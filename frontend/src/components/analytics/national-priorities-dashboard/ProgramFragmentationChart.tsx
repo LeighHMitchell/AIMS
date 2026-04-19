@@ -69,7 +69,7 @@ export function ProgramFragmentationChart({
       <div className="h-64 flex items-center justify-center text-muted-foreground">
         <div className="text-center">
           <p>No national priorities data available.</p>
-          <p className="text-sm mt-1">
+          <p className="text-body mt-1">
             Add national priorities in Admin &gt; Chart of Accounts &gt; National Priorities,
             then link them to activities.
           </p>
@@ -82,7 +82,7 @@ export function ProgramFragmentationChart({
     <div>
       <FragmentationHeatmap data={data} />
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+      <p className="text-body text-muted-foreground leading-relaxed mt-4">
         This heatmap shows how each donor distributes their funding across national priority programs. Darker cells indicate a higher share of a donor's total funding allocated to that program, helping to identify alignment with national priorities.
       </p>
     </div>

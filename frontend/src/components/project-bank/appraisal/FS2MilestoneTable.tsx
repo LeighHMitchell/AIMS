@@ -32,13 +32,13 @@ export function FS2MilestoneTable({ rows, onChange, disabled }: FS2MilestoneTabl
   return (
     <div>
       <div className="overflow-x-auto border rounded-lg">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <thead className="bg-surface-muted">
             <tr className="bg-surface-muted">
-              <th className="text-left p-2 font-medium text-xs w-[180px]">Phase</th>
-              <th className="text-left p-2 font-medium text-xs w-[130px]">Start Month</th>
-              <th className="text-left p-2 font-medium text-xs w-[130px]">End Month</th>
-              <th className="text-left p-2 font-medium text-xs">Key Activities</th>
+              <th className="text-left p-2 font-medium text-helper w-[180px]">Phase</th>
+              <th className="text-left p-2 font-medium text-helper w-[130px]">Start Month</th>
+              <th className="text-left p-2 font-medium text-helper w-[130px]">End Month</th>
+              <th className="text-left p-2 font-medium text-helper">Key Activities</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -49,7 +49,7 @@ export function FS2MilestoneTable({ rows, onChange, disabled }: FS2MilestoneTabl
                   <Input
                     value={row.phase}
                     onChange={e => updateRow(idx, 'phase', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     placeholder="e.g. Procurement"
                     disabled={disabled}
                   />
@@ -59,7 +59,7 @@ export function FS2MilestoneTable({ rows, onChange, disabled }: FS2MilestoneTabl
                     type="month"
                     value={row.start_month}
                     onChange={e => updateRow(idx, 'start_month', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     disabled={disabled}
                   />
                 </td>
@@ -68,7 +68,7 @@ export function FS2MilestoneTable({ rows, onChange, disabled }: FS2MilestoneTabl
                     type="month"
                     value={row.end_month}
                     onChange={e => updateRow(idx, 'end_month', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     disabled={disabled}
                   />
                 </td>
@@ -76,14 +76,14 @@ export function FS2MilestoneTable({ rows, onChange, disabled }: FS2MilestoneTabl
                   <Input
                     value={row.activities}
                     onChange={e => updateRow(idx, 'activities', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     placeholder="Key activities for this phase..."
                     disabled={disabled}
                   />
                 </td>
                 <td className="p-1.5">
                   {!disabled && (
-                    <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-red-500">
+                    <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -92,7 +92,7 @@ export function FS2MilestoneTable({ rows, onChange, disabled }: FS2MilestoneTabl
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="p-4 text-center text-body text-muted-foreground">
                   No milestones added yet. Click "Add Milestone" to begin.
                 </td>
               </tr>

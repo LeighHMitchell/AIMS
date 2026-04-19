@@ -48,7 +48,7 @@ export function BudgetCurrencySelect({
     >
       <SelectTrigger 
         id={id}
-        className={cn("h-10 text-xs", className)}
+        className={cn("h-10 text-helper", className)}
       >
         <SelectValue placeholder={placeholder}>
           {value && (
@@ -61,7 +61,7 @@ export function BudgetCurrencySelect({
           <SelectItem 
             key={currency.code} 
             value={currency.code}
-            className="text-xs"
+            className="text-helper"
           >
             <div className="flex items-center gap-2">
               <span className="font-medium">{currency.code}</span>

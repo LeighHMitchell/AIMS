@@ -486,7 +486,7 @@ export function ResultsReadOnlyView({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-semibold text-foreground">Results & Indicators</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             {results.length} result{results.length !== 1 ? 's' : ''} · {indicatorRows.filter(r => r.indicatorTitle !== '(No indicators defined)').length} indicator{indicatorRows.filter(r => r.indicatorTitle !== '(No indicators defined)').length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -526,7 +526,7 @@ export function ResultsReadOnlyView({
                 </div>
               </TooltipTrigger>
               <TooltipContent className="p-3">
-                <div className="flex flex-col gap-2 text-sm">
+                <div className="flex flex-col gap-2 text-body">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#6b9080]" />
                     <span>≥80% ({summary.high})</span>
@@ -557,7 +557,7 @@ export function ResultsReadOnlyView({
             <FileText className="h-4 w-4" />
             Documents
             {totalDocs > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+              <Badge variant="secondary" className="h-5 px-1.5 text-helper">
                 {totalDocs}
               </Badge>
             )}
@@ -692,7 +692,7 @@ export function ResultsReadOnlyView({
                           <Badge 
                             variant="outline" 
                             className={cn(
-                              "text-xs",
+                              "text-helper",
                               result.type === 'output' && "bg-[#e8f0f5] text-[#4a6a7a] border-[#c5d9e5]",
                               result.type === 'outcome' && "bg-[#f0e8f5] text-[#6a4a7a] border-[#d9c5e5]",
                               result.type === 'impact' && "bg-[#f5e8f0] text-[#7a4a6a] border-[#e5c5d9]"
@@ -704,17 +704,17 @@ export function ResultsReadOnlyView({
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {result.indicators.length === 0 ? (
-                          <p className="text-sm text-muted-foreground italic">No indicators defined</p>
+                          <p className="text-body text-muted-foreground italic">No indicators defined</p>
                         ) : (
                           result.indicators.map((indicator) => (
                             <div key={indicator.id} className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm text-foreground font-medium">{indicator.title}</p>
+                                <p className="text-body text-foreground font-medium">{indicator.title}</p>
                                 {indicator.achievementPercentage !== null && (
                                   <Badge 
                                     variant="outline"
                                     className={cn(
-                                      "text-xs font-normal",
+                                      "text-helper font-normal",
                                       indicator.status === 'high' && "bg-[#e8f0ec] text-[#4a6a5a] border-[#c5d9ce]",
                                       indicator.status === 'medium' && "bg-[#f5f0e0] text-[#806830] border-[#ddd0a0]",
                                       indicator.status === 'low' && "bg-[#f5e8e8] text-[#904848] border-[#ddc0c0]"
@@ -726,7 +726,7 @@ export function ResultsReadOnlyView({
                               </div>
                               {/* Progress Bar */}
                               <div className="space-y-1">
-                                <div className="flex justify-between text-xs text-muted-foreground">
+                                <div className="flex justify-between text-helper text-muted-foreground">
                                   <span>Target: {formatValue(indicator.target, indicator.measure)}</span>
                                 </div>
                                 <div className="h-4 rounded-full overflow-hidden bg-muted">
@@ -741,7 +741,7 @@ export function ResultsReadOnlyView({
                                     style={{ width: `${Math.min(indicator.achievementPercentage || 0, 100)}%` }}
                                   />
                                 </div>
-                                <div className="flex justify-between text-xs text-muted-foreground">
+                                <div className="flex justify-between text-helper text-muted-foreground">
                                   <span>Actual: {formatValue(indicator.actual, indicator.measure)}</span>
                                 </div>
                               </div>
@@ -810,7 +810,7 @@ export function ResultsReadOnlyView({
                               <div className="space-y-1">
                                 <p className="font-medium text-foreground">{row.resultTitle}</p>
                                 {row.indicatorTitle !== '(No indicators defined)' && (
-                                  <p className="text-sm text-muted-foreground">{row.indicatorTitle}</p>
+                                  <p className="text-body text-muted-foreground">{row.indicatorTitle}</p>
                                 )}
                               </div>
                             </TableCell>
@@ -829,7 +829,7 @@ export function ResultsReadOnlyView({
                                 <div>
                                   <span>{formatValue(row.baseline, row.measure)}</span>
                                   {row.baselineYear && (
-                                    <span className="text-muted-foreground text-xs ml-1">{row.baselineYear}</span>
+                                    <span className="text-muted-foreground text-helper ml-1">{row.baselineYear}</span>
                                   )}
                                 </div>
                               ) : '—'}
@@ -843,13 +843,13 @@ export function ResultsReadOnlyView({
                               <div>
                                 <span className="text-foreground">{formatValue(row.actual, row.measure)}</span>
                                 {row.achievementPercentage !== null && (
-                                  <span className="text-muted-foreground text-xs ml-1">{row.achievementPercentage}%</span>
+                                  <span className="text-muted-foreground text-helper ml-1">{row.achievementPercentage}%</span>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell className="py-4 px-4">
                               {row.comment ? (
-                                <p className="text-sm text-muted-foreground max-w-[200px] truncate" title={row.comment}>
+                                <p className="text-body text-muted-foreground max-w-[200px] truncate" title={row.comment}>
                                   {row.comment}
                                 </p>
                               ) : (
@@ -880,7 +880,7 @@ export function ResultsReadOnlyView({
                                     <Badge 
                                       key={idx}
                                       variant="outline"
-                                      className="text-xs font-normal bg-muted text-foreground border-border"
+                                      className="text-helper font-normal bg-muted text-foreground border-border"
                                     >
                                       <span className="font-mono bg-muted text-muted-foreground px-1 rounded">{dim.name}</span>
                                       <span className="ml-1">{dim.value}</span>

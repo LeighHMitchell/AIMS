@@ -90,10 +90,10 @@ const ACTIVITY_SECTIONS = [
 
 const REACTION_TYPES = [
   { type: 'thumbs_up', icon: ThumbsUp, label: 'Thumbs Up', color: 'text-[hsl(var(--success-icon))]' },
-  { type: 'thumbs_down', icon: ThumbsDown, label: 'Thumbs Down', color: 'text-red-600' },
+  { type: 'thumbs_down', icon: ThumbsDown, label: 'Thumbs Down', color: 'text-destructive' },
   { type: 'heart', icon: Heart, label: 'Love', color: 'text-pink-600' },
   { type: 'celebrate', icon: Zap, label: 'Celebrate', color: 'text-yellow-600' },
-  { type: 'confused', icon: HelpCircle, label: 'Confused', color: 'text-gray-600' },
+  { type: 'confused', icon: HelpCircle, label: 'Confused', color: 'text-muted-foreground' },
 ];
 
 export function EnhancedActivityComments({ 
@@ -608,7 +608,7 @@ export function EnhancedActivityComments({
 
   return (
     <TooltipProvider>
-      <div className={`space-y-6 ${showInline ? 'border-l-4 border-blue-200 pl-4' : ''}`}>
+      <div className={`space-y-6 ${showInline ? 'rounded-md bg-blue-50/50 p-4' : ''}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -630,7 +630,7 @@ export function EnhancedActivityComments({
             
             {notifications.length > 0 && (
               <Popover>
-                <PopoverTrigger className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">
+                <PopoverTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-white px-3 py-1.5 text-body font-medium hover:bg-muted">
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && <Badge variant="destructive" className="ml-1">{unreadCount}</Badge>}
                 </PopoverTrigger>
@@ -638,10 +638,10 @@ export function EnhancedActivityComments({
                   <div className="space-y-2">
                     <h4 className="font-medium">Notifications</h4>
                     {notifications.slice(0, 5).map((notification: any) => (
-                      <div key={notification.id} className={`p-2 rounded text-sm ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50'}`}>
+                      <div key={notification.id} className={`p-2 rounded text-sm ${notification.is_read ? 'bg-muted' : 'bg-blue-50'}`}>
                         <p className="font-medium">{notification.title}</p>
-                        <p className="text-gray-600">{notification.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-muted-foreground">{notification.message}</p>
+                        <p className="text-helper text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </p>
                       </div>
@@ -659,7 +659,7 @@ export function EnhancedActivityComments({
           <div className="flex flex-wrap gap-2">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search comments..."
                   value={searchTerm}
@@ -813,12 +813,12 @@ export function EnhancedActivityComments({
                     {attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {attachments.map((file, index) => (
-                          <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded">
+                          <div key={index} className="flex items-center gap-2 bg-muted px-3 py-1 rounded">
                             <File className="h-4 w-4" />
-                            <span className="text-sm">{file.name}</span>
+                            <span className="text-body">{file.name}</span>
                             <button
                               onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
-                              className="text-red-500 hover:text-red-700"
+                              className="text-destructive hover:text-destructive"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -880,7 +880,7 @@ export function EnhancedActivityComments({
                   <LoadingText>Loading comments...</LoadingText>
                 </div>
               ) : displayedComments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   No {activeTab} comments yet.
                 </div>
               ) : (
@@ -976,7 +976,7 @@ function CommentCard({
                 )}
                 
                 {comment.isArchived && (
-                  <Badge variant="outline" className="text-gray-600">
+                  <Badge variant="outline" className="text-muted-foreground">
                     <Archive className="h-3 w-3 mr-1" />
                     Archived
                   </Badge>
@@ -994,7 +994,7 @@ function CommentCard({
                   </div>
                   
                   {/* Top Right: Date/Time */}
-                  <span className="text-gray-500 text-xs">
+                  <span className="text-muted-foreground text-helper">
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                   </span>
                 </div>
@@ -1009,8 +1009,8 @@ function CommentCard({
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{comment.author.name}</span>
-                      <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-xs">
+                      <span className="font-medium text-body truncate">{comment.author.name}</span>
+                      <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-helper">
                         {getRoleDisplayLabel(comment.author.role)}
                       </Badge>
                     </div>
@@ -1021,7 +1021,7 @@ function CommentCard({
             
             <div className="flex items-center gap-2">
               {comment.contextSection && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-helper">
                   {comment.contextSection}
                   {comment.contextField && ` → ${comment.contextField}`}
                 </Badge>
@@ -1065,9 +1065,9 @@ function CommentCard({
                       variant="outline"
                       size="sm"
                       onClick={() => onDelete(comment.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Delete comment</TooltipContent>
@@ -1084,16 +1084,16 @@ function CommentCard({
           {/* Attachments */}
           {comment.attachments && comment.attachments.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Attachments:</p>
+              <p className="text-body font-medium text-foreground">Attachments:</p>
               <div className="flex flex-wrap gap-2">
                 {comment.attachments.map((attachment: any, index: number) => (
-                  <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded">
+                  <div key={index} className="flex items-center gap-2 bg-muted px-3 py-2 rounded">
                     {attachment.type?.startsWith('image/') ? (
                       <Image className="h-4 w-4" />
                     ) : (
                       <FileText className="h-4 w-4" />
                     )}
-                    <span className="text-sm">{attachment.name}</span>
+                    <span className="text-body">{attachment.name}</span>
                     <Button variant="ghost" size="sm" asChild>
                       <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
                         <Download className="h-3 w-3" />
@@ -1129,7 +1129,7 @@ function CommentCard({
                     <div>
                       <p>{label}</p>
                       {reaction?.users && reaction.users.length > 0 && (
-                        <p className="text-xs">
+                        <p className="text-helper">
                           {reaction.users.slice(0, 3).join(', ')}
                           {reaction.users.length > 3 && ` and ${reaction.users.length - 3} more`}
                         </p>
@@ -1153,28 +1153,28 @@ function CommentCard({
           {/* Resolution Note */}
           {comment.status === 'Resolved' && comment.resolutionNote && (
             <div className="bg-green-50 border border-green-200 rounded p-3">
-              <div className="flex items-center gap-2 text-green-800 font-medium text-sm">
+              <div className="flex items-center gap-2 text-green-800 font-medium text-body">
                 <CheckCircle className="h-4 w-4" />
                 Resolved by {comment.resolvedBy?.name}
               </div>
-              <p className="text-green-700 text-sm mt-1">{comment.resolutionNote}</p>
+              <p className="text-green-700 text-body mt-1">{comment.resolutionNote}</p>
             </div>
           )}
           
           {/* Archive Info */}
           {comment.isArchived && comment.archiveReason && (
-            <div className="bg-gray-50 border border-gray-200 rounded p-3">
-              <div className="flex items-center gap-2 text-gray-800 font-medium text-sm">
+            <div className="bg-muted border border-border rounded p-3">
+              <div className="flex items-center gap-2 text-foreground font-medium text-body">
                 <Archive className="h-4 w-4" />
                 Archived by {comment.archivedBy?.name}
               </div>
-              <p className="text-gray-700 text-sm mt-1">{comment.archiveReason}</p>
+              <p className="text-foreground text-body mt-1">{comment.archiveReason}</p>
             </div>
           )}
           
           {/* Replies */}
           {comment.replies && comment.replies.length > 0 && (
-            <div className="ml-6 border-l-2 border-gray-200 pl-4 space-y-4">
+            <div className="ml-6 border-l border-border pl-4 space-y-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -1202,7 +1202,7 @@ function CommentCard({
           
           {/* Reply Form */}
           {replyingTo === comment.id && (
-            <div className="ml-6 border-l-2 border-blue-200 pl-4 space-y-3">
+            <div className="ml-6 border-l border-primary/40 pl-4 space-y-3">
               <Textarea
                 placeholder="Write your reply..."
                 value={replyContent}
@@ -1244,7 +1244,7 @@ interface ReplyCardProps {
 
 function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
   return (
-    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+    <div className="bg-muted rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <UserAvatar
@@ -1253,25 +1253,25 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
             name={reply.author.name}
             size="sm"
           />
-          <span className="text-sm font-medium">{reply.author.name}</span>
-          <Badge variant={getRoleBadgeVariant(reply.author.role)} className="text-xs ml-2">
+          <span className="text-body font-medium">{reply.author.name}</span>
+          <Badge variant={getRoleBadgeVariant(reply.author.role)} className="text-helper ml-2">
             {getRoleDisplayLabel(reply.author.role)}
           </Badge>
-          <span className="text-xs text-gray-500">
+          <span className="text-helper text-muted-foreground">
             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
           </span>
         </div>
       </div>
       
-      <p className="text-sm whitespace-pre-wrap">{reply.message}</p>
+      <p className="text-body whitespace-pre-wrap">{reply.message}</p>
       
       {/* Reply Attachments */}
       {reply.attachments && reply.attachments.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-700">Attachments:</p>
+          <p className="text-helper font-medium text-foreground">Attachments:</p>
           <div className="flex flex-wrap gap-2">
             {reply.attachments.map((attachment: any, index: number) => (
-              <div key={index} className="flex items-center gap-1 bg-gray-200 px-2 py-1 rounded text-xs">
+              <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-helper">
                 <FileText className="h-3 w-3" />
                 <span>{attachment.name}</span>
                 <Button variant="ghost" size="sm" asChild>
@@ -1313,7 +1313,7 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
                 <div>
                   <p>{label}</p>
                   {users && users.length > 0 && (
-                    <p className="text-xs">
+                    <p className="text-helper">
                       {users.slice(0, 3).join(', ')}
                       {users.length > 3 && ` and ${users.length - 3} more`}
                     </p>

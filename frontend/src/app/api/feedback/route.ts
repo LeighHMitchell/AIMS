@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[AIMS Feedback API] GET request for user:', userId);
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
         }, { status: 500 });
       }
       
-      console.log('[AIMS Feedback API] Database connection test passed');
     } catch (dbError) {
       console.error('[AIMS Feedback API] Database connection error:', dbError);
       return NextResponse.json({ 
@@ -83,7 +81,6 @@ export async function GET(request: NextRequest) {
         }, { status: 500 });
       }
       
-      console.log('[AIMS Feedback API] Feedback table test passed');
     } catch (tableError) {
       console.error('[AIMS Feedback API] Feedback table error:', tableError);
       return NextResponse.json({ 
@@ -103,7 +100,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user role to check permissions
-    console.log('[AIMS Feedback API] Looking up user with ID:', realUserId);
     
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -111,19 +107,16 @@ export async function GET(request: NextRequest) {
       .eq('id', realUserId)
       .single();
 
-    console.log('[AIMS Feedback API] User lookup result:', { user, userError });
 
     if (userError || !user) {
       console.error('[AIMS Feedback API] User not found:', userError);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.log('[AIMS Feedback API] User role:', user.role);
 
     // Allow super users and dev partners to view all feedback
     const allowedRoles = ['super_user', 'dev_partner_tier_1', 'dev_partner_tier_2'];
     if (!allowedRoles.includes(user.role)) {
-      console.log('[AIMS Feedback API] Access denied - user role is:', user.role, 'but requires one of:', allowedRoles);
       return NextResponse.json({ 
         error: 'Insufficient permissions', 
         details: `Your role is '${user.role}' but one of these roles is required: ${allowedRoles.join(', ')}` 
@@ -131,7 +124,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query - using simpler approach to avoid foreign key issues
-    console.log('[AIMS Feedback API] Building feedback query...');
     
     // First, get total count
     let countQuery = supabase
@@ -191,13 +183,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 });
     }
 
-    console.log('[AIMS Feedback API] Found', feedback?.length || 0, 'feedback items');
     
     // Get user details for all feedback items
     let enrichedFeedback = feedback || [];
     
     if (feedback && feedback.length > 0) {
-      console.log('[AIMS Feedback API] Starting user enrichment...');
       
       // Get unique user IDs
       const userIds = Array.from(new Set(feedback.map((item: any) => item.user_id).filter(Boolean)));
@@ -236,7 +226,6 @@ export async function GET(request: NextRequest) {
         }
       }));
       
-      console.log('[AIMS Feedback API] User enrichment completed');
     }
 
     return NextResponse.json({ 
@@ -280,7 +269,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('[AIMS Feedback API] POST request for user:', userId);
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -301,7 +289,6 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
       
-      console.log('[AIMS Feedback API] Database connection test passed');
     } catch (dbError) {
       console.error('[AIMS Feedback API] Database connection error:', dbError);
       return NextResponse.json({ 
@@ -325,7 +312,6 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
       
-      console.log('[AIMS Feedback API] Feedback table test passed');
     } catch (tableError) {
       console.error('[AIMS Feedback API] Feedback table error:', tableError);
       return NextResponse.json({ 
@@ -346,12 +332,10 @@ export async function POST(request: NextRequest) {
 
     // The feedback table might reference auth.users instead of public.users
     // Let's check what the current authenticated user ID is
-    console.log('[AIMS Feedback API] Checking user authentication and table structure');
     
     // For now, let's try to use a known working approach
     // If the feedback table references auth.users, we need to use auth.uid()
     // Let's try to insert without checking user existence first
-    console.log('[AIMS Feedback API] Attempting direct insert with user ID:', realUserId);
 
     // Validate priority if provided
     const validPriorities = ['low', 'medium', 'high', 'urgent'];
@@ -368,7 +352,6 @@ export async function POST(request: NextRequest) {
       priority: finalPriority
     };
 
-    console.log('[AIMS Feedback API] Including feature field:', insertData.feature);
 
     // Check if attachment columns exist by trying to get a sample feedback record
     let hasAttachmentColumns = false;
@@ -385,7 +368,6 @@ export async function POST(request: NextRequest) {
                               'attachment_size' in sampleFeedback[0];
       }
       
-      console.log('[AIMS Feedback API] Attachment columns exist:', hasAttachmentColumns);
     } catch (error) {
       console.warn('[AIMS Feedback API] Could not check for attachment columns:', error);
       // Assume columns exist to avoid blocking attachment uploads
@@ -424,7 +406,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Log the actual insertData object being sent to database
-    console.log('[AIMS Feedback API] Final insertData object:', JSON.stringify(insertData, null, 2));
 
     const { data: feedback, error: insertError } = await supabase
       .from('feedback')
@@ -455,9 +436,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log what was actually saved to the database
-    console.log('[AIMS Feedback API] Feedback saved successfully. Database record:', JSON.stringify(feedback, null, 2));
 
-    console.log('[AIMS Feedback API] Feedback submitted successfully');
     return NextResponse.json({ 
       success: true, 
       feedback,
@@ -486,7 +465,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Feedback ID is required' }, { status: 400 });
     }
 
-    console.log('[AIMS Feedback API] PUT request for user:', userId);
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -517,7 +495,6 @@ export async function PUT(request: NextRequest) {
     // Allow super users and dev partners to update feedback
     const allowedRoles = ['super_user', 'dev_partner_tier_1', 'dev_partner_tier_2'];
     if (!allowedRoles.includes(user.role)) {
-      console.log('[AIMS Feedback API] Update access denied - user role is:', user.role, 'but requires one of:', allowedRoles);
       return NextResponse.json({ 
         error: 'Insufficient permissions',
         details: `Your role is '${user.role}' but one of these roles is required: ${allowedRoles.join(', ')}` 
@@ -547,7 +524,6 @@ export async function PUT(request: NextRequest) {
       updateData.archived_at = null;
     }
 
-    console.log('[AIMS Feedback API] Attempting to update feedback with data:', updateData);
     
     const { data: feedback, error: updateError } = await supabase
       .from('feedback')
@@ -581,7 +557,6 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[AIMS Feedback API] Feedback updated successfully');
     return NextResponse.json({ 
       success: true, 
       feedback,
@@ -614,7 +589,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deleteIds = isBatchDelete ? ids : [id];
-    console.log('[AIMS Feedback API] DELETE request for user:', userId, 'feedback count:', deleteIds.length);
     
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
@@ -645,7 +619,6 @@ export async function DELETE(request: NextRequest) {
 
     // For batch delete, only allow super_user role
     if (isBatchDelete && user.role !== 'super_user') {
-      console.log('[AIMS Feedback API] Batch delete access denied - user role is:', user.role, 'but requires super_user');
       return NextResponse.json({ 
         error: 'Insufficient permissions',
         details: 'Only super users can batch delete feedback' 
@@ -656,7 +629,6 @@ export async function DELETE(request: NextRequest) {
     if (!isBatchDelete) {
       const allowedRoles = ['super_user', 'dev_partner_tier_1', 'dev_partner_tier_2'];
       if (!allowedRoles.includes(user.role)) {
-        console.log('[AIMS Feedback API] Delete access denied - user role is:', user.role, 'but requires one of:', allowedRoles);
         return NextResponse.json({ 
           error: 'Insufficient permissions',
           details: `Your role is '${user.role}' but one of these roles is required: ${allowedRoles.join(', ')}` 
@@ -675,7 +647,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete feedback' }, { status: 500 });
     }
 
-    console.log('[AIMS Feedback API] Feedback deleted successfully, count:', deleteIds.length);
     return NextResponse.json({ 
       success: true, 
       message: isBatchDelete 

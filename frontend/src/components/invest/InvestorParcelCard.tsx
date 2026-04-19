@@ -18,11 +18,11 @@ export function InvestorParcelCard({ parcel, onClick }: InvestorParcelCardProps)
     >
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-medium text-sm">{parcel.name}</h3>
+          <h3 className="font-medium text-body">{parcel.name}</h3>
           <TitleStatusBadge status={parcel.title_status} />
         </div>
         <p className="text-xs text-muted-foreground font-mono mb-3">{parcel.parcel_code}</p>
-        <div className="space-y-1.5 text-xs text-muted-foreground">
+        <div className="space-y-1.5 text-helper text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5" />
             {parcel.state_region}{parcel.township ? `, ${parcel.township}` : ""}

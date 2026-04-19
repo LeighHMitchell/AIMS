@@ -201,8 +201,8 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
     icon: org.logo ? (
       <img src={org.logo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
     ) : (
-      <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+      <div className="h-5 w-5 rounded-sm bg-muted dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] font-medium text-muted-foreground dark:text-muted-foreground">
           {(org.acronym || org.name || '?')[0].toUpperCase()}
         </span>
       </div>
@@ -227,7 +227,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
           <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate">{document.fileName || 'External Document'}</p>
-            <p className="text-sm text-muted-foreground truncate">{document.url}</p>
+            <p className="text-body text-muted-foreground truncate">{document.url}</p>
           </div>
         </div>
 
@@ -299,7 +299,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
                 return (
                   <span
                     key={code}
-                    className="inline-flex items-center gap-1 bg-muted rounded px-2 py-1 text-sm"
+                    className="inline-flex items-center gap-1 bg-muted rounded px-2 py-1 text-body"
                   >
                     <span className="font-mono text-xs bg-background px-1 py-0.5 rounded">
                       {code.toUpperCase()}

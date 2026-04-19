@@ -67,7 +67,6 @@ describe('IATI Datastore API Integration', () => {
   describe('TC-DS-001: Search for known organization', () => {
     it('should find World Bank in IATI Datastore', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -88,7 +87,6 @@ describe('IATI Datastore API Integration', () => {
 
     it('should find UK Government activities', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -103,7 +101,6 @@ describe('IATI Datastore API Integration', () => {
   describe('TC-DS-002: Fetch activities by organization ref', () => {
     it('should retrieve activities for World Bank', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -119,7 +116,6 @@ describe('IATI Datastore API Integration', () => {
 
     it('should include activity metadata in response', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -143,7 +139,6 @@ describe('IATI Datastore API Integration', () => {
   describe('TC-DS-003: Handle non-existent organization', () => {
     it('should return empty results for non-existent org', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -199,7 +194,6 @@ describe('IATI Datastore API Integration', () => {
   describe('TC-DS-012: Parse datastore response correctly', () => {
     it('should parse JSON response format', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -217,7 +211,6 @@ describe('IATI Datastore API Integration', () => {
 
     it('should handle XML response format', async () => {
       if (!datastoreAvailable) {
-        console.log('Skipping: IATI Datastore not available');
         return;
       }
 
@@ -238,7 +231,6 @@ describe('IATI Datastore API Integration', () => {
     describe('TC-REG-001: Search organization packages', () => {
       it('should search for organization packages', async () => {
         if (!registryAvailable) {
-          console.log('Skipping: IATI Registry not available');
           return;
         }
 
@@ -256,7 +248,6 @@ describe('IATI Datastore API Integration', () => {
     describe('TC-REG-002: Get package details', () => {
       it('should retrieve package metadata', async () => {
         if (!registryAvailable) {
-          console.log('Skipping: IATI Registry not available');
           return;
         }
 

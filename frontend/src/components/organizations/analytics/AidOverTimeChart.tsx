@@ -53,7 +53,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
         <div className="bg-slate-900 text-white p-4 rounded-lg shadow-lg">
           <p className="font-semibold mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex justify-between gap-4 text-sm">
+            <div key={index} className="flex justify-between gap-4 text-body">
               <span style={{ color: entry.color }}>{entry.name}:</span>
               <span className="font-medium">{formatCurrency(entry.value)}</span>
             </div>
@@ -66,16 +66,16 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
 
   if (data.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-slate-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Aid Over Time
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-96 flex items-center justify-center text-slate-500">
+          <div className="h-96 flex items-center justify-center text-muted-foreground">
             <p>No time series data available</p>
           </div>
         </CardContent>
@@ -84,20 +84,20 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Aid Over Time
           </CardTitle>
-          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
               variant="ghost"
               size="sm"
               className={cn(
                 viewMode === 'detailed'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => setViewMode('detailed')}
             >
@@ -109,8 +109,8 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
               size="sm"
               className={cn(
                 viewMode === 'comparison'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => setViewMode('comparison')}
             >

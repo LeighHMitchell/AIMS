@@ -524,7 +524,6 @@ function ZoomDependentTownshipLayer({
       // Only change URL when crossing detail level thresholds
       const newUrl = getTownshipUrlForZoom(zoom);
       if (newUrl !== townshipUrl) {
-        console.log(`[Townships] Switching to ${newUrl} at zoom ${zoom.toFixed(1)}`);
         setTownshipUrl(newUrl);
       }
     };
@@ -643,8 +642,8 @@ function MapTooltip({
         maxWidth: 280,
       }}
     >
-      <h4 className="font-semibold text-foreground text-sm mb-2">{tooltipData.name}</h4>
-      <table className="w-full text-xs">
+      <h4 className="font-semibold text-foreground text-body mb-2">{tooltipData.name}</h4>
+      <table className="w-full text-helper">
         <tbody>
           <tr className="border-b border-border">
             <td className="py-1 text-muted-foreground">Allocation</td>
@@ -778,7 +777,7 @@ function Map3DController({
           className="bg-card shadow-md border-border h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">2D</span>
+          <span className="text-helper">2D</span>
         </Button>
       ) : (
         <Button
@@ -789,7 +788,7 @@ function Map3DController({
           className="bg-card shadow-md border-border h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">3D</span>
+          <span className="text-helper">3D</span>
         </Button>
       )}
 
@@ -973,7 +972,7 @@ function SubnationalChoroplethMapComponent({
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          Map
+          Sub-national Map
           <HelpTextTooltip content="Click on regions or townships to add them to the breakdown. Colors show allocation percentages. Toggle between ADM1 (states/regions) and ADM3 (townships) views." />
         </CardTitle>
       </CardHeader>
@@ -989,7 +988,7 @@ function SubnationalChoroplethMapComponent({
               <Button
                 variant={viewLevel === 'region' ? 'default' : 'ghost'}
                 size="sm"
-                className="h-9 rounded-r-none text-xs"
+                className="h-9 rounded-r-none text-helper"
                 onClick={() => onViewLevelChange('region')}
                 title="ADM1 — states and regions"
               >
@@ -999,7 +998,7 @@ function SubnationalChoroplethMapComponent({
               <Button
                 variant={viewLevel === 'township' ? 'default' : 'ghost'}
                 size="sm"
-                className="h-9 rounded-l-none text-xs"
+                className="h-9 rounded-l-none text-helper"
                 onClick={() => onViewLevelChange('township')}
                 title="ADM3 — townships"
               >
@@ -1040,7 +1039,7 @@ function SubnationalChoroplethMapComponent({
                   <Button
                     variant={viewLevel === 'region' ? 'default' : 'ghost'}
                     size="sm"
-                    className="h-8 rounded-r-none text-xs"
+                    className="h-8 rounded-r-none text-helper"
                     onClick={() => onViewLevelChange('region')}
                   >
                     ADM1
@@ -1048,7 +1047,7 @@ function SubnationalChoroplethMapComponent({
                   <Button
                     variant={viewLevel === 'township' ? 'default' : 'ghost'}
                     size="sm"
-                    className="h-8 rounded-l-none text-xs"
+                    className="h-8 rounded-l-none text-helper"
                     onClick={() => onViewLevelChange('township')}
                   >
                     ADM3
@@ -1076,7 +1075,7 @@ function SubnationalChoroplethMapComponent({
             {isExpanded && renderMap(dialogToolbarEl)}
           </div>
 
-          <p className="text-sm text-muted-foreground mt-4">
+          <p className="text-body text-muted-foreground mt-4">
             This interactive map provides a geographic visualization of aid distribution across Myanmar.
             Darker shading indicates higher allocation percentages, making it easy to identify regional
             concentrations and gaps at a glance. Toggle between ADM1 (15 states/regions/union territory)

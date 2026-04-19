@@ -158,7 +158,7 @@ export function OrganizationSearchableSelect({
           {(orgTypeName || org.country) && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {org.country && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <span className="text-helper text-muted-foreground flex items-center gap-1">
                   {getCountryCode(org.country) && (
                     <Flag
                       code={getCountryCode(org.country)!}
@@ -169,10 +169,10 @@ export function OrganizationSearchableSelect({
                 </span>
               )}
               {org.country && orgTypeName && (
-                <span className="text-xs text-muted-foreground">•</span>
+                <span className="text-helper text-muted-foreground">•</span>
               )}
               {orgTypeName && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-helper text-muted-foreground">
                   {orgTypeCode && <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{orgTypeCode}</span>}{' '}{orgTypeName}
                 </span>
               )}
@@ -189,7 +189,7 @@ export function OrganizationSearchableSelect({
         <PopoverTrigger
           data-popover-trigger
           className={cn(
-            "flex min-h-[60px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex min-h-[60px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-3 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedOrganization && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -199,8 +199,8 @@ export function OrganizationSearchableSelect({
               renderOrganizationDisplay(selectedOrganization, true)
             ) : fallbackRef ? (
               <span className="flex flex-col min-w-0 text-left leading-relaxed">
-                <span className="truncate font-medium text-red-600">{fallbackRef}</span>
-                <span className="text-sm text-red-500 truncate mt-0.5">Organization not found in list</span>
+                <span className="truncate font-medium text-destructive">{fallbackRef}</span>
+                <span className="text-body text-destructive truncate mt-0.5">Organization not found in list</span>
               </span>
             ) : (
               placeholder
@@ -215,7 +215,7 @@ export function OrganizationSearchableSelect({
                 aria-label="Clear selection"
                 tabIndex={-1}
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -236,7 +236,7 @@ export function OrganizationSearchableSelect({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+              className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
               autoFocus
             />
             {search && (
@@ -247,7 +247,7 @@ export function OrganizationSearchableSelect({
                 aria-label="Clear search"
                 tabIndex={-1}
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
           </div>
@@ -259,10 +259,10 @@ export function OrganizationSearchableSelect({
           >
             {filteredOrganizations.length === 0 ? (
               <div className="py-8 text-center">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   {emptyStateMessage}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-helper text-muted-foreground mt-1">
                   {emptyStateSubMessage}
                 </div>
               </div>

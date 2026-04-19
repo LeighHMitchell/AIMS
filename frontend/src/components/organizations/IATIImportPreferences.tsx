@@ -85,7 +85,7 @@ export function IATIImportPreferences({ organizationId }: { organizationId?: str
   }
 
   if (!registry || !prefs) {
-    return <div className="px-2 mt-4 text-sm text-muted-foreground">Loading IATI field registry…</div>
+    return <div className="px-2 mt-4 text-body text-muted-foreground">Loading IATI field registry…</div>
   }
 
   return (
@@ -106,23 +106,23 @@ export function IATIImportPreferences({ organizationId }: { organizationId?: str
 
       {Object.entries(grouped).map(([category, fields]) => (
         <div key={category} className="border rounded-md">
-          <div className="px-3 py-2 font-medium bg-gray-50">{category}</div>
+          <div className="px-3 py-2 font-medium bg-muted">{category}</div>
           <Separator />
           <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             {fields.map((f) => (
               <div key={f.id} className={cn('flex items-center justify-between gap-3 rounded-md border p-2', !f.supported && 'opacity-60') }>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{f.label}</span>
+                    <span className="font-medium text-body truncate">{f.label}</span>
                     {!f.supported && (
                       <HelpTextTooltip content="Not yet supported in AIMS; shown for future compatibility." />
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 truncate">{f.id}</div>
+                  <div className="text-helper text-muted-foreground truncate">{f.id}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   {f.docs && (
-                    <a href={f.docs} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">Docs</a>
+                    <a href={f.docs} target="_blank" rel="noreferrer" className="text-helper text-blue-600 hover:underline">Docs</a>
                   )}
                   <Switch
                     checked={!!prefs.fields[f.id]}

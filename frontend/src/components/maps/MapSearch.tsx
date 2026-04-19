@@ -106,7 +106,6 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       }
 
       const data = await response.json()
-      console.log('[MapSearch] Results:', data)
       setResults(data)
       setOpen(data.length > 0)
     } catch (err) {
@@ -134,7 +133,6 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
     const lng = parseFloat(result.lon)
     const zoomLevel = getZoomLevel(result.type, result.class)
     
-    console.log('[MapSearch] Selected:', result.display_name, 'at', lat, lng, 'type:', result.type)
     onLocationSelect(lat, lng, result.display_name, result.type)
     
     setSearchQuery('')
@@ -162,7 +160,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       <PopoverTrigger asChild>
         <div className={cn("relative", className)}>
           <div className="relative flex items-center">
-            <Search className="absolute left-3 h-3.5 w-3.5 text-gray-500 pointer-events-none" />
+            <Search className="absolute left-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <Input
               placeholder={placeholder}
               value={searchQuery}
@@ -173,16 +171,16 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                   setOpen(true)
                 }
               }}
-              className="pl-9 pr-9 bg-white shadow-md border-gray-300 h-9 text-xs"
+              className="pl-9 pr-9 bg-white shadow-md border-input h-9 text-helper"
             />
             {loading && (
-              <Loader2 className="absolute right-2.5 h-3.5 w-3.5 text-gray-500 animate-spin pointer-events-none" />
+              <Loader2 className="absolute right-2.5 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
             )}
             {!loading && searchQuery && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute right-1 h-6 w-6 p-0 hover:bg-gray-100"
+                className="absolute right-1 h-6 w-6 p-0 hover:bg-muted"
                 onClick={handleClear}
               >
                 <X className="h-3.5 w-3.5 text-muted-foreground" />
@@ -200,7 +198,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       >
         <Command shouldFilter={false}>
           {error && (
-            <div className="px-4 py-3 text-sm text-red-600">
+            <div className="px-4 py-3 text-body text-destructive">
               {error}
             </div>
           )}
@@ -220,15 +218,15 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                 >
                   <MapPin className="mr-2 h-4 w-4 text-blue-600 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
+                    <div className="text-body font-medium truncate">
                       {result.display_name.split(',')[0]}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">
+                    <div className="text-helper text-muted-foreground truncate">
                       {result.display_name}
                     </div>
                   </div>
                   <div className="ml-2 shrink-0">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-foreground">
                       {formatLocationType(result.type)}
                     </span>
                   </div>

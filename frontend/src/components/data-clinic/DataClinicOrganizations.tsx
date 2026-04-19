@@ -228,7 +228,7 @@ export function DataClinicOrganizations() {
                 className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelectedFilter(gap.field)}
               >
-                <p className="text-sm text-muted-foreground">{gap.label}</p>
+                <p className="text-body text-muted-foreground">{gap.label}</p>
                 <p className="text-2xl font-semibold">{gap.count}</p>
               </div>
             ))}
@@ -278,7 +278,7 @@ export function DataClinicOrganizations() {
           {isSuperUser && selectedOrganizations.size > 0 && (
             <div className="mt-4 p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-4">
-                <p className="text-sm font-medium">
+                <p className="text-body font-medium">
                   {selectedOrganizations.size} organizations selected
                 </p>
                 <Select value={bulkEditField} onValueChange={setBulkEditField}>
@@ -328,12 +328,12 @@ export function DataClinicOrganizations() {
                       />
                     </th>
                   )}
-                  <th className="p-4 text-left text-sm font-medium">Name</th>
-                  <th className="p-4 text-left text-sm font-medium">Acronym</th>
-                  <th className="p-4 text-left text-sm font-medium">Identifier</th>
-                  <th className="p-4 text-left text-sm font-medium">Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Location Represented</th>
-                  <th className="p-4 text-left text-sm font-medium">Currency</th>
+                  <th className="p-4 text-left text-body font-medium">Name</th>
+                  <th className="p-4 text-left text-body font-medium">Acronym</th>
+                  <th className="p-4 text-left text-body font-medium">Identifier</th>
+                  <th className="p-4 text-left text-body font-medium">Type</th>
+                  <th className="p-4 text-left text-body font-medium">Location Represented</th>
+                  <th className="p-4 text-left text-body font-medium">Currency</th>
                 </tr>
               </thead>
               <tbody>

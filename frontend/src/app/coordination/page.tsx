@@ -63,7 +63,7 @@ export default function CoordinationPage() {
                   <AlertCircle className="h-5 w-5 text-destructive" />
                   <div>
                     <h3 className="font-medium text-destructive">Error Loading Data</h3>
-                    <p className="text-sm text-destructive">{error}</p>
+                    <p className="text-body text-destructive">{error}</p>
                   </div>
                   <Button
                     variant="outline"
@@ -93,7 +93,7 @@ export default function CoordinationPage() {
               <Network className="h-6 w-6 text-foreground" />
               <div>
                 <h1 className="text-xl font-semibold text-foreground">Coordination</h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   {view === "sectors"
                     ? "Who's working in each sector?"
                     : "What is each partner working on?"}
@@ -143,7 +143,7 @@ export default function CoordinationPage() {
                   <DollarSign className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Budget</p>
+                  <p className="text-body text-muted-foreground">Total Budget</p>
                   {loading ? (
                     <Skeleton className="h-6 w-24 mt-1" />
                   ) : (
@@ -163,7 +163,7 @@ export default function CoordinationPage() {
                   <Layers className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Sectors</p>
+                  <p className="text-body text-muted-foreground">Sectors</p>
                   {loading ? (
                     <Skeleton className="h-6 w-16 mt-1" />
                   ) : (
@@ -183,7 +183,7 @@ export default function CoordinationPage() {
                   <Users className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Partners</p>
+                  <p className="text-body text-muted-foreground">Partners</p>
                   {loading ? (
                     <Skeleton className="h-6 w-16 mt-1" />
                   ) : (
@@ -203,7 +203,7 @@ export default function CoordinationPage() {
                   <Activity className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Activities</p>
+                  <p className="text-body text-muted-foreground">Activities</p>
                   {loading ? (
                     <Skeleton className="h-6 w-16 mt-1" />
                   ) : (
@@ -235,7 +235,7 @@ export default function CoordinationPage() {
           </Card>
 
           {/* Explanation */}
-          <div className="mt-4 text-sm text-muted-foreground text-center">
+          <div className="mt-4 text-body text-muted-foreground text-center">
             {view === "sectors" ? (
               <p>
                 Each large circle represents a sector. The smaller circles inside show

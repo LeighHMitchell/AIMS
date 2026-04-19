@@ -16,7 +16,6 @@ export default function DebugSectorsPage() {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}`;
     setLogs(prev => [...prev, logMessage]);
-    console.log(logMessage);
   };
 
   // Test: Load activity data directly
@@ -172,7 +171,7 @@ export default function DebugSectorsPage() {
             <div className="mb-4">
               <strong>Sectors Count:</strong> {activityData.sectors?.length || 0}
             </div>
-            <pre className="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-64">
+            <pre className="text-helper bg-muted p-4 rounded overflow-auto max-h-64">
               {JSON.stringify(activityData.sectors, null, 2)}
             </pre>
           </CardContent>
@@ -189,7 +188,7 @@ export default function DebugSectorsPage() {
             <div className="mb-4">
               <strong>Sectors Count:</strong> {sectorsFromDB.length}
             </div>
-            <pre className="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-64">
+            <pre className="text-helper bg-muted p-4 rounded overflow-auto max-h-64">
               {JSON.stringify(sectorsFromDB, null, 2)}
             </pre>
           </CardContent>
@@ -204,7 +203,7 @@ export default function DebugSectorsPage() {
         <CardContent>
           <div className="bg-black text-green-400 p-4 rounded font-mono text-xs max-h-96 overflow-y-auto">
             {logs.length === 0 ? (
-              <div className="text-gray-500">No logs yet. Click buttons above to start debugging.</div>
+              <div className="text-muted-foreground">No logs yet. Click buttons above to start debugging.</div>
             ) : (
               logs.map((log, index) => (
                 <div key={index} className="mb-1">
@@ -221,7 +220,7 @@ export default function DebugSectorsPage() {
         <CardHeader>
           <CardTitle>📋 Debug Steps</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+        <CardContent className="space-y-2 text-body">
           <p><strong>Step 1:</strong> Click "Load Activity Data" to see what the API returns</p>
           <p><strong>Step 2:</strong> Click "Query DB Directly" to see what's in the database</p>
           <p><strong>Step 3:</strong> Compare the two results - they should match</p>

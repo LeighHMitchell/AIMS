@@ -201,8 +201,8 @@ export function SectorTimeSeriesTable({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
-        <p className="text-slate-500">No data available for the selected filters</p>
+      <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
+        <p className="text-muted-foreground">No data available for the selected filters</p>
       </div>
     )
   }
@@ -212,7 +212,7 @@ export function SectorTimeSeriesTable({
       {/* Search and Export */}
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by year or sector..."
             value={searchQuery}
@@ -256,7 +256,7 @@ export function SectorTimeSeriesTable({
           <TableBody>
             {filteredAndSortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500 py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No data found matching your search
                 </TableCell>
               </TableRow>
@@ -264,29 +264,29 @@ export function SectorTimeSeriesTable({
               <>
                 {filteredAndSortedData.map((row, index) => (
                   <TableRow key={`${row.year}-${row.sector}-${index}`} className="hover:bg-muted/50">
-                    <TableCell className="font-medium text-slate-900">
+                    <TableCell className="font-medium text-foreground">
                       {row.year}
                     </TableCell>
                     <TableCell>
-                      <span className="text-slate-900">{row.sector}</span>
+                      <span className="text-foreground">{row.sector}</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <span className={`font-medium ${dataType === 'actual' ? 'text-green-700' : 'text-blue-700'}`}>
                         {formatCompactCurrency(row.amount)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right text-slate-600">
+                    <TableCell className="text-right text-muted-foreground">
                       {row.activityCount.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-right text-slate-600">
+                    <TableCell className="text-right text-muted-foreground">
                       {row.partnerCount.toLocaleString()}
                     </TableCell>
                   </TableRow>
                 ))}
                 {/* Totals Row */}
-                <TableRow className="bg-slate-100 font-semibold sticky bottom-0">
+                <TableRow className="bg-muted font-semibold sticky bottom-0">
                   <TableCell colSpan={2}>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-foreground">
                       Total ({filteredAndSortedData.length} rows)
                     </span>
                   </TableCell>
@@ -295,8 +295,8 @@ export function SectorTimeSeriesTable({
                       {formatCompactCurrency(grandTotal)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right text-slate-600">-</TableCell>
-                  <TableCell className="text-right text-slate-600">-</TableCell>
+                  <TableCell className="text-right text-muted-foreground">-</TableCell>
+                  <TableCell className="text-right text-muted-foreground">-</TableCell>
                 </TableRow>
               </>
             )}

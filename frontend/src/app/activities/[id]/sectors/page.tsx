@@ -45,7 +45,7 @@ export default function ActivitySectorsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -66,7 +66,7 @@ export default function ActivitySectorsPage() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => router.back()}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-input rounded-md shadow-sm text-body font-medium text-foreground bg-white hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Cancel
               </button>
@@ -107,10 +107,10 @@ export default function ActivitySectorsPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
+                <h3 className="text-body font-medium text-yellow-800">
                   Validation Required
                 </h3>
-                <div className="mt-2 text-sm text-yellow-700">
+                <div className="mt-2 text-body text-yellow-700">
                   <p>Please fix the following issues before saving:</p>
                   <ul className="list-disc list-inside mt-1">
                     {validation.errors.map((error, index) => (
@@ -126,10 +126,10 @@ export default function ActivitySectorsPage() {
         {/* CSV Template info */}
         <div className="mt-8 bg-muted rounded-lg p-6">
           <h3 className="text-lg font-medium text-foreground mb-3">Bulk Import Template</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-body text-muted-foreground mb-4">
             To import multiple sector allocations at once, use a CSV file with the following format:
           </p>
-          <pre className="bg-white border border-gray-200 rounded p-3 text-xs overflow-x-auto">
+          <pre className="bg-white border border-border rounded p-3 text-helper overflow-x-auto">
 {`dac5_code,percentage
 11220,30
 12220,25
@@ -137,7 +137,7 @@ export default function ActivitySectorsPage() {
 15110,15
 31110,10`}
           </pre>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-helper text-muted-foreground mt-2">
             The first row must be the header. DAC5 codes must be valid OECD DAC codes.
           </p>
         </div>

@@ -673,41 +673,41 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       const variance = comparisonValue - perfectSpend
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: COLOURS.coolSteel }}
                     />
-                    <span className="text-slate-700 font-medium">Even-spend baseline</span>
+                    <span className="text-foreground font-medium">Even-spend baseline</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipCurrency(perfectSpend)}
                   </td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: getComparisonColor() }}
                     />
-                    <span className="text-slate-700 font-medium capitalize">{getComparisonLabel()}</span>
+                    <span className="text-foreground font-medium capitalize">{getComparisonLabel()}</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipCurrency(comparisonValue)}
                   </td>
                 </tr>
-                <tr className="border-t border-slate-200">
+                <tr className="border-t border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 flex-shrink-0" />
-                    <span className="text-slate-700 font-medium">Gap to baseline</span>
+                    <span className="text-foreground font-medium">Gap to baseline</span>
                   </td>
                   <td
                     className="py-1.5 text-right font-semibold"
@@ -732,8 +732,8 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
     }
     if (error || !data || displayData.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
-          <p className="text-sm">{error || 'No data available'}</p>
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -833,7 +833,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   // Non-compact mode: error state
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64 text-red-500">
+      <div className="flex items-center justify-center h-64 text-destructive">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 mx-auto mb-3" />
           <p className="font-medium">{error}</p>
@@ -845,11 +845,11 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   // Non-compact mode: no data state
   if (!data || displayData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
-          <Info className="h-12 w-12 mx-auto mb-3 text-slate-400" />
+          <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
           <p className="font-medium">No activities with budget data found.</p>
-          <p className="text-sm mt-2 text-slate-400">
+          <p className="text-body mt-2 text-muted-foreground">
             Add budget data to activities to view the portfolio spend trajectory.
           </p>
         </div>
@@ -889,7 +889,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     {sortCustomYearsCalendarFirst(customYears).map(cy => (
                       <DropdownMenuItem
                         key={cy.id}
-                        className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                        className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                         onClick={() => setCalendarType(cy.id)}
                       >
                         <span className="flex items-center gap-2">
@@ -925,18 +925,18 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="p-3 w-auto">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                        <span className="text-helper font-medium text-foreground">Select Year Range</span>
                         <div className="flex gap-1">
                           <button
                             onClick={selectAllYears}
-                            className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                            className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                             title="Select all available years"
                           >
                             All
                           </button>
                           <button
                             onClick={selectDataRange}
-                            className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                            className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                             title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
                           >
                             Data
@@ -959,7 +959,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                                   ? 'bg-primary text-primary-foreground'
                                   : inRange
                                     ? 'bg-primary/20 text-primary'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                    : 'text-muted-foreground hover:bg-muted'
                                 }
                               `}
                               title="Click to select start, then click another to select end"
@@ -969,7 +969,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                           )
                         })}
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-2 text-center">
+                      <p className="text-[10px] text-muted-foreground mt-2 text-center">
                         Click start year, then click end year
                       </p>
                     </DropdownMenuContent>
@@ -977,7 +977,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                 </div>
                 {/* Date Range Indicator */}
                 {effectiveDateRange?.from && effectiveDateRange?.to && (
-                  <span className="text-xs text-slate-500 text-center">
+                  <span className="text-helper text-muted-foreground text-center">
                     {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                   </span>
                 )}
@@ -989,12 +989,12 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         {/* Right side - View Toggle & Export Buttons */}
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('chart')}
-              className={cn("h-8", viewMode === 'chart' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", viewMode === 'chart' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Chart view"
             >
               <BarChart3 className="h-4 w-4" />
@@ -1003,7 +1003,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('table')}
-              className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Table view"
             >
               <TableIcon className="h-4 w-4" />
@@ -1097,7 +1097,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                         onClick={() => handleLegendClick(dataKey)}
                         className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${
                           isHidden ? 'opacity-40' : 'opacity-100'
-                        } hover:bg-slate-100`}
+                        } hover:bg-muted`}
                       >
                         {isDashed ? (
                           <svg width="16" height="2" className="flex-shrink-0">
@@ -1114,7 +1114,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                             style={{ backgroundColor: entry.color }}
                           />
                         )}
-                        <span className={`text-xs ${isHidden ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                        <span className={`text-xs ${isHidden ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                           {entry.value}
                         </span>
                       </button>
@@ -1252,7 +1252,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       </div>
 
       {/* Explanatory Text */}
-      <div className="text-xs text-gray-500 mt-4 space-y-2">
+      <div className="text-helper text-muted-foreground mt-4 space-y-2">
         <p>
           This chart compares the portfolio's <strong>actual cumulative disbursements</strong> (red stepped line) against an
           <strong> even-spend budget baseline</strong> (grey dashed line) that models uniform spending across each activity's

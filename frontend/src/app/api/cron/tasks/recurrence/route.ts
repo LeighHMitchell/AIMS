@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
     const nowISO = now.toISOString();
-    console.log('[Cron Recurrence] Running at', nowISO);
 
     // Find active recurrence rules with next_occurrence_at <= now
     const { data: dueRules, error: fetchError } = await supabase
@@ -42,7 +41,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (!dueRules || dueRules.length === 0) {
-      console.log('[Cron Recurrence] No rules due for generation');
       return NextResponse.json({
         success: true,
         message: 'No recurring tasks to generate',
@@ -50,7 +48,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Cron Recurrence] Found', dueRules.length, 'rules due for generation');
 
     let generated = 0;
     let failed = 0;
@@ -67,13 +64,11 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (parentError || !parentTask) {
-          console.log('[Cron Recurrence] No parent task found for rule:', rule.id);
           continue;
         }
 
         // Check if rule should still generate
         if (rule.count && rule.occurrences_generated >= rule.count) {
-          console.log('[Cron Recurrence] Rule has reached count limit:', rule.id);
           await supabase
             .from('task_recurrence_rules')
             .update({ is_active: false, updated_at: nowISO })
@@ -82,7 +77,6 @@ export async function GET(request: NextRequest) {
         }
 
         if (rule.end_date && new Date(rule.end_date) < now) {
-          console.log('[Cron Recurrence] Rule has passed end date:', rule.id);
           await supabase
             .from('task_recurrence_rules')
             .update({ is_active: false, updated_at: nowISO })
@@ -123,7 +117,6 @@ export async function GET(request: NextRequest) {
           throw createError;
         }
 
-        console.log('[Cron Recurrence] Created new task instance:', newTask.id);
 
         // Copy assignments from parent task
         const { data: parentAssignments } = await supabase
@@ -142,7 +135,6 @@ export async function GET(request: NextRequest) {
           }));
 
           await supabase.from('task_assignments').insert(newAssignments);
-          console.log('[Cron Recurrence] Created', newAssignments.length, 'assignments');
         }
 
         // Log recurrence event
@@ -182,7 +174,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[Cron Recurrence] Complete. Generated:', generated, 'Failed:', failed);
 
     return NextResponse.json({
       success: true,

@@ -114,9 +114,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
 
   // Handle status change
   const handleStatusChange = useCallback(async (assignmentId: string, status: TaskStatus) => {
-    console.log('[TaskingTab] handleStatusChange called:', { assignmentId, status });
     const result = await updateStatus(assignmentId, status);
-    console.log('[TaskingTab] updateStatus result:', result);
     if (result) {
       toast.success(`Task ${status === 'completed' ? 'completed' : status === 'in_progress' ? 'started' : 'updated'}`);
       // Await the refetch to ensure UI updates with new status
@@ -294,7 +292,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-body text-muted-foreground">Total</span>
               </div>
               <p className="text-2xl font-bold mt-1">{currentStats.total}</p>
             </CardContent>
@@ -303,7 +301,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Pending</span>
+                <span className="text-body text-muted-foreground">Pending</span>
               </div>
               <p className="text-2xl font-bold mt-1">{currentStats.pending}</p>
             </CardContent>
@@ -312,7 +310,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <PlayCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">In Progress</span>
+                <span className="text-body text-muted-foreground">In Progress</span>
               </div>
               <p className="text-2xl font-bold mt-1">{currentStats.in_progress}</p>
             </CardContent>
@@ -321,7 +319,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Completed</span>
+                <span className="text-body text-muted-foreground">Completed</span>
               </div>
               <p className="text-2xl font-bold mt-1">{currentStats.completed}</p>
             </CardContent>
@@ -330,7 +328,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Declined</span>
+                <span className="text-body text-muted-foreground">Declined</span>
               </div>
               <p className="text-2xl font-bold mt-1">{currentStats.declined}</p>
             </CardContent>
@@ -339,7 +337,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Overdue</span>
+                <span className="text-body text-muted-foreground">Overdue</span>
               </div>
               <p className={`text-2xl font-bold mt-1 ${currentStats.overdue > 0 ? 'text-destructive' : ''}`}>
                 {currentStats.overdue}
@@ -350,7 +348,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <Archive className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Archived</span>
+                <span className="text-body text-muted-foreground">Archived</span>
               </div>
               <p className="text-2xl font-bold mt-1">{currentStats.archived ?? 0}</p>
             </CardContent>
@@ -402,15 +400,15 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           <div className="flex items-center gap-4">
             {/* View Toggle - Active/Archived */}
             {activeView === 'assigned' && (
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(false)}
                   className={cn(
                     !showArchived
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <CheckCircle2 className="h-4 w-4 mr-1" />
@@ -422,8 +420,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   onClick={() => setShowArchived(true)}
                   className={cn(
                     showArchived
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Archive className="h-4 w-4 mr-1" />
@@ -449,14 +447,14 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
 
             {/* View Mode Toggle - show for Assigned to Me, Reassigned, and Created by Me tabs */}
             {(activeView === 'assigned' || activeView === 'created' || activeView === 'reassigned') && (
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
                   variant="ghost"
                   size="icon"
                   className={cn(
                     viewMode === 'table'
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => setViewMode('table')}
                 >
@@ -467,8 +465,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   size="icon"
                   className={cn(
                     viewMode === 'cards'
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => setViewMode('cards')}
                 >
@@ -574,7 +572,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   <CardContent className="pt-2">
                     <div className="space-y-3">
                       {/* Reassigned to */}
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-body">
                         <UserCheck className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Reassigned to:</span>
                         <span className="font-medium">
@@ -582,7 +580,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                         </span>
                       </div>
                       {/* Reassignment date */}
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-body">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Reassigned:</span>
                         <span>
@@ -591,7 +589,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                       </div>
                       {/* Deadline if exists */}
                       {reassignment.assignment.task?.deadline && (
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-body">
                           <AlertTriangle className={`h-4 w-4 ${reassignment.assignment.is_overdue ? 'text-destructive' : 'text-muted-foreground'}`} />
                           <span className="text-muted-foreground">Deadline:</span>
                           <span className={reassignment.assignment.is_overdue ? 'text-destructive font-medium' : ''}>
@@ -602,7 +600,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                       )}
                       {/* Reassignment note */}
                       {reassignment.note && (
-                        <div className="text-sm text-muted-foreground bg-muted/50 rounded p-2 mt-2">
+                        <div className="text-body text-muted-foreground bg-muted/50 rounded p-2 mt-2">
                           <span className="font-medium">Note:</span> {reassignment.note}
                         </div>
                       )}
@@ -646,7 +644,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                         <td className="p-3">
                           <div className="font-medium">{reassignment.assignment.task?.title || 'Untitled'}</div>
                           {reassignment.assignment.task?.description && (
-                            <div className="text-sm text-muted-foreground line-clamp-1">
+                            <div className="text-body text-muted-foreground line-clamp-1">
                               {reassignment.assignment.task.description}
                             </div>
                           )}

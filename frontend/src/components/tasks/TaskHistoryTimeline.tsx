@@ -56,13 +56,13 @@ export function TaskHistoryTimeline({ history, className }: TaskHistoryTimelineP
         return 'bg-purple-100 text-purple-600';
       case 'status_changed':
         if (newStatus === 'completed') return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
-        if (newStatus === 'declined') return 'bg-gray-100 text-gray-600';
+        if (newStatus === 'declined') return 'bg-muted text-muted-foreground';
         if (newStatus === 'in_progress') return 'bg-amber-100 text-amber-600';
-        return 'bg-slate-100 text-slate-600';
+        return 'bg-muted text-muted-foreground';
       case 'note_added':
-        return 'bg-slate-100 text-slate-600';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-slate-100 text-slate-600';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -125,24 +125,24 @@ export function TaskHistoryTimeline({ history, className }: TaskHistoryTimelineP
                         </AvatarFallback>
                       </Avatar>
                     )}
-                    <span className="text-sm font-medium">
+                    <span className="text-body font-medium">
                       {getActionDescription(entry)}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="text-helper text-muted-foreground whitespace-nowrap">
                     {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                   </span>
                 </div>
 
                 {/* Note */}
                 {entry.note && (
-                  <div className="mt-2 bg-muted/50 rounded p-2 text-sm">
+                  <div className="mt-2 bg-muted/50 rounded p-2 text-body">
                     {entry.note}
                   </div>
                 )}
 
                 {/* Timestamp */}
-                <div className="mt-1 text-xs text-muted-foreground">
+                <div className="mt-1 text-helper text-muted-foreground">
                   {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
                 </div>
               </div>

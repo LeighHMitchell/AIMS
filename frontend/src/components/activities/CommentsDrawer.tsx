@@ -138,7 +138,7 @@ function CommentInput({
               onFocus={() => setIsFocused(true)}
               onKeyDown={handleKeyDown}
               autoFocus={autoFocus}
-              className="min-h-[60px] border-none bg-transparent p-0 resize-none focus-visible:ring-0 placeholder:text-muted-foreground/70 text-sm"
+              className="min-h-[60px] border-none bg-transparent p-0 resize-none focus-visible:ring-0 placeholder:text-muted-foreground/70 text-body"
             />
           </div>
         </div>
@@ -149,12 +149,12 @@ function CommentInput({
         <div className="flex items-center gap-2">
           {showSectionSelect && onSectionChange && (
             <Select value={selectedSection} onValueChange={onSectionChange}>
-              <SelectTrigger className="h-7 w-28 text-xs">
+              <SelectTrigger className="h-7 w-28 text-helper">
                 <SelectValue placeholder="Section" />
               </SelectTrigger>
               <SelectContent>
                 {ACTIVITY_SECTIONS.map((section) => (
-                  <SelectItem key={section.value} value={section.value} className="text-xs">
+                  <SelectItem key={section.value} value={section.value} className="text-helper">
                     {section.label}
                   </SelectItem>
                 ))}
@@ -163,12 +163,12 @@ function CommentInput({
           )}
           {showSectionSelect && onTypeChange && (
             <Select value={commentType} onValueChange={(v) => onTypeChange(v as 'Question' | 'Feedback')}>
-              <SelectTrigger className="h-7 w-24 text-xs">
+              <SelectTrigger className="h-7 w-24 text-helper">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {COMMENT_TYPE_OPTIONS.map((type) => (
-                  <SelectItem key={type.value} value={type.value} className="text-xs">
+                  <SelectItem key={type.value} value={type.value} className="text-helper">
                     {type.label}
                   </SelectItem>
                 ))}
@@ -183,7 +183,7 @@ function CommentInput({
               size="sm"
               type="button"
               onClick={onCancel}
-              className="text-xs h-7"
+              className="text-helper h-7"
             >
               Cancel
             </Button>
@@ -193,7 +193,7 @@ function CommentInput({
             disabled={!content.trim()}
             size="sm"
             type="submit"
-            className="gap-1.5 transition-all h-7 text-xs"
+            className="gap-1.5 transition-all h-7 text-helper"
           >
             {onCancel ? "Reply" : "Post"}
             <Send className="h-3 w-3" />
@@ -260,7 +260,7 @@ function CommentItem({
       exit={{ opacity: 0, height: 0 }}
       className={cn(
         "relative group",
-        isReply ? "ml-8 pl-4 border-l-2 border-border/40" : "mb-4"
+        isReply ? "ml-8 pl-4 border-l border-border" : "mb-4"
       )}
     >
       <div className="flex gap-3">
@@ -276,7 +276,7 @@ function CommentItem({
           {/* Header */}
           <header className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-body font-semibold text-foreground">
                 {comment.author?.name || 'Unknown User'}
               </span>
               {comment.author?.role && (
@@ -288,7 +288,7 @@ function CommentItem({
                 {getTypeIcon(comment.type)}
                 <span className="text-[10px] text-muted-foreground">{comment.type}</span>
               </div>
-              <time className="text-xs text-muted-foreground">
+              <time className="text-helper text-muted-foreground">
                 • {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
               </time>
               {comment.status === 'Resolved' && (
@@ -319,9 +319,9 @@ function CommentItem({
                 {canDelete && onDelete && (
                   <DropdownMenuItem
                     onClick={() => onDelete(comment.id)}
-                    className="text-red-600 focus:text-red-600"
+                    className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="h-3.5 w-3.5 mr-2 text-red-500" />
+                    <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
                     Delete
                   </DropdownMenuItem>
                 )}
@@ -334,7 +334,7 @@ function CommentItem({
           </header>
 
           {/* Content */}
-          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+          <p className="text-body text-foreground/90 leading-relaxed whitespace-pre-wrap">
             {comment.message}
           </p>
 
@@ -353,7 +353,7 @@ function CommentItem({
               onClick={() => setActiveReplyId(isReplying ? null : comment.id)}
               type="button"
               className={cn(
-                "flex items-center gap-1.5 text-xs font-medium transition-colors",
+                "flex items-center gap-1.5 text-helper font-medium transition-colors",
                 isReplying
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -363,7 +363,7 @@ function CommentItem({
               Reply
             </button>
             {comment.replies && comment.replies.length > 0 && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-helper text-muted-foreground">
                 {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
               </span>
             )}
@@ -428,7 +428,7 @@ function CommentItem({
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               type="button"
-              className="ml-11 text-xs font-medium text-primary hover:underline flex items-center gap-1"
+              className="ml-11 text-helper font-medium text-primary hover:underline flex items-center gap-1"
             >
               {isExpanded ? (
                 <>
@@ -728,7 +728,7 @@ export function CommentsDrawer({
             <MessageSquare className="h-4 w-4" />
             Comments
             {unreadCount > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-helper">
                 {unreadCount}
               </Badge>
             )}
@@ -744,7 +744,7 @@ export function CommentsDrawer({
           {/* Header */}
           <header className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold tracking-tight text-red-500">
+              <h2 className="text-lg font-semibold tracking-tight text-destructive">
                 NEW DRAWER TEST
               </h2>
               <Badge variant="secondary" className="font-normal">
@@ -770,7 +770,7 @@ export function CommentsDrawer({
               variant={activeTab === 'open' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('open')}
-              className="text-xs h-7"
+              className="text-helper h-7"
             >
               Open ({openCount})
             </Button>
@@ -778,7 +778,7 @@ export function CommentsDrawer({
               variant={activeTab === 'resolved' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('resolved')}
-              className="text-xs h-7"
+              className="text-helper h-7"
             >
               Resolved ({resolvedCount})
             </Button>
@@ -789,12 +789,12 @@ export function CommentsDrawer({
             {loading && comments.length === 0 && (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="ml-2"><LoadingText className="text-sm">Loading comments...</LoadingText></span>
+                <span className="ml-2"><LoadingText className="text-body">Loading comments...</LoadingText></span>
               </div>
             )}
 
             {error && (
-              <div className="text-center py-8 text-sm text-red-500">
+              <div className="text-center py-8 text-body text-destructive">
                 {error}
               </div>
             )}
@@ -802,8 +802,8 @@ export function CommentsDrawer({
             {!loading && !error && filteredComments.length === 0 && (
               <div className="text-center py-12">
                 <MessageSquare className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-                <h3 className="text-sm font-medium text-foreground mb-1">No comments yet</h3>
-                <p className="text-xs text-muted-foreground">
+                <h3 className="text-body font-medium text-foreground mb-1">No comments yet</h3>
+                <p className="text-helper text-muted-foreground">
                   {activeTab === 'open' ? 'Start a conversation about this activity.' : 'No resolved comments.'}
                 </p>
               </div>

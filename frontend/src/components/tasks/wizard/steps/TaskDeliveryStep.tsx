@@ -51,15 +51,15 @@ export function TaskDeliveryStep({
     <div className="space-y-6">
       {/* Error Banner */}
       {hasError && (
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-body">
           {errors[0]}
         </div>
       )}
 
       {/* Notification Methods */}
       <div className="space-y-4">
-        <Label className="text-sm font-medium">Notification Methods</Label>
-        <p className="text-xs text-muted-foreground -mt-2">
+        <Label className="text-body font-medium">Notification Methods</Label>
+        <p className="text-helper text-muted-foreground -mt-2">
           Choose how recipients will be notified about this task
         </p>
 
@@ -78,8 +78,8 @@ export function TaskDeliveryStep({
               <Bell className="h-5 w-5" />
             </div>
             <div>
-              <div className="font-medium text-sm">In-App Notifications</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="font-medium text-body">In-App Notifications</div>
+              <div className="text-helper text-muted-foreground">
                 Recipients will see the task in their notification bell
               </div>
             </div>
@@ -105,8 +105,8 @@ export function TaskDeliveryStep({
               <Mail className="h-5 w-5" />
             </div>
             <div>
-              <div className="font-medium text-sm">Email Notifications</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="font-medium text-body">Email Notifications</div>
+              <div className="text-helper text-muted-foreground">
                 Send an email notification to all recipients
               </div>
             </div>
@@ -120,7 +120,7 @@ export function TaskDeliveryStep({
 
       {/* Deadline */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
+        <Label className="text-body font-medium flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           Deadline
         </Label>
@@ -160,13 +160,13 @@ export function TaskDeliveryStep({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground"
+            className="text-helper text-muted-foreground"
             onClick={() => updateFormData({ deadline: null })}
           >
             Clear deadline
           </Button>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-helper text-muted-foreground">
           Optional. Set a due date for task completion.
         </p>
       </div>
@@ -174,7 +174,7 @@ export function TaskDeliveryStep({
       {/* Reminder */}
       {formData.deadline && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
+          <Label className="text-body font-medium flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Reminder
           </Label>
@@ -193,7 +193,7 @@ export function TaskDeliveryStep({
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             A reminder notification will be sent to recipients who haven&apos;t completed the task
           </p>
         </div>

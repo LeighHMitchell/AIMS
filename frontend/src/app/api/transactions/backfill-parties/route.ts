@@ -38,7 +38,6 @@ import { inferTransactionParties, ParticipatingOrg, ReportingOrg } from '@/lib/i
  * }
  */
 export async function POST(request: NextRequest) {
-  console.log('[Backfill Parties] Starting backfill process');
   
   try {
     const body = await request.json().catch(() => ({}));
@@ -46,7 +45,6 @@ export async function POST(request: NextRequest) {
     const activityId = body.activityId as string | undefined;
     const limit = Math.min(body.limit || 1000, 5000); // Cap at 5000
     
-    console.log(`[Backfill Parties] Options: dryRun=${dryRun}, activityId=${activityId || 'all'}, limit=${limit}`);
     // 1. Fetch transactions missing provider or receiver org_id
     let query = supabase
       .from('transactions')
@@ -86,7 +84,6 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    console.log(`[Backfill Parties] Found ${transactions.length} transactions to process`);
     
     // 2. Group transactions by activity_id
     const byActivity = new Map<string, typeof transactions>();
@@ -96,7 +93,6 @@ export async function POST(request: NextRequest) {
       byActivity.set(t.activity_id, list);
     }
     
-    console.log(`[Backfill Parties] Transactions span ${byActivity.size} activities`);
     
     // 3. Fetch all activity data in one query
     const activityIds = Array.from(byActivity.keys());
@@ -303,7 +299,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log(`[Backfill Parties] Complete. Summary:`, summary);
     
     return NextResponse.json({
       success: true,

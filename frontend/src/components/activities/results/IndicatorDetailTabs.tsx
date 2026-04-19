@@ -70,14 +70,14 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
       <TabsList className="grid w-full grid-cols-5 h-auto">
         <TabsTrigger 
           value="baseline" 
-          className="flex items-center gap-1.5 text-xs py-2"
+          className="flex items-center gap-1.5 text-helper py-2"
         >
           <Database className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Baseline</span>
         </TabsTrigger>
         <TabsTrigger 
           value="periods" 
-          className="flex items-center gap-1.5 text-xs py-2"
+          className="flex items-center gap-1.5 text-helper py-2"
         >
           <Calendar className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Periods</span>
@@ -89,7 +89,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
         </TabsTrigger>
         <TabsTrigger 
           value="disaggregation" 
-          className="flex items-center gap-1.5 text-xs py-2"
+          className="flex items-center gap-1.5 text-helper py-2"
           disabled={!hasDisaggregation}
         >
           <Layers className="h-3.5 w-3.5" />
@@ -97,7 +97,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
         </TabsTrigger>
         <TabsTrigger 
           value="references" 
-          className="flex items-center gap-1.5 text-xs py-2"
+          className="flex items-center gap-1.5 text-helper py-2"
         >
           <BookOpen className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">References</span>
@@ -109,7 +109,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
         </TabsTrigger>
         <TabsTrigger 
           value="documents" 
-          className="flex items-center gap-1.5 text-xs py-2"
+          className="flex items-center gap-1.5 text-helper py-2"
         >
           <FileText className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Documents</span>
@@ -145,7 +145,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             measure={indicator.measure}
           />
         ) : (
-          <div className="flex items-center justify-center text-slate-400 py-8">
+          <div className="flex items-center justify-center text-muted-foreground py-8">
             <Layers className="h-5 w-5 mr-2" />
             No disaggregation data available
           </div>
@@ -159,11 +159,11 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             {indicator.references!.map((ref: ResultReference) => (
               <div 
                 key={ref.id}
-                className="flex items-start justify-between p-3 rounded-md bg-slate-50 border border-slate-100"
+                className="flex items-start justify-between p-3 rounded-md bg-muted border border-border"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-helper">
                       {getVocabularyLabel(ref.vocabulary)}
                     </Badge>
                     <code className="text-sm bg-white px-2 py-0.5 rounded border">
@@ -175,7 +175,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
                       href={ref.indicator_uri}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      className="text-helper text-blue-600 hover:text-blue-700 flex items-center gap-1"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Indicator URI
@@ -186,7 +186,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
                       href={ref.vocabulary_uri}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      className="text-helper text-blue-600 hover:text-blue-700 flex items-center gap-1"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Vocabulary URI
@@ -197,7 +197,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center text-slate-400 py-8">
+          <div className="flex items-center justify-center text-muted-foreground py-8">
             <BookOpen className="h-5 w-5 mr-2" />
             No external references linked
           </div>
@@ -211,15 +211,15 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             {indicator.document_links!.map((doc: DocumentLink) => (
               <div 
                 key={doc.id}
-                className="flex items-center justify-between p-3 rounded-md bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors"
+                className="flex items-center justify-between p-3 rounded-md bg-muted border border-border hover:bg-muted transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-slate-400" />
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <div className="font-medium text-sm text-slate-700">
+                    <div className="font-medium text-body text-foreground">
                       {getLocalizedString(doc.title) || 'Untitled Document'}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-2">
+                    <div className="text-helper text-muted-foreground flex items-center gap-2">
                       {doc.format && (
                         <Badge variant="outline" className="text-[10px] h-4">
                           {doc.format.split('/').pop()?.toUpperCase()}
@@ -235,7 +235,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
                       )}
                     </div>
                     {doc.description && (
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                      <p className="text-helper text-muted-foreground mt-1 line-clamp-1">
                         {getLocalizedString(doc.description)}
                       </p>
                     )}
@@ -253,7 +253,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center text-slate-400 py-8">
+          <div className="flex items-center justify-center text-muted-foreground py-8">
             <FileText className="h-5 w-5 mr-2" />
             No documents attached
           </div>

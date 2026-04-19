@@ -214,7 +214,7 @@ export function MapCodesModal({
 
           {/* Progress Summary */}
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <span className="text-sm font-medium">
+            <span className="text-body font-medium">
               Mapped: {mappedCodesCount} / {totalUnmappedCodes}
             </span>
             {allCodesMapped && (
@@ -246,7 +246,7 @@ export function MapCodesModal({
                         const systemCodes = SYSTEM_CODES[codeType as keyof typeof SYSTEM_CODES] || [];
 
                         return (
-                          <div key={code} className={`flex items-center gap-4 p-3 rounded-lg border ${isMapped ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                          <div key={code} className={`flex items-center gap-4 p-3 rounded-lg border ${isMapped ? 'border-green-200 bg-green-50' : 'border-border'}`}>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <code className="font-mono text-sm bg-muted px-2 py-1 rounded">
@@ -259,7 +259,7 @@ export function MapCodesModal({
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Map to:</span>
+                              <span className="text-body font-medium">Map to:</span>
                               
                               {!isManual && systemCodes.length > 0 ? (
                                 <Select 

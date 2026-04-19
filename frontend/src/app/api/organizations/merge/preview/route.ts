@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
   const sourceOrgId = searchParams.get('sourceOrgId');
   const targetOrgId = searchParams.get('targetOrgId');
   
-  console.log('[AIMS] GET /api/organizations/merge/preview - Fetching preview for merge');
   
   const { supabase, response: authResponse } = await requireAuth();
   
@@ -261,7 +260,6 @@ export async function GET(request: NextRequest) {
       willAddAlias: sourceOrg.iati_org_id,
     };
     
-    console.log('[AIMS] Preview generated:', JSON.stringify(totals));
     
     const response = NextResponse.json(preview);
     response.headers.set('Access-Control-Allow-Origin', '*');

@@ -27,11 +27,11 @@ export function InvestorProjectCard({ project, onClick }: InvestorProjectCardPro
     >
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-medium text-sm">{project.name}</h3>
+          <h3 className="font-medium text-body">{project.name}</h3>
           <Badge variant="success" className="shrink-0">Approved</Badge>
         </div>
         <p className="text-xs text-muted-foreground font-mono mb-3">{project.project_code}</p>
-        <div className="space-y-1.5 text-xs text-muted-foreground">
+        <div className="space-y-1.5 text-helper text-muted-foreground">
           {project.region && (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />

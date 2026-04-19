@@ -301,7 +301,7 @@ export function NationalPlansManagement() {
               <div className="py-8 text-center text-muted-foreground">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No plans or strategies created yet</p>
-                <p className="text-sm mt-1">
+                <p className="text-body mt-1">
                   Click &quot;Add Plan&quot; to create your first national plan
                   or sectoral strategy
                 </p>
@@ -310,7 +310,7 @@ export function NationalPlansManagement() {
               <div className="space-y-4">
                 {/* Plan selector */}
                 <div className="flex flex-col gap-1">
-                  <Label className="text-xs text-muted-foreground">
+                  <Label className="text-helper text-muted-foreground">
                     Select plan to manage
                   </Label>
                   <Popover open={planSelectorOpen} onOpenChange={(open) => { setPlanSelectorOpen(open); if (!open) setPlanSearch(""); }}>
@@ -320,7 +320,7 @@ export function NationalPlansManagement() {
                         role="combobox"
                         aria-expanded={planSelectorOpen}
                         className={cn(
-                          "w-full max-w-md justify-between font-normal h-10 text-sm",
+                          "w-full max-w-md justify-between font-normal h-10 text-body",
                           !selectedPlanId && "text-muted-foreground"
                         )}
                       >
@@ -344,7 +344,7 @@ export function NationalPlansManagement() {
                                 setPlanSearch("");
                               }
                             }}
-                            className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                            className="flex h-10 w-full bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground"
                             autoFocus
                           />
                         </div>
@@ -385,7 +385,7 @@ export function NationalPlansManagement() {
                               const q = planSearch.toLowerCase();
                               return plan.name.toLowerCase().includes(q) || plan.acronym?.toLowerCase().includes(q);
                             }).length === 0 && (
-                              <div className="py-6 text-center text-sm text-muted-foreground">
+                              <div className="py-6 text-center text-body text-muted-foreground">
                                 No plans found
                               </div>
                             )}
@@ -403,19 +403,19 @@ export function NationalPlansManagement() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{formatPlanTitle(selectedPlan)}</span>
                         {selectedPlan.isPrimary && (
-                          <Badge variant="default" className="text-xs">
+                          <Badge variant="default" className="text-helper">
                             Primary
                           </Badge>
                         )}
-                        <Badge variant="gray" className="text-xs">
+                        <Badge variant="gray" className="text-helper">
                           {PLAN_TYPE_LABELS[selectedPlan.planType] || selectedPlan.planType}
                         </Badge>
-                        <Badge variant="gray" className="text-xs">
+                        <Badge variant="gray" className="text-helper">
                           {selectedPlan.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
                       {selectedPlan.description && (
-                        <p className="text-sm text-muted-foreground mt-1 truncate">
+                        <p className="text-body text-muted-foreground mt-1 truncate">
                           {selectedPlan.description}
                         </p>
                       )}
@@ -538,7 +538,7 @@ export function NationalPlansManagement() {
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
                         <span className="font-medium">National</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">Overarching national development plan or strategy</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">Overarching national development plan or strategy</p>
                     </div>
                   </SelectItem>
                   <SelectItem value="sectoral" className="py-3">
@@ -547,7 +547,7 @@ export function NationalPlansManagement() {
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
                         <span className="font-medium">Sectoral</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">Sector-specific strategy (e.g., education, health, agriculture)</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">Sector-specific strategy (e.g., education, health, agriculture)</p>
                     </div>
                   </SelectItem>
                   <SelectItem value="thematic" className="py-3">
@@ -556,7 +556,7 @@ export function NationalPlansManagement() {
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">3</span>
                         <span className="font-medium">Thematic</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">Cross-cutting theme (e.g., climate, gender, governance)</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">Cross-cutting theme (e.g., climate, gender, governance)</p>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -580,13 +580,13 @@ export function NationalPlansManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-1">
+              <Label className="text-body flex items-center gap-1">
                 Hierarchy Labels
                 <HelpTextTooltip text="Name the three levels used to structure this plan's objectives. For example, a national plan might use Pillar / Goal / Strategy, while a sector plan might use Priority Area / Objective / Action." size="sm" />
               </Label>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Level 1</Label>
+                  <Label className="text-helper text-muted-foreground">Level 1</Label>
                   <Input
                     value={formData.level1Label}
                     onChange={(e) =>
@@ -596,7 +596,7 @@ export function NationalPlansManagement() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Level 2</Label>
+                  <Label className="text-helper text-muted-foreground">Level 2</Label>
                   <Input
                     value={formData.level2Label}
                     onChange={(e) =>
@@ -606,7 +606,7 @@ export function NationalPlansManagement() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Level 3</Label>
+                  <Label className="text-helper text-muted-foreground">Level 3</Label>
                   <Input
                     value={formData.level3Label}
                     onChange={(e) =>

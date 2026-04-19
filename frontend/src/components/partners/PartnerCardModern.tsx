@@ -50,7 +50,7 @@ const PartnerCardModern: React.FC<PartnerCardModernProps> = ({
               {partner.acronym && <span className="ml-1">({partner.acronym})</span>}
             </Link>
           </h2>
-          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             {partner.countryRepresented && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
@@ -81,20 +81,20 @@ const PartnerCardModern: React.FC<PartnerCardModernProps> = ({
         </div>
 
         {partner.description && (
-          <p className="text-sm line-clamp-2 mb-4 text-muted-foreground">
+          <p className="text-body line-clamp-2 mb-4 text-muted-foreground">
             {partner.description}
           </p>
         )}
 
         <div className="mt-auto space-y-2">
           {partner.website && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-body text-muted-foreground">
               <Globe className="w-4 h-4" style={{ color: colors.coolSteel }} />
               <span className="truncate">{partner.website.replace(/^https?:\/\//, '')}</span>
             </div>
           )}
           {partner.iatiOrgId && (
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-helper">
               <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {partner.iatiOrgId}
               </span>

@@ -111,7 +111,7 @@ export default function LocationProfilesPage() {
           <div className="w-full p-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Location Profiles</h2>
                 <p className="text-muted-foreground">{error}</p>
               </CardContent>
@@ -164,14 +164,14 @@ export default function LocationProfilesPage() {
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-body">
                     <thead className="bg-surface-muted">
                       <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Location</th>
-                        <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Type</th>
-                        <th className="text-right py-2.5 px-3 text-xs font-medium text-muted-foreground">Activities</th>
-                        <th className="text-right py-2.5 px-3 text-xs font-medium text-muted-foreground">Committed</th>
-                        <th className="text-right py-2.5 px-3 text-xs font-medium text-muted-foreground">Disbursed</th>
+                        <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Location</th>
+                        <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Type</th>
+                        <th className="text-right py-2.5 px-3 text-helper font-medium text-muted-foreground">Activities</th>
+                        <th className="text-right py-2.5 px-3 text-helper font-medium text-muted-foreground">Committed</th>
+                        <th className="text-right py-2.5 px-3 text-helper font-medium text-muted-foreground">Disbursed</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -185,7 +185,7 @@ export default function LocationProfilesPage() {
                               </div>
                             </Link>
                           </td>
-                          <td className="py-2.5 px-3 text-xs text-foreground">{region.type}</td>
+                          <td className="py-2.5 px-3 text-helper text-foreground">{region.type}</td>
                           <td className="py-2.5 px-3 text-right text-foreground">{region.activityCount}</td>
                           <td className="py-2.5 px-3 text-right">{region.commitments > 0 ? formatCurrencyShort(region.commitments) : <span className="text-muted-foreground">—</span>}</td>
                           <td className="py-2.5 px-3 text-right">{region.disbursements > 0 ? formatCurrencyShort(region.disbursements) : <span className="text-muted-foreground">—</span>}</td>
@@ -238,18 +238,18 @@ export default function LocationProfilesPage() {
                   <div className="relative flex-1 p-5 flex flex-col bg-card">
                     <div className="flex items-center gap-2 mb-3">
                       <Activity className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">
+                      <span className="text-body font-medium">
                         {region.activityCount} {region.activityCount === 1 ? 'activity' : 'activities'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border mt-auto">
                       <div>
                         <p className="text-[10px] text-muted-foreground">Committed</p>
-                        <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(region.commitments)}</p>
+                        <p className="text-body font-semibold text-foreground">{formatCurrencyShort(region.commitments)}</p>
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground">Disbursed</p>
-                        <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(region.disbursements)}</p>
+                        <p className="text-body font-semibold text-foreground">{formatCurrencyShort(region.disbursements)}</p>
                       </div>
                     </div>
                   </div>

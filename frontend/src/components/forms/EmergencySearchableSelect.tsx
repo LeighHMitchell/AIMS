@@ -73,7 +73,7 @@ export function EmergencySearchableSelect({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedEmergency && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -101,7 +101,7 @@ export function EmergencySearchableSelect({
                 className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                 aria-label="Clear selection"
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -125,7 +125,7 @@ export function EmergencySearchableSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -135,14 +135,14 @@ export function EmergencySearchableSelect({
                   className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                   aria-label="Clear search"
                 >
-                  <span className="text-xs">×</span>
+                  <span className="text-helper">×</span>
                 </button>
               )}
             </div>
             <CommandList>
               <CommandGroup>
                 {loading ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
+                  <div className="py-6 text-center text-body text-muted-foreground">
                     Loading emergencies...
                   </div>
                 ) : (
@@ -173,12 +173,12 @@ export function EmergencySearchableSelect({
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           {emergency.location && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-helper text-muted-foreground">
                               {emergency.location}
                             </span>
                           )}
                           {formatDateRange(emergency) && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-helper text-muted-foreground">
                               {emergency.location ? " · " : ""}
                               {formatDateRange(emergency)}
                             </span>
@@ -191,10 +191,10 @@ export function EmergencySearchableSelect({
               </CommandGroup>
               {!loading && filteredEmergencies.length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No emergencies found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     {emergencies.length === 0
                       ? "No active emergencies have been configured. Contact an admin."
                       : "Try adjusting your search terms"}

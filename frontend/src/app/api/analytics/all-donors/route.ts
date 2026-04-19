@@ -72,11 +72,9 @@ export async function GET(request: Request) {
     const cacheKey = `all-donors:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}`
     const cached = getCached(cacheKey)
     if (cached) {
-      console.log('[AllDonors API] Returning cached data')
       return NextResponse.json(cached)
     }
 
-    console.log('[AllDonors API] Fetching data with params:', { dateFrom, dateTo, orgType })
 
     // First, get all organizations for mapping
     const { data: orgsData, error: orgsError } = await supabase
@@ -89,7 +87,6 @@ export async function GET(request: Request) {
     }
 
     const orgMap = new Map(orgsData?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym, type: o.type }]) || [])
-    console.log('[AllDonors API] Loaded organizations:', orgMap.size)
 
     // If sector filtering is enabled, get the list of activity IDs that match the sectors
     let sectorFilteredActivityIds: Set<string> | null = null
@@ -98,7 +95,6 @@ export async function GET(request: Request) {
 
     if (sectorCodes && sectorCodes.trim()) {
       const sectorCodeList = sectorCodes.split(',').map(s => s.trim()).filter(Boolean)
-      console.log('[AllDonors API] Filtering by sectors:', sectorCodeList, 'at level:', sectorLevel)
 
       // Fetch activity_sectors that match the given codes at the appropriate level
       // Only select columns that exist in the table
@@ -158,7 +154,6 @@ export async function GET(request: Request) {
           }
         })
 
-        console.log('[AllDonors API] Activities matching sector filter:', sectorFilteredActivityIds.size, 'from', sectorsByActivity.size, 'activities')
       }
     }
 
@@ -175,7 +170,6 @@ export async function GET(request: Request) {
     }>()
 
     // 1. AGGREGATE TOTAL BUDGETS BY REPORTING ORG
-    console.log('[AllDonors API] Fetching budgets...')
     const { data: budgets, error: budgetsError } = await supabase
       .from('activity_budgets')
       .select('activity_id, usd_value, period_start, period_end')
@@ -239,10 +233,8 @@ export async function GET(request: Request) {
       })
     }
 
-    console.log('[AllDonors API] Budgets aggregated:', donorData.size)
 
     // 2. AGGREGATE TOTAL PLANNED DISBURSEMENTS BY PROVIDER ORG
-    console.log('[AllDonors API] Fetching planned disbursements...')
     const { data: plannedDisbursements, error: pdError } = await supabase
       .from('planned_disbursements')
       .select('provider_org_id, usd_amount, period_start, period_end, activity_id')
@@ -291,10 +283,8 @@ export async function GET(request: Request) {
       donor.totalPlannedDisbursement += pdValue
     })
 
-    console.log('[AllDonors API] Planned disbursements aggregated:', donorData.size)
 
     // 3. AGGREGATE TOTAL COMMITMENTS BY PROVIDER ORG
-    console.log('[AllDonors API] Fetching commitments...')
     const { data: commitments, error: commitError } = await supabase
       .from('transactions')
       .select('provider_org_id, value, value_usd, currency, transaction_date, activity_id')
@@ -366,10 +356,8 @@ export async function GET(request: Request) {
       .map(d => ({ name: d.name, commitment: d.totalCommitment }))
       .sort((a, b) => b.commitment - a.commitment)
       .slice(0, 5)
-    console.log('[AllDonors API] Commitments aggregated:', donorData.size, 'Top 5 commitments:', commitmentTotals)
 
     // 4. AGGREGATE TOTAL ACTUAL DISBURSEMENTS BY PROVIDER ORG
-    console.log('[AllDonors API] Fetching actual disbursements...')
     // Fetch transactions with their activity info to get reporting org as fallback
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
@@ -458,7 +446,6 @@ export async function GET(request: Request) {
     
     // Cache the result
     setCache(cacheKey, result)
-    console.log('[AllDonors API] Cached result for key:', cacheKey)
 
     return NextResponse.json(result)
 

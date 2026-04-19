@@ -117,7 +117,7 @@ export default function FinanceTypeDonut({
 
   if (chartData.length === 0) {
     return (
-      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+      <div className="h-24 flex items-center justify-center text-muted-foreground text-helper">
         <p>No finance type data</p>
       </div>
     );
@@ -152,17 +152,17 @@ export default function FinanceTypeDonut({
       {/* Chart or Table View */}
       {viewMode === 'table' ? (
         <div className="h-24 overflow-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-helper">
             <thead className="bg-surface-muted">
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
-                <th className="text-right py-1 text-slate-600 font-medium">Amount</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-1 text-muted-foreground font-medium">Finance Type</th>
+                <th className="text-right py-1 text-muted-foreground font-medium">Amount</th>
               </tr>
             </thead>
             <tbody>
               {top5Data.map((item, idx) => (
-                <tr key={idx} className="border-b border-slate-100">
-                  <td className="py-1 text-slate-900">
+                <tr key={idx} className="border-b border-border">
+                  <td className="py-1 text-foreground">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-2 h-2 rounded-full flex-shrink-0"
@@ -171,14 +171,14 @@ export default function FinanceTypeDonut({
                       <span className="break-words">{item.name}</span>
                     </div>
                   </td>
-                  <td className="text-right py-1 text-slate-900 font-medium">
+                  <td className="text-right py-1 text-foreground font-medium">
                     {formatCurrencyShort(item.value)}
                   </td>
                 </tr>
               ))}
-              <tr className="border-t-2 border-slate-300 bg-slate-50">
-                <td className="py-1 text-slate-900 font-semibold">Total</td>
-                <td className="text-right py-1 text-slate-900 font-semibold">
+              <tr className="border-t-2 border-input bg-muted">
+                <td className="py-1 text-foreground font-semibold">Total</td>
+                <td className="text-right py-1 text-foreground font-semibold">
                   {formatCurrencyShort(top5Data.reduce((sum, item) => sum + item.value, 0))}
                 </td>
               </tr>
@@ -213,29 +213,29 @@ export default function FinanceTypeDonut({
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg min-w-[180px]">
-                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                      <div className="bg-white p-3 border border-border rounded-lg shadow-lg min-w-[180px]">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
                           <div 
                             className="w-3 h-3 rounded-full flex-shrink-0" 
                             style={{ backgroundColor: data.color }}
                           />
-                          <p className="text-sm font-semibold text-slate-900">
+                          <p className="text-body font-semibold text-foreground">
                             {data.name}
                           </p>
                         </div>
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <tbody>
-                            <tr className="border-b border-slate-100">
-                              <td className="px-1 py-1.5 text-slate-600">Code</td>
-                              <td className="text-right px-1 py-1.5 font-mono font-medium text-slate-900">{data.code}</td>
+                            <tr className="border-b border-border">
+                              <td className="px-1 py-1.5 text-muted-foreground">Code</td>
+                              <td className="text-right px-1 py-1.5 font-mono font-medium text-foreground">{data.code}</td>
                             </tr>
-                            <tr className="border-b border-slate-100">
-                              <td className="px-1 py-1.5 text-slate-600">Amount</td>
-                              <td className="text-right px-1 py-1.5 font-medium text-slate-900">{formatCurrencyShort(data.value)}</td>
+                            <tr className="border-b border-border">
+                              <td className="px-1 py-1.5 text-muted-foreground">Amount</td>
+                              <td className="text-right px-1 py-1.5 font-medium text-foreground">{formatCurrencyShort(data.value)}</td>
                             </tr>
                             <tr>
-                              <td className="px-1 py-1.5 text-slate-600">Share</td>
-                              <td className="text-right px-1 py-1.5 font-medium text-slate-900">{data.percentage}%</td>
+                              <td className="px-1 py-1.5 text-muted-foreground">Share</td>
+                              <td className="text-right px-1 py-1.5 font-medium text-foreground">{data.percentage}%</td>
                             </tr>
                           </tbody>
                         </table>

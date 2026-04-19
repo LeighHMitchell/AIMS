@@ -215,7 +215,6 @@ export async function GET(request: NextRequest) {
     };
     
     const mappedSortField = sortFieldMap[sortField] || 'updated_at';
-    console.log(`[AIMS Optimized] Sorting by ${sortField} -> ${mappedSortField}, order: ${sortOrder}`);
     dataQuery = dataQuery.order(mappedSortField, { ascending: sortOrder === 'asc' });
     
     // Note: Budget and disbursement sorting will be handled client-side after data aggregation
@@ -304,7 +303,6 @@ export async function GET(request: NextRequest) {
 
     if (activityIds.length > 0) {
       // PERFORMANCE OPTIMIZATION: Run all independent queries in parallel
-      console.log('[AIMS Optimized] Starting parallel data fetch for', activityIds.length, 'activities');
       const parallelStartTime = Date.now();
 
       // Execute all independent queries in parallel
@@ -353,7 +351,6 @@ export async function GET(request: NextRequest) {
           .in('activity_id', activityIds)
       ]);
 
-      console.log('[AIMS Optimized] Parallel fetch completed in', Date.now() - parallelStartTime, 'ms');
 
       // Process budgets
       const { data: budgets, error: budgetError } = budgetsResult;
@@ -748,7 +745,6 @@ export async function GET(request: NextRequest) {
       // Ignore logging errors
     }
 
-    console.log(`[AIMS Optimized] Fetched ${activities.length} activities in ${executionTime}ms`);
 
     // Return paginated response with system-wide totals for percentage calculations
     const response = {

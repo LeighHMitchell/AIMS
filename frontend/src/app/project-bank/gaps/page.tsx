@@ -98,7 +98,7 @@ export default function FundingGapsPage() {
     const isRight = className?.includes('text-right')
     return (
       <th
-        className={`h-10 px-4 align-middle text-xs font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || 'text-left'}`}
+        className={`h-10 px-4 align-middle text-helper font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || 'text-left'}`}
         onClick={() => handleSort(field)}
       >
         <span className={`flex items-center gap-1 ${isRight ? 'justify-end' : ''}`}>
@@ -136,7 +136,7 @@ export default function FundingGapsPage() {
                   <SortHeader field="funding_gap" className="text-right">Gap</SortHeader>
                   <SortHeader field="progress">Progress</SortHeader>
                   <SortHeader field="status">Status</SortHeader>
-                  <th className="h-10 px-2 text-center align-middle text-xs font-medium text-muted-foreground w-[44px]"></th>
+                  <th className="h-10 px-2 text-center align-middle text-helper font-medium text-muted-foreground w-[44px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -163,31 +163,31 @@ export default function FundingGapsPage() {
                       >
                         {/* Project Code + Name merged — single line like Project List */}
                         <td className="px-4 py-2 min-w-[200px]">
-                          <span className="text-sm font-medium text-foreground">{p.name}</span>
+                          <span className="text-body font-medium text-foreground">{p.name}</span>
                           {p.project_code && (
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2">{p.project_code}</span>
                           )}
                         </td>
                         {/* Sector — normal text */}
                         <td className="px-4 py-2">
-                          <div className="text-sm text-foreground leading-tight">{p.sector}</div>
+                          <div className="text-body text-foreground leading-tight">{p.sector}</div>
                           {p.sub_sector && (
-                            <div className="text-xs text-muted-foreground mt-0.5">{p.sub_sector}</div>
+                            <div className="text-helper text-muted-foreground mt-0.5">{p.sub_sector}</div>
                           )}
                         </td>
                         {/* Total Cost — USD styled */}
-                        <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
+                        <td className="px-4 py-2 text-body text-right whitespace-nowrap font-medium">
                           {p.estimated_cost != null ? (
-                            <span><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCostUSD(p.estimated_cost)}</span>
+                            <span><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCostUSD(p.estimated_cost)}</span>
                           ) : '—'}
                         </td>
                         {/* Secured — USD styled */}
-                        <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
-                          <span><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCostUSD(secured)}</span>
+                        <td className="px-4 py-2 text-body text-right whitespace-nowrap font-medium">
+                          <span><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCostUSD(secured)}</span>
                         </td>
                         {/* Gap — USD styled, red */}
-                        <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-semibold" style={{ color: '#dc2625' }}>
-                          <span><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCostUSD(p.funding_gap)}</span>
+                        <td className="px-4 py-2 text-body text-right whitespace-nowrap font-semibold" style={{ color: '#dc2625' }}>
+                          <span><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCostUSD(p.funding_gap)}</span>
                         </td>
                         {/* Progress bar — palette colours */}
                         <td className="px-4 py-2">
@@ -199,7 +199,7 @@ export default function FundingGapsPage() {
                         {/* Status — colour palette badge */}
                         <td className="px-4 py-2">
                           <span
-                            className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold"
+                            className="inline-flex items-center rounded-md px-2.5 py-0.5 text-helper font-semibold"
                             style={{
                               backgroundColor: badgeStyle.bg,
                               color: badgeStyle.text,

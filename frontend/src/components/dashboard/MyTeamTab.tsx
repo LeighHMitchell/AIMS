@@ -140,7 +140,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-slate-600" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             My Team
           </CardTitle>
         </CardHeader>
@@ -165,7 +165,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load team: {error}</p>
+          <p className="text-body text-destructive">Failed to load team: {error}</p>
         </CardContent>
       </Card>
     );
@@ -176,7 +176,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-slate-600" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             My Team
           </CardTitle>
           <div className="flex items-center gap-3">
@@ -186,7 +186,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
                 placeholder="Search by name, email, role..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
+                className="pl-9 h-9 text-body"
               />
               {searchQuery && (
                 <button
@@ -275,38 +275,38 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
                             {person.profile_photo && (
                               <AvatarImage src={person.profile_photo} alt={person.name} />
                             )}
-                            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                            <AvatarFallback className="text-helper">{initials}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium text-sm">{person.name}</span>
+                          <span className="font-medium text-body">{person.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-body text-muted-foreground">
                         {person.role ? getRoleDisplayLabel(person.role) : '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-body text-muted-foreground">
                         {person.job_title || person.position || '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-body text-muted-foreground">
                         {person.department || '—'}
                       </TableCell>
                       <TableCell>
                         {person.email ? (
-                          <a href={`mailto:${person.email}`} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+                          <a href={`mailto:${person.email}`} className="text-body text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
                             <Mail className="h-3.5 w-3.5" />
                             {person.email}
                           </a>
                         ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
+                          <span className="text-body text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell>
                         {person.phone ? (
-                          <span className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
+                          <span className="text-body text-muted-foreground inline-flex items-center gap-1.5">
                             <Phone className="h-3.5 w-3.5" />
                             {person.phone}
                           </span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
+                          <span className="text-body text-muted-foreground">—</span>
                         )}
                       </TableCell>
                     </TableRow>

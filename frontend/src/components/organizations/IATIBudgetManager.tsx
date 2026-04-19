@@ -364,7 +364,7 @@ export function IATIBudgetManager({
                 <CardTitle className="text-base">
                   {typeInfo?.label} - {statusLabel}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   {budget.periodStart && budget.periodEnd
                     ? `${budget.periodStart} to ${budget.periodEnd}`
                     : 'No period specified'
@@ -383,14 +383,14 @@ export function IATIBudgetManager({
                     size="sm"
                     onClick={() => handleEditBudget(budget)}
                   >
-                    <Pencil className="h-4 w-4 text-slate-500" />
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteBudget(budgetIndex)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               )}
@@ -400,7 +400,7 @@ export function IATIBudgetManager({
 
         {(budget.recipientRef || budget.recipientNarrative) && (
           <CardContent className="pt-0 pb-3">
-            <div className="text-sm">
+            <div className="text-body">
               <span className="font-medium">Recipient:</span>{' '}
               {budget.recipientNarrative || budget.recipientRef}
               {budget.recipientRef && budget.recipientNarrative && (
@@ -414,7 +414,7 @@ export function IATIBudgetManager({
           <CardContent className="pt-0">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Budget Lines</Label>
+                <Label className="text-body font-medium">Budget Lines</Label>
                 {!readOnly && (
                   <Button
                     variant="outline"
@@ -430,13 +430,13 @@ export function IATIBudgetManager({
                 {budget.budgetLines.map((line, lineIndex) => (
                   <div
                     key={line.id || lineIndex}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                    className="flex items-center justify-between p-2 bg-muted rounded-md"
                   >
                     <div className="flex-1">
-                      <div className="text-sm font-medium">
+                      <div className="text-body font-medium">
                         {line.narrative || `Line ${lineIndex + 1}`}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-helper text-muted-foreground">
                         {formatCurrency(line.value, line.currency)}
                         {line.ref && <span className="ml-2">Ref: {line.ref}</span>}
                       </div>
@@ -448,14 +448,14 @@ export function IATIBudgetManager({
                           size="sm"
                           onClick={() => handleEditBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Pencil className="h-3 w-3 text-slate-500" />
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Trash2 className="h-3 w-3 text-red-500" />
+                          <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
                       </div>
                     )}
@@ -487,8 +487,8 @@ export function IATIBudgetManager({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <span className="ml-2 text-gray-500">Loading budgets...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading budgets...</span>
       </div>
     );
   }
@@ -496,7 +496,7 @@ export function IATIBudgetManager({
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-500">
+      <div className="flex items-center justify-center py-12 text-destructive">
         <AlertCircle className="h-6 w-6 mr-2" />
         <span>{error}</span>
         <Button variant="link" onClick={fetchBudgets} className="ml-2">
@@ -511,12 +511,12 @@ export function IATIBudgetManager({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">IATI Budgets</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Manage organization budgets according to IATI standards
           </p>
         </div>
         {!readOnly && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             Total: {currentBudgets.length} budget{currentBudgets.length !== 1 ? 's' : ''}
           </div>
         )}
@@ -525,7 +525,7 @@ export function IATIBudgetManager({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           {BUDGET_TYPES.map((type) => (
-            <TabsTrigger key={type.value} value={type.value} className="text-xs">
+            <TabsTrigger key={type.value} value={type.value} className="text-helper">
               <type.icon className="h-3 w-3 mr-1" />
               {type.label.split(' ')[0]}
             </TabsTrigger>
@@ -537,7 +537,7 @@ export function IATIBudgetManager({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">{type.label}</h4>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
+                <p className="text-body text-muted-foreground">{type.description}</p>
               </div>
               {!readOnly && (
                 <Button
@@ -559,7 +559,7 @@ export function IATIBudgetManager({
               ) : (
                 <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                   <type.icon className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500 mb-4">No {type.label.toLowerCase()} budgets added yet</p>
+                  <p className="text-muted-foreground mb-4">No {type.label.toLowerCase()} budgets added yet</p>
                   {!readOnly && (
                     <Button
                       variant="outline"
@@ -607,7 +607,7 @@ export function IATIBudgetManager({
                         <SelectItem key={status.value} value={status.value}>
                           <div>
                             <div className="font-medium">{status.label}</div>
-                            <div className="text-xs text-muted-foreground">{status.description}</div>
+                            <div className="text-helper text-muted-foreground">{status.description}</div>
                           </div>
                         </SelectItem>
                       ))}

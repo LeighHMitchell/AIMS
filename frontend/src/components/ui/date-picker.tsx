@@ -71,7 +71,7 @@ export function DatePicker({
       <PopoverTrigger
         id={id}
         className={cn(
-          "flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           endAdornment ? "justify-between" : "justify-start",
           !date && "text-muted-foreground",
           disabled && "opacity-50 cursor-not-allowed",

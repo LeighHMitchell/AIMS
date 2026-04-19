@@ -115,12 +115,12 @@ export function DataClinicFinancialCompleteness() {
   // Error State
   if (error) {
     return (
-      <Card className="border-slate-200 bg-slate-50">
+      <Card className="border-border bg-muted">
         <CardContent className="flex items-center gap-3 py-6">
-          <AlertCircle className="h-8 w-8 text-slate-400" />
+          <AlertCircle className="h-8 w-8 text-muted-foreground" />
           <div>
-            <p className="font-medium text-slate-700">Unable to load financial completeness data.</p>
-            <p className="text-sm text-slate-500">{error}</p>
+            <p className="font-medium text-foreground">Unable to load financial completeness data.</p>
+            <p className="text-body text-muted-foreground">{error}</p>
           </div>
           <Button 
             variant="outline" 
@@ -155,7 +155,7 @@ export function DataClinicFinancialCompleteness() {
             <p className="font-semibold text-green-900 text-lg">
               No financial completeness issues detected.
             </p>
-            <p className="text-sm text-green-700 mt-1">
+            <p className="text-body text-green-700 mt-1">
               All multi-year activities have appropriate budget coverage, or no activities meet the criteria for this check.
             </p>
           </div>
@@ -170,7 +170,7 @@ export function DataClinicFinancialCompleteness() {
       {/* Info Banner */}
       <Card className="border-amber-200 bg-amber-50">
         <CardContent className="py-4">
-          <p className="text-sm text-amber-800">
+          <p className="text-body text-amber-800">
             <strong>Criteria:</strong> Activities shown below are multi-year (≥365 days), have fewer than 2 budget periods, 
             and have disbursed more than budgeted. This may indicate incomplete financial reporting.
           </p>

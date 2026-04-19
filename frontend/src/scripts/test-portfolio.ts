@@ -18,7 +18,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 async function testPortfolioAPI() {
-  console.log('🧪 Testing MyPortfolio API functionality...\n')
   
   const tests = [
     {
@@ -130,20 +129,15 @@ async function testPortfolioAPI() {
   for (const test of tests) {
     try {
       const result = await test.test()
-      console.log(`✅ ${test.name}: ${result.message}`)
       passed++
     } catch (error) {
-      console.log(`❌ ${test.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
       failed++
     }
   }
 
-  console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed`)
   
   if (failed === 0) {
-    console.log('🎉 All tests passed! MyPortfolio should be working correctly.')
   } else {
-    console.log('⚠️  Some tests failed. Check the errors above.')
   }
 }
 

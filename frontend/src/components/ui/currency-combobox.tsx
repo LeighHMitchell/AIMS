@@ -82,7 +82,7 @@ export function CurrencyCombobox({
             {selectedCurrency ? (
               <span className="truncate">
                 <span className="font-mono mr-2">{selectedCurrency.code}</span>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-muted-foreground text-body">
                   {selectedCurrency.name}
                 </span>
               </span>
@@ -114,7 +114,7 @@ export function CurrencyCombobox({
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-6">
+              <p className="text-body text-muted-foreground text-center py-6">
                 No currency found.
               </p>
             )}
@@ -126,7 +126,7 @@ export function CurrencyCombobox({
               {search === "" && (
                 <>
                   <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  <div className="px-2 py-1.5 text-helper font-medium text-muted-foreground">
                     Common currencies
                   </div>
                     {pinnedCurrencies.map((currency) => (
@@ -145,11 +145,11 @@ export function CurrencyCombobox({
                           <span className="font-mono font-medium">
                             {currency.code}
                           </span>
-                          <span className="text-sm text-muted-foreground truncate">
+                          <span className="text-body text-muted-foreground truncate">
                             {currency.name}
                           </span>
                           {currency.symbol && (
-                            <span className="text-sm text-muted-foreground ml-auto">
+                            <span className="text-body text-muted-foreground ml-auto">
                               {currency.symbol}
                             </span>
                           )}
@@ -163,7 +163,7 @@ export function CurrencyCombobox({
               
               {/* All currencies */}
               <CommandGroup>
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                <div className="px-2 py-1.5 text-helper font-medium text-muted-foreground">
                   {search ? "Search results" : "All currencies"}
                 </div>
                 {(search ? filteredCurrencies : regularCurrencies).map((currency) => (
@@ -182,11 +182,11 @@ export function CurrencyCombobox({
                       <span className="font-mono font-medium">
                         {currency.code}
                       </span>
-                      <span className="text-sm text-muted-foreground truncate">
+                      <span className="text-body text-muted-foreground truncate">
                         {currency.name}
                       </span>
                       {currency.symbol && (
-                        <span className="text-sm text-muted-foreground ml-auto">
+                        <span className="text-body text-muted-foreground ml-auto">
                           {currency.symbol}
                         </span>
                       )}

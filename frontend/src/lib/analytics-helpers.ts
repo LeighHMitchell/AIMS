@@ -90,7 +90,6 @@ export function buildAidFlowGraphData(
     return true
   })
 
-  console.log('[buildAidFlowGraphData] Valid transactions:', validTransactions.length)
   
   // Count how many have both provider and receiver
   const withBoth = validTransactions.filter(t => {
@@ -98,7 +97,6 @@ export function buildAidFlowGraphData(
     const hasReceiver = t.receiver_org_id || t.receiver_org_name
     return hasProvider && hasReceiver
   })
-  console.log('[buildAidFlowGraphData] Transactions with both provider AND receiver:', withBoth.length)
 
   // Process each transaction
   validTransactions.forEach(transaction => {
@@ -219,7 +217,6 @@ export function buildAidFlowGraphData(
 
   // If no nodes were created from transactions, create some from organizations directly
   if (nodesMap.size === 0 && organizations.length > 0) {
-    console.log('[buildAidFlowGraphData] No nodes from transactions, using top organizations')
 
     // Add top organizations as nodes
     organizations.slice(0, Math.min(20, organizations.length)).forEach(org => {

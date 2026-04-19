@@ -29,7 +29,7 @@ export function SubSection({ title, intro, id, children }: SubSectionProps) {
       <div className="space-y-1">
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         {intro && (
-          <p className="text-sm text-muted-foreground">{intro}</p>
+          <p className="text-body text-muted-foreground">{intro}</p>
         )}
       </div>
       <div className="space-y-6">{children}</div>

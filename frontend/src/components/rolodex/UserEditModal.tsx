@@ -128,7 +128,6 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
         avatar_url: formData.profile_photo,
       };
 
-      console.log('Updating user with data:', updateData);
 
       const response = await apiFetch('/api/users/update', {
         method: 'PUT',
@@ -190,7 +189,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Photo Section */}
           <div className="flex flex-col items-center space-y-4">
-            <div className="text-sm font-medium">Profile Photo</div>
+            <div className="text-body font-medium">Profile Photo</div>
             <ProfilePhotoUpload
               currentPhoto={formData.profile_photo}
               userInitials={getInitials(formData.first_name, formData.last_name)}
@@ -201,7 +200,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
 
           {/* Personal Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium flex items-center gap-2">
+            <h3 className="text-body font-medium flex items-center gap-2">
               <User className="h-4 w-4" />
               Personal Information
             </h3>
@@ -251,7 +250,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
 
           {/* Professional Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium flex items-center gap-2">
+            <h3 className="text-body font-medium flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               Professional Information
             </h3>
@@ -280,7 +279,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
 
           {/* System Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium flex items-center gap-2">
+            <h3 className="text-body font-medium flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               System Information
             </h3>
@@ -322,12 +321,12 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
 
           {/* Current Assignment Display */}
           {selectedOrg && (
-            <div className="bg-slate-50 p-4 rounded-md">
-              <div className="text-sm font-medium text-slate-700 mb-2">Current Assignment</div>
-              <div className="text-sm text-slate-600">
+            <div className="bg-muted p-4 rounded-md">
+              <div className="text-body font-medium text-foreground mb-2">Current Assignment</div>
+              <div className="text-body text-muted-foreground">
                 <strong>Organization:</strong> {selectedOrg.name} {selectedOrg.acronym && `(${selectedOrg.acronym})`}
               </div>
-              <div className="text-sm text-slate-600">
+              <div className="text-body text-muted-foreground">
                 <strong>Role:</strong> {USER_ROLES.find(r => r.value === formData.role)?.label || formData.role}
               </div>
             </div>

@@ -105,7 +105,7 @@ export function ParcelActionMenu({ parcel, canEdit }: ParcelActionMenuProps) {
         {canEdit && (
           <>
             <DropdownMenuItem onClick={() => router.push(`/land-bank/${parcel.id}/edit`)}>
-              <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+              <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />

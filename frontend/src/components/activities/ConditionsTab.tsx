@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConditions } from '@/hooks/use-conditions';
+import { toast } from 'sonner';
 import { 
   ConditionsTabProps, 
   ConditionType, 
@@ -92,7 +93,7 @@ function ConditionTypeSelect({
           <button
             type="button"
             className={cn(
-              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
               !selectedOption && "text-muted-foreground"
             )}
             disabled={disabled}
@@ -126,7 +127,7 @@ function ConditionTypeSelect({
                   }
                 }}
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </span>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -151,7 +152,7 @@ function ConditionTypeSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -168,7 +169,7 @@ function ConditionTypeSelect({
                     }
                   }}
                 >
-                  <span className="text-xs">×</span>
+                  <span className="text-helper">×</span>
                 </span>
               )}
             </div>
@@ -189,7 +190,7 @@ function ConditionTypeSelect({
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                         <span className="font-medium text-foreground">{option.name}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                      <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                         {option.description}
                       </div>
                     </div>
@@ -198,10 +199,10 @@ function ConditionTypeSelect({
               </CommandGroup>
               {filteredOptions.length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No condition types found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms
                   </div>
                 </div>
@@ -289,12 +290,31 @@ export function ConditionsTab({
 
   // Handle deleting a condition
   const handleDeleteCondition = async (conditionId: string) => {
-    if (await confirm({ title: 'Delete this condition?', description: 'This action cannot be undone. The condition will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this condition?', description: "The condition will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+      const snapshot = conditions.find(c => c.id === conditionId);
       setIsDeleting(conditionId);
       const success = await deleteCondition(conditionId);
       setIsDeleting(null);
       if (success) {
         onConditionsChange?.(conditions);
+        toast.success('Condition removed', snapshot ? {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                await createCondition({
+                  activity_id: activityId,
+                  type: (snapshot as any).type,
+                  narrative: (snapshot as any).narrative,
+                  attached: (snapshot as any).attached,
+                } as any);
+                toast.success('Condition restored');
+              } catch {
+                toast.error("Couldn't restore the condition. Please add it again manually.");
+              }
+            },
+          },
+        } : undefined);
       }
     }
   };
@@ -328,11 +348,11 @@ export function ConditionsTab({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Conditions</h3>
+          <h3 className="text-lg font-semibold text-foreground">Conditions</h3>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -372,14 +392,14 @@ export function ConditionsTab({
 
       {/* Attached Status Toggle */}
       {conditions.length > 0 && (
-        <Card className="border-2 border-gray-200">
+        <Card className="border-2 border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <Label htmlFor="conditions-attached" className="text-base font-medium text-gray-900">
+                <Label htmlFor="conditions-attached" className="text-base font-medium text-foreground">
                   Are conditions attached to this activity?
                 </Label>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   Toggle whether the conditions listed below apply to this activity
                 </p>
               </div>
@@ -392,7 +412,7 @@ export function ConditionsTab({
                 />
               )}
               {readOnly && (
-                <span className="ml-4 text-sm font-medium text-gray-700">
+                <span className="ml-4 text-body font-medium text-foreground">
                   {areConditionsAttached ? 'Yes' : 'No'}
                 </span>
               )}
@@ -416,7 +436,7 @@ export function ConditionsTab({
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="condition-type" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="condition-type" className="text-body font-medium flex items-center gap-2">
                 Condition Type <RequiredDot />
                 <HelpTextTooltip>
                   Select the type of condition based on IATI standard
@@ -430,7 +450,7 @@ export function ConditionsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="condition-narrative" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="condition-narrative" className="text-body font-medium flex items-center gap-2">
                 Description <RequiredDot />
               </Label>
               <Textarea
@@ -467,10 +487,10 @@ export function ConditionsTab({
 
       {/* Conditions List */}
       {conditions.length === 0 ? (
-        <Card className="border border-gray-200 bg-white">
+        <Card className="border border-border bg-white">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-semibold text-gray-900">Conditions</CardTitle>
+              <CardTitle className="text-2xl font-semibold text-foreground">Conditions</CardTitle>
               {!readOnly && (
                 <Button
                   size="sm"
@@ -484,7 +504,11 @@ export function ConditionsTab({
             </div>
           </CardHeader>
           <CardContent className="text-center pb-8">
-            <ScrollText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <img
+              src="/images/empty-canal-lock.png"
+              alt="No conditions"
+              className="h-32 mx-auto mb-4 opacity-80"
+            />
             <h3 className="text-lg font-medium mb-2">No conditions</h3>
             <p className="text-muted-foreground">
               Use the button above to add your first condition.
@@ -494,13 +518,13 @@ export function ConditionsTab({
       ) : (
         <div className="space-y-4">
           {conditions.map((condition, index) => (
-            <Card key={condition.id} className="border-2 border-gray-200">
+            <Card key={condition.id} className="border-2 border-border">
               <CardContent className="pt-6">
                 {editingCondition === condition.id && !readOnly ? (
                   // Edit Mode
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-base font-medium text-gray-900">
+                      <Label className="text-base font-medium text-foreground">
                         Condition Type
                       </Label>
                       <ConditionTypeSelect
@@ -511,7 +535,7 @@ export function ConditionsTab({
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-base font-medium text-gray-900">
+                      <Label className="text-base font-medium text-foreground">
                         Description
                       </Label>
                       <Textarea
@@ -527,7 +551,7 @@ export function ConditionsTab({
                         onClick={() => handleUpdateCondition(condition.id)}
                         disabled={!editingValues.narrative.trim() || isUpdating === condition.id}
                         size="sm"
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+                        className="bg-muted hover:bg-gray-300 text-foreground border border-gray-400"
                       >
                         {isUpdating === condition.id ? 'Saving...' : 'Save'}
                       </Button>
@@ -546,12 +570,12 @@ export function ConditionsTab({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-lg font-bold text-gray-900">{index + 1}.</span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-200 text-gray-800 border border-gray-400">
+                        <span className="text-lg font-bold text-foreground">{index + 1}.</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-md text-body font-medium bg-muted text-foreground border border-gray-400">
                           {CONDITION_TYPE_LABELS[condition.type]}
                         </span>
                       </div>
-                      <p className="text-gray-900 ml-7 whitespace-pre-wrap">
+                      <p className="text-foreground ml-7 whitespace-pre-wrap">
                         {condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0]}
                       </p>
                     </div>
@@ -568,7 +592,7 @@ export function ConditionsTab({
                               narrative: condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0] || ''
                             });
                           }}
-                          className="text-gray-600 hover:text-gray-900"
+                          className="text-muted-foreground hover:text-foreground"
                         >
                           Edit
                         </Button>
@@ -577,9 +601,9 @@ export function ConditionsTab({
                           size="sm"
                           onClick={() => handleDeleteCondition(condition.id)}
                           disabled={isDeleting === condition.id}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     )}

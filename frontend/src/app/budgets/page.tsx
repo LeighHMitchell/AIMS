@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,7 @@ import { useBudgets } from "@/hooks/useBudgets";
 import { Budget, BudgetFilter } from "@/types/budget";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
-import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
-import { useCustomYears } from "@/hooks/useCustomYears";
 import { BudgetsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { apiFetch } from '@/lib/api-fetch';
@@ -57,42 +54,6 @@ export default function BudgetsPage() {
     dateFrom: "",
     dateTo: "",
   });
-
-  // Yearly summary state for chart
-  const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
-  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
-
-  // Custom year selection for chart
-  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
-
-  // Year range filter for chart
-  const [chartStartYear, setChartStartYear] = useState<number | null>(null);
-  const [chartEndYear, setChartEndYear] = useState<number | null>(null);
-
-  // Filter yearly summary data by year range
-  const filteredYearlySummary = useMemo(() => {
-    if (!yearlySummary) return [];
-    return yearlySummary.filter(item => {
-      if (chartStartYear && item.year < chartStartYear) return false;
-      if (chartEndYear && item.year > chartEndYear) return false;
-      return true;
-    });
-  }, [yearlySummary, chartStartYear, chartEndYear]);
-
-  // Calculate actual data year range (from unfiltered data)
-  const dataYearRange = useMemo(() => {
-    if (!yearlySummary || yearlySummary.length === 0) return { min: null, max: null };
-    const years = yearlySummary.map(d => d.year);
-    return { min: Math.min(...years), max: Math.max(...years) };
-  }, [yearlySummary]);
-
-  // Auto-select "Data" range when data first loads
-  useEffect(() => {
-    if (dataYearRange.min !== null && dataYearRange.max !== null && chartStartYear === null && chartEndYear === null) {
-      setChartStartYear(dataYearRange.min);
-      setChartEndYear(dataYearRange.max);
-    }
-  }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
 
   // Use the custom hook to fetch budgets
   const { budgets, loading, error, refetch, deleteBudget, addBudget } = useBudgets({
@@ -130,40 +91,6 @@ export default function BudgetsPage() {
       console.error('Error fetching organizations:', error);
     }
   };
-
-  // Fetch yearly summary when filters change
-  useEffect(() => {
-    const fetchYearlySummary = async () => {
-      setYearlySummaryLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (filters.types.length > 0) params.append('types', filters.types.join(','));
-        if (filters.statuses.length > 0) params.append('statuses', filters.statuses.join(','));
-        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
-        if (searchQuery) params.append('search', searchQuery);
-        
-        // Add custom year params if selected
-        if (selectedYear) {
-          params.append('startMonth', selectedYear.startMonth.toString());
-          params.append('startDay', selectedYear.startDay.toString());
-          params.append('endMonth', selectedYear.endMonth.toString());
-          params.append('endDay', selectedYear.endDay.toString());
-        }
-
-        const response = await apiFetch(`/api/budgets/yearly-summary?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          setYearlySummary(data.years || []);
-        }
-      } catch (error) {
-        console.error('Error fetching yearly summary:', error);
-      } finally {
-        setYearlySummaryLoading(false);
-      }
-    };
-
-    fetchYearlySummary();
-  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -414,7 +341,7 @@ export default function BudgetsPage() {
         <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Search</Label>
+              <Label className="text-helper text-muted-foreground">Search</Label>
               <Input
                 placeholder="Search budgets..."
                 value={searchQuery}
@@ -425,7 +352,7 @@ export default function BudgetsPage() {
 
             {/* Filters */}
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Type</Label>
+                <Label className="text-helper text-muted-foreground">Type</Label>
                 <MultiSelectFilter
                   options={[
                     { value: "1", label: "Original", code: "1", color: "#3b82f6" },
@@ -442,7 +369,7 @@ export default function BudgetsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Label className="text-helper text-muted-foreground">Status</Label>
                 <MultiSelectFilter
                   options={[
                     { value: "1", label: "Indicative", code: "1", color: "#94a3b8" },
@@ -459,7 +386,7 @@ export default function BudgetsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Organisation</Label>
+                <Label className="text-helper text-muted-foreground">Organisation</Label>
                 <MultiSelectFilter
                   options={organizations.map((org) => ({
                     value: org.id,
@@ -484,40 +411,13 @@ export default function BudgetsPage() {
 
             {/* Column Selector */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Columns</Label>
+              <Label className="text-helper text-muted-foreground">Columns</Label>
               <BudgetColumnSelector
                 visibleColumns={visibleColumns}
                 onColumnsChange={setVisibleColumns}
               />
             </div>
         </FilterBar>
-
-        {/* Yearly Summary Chart */}
-        <YearlyTotalsBarChart
-          title="Budget Totals by Year"
-          description="Yearly budget totals in USD (filtered)"
-          loading={yearlySummaryLoading}
-          singleSeriesData={filteredYearlySummary}
-          singleSeriesColor="#4c5568"
-          singleSeriesLabel="Budget"
-          height={280}
-          selectedYear={selectedYear}
-          startYear={chartStartYear}
-          endYear={chartEndYear}
-          onStartYearChange={setChartStartYear}
-          onEndYearChange={setChartEndYear}
-          dataMinYear={dataYearRange.min}
-          dataMaxYear={dataYearRange.max}
-          headerControls={
-            <CustomYearSelector
-              customYears={customYears}
-              selectedId={selectedCustomYearId}
-              onSelect={setSelectedCustomYearId}
-              loading={customYearsLoading}
-              placeholder="Year Type"
-            />
-          }
-        />
 
         {/* Budgets Table */}
         {loading && sortedBudgets.length === 0 && !searchQuery ? (
@@ -568,7 +468,7 @@ export default function BudgetsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalBudgets)} to {Math.min(endIndex, totalBudgets)} of {totalBudgets} budgets
                 </div>
                 
@@ -614,7 +514,7 @@ export default function BudgetsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>
@@ -646,7 +546,7 @@ export default function BudgetsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground">Items per page:</label>
+                  <label className="text-body text-muted-foreground">Items per page:</label>
                   <Select 
                     value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

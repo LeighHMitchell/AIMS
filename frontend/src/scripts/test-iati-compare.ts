@@ -29,8 +29,6 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function testIATICompare(activityId: string, iatiIdentifier?: string) {
-  console.log('\n🔍 Testing IATI Compare API');
-  console.log('============================');
   
   // First, fetch the activity to get its details
   const { data: activity, error } = await supabase
@@ -44,15 +42,10 @@ async function testIATICompare(activityId: string, iatiIdentifier?: string) {
     return;
   }
   
-  console.log('\n📋 Activity Details:');
-  console.log('  - ID:', activity.id);
-  console.log('  - Title:', activity.title);
-  console.log('  - IATI ID:', activity.iati_id || 'Not set');
   
   // Simulate API call (in real app, you'd use fetch or axios)
   const apiUrl = `http://localhost:3000/api/activities/${activityId}/compare-iati`;
   
-  console.log('\n🌐 Making API request to:', apiUrl);
   
   const payload = {
     iati_identifier: iatiIdentifier // Optional - will use activity's iati_id if not provided
@@ -75,43 +68,19 @@ async function testIATICompare(activityId: string, iatiIdentifier?: string) {
     
     const result = await response.json();
     
-    console.log('\n✅ Comparison Results:');
-    console.log('====================');
     
     // Show local data summary
-    console.log('\n📊 Your Data:');
-    console.log('  - Title:', result.your_data.title_narrative);
-    console.log('  - Status:', result.your_data.activity_status);
-    console.log('  - Start Date:', result.your_data.activity_date_start_planned);
-    console.log('  - End Date:', result.your_data.activity_date_end_planned);
-    console.log('  - Sectors:', result.your_data.sectors.length);
-    console.log('  - Organizations:', result.your_data.participating_orgs.length);
-    console.log('  - Transactions:', result.your_data.transactions.length);
     
     // Show IATI data summary if available
     if (result.iati_data) {
-      console.log('\n🌍 IATI Data:');
-      console.log('  - Title:', result.iati_data.title_narrative);
-      console.log('  - Status:', result.iati_data.activity_status);
-      console.log('  - Start Date:', result.iati_data.activity_date_start_planned);
-      console.log('  - End Date:', result.iati_data.activity_date_end_planned);
-      console.log('  - Sectors:', result.iati_data.sectors.length);
-      console.log('  - Organizations:', result.iati_data.participating_orgs.length);
-      console.log('  - Transactions:', result.iati_data.transactions.length);
       
       // Show differences
       if (result.comparison.differences) {
-        console.log('\n🔄 Differences Found:');
         Object.entries(result.comparison.differences).forEach(([field, diff]: [string, any]) => {
-          console.log(`  - ${field}:`);
-          console.log(`    Local: ${diff.local || 'null'}`);
-          console.log(`    IATI: ${diff.iati || 'null'}`);
         });
       }
     } else {
-      console.log('\n⚠️  No IATI data found');
       if (result.comparison.iati_error) {
-        console.log('  Error:', result.comparison.iati_error);
       }
     }
     
@@ -135,7 +104,6 @@ if (!activityId) {
 
 testIATICompare(activityId, iatiIdentifier)
   .then(() => {
-    console.log('\n✅ Test completed');
     process.exit(0);
   })
   .catch((error) => {

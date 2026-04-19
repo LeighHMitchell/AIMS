@@ -91,7 +91,6 @@ export async function GET(request: NextRequest) {
   `;
 
   try {
-    console.log('[PowerGrid] Fetching from Overpass API for bbox:', bbox);
 
     const response = await fetch(OVERPASS_API, {
       method: 'POST',
@@ -200,7 +199,6 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    console.log(`[PowerGrid] Found ${lineFeatures.length} lines and ${pointFeatures.length} points`);
 
     return NextResponse.json(geojson, {
       headers: {

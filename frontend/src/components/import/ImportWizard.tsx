@@ -353,7 +353,7 @@ export function ImportWizard({ entityType, onImport, requiredPermission }: Impor
             {/* Progress Bar */}
             {isProcessing && importProgress > 0 && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="flex justify-between text-body text-muted-foreground">
                   <span>Importing...</span>
                   <span>{importProgress}%</span>
                 </div>

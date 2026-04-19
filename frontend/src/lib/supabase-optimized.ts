@@ -58,7 +58,6 @@ class SupabaseConnectionManager {
       })
       
       this.lastConnectionTime = now
-      console.log('[Supabase Optimized] Created new optimized connection')
       return this.adminClient
       
     } catch (error) {
@@ -78,7 +77,6 @@ class SupabaseConnectionManager {
     const now = Date.now()
     
     if (cached && (now - cached.timestamp) < cached.ttl) {
-      console.log(`[Supabase Optimized] Cache hit for: ${cacheKey}`)
       return cached.data
     }
     
@@ -94,7 +92,6 @@ class SupabaseConnectionManager {
       // Clean old cache entries
       this.cleanCache()
       
-      console.log(`[Supabase Optimized] Query executed and cached: ${cacheKey}`)
       return result
       
     } catch (error) {
@@ -205,7 +202,6 @@ class SupabaseConnectionManager {
   // Clear all caches
   clearCache() {
     this.queryCache.clear()
-    console.log('[Supabase Optimized] Cache cleared')
   }
 }
 

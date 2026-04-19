@@ -58,15 +58,15 @@ type ViewMode = 'count' | 'value'
 /** Toggle button group for count vs value */
 function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
   return (
-    <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
+    <div className="inline-flex rounded-md border border-border overflow-hidden text-helper">
       <button
-        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-slate-200 text-slate-900' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-muted text-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
         onClick={() => onChange('count')}
       >
         #
       </button>
       <button
-        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-slate-200 text-slate-900' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-muted text-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
         onClick={() => onChange('value')}
       >
         $
@@ -98,10 +98,10 @@ export default function ProjectBankDashboard() {
   }
 
   const getSortIcon = (field: string) => {
-    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-400" />
+    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
     return sortOrder === 'asc'
-      ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" />
-      : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+      ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+      : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
   }
 
   useEffect(() => {
@@ -180,11 +180,11 @@ export default function ProjectBankDashboard() {
       const entry = payload[0].payload
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
-          <p className="font-medium text-foreground text-sm mb-1">{label}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground text-body mb-1">{label}</p>
+          <p className="text-body text-muted-foreground">
             Projects: <span className="font-semibold text-foreground">{entry.count}</span>
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Value: <span className="font-semibold text-foreground">{formatFullCurrency(entry.value)}</span>
           </p>
         </div>
@@ -199,11 +199,11 @@ export default function ProjectBankDashboard() {
       const entry = payload[0].payload
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
-          <p className="font-medium text-foreground text-sm mb-1">{label}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground text-body mb-1">{label}</p>
+          <p className="text-body text-muted-foreground">
             Projects: <span className="font-semibold text-foreground">{entry.count}</span>
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Value: <span className="font-semibold text-foreground">{formatFullCurrency(entry.value)}</span>
           </p>
         </div>
@@ -218,11 +218,11 @@ export default function ProjectBankDashboard() {
       const entry = payload[0].payload
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
-          <p className="font-medium text-foreground text-sm mb-1">{label}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground text-body mb-1">{label}</p>
+          <p className="text-body text-muted-foreground">
             Projects: <span className="font-semibold text-foreground">{entry.count}</span>
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Value: <span className="font-semibold text-foreground">{formatFullCurrency(entry.value)}</span>
           </p>
         </div>
@@ -443,7 +443,7 @@ export default function ProjectBankDashboard() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">No sector data available</p>
+                    <p className="text-body text-muted-foreground text-center py-8">No sector data available</p>
                   )}
                 </CardContent>
               </Card>
@@ -487,7 +487,7 @@ export default function ProjectBankDashboard() {
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-body">
                           <thead className="bg-surface-muted">
                             <tr className="border-b bg-surface-muted">
                               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('name')}>
@@ -543,20 +543,20 @@ export default function ProjectBankDashboard() {
                                 <td className="px-4 py-2.5">
                                   <div>{project.sector}</div>
                                   {project.sub_sector && (
-                                    <div className="text-xs text-muted-foreground/70">{project.sub_sector}</div>
+                                    <div className="text-helper text-muted-foreground/70">{project.sub_sector}</div>
                                   )}
                                 </td>
                                 <td className="px-4 py-2.5">
                                   <div>{project.nominating_ministry || '—'}</div>
                                   {project.implementing_agency && (
-                                    <div className="text-xs text-muted-foreground/70">{project.implementing_agency}</div>
+                                    <div className="text-helper text-muted-foreground/70">{project.implementing_agency}</div>
                                   )}
                                 </td>
                                 <td className="px-4 py-2.5 text-muted-foreground">{project.project_type || '—'}</td>
                                 <td className="px-4 py-2.5 text-muted-foreground">{project.region || '—'}</td>
                                 <td className="px-4 py-2.5 text-muted-foreground">{project.estimated_start_date ? new Date(project.estimated_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
                                 <td className="px-4 py-2.5 text-right font-medium">
-                                  <span className="text-muted-foreground font-normal text-xs">USD</span>{' '}
+                                  <span className="text-muted-foreground font-normal text-helper">USD</span>{' '}
                                   {formatCurrency(project.estimated_cost, '').trim()}
                                 </td>
                                 <td className="px-4 py-2.5">

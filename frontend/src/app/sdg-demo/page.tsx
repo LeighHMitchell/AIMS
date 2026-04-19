@@ -115,10 +115,10 @@ export default function SDGDemoPage() {
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <h1 className="text-3xl font-bold text-foreground mb-4">
           SDG Icons & Status Display Demo
         </h1>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
           This page demonstrates the improved activity cards with prominent SDG icons and proper status text display.
           Notice how SDG icons appear both in the banner overlay and in the card content.
         </p>
@@ -134,7 +134,7 @@ export default function SDGDemoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-body text-muted-foreground">
               SDG icons now appear prominently in the top-right corner of activity banners and in the card content below.
             </p>
           </CardContent>
@@ -148,7 +148,7 @@ export default function SDGDemoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-body text-muted-foreground">
               Activity status now shows proper text labels like "Implementation", "Cancelled", "Suspended" instead of numbers.
             </p>
           </CardContent>
@@ -162,7 +162,7 @@ export default function SDGDemoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-body text-muted-foreground">
               SDG icons are sized appropriately and positioned for maximum visibility without overwhelming the design.
             </p>
           </CardContent>
@@ -191,7 +191,7 @@ export default function SDGDemoPage() {
 
       {/* Individual Activity Cards */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Individual Activity Cards</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-4">Individual Activity Cards</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sampleActivities.map((activity) => (
             <ActivityCardWithSDG
@@ -206,7 +206,7 @@ export default function SDGDemoPage() {
 
       {/* Activity List Component */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Activity List Component</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-4">Activity List Component</h2>
         <ActivityList 
           activities={sampleActivities}
         />
@@ -214,7 +214,7 @@ export default function SDGDemoPage() {
 
       {/* SDG Image Grid Examples */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">SDG Image Grid Component</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-4">SDG Image Grid Component</h2>
         <SDGImageGridExample />
       </div>
     </div>

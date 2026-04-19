@@ -82,7 +82,7 @@ export function FinanceTypeSelect({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal px-3 py-2 text-sm h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
+              "w-full justify-between font-normal px-3 py-2 text-body h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
               !selectedOption && "text-muted-foreground"
             )}
           >
@@ -90,10 +90,10 @@ export function FinanceTypeSelect({
               {selectedOption ? (
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
-                  <span className="font-medium text-sm text-gray-900">{selectedOption.name}</span>
+                  <span className="font-medium text-body text-foreground">{selectedOption.name}</span>
                 </span>
               ) : (
-                <span className="text-muted-foreground text-sm">{placeholder}</span>
+                <span className="text-muted-foreground text-body">{placeholder}</span>
               )}
             </span>
             <div className="flex items-center gap-1 ml-2">
@@ -111,7 +111,7 @@ export function FinanceTypeSelect({
                       onChange?.("");
                     }
                   }}
-                  className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                  className="h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Clear selection"
                 >
                   <X className="h-3 w-3 text-muted-foreground" />
@@ -139,14 +139,14 @@ export function FinanceTypeSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 autoFocus
               />
             </div>
             <CommandList>
               {Object.entries(groupedOptions).map(([groupName, options]) => options.length > 0 && (
                 <CommandGroup key={groupName}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                  <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                     {groupName}
                   </div>
                   {options.map(option => (
@@ -166,15 +166,15 @@ export function FinanceTypeSelect({
                       )}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm">
+                        <div className="text-body">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5">{option.code}</span>
                           <span className="text-foreground">{option.name}</span>
                           {option.withdrawn && (
-                            <span className="ml-2 text-xs text-red-500">Withdrawn</span>
+                            <span className="ml-2 text-helper text-destructive">Withdrawn</span>
                           )}
                         </div>
                         {option.description && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{option.description}</div>
+                          <div className="text-helper text-muted-foreground mt-0.5">{option.description}</div>
                         )}
                       </div>
                     </CommandItem>
@@ -183,10 +183,10 @@ export function FinanceTypeSelect({
               ))}
               {Object.keys(groupedOptions).length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No finance types found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms
                   </div>
                 </div>

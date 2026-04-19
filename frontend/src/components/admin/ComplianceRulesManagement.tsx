@@ -103,7 +103,7 @@ export function ComplianceRulesManagement() {
             {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded" />)}
           </div>
         ) : settings.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No compliance rules configured. Run the migration to seed defaults.</p>
+          <p className="text-body text-muted-foreground text-center py-4">No compliance rules configured. Run the migration to seed defaults.</p>
         ) : (
           <div className="space-y-4">
             {settings.map(setting => {
@@ -116,7 +116,7 @@ export function ComplianceRulesManagement() {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{setting.label}</span>
+                        <span className="text-body font-medium">{setting.label}</span>
                         <Badge variant={
                           edit.enforcement === 'enforce' ? 'destructive' :
                           edit.enforcement === 'warn' ? 'amber' : 'gray'
@@ -125,7 +125,7 @@ export function ComplianceRulesManagement() {
                         </Badge>
                       </div>
                       {setting.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{setting.description}</p>
+                        <p className="text-helper text-muted-foreground mt-0.5">{setting.description}</p>
                       )}
                     </div>
                     {changed && (
@@ -147,21 +147,21 @@ export function ComplianceRulesManagement() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs">{display.label}</Label>
+                      <Label className="text-helper">{display.label}</Label>
                       <Input
                         type="number"
                         value={edit.value?.[display.field] ?? ''}
                         onChange={e => updateValue(setting.key, display.field, e.target.value)}
-                        className="h-8 text-sm"
+                        className="h-8 text-body"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">Enforcement Mode</Label>
+                      <Label className="text-helper">Enforcement Mode</Label>
                       <Select
                         value={edit.enforcement}
                         onValueChange={v => updateEnforcement(setting.key, v)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-8 text-body">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

@@ -8,7 +8,6 @@ export async function POST() {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[Migration] Adding inherited flag columns...')
 
     // Execute the SQL to add columns
     const { error } = await supabase.rpc('exec_sql', {
@@ -28,7 +27,6 @@ export async function POST() {
       )
     }
 
-    console.log('[Migration] Columns added successfully')
 
     return NextResponse.json({
       success: true,

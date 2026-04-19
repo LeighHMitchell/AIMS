@@ -270,8 +270,8 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
     icon: org.logo ? (
       <img src={org.logo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
     ) : (
-      <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+      <div className="h-5 w-5 rounded-sm bg-muted dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] font-medium text-muted-foreground dark:text-muted-foreground">
           {(org.acronym || org.name || '?')[0].toUpperCase()}
         </span>
       </div>
@@ -332,7 +332,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
                   <FileText className="h-8 w-8 text-[hsl(var(--success-icon))]" />
                   <div className="text-left">
                     <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body text-muted-foreground">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
@@ -363,7 +363,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
                   >
                     Select File
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-helper text-muted-foreground mt-2">
                     Max file size: 50MB
                   </p>
                 </div>
@@ -393,7 +393,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
                 searchPlaceholder="Search formats..."
               />
               {format && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Detected: {FILE_FORMATS[format] || format}
                 </p>
               )}
@@ -469,7 +469,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
                 return (
                   <span
                     key={code}
-                    className="inline-flex items-center gap-1 bg-muted rounded px-2 py-1 text-sm"
+                    className="inline-flex items-center gap-1 bg-muted rounded px-2 py-1 text-body"
                   >
                     <span className="font-mono text-xs bg-background px-1 py-0.5 rounded">
                       {code.toUpperCase()}

@@ -33,10 +33,8 @@ export async function GET(
       );
     }
 
-    console.log('[Locations API] Raw locations from database:', locations);
     
     const transformedLocations = locations?.map((location: any) => {
-      console.log('[Locations API] Processing location:', location.id, 'country_code:', location.country_code);
       return {
       id: location.id,
       activity_id: location.activity_id,
@@ -130,8 +128,6 @@ export async function POST(
 
     const locationData = validationResult.data;
     
-    console.log('[Locations API] Received location data:', locationData);
-    console.log('[Locations API] Country code from form:', locationData.country_code);
 
     const insertData: Record<string, any> = {
       activity_id: activityId,
@@ -192,8 +188,6 @@ export async function POST(
     // insertData.spatial_reference_system = locationData.spatial_reference_system || null;
     insertData.srs_name = locationData.srs_name || 'http://www.opengis.net/def/crs/EPSG/0/4326';
     
-    console.log('[Locations API] Final insert data:', insertData);
-    console.log('[Locations API] Country code in insert data:', insertData.country_code);
 
     const { data: newLocation, error } = await supabase
       .from('activity_locations')
@@ -234,8 +228,6 @@ export async function PUT(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log('[Locations API] 🔄 PUT request received for activity:', activityId);
-    console.log('[Locations API] 📦 Request body:', body);
 
     if (!activityId) {
       return NextResponse.json(
@@ -365,7 +357,6 @@ export async function PUT(
       }
     }
 
-    console.log('[Locations API] ✅ Locations updated successfully:', locationsToInsert);
     return NextResponse.json({
       success: true,
       locations: locationsToInsert

@@ -252,7 +252,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-            <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+            <SelectTrigger className="w-48 h-9 bg-white border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -280,7 +280,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
         </div>
         
         {groupBy === 'fiscal' && (
-          <div className="text-xs text-slate-500">
+          <div className="text-helper text-muted-foreground">
             Financial Year: July–June
           </div>
         )}
@@ -355,7 +355,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
       </ResponsiveContainer>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart compares planned budgets against actual disbursements and expenditures for each period. Bars that fall short of the budget indicate under-spending, while those exceeding it suggest budget overruns. Use the period selector to switch between calendar year, financial year, and quarterly views to identify trends in budget execution.
       </p>
     </div>

@@ -228,7 +228,6 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         reported_by_org_id: form.organizationId || null // Use same org for reporting
       }
 
-      console.log('[EditUserModal] Updating user:', form.email)
 
       const response = await apiFetch(`/api/users/${form.id}`, {
         method: 'PUT',
@@ -244,7 +243,6 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         throw new Error(result.error || 'Failed to update user')
       }
 
-      console.log('[EditUserModal] User updated successfully:', result.email)
 
       // Transform the result to match our User interface
       const fullName = [result.first_name, result.middle_name, result.last_name]
@@ -284,7 +282,6 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
       
       // If the updated user is the current user, refresh the user context
       if (currentUser?.id === updatedUser.id) {
-        console.log('[EditUserModal] Refreshing current user context after self-update')
         await refreshUser()
       }
       
@@ -317,7 +314,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5 text-slate-500" />
+            <Pencil className="h-5 w-5 text-muted-foreground" />
             Edit User: {user.name}
           </DialogTitle>
           <DialogDescription>
@@ -478,7 +475,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 onValueChange={handleOrganizationChange}
                 placeholder="Select or search for an organization"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Select the organization this user belongs to. This determines their access and reporting scope.
               </p>
             </div>

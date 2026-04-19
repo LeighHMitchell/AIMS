@@ -65,10 +65,8 @@ export function RichTextEditor({
       if (!isSettingContentRef.current && isInitializedRef.current) {
         // Additional check: ensure the content actually differs from what was set via props
         if (currentContent !== lastPropContentRef.current) {
-          console.log('[RichTextEditor] User-initiated onChange triggered');
           onChange(currentContent)
         } else {
-          console.log('[RichTextEditor] Content matches prop, ignoring onChange');
         }
       } else {
         console.log('[RichTextEditor] Programmatic onChange blocked', {
@@ -201,9 +199,9 @@ export function RichTextEditor({
   }
 
   return (
-    <div className={cn("border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500", className)}>
+    <div className={cn("border border-input rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500", className)}>
       {/* Toolbar */}
-      <div className="border-b border-gray-200 p-2 flex flex-wrap gap-1 bg-gray-50 rounded-t-md">
+      <div className="border-b border-border p-2 flex flex-wrap gap-1 bg-muted rounded-t-md">
         <Button
           type="button"
           variant="ghost"
@@ -348,7 +346,7 @@ export function RichTextEditor({
       {/* Editor Content */}
       <div 
         onClick={handleEditorClick}
-        className="cursor-text relative overflow-hidden border-t border-gray-200"
+        className="cursor-text relative overflow-hidden border-t border-border"
         style={{ 
           minHeight: `${rows * 1.5}rem`,
           height: `${rows * 1.5}rem`
@@ -356,7 +354,7 @@ export function RichTextEditor({
       >
         <EditorContent 
           editor={editor} 
-          className="prose prose-sm max-w-none p-4 focus:outline-none h-full overflow-y-auto [&_p]:my-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600"
+          className="prose prose-sm max-w-none p-4 focus:outline-none h-full overflow-y-auto [&_p]:my-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_blockquote]:border-l-4 [&_blockquote]:border-input [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground"
         />
         
         {/* Resize Handle - styled to match the browser's native textarea resize grip */}

@@ -58,7 +58,7 @@ export function ImportProgressRoller({ message, className }: ImportProgressRolle
         {messages.map((msg, index) => (
           <div
             key={`${index}-${msg}`}
-            className="flex items-center text-sm font-medium whitespace-nowrap text-muted-foreground"
+            className="flex items-center text-body font-medium whitespace-nowrap text-muted-foreground"
             style={{ height: '24px' }}
           >
             {msg}

@@ -208,7 +208,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="2D View"
-          className="h-8 px-2.5 text-xs"
+          className="h-8 px-2.5 text-helper"
         >
           <Mountain className="h-3.5 w-3.5 mr-1" />
           2D
@@ -219,7 +219,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="3D View"
-          className="h-8 px-2.5 text-xs"
+          className="h-8 px-2.5 text-helper"
         >
           <Mountain className="h-3.5 w-3.5 mr-1" />
           3D
@@ -432,10 +432,10 @@ export default function ActivityLocationsHeatmap({
         {/* Controls toolbar — outside the map */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           {/* Map tile style selector */}
-          <MapStyleSelect value={mapStyle} onChange={handleStyleChange} triggerClassName="w-44 h-8 text-xs" />
+          <MapStyleSelect value={mapStyle} onChange={handleStyleChange} triggerClassName="w-44 h-8 text-helper" />
 
           {/* View mode toggle (markers / heatmap) */}
-          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
             <Button
               onClick={() => setViewMode('markers')}
               variant="ghost"
@@ -444,8 +444,8 @@ export default function ActivityLocationsHeatmap({
               className={cn(
                 "h-7 w-7 p-0",
                 viewMode === 'markers'
-                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white shadow-sm text-foreground hover:bg-white"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <CircleDot className="h-3.5 w-3.5" />
@@ -458,8 +458,8 @@ export default function ActivityLocationsHeatmap({
               className={cn(
                 "h-7 w-7 p-0",
                 viewMode === 'heatmap'
-                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white shadow-sm text-foreground hover:bg-white"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Flame className="h-3.5 w-3.5" />
@@ -489,7 +489,7 @@ export default function ActivityLocationsHeatmap({
         </div>
 
         {/* Map container */}
-        <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-gray-200">
+        <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-border">
           <Map
             styles={{
               light: MAP_STYLES[mapStyle].light as string | object,

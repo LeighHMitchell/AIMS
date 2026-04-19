@@ -104,7 +104,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <div className="flex flex-col items-center text-center">
               <AlertCircle className="h-12 w-12 text-destructive mb-4" />
               <h3 className="text-lg font-semibold mb-2">Error Loading Portfolio</h3>
-              <p className="text-sm text-muted-foreground">{error}</p>
+              <p className="text-body text-muted-foreground">{error}</p>
             </div>
           </CardContent>
         </Card>
@@ -178,14 +178,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
-              <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+              <CardTitle className="text-body font-medium">Total Activities</CardTitle>
               <HelpTextTooltip size="sm" content="Total number of activities you have created in the system." />
             </div>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.summary.totalActivities}</div>
-            <p className="text-xs text-muted-foreground">Created by you</p>
+            <p className="text-helper text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -194,14 +194,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
-              <CardTitle className="text-sm font-medium">Total Budgeted</CardTitle>
+              <CardTitle className="text-body font-medium">Total Budgeted</CardTitle>
               <HelpTextTooltip size="sm" content="Combined budget across all your activities, converted to USD." />
             </div>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalBudget)}</div>
-            <p className="text-xs text-muted-foreground">Created by you</p>
+            <p className="text-helper text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -210,14 +210,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
-              <CardTitle className="text-sm font-medium">Planned Disbursements</CardTitle>
+              <CardTitle className="text-body font-medium">Planned Disbursements</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of planned disbursement transactions across your activities, in USD." />
             </div>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalPlannedDisbursements)}</div>
-            <p className="text-xs text-muted-foreground">Created by you</p>
+            <p className="text-helper text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -226,14 +226,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
-              <CardTitle className="text-sm font-medium">Commitments</CardTitle>
+              <CardTitle className="text-body font-medium">Commitments</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of commitment transactions across your activities, in USD." />
             </div>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalCommitments)}</div>
-            <p className="text-xs text-muted-foreground">Created by you</p>
+            <p className="text-helper text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -242,14 +242,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
-              <CardTitle className="text-sm font-medium">Disbursements</CardTitle>
+              <CardTitle className="text-body font-medium">Disbursements</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of disbursement transactions across your activities, in USD." />
             </div>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalDisbursements)}</div>
-            <p className="text-xs text-muted-foreground">Created by you</p>
+            <p className="text-helper text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -258,14 +258,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
-              <CardTitle className="text-sm font-medium">Expenditure</CardTitle>
+              <CardTitle className="text-body font-medium">Expenditure</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of expenditure transactions across your activities, in USD." />
             </div>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalExpenditure)}</div>
-            <p className="text-xs text-muted-foreground">Created by you</p>
+            <p className="text-helper text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -284,18 +284,18 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Pipeline but Past Expected Start</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities still in &quot;Pipeline&quot; status whose expected start date has already passed. These may need to be updated to &quot;Active&quot; or have their dates revised." />
               </div>
-              <button onClick={() => setModalCard('pipeline')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+              <button onClick={() => setModalCard('pipeline')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand" aria-label="Expand">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
             <CardDescription>Activities that should have started</CardDescription>
           </CardHeader>
           <CardContent>
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Expected Start</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Expected Start</th>
                 </tr>
               </thead>
               <tbody>
@@ -306,13 +306,13 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                         {activity.title}
                       </Link>
                     </td>
-                    <td className="py-1.5 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="py-1.5 text-helper text-muted-foreground whitespace-nowrap">
                       {new Date(activity.expectedStart).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
                 {data.pipelinePastStart.length === 0 && (
-                  <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">No activities found</td></tr>
+                  <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-helper">No activities found</td></tr>
                 )}
               </tbody>
             </table>
@@ -327,18 +327,18 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Inactive for 90+ Days</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities that haven't been updated in over 90 days. Consider reviewing these to ensure they're still current." />
               </div>
-              <button onClick={() => setModalCard('inactive')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+              <button onClick={() => setModalCard('inactive')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand" aria-label="Expand">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
             <CardDescription>Activities needing updates</CardDescription>
           </CardHeader>
           <CardContent>
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Last Updated</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Last Updated</th>
                 </tr>
               </thead>
               <tbody>
@@ -349,13 +349,13 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                         {activity.title}
                       </Link>
                     </td>
-                    <td className="py-1.5 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="py-1.5 text-helper text-muted-foreground whitespace-nowrap">
                       {new Date(activity.lastUpdated).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
                 {data.inactive90Days.length === 0 && (
-                  <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">No activities found</td></tr>
+                  <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-helper">No activities found</td></tr>
                 )}
               </tbody>
             </table>
@@ -370,7 +370,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Missing Required Data</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities that are missing key fields needed for complete IATI reporting. Click a row to go directly to the relevant section in the activity editor." />
               </div>
-              <button onClick={() => setModalCard('missing')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+              <button onClick={() => setModalCard('missing')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand" aria-label="Expand">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
@@ -378,11 +378,11 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="max-h-64 overflow-y-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="sticky top-0 bg-surface-muted">
                   <tr className="border-b text-left">
-                    <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                    <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Fields</th>
+                    <th className="pb-2 font-medium text-muted-foreground text-helper">Activity</th>
+                    <th className="pb-2 font-medium text-muted-foreground text-helper">Missing Fields</th>
                     <th className="pb-2 w-8"></th>
                   </tr>
                 </thead>
@@ -397,7 +397,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                             {activity.title}
                           </span>
                         </td>
-                        <td className="py-1.5 text-xs text-muted-foreground">
+                        <td className="py-1.5 text-helper text-muted-foreground">
                           <span title={activity.missingFields.map(f => FIELD_LABELS[f] || f).join(', ')}>
                             {FIELD_LABELS[firstField] || firstField}
                             {remaining > 0 && (
@@ -414,7 +414,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                     )
                   })}
                   {data.missingData.length === 0 && (
-                    <tr><td colSpan={3} className="py-4 text-center text-muted-foreground text-xs">No missing data found</td></tr>
+                    <tr><td colSpan={3} className="py-4 text-center text-muted-foreground text-helper">No missing data found</td></tr>
                   )}
                 </tbody>
               </table>
@@ -431,11 +431,11 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <DialogDescription>Activities still in Pipeline status whose expected start date has passed</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Expected Start</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Expected Start</th>
                 </tr>
               </thead>
               <tbody>
@@ -446,7 +446,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                         {activity.title}
                       </Link>
                     </td>
-                    <td className="py-2 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="py-2 text-body text-muted-foreground whitespace-nowrap">
                       {new Date(activity.expectedStart).toLocaleDateString()}
                     </td>
                   </tr>
@@ -467,11 +467,11 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <DialogDescription>Activities that haven't been updated in over 90 days</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Last Updated</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Last Updated</th>
                 </tr>
               </thead>
               <tbody>
@@ -482,7 +482,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                         {activity.title}
                       </Link>
                     </td>
-                    <td className="py-2 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="py-2 text-body text-muted-foreground whitespace-nowrap">
                       {new Date(activity.lastUpdated).toLocaleDateString()}
                     </td>
                   </tr>
@@ -503,11 +503,11 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <DialogDescription>Activities with incomplete information needed for IATI reporting</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Fields</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-helper">Missing Fields</th>
                   <th className="pb-2 w-10"></th>
                 </tr>
               </thead>
@@ -517,10 +517,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                     <td className="py-2 pr-4 text-foreground">
                       {activity.title}
                     </td>
-                    <td className="py-2 text-sm text-muted-foreground">
+                    <td className="py-2 text-body text-muted-foreground">
                       <div className="flex flex-wrap gap-1">
                         {activity.missingFields.map((field) => (
-                          <Badge key={field} variant="outline" className="text-xs font-normal">
+                          <Badge key={field} variant="outline" className="text-helper font-normal">
                             {FIELD_LABELS[field] || field}
                           </Badge>
                         ))}

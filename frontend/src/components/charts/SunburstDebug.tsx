@@ -10,7 +10,6 @@ export default function SunburstDebug({ allocations }: DebugProps) {
   const sectorGroupData = require('@/data/SectorGroup.json');
   
   // Check what we have
-  console.log('[DEBUG] Input allocations:', allocations);
   
   // Find unique groups and categories
   const groups = new Set<string>();
@@ -33,7 +32,7 @@ export default function SunburstDebug({ allocations }: DebugProps) {
   });
   
   return (
-    <div className="p-4 bg-gray-100 rounded text-xs">
+    <div className="p-4 bg-muted rounded text-helper">
       <h3 className="font-bold mb-2">Sunburst Debug Info</h3>
       <div>Total allocations: {allocations.length}</div>
       <div>Unique groups: {Array.from(groups).join(', ')}</div>

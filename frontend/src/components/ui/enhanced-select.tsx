@@ -18,7 +18,7 @@ const EnhancedSelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
     {...props}
@@ -100,7 +100,7 @@ const EnhancedSelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className)}
+    className={cn("py-1.5 pl-8 pr-2 text-body font-semibold", className)}
     {...props}
   />
 ))
@@ -116,7 +116,7 @@ const EnhancedSelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "group relative flex w-full cursor-default select-none items-center py-3 pl-8 pr-4 text-sm outline-none focus:bg-blue-50 focus:text-blue-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "group relative flex w-full cursor-default select-none items-center py-3 pl-8 pr-4 text-body outline-none focus:bg-blue-50 focus:text-blue-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}
@@ -130,7 +130,7 @@ const EnhancedSelectItem = React.forwardRef<
     {label && description ? (
       <div className="flex flex-col gap-1 w-full min-w-0">
         <div className="font-medium leading-snug whitespace-normal">{label}</div>
-        <div className="text-xs leading-relaxed text-slate-500 group-data-[highlighted]:text-blue-700 whitespace-normal break-words">{description}</div>
+        <div className="text-helper leading-relaxed text-muted-foreground group-data-[highlighted]:text-blue-700 whitespace-normal break-words">{description}</div>
       </div>
     ) : (
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

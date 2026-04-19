@@ -49,9 +49,9 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                   if (active && payload && payload.length) {
                     return (
                       <div className={TOOLTIP_CLASSES}>
-                        <p className="font-medium text-xs text-foreground mb-1">Target {payload[0].payload.name}</p>
+                        <p className="font-medium text-helper text-foreground mb-1">Target {payload[0].payload.name}</p>
                         {payload.map((entry: any, i: number) => (
-                          <p key={i} className="text-xs text-muted-foreground">
+                          <p key={i} className="text-helper text-muted-foreground">
                             {entry.name}: {formatCurrencyShort(entry.value)}
                           </p>
                         ))}
@@ -84,13 +84,13 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                     >
                       {target.targetId}
                     </span>
-                    <span className="text-xs text-muted-foreground">{target.activityCount} activit{target.activityCount === 1 ? 'y' : 'ies'}</span>
+                    <span className="text-helper text-muted-foreground">{target.activityCount} activit{target.activityCount === 1 ? 'y' : 'ies'}</span>
                   </div>
-                  <p className="text-sm text-foreground mt-1">{target.targetText}</p>
+                  <p className="text-body text-foreground mt-1">{target.targetText}</p>
                 </div>
                 <div className="text-right ml-3 flex-shrink-0">
-                  <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(target.totalValue)}</p>
-                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(target.disbursements)} disbursed</p>
+                  <p className="text-body font-semibold text-foreground">{formatCurrencyShort(target.totalValue)}</p>
+                  <p className="text-helper text-muted-foreground">{formatCurrencyShort(target.disbursements)} disbursed</p>
                 </div>
               </div>
               {target.commitments > 0 && (
@@ -111,7 +111,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
         {fundedTargets.length > (compact ? 5 : 10) && (
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs text-muted-foreground hover:text-foreground underline"
+            className="text-helper text-muted-foreground hover:text-foreground underline"
           >
             {showAll ? 'Show less' : `Show all ${fundedTargets.length} funded targets`}
           </button>
@@ -121,12 +121,12 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
       {/* Unfunded Targets */}
       {unfundedTargets.length > 0 && !compact && (
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Unfunded Targets</p>
+          <p className="text-section-label font-medium text-muted-foreground mb-2 uppercase">Unfunded Targets</p>
           <div className="flex flex-wrap gap-2">
             {unfundedTargets.map(target => (
               <span
                 key={target.targetId}
-                className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground"
+                className="text-helper px-2 py-1 rounded bg-muted text-muted-foreground"
                 title={target.targetText}
               >
                 {target.targetId}

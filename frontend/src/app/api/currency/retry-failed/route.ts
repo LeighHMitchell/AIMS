@@ -34,12 +34,10 @@ export async function POST(request: NextRequest) {
     let totalConverted = 0;
     let totalFailed = 0;
 
-    console.log('[Currency Retry] Starting retry of failed conversions...');
 
     // ================================================================
     // 1. RETRY TRANSACTIONS
     // ================================================================
-    console.log('[Currency Retry] Fetching unconverted transactions...');
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
       .select('uuid, value, currency, value_date, transaction_date')
@@ -50,7 +48,6 @@ export async function POST(request: NextRequest) {
     if (txError) {
       console.error('[Currency Retry] Error fetching transactions:', txError);
     } else if (transactions && transactions.length > 0) {
-      console.log(`[Currency Retry] Found ${transactions.length} transactions to retry`);
 
       for (const tx of transactions) {
         totalProcessed++;
@@ -100,7 +97,6 @@ export async function POST(request: NextRequest) {
               exchangeRate: result.exchange_rate
             });
             totalConverted++;
-            console.log(`[Currency Retry] ✅ Transaction ${tx.uuid}: ${tx.value} ${tx.currency} → $${result.usd_amount} USD`);
           } else {
             results.push({
               table: 'transactions',
@@ -126,7 +122,6 @@ export async function POST(request: NextRequest) {
     // ================================================================
     // 2. RETRY BUDGETS
     // ================================================================
-    console.log('[Currency Retry] Fetching unconverted budgets...');
     const { data: budgets, error: budgetError } = await supabase
       .from('activity_budgets')
       .select('id, value, currency, value_date, period_start')
@@ -137,7 +132,6 @@ export async function POST(request: NextRequest) {
     if (budgetError) {
       console.error('[Currency Retry] Error fetching budgets:', budgetError);
     } else if (budgets && budgets.length > 0) {
-      console.log(`[Currency Retry] Found ${budgets.length} budgets to retry`);
 
       for (const budget of budgets) {
         totalProcessed++;
@@ -186,7 +180,6 @@ export async function POST(request: NextRequest) {
               exchangeRate: result.exchange_rate
             });
             totalConverted++;
-            console.log(`[Currency Retry] ✅ Budget ${budget.id}: ${budget.value} ${budget.currency} → $${result.usd_amount} USD`);
           } else {
             results.push({
               table: 'activity_budgets',
@@ -212,7 +205,6 @@ export async function POST(request: NextRequest) {
     // ================================================================
     // 3. RETRY PLANNED DISBURSEMENTS
     // ================================================================
-    console.log('[Currency Retry] Fetching unconverted planned disbursements...');
     const { data: disbursements, error: disbError } = await supabase
       .from('planned_disbursements')
       .select('id, amount, currency, value_date, period_start')
@@ -223,7 +215,6 @@ export async function POST(request: NextRequest) {
     if (disbError) {
       console.error('[Currency Retry] Error fetching planned disbursements:', disbError);
     } else if (disbursements && disbursements.length > 0) {
-      console.log(`[Currency Retry] Found ${disbursements.length} planned disbursements to retry`);
 
       for (const disb of disbursements) {
         totalProcessed++;
@@ -272,7 +263,6 @@ export async function POST(request: NextRequest) {
               exchangeRate: result.exchange_rate
             });
             totalConverted++;
-            console.log(`[Currency Retry] ✅ Planned disbursement ${disb.id}: ${disb.amount} ${disb.currency} → $${result.usd_amount} USD`);
           } else {
             results.push({
               table: 'planned_disbursements',

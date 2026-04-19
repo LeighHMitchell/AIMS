@@ -441,7 +441,7 @@ export function GlobalSearchBar({
   // Size-based styles
   const inputHeight = size === "large" ? "h-14" : "h-10"
   const iconSize = size === "large" ? "h-5 w-5" : "h-4 w-4"
-  const inputTextSize = size === "large" ? "text-base" : "text-sm"
+  const inputTextSize = size === "large" ? "text-base" : "text-body"
   const popoverWidth = size === "large" ? "w-full max-w-2xl" : "w-[500px]"
   
   // Render the search input (used in both modes)
@@ -510,13 +510,13 @@ export function GlobalSearchBar({
                   <Command className="border border-border rounded-lg bg-popover shadow-lg">
                     <CommandList className="max-h-80 overflow-y-auto">
                       {(loading || isSearching) && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="p-4 text-center text-body text-muted-foreground">
                           Searching...
                         </div>
                       )}
 
                       {!loading && !isSearching && error && (
-                        <div className="p-4 text-center text-sm text-destructive">
+                        <div className="p-4 text-center text-body text-destructive">
                           {error}
                         </div>
                       )}
@@ -531,14 +531,14 @@ export function GlobalSearchBar({
                           {/* Show suggestions if available */}
                           {suggestions.length > 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                              <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
                                 Suggestions
                               </div>
                               {suggestions.map((suggestion) => (
                                 <CommandItem
                                   key={`suggestion-${suggestion.type}-${suggestion.id}`}
                                   onSelect={() => handleSuggestionClick(suggestion)}
-                                  className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                  className="cursor-pointer py-3 px-2 hover:bg-muted"
                                 >
                                   <SearchResultRow
                                     result={suggestion}
@@ -553,21 +553,21 @@ export function GlobalSearchBar({
                           {/* Show popular searches if available */}
                           {popularSearches.length > 0 && suggestions.length === 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                              <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
                                 Popular Searches
                               </div>
                               {popularSearches.map((search, idx) => (
                                 <CommandItem
                                   key={`popular-${idx}`}
                                   onSelect={() => handlePopularSearchClick(search)}
-                                  className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                  className="cursor-pointer py-3 px-2 hover:bg-muted"
                                 >
                                   <div className="flex items-start gap-3 w-full">
                                     <div className="flex-shrink-0 mt-0.5">
-                                      <Search className="h-4 w-4 text-gray-400" />
+                                      <Search className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-sm truncate text-gray-900">
+                                      <div className="font-medium text-body truncate text-foreground">
                                         {search}
                                       </div>
                                     </div>
@@ -588,14 +588,14 @@ export function GlobalSearchBar({
 
                             return (
                               <CommandGroup key={type}>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                                <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
                                   {resultTypeLabels[type]}
                                 </div>
                                 {typeResults.map((result) => (
                                   <CommandItem
                                     key={`${result.type}-${result.id}`}
                                     onSelect={() => handleResultClick(result)}
-                                    className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                    className="cursor-pointer py-3 px-2 hover:bg-muted"
                                   >
                                     <SearchResultRow
                                       result={result}
@@ -611,14 +611,14 @@ export function GlobalSearchBar({
                       )}
 
                       {!loading && query.length > 0 && query.length < 1 && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="p-4 text-center text-body text-muted-foreground">
                           Start typing to search
                         </div>
                       )}
                     </CommandList>
                     {/* Add "View All Results" option at bottom if there are results */}
                     {!loading && !error && query.trim() && results.length > 0 && (
-                      <div className="border-t border-gray-100 p-2">
+                      <div className="border-t border-border p-2">
                         <Button
                           variant="ghost"
                           size="sm"

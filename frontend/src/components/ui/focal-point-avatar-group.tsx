@@ -24,8 +24,8 @@ interface FocalPointAvatarGroupProps {
 
 const sizeClasses = {
   sm: 'h-6 w-6 text-[10px]',
-  md: 'h-8 w-8 text-xs',
-  lg: 'h-10 w-10 text-sm',
+  md: 'h-8 w-8 text-helper',
+  lg: 'h-10 w-10 text-body',
 };
 
 /**
@@ -91,12 +91,12 @@ export function FocalPointAvatarGroup({
                   {getInitials(fp.name)}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate max-w-[120px] text-sm">{fp.name}</span>
+              <span className="truncate max-w-[120px] text-body">{fp.name}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
-            <p className="text-sm font-medium">{fp.name}</p>
-            {fp.email && <p className="text-xs text-muted-foreground">{fp.email}</p>}
+            <p className="text-body font-medium">{fp.name}</p>
+            {fp.email && <p className="text-helper text-muted-foreground">{fp.email}</p>}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -126,10 +126,10 @@ export function FocalPointAvatarGroup({
               ))}
               {remainingCount > 0 && (
                 <Avatar
-                  className={`${sizeClass} ring-2 ring-white bg-gray-100`}
+                  className={`${sizeClass} ring-2 ring-white bg-muted`}
                   style={{ zIndex: 0 }}
                 >
-                  <AvatarFallback className="bg-gray-100 text-gray-600 font-medium">
+                  <AvatarFallback className="bg-muted text-muted-foreground font-medium">
                     +{remainingCount}
                   </AvatarFallback>
                 </Avatar>
@@ -140,7 +140,7 @@ export function FocalPointAvatarGroup({
         <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
           <div className="space-y-2">
             {label && (
-              <p className="font-medium text-xs text-muted-foreground mb-2">
+              <p className="font-medium text-helper text-muted-foreground mb-2">
                 {label} ({focalPoints.length})
               </p>
             )}
@@ -155,9 +155,9 @@ export function FocalPointAvatarGroup({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{fp.name}</span>
+                  <span className="text-body font-medium">{fp.name}</span>
                   {fp.email && (
-                    <span className="text-xs text-muted-foreground">{fp.email}</span>
+                    <span className="text-helper text-muted-foreground">{fp.email}</span>
                   )}
                 </div>
               </div>

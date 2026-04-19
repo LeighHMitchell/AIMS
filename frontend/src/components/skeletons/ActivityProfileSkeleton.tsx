@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function ActivityProfileSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading activity profile">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading activity profile">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section with Banner */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
@@ -58,7 +58,7 @@ export function ActivityProfileSkeleton() {
                 </div>
 
                 {/* Contributors pills */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="mt-6 pt-4 border-t border-border">
                   <Skeleton variant="text" width="150px" height="0.875rem" className="mb-3" />
                   <div className="flex flex-wrap gap-2">
                     <Skeleton variant="rounded" width="80px" height="24px" />

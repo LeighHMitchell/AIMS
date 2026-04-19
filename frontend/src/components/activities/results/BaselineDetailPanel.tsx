@@ -39,7 +39,7 @@ const getLocalizedString = (value: any, lang: string = 'en'): string => {
 export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanelProps) {
   if (!baseline) {
     return (
-      <div className={cn("flex items-center justify-center text-slate-400 py-8", className)}>
+      <div className={cn("flex items-center justify-center text-muted-foreground py-8", className)}>
         <Info className="h-5 w-5 mr-2" />
         No baseline data defined
       </div>
@@ -54,12 +54,12 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
 
       {/* Comment */}
       {comment && (
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardContent className="pt-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wide mb-2">
+            <div className="text-section-label text-muted-foreground uppercase mb-2">
               Comment
             </div>
-            <p className="text-slate-700">{comment}</p>
+            <p className="text-foreground">{comment}</p>
           </CardContent>
         </Card>
       )}
@@ -67,9 +67,9 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
 
       {/* Documents */}
       {hasDocuments && (
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardContent className="pt-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+            <div className="text-section-label text-muted-foreground uppercase mb-2 flex items-center gap-1">
               <FileText className="h-3 w-3" />
               Document Links
             </div>
@@ -77,16 +77,16 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
               {baseline.document_links!.map((doc: DocumentLink) => (
                 <div 
                   key={doc.id}
-                  className="flex items-center justify-between p-2 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors"
+                  className="flex items-center justify-between p-2 rounded-md bg-muted hover:bg-muted transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-slate-400" />
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="text-sm font-medium text-slate-700">
+                      <div className="text-body font-medium text-foreground">
                         {getLocalizedString(doc.title) || 'Untitled Document'}
                       </div>
                       {doc.format && (
-                        <div className="text-xs text-slate-500">
+                        <div className="text-helper text-muted-foreground">
                           {doc.format}
                         </div>
                       )}
@@ -109,7 +109,7 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
 
       {/* Empty state for additional info */}
       {!comment && !hasDocuments && (
-        <div className="text-sm text-slate-400 text-center py-4">
+        <div className="text-body text-muted-foreground text-center py-4">
           No additional baseline information available
         </div>
       )}

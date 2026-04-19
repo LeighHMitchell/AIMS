@@ -54,7 +54,6 @@ export function GmailLogin({ redirectTo = '/', className = '' }: GmailLoginProps
       setIsLoading(true);
       
       const redirectOrigin = getRedirectOrigin();
-      console.log('[Google Login] Redirect URL:', `${redirectOrigin}${redirectTo}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -89,14 +88,14 @@ export function GmailLogin({ redirectTo = '/', className = '' }: GmailLoginProps
       variant="outline"
       onClick={handleGmailLogin}
       disabled={isLoading}
-      className={`w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 border-gray-300 ${className}`}
+      className={`w-full flex items-center justify-center gap-3 bg-white hover:bg-muted border-input ${className}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <GoogleIcon className="h-4 w-4" />
       )}
-      <span className="text-gray-700 font-medium">
+      <span className="text-foreground font-medium">
         {isLoading ? 'Signing in...' : 'Continue with Google'}
       </span>
     </Button>
@@ -115,7 +114,7 @@ export function GoogleLoginCard({ redirectTo = '/' }: { redirectTo?: string }) {
       <CardContent className="space-y-4">
         <GmailLogin redirectTo={redirectTo} />
         
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-body text-muted-foreground">
           <p>By signing in, you agree to our terms of service</p>
         </div>
       </CardContent>

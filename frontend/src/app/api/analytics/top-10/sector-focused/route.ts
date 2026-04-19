@@ -89,9 +89,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
     }
 
-    console.log('[Top10SectorFocused] Activity IDs:', activityIds.length);
-    console.log('[Top10SectorFocused] Transactions found:', transactions?.length || 0);
-    console.log('[Top10SectorFocused] Date range:', { dateFrom, dateTo });
 
     // Get sector name
     let sectorName = 'All Sectors';
@@ -120,13 +117,10 @@ export async function GET(request: NextRequest) {
       donorTotals.set(t.provider_org_id, current + value);
     });
 
-    console.log('[Top10SectorFocused] Transactions with provider_org_id:', transactionsWithProvider);
-    console.log('[Top10SectorFocused] Unique organizations from transactions:', donorTotals.size);
 
     // If no provider_org_id data, fall back to using activity_participating_organizations
     // with role code '1' (Funding) to aggregate by funding organization
     if (donorTotals.size === 0 && activityIds.length > 0) {
-      console.log('[Top10SectorFocused] Falling back to activity_participating_organizations');
 
       // Get participating organizations with Funding role (1) for these activities
       const { data: participatingOrgs, error: partOrgError } = await supabase
@@ -163,7 +157,6 @@ export async function GET(request: NextRequest) {
         donorTotals.set(po.organization_id, current + activityValue);
       });
 
-      console.log('[Top10SectorFocused] Organizations from participating orgs:', donorTotals.size);
     }
 
     // Get organization names

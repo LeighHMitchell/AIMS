@@ -113,7 +113,7 @@ export function LocationMiniBar({
   // Handle empty state
   if (!locations || locations.length === 0) {
     return (
-      <div className={`flex items-center justify-center text-xs text-gray-400 ${className}`}>
+      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
         —
       </div>
     )
@@ -184,7 +184,7 @@ export function LocationMiniBar({
 
   const barContent = (
     <div 
-      className={`flex w-full rounded overflow-hidden bg-gray-100 ${className}`}
+      className={`flex w-full rounded overflow-hidden bg-muted ${className}`}
       style={{ height: `${height}px` }}
     >
       {sortedLocations.map((location, index) => {
@@ -206,9 +206,9 @@ export function LocationMiniBar({
                 />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <div className="text-xs flex flex-wrap items-baseline gap-1.5">
+                <div className="text-helper flex flex-wrap items-baseline gap-1.5">
                   <span className="font-medium">{location.displayName}</span>
-                  <span className="text-gray-500">
+                  <span className="text-muted-foreground">
                     {displayMode === 'usd' 
                       ? `${formatUSD(location.usdValue)} (${Math.round(location.percentage)}%)`
                       : `${Math.round(location.percentage)}%`

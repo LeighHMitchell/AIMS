@@ -65,7 +65,6 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);
-        console.log(`Banner compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
 
         // Create preview from compressed file
         const reader = new FileReader();
@@ -218,7 +217,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
           {isRepositioning && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
               <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                <p className="text-body font-medium text-foreground flex items-center gap-2">
                   <Move className="h-4 w-4" />
                   Drag up or down to reposition
                 </p>
@@ -264,8 +263,8 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
 
         {/* Reposition controls */}
         {isRepositioning && (
-          <div className="flex items-center justify-between bg-slate-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+            <div className="flex items-center gap-2 text-body text-muted-foreground">
               <span>Position: {Math.round(position)}%</span>
               <input
                 type="range"
@@ -297,18 +296,18 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         {...getRootProps()}
         className={`
           h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
+          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400"}
           ${uploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full flex flex-col items-center justify-center text-gray-500">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
           <ImageIcon className="h-12 w-12 mb-3" />
-          <p className="text-sm font-medium">
+          <p className="text-body font-medium">
             {isDragActive ? "Drop the image here" : "Drag & drop a banner image here"}
           </p>
-          <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 10MB (auto-compressed)</p>
+          <p className="text-helper mt-1">or click to select</p>
+          <p className="text-helper mt-2 text-muted-foreground">PNG, JPG, GIF up to 10MB (auto-compressed)</p>
         </div>
       </div>
     </div>

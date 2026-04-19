@@ -22,7 +22,6 @@ export async function GET(
   
   try {
     const { id } = await params;
-    console.log('[AIMS] GET /api/organizations/[id] - Starting request for ID:', id);
     
     if (!supabase) {
       console.error('[AIMS] Supabase client is not initialized');
@@ -104,11 +103,6 @@ export async function GET(
       logo_scale: organization.logo_scale ?? 100
     };
     
-    console.log('[AIMS] Found organization:', organization.name);
-    console.log('[AIMS] DB country:', organization.country);
-    console.log('[AIMS] Returning country_represented:', enhancedOrganization.country_represented);
-    console.log('[AIMS] DB default_currency:', organization.default_currency);
-    console.log('[AIMS] Returning default_currency:', enhancedOrganization.default_currency);
     
     const response = NextResponse.json(enhancedOrganization);
     
@@ -136,7 +130,6 @@ export async function PUT(
   
   try {
     const { id } = await params;
-    console.log('[AIMS] PUT /api/organizations/[id] - Updating organization:', id);
     const body = await request.json();
     
     if (!supabase) {
@@ -233,10 +226,8 @@ export async function PUT(
     // Map frontend field names to database column names
     // Save to BOTH country and country_represented columns for compatibility
     if ('country_represented' in updates) {
-      console.log('[AIMS] Received country_represented:', updates.country_represented);
       updates.country = updates.country_represented;
       // Keep country_represented so it also gets saved to the database
-      console.log('[AIMS] Saving to both country and country_represented columns:', updates.country);
     }
     
     if ('organisation_type' in updates) {
@@ -257,8 +248,6 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Updated organization:', data.name);
-    console.log('[AIMS] Stored country in DB:', data.country);
 
     // Enhance response with frontend field mappings
     const enhancedData = {
@@ -293,7 +282,6 @@ export async function DELETE(
   
   try {
     const { id } = await params;
-    console.log('[AIMS] DELETE /api/organizations/[id] - Deleting organization:', id);
     
     if (!supabase) {
       return NextResponse.json(
@@ -340,7 +328,6 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[AIMS] Deleted organization:', id);
     
     const response = NextResponse.json({ success: true });
     

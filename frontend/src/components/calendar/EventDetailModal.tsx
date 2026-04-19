@@ -448,7 +448,7 @@ export function EventDetailModal({
                 ) : (
                   <h2 className="text-xl font-semibold mb-1">{event.title}</h2>
                 )}
-                <div className="text-sm text-[#4c5568] flex items-center gap-1">
+                <div className="text-body text-[#4c5568] flex items-center gap-1">
                   <Clock className="h-4 w-4" />
                   {getRelativeTime(event.start)}, {formatTime(event.start)}
                 </div>
@@ -459,7 +459,7 @@ export function EventDetailModal({
                 <>
                   {!isEditing ? (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                      <Pencil className="h-4 w-4 text-slate-500" />
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   ) : (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
@@ -468,7 +468,7 @@ export function EventDetailModal({
                   )}
                   {(isOrganizer || user?.role === 'admin') && (
                     <Button variant="ghost" size="sm" onClick={handleDelete} className="text-[#dc2625]">
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
                 </>
@@ -484,7 +484,7 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Calendar className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Date</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Date</Label>
               </div>
               <div className="flex-1">
                 {isEditing ? (
@@ -498,14 +498,14 @@ export function EventDetailModal({
                     />
                     <Badge 
                       variant="secondary" 
-                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal cursor-pointer"
+                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal cursor-pointer"
                       onClick={() => document.getElementById('date-input')?.click()}
                     >
                       {formData.start ? formatDate(formData.start) : 'Select date'}
                     </Badge>
                   </>
                 ) : (
-                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                     {formatDate(event.start)}
                   </Badge>
                 )}
@@ -516,14 +516,14 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Clock className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Time</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Time</Label>
               </div>
               <div className="flex-1 flex items-center gap-2">
                 {isEditing ? (
                   <>
                     <Badge 
                       variant="secondary" 
-                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal cursor-pointer"
+                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal cursor-pointer"
                       onClick={() => document.getElementById('start-time-input')?.click()}
                     >
                       {formData.start ? formatTime(formData.start) : 'Start'}
@@ -535,10 +535,10 @@ export function EventDetailModal({
                       className="hidden"
                       id="start-time-input"
                     />
-                    <span className="text-[#4c5568] text-sm">to</span>
+                    <span className="text-[#4c5568] text-body">to</span>
                     <Badge 
                       variant="secondary" 
-                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal cursor-pointer"
+                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal cursor-pointer"
                       onClick={() => document.getElementById('end-time-input')?.click()}
                     >
                       {formData.end ? formatTime(formData.end) : 'End'}
@@ -551,21 +551,21 @@ export function EventDetailModal({
                       id="end-time-input"
                     />
                     {formData.start && formData.end && (
-                      <span className="text-[#4c5568] text-sm">({calculateDuration()})</span>
+                      <span className="text-[#4c5568] text-body">({calculateDuration()})</span>
                     )}
                   </>
                 ) : (
                   <>
-                    <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                    <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                       {formatTime(event.start)}
                     </Badge>
                     {event.end && (
                       <>
-                        <span className="text-[#4c5568] text-sm">to</span>
-                        <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                        <span className="text-[#4c5568] text-body">to</span>
+                        <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                           {formatTime(event.end)}
                         </Badge>
-                        <span className="text-[#4c5568] text-sm">({calculateDuration()})</span>
+                        <span className="text-[#4c5568] text-body">({calculateDuration()})</span>
                       </>
                     )}
                   </>
@@ -577,7 +577,7 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Tag className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Event Type</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Event Type</Label>
               </div>
               <div className="flex-1">
                 {isEditing ? (
@@ -597,7 +597,7 @@ export function EventDetailModal({
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal capitalize">
+                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal capitalize">
                     {event.type || 'Other'}
                   </Badge>
                 )}
@@ -608,7 +608,7 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Palette className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Color</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Color</Label>
               </div>
               <div className="flex-1">
                 {isEditing ? (
@@ -650,7 +650,7 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <MapPin className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Location</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Location</Label>
               </div>
               <div className="flex-1">
                 {isEditing ? (
@@ -661,7 +661,7 @@ export function EventDetailModal({
                     className="bg-[#f1f4f8] border-0"
                   />
                 ) : (
-                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                     {event.location || 'Not specified'}
                   </Badge>
                 )}
@@ -672,10 +672,10 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <User className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Organizer</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Organizer</Label>
               </div>
               <div className="flex-1">
-                <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                   {event.organizerName || 'Unknown'}
                 </Badge>
               </div>
@@ -686,10 +686,10 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Building2 className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">Organization</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Organization</Label>
                 </div>
                 <div className="flex-1">
-                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                     {event.organizerOrganizationName}
                   </Badge>
                 </div>
@@ -701,7 +701,7 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <LinkIcon className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">Link</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Link</Label>
                 </div>
                 <div className="flex-1">
                   {isEditing ? (
@@ -721,7 +721,7 @@ export function EventDetailModal({
                     </Select>
                   ) : (
                     event.meetingLink && (
-                      <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                      <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                         Google Meet
                       </Badge>
                     )
@@ -735,7 +735,7 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Bell className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">Notification</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Notification</Label>
                 </div>
                 <div className="flex-1">
                   {isEditing ? (
@@ -756,7 +756,7 @@ export function EventDetailModal({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                    <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
                       {event.notificationMinutes === 0 ? 'At time of event' : `${event.notificationMinutes} minutes before`}
                     </Badge>
                   )}
@@ -769,7 +769,7 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Video className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">Recording</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Recording</Label>
                 </div>
                 <div className="flex-1">
                   {isEditing ? (
@@ -789,7 +789,7 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">AI notetaking</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">AI notetaking</Label>
                 </div>
                 <div className="flex-1">
                   {isEditing ? (
@@ -809,7 +809,7 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Puzzle className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">Integrations</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Integrations</Label>
                 </div>
                 <div className="flex-1 flex items-center gap-2 flex-wrap">
                   {isEditing ? (
@@ -818,7 +818,7 @@ export function EventDetailModal({
                         <Badge 
                           key={integration} 
                           variant="secondary" 
-                          className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal"
+                          className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal"
                         >
                           {integration}
                           <Button
@@ -847,7 +847,7 @@ export function EventDetailModal({
                       <Badge 
                         key={integration} 
                         variant="secondary" 
-                        className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal"
+                        className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal"
                       >
                         {integration}
                       </Badge>
@@ -861,7 +861,7 @@ export function EventDetailModal({
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">
+                <Label className="text-body font-medium text-[#4c5568]">
                   Participants {event.attendees && event.attendees.length > 0 && `(${event.attendees.length})`}
                 </Label>
               </div>
@@ -871,11 +871,11 @@ export function EventDetailModal({
                     <Badge 
                       key={participant.id} 
                       variant="secondary" 
-                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal flex items-center gap-2"
+                      className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal flex items-center gap-2"
                     >
                       <Avatar className="h-5 w-5">
                         <AvatarImage src={participant.avatar} />
-                        <AvatarFallback className="text-xs bg-[#7b95a7] text-white">
+                        <AvatarFallback className="text-helper bg-[#7b95a7] text-white">
                           {getInitials(participant.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -895,7 +895,7 @@ export function EventDetailModal({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#4c5568] italic">No participants added yet</p>
+                <p className="text-body text-[#4c5568] italic">No participants added yet</p>
               )}
             </div>
 
@@ -903,7 +903,7 @@ export function EventDetailModal({
             {(event.description || isEditing) && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium text-[#4c5568]">Description</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Description</Label>
                   <Button
                     type="button"
                     variant="ghost"
@@ -928,7 +928,7 @@ export function EventDetailModal({
                       className="resize-none"
                     />
                   ) : (
-                    <p className="text-sm text-[#4c5568] whitespace-pre-wrap">{event.description}</p>
+                    <p className="text-body text-[#4c5568] whitespace-pre-wrap">{event.description}</p>
                   )
                 )}
               </div>
@@ -939,14 +939,14 @@ export function EventDetailModal({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">
+                  <Label className="text-body font-medium text-[#4c5568]">
                     Documents {documents.length > 0 && `(${documents.length})`}
                   </Label>
                 </div>
                 {canEdit && (
                   <div className="flex items-center gap-2">
                     <Select value={documentType} onValueChange={(value: any) => setDocumentType(value)}>
-                      <SelectTrigger className="w-[120px] h-8 text-xs">
+                      <SelectTrigger className="w-[120px] h-8 text-helper">
                         <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -995,7 +995,7 @@ export function EventDetailModal({
                   <Loader2 className="h-5 w-5 animate-spin text-[#4c5568]" />
                 </div>
               ) : documents.length === 0 ? (
-                <p className="text-sm text-[#4c5568] italic py-2">No documents attached</p>
+                <p className="text-body text-[#4c5568] italic py-2">No documents attached</p>
               ) : (
                 <div className="space-y-2">
                   {documents.map((doc) => (
@@ -1006,9 +1006,9 @@ export function EventDetailModal({
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <File className="h-4 w-4 text-[#4c5568] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
-                          <div className="flex items-center gap-2 text-xs text-[#4c5568]">
-                            <Badge variant="outline" className="text-xs py-0 px-1">
+                          <p className="text-body font-medium truncate">{doc.fileName}</p>
+                          <div className="flex items-center gap-2 text-helper text-[#4c5568]">
+                            <Badge variant="outline" className="text-helper py-0 px-1">
                               {getDocumentTypeLabel(doc.documentType)}
                             </Badge>
                             <span>{formatFileSize(doc.fileSize)}</span>
@@ -1036,7 +1036,7 @@ export function EventDetailModal({
                             onClick={() => handleDeleteDocument(doc)}
                             title="Delete"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </div>
@@ -1049,7 +1049,7 @@ export function EventDetailModal({
             {/* RSVP Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-[#cfd0d5]">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[#4c5568]">Going?</span>
+                <span className="text-body font-medium text-[#4c5568]">Going?</span>
                 <div className="flex gap-2">
                   <Button
                     type="button"

@@ -64,16 +64,16 @@ function OtherOrgLocationMarker({ location }: { location: OtherOrgLocation }) {
       {/* Tooltip on hover */}
       <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[300px] overflow-hidden">
         <div className="p-2.5">
-          <div className="font-semibold text-xs text-blue-700 mb-1">{orgDisplay}</div>
+          <div className="font-semibold text-helper text-blue-700 mb-1">{orgDisplay}</div>
           {location.activity?.title && (
-            <div className="font-medium text-xs text-slate-700 mb-1 line-clamp-2">{location.activity.title}</div>
+            <div className="font-medium text-helper text-foreground mb-1 line-clamp-2">{location.activity.title}</div>
           )}
           <div className="text-[10px] space-y-1">
             {location.site_type && (
-              <div><span className="text-slate-500">Site Type:</span> {formatSiteType(location.site_type)}</div>
+              <div><span className="text-muted-foreground">Site Type:</span> {formatSiteType(location.site_type)}</div>
             )}
-            <div><span className="text-slate-500">Location:</span> {location.location_name || 'Unnamed'}</div>
-            <div><span className="text-slate-500">Coords:</span> {lat.toFixed(6)}, {lng.toFixed(6)}</div>
+            <div><span className="text-muted-foreground">Location:</span> {location.location_name || 'Unnamed'}</div>
+            <div><span className="text-muted-foreground">Coords:</span> {lat.toFixed(6)}, {lng.toFixed(6)}</div>
           </div>
         </div>
       </MarkerTooltip>

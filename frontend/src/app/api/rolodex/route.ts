@@ -100,7 +100,6 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('[AIMS Rolodex] Fetching people with filters:', filters);
 
     const offset = ((filters.page || 1) - 1) * (filters.limit || 24);
 
@@ -409,7 +408,6 @@ export async function GET(request: NextRequest) {
       filters: filters,
     };
 
-    console.log(`[AIMS Rolodex] Successfully fetched ${paginatedPeople.length} people (${users?.length || 0} users, ${contacts?.length || 0} contacts)`);
     return NextResponse.json(response);
 
   } catch (error) {
@@ -446,7 +444,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS Rolodex] Updating contact:', { id, source, updateData });
 
     let result;
     let error;
@@ -511,7 +508,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS Rolodex] Contact updated successfully:', result);
     return NextResponse.json(result);
 
   } catch (error) {
@@ -546,7 +542,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS Rolodex] Deleting contact:', { id, source });
 
     // Only allow deletion of activity contacts, not users
     if (source !== 'activity_contact') {
@@ -579,7 +574,6 @@ export async function DELETE(request: NextRequest) {
       .is('contact_id', null)
       .or('first_name.is.null,first_name.eq.');
 
-    console.log('[AIMS Rolodex] Contact deleted successfully:', id);
     return NextResponse.json({ success: true, message: 'Contact deleted successfully' });
 
   } catch (error) {

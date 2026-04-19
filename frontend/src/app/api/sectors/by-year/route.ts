@@ -5,7 +5,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET(request: NextRequest) {
-  console.log('[API] GET /api/sectors/by-year - Starting request')
   
   const searchParams = request.nextUrl.searchParams
   const status = searchParams.get('status')
@@ -55,7 +54,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log('[API] Successfully generated sector time series data')
     return NextResponse.json(timeSeriesData)
     
   } catch (error) {

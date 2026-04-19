@@ -238,36 +238,36 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       const nonCapitalColor = chartType === "bar" ? CAPITAL_COLORS.nonCapital : CAPITAL_COLORS.accent1;
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{label}</p>
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-body">{label}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1 pr-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: CAPITAL_COLORS.capital }} />
-                      <span className="text-slate-700 font-medium">Capital</span>
+                      <span className="text-foreground font-medium">Capital</span>
                     </div>
                   </td>
-                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(capitalValue)}</td>
-                  <td className="py-1 text-right text-xs text-slate-500 pl-2">{capitalPct}%</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(capitalValue)}</td>
+                  <td className="py-1 text-right text-helper text-muted-foreground pl-2">{capitalPct}%</td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1 pr-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: nonCapitalColor }} />
-                      <span className="text-slate-700 font-medium">Non-Capital</span>
+                      <span className="text-foreground font-medium">Non-Capital</span>
                     </div>
                   </td>
-                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(nonCapitalValue)}</td>
-                  <td className="py-1 text-right text-xs text-slate-500 pl-2">{nonCapitalPct}%</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(nonCapitalValue)}</td>
+                  <td className="py-1 text-right text-helper text-muted-foreground pl-2">{nonCapitalPct}%</td>
                 </tr>
                 <tr>
-                  <td className="py-1 pr-3 text-slate-700 font-medium">Total</td>
-                  <td className="py-1 text-right font-bold text-slate-900">{formatCurrency(total)}</td>
+                  <td className="py-1 pr-3 text-foreground font-medium">Total</td>
+                  <td className="py-1 text-right font-bold text-foreground">{formatCurrency(total)}</td>
                   <td></td>
                 </tr>
               </tbody>
@@ -304,7 +304,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <Legend
           wrapperStyle={{ fontSize: 11 }}
           formatter={(value) => (
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               {value === "capitalSpend" ? "Capital" : "Non-Capital"}
             </span>
           )}
@@ -360,7 +360,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <Legend
           wrapperStyle={{ fontSize: 11 }}
           formatter={(value) => (
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               {value === "capitalSpend" ? "Capital" : "Non-Capital"}
             </span>
           )}
@@ -428,7 +428,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <Legend
           wrapperStyle={{ fontSize: 11 }}
           formatter={(value) => (
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               {value === "capitalSpend" ? "Capital" : "Non-Capital"}
             </span>
           )}
@@ -505,14 +505,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: CAPITAL_COLORS.capital }}
           />
-          <span className="text-xs text-gray-600">Capital ({formatCurrencyUSD(totals.capitalSpend)})</span>
+          <span className="text-helper text-muted-foreground">Capital ({formatCurrencyUSD(totals.capitalSpend)})</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: nonCapitalColor }}
           />
-          <span className="text-xs text-gray-600">Non-Capital ({formatCurrencyUSD(totals.nonCapitalSpend)})</span>
+          <span className="text-helper text-muted-foreground">Non-Capital ({formatCurrencyUSD(totals.nonCapitalSpend)})</span>
         </div>
       </div>
     );
@@ -551,7 +551,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       {/* Left side controls */}
       <div className="flex items-center gap-2">
         <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectTrigger className="w-[160px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -582,7 +582,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", stackMode === "stacked" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", stackMode === "stacked" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => handleStackModeChange("stacked")}
               title="Stacked"
             >
@@ -591,7 +591,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", stackMode === "grouped" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", stackMode === "grouped" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => handleStackModeChange("grouped")}
               title="Grouped"
             >
@@ -605,7 +605,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setChartType("bar")}
             title="Bar Chart"
           >
@@ -614,7 +614,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setChartType("line")}
             title="Line Chart"
           >
@@ -623,7 +623,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setChartType("area")}
             title="Area Chart"
           >
@@ -632,7 +632,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", chartType === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setChartType("table")}
             title="Table"
           >
@@ -659,7 +659,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
       <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-xs">
+        <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -678,14 +678,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Capital vs Non-Capital Spend
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Yearly breakdown of spending types
               </CardDescription>
             </div>
@@ -693,17 +693,17 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.
           </p>
         </CardContent>
@@ -715,7 +715,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   Capital vs Non-Capital Spend Over Time
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">

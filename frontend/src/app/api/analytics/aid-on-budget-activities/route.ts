@@ -63,7 +63,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("[Aid on Budget Activities] Fetched activities:", activities?.length);
 
     // 2. Fetch organizations for partner names and acronyms
     const orgIds = Array.from(new Set((activities || []).map((a: any) => a.reporting_org_id).filter(Boolean)));
@@ -109,7 +108,6 @@ export async function GET(request: NextRequest) {
       console.error("[Aid on Budget Activities] Error fetching transactions:", transactionsError);
     }
 
-    console.log("[Aid on Budget Activities] Fetched transactions:", transactions?.length);
 
     // 4. Fetch country budget items for classification mapping
     const { data: countryBudgetItemsRaw, error: cbiError } = await supabase
@@ -241,14 +239,11 @@ export async function GET(request: NextRequest) {
       };
     }).filter(a => a.totalDisbursements > 0); // Only include activities with disbursements
 
-    console.log("[Aid on Budget Activities] Activities with disbursements:", activityDetails.length);
-    console.log("[Aid on Budget Activities] Disbursements map size:", activityDisbursements.size);
 
     // Debug: show a few activities with their disbursements
     let debugCount = 0;
     activityDisbursements.forEach((value, key) => {
       if (debugCount < 5 && value > 0) {
-        console.log(`[Aid on Budget Activities] Activity ${key}: $${value}`);
         debugCount++;
       }
     });

@@ -9,7 +9,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function createBasicCommentsTable() {
-  console.log('🔧 Creating basic comments table...')
   
   try {
     // Create a basic activity_comments table that matches current API expectations
@@ -25,7 +24,6 @@ async function createBasicCommentsTable() {
     `
     
     // Try to execute the SQL using a simple query
-    console.log('Attempting to create table...')
     
     // First check if table exists
     const { data: existingTable, error: checkError } = await supabase
@@ -34,15 +32,9 @@ async function createBasicCommentsTable() {
       .limit(1)
       
     if (!checkError) {
-      console.log('✅ Comments table already exists')
       return
     }
     
-    console.log('Table does not exist, need to create it manually in Supabase dashboard')
-    console.log('\nPlease run this SQL in your Supabase SQL editor:')
-    console.log('=====================================')
-    console.log(createTableSQL)
-    console.log('=====================================')
     
     // Also create indexes
     const indexSQL = `
@@ -51,10 +43,6 @@ async function createBasicCommentsTable() {
       CREATE INDEX IF NOT EXISTS idx_activity_comments_created_at ON activity_comments(created_at DESC);
     `
     
-    console.log('\nAlso run these indexes:')
-    console.log('=====================================')
-    console.log(indexSQL)
-    console.log('=====================================')
     
     // Create RLS policies
     const rlsSQL = `
@@ -73,10 +61,6 @@ async function createBasicCommentsTable() {
           FOR DELETE USING (user_id = auth.uid());
     `
     
-    console.log('\nAnd these RLS policies:')
-    console.log('=====================================')
-    console.log(rlsSQL)
-    console.log('=====================================')
     
   } catch (error) {
     console.error('❌ Error:', error)

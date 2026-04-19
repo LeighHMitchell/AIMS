@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
           console.error('[Data Clinic Duplicates] Error creating activity link:', linkError);
           // Don't fail the whole operation, just log it
         } else {
-          console.log(`[Data Clinic Duplicates] Created activity relationship: ${entity_id_1} <-> ${entity_id_2}`);
         }
       }
     }
@@ -131,7 +130,6 @@ export async function POST(request: NextRequest) {
       .eq('entity_id_1', orderedId1)
       .eq('entity_id_2', orderedId2);
 
-    console.log(`[Data Clinic Duplicates] Dismissed ${entity_type} pair: ${orderedId1} - ${orderedId2} (${action_taken})`);
 
     return NextResponse.json({
       success: true,

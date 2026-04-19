@@ -79,7 +79,7 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
       <Button
         variant="ghost"
         size="sm"
-        className="absolute top-2 right-2 z-10 bg-black/30 hover:bg-black/50 text-white h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 z-10 bg-black/30 hover:bg-black/50 text-white h-7 px-2 text-helper opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={() => setIsEditing(true)}
       >
         <Camera className="h-3 w-3 mr-1" />

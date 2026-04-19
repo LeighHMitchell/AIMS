@@ -170,7 +170,7 @@ export default function SubGroupsSection({
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-gray-900">Sub-Working Groups</h2>
+          <h2 className="text-xl font-semibold text-foreground">Sub-Working Groups</h2>
           <HelpTextTooltip text="Create specialized sub-groups under this working group. Each sub-group has its own members, meetings, and documents." />
         </div>
         <Button className="gap-2" onClick={() => setShowCreateDialog(true)}>
@@ -183,14 +183,14 @@ export default function SubGroupsSection({
       {loading ? (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       ) : subGroups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-gray-200 rounded-lg">
+        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-lg">
           <GitBranch className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium text-foreground">No sub-working groups yet</p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+          <p className="text-body font-medium text-foreground">No sub-working groups yet</p>
+          <p className="text-helper text-muted-foreground mt-1 max-w-sm">
             Sub-working groups let you organize specialized topics within this working group.
             Each has its own members, meetings, and documents.
           </p>
@@ -216,14 +216,14 @@ export default function SubGroupsSection({
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-foreground">{sg.label}</h3>
                     <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{sg.code}</code>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       {sg.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   {sg.description && (
-                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{sg.description}</p>
+                    <p className="text-body text-muted-foreground mt-0.5 line-clamp-1">{sg.description}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 mt-1 text-helper text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
                       {sg.member_count || 0} members
@@ -246,7 +246,7 @@ export default function SubGroupsSection({
                       <Eye className="h-4 w-4 mr-2" /> View Profile
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTarget(sg)}>
+                    <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(sg)}>
                       <Trash2 className="h-4 w-4 mr-2" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

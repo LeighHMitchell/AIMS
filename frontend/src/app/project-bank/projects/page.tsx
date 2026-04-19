@@ -227,7 +227,7 @@ export default function ProjectListPage() {
 
   const SortHeader = ({ field, children, className, tight }: { field: string; children: React.ReactNode; className?: string; tight?: boolean }) => (
     <th
-      className={`h-10 ${tight ? 'px-2' : 'px-3'} text-left align-middle text-xs font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || ''}`}
+      className={`h-10 ${tight ? 'px-2' : 'px-3'} text-left align-middle text-helper font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || ''}`}
       onClick={() => handleSort(field)}
     >
       <span className="flex items-center gap-1">
@@ -285,7 +285,7 @@ export default function ProjectListPage() {
         {/* Filters */}
         <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -297,7 +297,7 @@ export default function ProjectListPage() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Status</Label>
+            <Label className="text-helper text-muted-foreground">Status</Label>
             <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[180px] h-9">
                 <SelectValue placeholder="All" />
@@ -315,7 +315,7 @@ export default function ProjectListPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Sector</Label>
+            <Label className="text-helper text-muted-foreground">Sector</Label>
             <Select value={sectorFilter || 'all'} onValueChange={v => { setSectorFilter(v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-[160px] h-9">
                 <SelectValue placeholder="All" />
@@ -334,7 +334,7 @@ export default function ProjectListPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Origin</Label>
+            <Label className="text-helper text-muted-foreground">Origin</Label>
             <Select value={originFilter || 'all'} onValueChange={v => { setOriginFilter(v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-[140px] h-9">
                 <SelectValue placeholder="All" />
@@ -353,7 +353,7 @@ export default function ProjectListPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Pathway</Label>
+            <Label className="text-helper text-muted-foreground">Pathway</Label>
             <Select value={pathwayFilter || 'all'} onValueChange={v => { setPathwayFilter(v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-[160px] h-9">
                 <SelectValue placeholder="All" />
@@ -421,7 +421,7 @@ export default function ProjectListPage() {
                   <SortHeader field="pathway" tight>Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right" tight>Gap</SortHeader>
                   <SortHeader field="funded_pct" tight className="w-[100px]">Funding</SortHeader>
-                  <th className="h-10 px-1 text-center align-middle text-xs font-medium text-muted-foreground w-[36px]"></th>
+                  <th className="h-10 px-1 text-center align-middle text-helper font-medium text-muted-foreground w-[36px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -462,14 +462,14 @@ export default function ProjectListPage() {
                       <td className="px-3 py-2 min-w-[200px]">
                         <div className="space-y-1">
                           <div className="group/title flex items-start gap-1">
-                            <span className="text-sm font-medium text-foreground leading-tight">{p.name}</span>
+                            <span className="text-body font-medium text-foreground leading-tight">{p.name}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 e.preventDefault()
                                 copyToClipboard(p.name, 'name', p.id)
                               }}
-                              className="flex-shrink-0 mt-0.5 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                              className="flex-shrink-0 mt-0.5 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-foreground"
                               title="Copy Project Title"
                             >
                               {copiedId === `${p.id}-name` ? (
@@ -488,7 +488,7 @@ export default function ProjectListPage() {
                                   e.preventDefault()
                                   copyToClipboard(p.project_code, 'code', p.id)
                                 }}
-                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
                                 title="Copy Project ID"
                               >
                                 {copiedId === `${p.id}-code` ? (
@@ -502,43 +502,43 @@ export default function ProjectListPage() {
                         </div>
                       </td>
                       {/* Ministry */}
-                      <td className="px-3 py-2 text-sm text-foreground min-w-[140px]">
+                      <td className="px-3 py-2 text-body text-foreground min-w-[140px]">
                         <div>{p.nominating_ministry || '—'}</div>
                         {p.implementing_agency && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{p.implementing_agency}</div>
+                          <div className="text-helper text-muted-foreground mt-0.5">{p.implementing_agency}</div>
                         )}
                       </td>
                       {/* Location */}
-                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">{p.region || '—'}</td>
+                      <td className="px-2 py-2 text-body text-foreground whitespace-nowrap">{p.region || '—'}</td>
                       {/* Sector */}
-                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">
+                      <td className="px-2 py-2 text-body text-foreground whitespace-nowrap">
                         <div>{p.sector}</div>
                         {p.sub_sector && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{p.sub_sector}</div>
+                          <div className="text-helper text-muted-foreground mt-0.5">{p.sub_sector}</div>
                         )}
                       </td>
                       {/* Est. Cost */}
-                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap font-medium">
+                      <td className="px-2 py-2 text-body text-right whitespace-nowrap font-medium">
                         {p.estimated_cost != null ? (
-                          <span><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(p.estimated_cost)}</span>
+                          <span><span className="text-muted-foreground font-normal text-helper">USD</span> {formatCostUSD(p.estimated_cost)}</span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* FIRR */}
-                      <td className="px-2 py-2 text-sm text-right text-foreground whitespace-nowrap">
+                      <td className="px-2 py-2 text-body text-right text-foreground whitespace-nowrap">
                         {p.firr != null ? `${p.firr}%` : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* EIRR */}
-                      <td className="px-2 py-2 text-sm text-right text-foreground whitespace-nowrap">
+                      <td className="px-2 py-2 text-body text-right text-foreground whitespace-nowrap">
                         {p.eirr != null ? `${p.eirr}%` : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* VGF */}
-                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap font-medium">
+                      <td className="px-2 py-2 text-body text-right whitespace-nowrap font-medium">
                         {p.vgf_amount != null && p.vgf_amount > 0 ? (
-                          <span><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(p.vgf_amount)}</span>
+                          <span><span className="text-muted-foreground font-normal text-helper">USD</span> {formatCostUSD(p.vgf_amount)}</span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* Score */}
-                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap">
+                      <td className="px-2 py-2 text-body text-right whitespace-nowrap">
                         {(p as any).latest_score != null ? (
                           <span
                             className="font-semibold"
@@ -553,7 +553,7 @@ export default function ProjectListPage() {
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* Date Added */}
-                      <td className="px-2 py-2 text-sm text-muted-foreground whitespace-nowrap">
+                      <td className="px-2 py-2 text-body text-muted-foreground whitespace-nowrap">
                         {p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       {/* Pipeline Stage */}
@@ -577,13 +577,13 @@ export default function ProjectListPage() {
                         })()}
                       </td>
                       {/* Pathway */}
-                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">
+                      <td className="px-2 py-2 text-body text-foreground whitespace-nowrap">
                         {p.pathway ? PATHWAY_LABELS[p.pathway] || p.pathway.toUpperCase() : '—'}
                       </td>
                       {/* Gap */}
-                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap" style={{ color: gap > 0 ? '#dc2625' : undefined }}>
+                      <td className="px-2 py-2 text-body text-right whitespace-nowrap" style={{ color: gap > 0 ? '#dc2625' : undefined }}>
                         {gap > 0 ? (
-                          <span className="font-semibold"><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(gap)}</span>
+                          <span className="font-semibold"><span className="text-muted-foreground font-normal text-helper">USD</span> {formatCostUSD(gap)}</span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* Funding bar */}
@@ -601,7 +601,7 @@ export default function ProjectListPage() {
                             <span className="text-[10px] text-muted-foreground">100%</span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
+                          <span className="text-muted-foreground text-body">—</span>
                         )}
                       </td>
                       {/* Kebab menu */}

@@ -92,7 +92,7 @@ export function ReadinessProgressRail({
                 onClick={() => clickable && onStepClick(idx)}
                 disabled={!clickable}
                 className={cn(
-                  'text-sm pt-1 text-left transition-colors min-w-0 pb-3',
+                  'text-body pt-1 text-left transition-colors min-w-0 pb-3',
                   isCurrent && 'font-semibold text-foreground',
                   completed && !isCurrent && 'text-muted-foreground',
                   !completed && !isCurrent && 'text-muted-foreground/60',
@@ -104,7 +104,7 @@ export function ReadinessProgressRail({
                 {/* Inline progress for stage steps */}
                 {hasProgress && (
                   <div className="mt-1 space-y-1">
-                    <div className="text-xs text-muted-foreground font-normal">
+                    <div className="text-helper text-muted-foreground font-normal">
                       {step.progress!.completed + step.progress!.not_required} / {step.progress!.total} items
                     </div>
                     <Progress
@@ -116,7 +116,7 @@ export function ReadinessProgressRail({
                 {/* Config step status */}
                 {step.type === 'config' && (
                   <div className={cn(
-                    'text-xs font-normal mt-0.5 flex items-center gap-1',
+                    'text-helper font-normal mt-0.5 flex items-center gap-1',
                     completed ? 'text-muted-foreground' : 'text-muted-foreground/60',
                   )}>
                     {completed ? (

@@ -18,7 +18,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS API] GET /api/activities/[id]/countries-regions - Fetching countries/regions for activity:', id);
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(
@@ -42,7 +41,6 @@ export async function GET(
       );
     }
 
-    console.log('[AIMS API] Countries/regions data retrieved successfully');
     
     return NextResponse.json({
       countries: activity.recipient_countries || [],
@@ -78,10 +76,6 @@ export async function PATCH(
       );
     }
     
-    console.log('[AIMS API] PATCH /api/activities/[id]/countries-regions - Updating countries/regions for activity:', id);
-    console.log('[AIMS API] Countries:', countries);
-    console.log('[AIMS API] Regions:', regions);
-    console.log('[AIMS API] Custom Geographies:', customGeographies);
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(
@@ -111,7 +105,6 @@ export async function PATCH(
       );
     }
 
-    console.log('[AIMS API] Countries/regions data updated successfully');
     
     return NextResponse.json({
       success: true,

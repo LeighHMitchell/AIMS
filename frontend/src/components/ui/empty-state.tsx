@@ -45,8 +45,8 @@ export function EmptyState({ title, message, icon, action, showIllustration = tr
       ) : icon ? (
         <div className="mb-3 flex justify-center">{icon}</div>
       ) : null}
-      {title && <p className="text-sm font-medium mb-1 text-balance">{title}</p>}
-      <p className="text-muted-foreground text-sm">{message}</p>
+      {title && <p className="text-body font-medium mb-1 text-balance">{title}</p>}
+      <p className="text-body text-muted-foreground">{message}</p>
       {action && (
         <Button onClick={action.onClick} className="mt-4" size="sm">
           {action.label}

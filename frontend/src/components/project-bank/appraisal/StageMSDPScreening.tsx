@@ -203,7 +203,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">MSDP Alignment Screening</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Determine whether this project aligns with the Myanmar Sustainable Development Plan.
           MSDP alignment determines whether your project qualifies for additional economic analysis and PPP structuring.
         </p>
@@ -221,7 +221,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
             ) : (
               <AlertTriangle className="h-5 w-5 text-amber-600" />
             )}
-            <span className={cn('text-sm font-medium', ndpAligned ? 'text-green-700' : 'text-amber-700')}>
+            <span className={cn('text-body font-medium', ndpAligned ? 'text-green-700' : 'text-amber-700')}>
               {ndpAligned
                 ? 'Project is aligned with MSDP'
                 : 'Project is not currently aligned with MSDP'}
@@ -314,12 +314,12 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           <div>
             <Label>MSDP Strategies <HelpTooltip text="Select one or more MSDP strategies this project supports. Options are filtered by your selected goals above." /></Label>
             {availableStrategies.length === 0 ? (
-              <p className="text-sm text-muted-foreground mt-1">Select a goal first</p>
+              <p className="text-body text-muted-foreground mt-1">Select a goal first</p>
             ) : (
               <div className="space-y-3 mt-1">
                 {availableStrategies.map(group => (
                   <div key={group.goalNum}>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Goal {group.goalNum}: {group.goalName}</p>
+                    <p className="text-helper font-medium text-muted-foreground mb-1.5">Goal {group.goalNum}: {group.goalName}</p>
                     <div className="flex flex-wrap gap-2">
                       {group.strategies.map(s => {
                         const strategyValue = `Strategy ${s.code}: ${s.name}`;
@@ -342,7 +342,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                               }
                             }}
                             className={cn(
-                              'inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium border transition-colors text-left',
+                              'inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-helper font-medium border transition-colors text-left',
                               isSelected
                                 ? 'bg-primary/10 border-primary/30 text-foreground'
                                 : 'bg-background border-border text-muted-foreground hover:bg-muted/50',
@@ -350,7 +350,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                           >
                             <span className="font-mono font-bold shrink-0">{s.code}</span>
                             <span className="line-clamp-1">{s.name}</span>
-                            {isSelected && <span className="text-xs leading-none ml-0.5">×</span>}
+                            {isSelected && <span className="text-helper leading-none ml-0.5">×</span>}
                           </button>
                         );
                       })}
@@ -369,14 +369,14 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                 const remaining = 200 - len;
                 if (remaining <= 0) {
                   return (
-                    <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--success-icon))]">
+                    <span className="inline-flex items-center gap-1 text-helper text-[hsl(var(--success-icon))]">
                       <CheckCircle className="h-3.5 w-3.5" />
                       {len} characters
                     </span>
                   );
                 }
                 return (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-helper text-muted-foreground">
                     {remaining} more character{remaining !== 1 ? 's' : ''} suggested
                   </span>
                 );
@@ -405,7 +405,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           selectedLabel="document(s)"
           renderOption={(option) => (
             <div className="py-0.5">
-              <div className="text-sm flex items-center gap-2">
+              <div className="text-body flex items-center gap-2">
                 {option.subtitle && (
                   <span className="shrink-0 font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.subtitle}</span>
                 )}

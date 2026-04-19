@@ -72,7 +72,7 @@ export function AppFeatureSearchableSelect({
           <button
             type="button"
             className={cn(
-              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
               !selectedOption && "text-muted-foreground"
             )}
             disabled={disabled}
@@ -81,7 +81,7 @@ export function AppFeatureSearchableSelect({
               {selectedOption ? (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{selectedOption.name}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-helper text-muted-foreground">
                     ({selectedOption.group})
                   </span>
                 </div>
@@ -103,7 +103,7 @@ export function AppFeatureSearchableSelect({
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <input
                 placeholder="Search features..."
-                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-0 focus:ring-0"
+                className="flex h-11 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-0 focus:ring-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -121,7 +121,7 @@ export function AppFeatureSearchableSelect({
             <CommandList style={{ maxHeight: '300px', overflowY: 'auto' }}>
               {Object.entries(groupedOptions).map(([groupName, options]) => (
                 <CommandGroup key={groupName}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                  <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                     {groupName}
                   </div>
                   {options.map((option) => (
@@ -144,7 +144,7 @@ export function AppFeatureSearchableSelect({
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">{option.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                        <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                           {option.description}
                         </div>
                       </div>
@@ -153,7 +153,7 @@ export function AppFeatureSearchableSelect({
                 </CommandGroup>
               ))}
               {Object.keys(groupedOptions).length === 0 && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-6 text-center text-body text-muted-foreground">
                   No features found matching "{searchQuery}"
                 </div>
               )}

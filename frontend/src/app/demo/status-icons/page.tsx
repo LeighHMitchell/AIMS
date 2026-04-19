@@ -13,7 +13,7 @@ export default function StatusIconsDemoPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-muted p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Status Icons Demo</h1>
           <p className="text-muted-foreground mb-8">
@@ -42,7 +42,7 @@ export default function StatusIconsDemoPage() {
                         <TableCell>
                           <StatusIcon type="submission" status={status} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-body text-muted-foreground">
                           {status === 'draft' && 'Draft - In progress'}
                           {status === 'submitted' && 'Submitted - Awaiting validation'}
                           {status === 'validated' && 'Validated - Approved for publication'}
@@ -77,7 +77,7 @@ export default function StatusIconsDemoPage() {
                         <TableCell>
                           <StatusIcon type="publication" status={status} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-body text-muted-foreground">
                           {status === 'draft' && 'Unpublished - Not published'}
                           {status === 'published' && 'Published - Publicly visible'}
                         </TableCell>
@@ -117,7 +117,7 @@ export default function StatusIconsDemoPage() {
                         <TableCell>
                           <StatusIcon type="activity" status={status} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-body text-muted-foreground">
                           {status === 'planning' && 'Planning - Activity in planning phase'}
                           {status === 'implementation' && 'Implementation - Activity being implemented'}
                           {status === 'completed' && 'Completed - Activity completed successfully'}
@@ -207,7 +207,7 @@ export default function StatusIconsDemoPage() {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-semibold mb-2">Usage:</h3>
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-body">
 {`import { StatusIcon } from '@/components/ui/status-icon'
 
 // Submission status icon
@@ -229,8 +229,8 @@ export default function StatusIconsDemoPage() {
                 <h3 className="font-semibold mb-2">Available Status Values:</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <h4 className="font-medium text-sm mb-2">Submission Status:</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <h4 className="font-medium text-body mb-2">Submission Status:</h4>
+                    <ul className="text-body text-muted-foreground space-y-1">
                       <li>• draft</li>
                       <li>• submitted</li>
                       <li>• validated</li>
@@ -239,8 +239,8 @@ export default function StatusIconsDemoPage() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm mb-2">Publication Status:</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <h4 className="font-medium text-body mb-2">Publication Status:</h4>
+                    <ul className="text-body text-muted-foreground space-y-1">
                       <li>• draft</li>
                       <li>• published</li>
                     </ul>
@@ -250,7 +250,7 @@ export default function StatusIconsDemoPage() {
 
               <div>
                 <h3 className="font-semibold mb-2">Benefits:</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <ul className="text-body text-muted-foreground space-y-1">
                   <li>• Space-efficient - Icons take less space than text badges</li>
                   <li>• Consistent visual language across the application</li>
                   <li>• Hover tooltips provide clear status descriptions</li>

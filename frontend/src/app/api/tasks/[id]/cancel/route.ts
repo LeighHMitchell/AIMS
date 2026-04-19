@@ -111,10 +111,8 @@ export async function POST(
         .eq('task_id', taskId)
         .in('status', ['pending', 'in_progress']);
 
-      console.log('[Cancel API] Updated', assignments.length, 'active assignments');
     }
 
-    console.log('[Cancel API] Task cancelled:', taskId);
 
     return NextResponse.json({
       success: true,

@@ -195,13 +195,13 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
   }
 
   if (loading) {
-    return <div className="animate-pulse space-y-4"><div className="h-20 bg-gray-100 rounded" /><div className="h-20 bg-gray-100 rounded" /></div>
+    return <div className="animate-pulse space-y-4"><div className="h-20 bg-muted rounded" /><div className="h-20 bg-muted rounded" /></div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Documents & Media</h2>
+        <h2 className="text-xl font-semibold text-foreground">Documents & Media</h2>
         <Button onClick={() => setShowUploadDialog(true)} className="gap-2">
           <Upload className="h-4 w-4" />
           Upload Document
@@ -211,8 +211,8 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
       {documents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
           <FileText className="h-12 w-12 text-gray-300 mb-3" />
-          <p className="text-sm text-muted-foreground">No documents uploaded</p>
-          <p className="text-xs text-muted-foreground mt-1">Upload documents to share with working group members</p>
+          <p className="text-body text-muted-foreground">No documents uploaded</p>
+          <p className="text-helper text-muted-foreground mt-1">Upload documents to share with working group members</p>
           <Button onClick={() => setShowUploadDialog(true)} variant="outline" className="mt-4 gap-2">
             <Upload className="h-4 w-4" />
             Upload First Document
@@ -221,7 +221,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
       ) : (
         <div className="space-y-3">
           {documents.map((doc) => (
-            <div key={doc.id} className="p-4 border rounded-lg hover:bg-gray-50">
+            <div key={doc.id} className="p-4 border rounded-lg hover:bg-muted">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -229,13 +229,13 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                     <div>
                       <h4 className="font-medium">{doc.title}</h4>
                       {doc.description && (
-                        <p className="text-sm text-gray-600 mt-1">{doc.description}</p>
+                        <p className="text-body text-muted-foreground mt-1">{doc.description}</p>
                       )}
                       <div className="flex items-center gap-3 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           {getDocTypeLabel(doc.document_type)}
                         </Badge>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-helper text-muted-foreground">
                           Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
                         </p>
                       </div>
@@ -261,10 +261,10 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-red-500 hover:text-red-600"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => setDocToDelete(doc)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>

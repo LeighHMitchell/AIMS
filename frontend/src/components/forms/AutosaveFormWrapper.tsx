@@ -61,7 +61,6 @@ export function AutosaveFormWrapper({
     showSuccessToast: false, // We'll handle UI feedback ourselves
     showErrorToast: false,   // We'll show custom error alerts
     onSaveSuccess: (data) => {
-      console.log('[AutosaveFormWrapper] Save successful:', data);
     },
     onSaveError: (error) => {
       console.error('[AutosaveFormWrapper] Save error:', error);
@@ -128,7 +127,7 @@ export function AutosaveFormWrapper({
 
     if (state.lastError) {
       return (
-        <Badge variant="outline" className="text-red-600 border-red-300">
+        <Badge variant="outline" className="text-destructive border-destructive/30">
           <AlertCircle className="h-3 w-3 mr-1" />
           Save Failed
         </Badge>
@@ -154,7 +153,7 @@ export function AutosaveFormWrapper({
     }
 
     return (
-      <Badge variant="outline" className="text-gray-600">
+      <Badge variant="outline" className="text-muted-foreground">
         {/* No custom message, just show standard status or nothing */}
       </Badge>
     );
@@ -206,7 +205,7 @@ export function AutosaveFormWrapper({
                     clearError();
                     forceSave();
                   }}
-                  className="ml-4 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                  className="ml-4 px-3 py-1 bg-destructive text-white text-body rounded hover:bg-destructive"
                 >
                   Retry
                 </button>
@@ -229,7 +228,7 @@ export function AutosaveFormWrapper({
               <div>⏰ Last: {state.lastSaved.toLocaleTimeString()}</div>
             )}
             {state.lastError && (
-              <div className="text-red-400">💥 Error: {state.lastError.message.substring(0, 30)}...</div>
+              <div className="text-destructive">💥 Error: {state.lastError.message.substring(0, 30)}...</div>
             )}
           </div>
         )}

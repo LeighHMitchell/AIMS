@@ -68,13 +68,13 @@ export function CodelistTooltip({
               <span className="font-mono text-sm bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {definition.code}
               </span>
-              <span className="font-medium text-sm text-foreground ml-2">
+              <span className="font-medium text-body text-foreground ml-2">
                 {definition.name}
               </span>
             </div>
 
             {/* Definition - flows naturally */}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {definition.definition[0]} {definition.definition[1]}
             </p>
           </div>
@@ -122,11 +122,11 @@ export function CodelistTooltipInline({
               <span className="font-mono text-sm bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {definition.code}
               </span>
-              <span className="font-medium text-sm text-foreground ml-2">
+              <span className="font-medium text-body text-foreground ml-2">
                 {definition.name}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {definition.definition[0]} {definition.definition[1]}
             </p>
           </div>

@@ -125,16 +125,13 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       if (filters?.priority) params.set('priority', filters.priority);
       if (filters?.includeArchived) params.set('includeArchived', 'true');
 
-      console.log('[useTasks] fetchAssignedTasks: Fetching for userId:', userId, 'includeArchived:', filters?.includeArchived);
       const response = await apiFetch(`/api/tasks/assigned?${params}`);
       const data: AssignedTasksResponse = await response.json();
-      console.log('[useTasks] fetchAssignedTasks response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch assigned tasks');
       }
 
-      console.log('[useTasks] fetchAssignedTasks: Found', data.data?.length || 0, 'assigned tasks');
       // Log the statuses of returned assignments to verify updates are reflected
       console.log('[useTasks] fetchAssignedTasks: Assignment statuses:',
         data.data?.map((a: any) => ({ id: a.id, status: a.status, title: a.task?.title }))
@@ -163,16 +160,13 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
     try {
       const params = new URLSearchParams({ userId });
 
-      console.log('[useTasks] fetchReassignedTasks: Fetching for userId:', userId);
       const response = await apiFetch(`/api/tasks/reassigned?${params}`);
       const data = await response.json();
-      console.log('[useTasks] fetchReassignedTasks response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch reassigned tasks');
       }
 
-      console.log('[useTasks] fetchReassignedTasks: Found', data.data?.length || 0, 'reassigned tasks');
       setReassignedTasks(data.data || []);
       if (data.stats) setReassignedStats(data.stats);
     } catch (err) {
@@ -226,7 +220,6 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       });
 
       const result = await response.json();
-      console.log('[useTasks] createTask response:', result);
 
       if (!response.ok) {
         const errMsg = result.error || 'Failed to create task';
@@ -236,7 +229,6 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
 
       // Log how many assignments were created
       if (result.assignments_created !== undefined) {
-        console.log('[useTasks] Assignments created:', result.assignments_created);
         if (result.assignments_created === 0) {
           console.warn('[useTasks] WARNING: No assignments were created for this task!');
         }

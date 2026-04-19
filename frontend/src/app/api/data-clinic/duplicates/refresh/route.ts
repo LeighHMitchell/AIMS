@@ -125,7 +125,6 @@ export async function POST(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const entityType = searchParams.get('entity_type') || 'all';
 
-    console.log(`[Data Clinic Duplicates] Starting refresh for: ${entityType}`);
 
     const duplicates: DetectedDuplicate[] = [];
     const processedPairs = new Set<string>();
@@ -146,7 +145,6 @@ export async function POST(request: NextRequest) {
 
     // Detect activity duplicates
     if (entityType === 'all' || entityType === 'activity') {
-      console.log('[Data Clinic Duplicates] Detecting activity duplicates...');
       
       const { data: activities } = await supabase
         .from('activities')
@@ -317,7 +315,6 @@ export async function POST(request: NextRequest) {
 
     // Detect organization duplicates
     if (entityType === 'all' || entityType === 'organization') {
-      console.log('[Data Clinic Duplicates] Detecting organization duplicates...');
       
       const { data: organizations } = await supabase
         .from('organizations')
@@ -504,7 +501,6 @@ export async function POST(request: NextRequest) {
     const activityDups = duplicates.filter(d => d.entity_type === 'activity');
     const orgDups = duplicates.filter(d => d.entity_type === 'organization');
 
-    console.log(`[Data Clinic Duplicates] Refresh complete. Found ${duplicates.length} duplicates.`);
 
     return NextResponse.json({
       success: true,

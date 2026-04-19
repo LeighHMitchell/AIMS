@@ -66,7 +66,7 @@ export function GeographyLevelToggle({
             "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
             geographyLevel === 'activity'
               ? "ring-border bg-primary/5"
-              : "ring-border bg-background hover:bg-gray-50",
+              : "ring-border bg-background hover:bg-muted",
             (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -82,8 +82,8 @@ export function GeographyLevelToggle({
 
           {/* Text overlay */}
           <div className="relative z-10 p-3">
-            <h4 className="text-sm font-semibold">Activity Level</h4>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h4 className="text-body font-semibold">Activity Level</h4>
+            <p className="mt-1 text-helper text-muted-foreground">
               Single breakdown for all transactions
             </p>
           </div>
@@ -98,7 +98,7 @@ export function GeographyLevelToggle({
             "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
             geographyLevel === 'transaction'
               ? "ring-border bg-primary/5"
-              : "ring-border bg-background hover:bg-gray-50",
+              : "ring-border bg-background hover:bg-muted",
             (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -114,8 +114,8 @@ export function GeographyLevelToggle({
 
           {/* Text overlay */}
           <div className="relative z-10 p-3">
-            <h4 className="text-sm font-semibold">Transaction Level</h4>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h4 className="text-body font-semibold">Transaction Level</h4>
+            <p className="mt-1 text-helper text-muted-foreground">
               Custom breakdown per transaction
             </p>
           </div>

@@ -128,34 +128,34 @@ function CoverageTreeNode({
           {node.code}
         </span>
 
-        <Badge variant="outline" className="text-xs flex-shrink-0">
+        <Badge variant="outline" className="text-helper flex-shrink-0">
           {node.level === 1 ? "Pillar" : node.level === 2 ? "Outcome" : "Intervention"}
         </Badge>
 
         <button
           onClick={() => onNodeClick(node)}
-          className="text-sm flex-1 min-w-0 truncate text-left hover:underline"
+          className="text-body flex-1 min-w-0 truncate text-left hover:underline"
         >
           {node.name}
         </button>
 
         <span className="flex-shrink-0 w-[140px] text-right flex items-center justify-end gap-1">
           {node.principalCount > 0 && (
-            <Badge variant="default" className="text-xs" title="Principal alignments">
+            <Badge variant="default" className="text-helper" title="Principal alignments">
               {node.principalCount} Principal
             </Badge>
           )}
           {node.significantCount > 0 && (
-            <Badge variant="outline" className="text-xs" title="Significant alignments">
+            <Badge variant="outline" className="text-helper" title="Significant alignments">
               {node.significantCount} Significant
             </Badge>
           )}
           {node.activityCount === 0 && (
-            <Badge variant="outline" className="text-xs">0</Badge>
+            <Badge variant="outline" className="text-helper">0</Badge>
           )}
         </span>
 
-        <span className="flex-shrink-0 w-[100px] text-right text-sm font-medium">
+        <span className="flex-shrink-0 w-[100px] text-right text-body font-medium">
           {node.totalFunding > 0 ? formatCurrency(node.totalFunding) : "—"}
         </span>
       </div>
@@ -432,7 +432,7 @@ export function AlignmentCoverageDashboard() {
         <CardContent className="py-16 text-center text-muted-foreground">
           <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium mb-2">No development plans configured</h3>
-          <p className="text-sm">
+          <p className="text-body">
             An administrator needs to create national plans or sectoral strategies before alignment data can be displayed.
           </p>
         </CardContent>
@@ -445,7 +445,7 @@ export function AlignmentCoverageDashboard() {
       {/* Filters Bar */}
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Plan</Label>
+          <Label className="text-helper text-muted-foreground">Plan</Label>
           <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
             <SelectTrigger className="w-[280px]">
               <SelectValue placeholder="Select a plan..." />
@@ -462,7 +462,7 @@ export function AlignmentCoverageDashboard() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Donor</Label>
+          <Label className="text-helper text-muted-foreground">Donor</Label>
           <Select value={selectedDonorId} onValueChange={setSelectedDonorId}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="All donors" />
@@ -479,7 +479,7 @@ export function AlignmentCoverageDashboard() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <Label className="text-helper text-muted-foreground">Sector</Label>
           <Select value={selectedSectorCode} onValueChange={setSelectedSectorCode}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="All sectors" />
@@ -524,7 +524,7 @@ export function AlignmentCoverageDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{coverageData.alignedActivities}</p>
-                    <p className="text-xs text-muted-foreground">Activities aligned</p>
+                    <p className="text-helper text-muted-foreground">Activities aligned</p>
                   </div>
                 </div>
               </CardContent>
@@ -538,7 +538,7 @@ export function AlignmentCoverageDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{coveragePercent}%</p>
-                    <p className="text-xs text-muted-foreground">of all activities aligned</p>
+                    <p className="text-helper text-muted-foreground">of all activities aligned</p>
                   </div>
                 </div>
               </CardContent>
@@ -552,7 +552,7 @@ export function AlignmentCoverageDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{formatCurrency(coverageData.alignedFunding)}</p>
-                    <p className="text-xs text-muted-foreground">Funding aligned</p>
+                    <p className="text-helper text-muted-foreground">Funding aligned</p>
                   </div>
                 </div>
               </CardContent>
@@ -566,7 +566,7 @@ export function AlignmentCoverageDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{gapNodes.length}</p>
-                    <p className="text-xs text-muted-foreground">Priority areas with no activities</p>
+                    <p className="text-helper text-muted-foreground">Priority areas with no activities</p>
                   </div>
                 </div>
               </CardContent>
@@ -597,7 +597,7 @@ export function AlignmentCoverageDashboard() {
                           if (!active || !payload?.length) return null;
                           const d: any = payload[0].payload;
                           return (
-                            <div className="bg-white border rounded shadow-lg p-3 text-sm">
+                            <div className="bg-white border rounded shadow-lg p-3 text-body">
                               <p className="font-semibold mb-1">{d.fullName}</p>
                               <p className="text-foreground">Covered: {d.Covered}</p>
                               <p className="text-muted-foreground">Neglected: {d.Neglected}</p>
@@ -632,14 +632,14 @@ export function AlignmentCoverageDashboard() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={expandAll}
-                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                    className="text-helper text-muted-foreground hover:text-foreground underline"
                   >
                     Expand all
                   </button>
                   <span className="text-muted-foreground">|</span>
                   <button
                     onClick={collapseAll}
-                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                    className="text-helper text-muted-foreground hover:text-foreground underline"
                   >
                     Collapse all
                   </button>
@@ -647,7 +647,7 @@ export function AlignmentCoverageDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b font-medium text-xs text-muted-foreground uppercase tracking-wider">
+              <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b font-medium text-section-label text-muted-foreground uppercase">
                 <span className="w-5" />
                 <span className="w-4" />
                 <span className="flex-shrink-0 w-[60px]">Code</span>
@@ -702,11 +702,11 @@ export function AlignmentCoverageDashboard() {
                         <span className="font-mono text-xs bg-white px-1.5 py-0.5 rounded border">
                           {node.code}
                         </span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           {node.level === 2 ? "Outcome" : "Intervention"}
                         </Badge>
                       </div>
-                      <p className="text-sm font-medium">{node.name}</p>
+                      <p className="text-body font-medium">{node.name}</p>
                     </div>
                   ))}
                 </div>
@@ -714,7 +714,16 @@ export function AlignmentCoverageDashboard() {
             </Card>
           )}
         </>
-      ) : null}
+      ) : (
+        <Card>
+          <CardContent className="py-16 text-center text-muted-foreground">
+            <h3 className="text-lg font-medium text-foreground mb-2">No alignment data yet</h3>
+            <p className="text-body max-w-md mx-auto">
+              Activities haven't been mapped to this plan's priority areas yet. Open an activity and add alignments from the <span className="font-medium text-foreground">Alignment</span> tab to see coverage here.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Drill-down Dialog */}
       <Dialog open={!!drillNode} onOpenChange={(open) => !open && setDrillNode(null)}>
@@ -733,7 +742,7 @@ export function AlignmentCoverageDashboard() {
           <div className="mt-4">
             {drillNode && coverageData?.activitiesByPriority[drillNode.id]?.length ? (
               <div className="border rounded-md overflow-hidden">
-                <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b text-section-label font-medium text-muted-foreground uppercase">
                   <span className="flex-1">Activity</span>
                   <span className="w-[120px] text-right">Disbursed</span>
                   <span className="w-[40px]"></span>
@@ -744,12 +753,12 @@ export function AlignmentCoverageDashboard() {
                     className="flex items-center gap-3 py-2.5 px-3 border-b last:border-b-0 hover:bg-muted/30"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{act.title}</p>
+                      <p className="text-body font-medium truncate">{act.title}</p>
                       {act.iati_id && (
                         <p className="text-xs text-muted-foreground font-mono truncate">{act.iati_id}</p>
                       )}
                     </div>
-                    <span className="w-[120px] text-right text-sm font-medium">
+                    <span className="w-[120px] text-right text-body font-medium">
                       {formatCurrency(act.funding)}
                     </span>
                     <a
@@ -764,7 +773,7 @@ export function AlignmentCoverageDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center text-sm text-muted-foreground">
+              <div className="py-8 text-center text-body text-muted-foreground">
                 No activities aligned to this priority
               </div>
             )}

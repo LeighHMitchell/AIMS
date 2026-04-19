@@ -111,7 +111,7 @@ export function PhoneFields({
             aria-expanded={open}
             aria-label="Select country code"
             className={cn(
-              "w-[120px] justify-between h-9 flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-muted/50",
+              "w-[120px] justify-between h-9 flex items-center px-3 py-2 border border-input rounded-md bg-white hover:bg-muted/50",
               disabled && "cursor-not-allowed opacity-50"
             )}
             disabled={disabled}
@@ -159,7 +159,7 @@ export function PhoneFields({
                 onTouchMove={(e) => e.stopPropagation()}
               >
                 {filteredCountries.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
+                  <div className="p-4 text-center text-body text-muted-foreground">
                     No country found.
                   </div>
                 ) : (
@@ -184,7 +184,7 @@ export function PhoneFields({
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <span className="font-medium text-sm truncate block">{country.name}</span>
+                          <span className="font-medium text-body truncate block">{country.name}</span>
                         </div>
                         <span className="text-sm font-mono text-muted-foreground flex-shrink-0">
                           {country.dialCode}
@@ -205,7 +205,7 @@ export function PhoneFields({
       {/* Phone Number Field */}
       <div className="flex flex-col flex-1">
         {phoneLabel && (
-          <label className="text-sm font-medium text-gray-700 mb-2">
+          <label className="text-body font-medium text-foreground mb-2">
             {phoneLabel}
           </label>
         )}

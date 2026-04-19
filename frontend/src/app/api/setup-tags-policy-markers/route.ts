@@ -10,7 +10,6 @@ export async function POST() {
   try {
 
     
-    console.log('[SETUP] Starting policy markers setup...');
     
     // Insert predefined policy markers
     const policyMarkersData = [
@@ -50,7 +49,6 @@ export async function POST() {
       }
     }
     
-    console.log('[SETUP] Policy markers seeded successfully');
     
     return NextResponse.json({ 
       message: 'Tags and policy markers setup completed successfully',

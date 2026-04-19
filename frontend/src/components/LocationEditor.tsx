@@ -168,7 +168,7 @@ export default function LocationEditor({
               {Object.entries(errors).map(([locationId, error]) => {
                 const location = localLocations.find(l => l.id === locationId);
                 return (
-                  <li key={locationId} className="text-sm">
+                  <li key={locationId} className="text-body">
                     <strong>{location?.name || 'Location'}:</strong> {error}
                   </li>
                 );
@@ -181,15 +181,15 @@ export default function LocationEditor({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Activity Locations</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-medium text-foreground">Activity Locations</h3>
+          <p className="text-body text-muted-foreground">
             Add specific locations where this activity takes place
           </p>
         </div>
         <div className="flex items-center gap-2">
           {localLocations.length > 0 && (
             <>
-              <span className="text-sm text-gray-600">
+              <span className="text-body text-muted-foreground">
                 {localLocations.length} location{localLocations.length !== 1 ? 's' : ''}
               </span>
               <Button
@@ -204,9 +204,9 @@ export default function LocationEditor({
                   }
                 }}
                 disabled={!canEdit}
-                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
+                className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
               >
-                <Trash2 className="h-4 w-4 mr-1 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-1 text-destructive" />
                 Clear All
               </Button>
             </>
@@ -216,9 +216,9 @@ export default function LocationEditor({
 
       {/* Add Location Button (when empty) */}
       {localLocations.length === 0 && (
-        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-          <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600 mb-4">No locations added yet</p>
+        <div className="text-center py-8 border-2 border-dashed border-input rounded-lg">
+          <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground mb-4">No locations added yet</p>
           <Button onClick={addLocation} disabled={!canEdit}>
             <Plus className="h-4 w-4 mr-2" />
             Add Location
@@ -228,7 +228,7 @@ export default function LocationEditor({
 
       {/* Location Cards */}
       {localLocations.map((location, index) => (
-        <Card key={location.id} className="border border-gray-200">
+        <Card key={location.id} className="border border-border">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">
@@ -236,7 +236,7 @@ export default function LocationEditor({
               </CardTitle>
               <div className="flex items-center gap-2">
                 {errors[location.id] && (
-                  <AlertCircle className="h-4 w-4 text-red-500" title={errors[location.id]} />
+                  <AlertCircle className="h-4 w-4 text-destructive" title={errors[location.id]} />
                 )}
                 {!errors[location.id] && validateLocation(location) === null && (
                   <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" title="Valid location" />
@@ -246,9 +246,9 @@ export default function LocationEditor({
                   size="sm"
                   onClick={() => removeLocation(location.id)}
                   disabled={!canEdit}
-                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
             </div>
@@ -424,7 +424,7 @@ export default function LocationEditor({
 
       {/* Summary Card */}
       {localLocations.length > 0 && (
-        <Card className="mt-6 bg-gray-50">
+        <Card className="mt-6 bg-muted">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-blue-600" />
@@ -450,11 +450,11 @@ export default function LocationEditor({
                         {isValid ? (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         ) : (
-                          <AlertCircle className="h-4 w-4 text-red-500" />
+                          <AlertCircle className="h-4 w-4 text-destructive" />
                         )}
                       </div>
                       {(location.city || location.stateProvince || location.postalCode || countryName) && (
-                        <div className="text-sm text-gray-600 mt-1">
+                        <div className="text-body text-muted-foreground mt-1">
                           {[
                             location.city,
                             location.addressLine1,
@@ -465,7 +465,7 @@ export default function LocationEditor({
                         </div>
                       )}
                       {location.percentage !== undefined && location.percentage !== null && (
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-body text-muted-foreground mt-1">
                           {location.percentage}% allocation
                         </div>
                       )}

@@ -37,7 +37,6 @@ function isValidRole(role: unknown): role is typeof VALID_ROLES[number] {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/users - Starting request (Supabase)');
 
   const { supabase, response } = await requireAuth();
   if (response) return response;
@@ -117,7 +116,6 @@ export async function GET(request: NextRequest) {
       ? data.map(transformUser)
       : transformUser(data);
 
-    console.log('[AIMS] Successfully fetched from Supabase');
     return NextResponse.json(transformedData);
 
   } catch (error) {
@@ -130,7 +128,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/users - Starting request (Supabase)');
 
   const { supabase, user: authUser, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -171,7 +168,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    console.log('[AIMS] Creating user with email:', body.email);
 
     // Check if user with this email already exists
     const { data: existingUsers, error: checkError } = await supabaseAdmin
@@ -180,7 +176,6 @@ export async function POST(request: NextRequest) {
       .eq('email', body.email);
 
     if (existingUsers && existingUsers.length > 0) {
-      console.log('[AIMS] User profile already exists with email:', body.email);
       return NextResponse.json(
         { error: 'A user with this email address already exists' },
         { status: 409 }
@@ -211,7 +206,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Created auth user with ID:', authData.user.id);
 
     // SECURITY: Determine role with proper authorization
     let assignedRole = DEFAULT_ROLE;
@@ -234,7 +228,6 @@ export async function POST(request: NextRequest) {
           );
         }
         assignedRole = body.role;
-        console.log(`[AIMS] Role assignment authorized: Super user ${authUser.id} creating user with role ${assignedRole}`);
       }
     }
 
@@ -289,7 +282,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Created user in Supabase:', data.email, 'with role:', data.role);
     return NextResponse.json(data, { status: 201 });
 
   } catch (error) {
@@ -302,7 +294,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  console.log('[AIMS] PUT /api/users - Starting request (Supabase)');
 
   const { supabase, user: authUser, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -369,7 +360,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] PUT /api/users - Updating user:', targetUserId);
 
     // SECURITY: Build update data with explicit field allowlist (no mass assignment)
     const dbUpdateData: Record<string, any> = {
@@ -430,7 +420,6 @@ export async function PUT(request: NextRequest) {
       }
 
       dbUpdateData.role = body.role;
-      console.log(`[AIMS] Role change authorized: User ${authUser.id} setting ${targetUserId} role to ${body.role}`);
     }
 
     // Verify organization exists if organization_id is being set
@@ -487,7 +476,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Updated user in Supabase:', data.email);
 
     // Transform data to match frontend User type expectations
     const transformedData = {
@@ -529,7 +517,6 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  console.log('[AIMS] DELETE /api/users - Starting request (Supabase)');
 
   const { supabase, user: authUser, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -595,7 +582,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] DELETE /api/users - Super user deleting user:', targetUserId);
 
     // Clean up activity_logs to avoid FK constraint violation
     const { error: activityLogsError } = await supabase
@@ -635,7 +621,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Successfully deleted user:', targetUserId);
     return NextResponse.json({ success: true });
 
   } catch (error) {

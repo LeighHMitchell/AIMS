@@ -167,7 +167,7 @@ function SortableDocumentCard({
             <div
               {...attributes}
               {...listeners}
-              className="cursor-grab active:cursor-grabbing mt-1 text-gray-400 hover:text-gray-600"
+              className="cursor-grab active:cursor-grabbing mt-1 text-muted-foreground hover:text-muted-foreground"
             >
               <GripVertical className="h-5 w-5" />
             </div>
@@ -182,18 +182,18 @@ function SortableDocumentCard({
                 href={document.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                className="text-body text-blue-600 hover:underline flex items-center gap-1"
               >
                 <ExternalLink className="h-3 w-3" />
                 View Document
               </a>
               {document.format && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-helper">
                   {document.format}
                 </Badge>
               )}
               {docDate && (
-                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                <Badge variant="outline" className="text-helper flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   {docDate}
                 </Badge>
@@ -207,14 +207,14 @@ function SortableDocumentCard({
                 size="sm"
                 onClick={() => onEdit(document)}
               >
-                <Pencil className="h-4 w-4 text-slate-500" />
+                <Pencil className="h-4 w-4 text-muted-foreground" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete(index)}
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
           )}
@@ -225,7 +225,7 @@ function SortableDocumentCard({
         {/* Descriptions */}
         {document.descriptions.length > 0 && (
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {document.descriptions[0].narrative}
             </p>
           </div>
@@ -236,7 +236,7 @@ function SortableDocumentCard({
           <div className="flex items-center gap-2 flex-wrap">
             <Tag className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             {categoryLabels.map((label, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
+              <Badge key={i} variant="secondary" className="text-helper">
                 {label}
               </Badge>
             ))}
@@ -249,7 +249,7 @@ function SortableDocumentCard({
             <Languages className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <div className="flex gap-1 flex-wrap">
               {document.languages.map((lang, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
+                <Badge key={i} variant="outline" className="text-helper">
                   {COMMON_LANGUAGES.find(l => l.code === lang)?.label || lang.toUpperCase()}
                 </Badge>
               ))}
@@ -263,7 +263,7 @@ function SortableDocumentCard({
             <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <div className="flex gap-1 flex-wrap">
               {recipientCountries.map((country, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
+                <Badge key={i} variant="outline" className="text-helper">
                   {country.narrative || COMMON_COUNTRIES.find(c => c.code === country.code)?.name || country.code}
                 </Badge>
               ))}
@@ -623,8 +623,8 @@ export function IATIDocumentManager({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <span className="ml-2 text-gray-500">Loading documents...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading documents...</span>
       </div>
     );
   }
@@ -632,7 +632,7 @@ export function IATIDocumentManager({
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-500">
+      <div className="flex items-center justify-center py-12 text-destructive">
         <AlertCircle className="h-6 w-6 mr-2" />
         <span>{error}</span>
         <Button variant="link" onClick={fetchDocuments} className="ml-2">
@@ -647,12 +647,12 @@ export function IATIDocumentManager({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">IATI Documents</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Manage organization document links according to IATI standards. Drag to reorder.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             {currentDocuments.length} document{currentDocuments.length !== 1 ? 's' : ''}
           </div>
           {!readOnly && (
@@ -690,7 +690,7 @@ export function IATIDocumentManager({
         ) : (
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <Upload className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 mb-4">No documents added yet</p>
+            <p className="text-muted-foreground mb-4">No documents added yet</p>
             {!readOnly && (
               <Button variant="outline" onClick={handleAddDocument}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -792,7 +792,7 @@ export function IATIDocumentManager({
                           size="sm"
                           onClick={() => removeTitle(index)}
                         >
-                          <Trash2 className="h-3 w-3 text-red-500" />
+                          <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
                       )}
                     </div>
@@ -836,7 +836,7 @@ export function IATIDocumentManager({
                           size="sm"
                           onClick={() => removeDescription(index)}
                         >
-                          <Trash2 className="h-3 w-3 text-red-500" />
+                          <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
                       </div>
                       <Textarea
@@ -869,9 +869,9 @@ export function IATIDocumentManager({
                         }}
                         className="mt-0.5"
                       />
-                      <div className="text-sm">
+                      <div className="text-body">
                         <div className="font-medium">{category.code} - {category.label}</div>
-                        <div className="text-muted-foreground text-xs">{category.description}</div>
+                        <div className="text-muted-foreground text-helper">{category.description}</div>
                       </div>
                     </label>
                   ))}
@@ -896,7 +896,7 @@ export function IATIDocumentManager({
                           updateEditingDocument({ languages });
                         }}
                       />
-                      <span className="text-sm">{language.label}</span>
+                      <span className="text-body">{language.label}</span>
                     </label>
                   ))}
                 </div>
@@ -958,7 +958,7 @@ export function IATIDocumentManager({
                         size="sm"
                         onClick={() => removeRecipientCountry(index)}
                       >
-                        <Trash2 className="h-3 w-3 text-red-500" />
+                        <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
                     </div>
                   ))}

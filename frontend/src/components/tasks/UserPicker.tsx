@@ -67,7 +67,7 @@ const UserRow = memo(function UserRow({
     >
       <div className={cn(
         'w-4 h-4 border rounded flex items-center justify-center',
-        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+        isSelected ? 'bg-primary border-primary' : 'border-input'
       )}>
         {isSelected && <Check className="h-3 w-3 text-white" />}
       </div>
@@ -80,7 +80,7 @@ const UserRow = memo(function UserRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{displayName}</div>
         {user.organization && (
-          <div className="text-xs text-muted-foreground truncate">
+          <div className="text-helper text-muted-foreground truncate">
             {user.organization.name}
             {user.organization.acronym && ` (${user.organization.acronym})`}
           </div>
@@ -113,7 +113,7 @@ const OrgRow = memo(function OrgRow({
     >
       <div className={cn(
         'w-4 h-4 border rounded flex items-center justify-center',
-        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+        isSelected ? 'bg-primary border-primary' : 'border-input'
       )}>
         {isSelected && <Check className="h-3 w-3 text-white" />}
       </div>
@@ -126,8 +126,8 @@ const OrgRow = memo(function OrgRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium flex flex-wrap items-baseline gap-x-1.5">
           <span>{org.name}</span>
-          {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
-          <span className={cn('text-xs', hasNoMembers ? 'text-gray-500' : 'text-muted-foreground')}>
+          {org.acronym && <span className="text-helper text-muted-foreground">({org.acronym})</span>}
+          <span className={cn('text-helper', hasNoMembers ? 'text-muted-foreground' : 'text-muted-foreground')}>
             · {hasNoMembers ? 'No members' : `${memberCount} member${memberCount !== 1 ? 's' : ''}`}
           </span>
         </div>
@@ -157,14 +157,14 @@ const RoleRow = memo(function RoleRow({
     >
       <div className={cn(
         'w-4 h-4 border rounded flex items-center justify-center',
-        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+        isSelected ? 'bg-primary border-primary' : 'border-input'
       )}>
         {isSelected && <Check className="h-3 w-3 text-white" />}
       </div>
       <Shield className="h-5 w-5 text-muted-foreground" />
       <div className="flex-1 min-w-0">
         <div className="font-medium">{ROLE_DISPLAY_NAMES[role] || role}</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           {userCount} user{userCount !== 1 ? 's' : ''} with this role
         </div>
       </div>
@@ -377,7 +377,7 @@ function UserPickerInner({
     <div className="space-y-4">
       {/* Error Message */}
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-body text-destructive">
           <strong>Error:</strong> {error}
         </div>
       )}
@@ -398,7 +398,7 @@ function UserPickerInner({
                   title={`${name} (click to remove)`}
                 >
                   <AvatarImage src={user?.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="text-helper">
                     {name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -414,7 +414,7 @@ function UserPickerInner({
                   onClick={() => handleRemove('org', oid)}
                   title={`${org?.name || 'Organization'} (click to remove)`}
                 >
-                  <AvatarFallback className="text-xs bg-purple-100 text-purple-700">
+                  <AvatarFallback className="text-helper bg-purple-100 text-purple-700">
                     <Building2 className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
@@ -428,14 +428,14 @@ function UserPickerInner({
                 onClick={() => handleRemove('role', role)}
                 title={`${ROLE_DISPLAY_NAMES[role] || role} (click to remove)`}
               >
-                <AvatarFallback className="text-xs bg-amber-100 text-amber-700">
+                <AvatarFallback className="text-helper bg-amber-100 text-amber-700">
                   <Shield className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
             ))}
             {totalSelected > 8 && (
               <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-helper font-medium text-muted-foreground">
                   +{totalSelected - 8}
                 </span>
               </div>
@@ -444,12 +444,12 @@ function UserPickerInner({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-sm text-muted-foreground cursor-help underline decoration-dotted">
+                <span className="text-body text-muted-foreground cursor-help underline decoration-dotted">
                   {totalSelected} selected
                 </span>
               </TooltipTrigger>
               <TooltipContent side="bottom" align="start" className="max-w-xs">
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1 text-helper">
                   {selectedAssignees.user_ids && selectedAssignees.user_ids.length > 0 && (
                     <div>
                       <span className="font-medium">Users:</span>{' '}
@@ -580,7 +580,7 @@ function UserPickerInner({
                    filteredOrgs.some(org => (orgMemberCounts[org.id] || 0) === 0) && (
                     <div className="my-3 flex items-center gap-2">
                       <div className="flex-1 border-t border-dashed" />
-                      <span className="text-xs text-muted-foreground px-2">No members</span>
+                      <span className="text-helper text-muted-foreground px-2">No members</span>
                       <div className="flex-1 border-t border-dashed" />
                     </div>
                   )}
@@ -599,7 +599,7 @@ function UserPickerInner({
               )}
             </ScrollArea>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-helper text-muted-foreground mt-2">
             Selecting an organization will assign the task to all its members.
           </p>
         </TabsContent>
@@ -627,7 +627,7 @@ function UserPickerInner({
               </div>
             )}
           </ScrollArea>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-helper text-muted-foreground mt-2">
             Selecting a role will assign the task to all users with that role.
           </p>
         </TabsContent>

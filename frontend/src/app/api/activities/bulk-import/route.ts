@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[AIMS] POST /api/activities/bulk-import - Starting bulk import');
 
   try {
     const { activities } = await request.json();
@@ -22,7 +21,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[AIMS] Processing bulk import for ${activities.length} activities`);
 
     const results = {
       success: 0,
@@ -149,7 +147,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[AIMS] Bulk import completed. Success: ${results.success}, Failed: ${results.failed}`);
 
     return NextResponse.json({
       message: 'Bulk import completed',

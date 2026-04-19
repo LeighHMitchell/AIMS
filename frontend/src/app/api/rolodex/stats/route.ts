@@ -6,7 +6,6 @@ export async function GET(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[AIMS Rolodex Stats] Fetching contact type statistics');
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -32,7 +31,6 @@ export async function GET(request: NextRequest) {
 
     const total = (usersCount || 0) + (contactsCount || 0);
 
-    console.log(`[AIMS Rolodex Stats] Successfully fetched stats:`, stats);
 
     return NextResponse.json({
       stats,

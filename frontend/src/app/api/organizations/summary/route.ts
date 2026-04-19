@@ -11,7 +11,6 @@ export const dynamic = 'force-dynamic';
 // The handler still requires authentication before returning data
 const getCachedSummary = unstable_cache(
   async () => {
-    console.log('[AIMS] Summary Cache MISS - Fetching fresh summary from database');
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       throw new Error('Database not available');
@@ -59,7 +58,6 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/organizations/summary - Starting request');
 
   // Require authentication
   const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
@@ -76,7 +74,6 @@ export async function GET(request: NextRequest) {
     let groups: any[] | null = null;
 
     if (bustCache && supabase) {
-      console.log('[AIMS] Summary Cache BUST - Fetching fresh data');
       // Fetch directly without cache when busting
       const [orgsResult, activitiesResult, transactionsResult, groupsResult] = await Promise.all([
         supabase.from('organizations').select('id, updated_at'),
@@ -119,7 +116,6 @@ export async function GET(request: NextRequest) {
       lastUpdated
     };
 
-    console.log('[AIMS] Organization summary calculated:', summary);
 
     const response = NextResponse.json(summary);
 

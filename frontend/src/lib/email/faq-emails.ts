@@ -29,7 +29,6 @@ export async function sendQuestionAnsweredEmail({
   baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aidonbudget.org',
 }: SendQuestionAnsweredEmailOptions): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.log('[FAQ Emails] Email not configured, skipping question answered notification');
     return false;
   }
 
@@ -57,7 +56,6 @@ export async function sendQuestionAnsweredEmail({
   });
 
   if (success) {
-    console.log(`[FAQ Emails] Question answered email sent to ${userEmail}`);
   } else {
     console.error(`[FAQ Emails] Failed to send question answered email to ${userEmail}`);
   }

@@ -146,16 +146,16 @@ export function OrgTypeMappingModal({
 
         <div className="space-y-5 py-4">
           {/* Organization Info */}
-          <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-gray-200">
-            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-md border border-gray-200">
-              <Building2 className="h-5 w-5 text-gray-400" />
+          <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-border">
+            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-md border border-border">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-900 truncate">
+              <div className="font-medium text-foreground truncate">
                 {orgDisplayName}
               </div>
               {organization.country && (
-                <div className="text-sm text-gray-500">
+                <div className="text-body text-muted-foreground">
                   {organization.country}
                 </div>
               )}
@@ -167,10 +167,10 @@ export function OrgTypeMappingModal({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <div className="text-sm font-medium text-amber-800">
+                <div className="text-body font-medium text-amber-800">
                   Current Type: <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-xs">{currentTypeCode}</code> {legacyMapping.legacyLabel}
                 </div>
-                <div className="text-xs text-amber-700 mt-1">
+                <div className="text-helper text-amber-700 mt-1">
                   This code has been deprecated. Please select a more specific type below.
                 </div>
               </div>
@@ -179,7 +179,7 @@ export function OrgTypeMappingModal({
 
           {/* New Type Selection */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Select new organization type</Label>
+            <Label className="text-body font-medium">Select new organization type</Label>
             
             <RadioGroup
               value={selectedType}
@@ -194,7 +194,7 @@ export function OrgTypeMappingModal({
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                       selectedType === option.code
                         ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-muted/50"
+                        : "border-border hover:border-input hover:bg-muted/50"
                     }`}
                   >
                     <RadioGroupItem value={option.code} className="mt-0.5" />
@@ -203,16 +203,16 @@ export function OrgTypeMappingModal({
                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                           {option.code}
                         </code>
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-foreground">
                           {option.label}
                         </span>
                         {isSuggested && (
-                          <Badge variant="secondary" className="text-xs bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
+                          <Badge variant="secondary" className="text-helper bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                             Suggested
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">
+                      <div className="text-body text-muted-foreground mt-1">
                         {option.description}
                       </div>
                     </div>
@@ -226,7 +226,7 @@ export function OrgTypeMappingModal({
           {suggestionReason && (
             <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <Lightbulb className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <div className="text-body text-blue-800">
                 <span className="font-medium">Suggestion:</span> {suggestionReason}
               </div>
             </div>

@@ -154,7 +154,6 @@ export function FinancingTermsTab({
       return;
     }
 
-    console.log('[FinancingTerms] Saving loan terms...');
     setSavingLoanTerms(true);
     setLoanTermsSaved(false);
 
@@ -177,9 +176,7 @@ export function FinancingTermsTab({
         other_flags: otherFlags
       };
 
-      console.log('[FinancingTerms] Data to save:', data);
       const success = await saveLoanTerms(data);
-      console.log('[FinancingTerms] Save result:', success);
 
       if (success) {
         setLoanTermsSaved(true);
@@ -213,15 +210,36 @@ export function FinancingTermsTab({
 
   // Handle delete loan status
   const handleDeleteLoanStatus = async (id: string, year: number) => {
-    if (await confirm({ title: 'Delete loan status?', description: `Are you sure you want to delete the loan status for year ${year}?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete loan status?', description: `Are you sure you want to delete the loan status for year ${year}?`, confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+      const snapshot = loanStatuses.find(s => s.id === id);
       await deleteLoanStatus(id);
+      toast.success(`Removed loan status for ${year}`, snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              // Re-create via the same path used for adding
+              await createLoanStatus({
+                activity_id: activityId,
+                year: snapshot.year,
+                value: (snapshot as any).value,
+                currency: (snapshot as any).currency,
+                value_date: (snapshot as any).value_date,
+              } as any);
+              toast.success('Loan status restored');
+            } catch {
+              toast.error("Couldn't restore the loan status. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-foreground"></div>
       </div>
     );
   }
@@ -294,8 +312,8 @@ export function FinancingTermsTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rate-1" className="flex items-center gap-2">
-                Interest Rate 1
-                <HelpTextTooltip content="Primary interest rate for the loan (percentage)" />
+                Primary Interest Rate
+                <HelpTextTooltip content="The main interest rate for the loan (percentage)" />
               </Label>
               <div className="relative">
                 <Input
@@ -315,8 +333,8 @@ export function FinancingTermsTab({
 
             <div className="space-y-2">
               <Label htmlFor="rate-2" className="flex items-center gap-2">
-                Interest Rate 2
-                <HelpTextTooltip content="Secondary interest rate if applicable (percentage)" />
+                Secondary Interest Rate
+                <HelpTextTooltip content="A second interest rate, if applicable (percentage)" />
               </Label>
               <div className="relative">
                 <Input
@@ -432,7 +450,7 @@ export function FinancingTermsTab({
               >
                 {savingLoanTerms ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/40 border-t-white" />
                     Saving...
                   </>
                 ) : (
@@ -462,13 +480,13 @@ export function FinancingTermsTab({
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Interest Rate 1</div>
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Primary Interest Rate</div>
                         <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '-'}
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Interest Rate 2</div>
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Secondary Interest Rate</div>
                         <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '-'}
                         </div>
@@ -487,8 +505,8 @@ export function FinancingTermsTab({
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Repayment Type</div>
-                        <div className="text-sm font-semibold text-foreground">
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Repayment Type</div>
+                        <div className="text-body font-semibold text-foreground">
                           {loanTermsForm.repayment_type_code ? 
                             getRepaymentTypeLabel(loanTermsForm.repayment_type_code) : 
                             '-'
@@ -496,8 +514,8 @@ export function FinancingTermsTab({
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Repayment Plan</div>
-                        <div className="text-sm font-semibold text-foreground">
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Repayment Plan</div>
+                        <div className="text-body font-semibold text-foreground">
                           {loanTermsForm.repayment_plan_code ? 
                             getRepaymentPlanLabel(loanTermsForm.repayment_plan_code) : 
                             '-'
@@ -520,8 +538,8 @@ export function FinancingTermsTab({
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">Commitment Date</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">Commitment Date</div>
+                      <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.commitment_date ? formatDate(loanTermsForm.commitment_date) : '-'}
                       </div>
                     </div>
@@ -537,8 +555,8 @@ export function FinancingTermsTab({
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">First Repayment</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">First Repayment</div>
+                      <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.repayment_first_date ? formatDate(loanTermsForm.repayment_first_date) : '-'}
                       </div>
                     </div>
@@ -554,8 +572,8 @@ export function FinancingTermsTab({
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">Final Repayment</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">Final Repayment</div>
+                      <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.repayment_final_date ? formatDate(loanTermsForm.repayment_final_date) : '-'}
                       </div>
                     </div>
@@ -573,8 +591,8 @@ export function FinancingTermsTab({
                       <FileText className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">OECD CRS Flags</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">OECD CRS Flags</div>
+                      <div className="text-body font-semibold text-foreground">
                         {selectedCRSFlags.length > 0 ? `${selectedCRSFlags.length} selected` : '-'}
                       </div>
                     </div>
@@ -617,7 +635,7 @@ export function FinancingTermsTab({
           {/* Loan Status Table */}
           {loanStatuses.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted">
                   <tr className="border-b bg-muted">
                     <th className="text-left p-2 font-medium">Year</th>
@@ -667,9 +685,9 @@ export function FinancingTermsTab({
                               onClick={() => handleDeleteLoanStatus(status.id, status.year)}
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </td>
@@ -680,11 +698,11 @@ export function FinancingTermsTab({
               </table>
             </div>
           ) : (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
               <img src="/images/empty-galley.webp" alt="No loan status entries" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No loan status entries</h3>
+              <h3 className="text-base font-semibold mb-2">No yearly loan status recorded</h3>
               <p className="text-muted-foreground">
-                Use the button above to add your first yearly loan status.
+                Add annual reporting data for principal outstanding, arrears, and interest received.
               </p>
             </div>
           )}

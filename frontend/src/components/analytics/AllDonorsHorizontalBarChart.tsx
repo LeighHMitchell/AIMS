@@ -416,7 +416,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const fetchData = async () => {
     try {
       setLoading(true)
-      console.log('[AllDonorsChart] Starting data fetch')
 
       const queryParams = new URLSearchParams({
         dateFrom: effectiveDateRange.from.toISOString(),
@@ -437,7 +436,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         throw new Error(result.error || 'Failed to fetch donor data')
       }
 
-      console.log('[AllDonorsChart] Fetched donors:', result.count)
       setAllData(result.data || [])
       onDataChange?.(result.data || [])
     } catch (error) {
@@ -646,31 +644,31 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         : data.fullName
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm max-w-[280px] break-words">{orgDisplay}</p>
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-body max-w-[280px] break-words">{orgDisplay}</p>
             {data.type && (
               <div className="flex items-center gap-1.5 mt-1">
                 {getOrganizationTypeCode(data.type) && (
-                  <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">
+                  <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
                     {getOrganizationTypeCode(data.type)}
                   </code>
                 )}
-                <span className="text-xs text-slate-600">{getOrganizationTypeName(data.type)}</span>
+                <span className="text-helper text-muted-foreground">{getOrganizationTypeName(data.type)}</span>
               </div>
             )}
           </div>
           <div className="p-3">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-600 text-sm">{selectedMetric.name}</span>
-              <span className="text-lg font-bold text-slate-900">
+              <span className="text-muted-foreground text-body">{selectedMetric.name}</span>
+              <span className="text-lg font-bold text-foreground">
                 {formatCurrencyAbbreviated(selectedMetric.value)}
               </span>
             </div>
             {showPercentage && (
-              <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-slate-100">
-                <span className="text-slate-500 text-xs">% of Total</span>
-                <span className="text-sm font-medium text-slate-700">
+              <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-border">
+                <span className="text-muted-foreground text-helper">% of Total</span>
+                <span className="text-body font-medium text-foreground">
                   {formatPercentage(data.value)}
                 </span>
               </div>
@@ -787,8 +785,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     }
     if (!chartData || chartData.length === 0) {
       return (
-        <div className="h-full w-full flex items-center justify-center text-slate-500">
-          <p className="text-sm">No data available</p>
+        <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -855,7 +853,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                       {sortCustomYearsCalendarFirst(customYears).map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
-                          className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                          className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
                           <span className="flex items-center gap-2">
@@ -891,17 +889,17 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                          <span className="text-helper font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                             >
                               All
                             </button>
                             <button
                               onClick={selectDataRange}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                             >
                               Data
                             </button>
@@ -920,10 +918,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                                 className={`
                                   px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                   ${isStartOrEnd
-                                    ? 'bg-slate-200 text-slate-900'
+                                    ? 'bg-muted text-foreground'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
-                                      : 'text-slate-600 hover:bg-slate-100'
+                                      : 'text-muted-foreground hover:bg-muted'
                                   }
                                 `}
                                 title="Click to select start, then click another to select end"
@@ -933,14 +931,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                             )
                           })}
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-2 text-center">
+                        <p className="text-[10px] text-muted-foreground mt-2 text-center">
                           Click start year, then click end year
                         </p>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                   {localDateRange?.from && localDateRange?.to && (
-                    <span className="text-[10px] text-slate-500">
+                    <span className="text-[10px] text-muted-foreground">
                       {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                     </span>
                   )}
@@ -971,11 +969,11 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         </div>
 
         {/* Empty State */}
-        <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+        <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
           <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-2 opacity-50" />
-            <p className="text-slate-600 font-medium">No donor data available</p>
-            <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-muted-foreground font-medium">No donor data available</p>
+            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>
       </div>
@@ -1005,7 +1003,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     {sortCustomYearsCalendarFirst(customYears).map(cy => (
                       <DropdownMenuItem
                         key={cy.id}
-                        className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                        className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                         onClick={() => setCalendarType(cy.id)}
                       >
                         <span className="flex items-center gap-2">
@@ -1041,17 +1039,17 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="p-3 w-auto">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                        <span className="text-helper font-medium text-foreground">Select Year Range</span>
                         <div className="flex gap-1">
                           <button
                             onClick={selectAllYears}
-                            className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                            className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                           >
                             All
                           </button>
                           <button
                             onClick={selectDataRange}
-                            className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                            className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                           >
                             Data
                           </button>
@@ -1070,10 +1068,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                               className={`
                                 px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                 ${isStartOrEnd
-                                  ? 'bg-slate-200 text-slate-900'
+                                  ? 'bg-muted text-foreground'
                                   : inRange
                                     ? 'bg-primary/20 text-primary'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                    : 'text-muted-foreground hover:bg-muted'
                                 }
                               `}
                               title="Click to select start, then click another to select end"
@@ -1083,7 +1081,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           )
                         })}
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-2 text-center">
+                      <p className="text-[10px] text-muted-foreground mt-2 text-center">
                         Click start year, then click end year
                       </p>
                     </DropdownMenuContent>
@@ -1091,7 +1089,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 </div>
                 {/* Date Range Indicator */}
                 {localDateRange?.from && localDateRange?.to && (
-                  <span className="text-[10px] text-slate-500">
+                  <span className="text-[10px] text-muted-foreground">
                     {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                   </span>
                 )}
@@ -1120,12 +1118,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           </Select>
 
           {/* Sector Filter */}
-          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             {/* Sector Aggregation Level Toggle */}
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 text-xs", sectorAggregationLevel === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8 text-helper", sectorAggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setSectorAggregationLevel('group')}
             >
               Category
@@ -1133,7 +1131,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 text-xs", sectorAggregationLevel === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8 text-helper", sectorAggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setSectorAggregationLevel('category')}
             >
               Sector
@@ -1141,7 +1139,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 text-xs", sectorAggregationLevel === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8 text-helper", sectorAggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setSectorAggregationLevel('sector')}
             >
               Sub-sector
@@ -1157,7 +1155,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   {selectedSectors.size > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-900 rounded-full">
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-muted text-foreground rounded-full">
                       {selectedSectors.size}
                     </span>
                   )}
@@ -1168,19 +1166,19 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="p-3 w-[340px]">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-700">
+                  <span className="text-helper font-medium text-foreground">
                     Filter by {sectorAggregationLevel === 'group' ? 'Sector Category' : sectorAggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
                   </span>
                   <div className="flex gap-1">
                     <button
                       onClick={selectAllSectors}
-                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                     >
                       All
                     </button>
                     <button
                       onClick={clearAllSectors}
-                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                     >
                       Clear
                     </button>
@@ -1189,20 +1187,20 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
                 {/* Search box */}
                 <div className="relative mb-2">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Search by code or name..."
                     value={sectorFilterSearch}
                     onChange={(e) => setSectorFilterSearch(e.target.value)}
-                    className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full pl-7 pr-3 py-1.5 text-helper border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
 
                 {/* Sector list */}
                 <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
                   {filteredSectorItems.length === 0 ? (
-                    <div className="text-center text-xs text-slate-400 py-4">
+                    <div className="text-center text-helper text-muted-foreground py-4">
                       No matching items found
                     </div>
                   ) : (
@@ -1213,18 +1211,18 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                         <button
                           key={item.code}
                           onClick={() => toggleSectorVisibility(item.code)}
-                          className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-slate-50"
+                          className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-muted"
                         >
                           <div className={`
                             w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
-                            ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                            ${isSelected ? 'bg-primary border-primary' : 'border-input'}
                           `}>
                             {isSelected && <Check className="h-3 w-3 text-white" />}
                           </div>
                           <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                             {item.code}
                           </span>
-                          <span className="text-sm text-slate-700 leading-tight">
+                          <span className="text-body text-foreground leading-tight">
                             {item.name}
                           </span>
                         </button>
@@ -1233,7 +1231,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                   )}
                 </div>
 
-                <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t text-center">
+                <p className="text-[10px] text-muted-foreground mt-2 pt-2 border-t text-center">
                   {selectedSectors.size} of {aggregatedSectorData.length} {sectorAggregationLevel === 'group' ? 'categories' : sectorAggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
                   {selectedSectors.size === 0 && ' (showing all)'}
                 </p>
@@ -1272,12 +1270,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setChartViewMode('bar')}
-              className={cn("h-8", chartViewMode === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", chartViewMode === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Horizontal Bar Chart"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1290,7 +1288,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               variant="ghost"
               size="sm"
               onClick={() => setChartViewMode('stacked')}
-              className={cn("h-8", chartViewMode === 'stacked' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", chartViewMode === 'stacked' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Stacked by Org Type"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1307,7 +1305,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               variant="ghost"
               size="sm"
               onClick={() => setChartViewMode('table')}
-              className={cn("h-8", chartViewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", chartViewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
             >
               <TableIcon className="h-4 w-4" />
@@ -1371,7 +1369,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                             {item.type}
                           </code>
-                          <span className="text-sm text-slate-600">{item.typeName}</span>
+                          <span className="text-body text-muted-foreground">{item.typeName}</span>
                         </span>
                       )}
                     </TableCell>
@@ -1385,7 +1383,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </Table>
           </div>
         ) : chartViewMode === 'stacked' ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, stackedData.rows.length * 60)}>
               <BarChart
                 data={stackedData.rows}
@@ -1426,27 +1424,27 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                         : null
 
                       return (
-                        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md">
-                          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+                        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md">
+                          <div className="bg-surface-muted px-3 py-2 border-b border-border">
                             <div className="flex items-center gap-2">
-                              <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">
+                              <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
                                 {dataPoint?.typeCode}
                               </code>
-                              <span className="font-semibold text-slate-900 text-sm">{label}</span>
+                              <span className="font-semibold text-foreground text-body">{label}</span>
                             </div>
-                            <p className="text-sm text-slate-700 mt-1 font-medium">
+                            <p className="text-body text-foreground mt-1 font-medium">
                               {dataPoint?.donorCount} organization{dataPoint?.donorCount !== 1 ? 's' : ''}, Total {formatCurrencyAbbreviated(dataPoint?.totalValue || 0)}
                             </p>
                           </div>
                           {donorDetails && hoveredValue ? (
                             <div className="p-3">
-                              <p className="font-semibold text-slate-900 text-sm">{donorDisplay}</p>
-                              <p className="text-lg font-bold text-slate-900 mt-1">
+                              <p className="font-semibold text-foreground text-body">{donorDisplay}</p>
+                              <p className="text-lg font-bold text-foreground mt-1">
                                 {formatCurrencyAbbreviated(hoveredValue)}
                               </p>
                             </div>
                           ) : (
-                            <div className="p-2 text-xs text-slate-500">
+                            <div className="p-2 text-helper text-muted-foreground">
                               Hover over a segment to see details
                             </div>
                           )}
@@ -1470,7 +1468,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, chartData.length * 35)}>
               <BarChart
                 data={chartData}
@@ -1504,7 +1502,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart ranks funding organizations by their financial contributions, helping stakeholders understand the development assistance landscape. Compare organizations by total budgets, planned disbursements, commitments, or actual disbursements.
         The stacked view groups donors by organization type, showing individual organizations as segments within each bar for quick identification of major contributors.
       </p>

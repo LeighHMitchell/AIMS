@@ -53,7 +53,7 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-slate-900 text-white p-3 rounded-lg shadow-lg text-sm">
+        <div className="bg-slate-900 text-white p-3 rounded-lg shadow-lg text-body">
           <p className="font-semibold">{data.name}</p>
           <p className="text-slate-300">Count: {data.value}</p>
           <p className="text-slate-300">Percentage: {data.percentage.toFixed(1)}%</p>
@@ -73,7 +73,7 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-sm text-slate-600">
+            <span className="text-body text-muted-foreground">
               {entry.value}: {entry.payload.value}
             </span>
           </div>
@@ -84,14 +84,14 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
 
   if (data.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Project Status Distribution
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80 flex items-center justify-center text-slate-500">
+          <div className="h-80 flex items-center justify-center text-muted-foreground">
             <p>No project status data available</p>
           </div>
         </CardContent>
@@ -100,9 +100,9 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Project Status Distribution
         </CardTitle>
       </CardHeader>

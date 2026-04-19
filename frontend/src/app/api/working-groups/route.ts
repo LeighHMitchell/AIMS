@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[API] GET /api/working-groups - Starting request');
 
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -50,7 +49,6 @@ export async function GET(request: NextRequest) {
       // If table doesn't exist, return predefined list from our lib
       if (error.message.includes('does not exist')) {
         const { WORKING_GROUPS } = await import('@/lib/workingGroups');
-        console.log('[API] Returning predefined working groups:', WORKING_GROUPS.length);
         return NextResponse.json(WORKING_GROUPS);
       }
       
@@ -60,7 +58,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('[API] Successfully fetched working groups:', data?.length || 0);
 
     // Enrich with member counts from working_group_memberships
     if (data && data.length > 0) {
@@ -123,7 +120,6 @@ export async function GET(request: NextRequest) {
     // Fallback to predefined list
     try {
       const { WORKING_GROUPS } = await import('@/lib/workingGroups');
-      console.log('[API] Returning predefined working groups as fallback:', WORKING_GROUPS.length);
       return NextResponse.json(WORKING_GROUPS);
     } catch {
       return NextResponse.json(
@@ -142,7 +138,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[API] POST /api/working-groups - Starting request');
 
   try {
     const body = await request.json();
@@ -187,7 +182,6 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log('[API] Successfully created working group:', data);
     return NextResponse.json(data, { status: 201 });
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);

@@ -228,7 +228,7 @@ export function TaskCreationWizard({
                         index + 1
                       )}
                     </div>
-                    <span className="text-xs font-medium hidden sm:block">
+                    <span className="text-helper font-medium hidden sm:block">
                       {wizard.stepLabels[step]}
                     </span>
                   </button>
@@ -254,7 +254,7 @@ export function TaskCreationWizard({
         {/* Error Display */}
         {submitError && (
           <div className="flex-shrink-0 px-1 py-2">
-            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+            <p className="text-body text-destructive bg-destructive/10 px-3 py-2 rounded-md">
               {submitError}
             </p>
           </div>

@@ -95,7 +95,7 @@ export default function TransfersListPage() {
         {/* Filters — styled like Project List */}
         <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -107,7 +107,7 @@ export default function TransfersListPage() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Status</Label>
+            <Label className="text-helper text-muted-foreground">Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px] h-9">
                 <SelectValue placeholder="All Statuses" />
@@ -126,7 +126,7 @@ export default function TransfersListPage() {
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted">
                   <tr className="border-b bg-surface-muted">
                     <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Code</th>

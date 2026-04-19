@@ -18,7 +18,6 @@ const activeReadRequests = new Map<string, AbortController>();
  */
 export function cancelAllReads(): void {
   if (activeReadRequests.size > 0) {
-    console.log(`[apiFetch] Cancelling ${activeReadRequests.size} pending read requests for save priority`);
     activeReadRequests.forEach((controller) => {
       controller.abort();
     });

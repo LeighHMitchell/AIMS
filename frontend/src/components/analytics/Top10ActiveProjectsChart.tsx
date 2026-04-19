@@ -41,16 +41,16 @@ const CustomTooltip = ({ active, payload }: any) => {
     const data = payload[0].payload
     const orgDisplay = data.acronym ? `${data.name} (${data.acronym})` : data.name
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
-          <p className="font-semibold text-slate-900 text-sm">{orgDisplay}</p>
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-surface-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground text-body">{orgDisplay}</p>
         </div>
         <div className="p-2">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
               <tr>
-                <td className="py-1 pr-4 text-slate-700 font-medium">Active Projects</td>
-                <td className="py-1 text-right font-semibold text-slate-900">{data.projectCount}</td>
+                <td className="py-1 pr-4 text-foreground font-medium">Active Projects</td>
+                <td className="py-1 text-right font-semibold text-foreground">{data.projectCount}</td>
               </tr>
             </tbody>
           </table>
@@ -100,14 +100,12 @@ export function Top10ActiveProjectsChart({
       }
 
       const result = await response.json()
-      console.log('[Top10ActiveProjectsChart] API response:', result)
 
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
-      console.log('[Top10ActiveProjectsChart] Processed partners:', partners.length)
       setData(partners)
       onDataChange?.(partners)
     } catch (error) {
@@ -138,8 +136,8 @@ export function Top10ActiveProjectsChart({
     }
     if (!data || data.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
-          <p className="text-sm">No data available</p>
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -170,11 +168,11 @@ export function Top10ActiveProjectsChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
         <div className="text-center">
-          <Activity className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No active project data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your filters</p>
+          <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No active project data available</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
         </div>
       </div>
     )
@@ -239,20 +237,20 @@ export function Top10ActiveProjectsChart({
         </ResponsiveContainer>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <thead className="bg-surface-muted">
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-3 px-4 font-medium text-slate-600">Organization</th>
-                <th className="text-right py-3 px-4 font-medium text-slate-600">Active Projects</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Organization</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground">Active Projects</th>
               </tr>
             </thead>
             <tbody>
               {data.map((entry, index) => (
-                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                  <td className="py-3 px-4 text-slate-900">
+                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-muted' : 'bg-white'}>
+                  <td className="py-3 px-4 text-foreground">
                     {entry.name}{entry.acronym ? ` (${entry.acronym})` : ''}
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-900 font-medium">
+                  <td className="py-3 px-4 text-right text-foreground font-medium">
                     {entry.projectCount}
                   </td>
                 </tr>
@@ -263,7 +261,7 @@ export function Top10ActiveProjectsChart({
       )}
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart ranks development partners by the number of activities where they are listed as a funding or implementing organization.
         Use this to identify the most active partners in your country's development landscape and to facilitate coordination with key stakeholders who have significant operational presence.
       </p>

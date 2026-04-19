@@ -122,9 +122,9 @@ export function ProgressTimeline({
       case 'yellow':
         return <AlertCircle className="h-3 w-3 text-yellow-600" />;
       case 'red':
-        return <XCircle className="h-3 w-3 text-red-600" />;
+        return <XCircle className="h-3 w-3 text-destructive" />;
       default:
-        return <Clock className="h-3 w-3 text-gray-400" />;
+        return <Clock className="h-3 w-3 text-muted-foreground" />;
     }
   };
 
@@ -138,9 +138,9 @@ export function ProgressTimeline({
     if (current > previous + 5) {
       return <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
     } else if (current < previous - 5) {
-      return <TrendingDown className="h-3 w-3 text-red-600" />;
+      return <TrendingDown className="h-3 w-3 text-destructive" />;
     } else {
-      return <Minus className="h-3 w-3 text-gray-400" />;
+      return <Minus className="h-3 w-3 text-muted-foreground" />;
     }
   };
 
@@ -148,8 +148,8 @@ export function ProgressTimeline({
 
   if (segments.length === 0) {
     return (
-      <div className={cn("p-4 bg-gray-50 rounded-lg", className)}>
-        <p className="text-sm text-gray-600 text-center">
+      <div className={cn("p-4 bg-muted rounded-lg", className)}>
+        <p className="text-body text-muted-foreground text-center">
           No periods available for timeline visualization
         </p>
       </div>
@@ -161,8 +161,8 @@ export function ProgressTimeline({
       <div className={cn("space-y-4", className)}>
         {/* Timeline Header */}
         <div className="flex items-center justify-between">
-          <h5 className="text-sm font-medium">Progress Timeline</h5>
-          <div className="flex items-center gap-4 text-xs text-gray-600">
+          <h5 className="text-body font-medium">Progress Timeline</h5>
+          <div className="flex items-center gap-4 text-helper text-muted-foreground">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span>On track (≥85%)</span>
@@ -172,14 +172,14 @@ export function ProgressTimeline({
               <span>Attention (60-84%)</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-destructive/100 rounded-full"></div>
               <span>Off track (&lt;60%)</span>
             </div>
           </div>
         </div>
 
         {/* Timeline Visual */}
-        <div className="relative h-8 bg-gray-100 rounded-lg overflow-hidden">
+        <div className="relative h-8 bg-muted rounded-lg overflow-hidden">
           {segments.map((segment, index) => (
             <Tooltip key={segment.period.id}>
               <TooltipTrigger asChild>
@@ -188,7 +188,7 @@ export function ProgressTimeline({
                     "absolute top-0 h-full rounded transition-all duration-200 hover:opacity-80 cursor-pointer",
                     segment.status === 'green' && "bg-green-500",
                     segment.status === 'yellow' && "bg-yellow-500",
-                    segment.status === 'red' && "bg-red-500",
+                    segment.status === 'red' && "bg-destructive/100",
                     segment.status === 'gray' && "bg-gray-400"
                   )}
                   style={{
@@ -203,13 +203,13 @@ export function ProgressTimeline({
                     {new Date(segment.period.period_start).toLocaleDateString()} - {' '}
                     {new Date(segment.period.period_end).toLocaleDateString()}
                   </div>
-                  <div className="text-sm">
+                  <div className="text-body">
                     <div>Target: {formatValue(segment.period.target_value)}</div>
                     <div>Actual: {formatValue(segment.period.actual_value)}</div>
                     <div>Achievement: {Math.round(segment.achievementRate)}%</div>
                   </div>
                   {segment.period.facet && segment.period.facet !== 'Total' && (
-                    <div className="text-xs text-gray-300">
+                    <div className="text-helper text-gray-300">
                       Facet: {segment.period.facet}
                     </div>
                   )}
@@ -224,7 +224,7 @@ export function ProgressTimeline({
           {segments.map((segment, index) => (
             <div 
               key={segment.period.id}
-              className="flex items-center justify-between p-2 bg-white border border-gray-100 rounded text-xs"
+              className="flex items-center justify-between p-2 bg-white border border-border rounded text-helper"
             >
               <div className="flex items-center gap-2">
                 {getStatusIcon(segment.status)}
@@ -239,19 +239,19 @@ export function ProgressTimeline({
               
               <div className="flex items-center gap-4">
                 <div>
-                  <span className="text-gray-600">Target:</span> {formatValue(segment.period.target_value)}
+                  <span className="text-muted-foreground">Target:</span> {formatValue(segment.period.target_value)}
                 </div>
                 <div>
-                  <span className="text-gray-600">Actual:</span> {formatValue(segment.period.actual_value)}
+                  <span className="text-muted-foreground">Actual:</span> {formatValue(segment.period.actual_value)}
                 </div>
                 <Badge 
                   variant={segment.status === 'green' ? 'default' : 'secondary'}
                   className={cn(
-                    "text-xs",
+                    "text-helper",
                     segment.status === 'green' && "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]",
                     segment.status === 'yellow' && "bg-yellow-100 text-yellow-700",
-                    segment.status === 'red' && "bg-red-100 text-red-700",
-                    segment.status === 'gray' && "bg-gray-100 text-gray-700"
+                    segment.status === 'red' && "bg-destructive/10 text-destructive",
+                    segment.status === 'gray' && "bg-muted text-foreground"
                   )}
                 >
                   {Math.round(segment.achievementRate)}%
@@ -263,9 +263,9 @@ export function ProgressTimeline({
 
         {/* Overall Progress Bar */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-body">
             <span className="font-medium">Overall Progress</span>
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               {indicator.latestActual ? formatValue(indicator.latestActual) : '0'} / {' '}
               {indicator.totalTarget ? formatValue(indicator.totalTarget) : '0'}
             </span>
@@ -276,10 +276,10 @@ export function ProgressTimeline({
               "h-2",
               indicator.status?.color === 'green' && "[&>div]:bg-green-600",
               indicator.status?.color === 'yellow' && "[&>div]:bg-yellow-600",
-              indicator.status?.color === 'red' && "[&>div]:bg-red-600"
+              indicator.status?.color === 'red' && "[&>div]:bg-destructive"
             )}
           />
-          <div className="flex items-center justify-between text-xs text-gray-600">
+          <div className="flex items-center justify-between text-helper text-muted-foreground">
             <span>0%</span>
             <span className="font-medium">
               {indicator.status?.percentage || 0}% ({indicator.status?.label || 'No progress'})

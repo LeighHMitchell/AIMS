@@ -53,7 +53,6 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/organizations/merge - Starting merge operation');
   
   const { supabase, response: authResponse } = await requireAuth();
   
@@ -112,7 +111,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log(`[AIMS] Merging "${sourceOrg.name}" (${sourceOrgId}) into "${targetOrg.name}" (${targetOrgId})`);
     
     // Initialize summary
     const summary: MergeResult['summary'] = {
@@ -147,7 +145,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating activities:', activitiesError);
     } else {
       summary.activitiesUpdated = activitiesData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.activitiesUpdated} activities`);
     }
     
     // 2. Update activity_contributors.organization_id
@@ -161,7 +158,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating activity_contributors:', contributorsError);
     } else {
       summary.activityContributorsUpdated = contributorsData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.activityContributorsUpdated} activity_contributors`);
     }
     
     // 3. Update activity_participating_organizations.organization_id
@@ -175,7 +171,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating activity_participating_organizations:', participatingError);
     } else {
       summary.participatingOrgsUpdated = participatingData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.participatingOrgsUpdated} activity_participating_organizations`);
     }
     
     // 4. Update transactions.provider_org_id
@@ -189,7 +184,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating transactions provider:', txProviderError);
     } else {
       summary.transactionsProviderUpdated = txProviderData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.transactionsProviderUpdated} transactions (provider)`);
     }
     
     // 5. Update transactions.receiver_org_id
@@ -203,7 +197,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating transactions receiver:', txReceiverError);
     } else {
       summary.transactionsReceiverUpdated = txReceiverData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.transactionsReceiverUpdated} transactions (receiver)`);
     }
     
     // 6. Update planned_disbursements.provider_org_id
@@ -217,7 +210,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating planned_disbursements provider:', pdProviderError);
     } else {
       summary.plannedDisbursementsProviderUpdated = pdProviderData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.plannedDisbursementsProviderUpdated} planned_disbursements (provider)`);
     }
     
     // 7. Update planned_disbursements.receiver_org_id
@@ -231,7 +223,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating planned_disbursements receiver:', pdReceiverError);
     } else {
       summary.plannedDisbursementsReceiverUpdated = pdReceiverData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.plannedDisbursementsReceiverUpdated} planned_disbursements (receiver)`);
     }
     
     // 8. Update users.organization_id
@@ -245,7 +236,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating users:', usersError);
     } else {
       summary.usersUpdated = usersData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.usersUpdated} users`);
     }
     
     // 9. Update user_organizations.organization_id
@@ -259,7 +249,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating user_organizations:', userOrgsError);
     } else {
       summary.userOrganizationsUpdated = userOrgsData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.userOrganizationsUpdated} user_organizations`);
     }
     
     // 10. Update custom_group_organizations.organization_id
@@ -273,7 +262,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating custom_group_organizations:', customGroupError);
     } else {
       summary.customGroupOrganizationsUpdated = customGroupData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.customGroupOrganizationsUpdated} custom_group_organizations`);
     }
     
     // 11. Update organization_names.organization_id
@@ -287,7 +275,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating organization_names:', orgNamesError);
     } else {
       summary.organizationNamesUpdated = orgNamesData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.organizationNamesUpdated} organization_names`);
     }
     
     // 12. Update organization_budgets.organization_id
@@ -301,7 +288,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating organization_budgets:', budgetsError);
     } else {
       summary.organizationBudgetsUpdated = budgetsData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.organizationBudgetsUpdated} organization_budgets`);
     }
     
     // 13. Update organization_expenditures.organization_id
@@ -315,7 +301,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating organization_expenditures:', expendituresError);
     } else {
       summary.organizationExpendituresUpdated = expendituresData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.organizationExpendituresUpdated} organization_expenditures`);
     }
     
     // 14. Update organization_document_links.organization_id
@@ -329,7 +314,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating organization_document_links:', docLinksError);
     } else {
       summary.organizationDocumentLinksUpdated = docLinksData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.organizationDocumentLinksUpdated} organization_document_links`);
     }
     
     // 15. Update development_strategies.organization_id
@@ -343,7 +327,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error updating development_strategies:', strategiesError);
     } else {
       summary.developmentStrategiesUpdated = strategiesData?.length || 0;
-      console.log(`[AIMS] Updated ${summary.developmentStrategiesUpdated} development_strategies`);
     }
     
     // 16. Add source org's IATI ID to target's alias_refs
@@ -356,7 +339,6 @@ export async function POST(request: NextRequest) {
     if (sourceOrg.iati_org_id && !newAliasRefs.includes(sourceOrg.iati_org_id)) {
       newAliasRefs.push(sourceOrg.iati_org_id);
       summary.aliasAdded = sourceOrg.iati_org_id;
-      console.log(`[AIMS] Adding ${sourceOrg.iati_org_id} as alias on target org`);
     }
     
     // Also add source's existing alias_refs to target
@@ -395,7 +377,6 @@ export async function POST(request: NextRequest) {
     if (updateAliasError) {
       console.error('[AIMS] Error updating target org aliases:', updateAliasError);
     } else {
-      console.log(`[AIMS] Updated target org aliases`);
     }
     
     // 17. Delete source organization
@@ -417,7 +398,6 @@ export async function POST(request: NextRequest) {
     }
     
     summary.sourceOrgDeleted = true;
-    console.log(`[AIMS] Deleted source organization ${sourceOrgId}`);
     
     const result: MergeResult = {
       success: true,
@@ -433,7 +413,6 @@ export async function POST(request: NextRequest) {
       },
     };
     
-    console.log('[AIMS] Merge completed successfully:', JSON.stringify(summary));
     
     const response = NextResponse.json(result);
     response.headers.set('Access-Control-Allow-Origin', '*');

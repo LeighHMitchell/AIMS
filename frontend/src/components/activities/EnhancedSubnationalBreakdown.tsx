@@ -8,7 +8,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
-import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
+import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
@@ -340,21 +340,17 @@ export function EnhancedSubnationalBreakdown({
 
   // Load existing data
   const loadData = useCallback(async () => {
-    console.log('[EnhancedSubnationalBreakdown] loadData called with activityId:', activityId)
 
     if (!activityId || activityId === 'undefined' || activityId === 'null') {
-      console.log('[EnhancedSubnationalBreakdown] No valid activityId, setting loading to false')
       setLoading(false)
       return
     }
 
     try {
-      console.log('[EnhancedSubnationalBreakdown] Fetching data from API...')
       const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`)
 
       if (response.ok) {
         const data = await response.json()
-        console.log('[EnhancedSubnationalBreakdown] Received data:', data)
 
         // Convert backend data to entries format
         const loadedEntries: BreakdownEntry[] = []
@@ -437,17 +433,14 @@ export function EnhancedSubnationalBreakdown({
         setSelectedUnits(loadedSelectedUnits)
         setExpandedRegions(regionsToExpand)
 
-        console.log('[EnhancedSubnationalBreakdown] Data loaded successfully')
       } else {
-        console.log('[EnhancedSubnationalBreakdown] No existing data found, response status:', response.status)
       }
     } catch (error) {
       console.error('[EnhancedSubnationalBreakdown] Error loading data:', error)
       if (error instanceof Error && !error.message.includes('404')) {
-        toast.error('Failed to load subnational breakdown data')
+        toast.error('Couldn\u2019t load sub-national breakdown data. Refresh the page or contact support.')
       }
     } finally {
-      console.log('[EnhancedSubnationalBreakdown] Setting loading to false')
       setLoading(false)
       setTimeout(() => {
         isInitialLoadRef.current = false
@@ -461,11 +454,9 @@ export function EnhancedSubnationalBreakdown({
     if (hasLoadedRef.current) return
     hasLoadedRef.current = true
 
-    console.log('[EnhancedSubnationalBreakdown] Loading data for activityId:', activityId)
     loadData()
 
     const timeout = setTimeout(() => {
-      console.log('[EnhancedSubnationalBreakdown] Timeout reached, forcing loading to false')
       setLoading(false)
     }, 10000)
 
@@ -896,6 +887,24 @@ export function EnhancedSubnationalBreakdown({
     })
   }
 
+  // All region names currently represented in the allocations table. Used
+  // to power the Expand All / Collapse All bulk action in township view.
+  const allRegionNames = useMemo(
+    () => Array.from(regionSummaries.keys()),
+    [regionSummaries]
+  )
+  const areAllRegionsExpanded =
+    allRegionNames.length > 0 &&
+    allRegionNames.every(name => expandedRegions.has(name))
+
+  const toggleExpandAll = () => {
+    if (areAllRegionsExpanded) {
+      setExpandedRegions(new Set())
+    } else {
+      setExpandedRegions(new Set(allRegionNames))
+    }
+  }
+
   // Distribute 100% equally across all township entries
   const distributeEqually = () => {
     if (entries.length === 0) return
@@ -943,7 +952,6 @@ export function EnhancedSubnationalBreakdown({
   }, [entries, selectedUnits, loading, activityId, autoSave])
 
   if (loading) {
-    console.log('[EnhancedSubnationalBreakdown] Still loading, activityId:', activityId)
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -998,7 +1006,7 @@ export function EnhancedSubnationalBreakdown({
                 </div>
               </div>
 
-              <div className="flex items-center justify-center mt-8 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center mt-8 text-body text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Loading subnational breakdown data...
               </div>
@@ -1021,13 +1029,13 @@ export function EnhancedSubnationalBreakdown({
           <h3 className="text-lg font-semibold">
             Sub-national allocation is currently available for Myanmar only
           </h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          <p className="text-body text-muted-foreground max-w-md mx-auto">
             {otherCountryName
               ? <>This activity is reported for <span className="font-medium text-foreground">{otherCountryName}</span>. We're working to support additional countries.</>
               : <>We're working to support additional countries.</>
             }
           </p>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+          <p className="text-helper text-muted-foreground max-w-md mx-auto">
             Use the <span className="font-medium">Countries &amp; Regions</span> tab to record country-level allocations in the meantime.
           </p>
         </CardContent>
@@ -1073,6 +1081,31 @@ export function EnhancedSubnationalBreakdown({
             {entries.length > 0 && canEdit && (
               <div className="flex justify-end gap-2">
                 {/*
+                  Expand All / Collapse All — only meaningful in ADM3
+                  (township) view where regions have collapsible children.
+                  Hidden in ADM1 view to avoid a dead control.
+                */}
+                {viewLevel === 'township' && allRegionNames.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleExpandAll}
+                    aria-label={areAllRegionsExpanded ? 'Collapse all regions' : 'Expand all regions'}
+                  >
+                    {areAllRegionsExpanded ? (
+                      <>
+                        <ChevronsDownUp className="h-4 w-4 mr-2" />
+                        Collapse All
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsUpDown className="h-4 w-4 mr-2" />
+                        Expand All
+                      </>
+                    )}
+                  </Button>
+                )}
+                {/*
                   Distribute Equally — uses the default outline variant.
                   The previous `bg-foreground text-white` override inverted
                   the button's color scheme, which didn't match any other
@@ -1108,10 +1141,10 @@ export function EnhancedSubnationalBreakdown({
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="text-left px-3 py-2 font-medium text-sm text-foreground">Administrative Unit</th>
+                      <th className="text-left px-3 py-2 font-medium text-body text-foreground">Administrative Unit</th>
                       <th className="px-3 py-2">
                         <div className="flex items-center justify-end gap-2">
-                          <span className="w-20 text-right font-medium text-sm text-foreground">%</span>
+                          <span className="w-20 text-right font-medium text-body text-foreground">%</span>
                           <span className="w-8"></span>
                         </div>
                       </th>
@@ -1126,21 +1159,27 @@ export function EnhancedSubnationalBreakdown({
                           <tr key={`region-${item.regionName}`} className="border-t bg-muted/20">
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                {viewLevel === 'township' ? (
+                                {/*
+                                  Chevron is only rendered in ADM3 (township)
+                                  view, where expand/collapse is meaningful.
+                                  In ADM1 view there's no placeholder spacer
+                                  — region names sit flush-left with the
+                                  column edge.
+                                */}
+                                {viewLevel === 'township' && (
                                   <button
                                     type="button"
                                     onClick={() => toggleRegionExpansion(item.regionName)}
                                     className="p-0.5 hover:bg-muted rounded"
+                                    aria-label={isExpanded ? `Collapse ${item.regionName}` : `Expand ${item.regionName}`}
                                   >
                                     {isExpanded
                                       ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                       : <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                     }
                                   </button>
-                                ) : (
-                                  <span className="w-5" aria-hidden />
                                 )}
-                                <span className="text-sm font-semibold">{item.regionName}</span>
+                                <span className="text-body font-semibold">{item.regionName}</span>
                               </div>
                             </td>
                             <td className="px-3 py-2 text-right">
@@ -1152,11 +1191,11 @@ export function EnhancedSubnationalBreakdown({
                                   step="0.01"
                                   value={item.regionTotal ? parseFloat(item.regionTotal.toFixed(2)) || '' : ''}
                                   onChange={(e) => updateRegionPercentage(item.regionName, parseFloat(e.target.value) || 0)}
-                                  className="w-20 text-right text-sm h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-20 text-right text-body h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="0"
                                   disabled={!canEdit}
                                 />
-                                <span className="text-xs text-muted-foreground w-8 text-left">%</span>
+                                <span className="text-helper text-muted-foreground w-8 text-left">%</span>
                               </div>
                             </td>
                             {canEdit && (
@@ -1188,7 +1227,7 @@ export function EnhancedSubnationalBreakdown({
                         <tr key={entry.id} className={`border-t ${isHighlighted ? 'bg-emerald-50/50' : ''}`}>
                           <td className="px-3 py-2 pl-10">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-normal text-foreground">
+                              <span className="text-body font-normal text-foreground">
                                 {entry.adminUnit.name}
                               </span>
                               {isHighlighted && (
@@ -1208,11 +1247,11 @@ export function EnhancedSubnationalBreakdown({
                                 step="0.01"
                                 value={entry.percentage || ''}
                                 onChange={(e) => updatePercentage(entry.id, parseFloat(e.target.value) || 0)}
-                                className="w-20 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-20 text-right text-body h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="0"
                                 disabled={!canEdit}
                               />
-                              <span className="text-xs text-muted-foreground w-8 text-left">%</span>
+                              <span className="text-helper text-muted-foreground w-8 text-left">%</span>
                             </div>
                           </td>
                           {canEdit && (
@@ -1240,15 +1279,15 @@ export function EnhancedSubnationalBreakdown({
                   {hasAnyValues && (
                     <tfoot className="border-t">
                       <tr>
-                        <td className="px-3 py-2 font-semibold text-sm">
+                        <td className="px-3 py-2 font-semibold text-body">
                           Total
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <span className="text-foreground font-semibold text-sm w-20 text-right">
+                            <span className="text-foreground font-semibold text-body w-20 text-right">
                               {totalPercentage.toFixed(2)}
                             </span>
-                            <span className="text-xs text-foreground font-semibold w-8 text-left">%</span>
+                            <span className="text-helper text-foreground font-semibold w-8 text-left">%</span>
                           </div>
                         </td>
                         {canEdit && <td className="px-3 py-2"></td>}
@@ -1260,9 +1299,9 @@ export function EnhancedSubnationalBreakdown({
             ) : (
               <div className="text-center py-12 border rounded-lg">
                 <img src="/images/empty-fish.webp" alt="No administrative units" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No administrative units</h3>
+                <h3 className="text-base font-medium mb-2">No sub-national areas selected</h3>
                 <p className="text-muted-foreground">
-                  Use the dropdown above or click on the map to add regions.
+                  Use the dropdown above or click the map to allocate what share of the budget reaches each region or township.
                 </p>
               </div>
             )}
@@ -1270,7 +1309,7 @@ export function EnhancedSubnationalBreakdown({
             {/* Save Status */}
             {entries.length > 0 && saving && (
               <div className="flex justify-end pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Saving...
                 </div>
               </div>

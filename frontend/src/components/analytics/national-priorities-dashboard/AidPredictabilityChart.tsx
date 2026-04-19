@@ -151,12 +151,12 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       // Get the yearLabel from the payload's data point
       const yearLabel = payload[0]?.payload?.yearLabel || label;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{yearLabel}</p>
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground mb-2">{yearLabel}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: entry.color }}
             >
               {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatCurrency(entry.value)}`}
@@ -336,10 +336,10 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-xs font-medium">Year</TableHead>
-            <TableHead className="text-xs font-medium text-right">Planned Disbursements</TableHead>
-            <TableHead className="text-xs font-medium text-right">Actual Disbursements</TableHead>
-            <TableHead className="text-xs font-medium text-right">Variance</TableHead>
+            <TableHead className="text-helper font-medium">Year</TableHead>
+            <TableHead className="text-helper font-medium text-right">Planned Disbursements</TableHead>
+            <TableHead className="text-helper font-medium text-right">Actual Disbursements</TableHead>
+            <TableHead className="text-helper font-medium text-right">Variance</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -347,12 +347,12 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             const variance = row.actualDisbursements - row.plannedDisbursements;
             return (
               <TableRow key={row.year}>
-                <TableCell className="text-sm font-medium">{row.yearLabel}</TableCell>
-                <TableCell className="text-sm text-right">{formatCurrency(row.plannedDisbursements)}</TableCell>
-                <TableCell className="text-sm text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
+                <TableCell className="text-body font-medium">{row.yearLabel}</TableCell>
+                <TableCell className="text-body text-right">{formatCurrency(row.plannedDisbursements)}</TableCell>
+                <TableCell className="text-body text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
                 <TableCell className={cn(
-                  "text-sm text-right font-medium",
-                  variance > 0 ? "text-green-600" : variance < 0 ? "text-red-600" : "text-slate-500"
+                  "text-body text-right font-medium",
+                  variance > 0 ? "text-green-600" : variance < 0 ? "text-destructive" : "text-muted-foreground"
                 )}>
                   {variance > 0 ? "+" : ""}{formatCurrency(variance)}
                 </TableCell>
@@ -422,7 +422,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType("bar")}
               title="Bar Chart"
             >
@@ -431,7 +431,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType("line")}
               title="Line Chart"
             >
@@ -440,7 +440,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType("area")}
               title="Area Chart"
             >
@@ -455,7 +455,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === "chart" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", viewMode === "chart" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setViewMode("chart")}
               title="Chart"
             >
@@ -464,7 +464,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setViewMode("table")}
               title="Table"
             >
@@ -492,14 +492,14 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Aid Predictability
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Planned vs actual disbursements by year
               </CardDescription>
             </div>
@@ -507,17 +507,17 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A close match between planned and actual amounts indicates reliable and predictable aid flows. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.
           </p>
         </CardContent>
@@ -527,7 +527,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-2xl font-semibold text-slate-800">
+            <DialogTitle className="text-2xl font-semibold text-foreground">
               Aid Predictability
             </DialogTitle>
             <DialogDescription className="text-base mt-2">

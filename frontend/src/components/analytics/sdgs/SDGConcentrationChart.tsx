@@ -281,9 +281,9 @@ export function SDGConcentrationChart({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-slate-900 mb-2">Year: {getYearLabel(label)}</p>
-          <div className="space-y-1 text-sm">
+        <div className="bg-white border border-border rounded-lg shadow-lg p-3">
+          <p className="font-semibold text-foreground mb-2">Year: {getYearLabel(label)}</p>
+          <div className="space-y-1 text-body">
             {payload.map((entry: any, index: number) => (
               <div key={index} className="flex justify-between gap-4">
                 <span className="flex items-center gap-2">
@@ -291,7 +291,7 @@ export function SDGConcentrationChart({
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-slate-600">{entry.name}</span>
+                  <span className="text-muted-foreground">{entry.name}</span>
                 </span>
                 <span className="font-medium">
                   {metric === 'activities'
@@ -314,8 +314,8 @@ export function SDGConcentrationChart({
     }
     if (chartData.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
-          <p className="text-sm">No data available</p>
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -372,11 +372,11 @@ export function SDGConcentrationChart({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-2 opacity-50" />
-              <p className="text-slate-600 font-medium">No SDG concentration data available</p>
-              <p className="text-sm text-slate-500 mt-2">Try adjusting your filters</p>
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-muted-foreground font-medium">No SDG concentration data available</p>
+              <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
             </div>
           </div>
         </CardContent>
@@ -395,9 +395,9 @@ export function SDGConcentrationChart({
       <CardContent>
         {/* Calendar & Year Selectors */}
         {customYears.length > 0 && (
-          <div className="flex items-start gap-2 mb-4 pb-3 border-b border-slate-100">
+          <div className="flex items-start gap-2 mb-4 pb-3 border-b border-border">
             {/* Calendar Type Selector */}
-            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -411,7 +411,7 @@ export function SDGConcentrationChart({
                   {sortCustomYearsCalendarFirst(customYears).map(cy => (
                     <DropdownMenuItem
                       key={cy.id}
-                      className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                      className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                       onClick={() => setCalendarType(cy.id)}
                     >
                       <span className="flex items-center gap-2">
@@ -430,7 +430,7 @@ export function SDGConcentrationChart({
 
             {/* Year Range Selector */}
             <div className="flex flex-col gap-1">
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -447,16 +447,16 @@ export function SDGConcentrationChart({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="p-3 w-auto">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                      <span className="text-helper font-medium text-foreground">Select Year Range</span>
                       <button
                         onClick={selectAllYears}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                       >
                         All
                       </button>
                       <button
                         onClick={selectDataRange}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                         title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
                       >
                         Data
@@ -475,10 +475,10 @@ export function SDGConcentrationChart({
                             className={`
                               px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                               ${isStartOrEnd
-                                ? 'bg-slate-200 text-slate-900'
+                                ? 'bg-muted text-foreground'
                                 : inRange
                                   ? 'bg-primary/20 text-primary'
-                                  : 'text-slate-600 hover:bg-slate-100'
+                                  : 'text-muted-foreground hover:bg-muted'
                               }
                             `}
                           >
@@ -487,7 +487,7 @@ export function SDGConcentrationChart({
                         )
                       })}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-2 text-center">
+                    <p className="text-[10px] text-muted-foreground mt-2 text-center">
                       Click start year, then click end year
                     </p>
                   </DropdownMenuContent>
@@ -495,7 +495,7 @@ export function SDGConcentrationChart({
               </div>
               {/* Date Range Indicator */}
               {localDateRange?.from && localDateRange?.to && (
-                <span className="text-xs text-slate-500 text-center">
+                <span className="text-helper text-muted-foreground text-center">
                   {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                 </span>
               )}
@@ -577,7 +577,7 @@ export function SDGConcentrationChart({
 
         {/* Explanatory text */}
         <div className="mt-6">
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart tracks how many SDGs are typically assigned to each activity over time, helping assess the
             organization&apos;s approach to SDG alignment. Activities mapped to just one or two SDGs suggest targeted,
             focused interventions, while those mapped to five or more SDGs may indicate cross-cutting programs or

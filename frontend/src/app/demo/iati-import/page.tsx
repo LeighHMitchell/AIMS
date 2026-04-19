@@ -192,7 +192,7 @@ export default function IatiImportDemoPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">IATI External Publisher Import Demo</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Demonstration of the external publisher detection and import modal system
         </p>
       </div>
@@ -203,7 +203,7 @@ export default function IatiImportDemoPage() {
           <CardTitle>Mock User Profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-body">
             <div>
               <strong>Organisation:</strong> {MOCK_USER.orgName}
             </div>
@@ -233,7 +233,7 @@ export default function IatiImportDemoPage() {
               className="mt-1"
             />
             {selectedFile && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
               </p>
             )}
@@ -247,7 +247,7 @@ export default function IatiImportDemoPage() {
             {uploading ? 'Processing...' : 'Upload and Analyse'}
           </Button>
 
-          <div className="text-xs text-gray-500 space-y-1">
+          <div className="text-helper text-muted-foreground space-y-1">
             <p><strong>Expected behavior:</strong></p>
             <ul className="list-disc list-inside space-y-1">
               <li>If reporting-org matches {MOCK_USER.publisherRefs.join(' or ')}: Direct import as owned activity</li>
@@ -279,7 +279,7 @@ export default function IatiImportDemoPage() {
           <CardContent className="space-y-4">
             <div className="bg-green-50 p-4 rounded-lg">
               <p className="font-medium text-green-800">{result.message}</p>
-              <div className="mt-2 text-sm text-green-700 space-y-1">
+              <div className="mt-2 text-body text-green-700 space-y-1">
                 <p><strong>Type:</strong> {result.type}</p>
                 <p><strong>Activity ID:</strong> {result.activityId}</p>
                 {result.activity && (
@@ -306,7 +306,7 @@ export default function IatiImportDemoPage() {
             Test Instructions
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
+        <CardContent className="space-y-4 text-body">
           <div>
             <h4 className="font-semibold mb-2">To test external publisher detection:</h4>
             <ol className="list-decimal list-inside space-y-1">

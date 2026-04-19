@@ -48,20 +48,20 @@ const ActivityItem = memo(({ activity, style, onClick }: {
   return (
     <div style={style} onClick={handleClick}>
       {/* Activity item content */}
-      <div className="p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
-        <h3 className="font-medium text-gray-900 line-clamp-2">
+      <div className="p-4 border-b border-border hover:bg-muted cursor-pointer">
+        <h3 className="font-medium text-foreground line-clamp-2">
           {activity.title}
         </h3>
         {activity.partnerId && (
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             {activity.partnerId}
           </p>
         )}
         <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-gray-400">
+          <span className="text-helper text-muted-foreground">
             {activity.created_by_org_acronym || activity.created_by_org_name}
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-helper text-muted-foreground">
             {new Date(activity.updatedAt).toLocaleDateString()}
           </span>
         </div>
@@ -175,7 +175,7 @@ export const PerformanceMetrics = memo(({
   }
 
   return (
-    <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded border">
+    <div className="text-helper text-muted-foreground p-2 bg-muted rounded border">
       <div>Last query: {metrics.lastQueryTime}ms</div>
       <div>Average: {Math.round(metrics.averageQueryTime)}ms</div>
     </div>

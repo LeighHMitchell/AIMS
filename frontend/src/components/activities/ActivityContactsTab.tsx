@@ -206,7 +206,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             <AlertCircle className="h-5 w-5" />
             <div>
               <h3 className="font-medium">Error loading contacts</h3>
-              <p className="text-sm text-destructive mt-1">{error}</p>
+              <p className="text-body text-destructive mt-1">{error}</p>
             </div>
           </div>
         </CardContent>
@@ -220,7 +220,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
       <Card>
         <CardContent className="p-12 text-center">
           <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No contacts</h3>
+          <h3 className="text-base font-medium mb-2">No contacts</h3>
           <p className="text-muted-foreground">
             Use the button above to add your first contact.
           </p>
@@ -265,7 +265,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                       </span>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs border border-border bg-card shadow-lg">
-                      <p className="text-sm text-muted-foreground font-normal">This contact is designated as the focal point for this activity</p>
+                      <p className="text-body text-muted-foreground font-normal">This contact is designated as the focal point for this activity</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -279,7 +279,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                       </span>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs border border-border bg-card shadow-lg">
-                      <p className="text-sm text-muted-foreground font-normal">This contact was imported from IATI data</p>
+                      <p className="text-body text-muted-foreground font-normal">This contact was imported from IATI data</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -288,14 +288,14 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
             {/* Line 2: Job Title • Department */}
             {jobLine && (
-              <p className="text-sm text-muted-foreground break-words">
+              <p className="text-body text-muted-foreground break-words">
                 {jobLine}
               </p>
             )}
 
             {/* Line 3: Organization (only show if person name exists, otherwise it's already in the title) */}
             {contact.organisation && (contact.firstName || contact.lastName) && (
-              <p className="text-sm text-muted-foreground break-words">
+              <p className="text-body text-muted-foreground break-words">
                 {contact.organisation}
                 {contact.organisationAcronym && (
                   <span className="text-muted-foreground ml-1">({contact.organisationAcronym})</span>
@@ -312,7 +312,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
               <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <a 
                 href={`mailto:${contact.email}`} 
-                className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
+                className="text-body text-foreground hover:text-blue-600 transition-colors truncate"
               >
                 {contact.email}
               </a>
@@ -322,7 +322,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
           {(contact.phone || contact.phoneNumber) && (
             <div className="flex items-center space-x-2">
               <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
               </span>
             </div>
@@ -335,7 +335,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                 href={contact.website} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
+                className="text-body text-foreground hover:text-blue-600 transition-colors truncate"
               >
                 {contact.website.replace(/^https?:\/\//, '')}
               </a>
@@ -396,7 +396,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-card shadow-lg">
-                                <p className="text-sm text-muted-foreground font-normal">Focal Point</p>
+                                <p className="text-body text-muted-foreground font-normal">Focal Point</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -488,14 +488,14 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             </Badge>
           </div>
           
-          <p className="text-sm text-muted-foreground mt-0.5">{focalPoint.email}</p>
+          <p className="text-body text-muted-foreground mt-0.5">{focalPoint.email}</p>
           
           {focalPoint.job_title && (
-            <p className="text-sm text-muted-foreground">{focalPoint.job_title}</p>
+            <p className="text-body text-muted-foreground">{focalPoint.job_title}</p>
           )}
           
           {orgName && (
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+            <p className="text-body text-muted-foreground flex items-center gap-1.5 mt-1">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
               {orgName}
               {orgAcronym && ` (${orgAcronym})`}
@@ -541,7 +541,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             <UserCheck className="h-5 w-5 text-muted-foreground" />
             Activity Focal Points
           </CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="text-helper">
             Key contacts responsible for this activity. Reach out to them for project information.
           </CardDescription>
         </CardHeader>

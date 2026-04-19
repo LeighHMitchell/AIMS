@@ -160,7 +160,6 @@ export async function PUT(
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    console.log('[Templates API] Template updated:', id);
 
     return NextResponse.json({
       success: true,
@@ -236,7 +235,6 @@ export async function DELETE(
       return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
 
-    console.log('[Templates API] Template deleted (soft):', id);
 
     return NextResponse.json({
       success: true,

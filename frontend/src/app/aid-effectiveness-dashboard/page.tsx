@@ -221,7 +221,7 @@ function HelpTooltip({ helpKey, className }: { helpKey: string; className?: stri
         <TooltipTrigger asChild>
           <HelpCircle className={`h-4 w-4 cursor-help shrink-0 ${className || 'text-muted-foreground hover:text-foreground'}`} />
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+        <TooltipContent side="top" className="max-w-xs text-helper leading-relaxed">
           {text}
         </TooltipContent>
       </UITooltip>
@@ -563,7 +563,7 @@ export default function AidEffectivenessDashboard() {
               {customYears.length > 0 && (
                 <>
                   <div className="min-w-[180px]">
-                    <label className="text-sm font-medium text-white mb-2 block">Calendar</label>
+                    <label className="text-body font-medium text-white mb-2 block">Calendar</label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="h-9 gap-1 bg-card">
@@ -593,7 +593,7 @@ export default function AidEffectivenessDashboard() {
                   </div>
 
                   <div className="min-w-[200px]">
-                    <label className="text-sm font-medium text-white mb-2 block">Year Range</label>
+                    <label className="text-body font-medium text-white mb-2 block">Year Range</label>
                     <div className="flex flex-col gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -609,7 +609,7 @@ export default function AidEffectivenessDashboard() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="p-3 w-auto">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                            <span className="text-helper font-medium text-foreground">Select Year Range</span>
                           </div>
                           <button
                             onClick={() => setSelectedYears([])}
@@ -651,7 +651,7 @@ export default function AidEffectivenessDashboard() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                       {effectiveDateRange && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-helper text-muted-foreground">
                           {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                         </span>
                       )}
@@ -662,7 +662,7 @@ export default function AidEffectivenessDashboard() {
 
               {/* Reporting Organisation */}
               <div className="min-w-[320px]">
-                <label className="text-sm font-medium text-white mb-2 block">Reporting Organisation</label>
+                <label className="text-body font-medium text-white mb-2 block">Reporting Organisation</label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9 gap-2 bg-card w-full justify-between">
@@ -707,7 +707,7 @@ export default function AidEffectivenessDashboard() {
                             {org.logo ? <AvatarImage src={org.logo} alt={org.name} /> : null}
                             <AvatarFallback className="text-[9px] bg-muted">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
+                          <span className="text-body truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
                           <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0 ml-auto">{org.id.substring(0, 8)}</span>
                         </div>
                       </DropdownMenuItem>
@@ -718,7 +718,7 @@ export default function AidEffectivenessDashboard() {
 
               {/* Sector Filter */}
               <div className="min-w-[200px]">
-                <label className="text-sm font-medium text-white mb-2 block">Sector</label>
+                <label className="text-body font-medium text-white mb-2 block">Sector</label>
                 <SectorHierarchyFilter
                   selected={sectorSelection}
                   onChange={setSectorSelection}
@@ -756,7 +756,7 @@ export default function AidEffectivenessDashboard() {
                 <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                      <p className="text-body font-bold text-white flex items-center gap-1">
                         Overall Score <HelpTooltip helpKey="overallScore" className="text-white/60 hover:text-white" />
                       </p>
                       <p className="text-3xl font-bold text-white">{metrics.overallScore}%</p>
@@ -764,7 +764,7 @@ export default function AidEffectivenessDashboard() {
                     <Shield className="h-7 w-7 text-white/50" />
                   </div>
                   <Progress value={metrics.overallScore} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
-                  <p className="text-xs font-semibold text-white mt-1">{metrics.total} activities assessed</p>
+                  <p className="text-helper font-semibold text-white mt-1">{metrics.total} activities assessed</p>
                 </CardContent>
               </Card>
               <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '25% 50%' }}>
@@ -772,7 +772,7 @@ export default function AidEffectivenessDashboard() {
                 <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                      <p className="text-body font-bold text-white flex items-center gap-1">
                         GPEDC Compliant <HelpTooltip helpKey="gpedcCompliant" className="text-white/60 hover:text-white" />
                       </p>
                       <p className="text-3xl font-bold text-white">{metrics.complianceRate}%</p>
@@ -780,7 +780,7 @@ export default function AidEffectivenessDashboard() {
                     <CheckCircle2 className="h-7 w-7 text-white/50" />
                   </div>
                   <Progress value={metrics.complianceRate} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
-                  <p className="text-xs font-semibold text-white mt-1">{metrics.gpedcCompliant} of {metrics.total} (60%+ threshold)</p>
+                  <p className="text-helper font-semibold text-white mt-1">{metrics.gpedcCompliant} of {metrics.total} (60%+ threshold)</p>
                 </CardContent>
               </Card>
               <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '50% 50%' }}>
@@ -788,7 +788,7 @@ export default function AidEffectivenessDashboard() {
                 <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                      <p className="text-body font-bold text-white flex items-center gap-1">
                         Gov Ownership <HelpTooltip helpKey="govOwnership" className="text-white/60 hover:text-white" />
                       </p>
                       <p className="text-3xl font-bold text-white">{metrics.sectionScores.ownership}%</p>
@@ -796,7 +796,7 @@ export default function AidEffectivenessDashboard() {
                     <Building2 className="h-7 w-7 text-white/50" />
                   </div>
                   <Progress value={metrics.sectionScores.ownership} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
-                  <p className="text-xs font-semibold text-white mt-1">GPEDC Indicator 1</p>
+                  <p className="text-helper font-semibold text-white mt-1">GPEDC Indicator 1</p>
                 </CardContent>
               </Card>
               <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '75% 50%' }}>
@@ -804,7 +804,7 @@ export default function AidEffectivenessDashboard() {
                 <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                      <p className="text-body font-bold text-white flex items-center gap-1">
                         Untied Aid <HelpTooltip helpKey="untiedAid" className="text-white/60 hover:text-white" />
                       </p>
                       <p className="text-3xl font-bold text-white">{metrics.tiedAid[0].pct}%</p>
@@ -812,7 +812,7 @@ export default function AidEffectivenessDashboard() {
                     <Handshake className="h-7 w-7 text-white/50" />
                   </div>
                   <Progress value={metrics.tiedAid[0].pct} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
-                  <p className="text-xs font-semibold text-white mt-1">GPEDC Indicator 10</p>
+                  <p className="text-helper font-semibold text-white mt-1">GPEDC Indicator 10</p>
                 </CardContent>
               </Card>
               <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '100% 50%' }}>
@@ -820,14 +820,14 @@ export default function AidEffectivenessDashboard() {
                 <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                      <p className="text-body font-bold text-white flex items-center gap-1">
                         Avg Outcomes <HelpTooltip helpKey="avgOutcomes" className="text-white/60 hover:text-white" />
                       </p>
                       <p className="text-3xl font-bold text-white">{metrics.avgOutcome}</p>
                     </div>
                     <Target className="h-7 w-7 text-white/50" />
                   </div>
-                  <p className="text-xs font-semibold text-white mt-4">Indicators per activity</p>
+                  <p className="text-helper font-semibold text-white mt-4">Indicators per activity</p>
                 </CardContent>
               </Card>
             </div>
@@ -1033,7 +1033,7 @@ export default function AidEffectivenessDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {Object.entries(SECTION_FIELDS).map(([key, section]) => (
-                        <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div key={key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <span className="font-medium text-foreground">{section.label}</span>
                           <div className="flex items-center gap-3">
                             <Progress value={metrics.sectionScores[key]} className="w-32 bg-muted" style={{ '--progress-foreground': '#F37021' } as React.CSSProperties} />
@@ -1104,7 +1104,7 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey, desc
             {helpKey && <HelpTooltip helpKey={helpKey} />}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">{badge}</Badge>
+            <Badge variant="outline" className="text-helper">{badge}</Badge>
             <Badge className={
               score >= 70 ? "bg-[#F37021] text-white" :
               score >= 50 ? "bg-muted text-foreground" :
@@ -1190,8 +1190,8 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
       <CardContent>
         <div className="space-y-3">
           {data.map(item => (
-            <div key={item.reason} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-              <span className="text-sm text-foreground">{item.reason}</span>
+            <div key={item.reason} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-body text-foreground">{item.reason}</span>
               <Badge variant="secondary" className="bg-muted text-foreground">{item.count}</Badge>
             </div>
           ))}

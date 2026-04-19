@@ -64,13 +64,13 @@ export function ActivityVote({
     sm: {
       button: 'w-6 h-6',
       icon: 'h-4 w-4',
-      score: 'text-xs min-w-[24px]',
+      score: 'text-helper min-w-[24px]',
       gap: 'gap-0.5'
     },
     default: {
       button: 'w-8 h-8',
       icon: 'h-5 w-5',
-      score: 'text-sm min-w-[32px]',
+      score: 'text-body min-w-[32px]',
       gap: 'gap-1'
     },
     lg: {
@@ -106,10 +106,10 @@ export function ActivityVote({
   // Determine score color
   const getScoreColor = () => {
     if (userVote === 1) return 'text-primary font-semibold'
-    if (userVote === -1) return 'text-red-500 font-semibold'
-    if (score > 0) return 'text-slate-700'
-    if (score < 0) return 'text-slate-500'
-    return 'text-slate-500'
+    if (userVote === -1) return 'text-destructive font-semibold'
+    if (score > 0) return 'text-foreground'
+    if (score < 0) return 'text-muted-foreground'
+    return 'text-muted-foreground'
   }
 
   if (isLoading) {
@@ -120,9 +120,9 @@ export function ActivityVote({
         config.gap,
         className
       )}>
-        <div className={cn('rounded bg-slate-100 animate-pulse', config.button)} />
-        <div className={cn('rounded bg-slate-100 animate-pulse h-4 w-6')} />
-        <div className={cn('rounded bg-slate-100 animate-pulse', config.button)} />
+        <div className={cn('rounded bg-muted animate-pulse', config.button)} />
+        <div className={cn('rounded bg-muted animate-pulse h-4 w-6')} />
+        <div className={cn('rounded bg-muted animate-pulse', config.button)} />
       </div>
     )
   }
@@ -150,7 +150,7 @@ export function ActivityVote({
                 config.button,
                 userVote === 1
                   ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                  : 'text-slate-400 hover:text-primary hover:bg-slate-100',
+                  : 'text-muted-foreground hover:text-primary hover:bg-muted',
                 (!userId || isVoting) && 'opacity-50 cursor-not-allowed',
                 'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1'
               )}
@@ -171,7 +171,7 @@ export function ActivityVote({
           </TooltipTrigger>
           <TooltipContent side={isHorizontal ? 'top' : 'right'}>
             <p>{userId ? 'Upvote this activity' : 'Log in to vote'}</p>
-            {showCounts && <p className="text-xs text-muted-foreground">{upvoteCount} upvotes</p>}
+            {showCounts && <p className="text-helper text-muted-foreground">{upvoteCount} upvotes</p>}
           </TooltipContent>
         </Tooltip>
 
@@ -205,8 +205,8 @@ export function ActivityVote({
                 'flex items-center justify-center rounded-md transition-colors',
                 config.button,
                 userVote === -1
-                  ? 'bg-red-50 text-red-500 hover:bg-red-100'
-                  : 'text-slate-400 hover:text-red-500 hover:bg-slate-100',
+                  ? 'bg-destructive/10 text-destructive hover:bg-destructive/10'
+                  : 'text-muted-foreground hover:text-destructive hover:bg-muted',
                 (!userId || isVoting) && 'opacity-50 cursor-not-allowed',
                 'focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-1'
               )}
@@ -227,13 +227,13 @@ export function ActivityVote({
           </TooltipTrigger>
           <TooltipContent side={isHorizontal ? 'bottom' : 'right'}>
             <p>{userId ? 'Downvote this activity' : 'Log in to vote'}</p>
-            {showCounts && <p className="text-xs text-muted-foreground">{downvoteCount} downvotes</p>}
+            {showCounts && <p className="text-helper text-muted-foreground">{downvoteCount} downvotes</p>}
           </TooltipContent>
         </Tooltip>
 
         {/* Error indicator (subtle) */}
         {error && (
-          <div className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-red-500" title={error} />
+          <div className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-destructive/100" title={error} />
         )}
       </div>
     </TooltipProvider>

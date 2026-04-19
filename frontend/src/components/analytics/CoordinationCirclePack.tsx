@@ -329,7 +329,7 @@ export function CoordinationCirclePack({
 
   if (!data || data.children.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96 text-slate-500">
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
         No coordination data available
       </div>
     );
@@ -347,7 +347,7 @@ export function CoordinationCirclePack({
       {/* Tooltip */}
       {tooltip.show && tooltip.content && (
         <div
-          className="absolute pointer-events-none z-50 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm max-w-xs"
+          className="absolute pointer-events-none z-50 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg text-body max-w-xs"
           style={{
             left: Math.min(tooltip.x + 10, dimensions.width - 200),
             top: tooltip.y - 10,
@@ -356,16 +356,16 @@ export function CoordinationCirclePack({
         >
           <div className="font-semibold">{tooltip.content.title}</div>
           {tooltip.content.subtitle && (
-            <div className="text-slate-400 text-xs">{tooltip.content.subtitle}</div>
+            <div className="text-muted-foreground text-helper">{tooltip.content.subtitle}</div>
           )}
           <div className="mt-1 flex items-center gap-2">
             <span className="text-emerald-400">{tooltip.content.value}</span>
           </div>
-          <div className="text-slate-400 text-xs mt-1">
+          <div className="text-muted-foreground text-helper mt-1">
             {tooltip.content.activityCount} {tooltip.content.activityCount === 1 ? "activity" : "activities"}
           </div>
           {tooltip.content.isParent && tooltip.content.childCount && (
-            <div className="text-slate-400 text-xs">
+            <div className="text-muted-foreground text-helper">
               {tooltip.content.childCount} {view === "sectors" ? "partners" : "sectors"}
             </div>
           )}
@@ -373,7 +373,7 @@ export function CoordinationCirclePack({
       )}
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This circle pack visualisation groups organisations and sectors into nested bubbles to reveal coordination patterns. The size of each bubble reflects the total financial value, while the nesting shows how entities cluster within broader categories. Hover over any bubble to see detailed breakdowns including activity counts and total spending.
       </p>
     </div>

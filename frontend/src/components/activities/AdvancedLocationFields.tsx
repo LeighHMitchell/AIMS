@@ -202,7 +202,7 @@ export default function AdvancedLocationFields({
     <Card className="w-full">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+          <CardHeader className="cursor-pointer hover:bg-muted transition-colors">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -210,7 +210,7 @@ export default function AdvancedLocationFields({
               </CardTitle>
               <div className="flex items-center gap-2">
                 {localLocations.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-helper">
                     {localLocations.length} location{localLocations.length !== 1 ? 's' : ''}
                   </Badge>
                 )}
@@ -236,7 +236,7 @@ export default function AdvancedLocationFields({
             {localLocations.length === 0 ? (
               <div className="text-center py-12">
                 <img src="/images/empty-pushpin.webp" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No locations</h3>
+                <h3 className="text-base font-medium mb-2">No locations</h3>
                 <p className="text-muted-foreground">
                   Use the button above to add your first location.
                 </p>
@@ -244,11 +244,11 @@ export default function AdvancedLocationFields({
             ) : (
               <div className="space-y-4">
                 {localLocations.map((location, index) => (
-                  <Card key={location.id} className="border border-gray-200">
+                  <Card key={location.id} className="border border-border">
                     <CardContent className="p-6 space-y-4">
                       {/* Location Header */}
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm text-gray-700">
+                        <h4 className="font-medium text-body text-foreground">
                           Location {index + 1}
                         </h4>
                         {canEdit && (
@@ -256,9 +256,9 @@ export default function AdvancedLocationFields({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeLocation(location.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </div>
@@ -267,7 +267,7 @@ export default function AdvancedLocationFields({
                       {errors[location.id] && (
                         <Alert variant="destructive">
                           <AlertCircle className="h-4 w-4" />
-                          <AlertDescription className="text-sm">
+                          <AlertDescription className="text-body">
                             {errors[location.id]}
                           </AlertDescription>
                         </Alert>
@@ -310,7 +310,7 @@ export default function AdvancedLocationFields({
 
                       {/* Location ID */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Location ID</Label>
+                        <Label className="text-body font-medium">Location ID</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`location-id-vocab-${location.id}`}>Vocabulary</Label>
@@ -350,7 +350,7 @@ export default function AdvancedLocationFields({
 
                       {/* Administrative Divisions */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Administrative Divisions</Label>
+                        <Label className="text-body font-medium">Administrative Divisions</Label>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`admin-vocab-${location.id}`}>Vocabulary</Label>
@@ -439,7 +439,7 @@ export default function AdvancedLocationFields({
 
                       {/* Coordinates */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Coordinates</Label>
+                        <Label className="text-body font-medium">Coordinates</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`latitude-${location.id}`}>Latitude</Label>

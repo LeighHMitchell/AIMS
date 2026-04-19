@@ -165,7 +165,7 @@ const StepperTitle = React.forwardRef<HTMLDivElement, StepperTitleProps>(
       <div
         ref={ref}
         className={cn(
-          "mt-2 text-sm font-medium transition-colors duration-300",
+          "mt-2 text-body font-medium transition-colors duration-300",
           state === "active"
             ? "text-foreground font-semibold"
             : state === "completed"
@@ -192,7 +192,7 @@ const StepperDescription = React.forwardRef<HTMLDivElement, StepperDescriptionPr
       <div
         ref={ref}
         className={cn(
-          "text-xs text-muted-foreground/70",
+          "text-helper text-muted-foreground/70",
           className,
         )}
         {...props}

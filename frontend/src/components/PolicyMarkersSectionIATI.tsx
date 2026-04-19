@@ -126,7 +126,6 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
         setAvailableMarkers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching IATI policy markers:', error);
-        console.log('Using fallback IATI policy markers...');
         setAvailableMarkers(FALLBACK_IATI_MARKERS);
         toast.warning('Using offline IATI policy markers. Database connection may be required for full functionality.');
       } finally {
@@ -236,18 +235,18 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
 
     return (
       <div key={marker.id} className={`border rounded-lg p-4 transition-all ${
-        isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'
+        isSelected ? 'border-blue-300 bg-blue-50' : 'border-border bg-white'
       }`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-1">
                 {MARKER_TYPE_ICONS[marker.marker_type]}
-                <h4 className="font-medium text-sm">{marker.name}</h4>
+                <h4 className="font-medium text-body">{marker.name}</h4>
                 
                 {/* IATI Standard Badge */}
                 {marker.is_iati_standard && (
-                  <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+                  <Badge variant="outline" className="text-helper border-green-400 text-green-700">
                     <Globe className="h-3 w-3 mr-1" />
                     IATI {marker.iati_code}
                   </Badge>
@@ -255,16 +254,16 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               </div>
               
               {/* Vocabulary Badge - moved to the right */}
-              <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
+              <Badge variant="outline" className="text-helper border-gray-400 text-muted-foreground">
                 {VOCABULARY_LABELS[marker.vocabulary as keyof typeof VOCABULARY_LABELS] || `Vocab ${marker.vocabulary}`}
               </Badge>
             </div>
             
-            <p className="text-xs text-gray-600 mb-3">{marker.description}</p>
+            <p className="text-helper text-muted-foreground mb-3">{marker.description}</p>
             
             {/* Significance Selection */}
             <div className="mb-3">
-              <Label className="text-xs font-medium mb-1 block">Significance Level</Label>
+              <Label className="text-helper font-medium mb-1 block">Significance Level</Label>
               <PolicyMarkerScoreSelectIATI
                 value={significance}
                 onValueChange={(value) => updateMarkerSignificance(marker.id, value as 0 | 1 | 2 | 3 | 4)}
@@ -277,7 +276,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               <div className="mb-3">
                 <button
                   onClick={() => toggleCardExpansion(marker.id)}
-                  className="flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-gray-900 mb-2"
+                  className="flex items-center gap-1 text-helper font-medium text-foreground hover:text-foreground mb-2"
                 >
                   {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                   Rationale
@@ -288,7 +287,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
                     value={rationale}
                     onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
                     placeholder="Explain why this marker applies and its significance level..."
-                    className="text-xs"
+                    className="text-helper"
                     rows={3}
                   />
                 )}
@@ -316,7 +315,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
         </div>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-gray-200 rounded-lg" />
+            <div key={i} className="h-24 bg-muted rounded-lg" />
           ))}
         </div>
       </div>
@@ -334,7 +333,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
           <h3 className="text-lg font-semibold">IATI Policy Markers</h3>
           <HelpText content={HELP_CONTENT} />
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-body text-muted-foreground">
           {selectedCount} of {totalMarkers} markers selected
         </div>
       </div>
@@ -355,7 +354,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
                   <span className="sm:hidden">{label.split(' ')[0]}</span>
                 </div>
                 {selectedInType > 0 && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
+                  <Badge variant="secondary" className="ml-2 text-helper">
                     {selectedInType}
                   </Badge>
                 )}
@@ -379,7 +378,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               </div>
               
               {getMarkersByType(type).length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <p>No {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS].toLowerCase()} markers available</p>
                 </div>
               )}

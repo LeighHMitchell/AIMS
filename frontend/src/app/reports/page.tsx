@@ -232,27 +232,22 @@ export default function ReportsPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8 text-muted-foreground" />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-            <p className="text-muted-foreground mt-1">
-              Download pre-formatted reports or design your own custom pivot tables.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Reports</h1>
+          <p className="text-muted-foreground mt-2 max-w-2xl">
+            Pre-formatted downloads and custom pivot tables.
+          </p>
         </div>
 
         {/* Tabs for Standard vs Custom Reports */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
-              <FileText className="h-4 w-4" />
+          <TabsList className="h-auto bg-transparent p-0 gap-6 border-b mb-6 flex flex-wrap rounded-none w-full justify-start">
+            <TabsTrigger value="standard" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">
               Standard Reports
             </TabsTrigger>
-            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
-              <BarChart3 className="h-4 w-4" />
+            <TabsTrigger value="custom" className="group rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors gap-2">
               Design Your Own
-              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white group-data-[state=active]:bg-white group-data-[state=active]:text-[#3C6255]">
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white">
                 New
               </span>
             </TabsTrigger>
@@ -262,7 +257,7 @@ export default function ReportsPage() {
           <TabsContent value="standard" className="space-y-8 mt-0 border-0 p-0">
             {/* Activity Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Activity Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -282,7 +277,7 @@ export default function ReportsPage() {
 
             {/* Financial Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Financial Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -302,7 +297,7 @@ export default function ReportsPage() {
 
             {/* Organization Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Organization Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -322,7 +317,7 @@ export default function ReportsPage() {
 
             {/* Fund Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Pooled Fund Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -342,7 +337,7 @@ export default function ReportsPage() {
 
             {/* Data Quality Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Data Quality Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

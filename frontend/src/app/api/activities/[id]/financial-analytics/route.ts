@@ -20,7 +20,6 @@ export async function GET(
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const activityId = id
 
-    console.log(`[Financial Analytics] Optimized version - fetching data for activity ${activityId}`)
 
     // Fetch activity data (only fields we actually use)
     const { data: activity, error: activityError } = await supabase
@@ -42,7 +41,6 @@ export async function GET(
       .select('id, value, currency, usd_value, value_date, period_start, period_end, budget_type')
       .eq('activity_id', activityId)
 
-    console.log(`[Financial Analytics] Fetched ${budgets?.length || 0} budgets for activity ${activityId}`)
 
     // Convert budgets to USD if needed (parallel conversion for performance)
     if (budgets && budgets.length > 0) {
@@ -57,7 +55,6 @@ export async function GET(
             )
             if (result.success && result.usd_amount) {
               budget.usd_value = result.usd_amount
-              console.log(`[Financial Analytics] Converted budget ${budget.value} ${budget.currency} → $${result.usd_amount} USD`)
             } else {
               console.warn(`[Financial Analytics] Budget conversion failed: ${result.error}`)
               // If conversion fails, use the original value if it's already in USD
@@ -100,7 +97,6 @@ export async function GET(
       `)
       .eq('activity_id', activityId)
 
-    console.log(`[Financial Analytics] Fetched ${transactions?.length || 0} transactions for activity ${activityId}`)
 
     // Convert transactions to USD if needed (parallel conversion for performance)
     if (transactions && transactions.length > 0) {
@@ -108,7 +104,6 @@ export async function GET(
         // 1. Fallback to provider org default currency if transaction currency is missing
         if (!transaction.currency && transaction.provider_organization?.default_currency) {
           transaction.currency = transaction.provider_organization.default_currency
-          console.log(`[Financial Analytics] Using provider org default currency: ${transaction.currency}`)
         }
 
         // 2. Convert if missing both USD value fields
@@ -130,7 +125,6 @@ export async function GET(
               // Store in both fields for compatibility
               transaction.usd_value = result.usd_amount
               transaction.value_usd = result.usd_amount
-              console.log(`[Financial Analytics] Converted transaction ${transaction.value} ${transaction.currency} → $${result.usd_amount} USD`)
             } else {
               console.warn(`[Financial Analytics] Transaction conversion failed: ${result.error}`)
               // If conversion fails but currency is USD, use original value
@@ -158,7 +152,6 @@ export async function GET(
         acc[t.transaction_type] = (acc[t.transaction_type] || 0) + 1
         return acc
       }, {})
-      console.log(`[Financial Analytics] Transaction types breakdown:`, transactionTypes)
     }
 
     // Fetch planned disbursements - only needed fields
@@ -250,7 +243,6 @@ export async function GET(
       })
     }
     
-    console.log(`[Financial Analytics] Raw budget data entries: ${rawBudgetData.length}`)
 
     // Calculate Cumulative Spending
     const transactionsByDate = transactions
@@ -416,7 +408,6 @@ export async function GET(
 
     // Add actual disbursements from transactions
     const disbursementTransactions = transactions?.filter((t: any) => t.transaction_type === '3') || []
-    console.log(`[Financial Analytics] Found ${disbursementTransactions.length} disbursement transactions (type 3)`)
     
     disbursementTransactions.forEach((transaction: any) => {
       if (transaction.transaction_date) {
@@ -465,7 +456,6 @@ export async function GET(
         })
     }
     
-    console.log(`[Financial Analytics] Raw disbursement data entries: ${rawDisbursementData.length}`)
 
     // Helper function to get role code (1-4) from iati_role_code or role_type
     const getRoleCode = (org: any): string | null => {

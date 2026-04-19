@@ -100,7 +100,7 @@ export function MultiLingualNarrativeInput({
     <div className={`space-y-3 ${className}`}>
       {/* Primary Language Input */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-body font-medium text-foreground">
           {label} ({getLanguageName(primaryLanguage)})
         </label>
         <textarea
@@ -109,7 +109,7 @@ export function MultiLingualNarrativeInput({
           placeholder={placeholder}
           disabled={disabled}
           rows={3}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
         />
       </div>
 
@@ -121,7 +121,7 @@ export function MultiLingualNarrativeInput({
           size="sm"
           onClick={() => setShowAdditionalLanguages(true)}
           disabled={disabled}
-          className="text-xs"
+          className="text-helper"
         >
           <Plus className="h-3 w-3 mr-1" />
           Add translation
@@ -131,7 +131,7 @@ export function MultiLingualNarrativeInput({
       {showAdditionalLanguages && (
         <div className="space-y-3 border-t pt-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700">Additional Languages</h4>
+            <h4 className="text-body font-medium text-foreground">Additional Languages</h4>
             {availableLanguages.length > 0 && (
               <Button
                 type="button"
@@ -139,7 +139,7 @@ export function MultiLingualNarrativeInput({
                 size="sm"
                 onClick={addLanguage}
                 disabled={disabled}
-                className="text-xs h-7"
+                className="text-helper h-7"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add language
@@ -148,9 +148,9 @@ export function MultiLingualNarrativeInput({
           </div>
 
           {additionalLanguages.map((lang) => (
-            <div key={lang} className="space-y-2 p-3 bg-gray-50 rounded-md relative">
+            <div key={lang} className="space-y-2 p-3 bg-muted rounded-md relative">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-body font-medium text-foreground">
                   {getLanguageName(lang)} ({lang})
                 </label>
                 <Button
@@ -170,13 +170,13 @@ export function MultiLingualNarrativeInput({
                 placeholder={`Enter ${getLanguageName(lang).toLowerCase()} translation...`}
                 disabled={disabled}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                className="flex w-full rounded-md border border-input bg-white px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
             </div>
           ))}
 
           {additionalLanguages.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-body text-muted-foreground italic">
               No additional translations added yet. Click "Add language" to add a translation.
             </p>
           )}

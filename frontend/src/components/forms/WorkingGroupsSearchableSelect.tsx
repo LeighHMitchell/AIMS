@@ -68,7 +68,7 @@ export function WorkingGroupsSearchableSelect({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             selectedGroups.length === 0 && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -120,7 +120,7 @@ export function WorkingGroupsSearchableSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -137,7 +137,7 @@ export function WorkingGroupsSearchableSelect({
             <CommandList className="max-h-80">
               {Object.entries(groupedOptions).map(([sectorName, groups]) => (
                 <CommandGroup key={sectorName}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                  <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                     {sectorName}
                   </div>
                   {groups.map((wg) => (
@@ -160,7 +160,7 @@ export function WorkingGroupsSearchableSelect({
                           <span className="font-medium text-foreground">{wg.label}</span>
                         </div>
                         {wg.description && (
-                          <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                          <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                             {wg.description}
                           </div>
                         )}
@@ -171,10 +171,10 @@ export function WorkingGroupsSearchableSelect({
               ))}
               {Object.keys(groupedOptions).length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No working groups found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms
                   </div>
                 </div>

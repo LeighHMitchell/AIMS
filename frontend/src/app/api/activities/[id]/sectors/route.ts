@@ -140,9 +140,6 @@ export async function POST(
     const { id: activityId } = await params;
     const { sectors, replace = false } = await request.json();
 
-    console.log('[Sectors API] POST request for activity:', activityId);
-    console.log('[Sectors API] Sectors to import:', sectors);
-    console.log('[Sectors API] Replace existing:', replace);
 
     // Validate total percentage
     const total = sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
@@ -184,7 +181,6 @@ export async function POST(
       };
     });
 
-    console.log('[Sectors API] Prepared sectors for insertion:', sectorsToInsert);
 
     // Insert new sectors
     const { data: insertedSectors, error: insertError } = await supabase
@@ -207,7 +203,6 @@ export async function POST(
       console.error('[Sectors API] Error updating activity timestamp:', updateError);
     }
 
-    console.log('[Sectors API] Successfully inserted sectors:', insertedSectors);
 
     // Trigger auto-mapping from sectors to budget classifications
     let autoMappingResult = null;

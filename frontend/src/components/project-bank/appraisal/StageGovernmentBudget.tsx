@@ -42,37 +42,37 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">Government Budget Structuring</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Prepare this project for government budget funding — confirm budget allocation, implementation agency, and procurement approach.
         </p>
       </div>
 
       {/* Budget Allocation */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Budget Allocation</Label>
+        <Label className="text-body font-medium text-foreground">Budget Allocation</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Budget Source <HelpTooltip text="The government budget source (e.g. Union Budget, State/Region Budget, Special Fund)." /></label>
+            <label className="text-helper text-muted-foreground">Budget Source <HelpTooltip text="The government budget source (e.g. Union Budget, State/Region Budget, Special Fund)." /></label>
             <Input
               value={formData.budget_source || ''}
               onChange={e => updateField('budget_source', e.target.value)}
-              className="h-8 text-sm"
+              className="h-8 text-body"
               placeholder="e.g. Union Budget, State Budget"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Fiscal Year <HelpTooltip text="The fiscal year in which the budget is allocated." /></label>
+            <label className="text-helper text-muted-foreground">Fiscal Year <HelpTooltip text="The fiscal year in which the budget is allocated." /></label>
             <Input
               value={formData.budget_fiscal_year || ''}
               onChange={e => updateField('budget_fiscal_year', e.target.value)}
-              className="h-8 text-sm"
+              className="h-8 text-body"
               placeholder="e.g. FY 2026-27"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Budget Allocation Status <HelpTooltip text="Current status of the budget allocation process." /></label>
+            <label className="text-helper text-muted-foreground">Budget Allocation Status <HelpTooltip text="Current status of the budget allocation process." /></label>
             <Select value={formData.budget_allocation_status || ''} onValueChange={v => updateField('budget_allocation_status', v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select status..." /></SelectTrigger>
+              <SelectTrigger className="h-8 text-body"><SelectValue placeholder="Select status..." /></SelectTrigger>
               <SelectContent>
                 {BUDGET_ALLOCATION_STATUSES.map(bs => (
                   <SelectItem key={bs.value} value={bs.value}>
@@ -86,23 +86,23 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
             </Select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Budget Amount (USD) <HelpTooltip text="Total budget amount requested or allocated." /></label>
+            <label className="text-helper text-muted-foreground">Budget Amount (USD) <HelpTooltip text="Total budget amount requested or allocated." /></label>
             <FormattedNumberInput
               value={formData.budget_amount ?? null}
               onChange={v => updateField('budget_amount', v)}
               placeholder="e.g. 10,000,000"
               decimals={2}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Annual Operating Cost (USD) <HelpTooltip text="Expected annual operating and maintenance cost once the project is completed." /></label>
+            <label className="text-helper text-muted-foreground">Annual Operating Cost (USD) <HelpTooltip text="Expected annual operating and maintenance cost once the project is completed." /></label>
             <FormattedNumberInput
               value={formData.annual_operating_cost ?? null}
               onChange={v => updateField('annual_operating_cost', v)}
               placeholder="e.g. 500,000"
               decimals={2}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
         </div>
@@ -110,7 +110,7 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
 
       {/* Implementation */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Implementation</Label>
+        <Label className="text-body font-medium text-foreground">Implementation</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex items-center gap-3 md:col-span-2">
             <Switch
@@ -120,18 +120,18 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
             <Label>Implementation Agency Confirmed <HelpTooltip text="Whether the implementing ministry/agency has been confirmed and has capacity." /></Label>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Implementing Agency <HelpTooltip text="Name of the ministry or agency responsible for implementation." /></label>
+            <label className="text-helper text-muted-foreground">Implementing Agency <HelpTooltip text="Name of the ministry or agency responsible for implementation." /></label>
             <Input
               value={formData.implementing_agency || ''}
               onChange={e => updateField('implementing_agency', e.target.value)}
-              className="h-8 text-sm"
+              className="h-8 text-body"
               placeholder="e.g. Ministry of Construction"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Procurement Method <HelpTooltip text="The government procurement method to be used." /></label>
+            <label className="text-helper text-muted-foreground">Procurement Method <HelpTooltip text="The government procurement method to be used." /></label>
             <Select value={formData.procurement_method_gov || ''} onValueChange={v => updateField('procurement_method_gov', v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select method..." /></SelectTrigger>
+              <SelectTrigger className="h-8 text-body"><SelectValue placeholder="Select method..." /></SelectTrigger>
               <SelectContent>
                 {GOV_PROCUREMENT_METHODS.map(m => (
                   <SelectItem key={m.value} value={m.value}>
@@ -145,11 +145,11 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
             </Select>
           </div>
           <div className="md:col-span-2">
-            <label className="text-xs text-muted-foreground">Maintenance Responsibility <HelpTooltip text="Who will be responsible for ongoing maintenance after construction." /></label>
+            <label className="text-helper text-muted-foreground">Maintenance Responsibility <HelpTooltip text="Who will be responsible for ongoing maintenance after construction." /></label>
             <Textarea
               value={formData.maintenance_responsibility || ''}
               onChange={e => updateField('maintenance_responsibility', e.target.value)}
-              rows={2} className="text-sm"
+              rows={2} className="text-body"
               placeholder="Describe the agency/department responsible for maintenance..."
             />
           </div>
@@ -160,20 +160,20 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
       <div className="space-y-3">
         <Label>Cost Recovery</Label>
         <div>
-          <label className="text-xs text-muted-foreground">Cost Recovery Mechanism <HelpTooltip text="How the government intends to recover costs (e.g. user charges, fees, budget allocation)." /></label>
+          <label className="text-helper text-muted-foreground">Cost Recovery Mechanism <HelpTooltip text="How the government intends to recover costs (e.g. user charges, fees, budget allocation)." /></label>
           <Textarea
             value={formData.cost_recovery_mechanism || ''}
             onChange={e => updateField('cost_recovery_mechanism', e.target.value)}
-            rows={2} className="text-sm"
+            rows={2} className="text-body"
             placeholder="Describe the cost recovery mechanism..."
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Handover Timeline <HelpTooltip text="Expected timeline for commissioning and handover to the operating agency." /></label>
+          <label className="text-helper text-muted-foreground">Handover Timeline <HelpTooltip text="Expected timeline for commissioning and handover to the operating agency." /></label>
           <Textarea
             value={formData.handover_timeline || ''}
             onChange={e => updateField('handover_timeline', e.target.value)}
-            rows={2} className="text-sm"
+            rows={2} className="text-body"
             placeholder="Describe the expected handover schedule..."
           />
         </div>
@@ -189,21 +189,21 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
                 checked={checklist[item.key] || false}
                 onCheckedChange={(v) => updateChecklist(item.key, !!v)}
               />
-              <span className="text-sm">{item.label}</span>
+              <span className="text-body">{item.label}</span>
             </div>
           ))}
         </div>
 
         <div className="mt-3 p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground">Readiness</span>
-            <span className="text-xs font-medium">{completedItems}/{CHECKLIST_ITEMS.length} ({readinessPercent}%)</span>
+            <span className="text-helper text-muted-foreground">Readiness</span>
+            <span className="text-helper font-medium">{completedItems}/{CHECKLIST_ITEMS.length} ({readinessPercent}%)</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-red-400',
+                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-destructive/10',
               )}
               style={{ width: `${readinessPercent}%` }}
             />

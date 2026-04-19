@@ -475,7 +475,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
     } catch (error) {
       console.error('Failed to save reporting organization:', error);
-      toast.error('Failed to update reporting organization');
+      toast.error('Couldn\u2019t save the reporting organization. Check your selection and try again.');
     } finally {
       setIsSavingReportingOrg(false);
     }
@@ -705,7 +705,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       toast.success(`${fieldName} copied to clipboard`, { position: 'top-center' });
     } catch (err) {
       console.error('Failed to copy text: ', err);
-      toast.error('Failed to copy to clipboard', { position: 'top-center' });
+      toast.error('Couldn\u2019t copy to clipboard. Try selecting the text and copying manually.', { position: 'top-center' });
     }
   };
 
@@ -741,8 +741,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         description: general.description || '',
         user: user ? { id: user.id } : undefined
       };
-      console.log('[Manual Create] Payload:', payload);
-      console.log('[Manual Create] Acronym value:', payload.acronym);
       
       const res = await apiFetch('/api/activities', {
         method: 'POST',
@@ -757,7 +755,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       toast.success('Activity created');
     } catch (e: any) {
       console.error('[Manual Create] Failed:', e);
-      toast.error('Failed to create activity');
+      toast.error('Couldn\u2019t create the activity. Please try again.');
     } finally {
       setIsCreatingActivity(false);
     }
@@ -827,7 +825,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       console.error('[DEBUG] Failed to create activity:', error);
       // Dismiss the loading toast on error
       toast.dismiss(loadingToastId);
-      toast.error(`Failed to create activity: ${error.message}`);
+      toast.error('Couldn\u2019t create the activity. Please try again or contact support if the problem persists.');
     } finally {
       setIsSaving(false);
     }
@@ -1034,15 +1032,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               error: bannerAutosave.state.error || bannerPositionAutosave.state.error
             }}
             triggerSave={async (banner, position) => {
-              console.log('[BANNER SAVE] triggerSave called:', { banner: banner ? 'has banner' : 'no banner', position });
               // Only save banner if it's actually provided (not null/undefined)
               if (banner) {
-                console.log('[BANNER SAVE] Saving banner image...');
                 bannerAutosave.triggerFieldSave(banner);
               }
               // Save position if provided - use direct API call for reliability
               if (position !== undefined && general.id) {
-                console.log('[BANNER SAVE] Saving position:', position, 'activityId:', general.id);
                 try {
                   const response = await apiFetch('/api/activities/field', {
                     method: 'POST',
@@ -1055,7 +1050,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     })
                   });
                   const result = await response.json();
-                  console.log('[BANNER SAVE] Position save result:', result);
                   if (!response.ok) {
                     console.error('[BANNER SAVE] Position save failed:', result);
                   }
@@ -1111,15 +1105,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 error: iconAutosave.state.error || iconScaleAutosave.state.error
               }}
               triggerSave={async (icon, scale) => {
-                console.log('[ICON SAVE] triggerSave called:', { icon: icon ? 'has icon' : 'no icon', scale });
                 // Only save icon if it's actually provided (not null/undefined)
                 if (icon) {
-                  console.log('[ICON SAVE] Saving icon image...');
                   iconAutosave.triggerFieldSave(icon);
                 }
                 // Save scale if provided - use direct API call for reliability
                 if (scale !== undefined && general.id) {
-                  console.log('[ICON SAVE] Saving scale:', scale, 'activityId:', general.id);
                   const response = await apiFetch('/api/activities/field', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1131,7 +1122,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     })
                   });
                   const result = await response.json();
-                  console.log('[ICON SAVE] Scale save result:', result);
                   if (!response.ok) {
                     console.error('[ICON SAVE] Scale save failed:', result);
                     throw new Error(result.error || 'Failed to save zoom level');
@@ -1196,8 +1186,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   // the entered value, so the user already has feedback.
                 }
               }}
-              placeholder="Enter your organization's activity ID"
-              className={''}
+              placeholder="e.g., ACT-001, PJ-2024-567"
+              className="font-mono"
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 3 : -1}
             />
@@ -1227,7 +1217,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <div className="flex items-center gap-2">
               IATI Identifier
               <HelpTextTooltip>
-                This field is used to link activities reported in the application with those in the IATI Registry. It allows users to match locally reported activities with existing entries and, if desired, to keep them synchronised with the IATI Registry.
+                Links this activity to the global IATI Registry. Match locally reported activities with existing IATI entries and, if desired, keep them synchronised.
               </HelpTextTooltip>
               {fieldLockStatus.isLocked && (
                 <TooltipProvider>
@@ -1264,7 +1254,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="Enter IATI identifier"
-              className={''}
+              className="font-mono"
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 4 : -1}
             />
@@ -1352,7 +1342,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   isSaving={savingIdentifierIndex === index}
                   isSaved={savingIdentifierIndex !== index && !!identifier.code}
                   hasValue={!!identifier.code}
-                  className="text-sm font-medium text-foreground"
+                  className="text-body font-medium text-foreground"
                 >
                   {identifier.label || `Other Identifier ${index + 1}`}
                 </LabelSaveIndicator>
@@ -1380,11 +1370,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="text-sm text-foreground truncate pr-2">{identifier.code || ''}</div>
+                        <div className="text-body text-foreground truncate pr-2">{identifier.code || ''}</div>
                       </TooltipTrigger>
                       {(identifier.type || identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
                         <TooltipContent side="bottom" align="start" className="max-w-xs">
-                          <div className="space-y-1 text-xs">
+                          <div className="space-y-1 text-helper">
                             {(identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
                               <div className="flex items-center gap-1.5">
                                 {identifier.ownerOrg?.ref && <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{identifier.ownerOrg.ref}</span>}
@@ -1432,10 +1422,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         e.stopPropagation();
                         setPendingDeleteIdentifierIndex(index);
                       }}
-                      className="p-1 hover:bg-red-50 rounded"
+                      className="p-1 hover:bg-destructive/10 rounded"
                       title="Delete identifier"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                      <Trash2 className="w-3.5 h-3.5 text-destructive hover:text-destructive" />
                     </button>
                   </div>
                 </div>
@@ -1486,7 +1476,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogHeader>
           <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Label/Name
                 <HelpTextTooltip>A short, human-readable label for this identifier, such as "CRS ID" or "Internal Reference". This helps distinguish between multiple identifiers at a glance.</HelpTextTooltip>
               </label>
@@ -1498,7 +1488,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Identifier Code <RequiredDot />
                 <HelpTextTooltip>The actual identifier value assigned to this activity by the owner organisation. For example, a CRS number or an internal project code.</HelpTextTooltip>
               </label>
@@ -1510,13 +1500,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Identifier Type
                 <HelpTextTooltip>The IATI classification for this identifier. Common types include internal activity identifiers (A1), CRS activity identifiers (A2), and previous activity identifiers (A3).</HelpTextTooltip>
               </label>
               <Popover open={showIdentifierTypeDropdown} onOpenChange={setShowIdentifierTypeDropdown}>
                 <PopoverTrigger
-                  className="relative flex h-10 w-full items-center rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted/50"
+                  className="relative flex h-10 w-full items-center rounded-md border border-input bg-card px-3 py-2 text-body ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted/50"
                 >
                   {otherIdentifierForm.type ? (
                     <span className="flex items-center gap-2 text-left">
@@ -1553,7 +1543,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </Popover>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Owner Organisation <RequiredDot />
                 <HelpTextTooltip>The organisation that originally assigned or owns this identifier. Selecting an organisation will automatically fill in the Organisation Ref field.</HelpTextTooltip>
               </label>
@@ -1647,7 +1637,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
           </LabelSaveIndicator>
           {general.is_pooled_fund === true && (
-            <span className="text-xs text-muted-foreground font-normal">
+            <span className="text-helper text-muted-foreground font-normal">
               — shown as fund manager on the Pooled funds page
             </span>
           )}
@@ -1752,7 +1742,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
                 hasValue={!!general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== ''}
                 isFocused={isDescriptionObjectivesFocused}
-                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
+                className={`text-body font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
                 <div className="flex items-center gap-2">
                   Activity Description - Objectives
@@ -1779,7 +1769,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: false }))}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-helper text-muted-foreground hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1824,7 +1814,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
                 hasValue={!!general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== ''}
                 isFocused={isDescriptionTargetGroupsFocused}
-                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
+                className={`text-body font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
                 <div className="flex items-center gap-2">
                   Activity Description - Target Groups
@@ -1850,7 +1840,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: false }))}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-helper text-muted-foreground hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1895,7 +1885,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
                 hasValue={!!general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== ''}
                 isFocused={isDescriptionOtherFocused}
-                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
+                className={`text-body font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
                 <div className="flex items-center gap-2">
                   Activity Description - Other
@@ -1921,7 +1911,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: false }))}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-helper text-muted-foreground hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1975,10 +1965,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setVisibleDescriptionFields(prev => ({ ...prev, objectives: true }));
                       setShowAddDetailPopover(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    className="w-full text-left px-3 py-2 text-body rounded hover:bg-muted"
                   >
                     <div className="font-medium">Objectives</div>
-                    <div className="text-xs text-muted-foreground">What the activity aims to achieve</div>
+                    <div className="text-helper text-muted-foreground">What the activity aims to achieve</div>
                   </button>
                 )}
                 {!visibleDescriptionFields.targetGroups && (
@@ -1988,10 +1978,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: true }));
                       setShowAddDetailPopover(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    className="w-full text-left px-3 py-2 text-body rounded hover:bg-muted"
                   >
                     <div className="font-medium">Target groups</div>
-                    <div className="text-xs text-muted-foreground">Who benefits from the activity</div>
+                    <div className="text-helper text-muted-foreground">Who benefits from the activity</div>
                   </button>
                 )}
                 {!visibleDescriptionFields.other && (
@@ -2001,10 +1991,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setVisibleDescriptionFields(prev => ({ ...prev, other: true }));
                       setShowAddDetailPopover(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    className="w-full text-left px-3 py-2 text-body rounded hover:bg-muted"
                   >
                     <div className="font-medium">Other</div>
-                    <div className="text-xs text-muted-foreground">Context, background, anything else</div>
+                    <div className="text-helper text-muted-foreground">Context, background, anything else</div>
                   </button>
                 )}
               </PopoverContent>
@@ -2117,7 +2107,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   }
                 }}
                 onActivityCreated={(activityData) => {
-                  console.log('[AIMS] New activity created:', activityData);
                   setGeneral((g: any) => ({ ...g, id: activityData.id, uuid: activityData.uuid }));
                   // Clear saved form data since activity is now saved to database
                   clearSavedFormData();
@@ -2249,7 +2238,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       {/* Date Fields */}
       <div className="space-y-4" data-tour="editor-dates">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Activity Dates</h3>
+          <h3 className="text-body font-semibold text-foreground">Activity Dates</h3>
           <HelpTextTooltip>
             The Actual Start Date field becomes available once the activity status is set to Implementation or beyond. The Actual End Date field becomes available once the status is set to Completion, Post-completion, or if the activity is marked as Cancelled or Suspended.
           </HelpTextTooltip>
@@ -2314,7 +2303,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.plannedStartDescription?.trim()}
                         isFocused={isPlannedStartDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2330,7 +2319,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsPlannedStartDescriptionFocused(false)}
                         placeholder="e.g., 'Government approval received on this date'"
                         disabled={fieldLockStatus.isLocked}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2402,7 +2391,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.plannedEndDescription?.trim()}
                         isFocused={isPlannedEndDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2418,7 +2407,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsPlannedEndDescriptionFocused(false)}
                         placeholder="Add context about this date"
                         disabled={fieldLockStatus.isLocked}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2490,7 +2479,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={actualStartDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.actualStartDescription?.trim()}
                         isFocused={isActualStartDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2506,7 +2495,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsActualStartDescriptionFocused(false)}
                         placeholder="Add context about this date"
                         disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2578,7 +2567,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.actualEndDescription?.trim()}
                         isFocused={isActualEndDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2594,7 +2583,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsActualEndDescriptionFocused(false)}
                         placeholder="Add context about this date"
                         disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2612,7 +2601,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         {/* Other Activity Dates Section */}
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">Other Activity Dates</h3>
+            <h3 className="text-body font-semibold text-foreground">Other Activity Dates</h3>
             <HelpTextTooltip>
               Additional custom dates for this activity, such as government approval dates or milestone dates.
             </HelpTextTooltip>
@@ -2628,12 +2617,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       isSaving={savingCustomDateIndex === index}
                       isSaved={savingCustomDateIndex !== index && !!customDate.date}
                       hasValue={!!customDate.date}
-                      className="text-sm font-medium text-foreground"
+                      className="text-body font-medium text-foreground"
                     >
                       {customDate.label || `Activity Date ${index + 1}`}
                     </LabelSaveIndicator>
                     {customDate.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{customDate.description}</p>
+                      <p className="text-helper text-muted-foreground mt-0.5">{customDate.description}</p>
                     )}
                   </div>
                   <div className="relative">
@@ -2678,10 +2667,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                           e.stopPropagation();
                           setPendingDeleteCustomDateIndex(index);
                         }}
-                        className="p-1 hover:bg-red-50 rounded"
+                        className="p-1 hover:bg-destructive/10 rounded"
                         title="Delete date"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                        <Trash2 className="w-3.5 h-3.5 text-destructive hover:text-destructive" />
                       </button>
                     </div>
                   </div>
@@ -2726,7 +2715,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Date Type/Label</label>
+              <label className="text-body font-medium text-foreground">Date Type/Label</label>
               <Input
                 type="text"
                 value={activityDateForm.label}
@@ -2735,7 +2724,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Date</label>
+              <label className="text-body font-medium text-foreground">Date</label>
               <DatePicker
                 value={activityDateForm.date}
                 onChange={(value) => setActivityDateForm(prev => ({ ...prev, date: value }))}
@@ -2743,7 +2732,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-body font-medium text-foreground">
                 Description/Context
               </label>
               <Textarea
@@ -3137,6 +3126,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "iati":
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">IATI Link</h2>
+            <HelpTextTooltip content="Synchronise this activity with the IATI Registry and Datastore. Enabling sync ensures updates here are reflected in your published IATI file, keeping internal records and the official public dataset consistent.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
           <IATISyncPanel
             activityId={general.id || ''}
             iatiIdentifier={general.iatiIdentifier}
@@ -3157,18 +3152,23 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "excel-import":
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">Excel Import</h2>
+            <HelpTextTooltip content="Import activity data from an Excel spreadsheet. Download the template, fill it out, then drop it back in to review and apply the values.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
           <ActivityExcelImportTab
             activityId={general.id || null}
           />
         </div>
       );
     case "xml-import":
-      console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-3xl font-semibold text-foreground">Import Single Activity</h2>
-            <HelpTextTooltip content="Import activity data from an IATI-compliant XML file. You can review and select which fields to import.">
+            <h2 className="text-3xl font-semibold text-foreground">XML Import</h2>
+            <HelpTextTooltip content="Import activity data from an IATI-compliant XML file. Search the registry, upload a file, or paste a URL. You'll review every field before anything is applied.">
               <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
             </HelpTextTooltip>
           </div>
@@ -3326,7 +3326,6 @@ function NewActivityPageContent() {
   useEffect(() => {
     const tabParam = searchParams?.get("tab");
     if (tabParam) {
-      console.log('[ActivityEditor] Setting initial tab from query param:', tabParam);
       setActiveSection(tabParam);
       // Mark this tab as loaded
       setLoadedTabs(prev => new Set(Array.from(prev).concat([tabParam])));
@@ -3445,7 +3444,6 @@ function NewActivityPageContent() {
     isInProgress: boolean;
     isSaved: boolean;
   }) => {
-    console.log('[MainPage] setSectorsCompletionStatus called with:', newStatus);
     setSectorsCompletionStatus(newStatus);
   }, []);
   
@@ -3523,7 +3521,6 @@ function NewActivityPageContent() {
 
   // LAZY LOADING: Callback to handle tab data loaded from useTabDataLoader
   const handleTabDataLoaded = useCallback((group: string, data: TabGroupData) => {
-    console.log('[AIMS] Tab group data loaded:', group, Object.keys(data));
 
     // Update state based on which group was loaded
     if (group === 'stakeholders') {
@@ -3630,7 +3627,6 @@ function NewActivityPageContent() {
 
   // Memoized callbacks to prevent infinite re-render loop
   const handlePlannedDisbursementsChange = useCallback((disb: any[]) => {
-    console.log('[ActivityEditor] setPlannedDisbursements called with:', disb?.length || 0, 'disbursements');
     // Always update - the tab component already filters to only send data with IDs
     setPlannedDisbursements(disb);
   }, []);
@@ -3650,12 +3646,10 @@ function NewActivityPageContent() {
 
     // Only save to database if we have an activity ID
     if (!currentActivityId || currentActivityId === 'NEW') {
-      console.log('[ActivityEditor] Skipping geography level save - no activity ID yet');
       return;
     }
 
     try {
-      console.log('[ActivityEditor] Saving geography level:', level, 'for activity:', currentActivityId);
       const response = await apiFetch(`/api/activities/${currentActivityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -3668,7 +3662,6 @@ function NewActivityPageContent() {
         throw new Error('Failed to update geography level');
       }
 
-      console.log('[ActivityEditor] Geography level saved:', level);
       toast.success('Geography level saved');
     } catch (error) {
       console.error('[ActivityEditor] Error saving geography level:', error);
@@ -3689,12 +3682,10 @@ function NewActivityPageContent() {
 
     // Only save to database if we have an activity ID
     if (!currentActivityId || currentActivityId === 'NEW') {
-      console.log('[ActivityEditor] Skipping sector export level save - no activity ID yet');
       return;
     }
 
     try {
-      console.log('[ActivityEditor] Saving sector export level:', level, 'for activity:', currentActivityId);
       const response = await apiFetch(`/api/activities/${currentActivityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -3707,7 +3698,6 @@ function NewActivityPageContent() {
         throw new Error('Failed to update sector export level');
       }
 
-      console.log('[ActivityEditor] Sector export level saved:', level);
       toast.success('Sector export level saved');
     } catch (error) {
       console.error('[ActivityEditor] Error saving sector export level:', error);
@@ -3924,7 +3914,6 @@ function NewActivityPageContent() {
     if (!activityId) return;
     
     try {
-      console.log('[AIMS] Refreshing transactions for activity:', activityId);
       const response = await apiFetch(`/api/activities/${activityId}`, {
         cache: 'no-store'
       });
@@ -3932,7 +3921,6 @@ function NewActivityPageContent() {
         const data = await response.json();
         setTransactions(data.transactions || []);
         setTransactionsLoaded(true);
-        console.log('[AIMS] Refreshed transactions:', data.transactions?.length || 0);
       }
     } catch (error) {
       console.error('[AIMS] Error refreshing transactions:', error);
@@ -3944,7 +3932,6 @@ function NewActivityPageContent() {
     const handleReportingOrgUpdate = (event: CustomEvent) => {
       const { activityId: updatedActivityId, organizationData } = event.detail;
       if (updatedActivityId === general.id && organizationData) {
-        console.log('[ActivityEditor] Reporting org updated, refreshing data...');
         // Update the general data with new org information
         setGeneral((prev: any) => ({
           ...prev,
@@ -3991,7 +3978,6 @@ function NewActivityPageContent() {
     const shouldClearFormData = !currentActivityId && (previousActivityId !== null || previousActivityId === null);
     
     if (shouldClearFormData && previousActivityId !== currentActivityId) {
-      console.log('[AIMS] Switching to new activity creation - clearing form data');
       clearSavedFormData();
     }
     
@@ -4013,7 +3999,6 @@ function NewActivityPageContent() {
     );
     
     if (shouldResetForm) {
-      console.log('[AIMS] Resetting form state for new activity creation');
       setGeneral({
         id: "",
         partnerId: "",
@@ -4102,7 +4087,6 @@ function NewActivityPageContent() {
     
     // Only reset when user changes AND we're in new activity mode (no ID)
     if (!currentActivityId && user) {
-      console.log('[AIMS] User changed during new activity creation - updating org info');
       setGeneral(prev => ({
         ...prev,
         created_by_org_name: user?.organisation || user?.organization?.name || "",
@@ -4121,7 +4105,6 @@ function NewActivityPageContent() {
       setGeneral(prev => {
         // Only update if reportingOrgId is not already set
         if (!prev.reportingOrgId) {
-          console.log('[AIMS] Setting default reporting org to user organization:', user.organizationId);
           return {
             ...prev,
             reportingOrgId: user.organizationId
@@ -4222,7 +4205,6 @@ function NewActivityPageContent() {
   useEffect(() => {
     if (general.id && !searchParams?.get("id")) {
       // Activity was just created, update URL to include the ID
-      console.log('[AIMS] Activity created, updating URL with ID:', general.id);
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('id', general.id);
       window.history.replaceState({}, '', newUrl.toString());
@@ -4276,7 +4258,6 @@ function NewActivityPageContent() {
   const documentsAutosave = {
     saveNow: () => {
       // No-op: documents are saved directly to activity_documents table via upload API
-      console.log('[DocumentsAutosave] Skipping autosave - using dedicated API');
     }
   };
 
@@ -4284,12 +4265,10 @@ function NewActivityPageContent() {
   const governmentInputsAutosave = React.useMemo(() => ({
     saveNow: async (data: any) => {
       if (!general.id || !user?.id) {
-        console.log('[GovernmentInputsAutosave] Skipping save - missing activity ID or user ID');
         return;
       }
       
       try {
-        console.log('[GovernmentInputsAutosave] Saving government inputs...');
         const response = await apiFetch(`/api/activities/${general.id}/government-inputs`, {
           method: 'POST',
           headers: {
@@ -4308,7 +4287,6 @@ function NewActivityPageContent() {
         }
         
         const result = await response.json();
-        console.log('[GovernmentInputsAutosave] Government inputs saved successfully');
         return result;
       } catch (error) {
         console.error('[GovernmentInputsAutosave] Failed to save government inputs:', error);
@@ -4378,17 +4356,14 @@ function NewActivityPageContent() {
           // skip the API fetch to avoid overwriting user's local edits
           // This happens when an activity is just created and the URL changes to include the ID
           if (currentActivityIdRef.current === activityId) {
-            console.log('[AIMS] Activity already loaded in state, skipping API fetch to preserve local edits');
             setLoading(false);
             return;
           }
 
           // OPTIMIZATION: Use cached activity data if available
-          console.log('[AIMS] Loading activity with cache:', activityId);
           
           // RACE CONDITION FIX: Wait for all pending autosave operations to complete
           // This ensures we get the most up-to-date data when loading after activity creation
-          console.log('[AIMS] Waiting for pending autosave operations to complete...');
           
           // Wait for all pending saves to complete (with shorter delay)
           await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms for all pending saves
@@ -4398,7 +4373,6 @@ function NewActivityPageContent() {
           
           // Bypass cache completely and fetch fresh data directly from API
           const apiUrl = `/api/activities/${activityId}/basic`;
-          console.log('[AIMS] Fetching fresh data from API (bypassing cache):', apiUrl);
           const response = await fetch(apiUrl);
           
           if (!response.ok) {
@@ -4406,7 +4380,6 @@ function NewActivityPageContent() {
           }
           
           const data = await response.json();
-          console.log('[AIMS] Activity loaded:', data.title);
           // Update all state with loaded data
           setGeneral({
             id: data.id || activityId,
@@ -4520,9 +4493,7 @@ function NewActivityPageContent() {
           }
 
           // Set capital spend percentage for tab completion
-          console.log('[AIMS] Capital spend percentage from API:', data.capital_spend_percentage);
           setCapitalSpendPercentage(data.capital_spend_percentage ?? null);
-          console.log('[AIMS] Capital spend state set to:', data.capital_spend_percentage ?? null);
           
           // Convert database sectors to ImprovedSectorAllocationForm format
           const convertedSectors = (data.sectors || []).map((sector: any) => ({
@@ -4535,10 +4506,6 @@ function NewActivityPageContent() {
             categoryName: sector.categoryName,
             level: sector.level || (sector.code?.length === 3 ? 'group' : sector.code?.length === 5 ? 'subsector' : 'sector')
           }));
-          console.log('🔄 [AIMS] === LOADING SECTORS FROM DATABASE ===');
-          console.log('📊 [AIMS] Raw sectors from API:', JSON.stringify(data.sectors, null, 2));
-          console.log('🔧 [AIMS] Converted sectors for form:', JSON.stringify(convertedSectors, null, 2));
-          console.log('📈 [AIMS] Sector count - Raw:', data.sectors?.length || 0, 'Converted:', convertedSectors.length);
           setSectors(convertedSectors);
           // Only update transactions if explicitly provided (don't reset to empty during reload)
           if (data.transactions !== undefined) {
@@ -4553,7 +4520,6 @@ function NewActivityPageContent() {
             setContacts(data.contacts);
           }
           setGovernmentInputs(data.governmentInputs || {});
-          console.log('[AIMS] Loaded SDG mappings:', data.sdgMappings?.length || 0, data.sdgMappings);
           setSdgMappings(data.sdgMappings || []);
           setTags(data.tags || []);
           setWorkingGroups(data.workingGroups || []);
@@ -4570,23 +4536,17 @@ function NewActivityPageContent() {
           }
 
           if (data.locations) {
-            console.log('[Activity New] Locations data received:', data.locations);
-            console.log('[Activity New] Specific locations:', data.locations.specificLocations);
-            console.log('[Activity New] Coverage areas:', data.locations.coverageAreas);
             setSpecificLocations(data.locations.specificLocations || []);
             setCoverageAreas(data.locations.coverageAreas || []);
           } else {
-            console.log('[Activity New] No locations data in response');
           }
           
           // Set countries and regions data for tab completion
           if (data.recipient_countries) {
-            console.log('[Activity New] Countries data received:', data.recipient_countries);
             setCountries(data.recipient_countries || []);
           }
           
           if (data.recipient_regions) {
-            console.log('[Activity New] Regions data received:', data.recipient_regions);
             setRegions(data.recipient_regions || []);
           }
           
@@ -4595,7 +4555,6 @@ function NewActivityPageContent() {
           // LAZY LOADING: Tab data is now loaded on-demand when user navigates to each tab
           // This prevents 16+ simultaneous API calls that overwhelm the server
           // and cause field save requests to timeout
-          console.log('[AIMS] Basic activity data loaded - other tab data will load on-demand');
 
           // Mark only activity-overview group as loaded (basic data contains sectors, etc.)
           setDataLoadedGroups(new Set(['activity-overview']));
@@ -4624,10 +4583,8 @@ function NewActivityPageContent() {
             ]));
           }
 
-          console.log('[AIMS] Activity data loaded successfully - tab data will lazy load')
         } else {
           // New activity - just set some defaults
-          console.log('[AIMS] Creating new activity - user:', user);
           setGeneral((prev: any) => ({
             ...prev,
             created_by_org_name: user?.organisation || user?.organization?.name || "",
@@ -4683,7 +4640,6 @@ function NewActivityPageContent() {
       if (!cancelled) {
         // Mark all groups as visited so preloading works when switching
         setVisitedGroups(new Set(['activity-overview', ...groupsToPreload]));
-        console.log('[AIMS] Background preloading complete - all group data loaded');
       }
     };
 
@@ -4811,7 +4767,6 @@ function NewActivityPageContent() {
   // 🚀 FIELD-LEVEL AUTOSAVE SYSTEM - saves individual fields immediately
   // Simplified updateActivityNestedField for backward compatibility
   const updateActivityNestedField = (field: string, value: any) => {
-    console.log(`Field-level autosave: ${field} updated to`, value);
     // Individual fields now handle their own autosave via field-level hooks
   };
   
@@ -5214,7 +5169,7 @@ function NewActivityPageContent() {
   const handleTabChange = async (value: string) => {
     // Prevent tab change while saving
     if (isAnyAutosaveInProgress) {
-      toast.warning('Please wait while saving before switching tabs');
+      toast.warning('Still saving\u2014wait for it to finish before switching tabs.');
       return;
     }
     
@@ -5237,7 +5192,6 @@ function NewActivityPageContent() {
                                         isAdvancedSection(activeSection);
 
     if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
-      console.log('[AIMS Performance] Switching to section:', value, 'from:', activeSection);
 
       // Determine if switching within the same group or between groups
       const sameGroup = (isActivityOverviewSection(value) && isActivityOverviewSection(activeSection)) ||
@@ -5341,7 +5295,14 @@ function NewActivityPageContent() {
       }
     }
     
-    console.log('[AIMS Performance] Switching to tab:', value);
+
+    // Non-group tabs (Metadata, Government Inputs, Readiness Checklist, IATI
+    // tools, XML/Excel Import) fully replace the content area. Scroll the
+    // main container back to the top so the heading lands at viewport top
+    // instead of inheriting the scroll position from the previously-active
+    // group tab.
+    const mainEl = document.querySelector('main.flex-1.overflow-y-auto');
+    if (mainEl) (mainEl as HTMLElement).scrollTop = 0;
 
     setActiveSection(value);
 
@@ -5359,7 +5320,6 @@ function NewActivityPageContent() {
     if (tabGroup) {
       setVisitedGroups(prev => {
         if (prev.has(tabGroup)) return prev;
-        console.log('[AIMS Performance] Marking group as visited:', tabGroup);
         const newSet = new Set(prev);
         newSet.add(tabGroup);
         return newSet;
@@ -5367,7 +5327,6 @@ function NewActivityPageContent() {
     }
 
     if (general.id && general.id !== 'NEW' && tabGroup && !tabDataLoader.isGroupLoaded(value)) {
-      console.log('[AIMS Performance] Lazy loading data for tab group:', tabGroup);
       // Load data in parallel with UI transition
       tabDataLoader.loadTabData(value).catch(err => {
         console.error('[AIMS Performance] Failed to load tab data:', err);
@@ -5536,13 +5495,18 @@ function NewActivityPageContent() {
       ]
     },
     {
-      title: "Strategic Alignment",
+      title: "Alignment",
       sections: [
         { id: "national_plans", label: "Plan Alignment" },
         { id: "sdg", label: "SDG Alignment" },
+        { id: "policy_markers", label: "Policy Markers" },
+      ]
+    },
+    {
+      title: "Classification",
+      sections: [
         { id: "tags", label: "Tags" },
         { id: "working_groups", label: "Working Groups" },
-        { id: "policy_markers", label: "Policy Markers" },
       ]
     },
     {
@@ -5623,7 +5587,7 @@ function NewActivityPageContent() {
           {/* Activity Metadata Summary - Only show when editing */}
           {isEditing && general.id && (
             <div className="bg-card p-4">
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-body">
                 <div className="mb-3">
                     <span className="group/title inline">
                       <Link
@@ -5648,7 +5612,7 @@ function NewActivityPageContent() {
                       </button>
                     </span>
                     {/* Activity Identifier and IATI ID */}
-                    <div className="mt-2 flex items-center gap-1.5 flex-wrap text-xs">
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap text-helper">
                       {(general.otherIdentifier || general.partner_id) && (
                         <span className="group/actid inline-flex items-center gap-0.5">
                           <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
@@ -5704,7 +5668,7 @@ function NewActivityPageContent() {
                       <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
                         general.submissionStatus === 'submitted' ? 'text-blue-600 bg-blue-100' :
                         general.submissionStatus === 'validated' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' :
-                        general.submissionStatus === 'rejected' ? 'text-red-600 bg-red-100' :
+                        general.submissionStatus === 'rejected' ? 'text-destructive bg-destructive/10' :
                         general.submissionStatus === 'published' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' : 'text-muted-foreground bg-muted'
                       }`}>
                         {(() => {
@@ -5718,12 +5682,12 @@ function NewActivityPageContent() {
                         })()}
                       </span>
                       {general.validatedByName && general.submissionStatus === 'validated' && (
-                        <span className="text-xs text-muted-foreground">by {general.validatedByName}</span>
+                        <span className="text-helper text-muted-foreground">by {general.validatedByName}</span>
                       )}
                     </div>
                   )}
                   {showActivityMetadata && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-helper text-muted-foreground mt-2">
                       Created by {general.createdBy?.name || user?.name || "Unknown User"}
                       {(() => {
                         const jobTitle = (general.createdBy as any)?.jobTitle || (general.createdBy as any)?.title || user?.jobTitle || (user as any)?.title;
@@ -5748,7 +5712,7 @@ function NewActivityPageContent() {
                   )}
                   <button
                     onClick={() => setShowActivityMetadata(!showActivityMetadata)}
-                    className="text-xs text-muted-foreground hover:text-foreground mt-2"
+                    className="text-helper text-muted-foreground hover:text-foreground mt-2"
                   >
                     {showActivityMetadata ? 'Show less' : 'Show more'}
                   </button>
@@ -5779,7 +5743,7 @@ function NewActivityPageContent() {
                 {/* Reject Button - shown next to Published toggle for Tier 1 validators */}
                 {canValidate && general.submissionStatus === 'submitted' && (
                   <button
-                    className="text-white px-4 py-2 rounded-lg transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md hover:opacity-90"
+                    className="text-white px-4 py-2 rounded-lg transition font-medium text-body disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md hover:opacity-90"
                     style={{ backgroundColor: '#dc2625' }}
                     type="button"
                     onClick={handleReject}
@@ -5799,11 +5763,10 @@ function NewActivityPageContent() {
                          if (checked) {
                            // Check if we have the required fields for publishing
                            if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
-                             toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
+                             toast.error('To publish, complete all required fields: Title, Description, Status, Start Date, and End Date.');
                              return;
                            }
 
-                           console.log('[AIMS] Attempting to publish activity');
                            const originalStatus = general.publicationStatus;
 
                            // Optimistically update the UI
@@ -5811,7 +5774,6 @@ function NewActivityPageContent() {
 
                            try {
                              await saveActivity({ publish: true, suppressErrorToast: true });
-                             console.log('[AIMS] Publish successful');
                            } catch (error) {
                              console.error('[AIMS] Publish failed, reverting state:', error);
                              // Revert the optimistic update on failure
@@ -5820,7 +5782,6 @@ function NewActivityPageContent() {
                            }
                          } else {
                            // Unpublish the activity
-                           console.log('[AIMS] Attempting to unpublish activity');
                            const originalStatus = general.publicationStatus;
 
                            // Optimistically update the UI
@@ -5828,7 +5789,6 @@ function NewActivityPageContent() {
 
                            try {
                              await saveActivity({ publish: false, suppressErrorToast: true });
-                             console.log('[AIMS] Unpublish successful');
                            } catch (error) {
                              console.error('[AIMS] Unpublish failed, reverting state:', error);
                              // Revert the optimistic update on failure
@@ -5909,7 +5869,8 @@ function NewActivityPageContent() {
                activeSection !== 'metadata' &&
                activeSection !== 'government' &&
                activeSection !== 'readiness_checklist' &&
-               activeSection !== 'xml-import' && (
+               activeSection !== 'xml-import' &&
+               activeSection !== 'excel-import' && (
                 <div className="flex items-center gap-3 mb-6">
                   <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
                   <HelpTextTooltip content={getSectionHelpText(activeSection)}>
@@ -6022,7 +5983,7 @@ function NewActivityPageContent() {
                 {/* Validation Actions for Tier 1 Users */}
                 {canValidate && general.submissionStatus === 'submitted' && (
                     <button
-                      className="bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                      className="bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-body disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                       type="button"
                       onClick={handleApprove}
                       disabled={submitting}
@@ -6035,7 +5996,7 @@ function NewActivityPageContent() {
                 {/* Submit for Validation - For Tier 2 users with draft activities */}
                 {canSubmit && general.submissionStatus === 'draft' && general.id && (
                   <button
-                    className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                    className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-body disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                     type="button"
                     onClick={handleSubmitForValidation}
                     disabled={submitting}
@@ -6051,7 +6012,7 @@ function NewActivityPageContent() {
                 <button
                   type="button"
                   onClick={() => setShowShortcutCheatsheet(true)}
-                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded"
+                  className="flex items-center gap-2 text-helper text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded"
                   title="Show keyboard shortcuts"
                 >
                   <Keyboard className="h-3.5 w-3.5" />
@@ -6069,7 +6030,6 @@ function NewActivityPageContent() {
                     variant="outline"
                     className="px-4 py-3 text-base font-semibold"
                     onClick={() => {
-                      console.log('[Comments] Opening drawer for activity:', general.id);
                       setIsCommentsDrawerOpen(true);
                     }}
                   >
@@ -6098,7 +6058,7 @@ function NewActivityPageContent() {
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => previousSection && handleTabChange(previousSection.id)}
                   disabled={!previousSection || tabLoading || isAnyAutosaveInProgress}
-                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
+                  title={isAnyAutosaveInProgress ? "Still saving\u2014wait for it to finish" : undefined}
                 >
                   {tabLoading ? (
                     <>
@@ -6119,7 +6079,7 @@ function NewActivityPageContent() {
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => nextSection && handleTabChange(nextSection.id)}
                   disabled={!nextSection || isLastSection || tabLoading || isAnyAutosaveInProgress}
-                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
+                  title={isAnyAutosaveInProgress ? "Still saving\u2014wait for it to finish" : undefined}
                 >
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -6192,7 +6152,7 @@ function NewActivityPageContent() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h4 className="font-semibold">{match.activity.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-body text-muted-foreground mt-1">
                         {match.activity.description}
                       </p>
                     </div>
@@ -6200,7 +6160,7 @@ function NewActivityPageContent() {
                       {Math.round(match.score * 100)}% match
                     </Badge>
                   </div>
-                  <div className="text-sm text-muted-foreground space-y-1">
+                  <div className="text-body text-muted-foreground space-y-1">
                     {match.matchReasons.map((reason, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <CheckCircle className="h-3 w-3" />
@@ -6258,7 +6218,7 @@ function NewActivityPageContent() {
           <div className="py-4">
             <ul className="list-disc pl-6 space-y-1">
               {missingRequiredFields.map((field) => (
-                <li key={field} className="text-sm text-foreground">{field}</li>
+                <li key={field} className="text-body text-foreground">{field}</li>
               ))}
             </ul>
           </div>

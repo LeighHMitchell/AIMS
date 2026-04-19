@@ -57,39 +57,39 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">Private Investment Structuring</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Prepare this project for private sector investment — identify investors, procurement approach, and financial arrangements.
         </p>
       </div>
 
       {/* Investor Details */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Investor Details</Label>
+        <Label className="text-body font-medium text-foreground">Investor Details</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Private Partner Name <HelpTooltip text="Name of the identified or prospective private investor/consortium." /></label>
+            <label className="text-helper text-muted-foreground">Private Partner Name <HelpTooltip text="Name of the identified or prospective private investor/consortium." /></label>
             <Input
               value={formData.private_partner_name || ''}
               onChange={e => updateField('private_partner_name', e.target.value)}
-              className="h-8 text-sm"
+              className="h-8 text-body"
               placeholder="e.g. Myanmar Infrastructure Corp."
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Partner Experience <HelpTooltip text="Summary of the partner's relevant project experience and track record." /></label>
+            <label className="text-helper text-muted-foreground">Partner Experience <HelpTooltip text="Summary of the partner's relevant project experience and track record." /></label>
             <Input
               value={formData.private_partner_experience || ''}
               onChange={e => updateField('private_partner_experience', e.target.value)}
-              className="h-8 text-sm"
+              className="h-8 text-body"
               placeholder="Brief description of relevant experience"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="text-xs text-muted-foreground">Investor Commitments <HelpTooltip text="Details of the investor's financial commitments, equity pledges, or letters of intent." /></label>
+            <label className="text-helper text-muted-foreground">Investor Commitments <HelpTooltip text="Details of the investor's financial commitments, equity pledges, or letters of intent." /></label>
             <Textarea
               value={formData.investor_commitments || ''}
               onChange={e => updateField('investor_commitments', e.target.value)}
-              rows={2} className="text-sm"
+              rows={2} className="text-body"
               placeholder="Describe equity commitments, letters of intent, or other financial pledges..."
             />
           </div>
@@ -119,7 +119,7 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
           <FormattedNumberInput
             value={formData.concession_period_years ?? null}
             onChange={v => updateField('concession_period_years', v)}
-            className="h-8 text-sm"
+            className="h-8 text-body"
             placeholder="e.g. 25"
           />
         </div>
@@ -130,17 +130,17 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
         <Textarea
           value={formData.procurement_timeline || ''}
           onChange={e => updateField('procurement_timeline', e.target.value)}
-          rows={2} className="text-sm"
+          rows={2} className="text-body"
           placeholder="Describe the procurement timeline (e.g. EOI Q3 2026, RFP Q4 2026, Award Q1 2027)..."
         />
       </div>
 
       {/* Financial Structure */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Financial Structure</Label>
+        <Label className="text-body font-medium text-foreground">Financial Structure</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Equity Ratio (%) <HelpTooltip text="The private equity contribution as a percentage of total project cost." /></label>
+            <label className="text-helper text-muted-foreground">Equity Ratio (%) <HelpTooltip text="The private equity contribution as a percentage of total project cost." /></label>
             <FormattedNumberInput
               value={formData.equity_ratio ?? null}
               onChange={v => updateField('equity_ratio', v)}
@@ -148,11 +148,11 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
               decimals={1}
               min={0}
               max={100}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Financial Closure Target <HelpTooltip text="Target date for achieving financial closure with all funding sources confirmed." /></label>
+            <label className="text-helper text-muted-foreground">Financial Closure Target <HelpTooltip text="Target date for achieving financial closure with all funding sources confirmed." /></label>
             <DatePicker
               value={formData.financial_closure_target || ''}
               onChange={v => updateField('financial_closure_target', v || null)}
@@ -160,11 +160,11 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
             />
           </div>
           <div className="md:col-span-2">
-            <label className="text-xs text-muted-foreground">Security Arrangements <HelpTooltip text="Describe any security or guarantee arrangements (e.g. sovereign guarantees, escrow accounts, step-in rights)." /></label>
+            <label className="text-helper text-muted-foreground">Security Arrangements <HelpTooltip text="Describe any security or guarantee arrangements (e.g. sovereign guarantees, escrow accounts, step-in rights)." /></label>
             <Textarea
               value={formData.security_arrangements || ''}
               onChange={e => updateField('security_arrangements', e.target.value)}
-              rows={2} className="text-sm"
+              rows={2} className="text-body"
               placeholder="Sovereign guarantees, escrow accounts, step-in rights, etc."
             />
           </div>
@@ -200,21 +200,21 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
                 checked={checklist[item.key] || false}
                 onCheckedChange={(v) => updateChecklist(item.key, !!v)}
               />
-              <span className="text-sm">{item.label}</span>
+              <span className="text-body">{item.label}</span>
             </div>
           ))}
         </div>
 
         <div className="mt-3 p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground">Readiness</span>
-            <span className="text-xs font-medium">{completedItems}/{CHECKLIST_ITEMS.length} ({readinessPercent}%)</span>
+            <span className="text-helper text-muted-foreground">Readiness</span>
+            <span className="text-helper font-medium">{completedItems}/{CHECKLIST_ITEMS.length} ({readinessPercent}%)</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-red-400',
+                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-destructive/10',
               )}
               style={{ width: `${readinessPercent}%` }}
             />

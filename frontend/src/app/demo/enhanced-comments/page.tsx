@@ -48,7 +48,7 @@ export default function EnhancedCommentsDemo() {
             <CardContent className="p-6 text-center">
               <ThumbsUp className="h-8 w-8 text-[hsl(var(--success-icon))] mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Reactions</h3>
-              <p className="text-sm text-muted-foreground">👍 👎 ❤️ 🎉 😕</p>
+              <p className="text-body text-muted-foreground">👍 👎 ❤️ 🎉 😕</p>
             </CardContent>
           </Card>
           
@@ -56,7 +56,7 @@ export default function EnhancedCommentsDemo() {
             <CardContent className="p-6 text-center">
               <AtSign className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Mentions</h3>
-              <p className="text-sm text-muted-foreground">@users #organizations</p>
+              <p className="text-body text-muted-foreground">@users #organizations</p>
             </CardContent>
           </Card>
           
@@ -64,7 +64,7 @@ export default function EnhancedCommentsDemo() {
             <CardContent className="p-6 text-center">
               <Paperclip className="h-8 w-8 text-purple-600 mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Attachments</h3>
-              <p className="text-sm text-muted-foreground">Files & Images</p>
+              <p className="text-body text-muted-foreground">Files & Images</p>
             </CardContent>
           </Card>
           
@@ -72,7 +72,7 @@ export default function EnhancedCommentsDemo() {
             <CardContent className="p-6 text-center">
               <Archive className="h-8 w-8 text-orange-600 mx-auto mb-2" />
               <h3 className="font-semibent mb-1">Archive & Resolve</h3>
-              <p className="text-sm text-muted-foreground">Organize comments</p>
+              <p className="text-body text-muted-foreground">Organize comments</p>
             </CardContent>
           </Card>
         </div>
@@ -105,7 +105,7 @@ export default function EnhancedCommentsDemo() {
                         <ThumbsUp className="h-5 w-5 text-[hsl(var(--success-icon))] mt-0.5" />
                         <div>
                           <h4 className="font-medium">React to Comments</h4>
-                          <p className="text-sm text-muted-foreground">Give thumbs up/down, hearts, celebrate, or show confusion</p>
+                          <p className="text-body text-muted-foreground">Give thumbs up/down, hearts, celebrate, or show confusion</p>
                         </div>
                       </div>
                       
@@ -113,7 +113,7 @@ export default function EnhancedCommentsDemo() {
                         <AtSign className="h-5 w-5 text-blue-600 mt-0.5" />
                         <div>
                           <h4 className="font-medium">Mention Users & Organizations</h4>
-                          <p className="text-sm text-muted-foreground">Type @ for users or # for organizations with autocomplete</p>
+                          <p className="text-body text-muted-foreground">Type @ for users or # for organizations with autocomplete</p>
                         </div>
                       </div>
                       
@@ -121,7 +121,7 @@ export default function EnhancedCommentsDemo() {
                         <Paperclip className="h-5 w-5 text-purple-600 mt-0.5" />
                         <div>
                           <h4 className="font-medium">Attach Files</h4>
-                          <p className="text-sm text-muted-foreground">Add documents, images, and other files to comments</p>
+                          <p className="text-body text-muted-foreground">Add documents, images, and other files to comments</p>
                         </div>
                       </div>
                       
@@ -129,7 +129,7 @@ export default function EnhancedCommentsDemo() {
                         <Archive className="h-5 w-5 text-orange-600 mt-0.5" />
                         <div>
                           <h4 className="font-medium">Archive & Resolve</h4>
-                          <p className="text-sm text-muted-foreground">Mark comments as resolved or archive for later</p>
+                          <p className="text-body text-muted-foreground">Mark comments as resolved or archive for later</p>
                         </div>
                       </div>
                       
@@ -137,7 +137,7 @@ export default function EnhancedCommentsDemo() {
                         <Eye className="h-5 w-5 text-muted-foreground mt-0.5" />
                         <div>
                           <h4 className="font-medium">Advanced Filtering</h4>
-                          <p className="text-sm text-muted-foreground">Search, filter by type, status, and context</p>
+                          <p className="text-body text-muted-foreground">Search, filter by type, status, and context</p>
                         </div>
                       </div>
                     </div>
@@ -175,7 +175,7 @@ export default function EnhancedCommentsDemo() {
                     
                     {/* Activity Title Field */}
                     <div className="p-4 border border-border rounded-lg group relative">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-body font-medium text-foreground mb-2">
                         Activity Title
                       </label>
                       <input
@@ -196,7 +196,7 @@ export default function EnhancedCommentsDemo() {
                     
                     {/* Activity Description Field */}
                     <div className="p-4 border border-border rounded-lg group relative">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-body font-medium text-foreground mb-2">
                         Activity Description
                       </label>
                       <textarea
@@ -217,7 +217,7 @@ export default function EnhancedCommentsDemo() {
                     
                     {/* Date Fields */}
                     <div className="p-4 border border-border rounded-lg group relative">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-body font-medium text-foreground mb-2">
                         Project Dates
                       </label>
                       <div className="grid grid-cols-2 gap-3">
@@ -237,7 +237,7 @@ export default function EnhancedCommentsDemo() {
                     
                     {/* Budget Field */}
                     <div className="p-4 border border-border rounded-lg group relative">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-body font-medium text-foreground mb-2">
                         Budget Information
                       </label>
                       <div className="flex gap-2">
@@ -264,7 +264,7 @@ export default function EnhancedCommentsDemo() {
                     </div>
                     
                     <div className="text-center">
-                      <Badge variant="outline" className="text-sm">
+                      <Badge variant="outline" className="text-body">
                         💡 Click the comment icons to add contextual comments
                       </Badge>
                     </div>
@@ -320,7 +320,7 @@ export default function EnhancedCommentsDemo() {
                 <div className="space-y-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 className="font-medium text-blue-900 mb-2">🎯 Full Integration Demo</h4>
-                    <p className="text-blue-800 text-sm">
+                    <p className="text-blue-800 text-body">
                       This demonstrates the complete enhanced activity editor with integrated 
                       context-aware comments, auto-save, and all advanced features.
                     </p>
@@ -343,7 +343,7 @@ export default function EnhancedCommentsDemo() {
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-red-500" />
+              <Heart className="h-5 w-5 text-destructive" />
               Advanced Features Summary
             </CardTitle>
           </CardHeader>
@@ -351,7 +351,7 @@ export default function EnhancedCommentsDemo() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <h4 className="font-semibold mb-3 text-green-700">✅ Reactions & Engagement</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-body space-y-1 text-muted-foreground">
                   <li>• Thumbs up/down voting</li>
                   <li>• Heart, celebrate, confused reactions</li>
                   <li>• Real-time reaction counts</li>
@@ -361,7 +361,7 @@ export default function EnhancedCommentsDemo() {
               
               <div>
                 <h4 className="font-semibold mb-3 text-blue-700">🎯 Smart Features</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-body space-y-1 text-muted-foreground">
                   <li>• @user and #organization mentions</li>
                   <li>• File and image attachments</li>
                   <li>• Context linking to specific fields</li>
@@ -371,7 +371,7 @@ export default function EnhancedCommentsDemo() {
               
               <div>
                 <h4 className="font-semibold mb-3 text-purple-700">🔧 Organization Tools</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-body space-y-1 text-muted-foreground">
                   <li>• Comment resolution workflow</li>
                   <li>• Archive/unarchive functionality</li>
                   <li>• Real-time notifications</li>

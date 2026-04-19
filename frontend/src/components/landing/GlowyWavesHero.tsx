@@ -256,12 +256,12 @@ export function GlowyWavesHero() {
                 height="40"
                 className="rounded"
               />
-              <span className="font-bold text-2xl text-gray-900">aether</span>
+              <span className="font-bold text-2xl text-foreground">aether</span>
             </motion.div>
 
             <motion.h1
               variants={itemVariants}
-              className="mb-8 text-4xl font-semibold tracking-tight text-gray-900 md:text-5xl lg:text-6xl"
+              className="mb-8 text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl"
             >
               A transparent system for managing{" "}
               <span className="bg-gradient-to-r from-[#dc2625] via-[#4c5568] to-[#7b95a7] bg-clip-text text-transparent">
@@ -283,7 +283,7 @@ export function GlowyWavesHero() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-gray-300 bg-white/60 px-8 text-base text-gray-700 backdrop-blur transition-all hover:border-gray-400 hover:bg-white/80"
+                className="border-input bg-white/60 px-8 text-base text-foreground backdrop-blur transition-all hover:border-gray-400 hover:bg-white/80"
                 onClick={scrollToContact}
               >
                 Contact
@@ -302,26 +302,26 @@ export function GlowyWavesHero() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-4xl text-center"
         >
-          <p className="mb-8 text-lg text-gray-600 md:text-xl leading-relaxed">
+          <p className="mb-8 text-lg text-muted-foreground md:text-xl leading-relaxed">
             A purpose-built Development Finance Management Information System for governments,
             donors, and development partners to plan, track, and publish financial flows in
             alignment with international standards.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-body text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Government validation
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Donor reporting
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Public transparency
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               IATI Standard v2.03
             </div>

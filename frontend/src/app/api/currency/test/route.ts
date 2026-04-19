@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
     const to = searchParams.get('to') || 'USD';
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
-    console.log(`[Currency Test] Testing conversion: ${amount} ${from} → ${to} on ${date}`);
 
     // Test the conversion
     const result = await fixedCurrencyConverter.convertToUSD(
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`[Currency Test] Testing transaction conversion: ${transactionId}`);
 
     // Test transaction conversion
     const result = await fixedCurrencyConverter.convertTransaction(transactionId);

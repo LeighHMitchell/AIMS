@@ -432,18 +432,10 @@ export function ActivityExcelImportTab({
 
   return (
     <div className="space-y-6">
-      {/* Info */}
-      <div className="flex items-start gap-3 p-4 border border-border rounded-lg bg-muted/30">
-        <Info className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium text-foreground mb-1">Import activity data from Excel</p>
-          <p>
-            Download the template, fill it out, then drag it into the area below.
-            You&apos;ll review and adjust imported values before they&apos;re applied.
-            Existing field values will be overwritten.
-          </p>
-        </div>
-      </div>
+      {/* Short instruction line — the tab-level heading and tooltip above already say what this is for. */}
+      <p className="text-body text-muted-foreground">
+        Download the template, fill it out, then drop it back in. You&rsquo;ll review every value before it&rsquo;s applied &mdash; existing fields will be overwritten.
+      </p>
 
       {/* Template download */}
       <TemplateDownloadButton
@@ -462,7 +454,7 @@ export function ActivityExcelImportTab({
       )}
 
       {!activityId && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Save the activity first before importing from Excel.
         </p>
       )}
@@ -492,11 +484,15 @@ export function ActivityExcelImportTab({
             }}
             className="hidden"
           />
-          <Upload className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
+          <img
+            src="/images/empty-amphitheatre.png"
+            alt=""
+            className="h-28 mx-auto mb-4 opacity-80"
+          />
           <p className="text-base font-medium text-muted-foreground mb-1">
             Drop an Excel file here or click to browse
           </p>
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-body text-muted-foreground/60">
             Only .xlsx files are accepted
           </p>
         </div>
@@ -514,7 +510,7 @@ export function ActivityExcelImportTab({
       {phase === 'preview' && (
         <div className="space-y-4">
           {/* Stats */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 text-helper text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <CheckCircle className="h-3.5 w-3.5" />
               <span>{stats?.valid} matched</span>
@@ -548,7 +544,7 @@ export function ActivityExcelImportTab({
           )}
 
           {unmatchedColumns.length > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               <span className="font-medium">Unrecognized columns:</span>{' '}
               {unmatchedColumns.join(', ')}
             </p>

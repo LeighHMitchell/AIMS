@@ -116,7 +116,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log(`[Transactions Yearly Summary] Fetched ${transactions?.length || 0} transactions`);
     
     // Aggregate by year and transaction type
     const yearlyData: Record<number, Record<string, number>> = {};

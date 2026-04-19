@@ -264,7 +264,7 @@ export function AddLoanStatusModal({
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/40 border-t-white" />
                 {isEditing ? 'Updating...' : 'Adding...'}
               </>
             ) : (

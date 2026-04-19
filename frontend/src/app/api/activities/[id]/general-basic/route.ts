@@ -10,14 +10,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
-  console.log('[General Basic API] ============ PATCH /api/activities/[id]/general-basic ============');
-  console.log('[General Basic API] Timestamp:', new Date().toISOString());
   try {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     const { id } = await params;
-    console.log('[General Basic API] Activity ID:', id);
     if (!id) {
       return NextResponse.json(
         { error: 'Activity ID is required' },
@@ -27,7 +24,6 @@ export async function PATCH(
 
     const body = await request.json();
     const { title, acronym } = body || {};
-    console.log('[General Basic API] Request body:', { title, acronym });
     if (!supabase) {
       console.error('[General Basic API] Supabase admin client not available');
       return NextResponse.json(
@@ -49,7 +45,6 @@ export async function PATCH(
         { status: 404 }
       );
     }
-    console.log('[General Basic API] Current:', current);
 
     // Check acronym column exists
     try {
@@ -58,7 +53,6 @@ export async function PATCH(
         .select('acronym')
         .eq('id', id)
         .single();
-      console.log('[General Basic API] Acronym column exists. Current value:', columnCheck?.acronym);
     } catch (colErr: any) {
       console.error('[General Basic API] Acronym column check failed:', colErr?.message);
       if (colErr?.message?.includes('column') && colErr?.message?.includes('does not exist')) {
@@ -73,7 +67,6 @@ export async function PATCH(
     const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
     if (typeof title !== 'undefined') updateData.title_narrative = title;
     if (typeof acronym !== 'undefined') updateData.acronym = acronym;
-    console.log('[General Basic API] Update payload:', updateData);
 
     const { data, error } = await supabase
       .from('activities')
@@ -90,7 +83,6 @@ export async function PATCH(
       );
     }
 
-    console.log('[General Basic API] Update result:', data);
 
     // Verify update committed
     const { data: verify, error: verifyErr } = await supabase
@@ -101,12 +93,10 @@ export async function PATCH(
     if (verifyErr) {
       console.error('[General Basic API] Verification read failed:', verifyErr);
     } else {
-      console.log('[General Basic API] Verification result:', verify);
     }
 
     invalidateActivityCache(id);
     const duration = Date.now() - startTime;
-    console.log('[General Basic API] Completed in', duration, 'ms');
 
     return NextResponse.json({ success: true, data: verify || data });
   } catch (err: any) {

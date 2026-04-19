@@ -151,7 +151,6 @@ export async function GET(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[AIMS] GET /api/partner-summary - Starting request');
     
     // Check if getSupabaseAdmin is properly initialized
     if (!supabase) {
@@ -162,13 +161,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Supabase admin client is available, proceeding...');
     
     const searchParams = request.nextUrl.searchParams;
     const groupBy = searchParams.get('groupBy') || 'organizationType';
     const financialMode = searchParams.get('financialMode') || 'disbursements';
     
-    console.log('[AIMS] Fetching data from database...');
     
     // Fetch all organizations including full_name
     const { data: organizations, error: orgError } = await supabase
@@ -216,7 +213,6 @@ export async function GET(request: NextRequest) {
       .select('provider_org, receiver_org, value, transaction_date, transaction_type, activity_id, organization_id');
 
     if (!transactionFetchError && transactionData) {
-      console.log('[AIMS] Using transactions table, found', transactionData.length, 'transactions');
       // Map to expected format
       transactions = transactionData.map((t: any) => ({
         provider_organization_id: t.provider_org,
@@ -254,7 +250,6 @@ export async function GET(request: NextRequest) {
       return { ...t, provider_organization_id, receiver_organization_id };
     });
 
-    console.log('[AIMS] Normalized transactions count:', normalizedTransactions.length);
 
     // Filter transactions by financial mode
     const transactionTypeFilter = financialMode === 'disbursements' ? 'D' : 'C'; // Use single character codes
@@ -262,7 +257,6 @@ export async function GET(request: NextRequest) {
       t.transaction_type === transactionTypeFilter
     );
 
-    console.log('[AIMS] Filtered transactions for', financialMode, ':', filteredTransactions.length);
 
     // Fetch activities for additional project metadata
     const { data: activities, error: activitiesError } = await supabase
@@ -284,22 +278,17 @@ export async function GET(request: NextRequest) {
 
     // Sample data for debugging
     if (organizations && organizations.length > 0) {
-      console.log('[DEBUG] Sample organization:', organizations[0]);
     }
     if (filteredTransactions && filteredTransactions.length > 0) {
-      console.log('[DEBUG] Sample transaction:', filteredTransactions[0]);
       
       // Check for organizations with transactions
       const orgsWithTransactions = new Set([
         ...filteredTransactions.map((t: TransactionData) => t.provider_organization_id),
         ...filteredTransactions.map((t: TransactionData) => t.receiver_organization_id)
       ].filter(Boolean));
-      console.log('[DEBUG] Organizations with transactions count:', orgsWithTransactions.size);
-      console.log('[DEBUG] Sample org IDs with transactions:', Array.from(orgsWithTransactions).slice(0, 5));
     }
 
     if (!organizations || organizations.length === 0) {
-      console.log('[AIMS] No organizations found in database');
       return NextResponse.json({
         partners: [],
         organizationTypeGroups: [],

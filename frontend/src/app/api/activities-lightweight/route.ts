@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     
     const offset = (page - 1) * limit
     
-    console.log(`[AIMS Lightweight] Fetching activities - page: ${page}, limit: ${limit}`)
     
     // Use optimized cached query
     const result = await supabaseOptimized.getActivitiesOptimized(limit, offset, search)
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest) {
       updatedAt: activity.updated_at
     })) || []
     
-    console.log(`[AIMS Lightweight] Fetched ${activities.length} activities in ${executionTime}ms`)
     
     return NextResponse.json({
       success: true,

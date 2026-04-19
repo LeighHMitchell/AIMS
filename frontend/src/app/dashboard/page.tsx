@@ -205,15 +205,15 @@ export default function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     Please contact your system administrator to be assigned to an organization.
                     Once assigned, you'll have access to create and manage aid activities.
                   </p>
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <p className="text-sm text-orange-800">
+                    <p className="text-body text-orange-800">
                       <strong>What you can do now:</strong>
                     </p>
-                    <ul className="list-disc list-inside text-sm text-orange-700 mt-2 space-y-1">
+                    <ul className="list-disc list-inside text-body text-orange-700 mt-2 space-y-1">
                       <li>Update your profile information</li>
                       <li>View public activities</li>
                       <li>Contact support for assistance</li>
@@ -278,7 +278,7 @@ export default function Dashboard() {
                               <Shield className="h-4 w-4" />
                               <p className="font-semibold">Super User Access</p>
                             </div>
-                            <p className="text-sm">
+                            <p className="text-body">
                               You have full system access. This dashboard shows data scoped to your organization.
                               Use the Admin panel to view system-wide data.
                             </p>
@@ -360,7 +360,7 @@ export default function Dashboard() {
                     <Bell className="h-4 w-4" />
                     Notifications
                     {unreadNotificationCount > 0 && (
-                      <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-xs justify-center">
+                      <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-helper justify-center">
                         {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
                       </Badge>
                     )}

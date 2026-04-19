@@ -53,11 +53,11 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
     <div className="flex flex-wrap lg:flex-nowrap gap-4 mb-8">
       {/* Activities */}
       <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-muted-foreground truncate">Activities</p>
+        <p className="text-helper font-medium text-muted-foreground truncate">Activities</p>
         <p className="text-2xl font-bold text-foreground">
-          {metrics.activeActivities} <span className="text-sm font-normal text-muted-foreground">Active</span>
+          {metrics.activeActivities} <span className="text-body font-normal text-muted-foreground">Active</span>
         </p>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           <p>{metrics.pipelineActivities || 0} Pipeline</p>
           <p>{metrics.closedActivities || 0} Closed/Suspended</p>
         </div>
@@ -65,9 +65,9 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
 
       {/* Total Committed */}
       <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-muted-foreground truncate">Total Committed</p>
+        <p className="text-helper font-medium text-muted-foreground truncate">Total Committed</p>
         <p className="text-2xl font-bold text-foreground">{formatCurrencyShort(metrics.commitments)}</p>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           <p className="flex items-center gap-1">
             {yoyStats.commitmentChange >= 0 ? <TriangleUp /> : <TriangleDown />}
             <span>{yoyStats.commitmentChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.commitmentChange)} vs last year</span>
@@ -78,9 +78,9 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
 
       {/* Total Disbursed */}
       <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-muted-foreground truncate">Total Disbursed</p>
+        <p className="text-helper font-medium text-muted-foreground truncate">Total Disbursed</p>
         <p className="text-2xl font-bold text-foreground">{formatCurrencyShort(metrics.disbursements)}</p>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           <p className="flex items-center gap-1">
             {yoyStats.disbursementChange >= 0 ? <TriangleUp /> : <TriangleDown />}
             <span>{yoyStats.disbursementChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.disbursementChange)} vs last year</span>
@@ -91,18 +91,18 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
 
       {/* % Disbursed */}
       <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-muted-foreground truncate">% Disbursed</p>
+        <p className="text-helper font-medium text-muted-foreground truncate">% Disbursed</p>
         <p className="text-2xl font-bold text-foreground">{disbursedPercent}%</p>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           <p>of total commitments</p>
         </div>
       </div>
 
       {/* Total Expended */}
       <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-muted-foreground truncate">Total Expended</p>
+        <p className="text-helper font-medium text-muted-foreground truncate">Total Expended</p>
         <p className="text-2xl font-bold text-foreground">{formatCurrencyShort(metrics.expenditures)}</p>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           <p className="flex items-center gap-1">
             {yoyStats.expenditureChange >= 0 ? <TriangleUp /> : <TriangleDown />}
             <span>{yoyStats.expenditureChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.expenditureChange)} vs last year</span>
@@ -113,9 +113,9 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
 
       {/* Organizations */}
       <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-muted-foreground truncate">Organizations</p>
+        <p className="text-helper font-medium text-muted-foreground truncate">Organizations</p>
         <p className="text-2xl font-bold text-foreground">{metrics.totalOrganizations}</p>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           <p>{donorCount} donor{donorCount !== 1 ? 's' : ''}</p>
         </div>
       </div>

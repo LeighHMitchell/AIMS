@@ -171,7 +171,7 @@ export default function SectorProfilePage() {
       <MainLayout>
         <div className="min-h-screen"><div className="w-full p-6">
           <Card><CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Sector</h2>
             <p className="text-muted-foreground mb-4">{error || 'Failed to load'}</p>
             <Button onClick={() => router.push('/sectors')}><ArrowLeft className="h-4 w-4 mr-2" />Back to Sectors</Button>
@@ -216,7 +216,7 @@ export default function SectorProfilePage() {
                 <div className="flex items-center gap-2 mt-1">
                   <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">DAC CRS</code>
                   {sector.groupName && sector.level !== 'group' && (
-                    <span className="text-xs font-semibold text-muted-foreground">{sector.groupName}</span>
+                    <span className="text-helper font-semibold text-muted-foreground">{sector.groupName}</span>
                   )}
                 </div>
               </div>
@@ -244,8 +244,8 @@ export default function SectorProfilePage() {
                         <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}>
-                            <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
-                            {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground">{e.name}: {formatCurrencyShort(e.value)}</p>)}
+                            <p className="font-medium text-helper text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                            {payload.map((e: any, i: number) => <p key={i} className="text-helper text-muted-foreground">{e.name}: {formatCurrencyShort(e.value)}</p>)}
                           </div>
                         ) : null} />
                         <Area type="monotone" dataKey="commitments" stackId="1" stroke="#4c5568" strokeWidth={2} fill="url(#secGrad)" name="Commitments" />
@@ -253,7 +253,7 @@ export default function SectorProfilePage() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No data</div>}
             </MiniChartCard>
 
             {/* Sub-sector Coverage mini */}
@@ -270,13 +270,13 @@ export default function SectorProfilePage() {
                         <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={65} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
-                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
                         ) : null} />
                         <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No donor data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No donor data</div>}
             </MiniChartCard>
 
             {/* Geographic Spread mini */}
@@ -288,13 +288,13 @@ export default function SectorProfilePage() {
                         <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={30} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
-                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
                         ) : null} />
                         <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No geo data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No geo data</div>}
             </MiniChartCard>
           </div>
 
@@ -302,29 +302,29 @@ export default function SectorProfilePage() {
           <div className="space-y-8">
 
             {/* Sub-Sector Coverage + Breakdown */}
-            <Card><CardHeader><CardTitle className="text-sm">{sector.level === 'sector' ? 'Related Sectors in Same Category' : 'Sub-Sector Breakdown'}</CardTitle></CardHeader><CardContent>
+            <Card><CardHeader><CardTitle className="text-body">{sector.level === 'sector' ? 'Related Sectors in Same Category' : 'Sub-Sector Breakdown'}</CardTitle></CardHeader><CardContent>
               {subSectorBreakdown.length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {subSectorBreakdown.map(sub => (
                       <Link key={sub.code} href={`/sectors/${sub.code}`}>
-                        <span className="text-xs font-medium px-2 py-1 rounded cursor-pointer hover:opacity-80" style={sub.totalValue > 0 ? { backgroundColor: `${themeColor}20`, color: themeColor, border: `1px solid ${themeColor}40` } : { backgroundColor: '#f1f5f9', color: '#94a3b8' }} title={`${sub.name} — ${formatCurrencyShort(sub.totalValue)}`}>
+                        <span className="text-helper font-medium px-2 py-1 rounded cursor-pointer hover:opacity-80" style={sub.totalValue > 0 ? { backgroundColor: `${themeColor}20`, color: themeColor, border: `1px solid ${themeColor}40` } : { backgroundColor: '#f1f5f9', color: '#94a3b8' }} title={`${sub.name} — ${formatCurrencyShort(sub.totalValue)}`}>
                           {sub.code}
                         </span>
                       </Link>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">{subSectorBreakdown.filter(s => s.totalValue > 0).length} of {subSectorBreakdown.length} sub-sectors funded</p>
+                  <p className="text-helper text-muted-foreground">{subSectorBreakdown.filter(s => s.totalValue > 0).length} of {subSectorBreakdown.length} sub-sectors funded</p>
                   <SubSectorBreakdown subSectors={subSectorBreakdown} themeColor={themeColor} />
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm text-center py-8">No sub-sector data available</p>
+                <p className="text-muted-foreground text-body text-center py-8">No sub-sector data available</p>
               )}
             </CardContent></Card>
 
             {/* Financials */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card><CardHeader><CardTitle className="text-sm">Financial Trends</CardTitle></CardHeader><CardContent>
+              <Card><CardHeader><CardTitle className="text-body">Financial Trends</CardTitle></CardHeader><CardContent>
                 {transactionsByYear.length > 0 ? (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
@@ -337,8 +337,8 @@ export default function SectorProfilePage() {
                         <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}>
-                            <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
-                            {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
+                            <p className="font-medium text-helper text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                            {payload.map((e: any, i: number) => <p key={i} className="text-helper text-muted-foreground"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
                           </div>
                         ) : null} />
 
@@ -348,10 +348,10 @@ export default function SectorProfilePage() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No time-series data</div>}
+                ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-body">No time-series data</div>}
               </CardContent></Card>
 
-              <Card><CardHeader><CardTitle className="text-sm">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
+              <Card><CardHeader><CardTitle className="text-body">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
                 {transactionsByType.length > 0 ? (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
@@ -364,17 +364,17 @@ export default function SectorProfilePage() {
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No transaction data</div>}
+                ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-body">No transaction data</div>}
               </CardContent></Card>
             </div>
 
             {/* Donors */}
-            <Card><CardHeader><CardTitle className="text-sm">Donor Landscape</CardTitle></CardHeader><CardContent>
+            <Card><CardHeader><CardTitle className="text-body">Donor Landscape</CardTitle></CardHeader><CardContent>
               <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
             </CardContent></Card>
 
             {/* Activities */}
-            <Card><CardHeader><CardTitle className="text-sm">Activities</CardTitle></CardHeader><CardContent className="space-y-4">
+            <Card><CardHeader><CardTitle className="text-body">Activities</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   {[
@@ -383,13 +383,13 @@ export default function SectorProfilePage() {
                     { key: '2', label: 'Active', count: activities.filter(a => a.activity_status === '2').length },
                     { key: '4', label: 'Closed', count: activities.filter(a => a.activity_status === '4' || a.activity_status === '3').length },
                   ].map(f => (
-                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-xs px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={activityStatusFilter === f.key ? { backgroundColor: '#4c5568' } : undefined}>
+                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-helper px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={activityStatusFilter === f.key ? { backgroundColor: '#4c5568' } : undefined}>
                       {f.label} ({f.count})
                     </button>
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground">
+                  <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-helper border border-border rounded-md px-2 py-1 text-muted-foreground">
                     <option value="value">Sort by Value</option><option value="committed">Sort by Committed</option><option value="disbursed">Sort by Disbursed</option><option value="allocation">Sort by Allocation %</option><option value="title">Sort by Title</option>
                   </select>
                   <div className="flex border border-border rounded-md">
@@ -412,7 +412,7 @@ export default function SectorProfilePage() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
+              <p className="text-helper text-muted-foreground">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
 
               {activityView === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -424,12 +424,12 @@ export default function SectorProfilePage() {
                           {activity.sectorPercentage < 100 && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{activity.sectorPercentage}%</Badge>}
                         </div>
                         <div className="flex items-start gap-1.5 mb-2">
-                          <h3 className="font-medium text-sm text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
+                          <h3 className="font-medium text-body text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
                           {activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
                         </div>
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                          <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
-                          <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
+                          <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
+                          <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
                         </div>
                         {activity.commitments > 0 && (
                           <div className="w-full bg-muted rounded-full h-1 mt-2">
@@ -442,7 +442,7 @@ export default function SectorProfilePage() {
                 </div>
               ) : (
                 <Card><CardContent className="p-0"><div className="overflow-x-auto">
-                  <table className="w-full text-xs"><thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
+                  <table className="w-full text-helper"><thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
                     <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Title</th>
                     <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Status</th>
                     <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Alloc %</th>
@@ -464,28 +464,28 @@ export default function SectorProfilePage() {
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2">
-                  <Button variant="outline" size="sm" disabled={activityPage <= 1} onClick={() => setActivityPage(p => p - 1)} className="text-xs h-7">Previous</Button>
-                  <span className="text-xs text-muted-foreground">Page {activityPage} of {totalPages}</span>
-                  <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-xs h-7">Next</Button>
+                  <Button variant="outline" size="sm" disabled={activityPage <= 1} onClick={() => setActivityPage(p => p - 1)} className="text-helper h-7">Previous</Button>
+                  <span className="text-helper text-muted-foreground">Page {activityPage} of {totalPages}</span>
+                  <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-helper h-7">Next</Button>
                 </div>
               )}
             </CardContent></Card>
 
             {/* Organizations */}
-            <Card><CardHeader><CardTitle className="text-sm">Organizations</CardTitle></CardHeader><CardContent className="space-y-4">
+            <Card><CardHeader><CardTitle className="text-body">Organizations</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1">
                   {['all', 'funding', 'implementing', 'accountable'].map(role => (
-                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
+                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-helper px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
                       {role === 'all' ? 'All' : role}
                     </button>
                   ))}
                 </div>
-                <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground">
+                <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-helper border border-border rounded-md px-2 py-1 text-muted-foreground">
                   <option value="value">Sort by Value</option><option value="activities">Sort by Activities</option><option value="name">Sort by Name</option>
                 </select>
               </div>
-              <p className="text-xs text-muted-foreground">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
+              <p className="text-helper text-muted-foreground">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
               {filteredOrgs.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredOrgs.map(org => (
@@ -493,15 +493,15 @@ export default function SectorProfilePage() {
                       <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-6">
                         <div className="flex items-start gap-3">
                           {org.logo ? <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" /> : (
-                            <div className="w-10 h-10 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: '#4c5568' }}>
+                            <div className="w-10 h-10 rounded flex items-center justify-center text-white text-helper font-bold flex-shrink-0" style={{ backgroundColor: '#4c5568' }}>
                               {(org.acronym || org.name).substring(0, 2).toUpperCase()}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm text-foreground truncate">{org.name}</h3>
+                            <h3 className="font-medium text-body text-foreground truncate">{org.name}</h3>
                             {org.acronym && <p className="text-[10px] text-muted-foreground">{org.acronym}</p>}
                             <div className="flex items-center gap-3 mt-1.5">
-                              <span className="text-xs font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
+                              <span className="text-helper font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
                               <span className="text-[10px] text-muted-foreground">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
                             </div>
                             {org.contributionTypes.length > 0 && (
@@ -515,25 +515,25 @@ export default function SectorProfilePage() {
                     </Link>
                   ))}
                 </div>
-              ) : <p className="text-muted-foreground text-sm text-center py-8">No organizations found</p>}
+              ) : <p className="text-muted-foreground text-body text-center py-8">No organizations found</p>}
             </CardContent></Card>
 
             {/* Geography */}
-            <Card><CardHeader><CardTitle className="text-sm">Activity Locations</CardTitle></CardHeader><CardContent>
+            <Card><CardHeader><CardTitle className="text-body">Activity Locations</CardTitle></CardHeader><CardContent>
               <SDGGeographyMap locations={geographicDistribution} sdgColor={themeColor} />
             </CardContent></Card>
 
             {geographicDistribution.length > 0 && (
               <Card><CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">Country Rankings</CardTitle>
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
+                  <CardTitle className="text-body">Country Rankings</CardTitle>
+                  <Button variant="ghost" size="sm" className="text-helper h-7" onClick={() => {
                     exportChartToCSV(geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value })), `Sector ${sector.code} Countries`)
                   }}><Download className="h-3 w-3 mr-1" />CSV</Button>
                 </div>
               </CardHeader><CardContent>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                  <table className="w-full text-helper">
                     <thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
                       <th className="text-left py-2.5 px-3 text-muted-foreground font-medium w-8">#</th>
                       <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Country</th>

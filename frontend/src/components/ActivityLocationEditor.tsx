@@ -129,7 +129,7 @@ function MultiSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "w-full justify-between font-normal border border-input bg-background hover:bg-accent hover:text-accent-foreground px-3 py-2 text-sm rounded-md flex items-center",
+          "w-full justify-between font-normal border border-input bg-background hover:bg-accent hover:text-accent-foreground px-3 py-2 text-body rounded-md flex items-center",
           !value && "text-muted-foreground"
         )}
         aria-expanded={open}
@@ -327,7 +327,7 @@ export default function ActivityLocationEditor({
     <div className="space-y-6">
       {/* Activity Scope Selector */}
       <div className="space-y-2">
-        <Label htmlFor="activityScope" className="text-sm font-medium">
+        <Label htmlFor="activityScope" className="text-body font-medium">
           Activity Scope <RequiredDot />
         </Label>
         <Select value={scope} onValueChange={onScopeChange}>
@@ -338,7 +338,7 @@ export default function ActivityLocationEditor({
             {ACTIVITY_SCOPES.map((scopeOption) => (
               <SelectItem key={scopeOption.code} value={scopeOption.code}>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-helper">
                     {scopeOption.code}
                   </Badge>
                   {scopeOption.name}
@@ -347,7 +347,7 @@ export default function ActivityLocationEditor({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-gray-500">
+        <p className="text-helper text-muted-foreground">
           The scope determines the geographic level of your activity
         </p>
       </div>
@@ -365,7 +365,7 @@ export default function ActivityLocationEditor({
       {(scope === "2" || scope === "3") && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">
+            <Label className="text-body font-medium">
               {scope === "2" ? "Select Regions" : "Select Countries"}
             </Label>
             <MultiSelect
@@ -379,11 +379,11 @@ export default function ActivityLocationEditor({
           {/* Static map preview */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Coverage Preview</CardTitle>
+              <CardTitle className="text-body">Coverage Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 bg-gray-100 rounded flex items-center justify-center">
-                <p className="text-gray-500">
+              <div className="h-64 bg-muted rounded flex items-center justify-center">
+                <p className="text-muted-foreground">
                   Map preview for {scope === "2" ? selectedRegions.length : selectedCountries.length} selected areas
                 </p>
               </div>
@@ -395,7 +395,7 @@ export default function ActivityLocationEditor({
       {scope === "4" && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="country" className="text-sm font-medium">
+            <Label htmlFor="country" className="text-body font-medium">
               Country <RequiredDot />
             </Label>
             <Select value={selectedCountry} onValueChange={setSelectedCountry}>
@@ -415,7 +415,7 @@ export default function ActivityLocationEditor({
           {/* Static country map with GeoJSON */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Country Coverage</CardTitle>
+              <CardTitle className="text-body">Country Coverage</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 overflow-hidden rounded border">
@@ -437,7 +437,7 @@ export default function ActivityLocationEditor({
       {scope === "5" && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">
+            <Label className="text-body font-medium">
               Select Multiple Admin Areas <RequiredDot />
             </Label>
             <MultiSelect
@@ -451,7 +451,7 @@ export default function ActivityLocationEditor({
           {/* Map with highlighted regions */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Selected Regions</CardTitle>
+              <CardTitle className="text-body">Selected Regions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 overflow-hidden rounded border relative">
@@ -463,7 +463,7 @@ export default function ActivityLocationEditor({
                 </Map>
                 {/* Overlay showing selection count */}
                 {selectedRegionMulti.length > 0 && (
-                  <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded shadow text-xs z-10">
+                  <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded shadow text-helper z-10">
                     {selectedRegionMulti.length} regions selected
                   </div>
                 )}
@@ -476,7 +476,7 @@ export default function ActivityLocationEditor({
       {scope === "6" && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="singleRegion" className="text-sm font-medium">
+            <Label htmlFor="singleRegion" className="text-body font-medium">
               Select Admin Area <RequiredDot />
             </Label>
             <Select value={selectedRegion} onValueChange={setSelectedRegion}>
@@ -497,7 +497,7 @@ export default function ActivityLocationEditor({
           {selectedRegion && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">
+                <CardTitle className="text-body">
                   {MYANMAR_REGIONS.find(r => r.value === selectedRegion)?.label}
                 </CardTitle>
               </CardHeader>
@@ -520,7 +520,7 @@ export default function ActivityLocationEditor({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="region7" className="text-sm font-medium">
+              <Label htmlFor="region7" className="text-body font-medium">
                 State/Region <RequiredDot />
               </Label>
               <Select value={selectedRegion} onValueChange={setSelectedRegion}>
@@ -538,7 +538,7 @@ export default function ActivityLocationEditor({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="township" className="text-sm font-medium">
+              <Label htmlFor="township" className="text-body font-medium">
                 Township <RequiredDot />
               </Label>
               <Select 
@@ -564,7 +564,7 @@ export default function ActivityLocationEditor({
           {selectedTownship && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">
+                <CardTitle className="text-body">
                   {availableTownships.find(t => t.value === selectedTownship)?.label} Township
                 </CardTitle>
               </CardHeader>
@@ -577,7 +577,7 @@ export default function ActivityLocationEditor({
                     <MapControls position="top-right" showZoom />
                   </Map>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-helper text-muted-foreground mt-2">
                   Click on the map to add a specific location within this township
                 </p>
               </CardContent>
@@ -590,7 +590,7 @@ export default function ActivityLocationEditor({
         <div className="space-y-4">
           {/* Address search */}
           <div className="space-y-2">
-            <Label htmlFor="address" className="text-sm font-medium">
+            <Label htmlFor="address" className="text-body font-medium">
               Address Search
             </Label>
             <div className="flex gap-2">
@@ -608,7 +608,7 @@ export default function ActivityLocationEditor({
           {/* Interactive map */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Select Location</CardTitle>
+              <CardTitle className="text-body">Select Location</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 overflow-hidden rounded border">
@@ -638,7 +638,7 @@ export default function ActivityLocationEditor({
                   </MapMarker>
                 </Map>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-helper text-muted-foreground mt-2">
                 Click on the map or search for an address to set the location
               </p>
             </CardContent>
@@ -647,7 +647,7 @@ export default function ActivityLocationEditor({
           {/* Location details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="locationName" className="text-sm font-medium">
+              <Label htmlFor="locationName" className="text-body font-medium">
                 Location Name
               </Label>
               <Input
@@ -659,7 +659,7 @@ export default function ActivityLocationEditor({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-sm font-medium">
+              <Label htmlFor="category" className="text-body font-medium">
                 Location Category <RequiredDot />
               </Label>
               <Select 
@@ -682,7 +682,7 @@ export default function ActivityLocationEditor({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="latitude" className="text-sm font-medium">
+              <Label htmlFor="latitude" className="text-body font-medium">
                 Latitude
               </Label>
               <Input
@@ -695,7 +695,7 @@ export default function ActivityLocationEditor({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="longitude" className="text-sm font-medium">
+              <Label htmlFor="longitude" className="text-body font-medium">
                 Longitude
               </Label>
               <Input
@@ -709,7 +709,7 @@ export default function ActivityLocationEditor({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium">
+            <Label htmlFor="description" className="text-body font-medium">
               Description
             </Label>
             <Textarea
@@ -727,10 +727,10 @@ export default function ActivityLocationEditor({
       {scope !== "1" && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-sm">Location Summary</CardTitle>
+            <CardTitle className="text-body">Location Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-gray-600">
+            <div className="text-body text-muted-foreground">
               {scope === "2" && `${selectedRegions.length} region(s) selected`}
               {scope === "3" && `${selectedCountries.length} country/countries selected`}
               {scope === "4" && `National scope: ${COUNTRIES.find(c => c.value === selectedCountry)?.label}`}

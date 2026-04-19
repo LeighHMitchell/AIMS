@@ -187,7 +187,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log(`[PortfolioSpendTrajectory] Total budget: ${totalBudget}, Activities included: ${activitiesIncluded}, Monthly data points: ${monthlyDisbursements.length}`)
 
     return NextResponse.json({
       totalBudget,

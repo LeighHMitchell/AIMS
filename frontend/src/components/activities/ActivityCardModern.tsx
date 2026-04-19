@@ -158,7 +158,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               )}
             </h2>
           </Link>
-          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             {activity.created_by_org_acronym || activity.created_by_org_name ? (
               <>
                 <span className="flex items-center gap-1">
@@ -207,7 +207,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Start Date
               </p>
-              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{activity.planned_start_date ? formatActivityDate(activity.planned_start_date) : 'Not set'}</span>
               </div>
@@ -216,7 +216,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 End Date
               </p>
-              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{activity.planned_end_date ? formatActivityDate(activity.planned_end_date) : 'Not set'}</span>
               </div>
@@ -225,7 +225,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Total Budget
               </p>
-              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{formatCurrency(activity.totalBudget || 0)}</span>
               </div>
@@ -234,7 +234,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Disbursed
               </p>
-              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{formatCurrency(activity.totalDisbursed || 0)}</span>
               </div>
@@ -253,7 +253,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
               {idLabel}
             </p>
-            <p className="text-xs leading-relaxed">
+            <p className="text-helper leading-relaxed">
               <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded-sm" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{displayId}</span>
               <button
                 onClick={(e) => {

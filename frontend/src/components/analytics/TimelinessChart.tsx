@@ -181,7 +181,7 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
   // Don't render if data is empty or invalid
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] text-slate-500">
+      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
         <p>No timeliness data available for the selected period</p>
       </div>
     )
@@ -221,9 +221,9 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
                 return (
                   <div className="bg-slate-800 text-white p-3 rounded-lg shadow-lg">
                     <p className="font-medium">{data.donor}</p>
-                    <p className="text-sm">On-time: {Number.isFinite(data.onTimePercentage) ? data.onTimePercentage : 0}%</p>
-                    <p className="text-sm">Avg delay: {Number.isFinite(data.averageDelay) ? data.averageDelay : 0} days</p>
-                    <p className="text-sm">Total: {Number.isFinite(data.totalTransactions) ? data.totalTransactions : 0} transactions</p>
+                    <p className="text-body">On-time: {Number.isFinite(data.onTimePercentage) ? data.onTimePercentage : 0}%</p>
+                    <p className="text-body">Avg delay: {Number.isFinite(data.averageDelay) ? data.averageDelay : 0} days</p>
+                    <p className="text-body">Total: {Number.isFinite(data.totalTransactions) ? data.totalTransactions : 0} transactions</p>
                   </div>
                 )
               }
@@ -241,7 +241,7 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
   } catch (error) {
     console.error('[TimelinessChart] Render error:', error)
     return (
-      <div className="flex items-center justify-center h-[400px] text-red-500">
+      <div className="flex items-center justify-center h-[400px] text-destructive">
         <p>Error rendering timeliness chart</p>
       </div>
     )

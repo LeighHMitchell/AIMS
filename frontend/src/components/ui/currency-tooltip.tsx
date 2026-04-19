@@ -59,7 +59,7 @@ export function CurrencyTooltip({
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-sm">{tooltipContent}</p>
+          <p className="text-body">{tooltipContent}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -86,7 +86,7 @@ export function InfoIconTooltip({
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-sm max-w-xs">{content}</p>
+          <p className="text-body max-w-xs">{content}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

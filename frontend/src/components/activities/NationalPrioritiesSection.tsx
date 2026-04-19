@@ -220,7 +220,7 @@ export function NationalPrioritiesSection({
 
   const handleAddAllocation = async () => {
     if (!selectedPriorityId) {
-      toast.error("Please select a priority");
+      toast.error("Select a priority from the list before adding an alignment.");
       return;
     }
 
@@ -252,14 +252,38 @@ export function NationalPrioritiesSection({
       onChange?.();
     } catch (error: any) {
       console.error("Error adding allocation:", error);
-      toast.error(error.message || "Failed to add alignment");
+      toast.error("Couldn't add the alignment. Please try again in a moment.");
     } finally {
       setSaving(false);
     }
   };
 
+  // Re-create an allocation (used by Undo after delete)
+  const restoreAllocation = async (snapshot: ActivityNationalPriority) => {
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}/national-priorities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nationalPriorityId: snapshot.nationalPriorityId,
+          significance: snapshot.significance,
+          rationale: snapshot.rationale || null,
+        }),
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || "Failed to restore allocation");
+      toast.success("Alignment restored");
+      await fetchAllocations();
+      onChange?.();
+    } catch (error) {
+      console.error("Error restoring allocation:", error);
+      toast.error("Couldn't restore the alignment. Please add it again manually.");
+    }
+  };
+
   const handleDeleteAllocation = async () => {
     if (!selectedAllocation) return;
+    const snapshot = selectedAllocation;
 
     try {
       setSaving(true);
@@ -274,14 +298,19 @@ export function NationalPrioritiesSection({
         throw new Error(result.error || "Failed to remove allocation");
       }
 
-      toast.success("Priority allocation removed");
+      toast.success("Priority allocation removed", {
+        action: {
+          label: "Undo",
+          onClick: () => restoreAllocation(snapshot),
+        },
+      });
       setDeleteDialogOpen(false);
       setSelectedAllocation(null);
       await fetchAllocations();
       onChange?.();
     } catch (error: any) {
       console.error("Error deleting allocation:", error);
-      toast.error(error.message || "Failed to remove allocation");
+      toast.error("Couldn't remove the alignment. Please try again in a moment.");
     } finally {
       setSaving(false);
     }
@@ -327,7 +356,7 @@ export function NationalPrioritiesSection({
         {allocations.length === 0 ? (
           <div className="text-center py-12">
             <img src="/images/empty-tuning-fork.webp" alt="No plan alignments" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No plan alignments</h3>
+            <h3 className="text-base font-medium mb-2">No plan alignments</h3>
             <p className="text-muted-foreground">
               Use the Add Alignment button to align this activity to a national plan or strategy.
             </p>
@@ -348,16 +377,16 @@ export function NationalPrioritiesSection({
                 <TableBody>
                   {allocations.map((allocation) => (
                     <TableRow key={allocation.id}>
-                      <TableCell className="text-sm whitespace-normal align-top">
+                      <TableCell className="text-body whitespace-normal align-top">
                         {allocation.nationalPriority?.planName || "—"}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-body">
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
                           {allocation.nationalPriority?.code}
                         </span>
                         {allocation.nationalPriority?.name}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-body">
                         <span className="flex items-center gap-2">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                             {allocation.significance === "principal" ? "1" : "2"}
@@ -365,7 +394,7 @@ export function NationalPrioritiesSection({
                           {ALIGNMENT_SIGNIFICANCE_LABELS[allocation.significance]}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm whitespace-normal align-top">
+                      <TableCell className="text-body whitespace-normal align-top">
                         {allocation.rationale || "—"}
                       </TableCell>
                       <TableCell className="text-right">
@@ -382,13 +411,13 @@ export function NationalPrioritiesSection({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               onClick={() => {
                                 setSelectedAllocation(allocation);
                                 setDeleteDialogOpen(true);
                               }}
                             >
-                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>
                           </div>
                         )}
@@ -426,8 +455,8 @@ export function NationalPrioritiesSection({
               // Read-only plan + priority display in edit mode
               <div className="space-y-2">
                 <Label>Plan & Priority</Label>
-                <div className="p-3 border rounded-md bg-muted/30 text-sm">
-                  <div className="text-muted-foreground text-xs mb-1">
+                <div className="p-3 border rounded-md bg-muted/30 text-body">
+                  <div className="text-muted-foreground text-helper mb-1">
                     {editingAllocation.nationalPriority?.planName || "—"}
                   </div>
                   <div className="flex items-center gap-2">
@@ -502,7 +531,7 @@ export function NationalPrioritiesSection({
                         </SelectGroup>
                       ))}
                       {unallocatedPriorities.length === 0 && (
-                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                        <div className="px-2 py-4 text-center text-body text-muted-foreground">
                           All priorities from this plan are already allocated
                         </div>
                       )}
@@ -537,7 +566,7 @@ export function NationalPrioritiesSection({
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">1</span>
                         <span className="font-medium">Principal</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.principal}</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.principal}</p>
                     </div>
                   </SelectItem>
                   <SelectItem value="significant" className="py-3">
@@ -546,7 +575,7 @@ export function NationalPrioritiesSection({
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">2</span>
                         <span className="font-medium">Significant</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.significant}</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.significant}</p>
                     </div>
                   </SelectItem>
                 </SelectContent>

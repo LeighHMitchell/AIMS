@@ -64,7 +64,7 @@ export function FullPagination({
     <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         {/* Info text */}
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           Showing {showingFrom} to {showingTo} of {totalItems} {itemLabel}
         </div>
 
@@ -127,7 +127,7 @@ export function FullPagination({
 
         {/* Items per page */}
         <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground">Per page:</label>
+          <label className="text-body text-muted-foreground">Per page:</label>
           <Select
             value={String(perPage)}
             onValueChange={(v) => {

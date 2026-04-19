@@ -101,7 +101,6 @@ export function CreateTaskModal({
         assignees,
       };
 
-      console.log('[CreateTaskModal] Submitting task with assignees:', JSON.stringify(assignees, null, 2));
 
       // Add entity link if provided
       if (defaultActivityId) {
@@ -242,7 +241,7 @@ export function CreateTaskModal({
                       <SelectItem value="14">14 days before</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  <span className="text-body text-muted-foreground whitespace-nowrap">
                     {format(new Date(deadline.getTime() - reminderDays * 24 * 60 * 60 * 1000), 'EEEE do MMMM yyyy')}
                   </span>
                 </div>

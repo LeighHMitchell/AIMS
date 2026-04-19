@@ -66,7 +66,7 @@ function SeverityBadge({ severity }: { severity: Severity }) {
       );
     case 'severe':
       return (
-        <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+        <Badge className="bg-destructive/10 text-red-800 border-destructive/30 hover:bg-destructive/10">
           Severe
         </Badge>
       );
@@ -208,43 +208,43 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
     const item = payload[0].payload as FinancialCompletenessActivity & { fullName: string };
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-sm">
-        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-          <p className="font-semibold text-slate-900 text-sm">{item.fullName}</p>
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
+        <div className="bg-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground text-body">{item.fullName}</p>
           {item.reporting_org_name && (
-            <p className="text-xs text-slate-600 mt-0.5">{item.reporting_org_name}</p>
+            <p className="text-helper text-muted-foreground mt-0.5">{item.reporting_org_name}</p>
           )}
         </div>
         <div className="p-2">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
-              <tr className="border-b border-slate-100">
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">Budgeted</td>
-                <td className="py-1.5 text-right font-semibold text-slate-900">
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-4 text-foreground font-medium">Budgeted</td>
+                <td className="py-1.5 text-right font-semibold text-foreground">
                   {formatCurrencyFull(item.total_budgeted_usd)}
                 </td>
               </tr>
-              <tr className="border-b border-slate-100">
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">Disbursed</td>
-                <td className="py-1.5 text-right font-semibold text-slate-900">
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-4 text-foreground font-medium">Disbursed</td>
+                <td className="py-1.5 text-right font-semibold text-foreground">
                   {formatCurrencyFull(item.total_disbursed_usd)}
                 </td>
               </tr>
-              <tr className="border-b border-slate-100">
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">Overspend</td>
-                <td className="py-1.5 text-right font-semibold text-red-600">
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-4 text-foreground font-medium">Overspend</td>
+                <td className="py-1.5 text-right font-semibold text-destructive">
                   {formatCurrencyFull(item.overspend_usd)}
                 </td>
               </tr>
-              <tr className="border-b border-slate-100">
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">% Spent</td>
-                <td className="py-1.5 text-right font-semibold text-slate-900">
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-4 text-foreground font-medium">% Spent</td>
+                <td className="py-1.5 text-right font-semibold text-foreground">
                   {formatPercentage(item.percentage_spent)}
                 </td>
               </tr>
               <tr>
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">Budget Periods</td>
-                <td className="py-1.5 text-right font-semibold text-slate-900">
+                <td className="py-1.5 pr-4 text-foreground font-medium">Budget Periods</td>
+                <td className="py-1.5 text-right font-semibold text-foreground">
                   {item.budget_period_count}
                 </td>
               </tr>
@@ -257,9 +257,9 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Overspend by Activity
           </CardTitle>
           <CardDescription>
@@ -275,9 +275,9 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
 
   if (!chartData || chartData.length === 0) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Overspend by Activity
           </CardTitle>
           <CardDescription>
@@ -285,11 +285,11 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-2 opacity-50" />
-              <p className="text-slate-600 font-medium">No data to display</p>
-              <p className="text-sm text-slate-500 mt-2">Apply filters or check if data exists</p>
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-muted-foreground font-medium">No data to display</p>
+              <p className="text-body text-muted-foreground mt-2">Apply filters or check if data exists</p>
             </div>
           </div>
         </CardContent>
@@ -301,11 +301,11 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
   const chartHeight = Math.max(400, chartData.length * 70);
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Overspend by Activity
             </CardTitle>
             <CardDescription>
@@ -336,24 +336,24 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
         </div>
         {/* Severity Legend */}
         <div className="flex items-center gap-4 mt-4">
-          <span className="text-xs text-slate-500">Severity:</span>
+          <span className="text-helper text-muted-foreground">Severity:</span>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#fbbf24' }} />
-            <span className="text-xs text-slate-600">Mild (&lt;150%)</span>
+            <span className="text-helper text-muted-foreground">Mild (&lt;150%)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f97316' }} />
-            <span className="text-xs text-slate-600">Moderate (150-200%)</span>
+            <span className="text-helper text-muted-foreground">Moderate (150-200%)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ef4444' }} />
-            <span className="text-xs text-slate-600">Severe (&gt;200%)</span>
+            <span className="text-helper text-muted-foreground">Severe (&gt;200%)</span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {viewMode === 'chart' ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
                 data={chartData}
@@ -394,9 +394,9 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
           <div className="rounded-md border overflow-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted">
                   <TableHead 
-                    className="min-w-[250px] cursor-pointer hover:bg-slate-100"
+                    className="min-w-[250px] cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('title')}
                   >
                     <div className="flex items-center">
@@ -405,7 +405,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('organization')}
                   >
                     <div className="flex items-center">
@@ -414,7 +414,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className="text-right cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('budgeted')}
                   >
                     <div className="flex items-center justify-end">
@@ -423,7 +423,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className="text-right cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('disbursed')}
                   >
                     <div className="flex items-center justify-end">
@@ -432,7 +432,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className="text-right cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('overspend')}
                   >
                     <div className="flex items-center justify-end">
@@ -441,7 +441,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className="text-right cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('percentage')}
                   >
                     <div className="flex items-center justify-end">
@@ -450,7 +450,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="text-center cursor-pointer hover:bg-slate-100"
+                    className="text-center cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('severity')}
                   >
                     <div className="flex items-center justify-center">
@@ -473,7 +473,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                       <TableCell className="font-medium">
                         <span className="line-clamp-2">{item.title}</span>
                       </TableCell>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="text-muted-foreground">
                         {item.reporting_org_name || '—'}
                       </TableCell>
                       <TableCell className="text-right font-medium">
@@ -482,7 +482,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                       <TableCell className="text-right font-medium">
                         {formatCurrencyFull(item.total_disbursed_usd)}
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-red-600">
+                      <TableCell className="text-right font-semibold text-destructive">
                         {formatCurrencyFull(item.overspend_usd)}
                       </TableCell>
                       <TableCell className="text-right font-medium">
@@ -492,7 +492,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                         <SeverityBadge severity={severity} />
                       </TableCell>
                       <TableCell>
-                        <ExternalLink className="h-4 w-4 text-slate-400" />
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
                       </TableCell>
                     </TableRow>
                   );

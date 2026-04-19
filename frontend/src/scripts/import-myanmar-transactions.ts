@@ -22,16 +22,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function importTransactions() {
-  console.log('💰 Starting Myanmar transactions import...\n')
   
   try {
     // 1. Load transactions data
     const transactionsPath = resolve(__dirname, '../../myanmar-transactions-fixed.json')
     const transactions = JSON.parse(readFileSync(transactionsPath, 'utf-8'))
-    console.log(`📋 Found ${transactions.length} transactions to import\n`)
     
     // 2. Get all Myanmar activities for mapping
-    console.log('🔗 Fetching activity mappings...')
     // Get all activities that were recently created (Myanmar ones)
     const { data: activities, error: actError } = await supabase
       .from('activities')
@@ -50,10 +47,8 @@ async function importTransactions() {
       activityMap[act.iati_id] = act.id
     })
     
-    console.log(`✅ Found ${activities.length} Myanmar activities for mapping\n`)
     
     // 3. Import transactions in batches
-    console.log('🔄 Importing transactions...')
     let successCount = 0
     let errorCount = 0
     let skippedCount = 0
@@ -114,19 +109,11 @@ async function importTransactions() {
           errorCount += batchTransactions.length
         } else {
           successCount += batchTransactions.length
-          console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}: Imported ${batchTransactions.length} transactions`)
         }
       }
     }
     
     // 4. Summary
-    console.log('\n' + '='.repeat(60))
-    console.log('🎉 Transaction import complete!')
-    console.log('\n📊 Summary:')
-    console.log(`- Transactions processed: ${transactions.length}`)
-    console.log(`- Successfully imported: ${successCount}`)
-    console.log(`- Failed: ${errorCount}`)
-    console.log(`- Skipped (no activity mapping): ${skippedCount}`)
     
     if (successCount > 0) {
       // Calculate some statistics
@@ -142,8 +129,6 @@ async function importTransactions() {
           return acc
         }, {} as Record<string, number>)
         
-        console.log(`\n💵 Total transaction value: $${totalValue.toLocaleString()}`)
-        console.log('\n📈 Transactions by type:')
         Object.entries(byType).forEach(([type, count]) => {
           const typeName = {
             '2': 'Commitment',
@@ -151,15 +136,10 @@ async function importTransactions() {
             '4': 'Expenditure',
             '7': 'Reimbursement'
           }[type] || type
-          console.log(`  - ${typeName}: ${count}`)
         })
       }
     }
     
-    console.log('\n✨ Next steps:')
-    console.log('1. View transactions at http://localhost:3002/transactions')
-    console.log('2. Check activity finance tabs for transaction details')
-    console.log('3. Organization summary should now show committed funding')
     
   } catch (error) {
     console.error('❌ Import error:', error)

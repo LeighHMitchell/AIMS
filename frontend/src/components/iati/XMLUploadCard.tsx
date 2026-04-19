@@ -128,29 +128,29 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
             className={`
               border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
               transition-colors duration-200 ease-in-out
-              ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
+              ${isDragActive ? 'border-primary bg-primary/5' : 'border-input hover:border-gray-400'}
               ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
             <input {...getInputProps()} />
-            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-sm text-gray-600 mb-2">
+            <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-body text-muted-foreground mb-2">
               {isDragActive
                 ? 'Drop the XML file here...'
                 : 'Drag & drop your IATI XML file here, or click to select'}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-helper text-muted-foreground">
               Supports IATI 2.x format • Maximum file size: 50MB
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <div className="flex items-center space-x-3">
                 <FileText className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                  <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  <p className="text-body font-medium text-foreground">{file.name}</p>
+                  <p className="text-helper text-muted-foreground">{formatFileSize(file.size)}</p>
                 </div>
               </div>
               {!isProcessing && (
@@ -158,7 +158,7 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
                   variant="ghost"
                   size="sm"
                   onClick={removeFile}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -167,7 +167,7 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
 
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="space-y-2">
-                <div className="flex justify-between text-xs text-gray-600">
+                <div className="flex justify-between text-helper text-muted-foreground">
                   <span>Reading file...</span>
                   <span>{Math.round(uploadProgress)}%</span>
                 </div>

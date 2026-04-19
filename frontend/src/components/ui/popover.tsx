@@ -263,7 +263,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
           ref={combinedRef}
           data-popover-content
           className={cn(
-            "fixed z-[10005] pointer-events-auto rounded-md border bg-white p-4 text-gray-900 shadow-lg outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
+            "fixed z-[10005] pointer-events-auto rounded-md border bg-white p-4 text-foreground shadow-lg outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
             !hasAutoWidth && "min-w-[200px]",
             className
           )}
@@ -290,7 +290,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
       <div
         ref={combinedRef}
         className={cn(
-          "absolute z-[10005] w-72 rounded-md border bg-white p-4 text-gray-900 shadow-md outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
+          "absolute z-[10005] w-72 rounded-md border bg-white p-4 text-foreground shadow-md outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
           align === "start" && "left-0",
           align === "center" && "left-1/2 -translate-x-1/2",
           align === "end" && "right-0",

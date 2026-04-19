@@ -206,7 +206,6 @@ export async function POST(request: NextRequest) {
       // Generate thumbnail for PDFs
       if (file.type === 'application/pdf') {
         try {
-          console.log('[Library Upload] Generating PDF thumbnail...');
           const thumbnailBuffer = await generatePdfThumbnailBuffer(buffer, {
             width: 300,
             height: 400,
@@ -232,7 +231,6 @@ export async function POST(request: NextRequest) {
 
               thumbnailUrl = thumbUrlData.publicUrl;
               thumbnailPath = thumbnailStoragePath;
-              console.log('[Library Upload] Thumbnail generated:', thumbnailUrl);
             } else {
               console.error('[Library Upload] Thumbnail upload error:', thumbUploadError);
             }
@@ -246,7 +244,6 @@ export async function POST(request: NextRequest) {
       // Generate thumbnail for images (just resize the original)
       if (file.type.startsWith('image/') && !file.type.includes('svg')) {
         try {
-          console.log('[Library Upload] Generating image thumbnail...');
           const sharp = (await import('sharp')).default;
           const thumbnailBuffer = await sharp(buffer)
             .resize(300, 400, {
@@ -274,7 +271,6 @@ export async function POST(request: NextRequest) {
 
             thumbnailUrl = thumbUrlData.publicUrl;
             thumbnailPath = thumbnailStoragePath;
-            console.log('[Library Upload] Thumbnail generated:', thumbnailUrl);
           } else {
             console.error('[Library Upload] Thumbnail upload error:', thumbUploadError);
           }

@@ -4,7 +4,6 @@ import { requireAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
-  console.log('[Storage] Creating uploads bucket for profile pictures');
   
   const { supabase, response: authResponse } = await requireAuth();
   
@@ -29,7 +28,6 @@ export async function POST() {
     const uploadsExists = buckets?.some((bucket: any) => bucket.name === 'uploads');
     
     if (uploadsExists) {
-      console.log('[Storage] Uploads bucket already exists');
       return NextResponse.json({ 
         success: true, 
         message: 'Uploads bucket already exists',
@@ -49,7 +47,6 @@ export async function POST() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[Storage] Uploads bucket created successfully');
     
     return NextResponse.json({ 
       success: true, 

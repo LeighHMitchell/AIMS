@@ -62,19 +62,19 @@ export function IATISyncStatusIndicator({
         return {
           icon: XCircle,
           label: 'Error',
-          color: 'text-red-600',
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200',
-          description: 'Sync failed - check IATI identifier'
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
+          borderColor: 'border-destructive/30',
+          description: 'Sync failed \u2014 verify the IATI identifier is correct and the activity exists in the IATI Registry'
         };
       case 'never':
       default:
         return {
           icon: Clock,
           label: 'Not synced',
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-50',
-          borderColor: 'border-gray-200',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted',
+          borderColor: 'border-border',
           description: 'Never synced with IATI'
         };
     }
@@ -86,13 +86,13 @@ export function IATISyncStatusIndicator({
   const sizeClasses = {
     sm: {
       icon: 'h-3 w-3',
-      text: 'text-xs',
+      text: 'text-helper',
       padding: 'px-1.5 py-0.5',
       gap: 'gap-1'
     },
     md: {
       icon: 'h-4 w-4',
-      text: 'text-sm',
+      text: 'text-body',
       padding: 'px-2 py-1',
       gap: 'gap-1.5'
     },
@@ -126,7 +126,7 @@ export function IATISyncStatusIndicator({
           {indicator}
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-sm">{config.description}</p>
+          <p className="text-body">{config.description}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -162,10 +162,10 @@ export function IATISyncStatusBadge({
       case 'outdated':
         return <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />;
       case 'error':
-        return <XCircle className="h-3.5 w-3.5 text-red-600" />;
+        return <XCircle className="h-3.5 w-3.5 text-destructive" />;
       case 'never':
       default:
-        return <Clock className="h-3.5 w-3.5 text-gray-400" />;
+        return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
     }
   };
 
@@ -196,7 +196,7 @@ export function IATISyncStatusBadge({
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-xs">{getTooltipText()}</p>
+          <p className="text-helper">{getTooltipText()}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

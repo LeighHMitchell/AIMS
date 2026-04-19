@@ -24,7 +24,6 @@ export async function GET(
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Tasks API] GET task:', id, 'for user:', userId);
 
     // Fetch the task with all related data
     const { data: task, error: taskError } = await supabase
@@ -179,7 +178,6 @@ export async function PUT(
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Tasks API] PUT task:', id, 'by user:', userId);
 
     // Verify user is creator or super_user
     const { data: task, error: taskError } = await supabase
@@ -272,7 +270,6 @@ export async function PUT(
           .from('task_assignments')
           .delete()
           .in('id', removeIds);
-        console.log('[Tasks API] Removed', toRemove.length, 'assignments');
       }
 
       // Add new assignments
@@ -305,7 +302,6 @@ export async function PUT(
         if (insertError) {
           console.error('[Tasks API] Error adding assignments:', insertError);
         } else {
-          console.log('[Tasks API] Added', toAdd.length, 'new assignments');
         }
       }
     }
@@ -359,7 +355,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Tasks API] DELETE task:', id, 'by user:', userId);
 
     // Verify user is creator or super_user and get task details
     const { data: task, error: taskError } = await supabase
@@ -424,7 +419,6 @@ export async function DELETE(
         console.error('[Tasks API] Error creating deletion notifications:', notifyError);
         // Don't fail the request, task is already deleted
       } else {
-        console.log('[Tasks API] Sent deletion notifications to', assigneeIds.length, 'assignees');
       }
     }
 

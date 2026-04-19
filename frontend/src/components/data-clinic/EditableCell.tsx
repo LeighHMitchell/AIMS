@@ -217,7 +217,7 @@ export function EditableCell({
   const renderDisplayValue = () => {
     if (!value) {
       return (
-        <Badge variant="destructive" className="text-xs">
+        <Badge variant="destructive" className="text-helper">
           <AlertCircle className="h-3 w-3 mr-1" />
           Missing
         </Badge>
@@ -233,7 +233,7 @@ export function EditableCell({
             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
               {typeCode}
             </span>
-            <span className="text-sm">{typeLabel}</span>
+            <span className="text-body">{typeLabel}</span>
           </div>
         );
       case 'country':
@@ -242,7 +242,7 @@ export function EditableCell({
           return (
             <div className="flex items-center gap-2">
               <Flag code={countryInfo.code} className="h-4 w-6 object-cover rounded" />
-              <span className="text-sm">{value}</span>
+              <span className="text-body">{value}</span>
             </div>
           );
         }
@@ -253,7 +253,7 @@ export function EditableCell({
             return (
               <div className="flex items-center gap-2">
                 <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-4 w-6 object-cover rounded" />
-                <span className="text-sm">{value}</span>
+                <span className="text-body">{value}</span>
               </div>
             );
           }
@@ -262,19 +262,19 @@ export function EditableCell({
             return (
               <div className="flex items-center gap-2">
                 <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-4 w-6 object-cover rounded" />
-                <span className="text-sm">{value}</span>
+                <span className="text-body">{value}</span>
               </div>
             );
           }
           return (
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{value}</span>
+              <span className="text-body">{value}</span>
             </div>
           );
         }
         // Fallback for legacy or unknown values
-        return <span className="text-sm">{value}</span>;
+        return <span className="text-body">{value}</span>;
       case 'iati_org_id':
         const isValid = isValidIdentifier ? isValidIdentifier(value) : true;
         if (!isValid) {
@@ -287,13 +287,13 @@ export function EditableCell({
                     <AlertCircle className="h-3 w-3 text-orange-500" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <div className="text-xs space-y-1">
+                    <div className="text-helper space-y-1">
                       <p className="font-semibold">Invalid IATI Organization Identifier</p>
                       <p>Required format: AGENCY-REGISTRATION</p>
-                      <p className="text-gray-400">Examples:</p>
-                      <p className="text-gray-400">• XI-IATI-1234</p>
-                      <p className="text-gray-400">• GB-COH-123456</p>
-                      <p className="text-gray-400">• US-EIN-12-3456789</p>
+                      <p className="text-muted-foreground">Examples:</p>
+                      <p className="text-muted-foreground">• XI-IATI-1234</p>
+                      <p className="text-muted-foreground">• GB-COH-123456</p>
+                      <p className="text-muted-foreground">• US-EIN-12-3456789</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -303,7 +303,7 @@ export function EditableCell({
         }
         return <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{value}</span>;
       default:
-        return <span className="text-sm">{value}</span>;
+        return <span className="text-body">{value}</span>;
     }
   };
 
@@ -315,7 +315,7 @@ export function EditableCell({
         const currentTypeCode = getTypeCode(localValue);
         return (
           <div className="space-y-3">
-            <Label className="text-sm font-medium">{FIELD_LABELS[field]}</Label>
+            <Label className="text-body font-medium">{FIELD_LABELS[field]}</Label>
             <Select 
               value={currentTypeCode} 
               onValueChange={handleSelectChange}
@@ -358,7 +358,7 @@ export function EditableCell({
 
         return (
           <div className="space-y-3">
-            <Label className="text-sm font-medium">{FIELD_LABELS[field]}</Label>
+            <Label className="text-body font-medium">{FIELD_LABELS[field]}</Label>
             <Select 
               value={localValue} 
               onValueChange={(val) => {
@@ -433,7 +433,7 @@ export function EditableCell({
                 {/* Institutional Groups */}
                 {hasInstitutionalResults && (
                   <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                    <div className="px-2 py-1.5 text-body font-semibold text-muted-foreground bg-muted">
                       Institutional Groups
                     </div>
                     {filteredInstitutionalGroups.map((group) => (
@@ -457,7 +457,7 @@ export function EditableCell({
                 {/* Country Options */}
                 {hasCountryResults && (
                   <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                    <div className="px-2 py-1.5 text-body font-semibold text-muted-foreground bg-muted">
                       Countries
                     </div>
                     {filteredCountries.map((country) => (
@@ -473,7 +473,7 @@ export function EditableCell({
 
                 {/* No Results */}
                 {!hasInstitutionalResults && !hasCountryResults && (
-                  <div className="px-2 py-6 text-center text-sm text-gray-500">
+                  <div className="px-2 py-6 text-center text-body text-muted-foreground">
                     No results found for "{countrySearchTerm}"
                   </div>
                 )}
@@ -485,7 +485,7 @@ export function EditableCell({
       case 'default_currency':
         return (
           <div className="space-y-3">
-            <Label className="text-sm font-medium">{FIELD_LABELS[field]}</Label>
+            <Label className="text-body font-medium">{FIELD_LABELS[field]}</Label>
             <Select 
               value={localValue} 
               onValueChange={handleSelectChange}
@@ -513,7 +513,7 @@ export function EditableCell({
       default:
         return (
           <div className="space-y-3">
-            <Label className="text-sm font-medium">{FIELD_LABELS[field] || field}</Label>
+            <Label className="text-body font-medium">{FIELD_LABELS[field] || field}</Label>
             <div className="flex gap-2">
               <Input
                 ref={inputRef}
@@ -556,7 +556,7 @@ export function EditableCell({
               </Button>
             </div>
             {field === 'iati_org_id' && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 Format: AGENCY-REGISTRATION (e.g., GB-COH-123456)
               </p>
             )}

@@ -192,7 +192,7 @@ export default function FundsPage() {
         {/* Filters - shaded card like activity list */}
         <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-md">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -204,7 +204,7 @@ export default function FundsPage() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Status</Label>
+            <Label className="text-helper text-muted-foreground">Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px] h-9">
                 <SelectValue placeholder="All Statuses" />
@@ -221,7 +221,7 @@ export default function FundsPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Sort by</Label>
+            <Label className="text-helper text-muted-foreground">Sort by</Label>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[180px] h-9">
                 <ChevronsUpDown className="h-3.5 w-3.5 mr-1" />
@@ -288,7 +288,7 @@ export default function FundsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredFunds.map(fund => {
-              const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
+              const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-destructive' : 'text-muted-foreground'
               const utilisation = fund.totalContributions > 0
                 ? ((fund.totalDisbursements / fund.totalContributions) * 100).toFixed(0)
                 : '0'
@@ -390,7 +390,7 @@ export default function FundsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setDeleteFundId(fund.id)}
-                              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                              className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-red-900/20"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -406,7 +406,7 @@ export default function FundsPage() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <p className="text-xs text-muted-foreground mb-1 cursor-help">Fund Manager</p>
+                              <p className="text-helper text-muted-foreground mb-1 cursor-help">Fund Manager</p>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>From this activity&apos;s Reporting Organisation; edit on the activity.</p>
@@ -421,10 +421,10 @@ export default function FundsPage() {
                             className="shrink-0"
                           />
                           <div className="min-w-0">
-                            <span className="text-xs text-foreground font-medium truncate block">
+                            <span className="text-helper text-foreground font-medium truncate block">
                               {fund.fundManager.name}
                               {fund.fundManager.acronym && (
-                                <span className="text-xs text-foreground font-medium ml-0.5">({fund.fundManager.acronym})</span>
+                                <span className="text-helper text-foreground font-medium ml-0.5">({fund.fundManager.acronym})</span>
                               )}
                             </span>
                           </div>
@@ -435,22 +435,22 @@ export default function FundsPage() {
                     {/* Financial summary */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">Contributions</p>
-                        <p className="text-sm font-semibold">{formatUSD(fund.totalContributions)}</p>
+                        <p className="text-helper text-muted-foreground">Contributions</p>
+                        <p className="text-body font-semibold">{formatUSD(fund.totalContributions)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Disbursed</p>
-                        <p className="text-sm font-semibold">{formatUSD(fund.totalDisbursements)}</p>
+                        <p className="text-helper text-muted-foreground">Disbursed</p>
+                        <p className="text-body font-semibold">{formatUSD(fund.totalDisbursements)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Balance</p>
+                        <p className="text-helper text-muted-foreground">Balance</p>
                         <p className={`text-sm font-semibold ${balanceColor}`}>{formatUSD(fund.balance)}</p>
                       </div>
                     </div>
 
                     {/* Utilisation bar: track Pale Slate, progress Blue Slate */}
                     <div className="mb-3">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <div className="flex justify-between text-helper text-muted-foreground mb-1">
                         <span>{utilisation}% utilised</span>
                       </div>
                       <div className="w-full rounded-full h-1.5 bg-[#cfd0d5]">
@@ -464,13 +464,13 @@ export default function FundsPage() {
                     {/* Child Activities: first 3 + "Show all" with hover/click full list */}
                     {(fund.childActivities?.length ?? 0) > 0 && (
                       <div className="mb-3">
-                        <p className="text-xs text-muted-foreground mb-1">Child Activities</p>
+                        <p className="text-helper text-muted-foreground mb-1">Child Activities</p>
                         <ul className="space-y-0.5">
                           {fund.childActivities.slice(0, 3).map(child => (
                             <li key={child.id}>
                               <Link
                                 href={`/activities/${child.id}`}
-                                className="text-xs text-foreground flex flex-wrap items-baseline gap-1 gap-y-0.5"
+                                className="text-helper text-foreground flex flex-wrap items-baseline gap-1 gap-y-0.5"
                               >
                                 <span className="break-words min-w-0">
                                   {child.title}
@@ -493,7 +493,7 @@ export default function FundsPage() {
                                 <PopoverTrigger asChild>
                                   <button
                                     type="button"
-                                    className="text-xs text-primary font-medium"
+                                    className="text-helper text-primary font-medium"
                                     onMouseEnter={() => { clearMoreChildCloseTimeout(); setOpenMoreChildFundId(fund.id); }}
                                     onMouseLeave={scheduleMoreChildClose}
                                   >
@@ -506,13 +506,13 @@ export default function FundsPage() {
                                   onMouseEnter={() => { clearMoreChildCloseTimeout(); setOpenMoreChildFundId(fund.id); }}
                                   onMouseLeave={scheduleMoreChildClose}
                                 >
-                                  <p className="text-xs font-semibold text-foreground pb-2">All child activities</p>
+                                  <p className="text-helper font-semibold text-foreground pb-2">All child activities</p>
                                   <ul className="space-y-1">
                                     {fund.childActivities.map(child => (
                                       <li key={child.id}>
                                         <Link
                                           href={`/activities/${child.id}`}
-                                          className="text-xs text-foreground flex flex-wrap items-baseline gap-1"
+                                          className="text-helper text-foreground flex flex-wrap items-baseline gap-1"
                                           onClick={() => setOpenMoreChildFundId(null)}
                                         >
                                           <span className="break-words min-w-0">
@@ -538,7 +538,7 @@ export default function FundsPage() {
 
                     {/* Fund flow Sankey (donors → fund → sectors) */}
                     <div className="mb-3">
-                      <p className="text-xs text-muted-foreground mb-1">Fund Flow</p>
+                      <p className="text-helper text-muted-foreground mb-1">Fund Flow</p>
                       <FundFlowSankey
                         fundTitle={fund.acronym ? `${fund.title} (${fund.acronym})` : fund.title}
                         topDonors={fund.topDonors}
@@ -552,14 +552,14 @@ export default function FundsPage() {
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div className="space-y-1">
                         <p className="text-[10px] uppercase tracking-wider text-[#7b95a7]">Start Date</p>
-                        <div className="flex items-center gap-2 font-medium text-sm text-[#4c5568]">
+                        <div className="flex items-center gap-2 font-medium text-body text-[#4c5568]">
                           <Calendar className="w-4 h-4 text-[#7b95a7]" />
                           <span>{fund.dateRange.start ? formatActivityDate(fund.dateRange.start) : 'Not set'}</span>
                         </div>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] uppercase tracking-wider text-[#7b95a7]">End Date</p>
-                        <div className="flex items-center gap-2 font-medium text-sm text-[#4c5568]">
+                        <div className="flex items-center gap-2 font-medium text-body text-[#4c5568]">
                           <Calendar className="w-4 h-4 text-[#7b95a7]" />
                           <span>{fund.dateRange.end ? formatActivityDate(fund.dateRange.end) : 'Not set'}</span>
                         </div>

@@ -73,7 +73,6 @@ interface CreatedUser {
 }
 
 async function main() {
-  console.log('🚀 Creating Supabase Auth accounts for existing users...\n');
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -84,7 +83,6 @@ async function main() {
 
   try {
     // 1. Get all user profiles
-    console.log('📋 Fetching all user profiles...');
     const { data: userProfiles, error: fetchError } = await supabase
       .from('users')
       .select('id, email, first_name, last_name, role, organization_id')
@@ -95,11 +93,9 @@ async function main() {
     }
 
     if (!userProfiles || userProfiles.length === 0) {
-      console.log('ℹ️  No user profiles found');
       return;
     }
 
-    console.log(`📊 Found ${userProfiles.length} user profiles\n`);
 
     const results: CreatedUser[] = [];
     let created = 0;
@@ -111,14 +107,12 @@ async function main() {
       const profile = userProfiles[i];
       const name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
       
-      console.log(`🔍 [${i + 1}/${userProfiles.length}] Checking: ${profile.email} (${name})`);
 
       try {
         // Check if auth user already exists
         const { data: existingAuthUser, error: checkError } = await supabase.auth.admin.getUserById(profile.id);
 
         if (existingAuthUser && existingAuthUser.user && !checkError) {
-          console.log(`   ✅ Auth account already exists`);
           skipped++;
           results.push({
             email: profile.email,
@@ -132,7 +126,6 @@ async function main() {
 
         // Create auth account
         const tempPassword = generateTempPassword();
-        console.log(`   🔧 Creating auth account...`);
 
         const { data: authData, error: createError } = await supabase.auth.admin.createUser({
           email: profile.email,
@@ -151,7 +144,6 @@ async function main() {
 
         // Update profile with correct auth ID if different
         if (authData.user.id !== profile.id) {
-          console.log(`   🔄 Syncing profile ID...`);
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -161,11 +153,9 @@ async function main() {
             .eq('id', profile.id);
 
           if (updateError) {
-            console.log(`   ⚠️  Warning: Failed to sync profile ID: ${updateError.message}`);
           }
         }
 
-        console.log(`   ✅ Created auth account successfully!`);
         created++;
 
         results.push({
@@ -195,49 +185,27 @@ async function main() {
     }
 
     // 3. Summary and credentials
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 CREATION SUMMARY');
-    console.log('='.repeat(60));
-    console.log(`✅ Successfully created: ${created}`);
-    console.log(`⏭️  Already existed: ${skipped}`);
-    console.log(`❌ Failed: ${failed}`);
-    console.log(`📋 Total processed: ${userProfiles.length}`);
 
     if (failed > 0) {
-      console.log('\n❌ FAILED ACCOUNTS:');
-      console.log('-'.repeat(40));
       results.filter(r => !r.success).forEach(user => {
-        console.log(`• ${user.email} - ${user.error}`);
       });
     }
 
     if (created > 0 || skipped > 0) {
-      console.log('\n🔑 LOGIN CREDENTIALS:');
-      console.log('-'.repeat(60));
-      console.log('| Email                        | Password         | Name            | Role        |');
-      console.log('|------------------------------|------------------|-----------------|-------------|');
       
       results.filter(r => r.success).forEach(user => {
         const email = user.email.padEnd(28, ' ');
         const password = user.password.padEnd(16, ' ');
         const name = user.name.padEnd(15, ' ');
         const role = user.role.padEnd(11, ' ');
-        console.log(`| ${email} | ${password} | ${name} | ${role} |`);
       });
     }
 
-    console.log('\n🎉 Process completed!');
-    console.log('\n📋 Next steps:');
-    console.log('1. Share login credentials with users');
-    console.log('2. Users can change their passwords after first login');
-    console.log('3. Test login with one of the accounts');
-    console.log('4. Deploy to production to make accounts available');
 
     // Save credentials to file for reference
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `user-credentials-${timestamp}.txt`;
     
-    console.log(`\n💾 Saving credentials to: ${filename}`);
     
     let credentialsContent = `User Login Credentials - Generated ${new Date().toLocaleString()}\n`;
     credentialsContent += '='.repeat(80) + '\n\n';
@@ -251,7 +219,6 @@ async function main() {
     });
 
     writeFileSync(filename, credentialsContent);
-    console.log(`✅ Credentials saved to ${filename}`);
 
   } catch (error) {
     console.error('💥 Script failed:', error);

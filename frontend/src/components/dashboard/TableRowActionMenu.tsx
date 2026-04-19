@@ -56,7 +56,7 @@ export function TableRowActionMenu({ activityId, entityType, entityId, onDelete 
           Edit
         </DropdownMenuItem>
         {onDelete && (
-          <DropdownMenuItem onClick={onDelete} className="text-red-600">
+          <DropdownMenuItem onClick={onDelete} className="text-destructive">
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </DropdownMenuItem>

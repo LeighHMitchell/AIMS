@@ -191,7 +191,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
   }), [filteredAndSortedData])
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div>
@@ -206,7 +206,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
 
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search sectors..."
                 value={searchQuery}
@@ -216,7 +216,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-helper">
                 {filteredAndSortedData.length} of {data.length} sectors
               </Badge>
               <Button
@@ -262,7 +262,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
             <TableBody>
               {filteredAndSortedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-slate-500 py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No sectors found matching your search
                   </TableCell>
                 </TableRow>
@@ -272,20 +272,20 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
                     <TableRow key={index} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         <div>
-                          <div className="font-semibold text-slate-900">{item.sectorName}</div>
-                          <div className="text-xs text-slate-500">{item.sectorCode}</div>
+                          <div className="font-semibold text-foreground">{item.sectorName}</div>
+                          <div className="text-helper text-muted-foreground">{item.sectorCode}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div>
                           <div className="font-medium">{formatCompactCurrency(item.plannedDisbursements)}</div>
-                          <div className="text-xs text-slate-500">{item.plannedPercentage.toFixed(1)}%</div>
+                          <div className="text-helper text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div>
                           <div className="font-semibold text-green-700">{formatCompactCurrency(item.actualDisbursements)}</div>
-                          <div className="text-xs text-slate-500">{item.actualPercentage.toFixed(1)}%</div>
+                          <div className="text-helper text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">
@@ -303,9 +303,9 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
                     </TableRow>
                   ))}
                   {/* Totals Row */}
-                  <TableRow className="bg-slate-100 font-semibold sticky bottom-0">
+                  <TableRow className="bg-muted font-semibold sticky bottom-0">
                     <TableCell>
-                      <div className="font-bold text-slate-900">Total</div>
+                      <div className="font-bold text-foreground">Total</div>
                     </TableCell>
                     <TableCell className="text-right font-bold">
                       {formatCompactCurrency(totals.planned)}

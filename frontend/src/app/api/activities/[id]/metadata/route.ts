@@ -148,7 +148,6 @@ export async function GET(
       
       if (!usersError) {
         usersData = users || [];
-        console.log('[AIMS] Found user data:', usersData);
       } else {
         console.error('[AIMS] Error fetching users:', usersError);
       }

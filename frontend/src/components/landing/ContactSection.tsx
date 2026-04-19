@@ -34,10 +34,10 @@ export function ContactSection() {
           transition={{ duration: 0.6 }}
           className="mb-16 text-center"
         >
-          <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
+          <h2 className="mb-4 text-3xl font-bold text-foreground md:text-4xl">
             Get in Touch
           </h2>
-          <p className="mx-auto max-w-2xl text-lg text-gray-600">
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
             Interested in learning more about the platform or discussing how it could
             support your development finance management needs? We welcome inquiries
             from governments, development partners, and civil society organisations.
@@ -51,13 +51,13 @@ export function ContactSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Card className="border-gray-200 bg-white p-6 md:p-8">
+            <Card className="border-border bg-white p-6 md:p-8">
               <div className="space-y-6">
                 <div>
-                  <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                  <h3 className="mb-2 text-xl font-semibold text-foreground">
                     Send us an email
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Click the button below to open your email client with our contact address pre-filled.
                   </p>
                 </div>
@@ -86,10 +86,10 @@ export function ContactSection() {
             className="space-y-6"
           >
             <div className="mb-8">
-              <h3 className="mb-4 text-xl font-semibold text-gray-900">
+              <h3 className="mb-4 text-xl font-semibold text-foreground">
                 Who This Platform Serves
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 The system is designed to support coordination between multiple
                 stakeholder types involved in development finance management.
               </p>
@@ -103,7 +103,7 @@ export function ContactSection() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
               >
-                <Card className="group border-gray-200 bg-white p-5 transition-all duration-300 hover:border-gray-300 hover:shadow-md">
+                <Card className="group border-border bg-white p-5 transition-all duration-300 hover:border-input hover:shadow-md">
                   <div className="flex items-start gap-4">
                     <motion.div
                       whileHover={{ scale: 1.05 }}
@@ -113,10 +113,10 @@ export function ContactSection() {
                       <audience.icon className="h-5 w-5" />
                     </motion.div>
                     <div>
-                      <h4 className="mb-1 font-semibold text-gray-900 transition-colors group-hover:text-gray-700">
+                      <h4 className="mb-1 font-semibold text-foreground transition-colors group-hover:text-foreground">
                         {audience.label}
                       </h4>
-                      <p className="text-sm text-gray-600">{audience.description}</p>
+                      <p className="text-body text-muted-foreground">{audience.description}</p>
                     </div>
                   </div>
                 </Card>

@@ -105,11 +105,11 @@ export default function WorkingGroupEditorNavigation({
       <nav className="w-64 bg-white border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Working Group Header */}
         {workingGroup && workingGroup.label && (
-          <div className="pb-4 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-slate-900 group leading-tight">
+          <div className="pb-4 border-b border-border">
+            <h2 className="text-lg font-bold text-foreground group leading-tight">
               <button
                 onClick={() => router.push(`/working-groups/${workingGroup.id}`)}
-                className="text-left hover:text-slate-600 transition-colors"
+                className="text-left hover:text-muted-foreground transition-colors"
                 title="View Working Group profile"
               >
                 {workingGroup.label}
@@ -160,7 +160,7 @@ export default function WorkingGroupEditorNavigation({
           >
             <div
               id={`group-${groupIndex}`}
-              className="text-xs font-bold text-black uppercase mb-2 tracking-wide px-1 flex items-center gap-1"
+              className="text-section-label font-bold text-black uppercase mb-2 px-1 flex items-center gap-1"
               role="heading"
               aria-level={3}
             >
@@ -170,7 +170,7 @@ export default function WorkingGroupEditorNavigation({
             {group.sections.length > 0 && (
               <div className="relative">
                 <div
-                  className="absolute left-[12px] top-0 bottom-0 w-px bg-gray-200"
+                  className="absolute left-[12px] top-0 bottom-0 w-px bg-muted"
                   style={{ height: '100%' }}
                 />
 
@@ -189,22 +189,24 @@ export default function WorkingGroupEditorNavigation({
                         disabled={isLocked || disabled}
                         data-tab={section.id}
                         className={cn(
-                          "w-full text-left py-2 px-3 rounded text-sm font-normal transition-all duration-200 ease-in-out",
+                          // Active state carried by background fill + text
+                          // weight/color. Removed the 3px left-stripe accent
+                          // that duplicated those signals (AI-slop tell).
+                          "w-full text-left py-2 px-3 rounded text-body font-normal transition-all duration-200 ease-in-out",
                           "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",
-                          "border-l-3 border-transparent",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
-                            ? "text-gray-400 cursor-not-allowed opacity-60"
+                            ? "text-muted-foreground cursor-not-allowed opacity-60"
                             : isActive
-                              ? "bg-blue-100 text-blue-700 font-medium border-l-3 border-blue-600 shadow-sm"
-                              : "text-gray-600 hover:bg-gray-50 hover:text-black hover:border-l-3 hover:border-gray-300"
+                              ? "bg-blue-100 text-blue-700 font-medium shadow-sm"
+                              : "text-muted-foreground hover:bg-muted hover:text-black"
                         )}
                         aria-current={isActive ? "page" : undefined}
                         title={disabled ? "Please wait while saving..." : undefined}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
+                            {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                             <span>{section.label}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -248,7 +250,7 @@ export default function WorkingGroupEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-body font-medium bg-destructive/100 text-white hover:bg-destructive transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

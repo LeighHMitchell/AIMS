@@ -201,11 +201,9 @@ export function useOptimizedTransactions(
       const queryTime = Date.now() - startTime;
       setLastQueryTime(queryTime);
 
-      console.log(`[Transactions Hook] Fetched ${data.length} transactions in ${queryTime}ms`);
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[Transactions Hook] Request aborted');
         return;
       }
 

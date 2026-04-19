@@ -36,7 +36,7 @@ export function SuggestedParcelsCard({ projectId }: SuggestedParcelsCardProps) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-body text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Finding parcels...
           </div>
@@ -50,7 +50,7 @@ export function SuggestedParcelsCard({ projectId }: SuggestedParcelsCardProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-1.5">
+        <CardTitle className="text-body flex items-center gap-1.5">
           <Lightbulb className="h-4 w-4" />
           Suggested Parcels
         </CardTitle>
@@ -63,8 +63,8 @@ export function SuggestedParcelsCard({ projectId }: SuggestedParcelsCardProps) {
               className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => router.push(`/land-bank/${parcel.id}`)}
             >
-              <p className="text-sm font-medium">{parcel.name}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-body font-medium">{parcel.name}</p>
+              <p className="text-helper text-muted-foreground">
                 {parcel.parcel_code} · {parcel.state_region}
                 {parcel.size_hectares ? ` · ${formatHectares(parcel.size_hectares)}` : ""}
               </p>

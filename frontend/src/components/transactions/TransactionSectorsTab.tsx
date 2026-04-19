@@ -148,7 +148,7 @@ export default function TransactionSectorsTab({
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Sector allocation is managed at the activity level</p>
-                <p className="text-sm mt-1">
+                <p className="text-body mt-1">
                   These sectors are inherited from the activity and cannot be edited here.
                   To edit sectors, go to the activity's Sectors tab.
                 </p>
@@ -173,7 +173,7 @@ export default function TransactionSectorsTab({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Transaction Sectors</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             {isLocked 
               ? 'Inherited from activity sector allocation'
               : 'Allocate this transaction across different sectors'
@@ -220,7 +220,7 @@ export default function TransactionSectorsTab({
               </div>
               <div>
                 <h4 className="font-medium">No sector allocations yet</h4>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   Adding sector splits helps with downstream analytics and aligns 
                   transaction records with sector reporting.
                 </p>
@@ -323,11 +323,11 @@ export default function TransactionSectorsTab({
                             onChange={(e) => handlePercentageChange(line.id, e.target.value)}
                             className={cn(
                               "w-20 text-right",
-                              isLocked && "bg-gray-100 cursor-not-allowed"
+                              isLocked && "bg-muted cursor-not-allowed"
                             )}
                             disabled={effectiveDisabled}
                           />
-                          <span className="text-sm text-muted-foreground">%</span>
+                          <span className="text-body text-muted-foreground">%</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -342,9 +342,9 @@ export default function TransactionSectorsTab({
                             variant="ghost"
                             onClick={() => removeSectorLine(line.id)}
                             disabled={effectiveDisabled}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </TableCell>
@@ -358,11 +358,11 @@ export default function TransactionSectorsTab({
             <div className="space-y-3">
               {/* Progress bar */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-body">
                   <span>Total Allocation</span>
                   <span className={cn(
                     "font-medium",
-                    validation?.isValid ? "text-[hsl(var(--success-icon))]" : "text-red-600"
+                    validation?.isValid ? "text-[hsl(var(--success-icon))]" : "text-destructive"
                   )}>
                     {validation?.totalPercentage.toFixed(1)}% of 100%
                   </span>
@@ -371,13 +371,13 @@ export default function TransactionSectorsTab({
                   value={validation?.totalPercentage || 0} 
                   className={cn(
                     "h-2",
-                    validation?.totalPercentage && validation.totalPercentage > 100 && "bg-red-100"
+                    validation?.totalPercentage && validation.totalPercentage > 100 && "bg-destructive/10"
                   )}
                 />
               </div>
               
               {/* Summary stats */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-body">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span className="font-mono">
@@ -398,14 +398,14 @@ export default function TransactionSectorsTab({
                   {validation.isValid ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                      <span className="text-sm text-[hsl(var(--success-icon))] font-medium">
+                      <span className="text-body text-[hsl(var(--success-icon))] font-medium">
                         Valid allocation (100%)
                       </span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="text-sm text-red-600 font-medium">
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                      <span className="text-body text-destructive font-medium">
                         {validation.errors[0] || 'Invalid allocation'}
                       </span>
                     </>
@@ -470,7 +470,7 @@ export default function TransactionSectorsTab({
       {/* Help text */}
       <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
         <HelpCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           <p>
             <strong>Transaction sectors</strong> allow you to specify how this specific 
             transaction is allocated across different sectors. This provides more granular 

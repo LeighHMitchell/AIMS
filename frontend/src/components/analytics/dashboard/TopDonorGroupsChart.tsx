@@ -125,16 +125,16 @@ export function TopDonorGroupsChart({
             if (active && payload && payload.length) {
               const item = payload[0].payload;
               return (
-                <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                  <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
-                    <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+                <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                  <div className="bg-surface-muted px-3 py-2 border-b border-border">
+                    <p className="font-semibold text-foreground text-body">{item.name}</p>
                   </div>
                   <div className="p-2">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <tbody>
                         <tr>
-                          <td className="py-1 pr-4 text-slate-700 font-medium">Value</td>
-                          <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                          <td className="py-1 pr-4 text-foreground font-medium">Value</td>
+                          <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.value)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -159,7 +159,7 @@ export function TopDonorGroupsChart({
       {chartData.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between text-xs"
+          className="flex items-center justify-between text-helper"
         >
           <div className="flex items-center gap-2">
             <div
@@ -196,7 +196,7 @@ export function TopDonorGroupsChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart ranks the top donor groups by total funding value. Donors are grouped by their country of origin or multilateral institution to show consolidated contributions. Hover over bars for detailed value breakdowns.
       </p>
 

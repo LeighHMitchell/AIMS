@@ -352,12 +352,12 @@ export function AidPredictabilityChart() {
       </div>
 
       {/* Legend explanation */}
-      <div className="text-xs text-muted-foreground text-center">
+      <div className="text-helper text-muted-foreground text-center">
         Comparing planned disbursements against actual disbursements to measure aid predictability
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A high predictability ratio indicates that disbursements are closely aligned with plans, supporting more effective resource allocation. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.
       </p>
 
@@ -401,11 +401,11 @@ export function AidPredictabilityChart() {
           <div className="flex flex-wrap items-center gap-4 mt-4 mb-2">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: CHART_COLORS.planned }} />
-              <span className="text-sm text-gray-600">Planned Disbursements</span>
+              <span className="text-body text-muted-foreground">Planned Disbursements</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: CHART_COLORS.actual }} />
-              <span className="text-sm text-gray-600">Actual Disbursements</span>
+              <span className="text-body text-muted-foreground">Actual Disbursements</span>
             </div>
           </div>
 

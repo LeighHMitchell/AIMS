@@ -80,8 +80,8 @@ export function TransactionIdentifiersExample() {
   const activityId = "act_550e8400-e29b-41d4-a716-446655440001"
   
   return (
-    <div className="space-y-4 pb-4 border-b border-gray-200">
-      <h3 className="text-sm font-semibold text-gray-900">Transaction Identifiers</h3>
+    <div className="space-y-4 pb-4 border-b border-border">
+      <h3 className="text-body font-semibold text-foreground">Transaction Identifiers</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CopyField
           label="Transaction UUID"
@@ -155,7 +155,7 @@ export function ActivityEditorIdentifiersExample({ activity }: { activity: any }
     <>
       {/* Editable Partner ID field */}
       <div className="space-y-2">
-        <label htmlFor="partnerId" className="text-sm font-medium">
+        <label htmlFor="partnerId" className="text-body font-medium">
           Activity Partner ID *
         </label>
         <input
@@ -163,7 +163,7 @@ export function ActivityEditorIdentifiersExample({ activity }: { activity: any }
           value={activity.partnerId || ''}
           onChange={(e) => {/* handle change */}}
           placeholder="Partner ID"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          className="w-full px-3 py-2 border border-input rounded-md"
         />
       </div>
 
@@ -199,8 +199,8 @@ export function TransactionModalIdentifiersExample({
   }
 
   return (
-    <div className="space-y-4 pb-4 border-b border-gray-200">
-      <h3 className="text-sm font-semibold text-gray-900">Transaction Identifiers</h3>
+    <div className="space-y-4 pb-4 border-b border-border">
+      <h3 className="text-body font-semibold text-foreground">Transaction Identifiers</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CopyField
           label="Transaction UUID"

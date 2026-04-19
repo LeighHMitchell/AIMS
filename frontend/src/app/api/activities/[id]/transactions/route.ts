@@ -24,7 +24,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS] GET /api/activities/[id]/transactions - Fetching for activity:', activityId);
     
     // Get query parameters for linked transactions
     const { searchParams } = new URL(request.url);
@@ -277,7 +276,6 @@ export async function GET(
       aid_types: aidTypeLinesMap[t.uuid] || [],
     }));
     
-    console.log(`[AIMS] Successfully fetched ${transformedTransactions.length} transactions for activity ${activityId}`);
 
     return NextResponse.json(transformedTransactions, {
       headers: {
@@ -315,7 +313,6 @@ export async function POST(
       );
     }
     
-    console.log('[AIMS] POST /api/activities/[id]/transactions - Creating transaction for activity:', activityId);
 
     // Check/create provider organization if name is provided (ref is optional)
     let providerOrgId = body.provider_org_id || null;
@@ -425,7 +422,6 @@ export async function POST(
     };
     
     // Convert to USD following the same pattern as budgets and planned disbursements
-    console.log(`[AIMS] Converting transaction to USD: ${transactionData.value} ${transactionData.currency} (resolved from ${body.currency || 'missing'})`);
     const usdResult = await convertTransactionToUSD(
       transactionData.value,
       transactionData.currency,
@@ -433,7 +429,6 @@ export async function POST(
     );
 
     if (usdResult.success) {
-      console.log(`[AIMS] USD conversion successful: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
     } else {
       console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
     }
@@ -483,7 +478,6 @@ export async function POST(
       receiver_org_name: insertedTransaction.receiver_org?.acronym || insertedTransaction.receiver_org?.name || insertedTransaction.receiver_org_name,
     };
     
-    console.log('[AIMS] Successfully created transaction with ID:', transformedTransaction.uuid);
 
     return NextResponse.json(transformedTransaction);
   } catch (error) {

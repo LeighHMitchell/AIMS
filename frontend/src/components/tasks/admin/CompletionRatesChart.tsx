@@ -40,7 +40,7 @@ export function CompletionRatesChart({ data }: CompletionRatesChartProps) {
   return (
     <div className="h-[300px] overflow-hidden">
       {/* Legend */}
-      <div className="mb-4 flex items-center gap-4 text-sm">
+      <div className="mb-4 flex items-center gap-4 text-body">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-slate-600" />
           <span>Created</span>
@@ -75,7 +75,7 @@ export function CompletionRatesChart({ data }: CompletionRatesChartProps) {
                   }}
                 />
                 <div
-                  className="rounded-t bg-slate-400 transition-all hover:bg-slate-500"
+                  className="rounded-t bg-slate-400 transition-all hover:bg-muted0"
                   style={{
                     width: barWidth / 2 - 1,
                     height: Math.max(completedHeight, 2),
@@ -94,7 +94,7 @@ export function CompletionRatesChart({ data }: CompletionRatesChartProps) {
               )}
 
               {/* Tooltip on hover */}
-              <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 rounded bg-popover border px-2 py-1 text-xs shadow-lg group-hover:block whitespace-nowrap">
+              <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 rounded bg-popover border px-2 py-1 text-helper shadow-lg group-hover:block whitespace-nowrap">
                 <div className="font-medium">{label}</div>
                 <div>Created: {item.created}</div>
                 <div>Completed: {item.completed}</div>

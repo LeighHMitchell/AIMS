@@ -64,7 +64,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">Detailed Feasibility Study</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           In-depth analysis covering demand, technical design, financial viability, environmental impact, risk, and implementation planning.
         </p>
       </div>
@@ -82,7 +82,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
       {assignment && (
         <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
           <UserCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="flex-1 text-sm">
+          <div className="flex-1 text-body">
             <span className="font-medium">{assignment.assigned_to}</span>
             {assignment.deadline && (
               <span className="text-muted-foreground ml-2">
@@ -91,7 +91,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 text-helper">
             {assignment.status === 'completed' && <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />}
             {assignment.status === 'in_progress' && <Clock className="h-3 w-3 text-blue-600" />}
             <span className="capitalize text-muted-foreground">{assignment.status.replace(/_/g, ' ')}</span>
@@ -354,7 +354,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
 
         {/* ═══ Tab 4: Financial Analysis ═══ */}
         <TabsContent value="financial" className="space-y-4 mt-4" id="section-fs2-financial">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Update the cost breakdown and financing plan. The FIRR calculator below uses the refined cost table data.
           </p>
 
@@ -363,7 +363,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <div>
               <Label>Land Costs <FieldCheck value={sd.cost_land} /></Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-helper font-medium text-muted-foreground">USD</span>
                 <FormattedNumberInput
                   value={sd.cost_land ?? null}
                   onChange={v => updateFS2Field('cost_land', v)}
@@ -376,7 +376,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <div>
               <Label>Civil Works <FieldCheck value={sd.cost_civil} /></Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-helper font-medium text-muted-foreground">USD</span>
                 <FormattedNumberInput
                   value={sd.cost_civil ?? null}
                   onChange={v => updateFS2Field('cost_civil', v)}
@@ -389,7 +389,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <div>
               <Label>Equipment <FieldCheck value={sd.cost_equipment} /></Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-helper font-medium text-muted-foreground">USD</span>
                 <FormattedNumberInput
                   value={sd.cost_equipment ?? null}
                   onChange={v => updateFS2Field('cost_equipment', v)}
@@ -402,7 +402,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <div>
               <Label>Consultancy <FieldCheck value={sd.cost_consultancy} /></Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-helper font-medium text-muted-foreground">USD</span>
                 <FormattedNumberInput
                   value={sd.cost_consultancy ?? null}
                   onChange={v => updateFS2Field('cost_consultancy', v)}
@@ -415,7 +415,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <div>
               <Label>Contingency <FieldCheck value={sd.cost_contingency} /></Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-helper font-medium text-muted-foreground">USD</span>
                 <FormattedNumberInput
                   value={sd.cost_contingency ?? null}
                   onChange={v => updateFS2Field('cost_contingency', v)}
@@ -428,7 +428,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <div>
               <Label>Other Costs <FieldCheck value={sd.cost_other} /></Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-helper font-medium text-muted-foreground">USD</span>
                 <FormattedNumberInput
                   value={sd.cost_other ?? null}
                   onChange={v => updateFS2Field('cost_other', v)}

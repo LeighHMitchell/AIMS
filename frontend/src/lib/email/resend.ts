@@ -39,7 +39,6 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   const client = getResendClient();
 
   if (!client) {
-    console.log('[Email] Skipping email - Resend not configured');
     return false;
   }
 
@@ -60,7 +59,6 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       return false;
     }
 
-    console.log('[Email] Email sent successfully:', data?.id);
     return true;
   } catch (error) {
     console.error('[Email] Unexpected error:', error);

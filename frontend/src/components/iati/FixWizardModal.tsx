@@ -238,10 +238,10 @@ export function FixWizardModal({
                 return (
                   <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">
+                      <p className="text-body font-medium">
                         Transaction #{txIndex + 1}
                       </p>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-helper text-muted-foreground">
                         {transaction?.type} - {transaction?.value} on {transaction?.date}
                       </p>
                     </div>
@@ -299,7 +299,7 @@ export function FixWizardModal({
               <div key={iatiId} className="p-4 border rounded-lg space-y-3">
                 <div>
                   <p className="font-medium">IATI ID: {iatiId}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-body text-muted-foreground">
                     {missingActivityDetails.filter(d => d.activityId === iatiId).length} transactions
                   </p>
                 </div>
@@ -326,7 +326,7 @@ export function FixWizardModal({
                         Create new activity
                       </span>
                     </SelectItem>
-                    <div className="my-2 h-px bg-gray-200" />
+                    <div className="my-2 h-px bg-muted" />
                     {activities.map(activity => (
                       <SelectItem key={activity.id} value={activity.id}>
                         {activity.title} ({activity.iati_id})
@@ -430,13 +430,13 @@ export function FixWizardModal({
               
               return (
                 <div key={idx} className="p-4 border rounded-lg space-y-3">
-                  <p className="text-sm font-medium">
+                  <p className="text-body font-medium">
                     Transaction #{txIndex + 1}
                   </p>
                   
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs">Provider Organization</Label>
+                      <Label className="text-helper">Provider Organization</Label>
                       <Input
                         placeholder="Enter provider name"
                         value={fixes.organizationFixes[txIndex]?.provider || ''}
@@ -456,7 +456,7 @@ export function FixWizardModal({
                     </div>
                     
                     <div>
-                      <Label className="text-xs">Receiver Organization</Label>
+                      <Label className="text-helper">Receiver Organization</Label>
                       <Input
                         placeholder="Enter receiver name"
                         value={fixes.organizationFixes[txIndex]?.receiver || ''}
@@ -504,13 +504,13 @@ export function FixWizardModal({
               const txIndex = detail.transactionIndex || 0;
               
               return (
-                <div key={idx} className="p-4 border border-red-200 rounded-lg space-y-2">
+                <div key={idx} className="p-4 border border-destructive/30 rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">
+                      <p className="text-body font-medium">
                         Transaction #{txIndex + 1}
                       </p>
-                      <p className="text-xs text-red-600">
+                      <p className="text-helper text-destructive">
                         {detail.message}
                       </p>
                     </div>

@@ -131,32 +131,67 @@ const getActionIcon = (action: string) => {
   switch (action.toLowerCase()) {
     case 'create':
     case 'created':
-      return <Plus className="h-4 w-4 text-gray-600" />;
+      return <Plus className="h-4 w-4 text-muted-foreground" />;
     case 'edit':
     case 'update':
     case 'updated':
-      return <Pencil className="h-4 w-4 text-slate-500" />;
+      return <Pencil className="h-4 w-4 text-muted-foreground" />;
     case 'delete':
     case 'deleted':
-      return <Trash2 className="h-4 w-4 text-red-500" />;
+      return <Trash2 className="h-4 w-4 text-destructive" />;
     case 'publish':
     case 'published':
-      return <Upload className="h-4 w-4 text-gray-600" />;
+      return <Upload className="h-4 w-4 text-muted-foreground" />;
     case 'unpublish':
     case 'unpublished':
-      return <Download className="h-4 w-4 text-gray-600" />;
+      return <Download className="h-4 w-4 text-muted-foreground" />;
     case 'sync':
     case 'synced':
-      return <RefreshCw className="h-4 w-4 text-gray-600" />;
+      return <RefreshCw className="h-4 w-4 text-muted-foreground" />;
     case 'view':
     case 'viewed':
-      return <Eye className="h-4 w-4 text-gray-500" />;
+      return <Eye className="h-4 w-4 text-muted-foreground" />;
     case 'validate':
     case 'validated':
-      return <UserCheck className="h-4 w-4 text-gray-600" />;
+      return <UserCheck className="h-4 w-4 text-muted-foreground" />;
     default:
-      return <Activity className="h-4 w-4 text-gray-500" />;
+      return <Activity className="h-4 w-4 text-muted-foreground" />;
   }
+};
+
+// Turn raw DB field names like `activity_description` into human labels like "Activity description"
+const humanizeFieldName = (raw: string): string => {
+  const dict: Record<string, string> = {
+    title: 'Title',
+    description: 'Description',
+    activity_description: 'Description',
+    activity_status: 'Activity status',
+    publication_status: 'Publication status',
+    submission_status: 'Submission status',
+    iati_identifier: 'IATI identifier',
+    partner_id: 'Partner code',
+    reporting_org_id: 'Reporting organisation',
+    planned_start_date: 'Planned start date',
+    planned_end_date: 'Planned end date',
+    actual_start_date: 'Actual start date',
+    actual_end_date: 'Actual end date',
+    total_budget: 'Total budget',
+    total_disbursed: 'Total disbursed',
+    collaboration_type: 'Collaboration type',
+    default_flow_type: 'Default flow type',
+    default_finance_type: 'Default finance type',
+    default_aid_type: 'Default aid type',
+    default_tied_status: 'Default tied status',
+    humanitarian: 'Humanitarian flag',
+    language: 'Narrative language',
+  };
+  if (dict[raw]) return dict[raw];
+  // Fallback: turn snake_case into Sentence case
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/^(\w)/, (c) => c.toUpperCase())
+    .replace(/^./, (c) => c.toUpperCase());
 };
 
 const getActionDescription = (log: ActivityLog): string => {
@@ -165,7 +200,7 @@ const getActionDescription = (log: ActivityLog): string => {
   const metadata = log.details.metadata;
 
   if (metadata?.fieldChanged) {
-    return `${user} updated ${metadata.fieldChanged}`;
+    return `${user} updated ${humanizeFieldName(metadata.fieldChanged).toLowerCase()}`;
   }
 
   switch (action.toLowerCase()) {
@@ -224,6 +259,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [savingReportingOrg, setSavingReportingOrg] = useState(false);
   const [language, setLanguage] = useState<string>('en');
+  const [showTechnical, setShowTechnical] = useState(false);
   
   const { user } = useUser();
   const { organizations, loading: organizationsLoading } = useOrganizations();
@@ -267,7 +303,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         });
       }
 
-      toast.success('Reporting organization updated successfully');
+      toast.success('Reporting organization updated');
       
       // Refresh metadata to ensure UI is synchronized
       await fetchMetadata();
@@ -282,7 +318,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }));
     } catch (error) {
       console.error('[AIMS] Error updating reporting organization:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update reporting organization');
+      toast.error('Couldn\u2019t update the reporting organization. Check your connection and try again.');
     } finally {
       setSavingReportingOrg(false);
     }
@@ -296,7 +332,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }
       setError(null);
       
-      console.log('[MetadataTab] Fetching metadata for activity ID:', activityId);
       const response = await apiFetch(`/api/activities/${activityId}/metadata`, {
         cache: 'no-store', // Force fresh data, no caching
         headers: {
@@ -312,7 +347,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }
       
       const result = await response.json();
-      console.log('[MetadataTab] Received metadata:', result);
       console.log('[MetadataTab] Reporting org data:', {
         reporting_org_id: result.metadata?.reporting_org_id,
         created_by_org_name: result.metadata?.created_by_org_name,
@@ -323,7 +357,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       setLanguage(result.metadata?.language || 'en');
     } catch (err) {
       console.error('[AIMS] Error fetching activity metadata:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load metadata');
+      setError('Couldn\u2019t load activity metadata. Try refreshing the page.');
     } finally {
       setLoading(false);
     }
@@ -342,7 +376,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && activityId) {
-        console.log('[MetadataTab] Tab became visible, refreshing data...');
         fetchMetadata();
       }
     };
@@ -355,7 +388,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   useEffect(() => {
     const handleActivityUpdate = (event: CustomEvent) => {
       if (event.detail.activityId === activityId) {
-        console.log('[MetadataTab] Activity updated, refreshing metadata...');
         fetchMetadata();
       }
     };
@@ -401,7 +433,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>No metadata available for this activity.</AlertDescription>
+        <AlertDescription>No activity information is available yet.</AlertDescription>
       </Alert>
     );
   }
@@ -412,6 +444,14 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowTechnical(!showTechnical)}
+          className="text-muted-foreground"
+        >
+          {showTechnical ? 'Hide technical details' : 'Show technical details'}
+        </Button>
         <Button variant="outline" size="sm" onClick={fetchMetadata}>
           <RefreshCw className="h-4 w-4 mr-1" />
           Refresh
@@ -420,7 +460,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
 
       {/* Metadata Table */}
       <div className="border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <tbody className="divide-y divide-border">
             {/* Title */}
             <tr>
@@ -441,13 +481,15 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                 <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.iati_identifier || 'Not assigned'}</code>
               </td>
             </tr>
-            {/* UUID */}
-            <tr>
-              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">UUID</td>
-              <td className="px-4 py-3">
-                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.id}</code>
-              </td>
-            </tr>
+            {/* UUID (technical) */}
+            {showTechnical && (
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">UUID</td>
+                <td className="px-4 py-3">
+                  <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.id}</code>
+                </td>
+              </tr>
+            )}
             {/* Activity Status - show code and name */}
             <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Activity Status</td>
@@ -577,7 +619,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                     disabled={organizationsLoading}
                   />
                   {(metadata.created_by_org_name || metadata.created_by_org_acronym) && (
-                    <div className="mt-2 text-xs text-muted-foreground">
+                    <div className="mt-2 text-helper text-muted-foreground">
                       {metadata.created_by_org_name}
                       {metadata.created_by_org_acronym && metadata.created_by_org_name !== metadata.created_by_org_acronym && (
                         <span> ({metadata.created_by_org_acronym})</span>
@@ -595,13 +637,13 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       <div className="border rounded-lg overflow-hidden">
         <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
           <History className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Activity Log</span>
-          <span className="text-xs text-muted-foreground">({stats.totalLogs} entries)</span>
+          <span className="text-body font-medium text-foreground">Activity Log</span>
+          <span className="text-helper text-muted-foreground">({stats.totalLogs} entries)</span>
         </div>
         {logs.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+          <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
             <img src="/images/empty-fingerprint.webp" alt="No activity logs" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No activity logs</h3>
+            <h3 className="text-base font-semibold mb-2">No activity logs</h3>
             <p className="text-muted-foreground">Changes will appear here when the activity is modified.</p>
           </div>
         ) : (
@@ -621,26 +663,26 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                   {/* Content */}
                   <div className="flex-1 min-w-0 pb-4">
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-body font-medium text-foreground">
                         {getActionDescription(log)}
                       </p>
-                      <time className="text-xs text-muted-foreground whitespace-nowrap">
+                      <time className="text-helper text-muted-foreground whitespace-nowrap">
                         {format(new Date(log.created_at), 'MMM d, yyyy')}
                       </time>
                     </div>
-                    {log.details.metadata?.fieldChanged && (
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        <span className="font-medium">Field:</span> {log.details.metadata.fieldChanged}
+                    {log.details.metadata?.fieldChanged && showTechnical && (
+                      <div className="mt-1 text-helper text-muted-foreground">
+                        <span className="font-medium">Field:</span> {humanizeFieldName(log.details.metadata.fieldChanged)}
                         {log.details.metadata.oldValue && log.details.metadata.newValue && (
                           <div className="mt-1 font-mono">
-                            <span className="text-red-600">- {JSON.stringify(log.details.metadata.oldValue)}</span>
+                            <span className="text-destructive">- {JSON.stringify(log.details.metadata.oldValue)}</span>
                             <br />
                             <span className="text-[hsl(var(--success-icon))]">+ {JSON.stringify(log.details.metadata.newValue)}</span>
                           </div>
                         )}
                       </div>
                     )}
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="text-helper text-muted-foreground mt-0.5">
                       {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
                     </div>
                   </div>

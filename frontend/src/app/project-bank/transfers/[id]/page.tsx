@@ -180,7 +180,7 @@ export default function TransferDetailPage() {
                     {SEE_STATUS_LABELS[transfer.status]}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-body text-muted-foreground mt-0.5">
                   {transfer.transfer_code}
                   {transfer.see_ministry && ` · ${transfer.see_ministry}`}
                 </p>
@@ -245,7 +245,7 @@ export default function TransferDetailPage() {
                 <CardTitle className="text-base">Enterprise Profile</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-body">
                   <div>
                     <span className="text-muted-foreground">Sector</span>
                     <p className="font-medium">{transfer.see_sector || '—'}</p>
@@ -267,8 +267,8 @@ export default function TransferDetailPage() {
                 </div>
                 {transfer.description && (
                   <div className="mt-4 pt-4 border-t">
-                    <span className="text-sm text-muted-foreground">Description</span>
-                    <p className="text-sm mt-1">{transfer.description}</p>
+                    <span className="text-body text-muted-foreground">Description</span>
+                    <p className="text-body mt-1">{transfer.description}</p>
                   </div>
                 )}
               </CardContent>
@@ -280,7 +280,7 @@ export default function TransferDetailPage() {
                 <CardTitle className="text-base">Financial Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-body">
                   <div>
                     <span className="text-muted-foreground">Annual Revenue</span>
                     <p className="font-medium font-mono">{formatCurrency(transfer.current_annual_revenue)}</p>
@@ -308,7 +308,7 @@ export default function TransferDetailPage() {
                   <CardTitle className="text-base">Valuation</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-body">
                     <div>
                       <span className="text-muted-foreground">Valuation Amount</span>
                       <p className="font-medium font-mono text-lg">{formatCurrency(transfer.valuation_amount)}</p>
@@ -338,7 +338,7 @@ export default function TransferDetailPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <thead className="bg-surface-muted">
                         <tr className="border-b bg-surface-muted">
                           <th className="text-left px-4 py-2 font-medium text-muted-foreground">Year</th>
@@ -379,7 +379,7 @@ export default function TransferDetailPage() {
               <CardHeader>
                 <CardTitle className="text-base">Compliance Checks</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+              <CardContent className="space-y-3 text-body">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Fixed Asset Register</span>
                   <Badge variant={transfer.fixed_asset_register_maintained ? 'success' : 'gray'} className="text-[10px]">
@@ -417,15 +417,15 @@ export default function TransferDetailPage() {
               </CardHeader>
               <CardContent>
                 {!transfer.documents || transfer.documents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No documents uploaded</p>
+                  <p className="text-body text-muted-foreground text-center py-4">No documents uploaded</p>
                 ) : (
                   <div className="space-y-2">
                     {transfer.documents.map(doc => (
                       <div key={doc.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
                         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="min-w-0">
-                          <div className="text-sm truncate">{doc.file_name}</div>
-                          <div className="text-xs text-muted-foreground">{doc.document_type}</div>
+                          <div className="text-body truncate">{doc.file_name}</div>
+                          <div className="text-helper text-muted-foreground">{doc.document_type}</div>
                         </div>
                       </div>
                     ))}
@@ -441,18 +441,18 @@ export default function TransferDetailPage() {
                   <CardTitle className="text-base">Restructuring Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm whitespace-pre-wrap">{transfer.restructuring_notes}</p>
+                  <p className="text-body whitespace-pre-wrap">{transfer.restructuring_notes}</p>
                 </CardContent>
               </Card>
             )}
 
             {/* Danger Zone */}
-            <Card className="border-red-200">
+            <Card className="border-destructive/30">
               <CardContent className="p-6">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                  className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
                   onClick={() => setShowDeleteDialog(true)}
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1.5" />

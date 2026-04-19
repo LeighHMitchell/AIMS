@@ -161,10 +161,10 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
         <table className="w-full">
           <thead className="bg-surface-muted">
             <tr className="border-b border-border">
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Location</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Country</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Projects</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Total Disbursed</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Location</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Country</th>
+              <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground">Projects</th>
+              <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground">Total Disbursed</th>
             </tr>
           </thead>
           <tbody>
@@ -173,19 +173,19 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
                 key={index}
                 className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}
               >
-                <td className="py-3 px-4 text-sm text-foreground font-medium">
+                <td className="py-3 px-4 text-body text-foreground font-medium">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-3 w-3 text-muted-foreground" />
                     {location.location}
                   </div>
                 </td>
-                <td className="py-3 px-4 text-sm text-muted-foreground">
+                <td className="py-3 px-4 text-body text-muted-foreground">
                   {location.country}
                 </td>
-                <td className="py-3 px-4 text-sm text-foreground text-right">
+                <td className="py-3 px-4 text-body text-foreground text-right">
                   {location.projectCount}
                 </td>
-                <td className="py-3 px-4 text-sm text-foreground text-right font-medium">
+                <td className="py-3 px-4 text-body text-foreground text-right font-medium">
                   {formatCurrency(location.totalDisbursement)}
                 </td>
               </tr>
@@ -195,7 +195,7 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
       </div>
       
       <div className="mt-4 text-center">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-helper text-muted-foreground">
           Showing top 15 locations by disbursement amount
         </p>
       </div>

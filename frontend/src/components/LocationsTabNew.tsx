@@ -113,7 +113,6 @@ export default function LocationsTabNew({
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
-      console.log('[LocationsTabNew] 🚀 Starting save process for location:', locationData);
       
       const isUpdate = !!locationData.id;
       const url = isUpdate
@@ -122,7 +121,6 @@ export default function LocationsTabNew({
 
       const method = isUpdate ? 'PATCH' : 'POST';
 
-      console.log('[LocationsTabNew] 📡 Making API request:', { url, method, isUpdate });
 
       const response = await fetch(url, {
         method,
@@ -135,7 +133,6 @@ export default function LocationsTabNew({
         }),
       });
 
-      console.log('[LocationsTabNew] 📡 API response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -144,7 +141,6 @@ export default function LocationsTabNew({
       }
 
       const result = await response.json();
-      console.log('[LocationsTabNew] ✅ API success response:', result);
 
       if (isUpdate) {
         // Update existing location in state
@@ -153,17 +149,13 @@ export default function LocationsTabNew({
             loc.id === locationData.id ? result.location : loc
           )
         );
-        console.log('[LocationsTabNew] ✅ Updated location in state');
       } else {
         // Add new location to state
         setLocations(prev => [...prev, result.location]);
-        console.log('[LocationsTabNew] ✅ Added new location to state');
       }
 
       // Reload to get updated percentage summary
-      console.log('[LocationsTabNew] 🔄 Reloading locations...');
       await loadLocations();
-      console.log('[LocationsTabNew] ✅ Locations reloaded successfully');
 
     } catch (error) {
       console.error('[LocationsTabNew] ❌ Error saving location:', error);
@@ -237,7 +229,7 @@ export default function LocationsTabNew({
       <div className="space-y-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading locations...</span>
+          <span className="ml-2 text-muted-foreground">Loading locations...</span>
         </div>
       </div>
     );
@@ -284,8 +276,8 @@ export default function LocationsTabNew({
       {locations.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No locations added</h4>
-          <p className="text-gray-600 mb-4">
+          <h4 className="text-lg font-medium text-foreground mb-2">No locations added</h4>
+          <p className="text-muted-foreground mb-4">
             Add locations to specify where your activity takes place or where beneficiaries are located.
           </p>
           {canEdit && (

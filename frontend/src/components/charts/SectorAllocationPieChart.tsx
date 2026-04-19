@@ -69,18 +69,12 @@ export default function SectorAllocationPieChart({
   
   renderCount.current += 1;
   
-  console.log(`SectorAllocationPieChart rendered (render #${renderCount.current}) with allocations:`, allocations);
-  console.log('SectorAllocationPieChart - svgRef.current:', svgRef.current);
-  console.log('SectorAllocationPieChart - isLoading:', isLoading);
   
   // Transform allocations into hierarchical data for treemap
   const treemapData = useMemo(() => {
-    console.log('=== useMemo triggered ===');
-    console.log('Processing treemap data with allocations:', allocations);
     const categoryLookup = createCategoryLookup();
     
     if (allocations.length === 0) {
-      console.log('No allocations, returning null');
       return null;
     }
     
@@ -117,7 +111,6 @@ export default function SectorAllocationPieChart({
             description
           };
           
-          console.log('Created sector node:', sectorNode);
           
           if (!categoryMap.has(categoryCode)) {
             categoryMap.set(categoryCode, []);
@@ -142,7 +135,6 @@ export default function SectorAllocationPieChart({
         }
       });
     
-    console.log('Category map:', categoryMap);
     
     // Create hierarchical structure
     const children = Array.from(categoryMap.entries()).map(([categoryCode, sectors]) => {
@@ -159,27 +151,17 @@ export default function SectorAllocationPieChart({
       children
     };
     
-    console.log('Final treemap data:', result);
     return result;
   }, [allocations]);
 
   // Force D3 rendering on every render when we have data
   useEffect(() => {
-    console.log('=== FORCE RENDER useEffect triggered ===');
-    console.log('Render count:', renderCount.current);
-    console.log('useEffect triggered with treemapData:', treemapData);
-    console.log('svgRef.current:', svgRef.current);
-    console.log('svgRef.current?.parentElement:', svgRef.current?.parentElement);
-    console.log('svgRef.current?.parentElement?.clientWidth:', svgRef.current?.parentElement?.clientWidth);
-    console.log('svgRef.current?.parentElement?.clientHeight:', svgRef.current?.parentElement?.clientHeight);
     
     if (!svgRef.current || !treemapData) {
-      console.log('Early return - no svgRef or treemapData');
       setIsLoading(false);
       return;
     }
 
-    console.log('Starting treemap rendering...');
     setIsLoading(true);
 
     try {
@@ -193,7 +175,6 @@ export default function SectorAllocationPieChart({
       // Ensure we have valid dimensions
       let width, height;
       if (containerWidth <= 0 || containerHeight <= 0) {
-        console.log('Container has invalid dimensions, using defaults');
         width = 800;
         height = 600;
       } else {
@@ -201,8 +182,6 @@ export default function SectorAllocationPieChart({
         height = Math.max(containerHeight, 300); // Ensure minimum height
       }
       
-      console.log('Treemap dimensions:', { width, height, containerWidth, containerHeight });
-      console.log('Treemap data:', treemapData);
       
       // Reduced margins for better space utilization
       const margin = { top: 10, right: 10, bottom: 10, left: 10 };
@@ -214,7 +193,6 @@ export default function SectorAllocationPieChart({
         .sum((d: any) => d.value || 0)
         .sort((a, b) => (b.value || 0) - (a.value || 0));
 
-      console.log('D3 hierarchy root:', root);
 
       // Create treemap layout with reduced padding for better space utilization
       const treemap = d3.treemap<any>()
@@ -235,7 +213,7 @@ export default function SectorAllocationPieChart({
 
       // Create tooltip with enhanced styling
       const tooltip = d3.select('body').append('div')
-        .attr('class', 'absolute invisible bg-gray-900/95 backdrop-blur-sm text-white text-sm rounded-lg px-4 py-3 pointer-events-none z-50 shadow-2xl border border-gray-700')
+        .attr('class', 'absolute invisible bg-gray-900/95 backdrop-blur-sm text-white text-body rounded-lg px-4 py-3 pointer-events-none z-50 shadow-2xl border border-gray-700')
         .style('opacity', 0);
 
       // Color scale
@@ -248,7 +226,6 @@ export default function SectorAllocationPieChart({
         .attr('class', 'leaf')
         .attr('transform', (d: any) => `translate(${d.x0},${d.y0})`);
 
-      console.log('Leaf nodes:', root.leaves());
 
       leaf.append('rect')
         .attr('width', (d: any) => Math.max(0, d.x1 - d.x0))
@@ -274,7 +251,7 @@ export default function SectorAllocationPieChart({
           tooltip.transition().duration(200).style('opacity', 1);
           tooltip.html(`
             <div class="font-semibold text-base mb-1">${d.data.code} - ${d.data.name}</div>
-            <div class="text-sm opacity-75 mb-1">Category: ${d.parent?.data.name}</div>
+            <div class="text-body opacity-75 mb-1">Category: ${d.parent?.data.name}</div>
             <div class="text-lg font-bold">${d.data.value.toFixed(1)}%</div>
           `)
             .style('left', `${event.pageX + 15}px`)
@@ -398,7 +375,6 @@ export default function SectorAllocationPieChart({
         .attr('text-anchor', 'start')
         .style('font-family', 'system-ui, -apple-system, sans-serif');
 
-      console.log('Treemap rendering completed successfully');
       // Set loading to false after rendering
       setTimeout(() => setIsLoading(false), 100);
 
@@ -446,10 +422,9 @@ export default function SectorAllocationPieChart({
 
   // Loading state with skeleton
   if (isLoading) {
-    console.log('Rendering loading skeleton');
     return (
       <div className="h-full flex flex-col">
-        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex items-center justify-center">
+        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex items-center justify-center">
           <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </div>
       </div>
@@ -457,24 +432,22 @@ export default function SectorAllocationPieChart({
   }
 
   if (!treemapData || allocations.length === 0) {
-    console.log('Rendering no data message');
     return (
       <div className="h-full flex flex-col">
-        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex items-center justify-center">
+        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex items-center justify-center">
           <div className="text-center">
-            <div className="text-sm font-medium mb-1 text-gray-500">No Sector Data</div>
-            <div className="text-xs text-gray-400">Add sectors with percentages to see the visualization</div>
+            <div className="text-body font-medium mb-1 text-muted-foreground">No Sector Data</div>
+            <div className="text-helper text-muted-foreground">Add sectors with percentages to see the visualization</div>
           </div>
         </div>
       </div>
     );
   }
 
-  console.log('Rendering treemap SVG');
   return (
     <div className="h-full flex flex-col">
       {/* Chart Container - removed padding for better space utilization */}
-      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
         <svg 
           ref={svgRef} 
           className="w-full h-full"

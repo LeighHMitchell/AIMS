@@ -52,12 +52,12 @@ export default function LandBankAnalyticsPage() {
     if (active && payload?.length) {
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-          <p className="font-medium text-foreground text-sm">{payload[0].payload.name}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground text-body">{payload[0].payload.name}</p>
+          <p className="text-body text-muted-foreground">
             <span className="font-semibold">{payload[0].value}</span> parcels
           </p>
           {payload[0].payload.hectares !== undefined && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {formatHectares(payload[0].payload.hectares)}
             </p>
           )}
@@ -296,8 +296,8 @@ export default function LandBankAnalyticsPage() {
                       if (active && payload?.length) {
                         return (
                           <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-                            <p className="font-medium text-sm">{payload[0].payload.name}</p>
-                            <p className="text-sm text-muted-foreground">{formatHectares(payload[0].value)}</p>
+                            <p className="font-medium text-body">{payload[0].payload.name}</p>
+                            <p className="text-body text-muted-foreground">{formatHectares(payload[0].value)}</p>
                           </div>
                         )
                       }
@@ -338,7 +338,7 @@ export default function LandBankAnalyticsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">No asset type data</div>
+                <div className="py-8 text-center text-body text-muted-foreground">No asset type data</div>
               )}
             </CardContent>
           </Card>
@@ -370,7 +370,7 @@ export default function LandBankAnalyticsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">No title status data</div>
+                <div className="py-8 text-center text-body text-muted-foreground">No title status data</div>
               )}
             </CardContent>
           </Card>
@@ -398,7 +398,7 @@ export default function LandBankAnalyticsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">No ministry data</div>
+                <div className="py-8 text-center text-body text-muted-foreground">No ministry data</div>
               )}
             </CardContent>
           </Card>

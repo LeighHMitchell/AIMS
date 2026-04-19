@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
   `;
 
   try {
-    console.log('[HealthFacilities] Fetching from Overpass API for bbox:', bbox);
 
     const response = await fetch(OVERPASS_API, {
       method: 'POST',
@@ -140,7 +139,6 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    console.log(`[HealthFacilities] Found ${features.length} facilities`);
 
     return NextResponse.json(geojson, {
       headers: {

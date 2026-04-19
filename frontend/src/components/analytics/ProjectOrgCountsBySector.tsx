@@ -457,7 +457,7 @@ export function ProjectOrgCountsBySector({
         <div className="bg-surface-muted px-4 py-3 border-b border-border">
           {/* Hierarchical sector info */}
           {parentInfo && groupByLevel !== '1' && (
-            <div className="mb-2 text-xs text-muted-foreground">
+            <div className="mb-2 text-helper text-muted-foreground">
               <span className="font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground mr-1.5">{parentInfo.categoryCode}</span>
               <span>{parentInfo.categoryName}</span>
               {groupByLevel === '5' && (
@@ -473,11 +473,11 @@ export function ProjectOrgCountsBySector({
             <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
               {sectorCode}
             </span>
-            <span className="font-semibold text-sm">{fullName}</span>
+            <span className="font-semibold text-body">{fullName}</span>
           </div>
         </div>
         <div className="p-4">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <tbody>
             {payload.map((entry, index) => (
               <tr key={index} className="border-b last:border-b-0">
@@ -563,7 +563,7 @@ export function ProjectOrgCountsBySector({
       return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
-      return <div className="h-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
+      return <div className="h-full flex items-center justify-center text-destructive"><p className="text-body">{error}</p></div>
     }
     return (
       <div ref={chartRef} className="bg-card h-full">
@@ -642,7 +642,7 @@ export function ProjectOrgCountsBySector({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <p className="text-red-600">Error loading data: {error}</p>
+          <p className="text-destructive">Error loading data: {error}</p>
         </CardContent>
       </Card>
     )
@@ -708,7 +708,7 @@ export function ProjectOrgCountsBySector({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                          <span className="text-helper font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
@@ -737,7 +737,7 @@ export function ProjectOrgCountsBySector({
                                 className={`
                                   px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                   ${isStartOrEnd
-                                    ? 'bg-slate-200 text-slate-900'
+                                    ? 'bg-muted text-foreground'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
                                       : 'text-muted-foreground hover:bg-muted'
@@ -758,7 +758,7 @@ export function ProjectOrgCountsBySector({
                   </div>
                   {/* Date Range Indicator */}
                   {localDateRange?.from && localDateRange?.to && (
-                    <span className="text-xs text-muted-foreground text-center">
+                    <span className="text-helper text-muted-foreground text-center">
                       {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                     </span>
                   )}
@@ -984,7 +984,7 @@ export function ProjectOrgCountsBySector({
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows the number of projects and unique organisations involved in each {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'}.
           Since activities can be tagged with multiple sectors, the same project or organisation may appear across different groupings.
           Use the toggle to switch between Sector Category, Sector, or Sub-sector levels, and check the table view footer for true unique totals across the entire portfolio.

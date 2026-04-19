@@ -28,8 +28,6 @@ export async function POST(
     const body = await request.json();
     const { results, mode = 'create' } = body;
 
-    console.log(`[Results Import API] Starting import for activity: ${activityId}`);
-    console.log(`[Results Import API] Import mode: ${mode}, Results count: ${results?.length || 0}`);
 
     // Validation
     if (!activityId) {
@@ -74,7 +72,6 @@ export async function POST(
 
     const summary = await importResultsForActivity(supabase, activityId, results);
 
-    console.log('[Results Import API] Import complete:', summary);
 
     return NextResponse.json({
       success: true,

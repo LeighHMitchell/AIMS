@@ -245,14 +245,14 @@ export function PlannedDisbursementsTable({
         maximumFractionDigits: 0,
       }).format(value);
 
-      return <><span className="text-xs text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-helper text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[PlannedDisbursementsTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
+      return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -276,7 +276,7 @@ export function PlannedDisbursementsTable({
     return (
       <div className="p-8 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading planned disbursements...</p>
+        <p className="mt-4 text-muted-foreground">Loading planned disbursements...</p>
       </div>
     );
   }
@@ -284,7 +284,7 @@ export function PlannedDisbursementsTable({
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading planned disbursements: {error}</p>
+        <p className="text-destructive">Error loading planned disbursements: {error}</p>
       </div>
     );
   }
@@ -427,7 +427,6 @@ export function PlannedDisbursementsTable({
                       checked={selectedIds.size === disbursements.length && disbursements.length > 0}
                       indeterminate={selectedIds.size > 0 && selectedIds.size < disbursements.length}
                       onCheckedChange={(checked) => {
-                        console.log('[PlannedDisbursementsTable] Select all clicked:', checked, 'disbursements.length:', disbursements.length);
                         onSelectAll(!!checked);
                       }}
                       aria-label="Select all disbursements"
@@ -459,7 +458,7 @@ export function PlannedDisbursementsTable({
                         }
                       }}
                     >
-                      <div className="text-sm">
+                      <div className="text-body">
                         {activityTitle}
                         {disbursement.activity?.iati_identifier && (
                           <>
@@ -472,7 +471,7 @@ export function PlannedDisbursementsTable({
                                 e.preventDefault();
                                 copyIatiId(disbursement.activity!.iati_identifier!, disbursementId);
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 inline-flex align-middle ml-1"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex align-middle ml-1"
                               title="Copy IATI Identifier"
                             >
                               {copiedId === `${disbursementId}-iati` ? (
@@ -511,9 +510,9 @@ export function PlannedDisbursementsTable({
                 type: (
                   <td key="type" className="py-3 px-4 whitespace-nowrap">
                     {disbursement.type ? (
-                      <span className="text-sm">{getDisbursementTypeLabel(disbursement.type)}</span>
+                      <span className="text-body">{getDisbursementTypeLabel(disbursement.type)}</span>
                     ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
+                      <span className="text-muted-foreground text-body">—</span>
                     )}
                   </td>
                 ),
@@ -524,7 +523,7 @@ export function PlannedDisbursementsTable({
                       const receiverDisplay = disbursement.receiver_org_acronym || disbursement.receiver_org_name || '—';
 
                       return (
-                        <div className="text-sm">
+                        <div className="text-body">
                           <div className="flex items-start gap-2">
                             {/* Provider */}
                             <div className="flex flex-col gap-0.5">
@@ -536,13 +535,13 @@ export function PlannedDisbursementsTable({
                                 />
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-sm">
+                                    <span className="text-body">
                                       {providerDisplay}
                                     </span>
                                   </TooltipTrigger>
                                   {disbursement.provider_org_ref && (
                                     <TooltipContent side="top">
-                                      <p className="text-xs">{disbursement.provider_org_ref}</p>
+                                      <p className="text-helper">{disbursement.provider_org_ref}</p>
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -561,13 +560,13 @@ export function PlannedDisbursementsTable({
                                 />
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-sm">
+                                    <span className="text-body">
                                       {receiverDisplay}
                                     </span>
                                   </TooltipTrigger>
                                   {disbursement.receiver_org_ref && (
                                     <TooltipContent side="top">
-                                      <p className="text-xs">{disbursement.receiver_org_ref}</p>
+                                      <p className="text-helper">{disbursement.receiver_org_ref}</p>
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -587,8 +586,8 @@ export function PlannedDisbursementsTable({
 
                       if (amountValue != null && disbursement.currency) {
                         return (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground text-xs">{disbursement.currency.toUpperCase()}</span>{' '}
+                          <div className="text-body">
+                            <span className="text-muted-foreground text-helper">{disbursement.currency.toUpperCase()}</span>{' '}
                             {new Intl.NumberFormat("en-US", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
@@ -614,7 +613,7 @@ export function PlannedDisbursementsTable({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-sm cursor-help">
+                              <span className="text-body cursor-help">
                                 {formatCurrency(usdValues[disbursement.id].usd!, 'USD')}
                               </span>
                             </TooltipTrigger>
@@ -648,7 +647,7 @@ export function PlannedDisbursementsTable({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-md text-left">
-                          <p className="text-xs whitespace-pre-wrap break-words text-left">
+                          <p className="text-helper whitespace-pre-wrap break-words text-left">
                             {disbursement.notes || disbursement.description || 'Has notes'}
                           </p>
                         </TooltipContent>
@@ -710,22 +709,22 @@ export function PlannedDisbursementsTable({
 
                   {/* Expanded Row Content */}
                   {isExpanded && (
-                    <TableRow className="bg-slate-50/50">
+                    <TableRow className="bg-muted/50">
                       <td colSpan={visibleColumnCount + 1} className="p-6">
                         <div className="space-y-4">
-                          <h3 className="text-sm font-semibold text-gray-900">Details</h3>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
+                          <h3 className="text-body font-semibold text-foreground">Details</h3>
+                          <div className="grid grid-cols-2 gap-4 text-body">
                             <div>
-                              <span className="text-gray-500">Provider Org Ref:</span>
+                              <span className="text-muted-foreground">Provider Org Ref:</span>
                               <p className="font-mono text-xs mt-1">{disbursement.provider_org_ref || '—'}</p>
                             </div>
                             <div>
-                              <span className="text-gray-500">Receiver Org Ref:</span>
+                              <span className="text-muted-foreground">Receiver Org Ref:</span>
                               <p className="font-mono text-xs mt-1">{disbursement.receiver_org_ref || '—'}</p>
                             </div>
                             {disbursement.description && (
                               <div className="col-span-2">
-                                <span className="text-gray-500">Description:</span>
+                                <span className="text-muted-foreground">Description:</span>
                                 <p className="mt-1">{disbursement.description}</p>
                               </div>
                             )}

@@ -174,13 +174,13 @@ export default function HomePage() {
                   {/* Text overlay */}
                   <div className="relative z-10 p-6">
                     <h2 className="text-lg font-semibold">{m.label}</h2>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                    <p className="mt-2 text-body text-muted-foreground leading-relaxed">
                       {m.description}
                     </p>
                     {m.stats.length > 0 && (
                       <div className="flex gap-4 mt-3">
                         {m.stats.map((s, i) => (
-                          <span key={i} className="text-xs text-muted-foreground/70">
+                          <span key={i} className="text-helper text-muted-foreground/70">
                             {s}
                           </span>
                         ))}

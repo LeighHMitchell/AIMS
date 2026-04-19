@@ -11,15 +11,15 @@ const STAGE_LABELS: Record<ScoringStage, string> = {
 }
 
 const STAGE_COLORS: Record<ScoringStage, string> = {
-  intake: 'bg-slate-100 text-slate-700',
+  intake: 'bg-muted text-foreground',
   fs1: 'bg-sky-100 text-sky-700',
   fs2: 'bg-indigo-100 text-indigo-700',
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 70) return 'text-slate-700'
+  if (score >= 70) return 'text-foreground'
   if (score >= 40) return 'text-steel-600'
-  return 'text-red-600'
+  return 'text-destructive'
 }
 
 interface ScoreHistoryTimelineProps {
@@ -29,7 +29,7 @@ interface ScoreHistoryTimelineProps {
 export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
   if (scores.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4">
+      <p className="text-body text-muted-foreground py-4">
         No score history yet. Scores are calculated when a project is submitted or reviewed.
       </p>
     )
@@ -45,7 +45,7 @@ export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
           <div key={score.id} className="flex items-start gap-4 relative">
             {/* Date column */}
             <div className="w-[52px] text-right flex-shrink-0 pt-1">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 {new Date(score.calculated_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -68,7 +68,7 @@ export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
                   <span className={`text-lg font-bold ${getScoreColor(Number(score.composite_score))}`}>
                     {Number(score.composite_score).toFixed(1)}
                   </span>
-                  <span className="text-xs text-muted-foreground">/100</span>
+                  <span className="text-helper text-muted-foreground">/100</span>
                   <Badge variant="outline" className={`text-[10px] ${STAGE_COLORS[score.stage]}`}>
                     {STAGE_LABELS[score.stage]}
                   </Badge>

@@ -113,7 +113,7 @@ Onboarding.StepIndicator = function OnboardingStepIndicator({ labels, className 
           {labels && labels[i] && (
             <span
               className={cn(
-                "hidden text-sm sm:inline",
+                "hidden text-body sm:inline",
                 i === currentStep ? "font-medium text-foreground" : "text-muted-foreground"
               )}
             >
@@ -160,7 +160,7 @@ Onboarding.Navigation = function OnboardingNavigation({
         onClick={goBack}
         disabled={isFirst || isSubmitting}
         className={cn(
-          "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+          "rounded-md px-4 py-2 text-body font-medium transition-colors",
           isFirst
             ? "invisible"
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -173,7 +173,7 @@ Onboarding.Navigation = function OnboardingNavigation({
           type="button"
           onClick={onComplete}
           disabled={nextDisabled || isSubmitting}
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-body font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <>
@@ -192,7 +192,7 @@ Onboarding.Navigation = function OnboardingNavigation({
           type="button"
           onClick={goNext}
           disabled={nextDisabled || isSubmitting}
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-body font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>

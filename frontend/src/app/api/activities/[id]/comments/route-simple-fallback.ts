@@ -25,7 +25,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log('[AIMS Comments API FALLBACK] GET request for activity:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -45,7 +44,6 @@ export async function GET(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    console.log('[AIMS Comments API FALLBACK] Activity found, checking for comments table...');
     
     // Try to get comments, but handle the case where the table doesn't exist
     try {
@@ -56,18 +54,15 @@ export async function GET(
         .order('created_at', { ascending: false });
       
       if (commentsError) {
-        console.log('[AIMS Comments API FALLBACK] Comments table error:', commentsError.message);
         
         // If it's a column error, return empty array (graceful fallback)
         if (commentsError.code === '42703' || commentsError.message.includes('column') || commentsError.message.includes('relation')) {
-          console.log('[AIMS Comments API FALLBACK] Comments table not properly set up, returning empty array');
           return NextResponse.json([]);
         }
         
         throw commentsError;
       }
       
-      console.log('[AIMS Comments API FALLBACK] Found', comments?.length || 0, 'comments');
       
       // Transform comments to expected format
       const transformedComments = (comments || []).map((comment: any) => ({
@@ -89,7 +84,6 @@ export async function GET(
       return NextResponse.json(transformedComments);
       
     } catch (tableError) {
-      console.log('[AIMS Comments API FALLBACK] Table access error, returning empty comments:', tableError instanceof Error ? tableError.message : String(tableError));
       return NextResponse.json([]);
     }
     
@@ -109,9 +103,6 @@ export async function POST(
     const body = await request.json();
     const { user, content, type } = body;
     
-    console.log('[AIMS Comments API FALLBACK] POST request for activity:', id);
-    console.log('[AIMS Comments API FALLBACK] User:', user);
-    console.log('[AIMS Comments API FALLBACK] Content:', content);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -167,7 +158,6 @@ export async function POST(
           .single();
         
         if (commentError) {
-          console.log('[AIMS Comments API FALLBACK] Extended insert failed, trying basic:', commentError.message);
           
           // Fallback to basic insert
           const { data: basicComment, error: basicError } = await supabase
@@ -180,18 +170,14 @@ export async function POST(
             throw basicError;
           }
           
-          console.log('[AIMS Comments API FALLBACK] Basic comment added successfully');
         } else {
-          console.log('[AIMS Comments API FALLBACK] Extended comment added successfully');
         }
         
       } catch (insertError) {
-        console.log('[AIMS Comments API FALLBACK] Insert failed:', insertError instanceof Error ? insertError.message : String(insertError));
         return NextResponse.json({ error: 'Comments feature not available - database setup required' }, { status: 503 });
       }
       
     } catch (tableError) {
-      console.log('[AIMS Comments API FALLBACK] Comments table not available:', tableError instanceof Error ? tableError.message : String(tableError));
       return NextResponse.json({ error: 'Comments feature not available - please set up database tables' }, { status: 503 });
     }
     
@@ -217,7 +203,6 @@ export async function PATCH(
     const body = await request.json();
     const { user, commentId, action } = body;
     
-    console.log(`[AIMS Comments API FALLBACK] Comment ${commentId} action: ${action} by ${user.name}`);
     
     // For fallback version, just return success
     return NextResponse.json({ success: true });

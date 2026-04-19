@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  console.log(`[AIMS API] GET /api/search - Authenticated user: ${user?.id}`)
 
   const startTime = Date.now()
   let searchAnalyticsData = null
@@ -75,7 +74,6 @@ export async function GET(request: NextRequest) {
     const cachedResult = searchCache.get(cacheKey)
 
     if (cachedResult) {
-      console.log(`[AIMS API] Cache hit for query: "${query}"`)
       return NextResponse.json({
         ...cachedResult,
         cached: true,
@@ -225,8 +223,6 @@ export async function GET(request: NextRequest) {
         })
     }
 
-    console.log(`[AIMS API] Supercharged search completed - Found ${formattedResults.length} results for query: "${query}"`)
-    console.log(`[AIMS API] Performance: ${responseTime}ms (target: <50ms), Pagination: page ${page}, limit ${limit}, offset ${offset}, total ${totalResults}, hasMore ${hasMore}`)
 
     // Extract search terms for highlighting
     const searchTerms = extractSearchTerms(query)
@@ -277,7 +273,6 @@ async function fallbackLegacySearch(
   supabase: any,
   userId: string | undefined
 ) {
-  console.log('[AIMS API] Falling back to legacy search')
 
   try {
     const searchParams = request.nextUrl.searchParams

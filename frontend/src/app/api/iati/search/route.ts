@@ -105,24 +105,19 @@ const extractDateFromSolrArrays = (
  * Search the IATI Datastore using the correct API v3 format
  */
 export async function POST(request: NextRequest) {
-  console.log("[IATI Search API] POST request received")
 
   try {
     const body: SearchParams = await request.json()
     const { reportingOrgRef, recipientCountry, activityTitle, limit = 20 } = body
 
-    console.log("[IATI Search API] Parsed body:", body)
 
     if (!activityTitle?.trim()) {
-      console.log("[IATI Search API] Missing activity title")
       return NextResponse.json(
         { error: "Activity title is required" },
         { status: 400 }
       )
     }
 
-    console.log("[IATI Search API] Starting search for:", activityTitle)
-    console.log("[IATI Search API] Filters:", { reportingOrgRef, recipientCountry, limit })
 
     // Build the correct IATI Datastore API URL (v3 format)
     const trimmedTitle = activityTitle.trim()
@@ -184,9 +179,6 @@ export async function POST(request: NextRequest) {
     let searchUrl = `https://api.iatistandard.org/datastore/activity/select?q=${encodeURIComponent(searchQuery)}&rows=${limit}&wt=json`
 
     // Add debug info
-    console.log("[IATI Search API] Search term:", trimmedTitle)
-    console.log("[IATI Search API] Detected as IATI ID:", isIatiId)
-    console.log("[IATI Search API] Search query:", searchQuery)
 
     // Add filters using fq (filter query) parameter
     if (reportingOrgRef?.trim()) {
@@ -197,7 +189,6 @@ export async function POST(request: NextRequest) {
       searchUrl += `&fq=recipient_country_code:${encodeURIComponent(recipientCountry.trim())}`
     }
 
-    console.log("[IATI Search API] Final search URL:", searchUrl)
 
     // Create abort controller for timeout (more compatible than AbortSignal.timeout)
     const abortController = new AbortController()
@@ -216,12 +207,6 @@ export async function POST(request: NextRequest) {
         headers["Ocp-Apim-Subscription-Key"] = IATI_API_KEY
       }
 
-      console.log("[IATI Search API] Making fetch request to:", searchUrl)
-      console.log("[IATI Search API] Headers:", Object.keys(headers))
-      console.log("[IATI Search API] Has API key:", !!IATI_API_KEY)
-      console.log("[IATI Search API] API key length:", IATI_API_KEY ? IATI_API_KEY.length : 0)
-      console.log("[IATI Search API] API key first 4 chars:", IATI_API_KEY ? IATI_API_KEY.substring(0, 4) : 'N/A')
-      console.log("[IATI Search API] All env vars starting with IATI:", Object.keys(process.env).filter(k => k.includes('IATI')))
 
       const response = await fetch(searchUrl, {
         method: "GET",
@@ -231,7 +216,6 @@ export async function POST(request: NextRequest) {
 
       clearTimeout(timeoutId)
 
-      console.log("[IATI Search API] Response status:", response.status, response.statusText)
 
       if (response.status === 401) {
         const errorText = await response.text().catch(() => '')
@@ -282,17 +266,11 @@ export async function POST(request: NextRequest) {
         // Parse the IATI API v3 response format
         const activitiesData = data.response?.docs || []
 
-        console.log("[IATI Search API] Found", activitiesData.length, "activities from IATI API")
-        console.log("[IATI Search API] Total found:", data.response?.numFound || 0)
-        console.log("[IATI Search API] First activity fields:", activitiesData[0] ? Object.keys(activitiesData[0]) : "No activities")
-        console.log("[IATI Search API] First few activities:", activitiesData.slice(0, 3))
         
         // Log date-related fields from first activity for debugging
         if (activitiesData[0]) {
-          console.log("[IATI Search API] Date-related fields in first activity:")
           Object.keys(activitiesData[0]).forEach(key => {
             if (key.toLowerCase().includes('date') || key.toLowerCase().includes('activity_date')) {
-              console.log(`  ${key}:`, activitiesData[0][key])
             }
           })
           // Try to extract dates using our helper
@@ -302,15 +280,12 @@ export async function POST(request: NextRequest) {
             endPlanned: extractDateFromSolrArrays(activitiesData[0], '3'),
             endActual: extractDateFromSolrArrays(activitiesData[0], '4'),
           }
-          console.log("[IATI Search API] Extracted dates from first activity:", testDates)
         }
 
         // Log organization-related fields specifically
         if (activitiesData[0]) {
-          console.log("[IATI Search API] Organization fields in first activity:")
           Object.keys(activitiesData[0]).forEach(key => {
             if (key.includes('org') || key.includes('participating') || key.includes('reporting')) {
-              console.log(`  ${key}:`, activitiesData[0][key])
             }
           })
         }
@@ -327,14 +302,12 @@ export async function POST(request: NextRequest) {
 
             // Skip if we've already seen this IATI identifier (deduplication)
             if (iatiId && seenIdentifiers.has(iatiId)) {
-              console.log("[IATI Search API] Skipping duplicate activity:", iatiId)
               continue
             }
 
             // If searching by IATI ID, only include results where the search term matches the actual iati_identifier
             // This filters out matches from other-identifier fields
             if (isIatiId && iatiId !== trimmedTitle) {
-              console.log("[IATI Search API] Skipping other-identifier match:", iatiId, "!==", trimmedTitle)
               continue
             }
 
@@ -349,10 +322,6 @@ export async function POST(request: NextRequest) {
                 
                 // Debug logging for this specific activity
                 if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203') {
-                  console.log('[IATI Search API] DEBUG - Activity:', iatiId);
-                  console.log('[IATI Search API] DEBUG - participating_org_narrative:', activity.participating_org_narrative);
-                  console.log('[IATI Search API] DEBUG - participating_org_ref:', activity.participating_org_ref);
-                  console.log('[IATI Search API] DEBUG - participating_org_role:', activity.participating_org_role);
                   console.log('[IATI Search API] DEBUG - All participating org fields:', 
                     Object.keys(activity).filter(k => k.includes('participating')));
                 }
@@ -405,7 +374,6 @@ export async function POST(request: NextRequest) {
                   if (activity[fieldName]) {
                     foundRefField = fieldName;
                     if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203') {
-                      console.log('[IATI Search API] DEBUG - Found ref field:', fieldName, 'value:', activity[fieldName]);
                     }
                     break;
                   }
@@ -463,8 +431,6 @@ export async function POST(request: NextRequest) {
                     roles: orgRoles.length,
                     refs: orgRefs.length
                   });
-                  console.log('[IATI Search API] DEBUG - First 15 narratives:', orgNarratives.slice(0, 15));
-                  console.log('[IATI Search API] DEBUG - First 15 refs:', orgRefs.slice(0, 15));
                   console.log('[IATI Search API] DEBUG - Looking for "EXPERTISE ADVISORS" at index:', 
                     orgNarratives.findIndex(n => n && n.includes('EXPERTISE ADVISORS')));
                 }
@@ -684,7 +650,6 @@ export async function POST(request: NextRequest) {
         }
 
         if (activities.length > 0) {
-          console.log("[IATI Search] Successfully parsed", activities.length, "activities from IATI API")
           return NextResponse.json({
             results: activities,
             count: activities.length,
@@ -693,8 +658,6 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        console.log("[IATI Search API] No activities found from IATI API")
-        console.log("[IATI Search API] Response data:", data)
         return NextResponse.json({
           results: [],
           count: 0,

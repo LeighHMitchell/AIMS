@@ -14,12 +14,12 @@ export const BUDGET_TYPES: BudgetType[] = [
   {
     code: '1',
     name: 'Original',
-    description: 'The original budget allocated to the planned disbursement'
+    description: 'The first version of the budget, as originally planned.'
   },
   {
     code: '2',
     name: 'Revised',
-    description: 'A revised budget for the planned disbursement'
+    description: 'An updated budget that replaces an earlier version.'
   }
 ];
 

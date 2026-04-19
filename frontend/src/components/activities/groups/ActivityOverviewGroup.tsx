@@ -155,15 +155,8 @@ export function ActivityOverviewGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          // Only re-scroll if layout shifts moved the element
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -280,11 +273,11 @@ export function ActivityOverviewGroup({
           <section
             id="sectors"
             ref={sectorsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('sectors') }}
           >
             {isSectionActive('sectors') || activeSections.has('sectors') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="sectors"
                   title={getSectionLabel('sectors')}
@@ -294,9 +287,6 @@ export function ActivityOverviewGroup({
                 <ImprovedSectorAllocationForm
                   allocations={sectors}
                   onChange={(newSectors) => {
-                    console.log('🎯 [AIMS] === SECTORS CHANGED IN FORM ===')
-                    console.log('📊 [AIMS] New sectors:', JSON.stringify(newSectors, null, 2))
-                    console.log('📈 [AIMS] Sector count:', newSectors.length)
                     setSectors(newSectors)
                   }}
                   onValidationChange={setSectorValidation}
@@ -315,11 +305,11 @@ export function ActivityOverviewGroup({
           <section
             id="humanitarian"
             ref={humanitarianRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('humanitarian') }}
           >
             {isSectionActive('humanitarian') || activeSections.has('humanitarian') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="humanitarian"
                   title={getSectionLabel('humanitarian')}

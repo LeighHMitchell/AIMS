@@ -74,13 +74,13 @@ function FilterChip({
   const remainingCount = values.length - maxDisplay
 
   return (
-    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary rounded-md text-sm border border-primary/20 group">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary rounded-md text-body border border-primary/20 group">
       <span className="text-primary/70">{icon}</span>
       <span className="font-medium">{label}:</span>
       <span className="text-primary/90">
         {displayValues.join(', ')}
         {remainingCount > 0 && (
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-helper">
             +{remainingCount}
           </Badge>
         )}
@@ -123,7 +123,7 @@ function DateRangeChip({
   if (!label) return null
 
   return (
-    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary rounded-md text-sm border border-primary/20">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary rounded-md text-body border border-primary/20">
       <Calendar className="h-3.5 w-3.5 text-primary/70" />
       <span className="font-medium">Date:</span>
       <span className="text-primary/90">{label}</span>
@@ -164,7 +164,7 @@ export function FilterBreadcrumbs({
   if (activeFilterCount === 0) {
     return (
       <div className={cn("flex items-center gap-2 py-2", className)}>
-        <span className="text-xs text-muted-foreground/60 italic">
+        <span className="text-helper text-muted-foreground/60 italic">
           No filters applied — filter chips will appear here
         </span>
       </div>
@@ -196,7 +196,7 @@ export function FilterBreadcrumbs({
       aria-label="Active filters"
       role="navigation"
     >
-      <span className="text-xs text-muted-foreground font-medium shrink-0" aria-hidden="true">
+      <span className="text-helper text-muted-foreground font-medium shrink-0" aria-hidden="true">
         Active filters:
       </span>
       
@@ -283,7 +283,7 @@ export function FilterBreadcrumbs({
             variant="ghost"
             size="sm"
             onClick={onClearAll}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive gap-1 shrink-0"
+            className="h-7 px-2 text-helper text-muted-foreground hover:text-destructive gap-1 shrink-0"
             aria-label="Clear all filters"
           >
             <XCircle className="h-3.5 w-3.5" aria-hidden="true" />

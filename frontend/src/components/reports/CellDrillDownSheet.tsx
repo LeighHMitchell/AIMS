@@ -264,7 +264,7 @@ export function CellDrillDownSheet({
           {summary && !isLoading && (
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-muted/50 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Transactions</div>
+                <div className="text-helper text-muted-foreground">Transactions</div>
                 <div className="text-lg font-semibold flex items-center gap-1">
                   <Hash className="h-4 w-4 text-muted-foreground" />
                   {summary.transactionCount.toLocaleString()}
@@ -276,14 +276,14 @@ export function CellDrillDownSheet({
                 </div>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Total Amount</div>
+                <div className="text-helper text-muted-foreground">Total Amount</div>
                 <div className="text-lg font-semibold flex items-center gap-1">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   {formatCurrency(summary.totalAmount)}
                 </div>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Activities</div>
+                <div className="text-helper text-muted-foreground">Activities</div>
                 <div className="text-lg font-semibold">
                   {summary.activityCount.toLocaleString()}
                 </div>
@@ -293,7 +293,7 @@ export function CellDrillDownSheet({
 
           {/* Actions */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               {summary?.truncated && (
                 <span className="text-yellow-600 dark:text-yellow-500">
                   Results limited to 100 transactions
@@ -335,7 +335,7 @@ export function CellDrillDownSheet({
                   No transactions found for this selection
                 </div>
               ) : (
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted border-b">
                     <tr>
                       <th 
@@ -400,7 +400,7 @@ export function CellDrillDownSheet({
                         </td>
                         <td className="p-2">
                           {row.transaction_type ? (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-helper">
                               {row.transaction_type}
                             </Badge>
                           ) : (

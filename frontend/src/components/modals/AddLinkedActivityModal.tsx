@@ -243,7 +243,7 @@ export function AddLinkedActivityModal({
                 <div className="p-3 border rounded-md bg-blue-50 border-blue-200">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-medium text-sm">
+                      <div className="font-medium text-body">
                         {selectedActivity.title_narrative}
                       </div>
                       {selectedActivity.iati_identifier && (
@@ -267,12 +267,12 @@ export function AddLinkedActivityModal({
               {!selectedActivity && searchQuery.length >= 2 && (
                 <div className="border rounded-md max-h-64 overflow-y-auto">
                   {searching && (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="p-4 text-center text-body text-muted-foreground">
                       Searching...
                     </div>
                   )}
                   {!searching && searchResults.length === 0 && (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="p-4 text-center text-body text-muted-foreground">
                       No activities found
                     </div>
                   )}
@@ -283,7 +283,7 @@ export function AddLinkedActivityModal({
                         onClick={() => setSelectedActivity(activity)}
                         className="w-full p-3 text-left hover:bg-accent transition-colors border-b last:border-b-0"
                       >
-                        <div className="font-medium text-sm">
+                        <div className="font-medium text-body">
                           {activity.title_narrative}
                         </div>
                         {activity.iati_identifier && (
@@ -319,7 +319,7 @@ export function AddLinkedActivityModal({
                   value={externalIatiId}
                   onChange={(e) => setExternalIatiId(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   The unique IATI identifier of the related activity
                 </p>
               </div>
@@ -332,7 +332,7 @@ export function AddLinkedActivityModal({
                   value={externalTitle}
                   onChange={(e) => setExternalTitle(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Optional title to help identify this activity
                 </p>
               </div>
@@ -353,7 +353,7 @@ export function AddLinkedActivityModal({
                   <SelectItem key={type.code} value={type.code}>
                     <div>
                       <div className="font-medium">{type.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-helper text-muted-foreground">
                         {type.description}
                       </div>
                     </div>

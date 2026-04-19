@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
       // Use manually provided exchange rate
       usdAmount = disbursementData.usd_amount;
       exchangeRateUsed = disbursementData.exchange_rate_used;
-      console.log(`[Planned Disbursements API] Using manual exchange rate: ${disbursementData.amount} ${disbursementData.currency} → $${usdAmount} USD (rate: ${exchangeRateUsed})`);
     } else if (disbursementData.amount) {
       // Fetch exchange rate from API
       const valueDate = disbursementData.value_date || disbursementData.period_start || new Date().toISOString().split('T')[0];
@@ -86,7 +85,6 @@ export async function POST(request: NextRequest) {
         if (result.success && result.usd_amount != null) {
           usdAmount = result.usd_amount;
           exchangeRateUsed = result.exchange_rate;
-          console.log(`[Planned Disbursements API] Converted ${disbursementData.amount} ${disbursementData.currency} → $${usdAmount} USD (rate: ${exchangeRateUsed})`);
         } else {
           usdConvertible = false;
           console.warn('[Planned Disbursements API] Currency conversion failed:', result.error);
@@ -221,7 +219,6 @@ export async function PUT(request: NextRequest) {
           // Use manually provided exchange rate
           usdAmount = updateData.usd_amount;
           exchangeRateUsed = updateData.exchange_rate_used;
-          console.log(`[Planned Disbursements API] Using manual exchange rate: ${amount} ${currency} → $${usdAmount} USD (rate: ${exchangeRateUsed})`);
         } else {
           // Fetch exchange rate from API
           const conversionDate = valueDate || periodStart || new Date().toISOString().split('T')[0];
@@ -234,7 +231,6 @@ export async function PUT(request: NextRequest) {
             if (result.success && result.usd_amount != null) {
               usdAmount = result.usd_amount;
               exchangeRateUsed = result.exchange_rate;
-              console.log(`[Planned Disbursements API] Updated conversion: ${amount} ${currency} → $${usdAmount} USD (rate: ${exchangeRateUsed})`);
             } else {
               usdConvertible = false;
               console.warn('[Planned Disbursements API] Currency conversion failed:', result.error);

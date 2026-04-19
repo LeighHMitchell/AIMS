@@ -125,7 +125,7 @@ export function MultiSelectFilter({
           <div className="flex items-center gap-1 ml-1 shrink-0">
             {safeValue.length > 0 ? (
               <>
-                <Badge variant="secondary" className="px-1.5 py-0 text-xs">
+                <Badge variant="secondary" className="px-1.5 py-0 text-helper">
                   {safeValue.length}
                 </Badge>
                 <X 
@@ -163,7 +163,7 @@ export function MultiSelectFilter({
 
         {/* Quick actions */}
         <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             {safeValue.length} of {options.length} selected
           </span>
           <div className="flex items-center gap-1">
@@ -171,7 +171,7 @@ export function MultiSelectFilter({
               variant="ghost"
               size="sm"
               onClick={selectAll}
-              className="h-6 text-xs px-2"
+              className="h-6 text-helper px-2"
             >
               Select all
             </Button>
@@ -179,7 +179,7 @@ export function MultiSelectFilter({
               variant="ghost"
               size="sm"
               onClick={clearAll}
-              className="h-6 text-xs px-2"
+              className="h-6 text-helper px-2"
               disabled={safeValue.length === 0}
             >
               Clear
@@ -190,7 +190,7 @@ export function MultiSelectFilter({
         {/* Options */}
         <div className="max-h-[300px] overflow-y-auto">
           {filteredOptions.length === 0 ? (
-            <div className="p-3 text-sm text-muted-foreground text-center">
+            <div className="p-3 text-body text-muted-foreground text-center">
               {emptyText}
             </div>
           ) : (
@@ -215,7 +215,7 @@ export function MultiSelectFilter({
                     {option.code}
                   </span>
                 )}
-                <span className="text-sm truncate">{option.label}</span>
+                <span className="text-body truncate">{option.label}</span>
               </div>
             ))
           )}

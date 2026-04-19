@@ -22,8 +22,6 @@ export async function POST(
     const { id: activityId } = await params;
     const { documents } = await request.json();
 
-    console.log(`[Document Import API] Starting import for activity: ${activityId}`);
-    console.log(`[Document Import API] Documents count: ${documents?.length || 0}`);
 
     // Validation
     if (!activityId) {
@@ -148,12 +146,10 @@ export async function POST(
             // Don't fail the whole document, just log the error
             // The document still has the first category in the main table for backward compatibility
           } else {
-            console.log(`[Document Import API] Successfully inserted ${categoryCodes.length} categories for document ${i + 1}`);
           }
         }
 
         results.success++;
-        console.log(`[Document Import API] Successfully inserted document ${i + 1} with ${categoryCodes.length} categories`);
       } catch (docError: any) {
         console.error(`[Document Import API] Exception processing document ${i + 1}:`, docError);
         results.failed++;
@@ -165,7 +161,6 @@ export async function POST(
       }
     }
 
-    console.log(`[Document Import API] Import complete: ${results.success} succeeded, ${results.failed} failed`);
 
     return NextResponse.json({
       success: results.success,

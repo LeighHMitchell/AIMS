@@ -349,17 +349,14 @@ function ActivitiesPageContent() {
         setActivities(Array.isArray(data) ? data : []);
         // Store total count for pagination calculations
         setTotalActivitiesCount(pagination.total || 0);
-        console.log(`[AIMS Debug] Fetched ${fetchAll ? 'all' : `page ${page} of ${pagination.totalPages}`}: ${data.length} activities (total: ${pagination.total})`);
       } else {
         // Fallback for non-paginated response
         const data = response.data || response;
         setActivities(Array.isArray(data) ? data : []);
-        console.log("[AIMS Debug] Activities fetched:", Array.isArray(data) ? data.length : 0);
       }
     } catch (error) {
       // Don't handle AbortError - it's expected when requests are cancelled
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[AIMS] Request aborted');
         return;
       }
 
@@ -411,10 +408,8 @@ function ActivitiesPageContent() {
     // Only fetch data if user loading is complete
     // This prevents fetching with null user state before authentication is resolved
     if (!userLoading) {
-      console.log('[AIMS] User loading complete, fetching activities with user:', user?.email || 'no user');
       fetchData();
     } else {
-      console.log('[AIMS] Waiting for user to load before fetching activities...');
     }
   }, [userLoading]); // Add userLoading as dependency
 
@@ -449,7 +444,6 @@ function ActivitiesPageContent() {
         
         // If it's a 404, the activity is already gone
         if (res.status === 404) {
-          console.log("[AIMS] Activity already deleted:", id);
           toast.success("Activity deleted successfully");
           return;
         }
@@ -518,11 +512,11 @@ function ActivitiesPageContent() {
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
     }
     return sortOrder === 'asc' 
-      ? <ChevronUp className="h-4 w-4 text-gray-700" />
-      : <ChevronDown className="h-4 w-4 text-gray-700" />;
+      ? <ChevronUp className="h-4 w-4 text-foreground" />
+      : <ChevronDown className="h-4 w-4 text-foreground" />;
   };
 
   const exportActivities = () => {
@@ -687,8 +681,8 @@ function ActivitiesPageContent() {
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
-            <p className="text-slate-500">Manage and track all development activities</p>
+            <h1 className="text-2xl font-semibold text-foreground">Activities</h1>
+            <p className="text-muted-foreground">Manage and track all development activities</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -727,7 +721,7 @@ function ActivitiesPageContent() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 bg-muted rounded-lg px-4">
           {/* Left Side: Search + Filters + Page Size */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
             {/* Search Input */}
@@ -765,7 +759,7 @@ function ActivitiesPageContent() {
               
               {/* Page Size Selector */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">Show:</span>
+                <span className="text-body text-muted-foreground">Show:</span>
                 <Select 
                   value={pageLimit.toString()} 
                   onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -807,7 +801,7 @@ function ActivitiesPageContent() {
             </div>
             
             {/* Results Summary */}
-            <p className="text-sm text-slate-600 whitespace-nowrap">
+            <p className="text-body text-muted-foreground whitespace-nowrap">
               {totalActivities === 0 
                 ? "No activities" 
                 : paginatedActivities.length === 0
@@ -819,7 +813,7 @@ function ActivitiesPageContent() {
         
         {/* Performance Warning (if applicable) */}
         {totalActivities > 500 && pageLimit === 9999 && (
-          <div className="text-xs text-amber-600 mt-2 px-4">
+          <div className="text-helper text-amber-600 mt-2 px-4">
             ⚠️ Showing {totalActivities} items may affect performance
           </div>
         )}
@@ -828,23 +822,23 @@ function ActivitiesPageContent() {
         {loading || userLoading ? (
           <ActivityListSkeleton />
         ) : totalActivities === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
             {fetchError ? (
               <div className="space-y-4">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
-                  <p className="text-slate-500 mb-4">{fetchError}</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Activities</h3>
+                  <p className="text-muted-foreground mb-4">{fetchError}</p>
                   <Button onClick={() => fetchActivities(1, true)} variant="outline">
                     Try Again
                   </Button>
                 </div>
               </div>
             ) : searchQuery || filterStatus !== "all" || filterValidation !== "all" ? (
-              <div className="text-slate-500">No matching activities found</div>
+              <div className="text-muted-foreground">No matching activities found</div>
             ) : (
               <div className="space-y-4">
-                <div className="text-slate-500">No activities yet</div>
+                <div className="text-muted-foreground">No activities yet</div>
                 <Button onClick={() => router.push("/activities/new")} className="mt-4">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Activity
@@ -853,13 +847,13 @@ function ActivitiesPageContent() {
             )}
           </div>
         ) : viewMode === 'table' ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
+          <div className="bg-white rounded-md shadow-sm border border-border overflow-hidden fade-in">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse min-w-[1300px]">
                 <thead className="bg-surface-muted border-b">
                   <tr>
                     <th 
-                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[30%]"
+                      className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-muted w-[30%]"
                       onClick={() => handleSort('title')}
                     >
                       <div className="flex items-center gap-1">
@@ -867,14 +861,14 @@ function ActivitiesPageContent() {
                         {getSortIcon('title')}
                       </div>
                     </th>
-                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left w-[120px]">
+                    <th className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-left w-[120px]">
                       Status
                     </th>
-                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-center w-[120px]">
+                    <th className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-center w-[120px]">
                       Data Source & Review
                     </th>
                     <th 
-                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-gray-200"
+                      className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-muted"
                       onClick={() => handleSort('createdBy')}
                     >
                       <div className="flex items-center gap-1">
@@ -883,14 +877,14 @@ function ActivitiesPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[120px]"
+                      className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-muted min-w-[120px]"
                       onClick={() => handleSort('commitments')}
                     >
                       <div className="flex items-center justify-end gap-1">
                         Commitments
                         <span className="ml-1 relative group cursor-pointer">
                           <Info className="inline h-4 w-4 text-muted-foreground" />
-                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-gray-200 p-2 rounded-md shadow-md w-64 right-0 mt-1">
+                          <span className="absolute z-10 hidden group-hover:block bg-white text-helper text-muted-foreground border border-border p-2 rounded-md shadow-md w-64 right-0 mt-1">
                             Outgoing funds formally obligated but not yet disbursed.
                           </span>
                         </span>
@@ -898,14 +892,14 @@ function ActivitiesPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
+                      className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-muted min-w-[100px]"
                       onClick={() => handleSort('disbursements')}
                     >
                       <div className="flex items-center justify-end gap-1">
                         Outflows
                         <span className="ml-1 relative group cursor-pointer">
                           <Info className="inline h-4 w-4 text-muted-foreground" />
-                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-gray-200 p-2 rounded-md shadow-md w-64 right-0 mt-1">
+                          <span className="absolute z-10 hidden group-hover:block bg-white text-helper text-muted-foreground border border-border p-2 rounded-md shadow-md w-64 right-0 mt-1">
                             Funds disbursed or spent — includes disbursements and expenditures.
                           </span>
                         </span>
@@ -914,7 +908,7 @@ function ActivitiesPageContent() {
                     </th>
 
                     <th 
-                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
+                      className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-muted min-w-[100px]"
                       onClick={() => handleSort('updatedAt')}
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -922,10 +916,10 @@ function ActivitiesPageContent() {
                         {getSortIcon('updatedAt')}
                       </div>
                     </th>
-                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-center w-[120px]">
+                    <th className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-center w-[120px]">
                       Default Aid Modality
                     </th>
-                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right w-[80px]">
+                    <th className="bg-muted text-body font-medium text-muted-foreground px-4 py-2 text-right w-[80px]">
                       Actions
                     </th>
                   </tr>
@@ -944,7 +938,7 @@ function ActivitiesPageContent() {
                         key={activity.id}
                         className="hover:bg-muted transition-colors"
                       >
-                        <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
+                        <td className="px-4 py-2 text-body text-foreground whitespace-normal break-words leading-tight">
                           <div 
                             className="cursor-pointer"
                             onClick={() => router.push(`/activities/${activity.id}`)}
@@ -954,7 +948,7 @@ function ActivitiesPageContent() {
                                 {activity.title}
                               </h3>
                               {(activity.partnerId || activity.iatiIdentifier) && (
-                                <div className="text-xs text-muted-foreground line-clamp-1">
+                                <div className="text-helper text-muted-foreground line-clamp-1">
                                   {activity.partnerId}
                                   {activity.partnerId && activity.iatiIdentifier && '  •  '}
                                   <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
@@ -963,35 +957,35 @@ function ActivitiesPageContent() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                        <td className="px-4 py-2 text-body text-foreground text-left">
                           {getActivityStatusLabel(activityStatus)}
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                        <td className="px-4 py-2 text-body text-foreground text-center">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-muted-foreground hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <FileCheck className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                                    <span className="text-body"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <ShieldCheck className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                                    <span className="text-body"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Globe className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                    <span className="text-body"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-left" style={{textAlign: 'left'}}>
+                        <td className="px-4 py-2 text-body text-foreground text-left" style={{textAlign: 'left'}}>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger className="cursor-help">
@@ -1005,7 +999,7 @@ function ActivitiesPageContent() {
                                     Reported by {activity.created_by_org_name || "Unknown Organization"}
                                   </div>
                                   {activity.createdBy?.name && (
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-helper text-muted-foreground">
                                       Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
                                     </div>
                                   )}
@@ -1014,42 +1008,42 @@ function ActivitiesPageContent() {
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+                        <td className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap font-medium">
                           {formatCurrency(activity.commitments || 0)}
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+                        <td className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap font-medium">
                           {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}
                         </td>
 
-                        <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
+                        <td className="px-4 py-2 text-body text-foreground whitespace-nowrap text-right">
                           {format(new Date(activity.updatedAt), "dd MMM yyyy")}
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                        <td className="px-4 py-2 text-body text-foreground text-center">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
+                                <ReceiptText className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer mx-auto" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Handshake className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
+                                    <span className="text-body"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Shuffle className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
+                                    <span className="text-body"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Link2 className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status : 'Not specified'}</span>
+                                    <span className="text-body"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status] || activity.default_tied_status : 'Not specified'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground text-right">
+                        <td className="px-4 py-2 text-body text-foreground text-right">
                           <div className="flex items-center justify-end gap-2">
                             {canUserEditActivity(user, activity) && (
                               <TooltipProvider>
@@ -1059,7 +1053,7 @@ function ActivitiesPageContent() {
                                       onClick={() => router.push(`/activities/new?id=${activity.id}`)}
                                       className="p-1 hover:text-primary cursor-pointer transition-colors"
                                     >
-                                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                      <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -1075,7 +1069,7 @@ function ActivitiesPageContent() {
                                     onClick={() => setDeleteActivityId(activity.id)}
                                     className="p-1 hover:text-primary cursor-pointer transition-colors"
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1113,19 +1107,19 @@ function ActivitiesPageContent() {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
                           const placeholder = document.createElement('div');
-                          placeholder.className = 'w-full h-24 sm:h-32 bg-slate-100 rounded-t-md';
+                          placeholder.className = 'w-full h-24 sm:h-32 bg-muted rounded-t-md';
                           target.parentNode?.appendChild(placeholder);
                         }}
                       />
                     ) : (
-                      <div className="w-full h-24 sm:h-32 bg-slate-100 rounded-t-md" />
+                      <div className="w-full h-24 sm:h-32 bg-muted rounded-t-md" />
                     )}
                   </div>
                   
                   <CardHeader onClick={() => router.push(`/activities/${activity.id}`)}>
                     <CardTitle className="text-lg line-clamp-2">{activity.title}</CardTitle>
                     {(activity.partnerId || activity.iatiIdentifier) && (
-                      <p className="text-sm text-slate-500">
+                      <p className="text-body text-muted-foreground">
                         {activity.partnerId}
                         {activity.partnerId && activity.iatiIdentifier && ' • '}
                         {activity.iatiIdentifier && <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>}
@@ -1141,7 +1135,7 @@ function ActivitiesPageContent() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     
-                    <div className="text-sm text-slate-500">
+                    <div className="text-body text-muted-foreground">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger className="cursor-help">
@@ -1155,7 +1149,7 @@ function ActivitiesPageContent() {
                                 Reported by {activity.created_by_org_name || "Unknown Organization"}
                               </div>
                               {activity.createdBy?.name && (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-helper text-muted-foreground">
                                   Submitted by {activity.createdBy.name} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
                                 </div>
                               )}
@@ -1165,19 +1159,19 @@ function ActivitiesPageContent() {
                       </TooltipProvider>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-body">
                       <div>
-                        <p className="text-slate-500 text-xs">Commitments</p>
+                        <p className="text-muted-foreground text-helper">Commitments</p>
                         <p className="font-medium">{formatCurrency(activity.commitments || 0)}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs">Outflows</p>
+                        <p className="text-muted-foreground text-helper">Outflows</p>
                         <p className="font-medium">{formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</p>
                       </div>
                     </div>
                     
                     <div className="flex justify-between items-center pt-2">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-helper text-muted-foreground">
                         Updated {format(new Date(activity.updatedAt), "dd MMM yyyy")}
                       </span>
                       <Popover>
@@ -1193,23 +1187,23 @@ function ActivitiesPageContent() {
                         <PopoverContent className="w-32 p-1">
                           {canUserEditActivity(user, activity) && (
                             <button 
-                              className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                              className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/activities/new?id=${activity.id}`);
                               }}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
+                              <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                             </button>
                           )}
                           <button 
-                            className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                            className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-body"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDeleteActivityId(activity.id);
                             }}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                            <Trash2 className="h-4 w-4 text-destructive" /> Delete
                           </button>
                         </PopoverContent>
                       </Popover>
@@ -1250,7 +1244,7 @@ function ActivitiesPageContent() {
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`w-10 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                    className={`w-10 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                   >
                     {pageNum}
                   </Button>

@@ -114,7 +114,6 @@ export class TransactionDiagnostic {
   }
 
   async diagnoseXmlFile(xmlContent: string): Promise<ImportSummary> {
-    console.log('🔍 Starting Transaction Diagnostic Analysis...\n');
 
     // Parse XML
     const parser = new XMLParser({
@@ -133,8 +132,6 @@ export class TransactionDiagnostic {
       const iatiIdentifier = this.extractIatiIdentifier(activity);
       const transactions = this.ensureArray(activity.transaction || []);
 
-      console.log(`\n📋 Processing Activity: ${iatiIdentifier}`);
-      console.log(`   Found ${transactions.length} transactions`);
 
       // Check if activity exists in database
       const activityLookup = await this.findActivity(iatiIdentifier);
@@ -175,7 +172,6 @@ export class TransactionDiagnostic {
       }
     };
 
-    console.log(`\n🔄 Transaction #${index}:`);
 
     // 1. Extract transaction type
     const typeCode = transaction['transaction-type']?.['@_code'] || 
@@ -185,7 +181,6 @@ export class TransactionDiagnostic {
     if (!result.values.transaction_type) {
       result.errors.push(`❌ Invalid transaction type: "${typeCode}"`);
     } else {
-      console.log(`   ✅ Type: ${result.values.transaction_type} (from "${typeCode}")`);
     }
 
     // 2. Extract and validate value
@@ -199,7 +194,6 @@ export class TransactionDiagnostic {
       if (result.values.value === null) {
         result.errors.push(`❌ Invalid value format: "${rawValue}"`);
       } else {
-        console.log(`   ✅ Value: ${result.values.value} ${result.values.currency}`);
       }
 
       if (!this.isValidCurrency(result.values.currency)) {
@@ -217,14 +211,12 @@ export class TransactionDiagnostic {
     if (!result.values.transaction_date) {
       result.errors.push(`❌ Invalid date format: "${rawDate}"`);
     } else {
-      console.log(`   ✅ Date: ${result.values.transaction_date}`);
     }
 
     // 4. Extract description
     const description = this.extractNarrative(transaction.description);
     if (description) {
       result.values.description = description;
-      console.log(`   ✅ Description: "${description.substring(0, 50)}..."`);
     }
 
     // 5. Extract provider organization
@@ -233,7 +225,6 @@ export class TransactionDiagnostic {
       result.values.provider_org_ref = providerOrg['@_ref'];
       result.values.provider_org_type = providerOrg['@_type'];
       result.values.provider_org_name = this.extractNarrative(providerOrg);
-      console.log(`   ✅ Provider: ${result.values.provider_org_name || result.values.provider_org_ref}`);
     }
 
     // 6. Extract receiver organization
@@ -242,7 +233,6 @@ export class TransactionDiagnostic {
       result.values.receiver_org_ref = receiverOrg['@_ref'];
       result.values.receiver_org_type = receiverOrg['@_type'];
       result.values.receiver_org_name = this.extractNarrative(receiverOrg);
-      console.log(`   ✅ Receiver: ${result.values.receiver_org_name || result.values.receiver_org_ref}`);
     }
 
     // 7. Extract classifications
@@ -298,9 +288,7 @@ export class TransactionDiagnostic {
     // Determine final status
     if (result.errors.length > 0) {
       result.status = 'invalid';
-      console.log(`   ❌ INVALID: ${result.errors.join(', ')}`);
     } else if (result.warnings.length > 0) {
-      console.log(`   ⚠️  WARNINGS: ${result.warnings.join(', ')}`);
     }
 
     // Attempt insert if valid
@@ -309,9 +297,7 @@ export class TransactionDiagnostic {
       if (!insertResult.success) {
         result.status = 'invalid';
         result.errors.push(`❌ Database insert failed: ${insertResult.error}`);
-        console.log(`   ❌ INSERT FAILED: ${insertResult.error}`);
       } else {
-        console.log(`   ✅ INSERT SUCCESSFUL`);
       }
     }
 
@@ -523,31 +509,19 @@ export class TransactionDiagnostic {
   }
 
   private printSummary() {
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 TRANSACTION IMPORT DIAGNOSTIC SUMMARY');
-    console.log('='.repeat(60));
-    console.log(`Total Transactions Parsed: ${this.summary.totalParsed}`);
-    console.log(`✅ Valid & Imported: ${this.summary.totalValid}`);
-    console.log(`⏭️  Skipped: ${this.summary.totalSkipped}`);
-    console.log(`❌ Failed: ${this.summary.totalFailed}`);
     
     if (Object.keys(this.summary.failureReasons).length > 0) {
-      console.log('\n🔍 Failure Breakdown:');
       Object.entries(this.summary.failureReasons)
         .sort((a, b) => b[1] - a[1])
         .forEach(([reason, count]) => {
-          console.log(`   ${reason}: ${count}`);
         });
     }
     
     if (this.summary.recommendations.length > 0) {
-      console.log('\n💡 Recommendations:');
       this.summary.recommendations.forEach(rec => {
-        console.log(`   ${rec}`);
       });
     }
     
-    console.log('\n' + '='.repeat(60));
   }
 }
 

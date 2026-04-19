@@ -42,7 +42,7 @@ export function BudgetActionMenu({
         {onEdit && onDelete && <DropdownMenuSeparator />}
         {onDelete && (
           <DropdownMenuItem
-            className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+            className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-red-900/20"
             onClick={onDelete}
           >
             <Trash2 className="h-4 w-4 mr-2" />

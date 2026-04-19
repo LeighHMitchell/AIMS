@@ -32,8 +32,8 @@ const VALIDATION_EVENT_CONFIG: Record<ValidationEventType, {
   },
   rejected: {
     icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
     label: 'Rejected',
   },
   more_info_requested: {
@@ -86,8 +86,8 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-sm text-red-700">Failed to load recency data: {error}</p>
+      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+        <p className="text-body text-destructive">Failed to load recency data: {error}</p>
       </div>
     );
   }
@@ -102,8 +102,8 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <Plus className="h-4 w-4 text-slate-600" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <Plus className="h-4 w-4 text-muted-foreground" />
               Last Activity Created
             </CardTitle>
           </CardHeader>
@@ -111,7 +111,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastCreated ? (
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <a href={`/activities/new?id=${lastCreated.id}`} className="font-medium text-slate-900 leading-snug hover:text-primary hover:underline" title={lastCreated.title}>
+                  <a href={`/activities/new?id=${lastCreated.id}`} className="font-medium text-foreground leading-snug hover:text-primary hover:underline" title={lastCreated.title}>
                     {lastCreated.title}
                     {lastCreated.iatiIdentifier && (
                       <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastCreated.iatiIdentifier}</code></>
@@ -122,7 +122,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 shrink-0"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
                       >
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
@@ -132,7 +132,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                         <Pencil className="h-3.5 w-3.5 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { window.location.href = `/activities/${lastCreated.id}`; }}>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { window.location.href = `/activities/${lastCreated.id}`; }}>
                         <Trash2 className="h-3.5 w-3.5 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -140,7 +140,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </DropdownMenu>
                 </div>
                 {lastCreated.creatorProfile && (
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-helper text-muted-foreground">
                     <span>{lastCreated.creatorProfile.name}</span>
                     {lastCreated.creatorProfile.jobTitle && (
                       <span> · {lastCreated.creatorProfile.jobTitle}</span>
@@ -151,14 +151,14 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </div>
                 )}
                 <p
-                  className="text-xs text-slate-500 mt-1.5"
+                  className="text-helper text-muted-foreground mt-1.5"
                   title={formatTimestamp(lastCreated.timestamp).absolute}
                 >
                   {formatTimestamp(lastCreated.timestamp).relative}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-slate-500 italic">No activities created yet</p>
+              <p className="text-body text-muted-foreground italic">No activities created yet</p>
             )}
           </CardContent>
         </Card>
@@ -168,8 +168,8 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <Pencil className="h-4 w-4 text-slate-500" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-muted-foreground" />
               Last Activity Edited
             </CardTitle>
           </CardHeader>
@@ -177,7 +177,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastEdited ? (
               <>
                 <div className="flex items-start justify-between gap-2">
-                  <a href={`/activities/new?id=${lastEdited.id}`} className="font-medium text-slate-900 leading-snug hover:text-primary hover:underline" title={lastEdited.title}>
+                  <a href={`/activities/new?id=${lastEdited.id}`} className="font-medium text-foreground leading-snug hover:text-primary hover:underline" title={lastEdited.title}>
                     {lastEdited.title}
                     {lastEdited.iatiIdentifier && (
                       <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastEdited.iatiIdentifier}</code></>
@@ -188,7 +188,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 shrink-0"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
                       >
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
@@ -198,7 +198,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                         <Pencil className="h-3.5 w-3.5 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { window.location.href = `/activities/${lastEdited.id}`; }}>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { window.location.href = `/activities/${lastEdited.id}`; }}>
                         <Trash2 className="h-3.5 w-3.5 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -206,7 +206,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </DropdownMenu>
                 </div>
                 {/* Editor details */}
-                <div className="mt-2 text-xs text-slate-500">
+                <div className="mt-2 text-helper text-muted-foreground">
                   {lastEdited.editedByYou ? (
                     <span>Edited by you</span>
                   ) : (
@@ -224,14 +224,14 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   )}
                 </div>
                 <p
-                  className="text-xs text-slate-500 mt-1"
+                  className="text-helper text-muted-foreground mt-1"
                   title={formatTimestamp(lastEdited.timestamp).absolute}
                 >
                   {formatTimestamp(lastEdited.timestamp).relative}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-slate-500 italic">No activities edited yet</p>
+              <p className="text-body text-muted-foreground italic">No activities edited yet</p>
             )}
           </CardContent>
         </Card>
@@ -241,8 +241,8 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-slate-600" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
               Last Activity Validated
             </CardTitle>
           </CardHeader>
@@ -250,14 +250,14 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastValidation ? (
               <>
                 <div className="flex items-start gap-2">
-                  <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="font-medium text-slate-900 leading-snug flex-1 hover:text-primary hover:underline" title={lastValidation.activityTitle}>
+                  <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="font-medium text-foreground leading-snug flex-1 hover:text-primary hover:underline" title={lastValidation.activityTitle}>
                     {lastValidation.activityTitle}
                   </a>
                   <div className="flex items-center gap-1 shrink-0">
                     {(() => {
                       const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
                       return (
-                        <Badge className={`text-xs ${config.bgColor} ${config.color} border-0`}>
+                        <Badge className={`text-helper ${config.bgColor} ${config.color} border-0`}>
                           {config.label}
                         </Badge>
                       );
@@ -267,7 +267,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 shrink-0"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
                         >
                           <MoreVertical className="h-3.5 w-3.5" />
                         </Button>
@@ -277,7 +277,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                           <Pencil className="h-3.5 w-3.5 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { window.location.href = `/activities/${lastValidation.activityId}`; }}>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { window.location.href = `/activities/${lastValidation.activityId}`; }}>
                           <Trash2 className="h-3.5 w-3.5 mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -291,24 +291,24 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </code>
                 )}
                 {lastValidation.validatorName && (
-                  <p className="text-xs text-slate-500 mt-1.5">
+                  <p className="text-helper text-muted-foreground mt-1.5">
                     by <span>{lastValidation.validatorName}</span>
                   </p>
                 )}
                 {lastValidation.rejectionReason && (
-                  <p className="text-xs text-slate-500 mt-1 italic line-clamp-2">
+                  <p className="text-helper text-muted-foreground mt-1 italic line-clamp-2">
                     &ldquo;{lastValidation.rejectionReason}&rdquo;
                   </p>
                 )}
                 <p
-                  className="text-xs text-slate-500 mt-1"
+                  className="text-helper text-muted-foreground mt-1"
                   title={formatTimestamp(lastValidation.timestamp).absolute}
                 >
                   {formatTimestamp(lastValidation.timestamp).relative}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-slate-500 italic">No validation events yet</p>
+              <p className="text-body text-muted-foreground italic">No validation events yet</p>
             )}
           </CardContent>
         </Card>

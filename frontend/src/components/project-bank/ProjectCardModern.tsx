@@ -108,7 +108,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
               </button>
             </span>
           </h2>
-          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             {project.region && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
@@ -134,7 +134,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
         </div>
 
         {project.description && (
-          <p className="text-sm line-clamp-2 mb-4 text-muted-foreground">
+          <p className="text-body line-clamp-2 mb-4 text-muted-foreground">
             {project.description}
           </p>
         )}
@@ -144,7 +144,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Estimated Cost
             </p>
-            <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+            <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
               <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
               <span>{formatCurrency(project.estimated_cost)}</span>
             </div>
@@ -153,7 +153,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Funding Gap
             </p>
-            <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+            <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
               <TrendingUp className="w-4 h-4" style={{ color: colors.coolSteel }} />
               <span>{formatCurrency(project.funding_gap)}</span>
             </div>
@@ -184,7 +184,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Ministry
             </p>
-            <p className="text-xs font-medium truncate max-w-[180px]" style={{ color: colors.blueSlate }}>
+            <p className="text-helper font-medium truncate max-w-[180px]" style={{ color: colors.blueSlate }}>
               {project.nominating_ministry || 'Not specified'}
             </p>
           </div>
@@ -192,7 +192,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Score
             </p>
-            <p className="text-sm font-bold" style={{ color: colors.blueSlate }}>
+            <p className="text-body font-bold" style={{ color: colors.blueSlate }}>
               {project.firr != null ? `${project.firr.toFixed(1)}%` : '—'}
             </p>
           </div>

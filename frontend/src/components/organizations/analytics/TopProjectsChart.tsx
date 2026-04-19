@@ -55,9 +55,9 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
 
       return (
         <div className="bg-slate-900 text-white p-4 rounded-lg shadow-lg max-w-xs">
-          <p className="font-semibold mb-2 text-sm">{project?.title || label}</p>
+          <p className="font-semibold mb-2 text-body">{project?.title || label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex justify-between gap-4 text-xs">
+            <div key={index} className="flex justify-between gap-4 text-helper">
               <span style={{ color: entry.color }}>{entry.name}:</span>
               <span className="font-medium">{formatCurrency(entry.value)}</span>
             </div>
@@ -99,7 +99,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
                   opacity: isHidden ? 0.5 : 1
                 }}
               />
-              <span className={`text-sm ${isHidden ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
+              <span className={`text-body ${isHidden ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>
                 {entry.value}
               </span>
             </div>
@@ -111,14 +111,14 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
 
   if (projects.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Top 10 Projects by Budget
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-96 flex items-center justify-center text-slate-500">
+          <div className="h-96 flex items-center justify-center text-muted-foreground">
             <p>No project data available</p>
           </div>
         </CardContent>
@@ -127,9 +127,9 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Top 10 Projects by Budget
         </CardTitle>
       </CardHeader>

@@ -93,21 +93,21 @@ export function ReadinessValidationWarning({
         </DialogHeader>
 
         {loading ? (
-          <div className="py-8 text-center text-gray-500">
+          <div className="py-8 text-center text-muted-foreground">
             Loading checklist status...
           </div>
         ) : state ? (
           <div className="space-y-4">
             {/* Overall Progress */}
-            <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+            <div className="p-4 bg-muted rounded-lg space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Overall Progress</span>
+                <span className="text-body font-medium text-foreground">Overall Progress</span>
                 <Badge variant={isComplete ? "default" : "secondary"}>
                   {state.overallProgress.percentage}%
                 </Badge>
               </div>
               <Progress value={state.overallProgress.percentage} className="h-2" />
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between text-helper text-muted-foreground">
                 <span>
                   {state.overallProgress.completed + state.overallProgress.not_required} of{' '}
                   {state.overallProgress.total} items
@@ -121,12 +121,12 @@ export function ReadinessValidationWarning({
             {/* Incomplete Stages */}
             {incompleteStages.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">Incomplete Stages:</h4>
+                <h4 className="text-body font-medium text-foreground">Incomplete Stages:</h4>
                 <div className="space-y-1">
                   {incompleteStages.slice(0, 5).map((stage) => (
                     <div 
                       key={stage.id} 
-                      className="flex items-center justify-between p-2 bg-yellow-50 border border-yellow-200 rounded text-sm"
+                      className="flex items-center justify-between p-2 bg-yellow-50 border border-yellow-200 rounded text-body"
                     >
                       <div className="flex items-center gap-2">
                         {stage.signoff ? (
@@ -134,18 +134,18 @@ export function ReadinessValidationWarning({
                         ) : stage.progress.percentage === 100 ? (
                           <Clock className="h-4 w-4 text-blue-600" />
                         ) : (
-                          <Circle className="h-4 w-4 text-gray-400" />
+                          <Circle className="h-4 w-4 text-muted-foreground" />
                         )}
                         <span>{stage.name}</span>
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-helper text-muted-foreground">
                         {stage.progress.percentage}% complete
                         {stage.progress.percentage === 100 && !stage.signoff && ' (needs sign-off)'}
                       </span>
                     </div>
                   ))}
                   {incompleteStages.length > 5 && (
-                    <p className="text-xs text-gray-500 text-center">
+                    <p className="text-helper text-muted-foreground text-center">
                       ...and {incompleteStages.length - 5} more stages
                     </p>
                   )}
@@ -172,7 +172,7 @@ export function ReadinessValidationWarning({
             )}
           </div>
         ) : (
-          <div className="py-4 text-center text-gray-500">
+          <div className="py-4 text-center text-muted-foreground">
             No readiness checklist data available.
           </div>
         )}

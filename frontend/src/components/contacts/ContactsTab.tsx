@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy, Users } from 'lucide-react';
+import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy, Users, CheckSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import ContactForm from './ContactForm';
 import ContactSearchBar from './ContactSearchBar';
 import { PersonCard } from '@/components/rolodex/PersonCard';
@@ -11,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
 import { normalizeContact, deduplicateContacts, areContactsDuplicate } from '@/lib/contact-utils';
 import { apiFetch } from '@/lib/api-fetch';
@@ -77,16 +80,28 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   const [contactsView, setContactsView] = useState<'table' | 'cards'>('table');
   const saveInProgressRef = useRef(false);
   const lastNotifiedCountRef = useRef<number>(-1);
+  // Bulk-select state
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+  const toggleContactSelected = (id: string) => {
+    setSelectedContactIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const exitContactSelectMode = () => {
+    setSelectMode(false);
+    setSelectedContactIds(new Set());
+  };
 
   // Fetch contacts from database
   const fetchContacts = useCallback(async (force = false) => {
     if (!activityId) {
-      console.log('[ContactsTab] No activityId, skipping fetch');
       return null;
     }
 
     try {
-      console.log('[ContactsTab] Fetching contacts for activity:', activityId, force ? '(forced refresh)' : '');
       if (force || isLoading) {
         setIsLoading(true);
       }
@@ -107,7 +122,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       }
       
       const data = await response.json();
-      console.log('[ContactsTab] Fetched contacts:', data?.length || 0, 'contacts');
       setContacts(data || []);
       return data || [];
     } catch (error) {
@@ -128,25 +142,14 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   useEffect(() => {
     // Filter out contacts without IDs - only count actual saved contacts
     const actualContacts = contacts.filter(c => c.id);
-    
-    console.log('[ContactsTab] useEffect - Checking notification conditions:', {
-      hasCallback: !!onContactsChange,
-      isLoading,
-      contactsCount: contacts.length,
-      actualContactsCount: actualContacts.length,
-      lastNotifiedCount: lastNotifiedCountRef.current
-    });
-    
+
     // Only notify if:
     // 1. We have a callback
     // 2. We're not loading
     // 3. The actual contacts count has changed since last notification
     if (onContactsChange && !isLoading && lastNotifiedCountRef.current !== actualContacts.length) {
-      console.log('[ContactsTab] Notifying parent with contacts:', actualContacts.length);
       lastNotifiedCountRef.current = actualContacts.length;
       onContactsChange(actualContacts);
-    } else {
-      console.log('[ContactsTab] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contacts, isLoading]); // Intentionally exclude onContactsChange to prevent infinite loops
@@ -165,7 +168,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     }
 
     try {
-      console.log('[ContactsTab] Saving', newContacts.length, 'contacts to database');
       saveInProgressRef.current = true;
       setIsSaving(true);
       
@@ -185,8 +187,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         throw new Error('Failed to save contacts');
       }
 
-      console.log('[ContactsTab] Save successful, refreshing contacts list');
-      console.log('[ContactsTab] Expected contacts count after save:', newContacts.length);
       
       // Delay to ensure database transaction commits and propagates
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -225,12 +225,9 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
 
     // Add contact directly without showing form
     try {
-      console.log('[ContactsTab] Adding contact from search:', normalized);
       const updatedContacts = [...contacts, normalized];
-      console.log('[ContactsTab] New contacts array length:', updatedContacts.length);
       
       await saveContacts(updatedContacts);
-      console.log('[ContactsTab] Contact added successfully');
     } catch (error) {
       console.error('[ContactsTab] Error adding contact from search:', error);
       // Error handled by saveContacts
@@ -246,18 +243,15 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   // Handle form save
   const handleSave = async (contact: Contact) => {
     try {
-      console.log('[ContactsTab] Saving contact:', contact);
       let updatedContacts: Contact[];
 
       if (editingContact?.id) {
         // Update existing contact
-        console.log('[ContactsTab] Updating existing contact:', editingContact.id);
         updatedContacts = contacts.map(c => 
           c.id === editingContact.id ? { ...contact, id: c.id } : c
         );
       } else {
         // Add new contact
-        console.log('[ContactsTab] Adding new contact to', contacts.length, 'existing contacts');
         
         // Check for duplicates before adding
         const isDuplicate = contacts.some(c => areContactsDuplicate(c, contact));
@@ -269,11 +263,9 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         }
 
         updatedContacts = [...contacts, contact];
-        console.log('[ContactsTab] New contacts array length:', updatedContacts.length);
       }
 
       await saveContacts(updatedContacts);
-      console.log('[ContactsTab] Save complete, closing form');
       setShowForm(false);
       setEditingContact(null);
     } catch (error) {
@@ -288,22 +280,76 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     setShowForm(true);
   };
 
+  // Bulk remove selected contacts
+  const handleBulkDelete = async () => {
+    if (selectedContactIds.size === 0) return;
+    const count = selectedContactIds.size;
+    if (!(await confirm({
+      title: `Remove ${count} contact${count === 1 ? '' : 's'}?`,
+      description: `The selected contact${count === 1 ? '' : 's'} will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: `Remove ${count}`,
+      cancelLabel: 'Keep all',
+    }))) return;
+
+    try {
+      const previousContacts = contacts;
+      const updatedContacts = contacts.filter(c => !selectedContactIds.has(c.id || ''));
+      await saveContacts(updatedContacts);
+      exitContactSelectMode();
+      toast.success(`Removed ${count} contact${count === 1 ? '' : 's'}`, {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await saveContacts(previousContacts);
+              toast.success('Contacts restored');
+            } catch {
+              toast.error("Couldn't restore the contacts. Please add them again manually.");
+            }
+          },
+        },
+      });
+    } catch {
+      toast.error("Couldn't remove the contacts. Please try again in a moment.");
+    }
+  };
+
   // Handle delete contact
   const handleDelete = async (contactId: string) => {
-    if (!(await confirm({ title: 'Delete this contact?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    const snapshot = contacts.find(c => c.id === contactId);
+    const contactName = snapshot
+      ? `${snapshot.firstName || ''} ${snapshot.lastName || ''}`.trim() || 'this contact'
+      : 'this contact';
+    if (!(await confirm({
+      title: 'Remove this contact?',
+      description: `"${contactName}" will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Keep',
+      destructive: true,
+    }))) {
       return;
     }
 
     try {
-      console.log('[ContactsTab] Deleting contact:', contactId);
-      console.log('[ContactsTab] Current contacts count:', contacts.length);
+      const previousContacts = contacts;
       const updatedContacts = contacts.filter(c => c.id !== contactId);
-      console.log('[ContactsTab] After filter contacts count:', updatedContacts.length);
       await saveContacts(updatedContacts);
-      toast.success('Contact deleted successfully');
+      toast.success(`Removed ${contactName}`, snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await saveContacts(previousContacts);
+              toast.success('Contact restored');
+            } catch {
+              toast.error("Couldn't restore the contact. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
     } catch (error) {
       console.error('[ContactsTab] Error deleting contact:', error);
-      toast.error('Failed to delete contact');
+      toast.error("Couldn't remove the contact. Please try again in a moment.");
     }
   };
 
@@ -342,54 +388,54 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     return (
       <div className="space-y-6">
         {/* Skeleton for search/add bar */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-white p-6 rounded-lg border border-border">
           <div className="space-y-4">
-            <div className="h-10 bg-slate-200 rounded animate-pulse"></div>
-            <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
           </div>
         </div>
 
         {/* Skeleton for contacts list */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-white p-6 rounded-lg border border-border">
           <div className="mb-4">
-            <div className="h-7 bg-slate-200 rounded w-64 animate-pulse"></div>
+            <div className="h-7 bg-muted rounded w-64 animate-pulse"></div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+              <div key={i} className="bg-white border border-border rounded-lg p-6 shadow-sm">
                 {/* Header with avatar and actions */}
                 <div className="flex items-start gap-4">
                   {/* Avatar skeleton */}
-                  <div className="w-16 h-16 bg-slate-200 rounded-full animate-pulse flex-shrink-0"></div>
+                  <div className="w-16 h-16 bg-muted rounded-full animate-pulse flex-shrink-0"></div>
                   
                   {/* Name and details */}
                   <div className="flex-1 space-y-2">
                     {/* Name */}
-                    <div className="h-6 bg-slate-200 rounded w-3/4 animate-pulse"></div>
+                    <div className="h-6 bg-muted rounded w-3/4 animate-pulse"></div>
                     {/* Job title and department */}
-                    <div className="h-4 bg-slate-200 rounded w-2/3 animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded w-2/3 animate-pulse"></div>
                     {/* Organization */}
-                    <div className="h-4 bg-slate-200 rounded w-1/2 animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
                   </div>
 
                   {/* Action buttons skeleton */}
                   <div className="flex gap-2">
-                    <div className="h-8 w-8 bg-slate-200 rounded animate-pulse"></div>
-                    <div className="h-8 w-8 bg-slate-200 rounded animate-pulse"></div>
+                    <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                    <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
                   </div>
                 </div>
 
                 {/* Contact info skeleton */}
                 <div className="mt-4 space-y-2">
-                  <div className="h-4 bg-slate-200 rounded w-4/5 animate-pulse"></div>
-                  <div className="h-4 bg-slate-200 rounded w-3/5 animate-pulse"></div>
-                  <div className="h-4 bg-slate-200 rounded w-2/3 animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded w-4/5 animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded w-3/5 animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded w-2/3 animate-pulse"></div>
                 </div>
 
                 {/* Contact type badge skeleton */}
                 <div className="mt-4">
-                  <div className="h-6 bg-slate-200 rounded-full w-24 animate-pulse"></div>
+                  <div className="h-6 bg-muted rounded-full w-24 animate-pulse"></div>
                 </div>
               </div>
             ))}
@@ -403,8 +449,11 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     <div className="space-y-6">
       {/* Search and Add Section */}
       {!readOnly && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Add Contact to Activity</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-xl font-semibold">Add Contact to Activity</h2>
+            <HelpTextTooltip content="Search for an existing contact across the system to link them to this activity. If they're new, click 'Create New' to add them. Contacts are general points-of-contact; the Focal Points tab manages officially-designated roles." />
+          </div>
           <ContactSearchBar
             onSelect={handleSearchSelect}
             onCreateNew={handleCreateNew}
@@ -425,37 +474,72 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       {/* Current Contacts List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">
-            Current Activity Contacts
-            {isSaving && <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">
+              Current Activity Contacts
+              {isSaving && <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
+            </h2>
+            <HelpTextTooltip content="People linked to this specific activity for questions, documentation, or coordination. Duplicate detection prevents adding the same person twice." />
+          </div>
           {contacts.length > 0 && (
-            <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
-              <button
-                type="button"
-                onClick={() => setContactsView('table')}
-                className={`p-1.5 rounded transition-colors ${contactsView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Table view"
-              >
-                <TableIcon className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setContactsView('cards')}
-                className={`p-1.5 rounded transition-colors ${contactsView === 'cards' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Card view"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
+            <div className="flex items-center gap-2">
+              {!readOnly && contactsView === 'table' && (
+                selectMode ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-body text-muted-foreground">
+                      {selectedContactIds.size} selected
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleBulkDelete}
+                      disabled={selectedContactIds.size === 0}
+                    >
+                      Remove selected
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={exitContactSelectMode}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectMode(true)}
+                    className="gap-1.5"
+                  >
+                    <CheckSquare className="h-4 w-4" />
+                    Select
+                  </Button>
+                )
+              )}
+              <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setContactsView('table')}
+                  className={`p-1.5 rounded transition-colors ${contactsView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Table view"
+                >
+                  <TableIcon className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setContactsView('cards'); exitContactSelectMode(); }}
+                  className={`p-1.5 rounded transition-colors ${contactsView === 'cards' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Card view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
 
         {contacts.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
             <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No contacts</h3>
-            <p className="text-muted-foreground">
+            <h3 className="text-base font-medium mb-2">No contacts</h3>
+            <p className="text-body text-muted-foreground">
               {!readOnly ? 'Use the search above to add your first contact.' : 'No contacts have been added to this activity yet.'}
             </p>
           </div>
@@ -463,6 +547,24 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
           <Table>
             <TableHeader>
               <TableRow>
+                {selectMode && (
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={
+                        contacts.length > 0 &&
+                        contacts.every(c => selectedContactIds.has(c.id || ''))
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedContactIds(new Set(contacts.map(c => c.id || '').filter(Boolean)));
+                        } else {
+                          setSelectedContactIds(new Set());
+                        }
+                      }}
+                      aria-label="Select all contacts"
+                    />
+                  </TableHead>
+                )}
                 <TableHead>Name</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Organisation</TableHead>
@@ -479,24 +581,41 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                   : contact.organisation;
 
                 return (
-                  <TableRow key={contact.id || index}>
+                  <TableRow
+                    key={contact.id || index}
+                    className={cn(
+                      selectMode && "cursor-pointer",
+                      selectMode && selectedContactIds.has(contact.id || '') && "bg-muted/50"
+                    )}
+                    onClick={selectMode ? () => toggleContactSelected(contact.id || '') : undefined}
+                  >
+                    {selectMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedContactIds.has(contact.id || '')}
+                          onCheckedChange={() => toggleContactSelected(contact.id || '')}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${[contact.firstName, contact.lastName].filter(Boolean).join(' ')}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 flex-shrink-0">
                           {contact.profilePhoto && (
                             <AvatarImage src={contact.profilePhoto} alt={fullName} />
                           )}
-                          <AvatarFallback className="bg-slate-100 text-xs">
+                          <AvatarFallback className="bg-muted text-helper">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">{fullName || 'Unknown Contact'}</span>
+                        <span className="text-body">{fullName || 'Unknown Contact'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {contact.jobTitle || contact.position || '-'}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {orgDisplay ? (
                         <div className="flex items-center gap-2">
                           <OrganizationLogo
@@ -508,7 +627,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                         </div>
                       ) : '-'}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {contact.email ? (
                         <div className="flex items-center gap-1 group/email">
                           <span>{contact.email}</span>
@@ -531,11 +650,12 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                         <div className="flex gap-1">
                           <button
                             type="button"
-                            onClick={() => handleDelete(contact.id || '')}
-                            className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(contact.id || ''); }}
+                            disabled={selectMode}
+                            className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
                             title="Remove contact"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </button>
                         </div>
                       </TableCell>

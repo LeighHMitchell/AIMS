@@ -308,7 +308,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50')
+        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50')
         .style('opacity', 0)
         .style('pointer-events', 'none')
         .style('min-width', '280px')
@@ -589,10 +589,10 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
 
   if (events.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No activity data available</p>
-          <p className="text-xs mt-2">Start creating activities, transactions, and budgets to see your contribution calendar</p>
+          <p className="text-helper mt-2">Start creating activities, transactions, and budgets to see your contribution calendar</p>
         </div>
       </div>
     )
@@ -604,16 +604,16 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {/* Year Type Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setYearType('calendar')}
               className={cn(
-                'h-7 px-3 text-xs',
+                'h-7 px-3 text-helper',
                 yearType === 'calendar'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Calendar Year
@@ -623,10 +623,10 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
               size="sm"
               onClick={() => setYearType('financial')}
               className={cn(
-                'h-7 px-3 text-xs',
+                'h-7 px-3 text-helper',
                 yearType === 'financial'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Financial Year
@@ -639,7 +639,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
               value={selectedYear?.toString() ?? ''}
               onValueChange={(val) => setSelectedYear(parseInt(val))}
             >
-              <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectTrigger className="w-[140px] h-8 text-helper">
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
               <SelectContent>
@@ -660,7 +660,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       </div>
 
       {/* Intensity Legend */}
-      <div className="flex items-center gap-1 text-xs">
+      <div className="flex items-center gap-1 text-helper">
         {[0, 0.25, 0.5, 0.75, 1.0].map((intensity) => (
           <div
             key={intensity}

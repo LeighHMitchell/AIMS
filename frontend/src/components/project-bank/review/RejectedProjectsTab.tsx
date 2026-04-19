@@ -75,7 +75,7 @@ function RecoverModal({
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 bg-surface-muted rounded-t-lg border-b">
-          <h3 className="text-sm font-semibold">Recover Project</h3>
+          <h3 className="text-body font-semibold">Recover Project</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
@@ -84,7 +84,7 @@ function RecoverModal({
         <div className="px-5 py-4 space-y-4">
           {/* Project info */}
           <div>
-            <p className="text-sm font-medium">{project.name}</p>
+            <p className="text-body font-medium">{project.name}</p>
             <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
               {project.project_code}
             </span>
@@ -92,7 +92,7 @@ function RecoverModal({
 
           {/* Target stage */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Recover to</Label>
+            <Label className="text-helper">Recover to</Label>
             <Select value={targetStage} onValueChange={v => setTargetStage(v as ProjectStage)}>
               <SelectTrigger className="h-9">
                 <SelectValue />
@@ -107,17 +107,17 @@ function RecoverModal({
 
           {/* Optional reason */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Notes (optional)</Label>
+            <Label className="text-helper">Notes (optional)</Label>
             <Textarea
               placeholder="Reason for recovery…"
               value={reason}
               onChange={e => setReason(e.target.value)}
               rows={3}
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-helper text-destructive">{error}</p>}
         </div>
 
         {/* Footer */}
@@ -143,7 +143,7 @@ function CooldownBadge({ project }: { project: RejectedProject }) {
   const rejectedDate = project.fs1_rejected_at || project.rejected_at
   const { blocked, cooldownEnds } = checkCooldownViolation(rejectedDate)
 
-  if (!cooldownEnds) return <span className="text-xs text-muted-foreground">—</span>
+  if (!cooldownEnds) return <span className="text-helper text-muted-foreground">—</span>
 
   if (blocked) {
     return (
@@ -173,7 +173,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: RejectedProject) => (
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{p.name}</p>
+          <p className="text-body font-medium truncate">{p.name}</p>
           <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
         </div>
       </div>
@@ -185,7 +185,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: RejectedProject) => (
       <div>
         <span>{p.nominating_ministry}</span>
-        {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
+        {p.implementing_agency && <p className="text-helper text-muted-foreground">{p.implementing_agency}</p>}
       </div>
     ),
   },
@@ -195,7 +195,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: RejectedProject) => (
       <div>
         <span>{p.sector}</span>
-        {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
+        {p.sub_sector && <p className="text-helper text-muted-foreground">{p.sub_sector}</p>}
       </div>
     ),
   },
@@ -224,7 +224,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     key: "rejection_reason",
     label: "Reason / Comments",
     render: (p: RejectedProject) => (
-      <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+      <p className="text-helper text-muted-foreground truncate max-w-[200px]">
         {p.rejection_reason || p.review_comments || "—"}
       </p>
     ),
@@ -234,7 +234,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     label: "Rejected",
     render: (p: RejectedProject) => {
       const date = p.fs1_rejected_at || p.rejected_at
-      return <span className="text-xs">{date ? new Date(date).toLocaleDateString() : "—"}</span>
+      return <span className="text-helper">{date ? new Date(date).toLocaleDateString() : "—"}</span>
     },
   },
   {
@@ -295,7 +295,7 @@ export function RejectedProjectsTab() {
     <>
       <FilterBar>
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-          <Label className="text-xs text-muted-foreground">Search</Label>
+          <Label className="text-helper text-muted-foreground">Search</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -307,7 +307,7 @@ export function RejectedProjectsTab() {
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <Label className="text-helper text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
@@ -326,7 +326,7 @@ export function RejectedProjectsTab() {
           </Select>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Label className="text-helper text-muted-foreground">Region</Label>
           <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[160px] h-9">
               <SelectValue placeholder="All" />
@@ -342,7 +342,7 @@ export function RejectedProjectsTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("card")}
-            className={`rounded-r-none h-9 ${viewMode === "card" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-r-none h-9 ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -350,7 +350,7 @@ export function RejectedProjectsTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("table")}
-            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <Table2 className="h-4 w-4" />
           </Button>
@@ -361,7 +361,7 @@ export function RejectedProjectsTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredProjects.length === 0 ? (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-              <p className="text-sm">No rejected projects</p>
+              <p className="text-body">No rejected projects</p>
             </div>
           ) : filteredProjects.map(p => {
             const rejectedDate = p.fs1_rejected_at || p.rejected_at
@@ -372,7 +372,7 @@ export function RejectedProjectsTab() {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-body font-medium truncate">{p.name}</p>
                     <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
                   </div>
                   <div className="mt-1">
@@ -384,7 +384,7 @@ export function RejectedProjectsTab() {
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="mt-3 grid grid-cols-2 gap-2 text-helper">
                   <div className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Building2 className="h-3 w-3 shrink-0" />
@@ -409,7 +409,7 @@ export function RejectedProjectsTab() {
                   )}
                 </div>
                 {(p.rejection_reason || p.review_comments) && (
-                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                  <p className="mt-2 text-helper text-muted-foreground line-clamp-2">
                     {p.rejection_reason || p.review_comments}
                   </p>
                 )}
@@ -418,7 +418,7 @@ export function RejectedProjectsTab() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs gap-1"
+                    className="h-7 text-helper gap-1"
                     onClick={() => setRecoverProject(p)}
                   >
                     <RotateCcw className="h-3 w-3" />
@@ -443,7 +443,7 @@ export function RejectedProjectsTab() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs gap-1"
+                  className="h-7 text-helper gap-1"
                   onClick={e => { e.stopPropagation(); setRecoverProject(p) }}
                 >
                   <RotateCcw className="h-3 w-3" />

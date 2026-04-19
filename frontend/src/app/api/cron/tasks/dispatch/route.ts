@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date().toISOString();
-    console.log('[Cron Dispatch] Running at', now);
 
     // Find scheduled tasks ready to dispatch
     const { data: scheduledTasks, error: fetchError } = await supabase
@@ -42,7 +41,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (!scheduledTasks || scheduledTasks.length === 0) {
-      console.log('[Cron Dispatch] No tasks to dispatch');
       return NextResponse.json({
         success: true,
         message: 'No tasks to dispatch',
@@ -50,7 +48,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Cron Dispatch] Found', scheduledTasks.length, 'tasks to dispatch');
 
     let dispatched = 0;
     let failed = 0;
@@ -166,7 +163,6 @@ export async function GET(request: NextRequest) {
         });
 
         dispatched++;
-        console.log('[Cron Dispatch] Dispatched task:', task.id, 'to', assignments?.length || 0, 'assignees');
       } catch (err) {
         failed++;
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -175,7 +171,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[Cron Dispatch] Complete. Dispatched:', dispatched, 'Failed:', failed);
 
     return NextResponse.json({
       success: true,

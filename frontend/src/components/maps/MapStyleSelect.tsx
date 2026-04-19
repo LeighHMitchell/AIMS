@@ -14,7 +14,7 @@ interface MapStyleSelectProps {
 
 function CodeChip({ code }: { code: string }) {
   return (
-    <span className="inline-flex items-center justify-center font-mono text-[10px] leading-none bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+    <span className="inline-flex items-center justify-center font-mono text-[10px] leading-none bg-muted text-foreground px-1.5 py-0.5 rounded">
       {code}
     </span>
   );
@@ -33,7 +33,7 @@ export function MapStyleSelect({
       <Select value={value} onValueChange={(v) => onChange(v as MapStyleKey)}>
         <SelectTrigger
           className={cn(
-            'w-[170px] bg-white shadow-md border-gray-300 text-xs h-9',
+            'w-[170px] bg-white shadow-md border-input text-helper h-9',
             triggerClassName
           )}
         >

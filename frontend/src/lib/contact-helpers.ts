@@ -75,7 +75,6 @@ export async function getOrCreateContact(
   }
 
   const displayName = params.email || `${params.firstName || ''} ${params.lastName || ''}`.trim() || 'Unknown';
-  console.log(`[Contact Helper] Resolving contact: "${displayName}"`);
 
   try {
     // Step 1: Try email match
@@ -94,7 +93,6 @@ export async function getOrCreateContact(
         ) as any;
 
         if (!error && emailMatch) {
-          console.log(`[Contact Helper] Found by email: ${displayName} (ID: ${emailMatch.id})`);
           return emailMatch.id;
         }
       } catch (err) {
@@ -119,7 +117,6 @@ export async function getOrCreateContact(
         ) as any;
 
         if (!error && nameMatch) {
-          console.log(`[Contact Helper] Found by name: ${displayName} (ID: ${nameMatch.id})`);
           return nameMatch.id;
         }
       } catch (err) {
@@ -128,7 +125,6 @@ export async function getOrCreateContact(
     }
 
     // Step 3: Create new contact
-    console.log(`[Contact Helper] Creating new contact: "${displayName}"`);
 
     const newContactData: Record<string, any> = {
       title: params.title || null,
@@ -170,7 +166,6 @@ export async function getOrCreateContact(
       if (createError) {
         // Handle unique constraint violation (email already exists from concurrent insert)
         if (createError.code === '23505' && params.email) {
-          console.log('[Contact Helper] Contact already exists (concurrent insert), looking up...');
           const { data: existing } = await supabase
             .from('contacts')
             .select('id')
@@ -178,7 +173,6 @@ export async function getOrCreateContact(
             .maybeSingle();
 
           if (existing) {
-            console.log(`[Contact Helper] Found existing contact after conflict: ${existing.id}`);
             return existing.id;
           }
         }
@@ -187,7 +181,6 @@ export async function getOrCreateContact(
       }
 
       if (created) {
-        console.log(`[Contact Helper] Created contact: "${displayName}" (ID: ${created.id})`);
         return created.id;
       }
     } catch (createErr) {
@@ -227,7 +220,6 @@ export async function prefetchContacts(
     .map(c => c.email?.trim().toLowerCase())
     .filter((e): e is string => !!e && e.length > 0);
 
-  console.log(`[Contact Prefetch] ${contactParams.length} total params -> ${uniqueContacts.length} unique (${allEmails.length} with emails)`);
 
   const storeInCache = (params: ContactParams, id: string) => {
     const key = contactDedupKey(params);
@@ -258,7 +250,6 @@ export async function prefetchContacts(
             if (matchId) storeInCache(param, matchId);
           }
         }
-        console.log(`[Contact Prefetch] Matched ${emailMatches.length} contacts by email`);
       }
     } catch (err) {
       console.warn('[Contact Prefetch] Batch email lookup failed:', err);
@@ -308,13 +299,11 @@ export async function prefetchContacts(
   });
 
   if (stillUnresolved.length > 0) {
-    console.log(`[Contact Prefetch] Creating ${stillUnresolved.length} new contacts...`);
     for (const param of stillUnresolved) {
       const contactId = await getOrCreateContact(supabase, param);
       if (contactId) storeInCache(param, contactId);
     }
   }
 
-  console.log(`[Contact Prefetch] Resolved ${cache.size} cache entries total`);
   return cache;
 }

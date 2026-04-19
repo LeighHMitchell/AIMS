@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS-SIMPLE] Database URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...');
 
     // Get accurate total count for pagination
     let count: number | null = null;
@@ -32,7 +31,6 @@ export async function GET(request: NextRequest) {
       
       if (!countError && totalCount !== null) {
         count = totalCount;
-        console.log('[AIMS-SIMPLE] Total activity count:', count);
       } else {
         console.error('[AIMS-SIMPLE] Count error:', countError);
       }
@@ -44,7 +42,6 @@ export async function GET(request: NextRequest) {
     const includeImages = searchParams.get('includeImages') === 'true';
     
     // Use the simplest possible query without any joins
-    console.log('[AIMS-SIMPLE] Executing simple query without joins...', includeImages ? 'including images for card view' : 'excluding images for performance');
     const selectFields = `
         id,
         other_identifier,
@@ -121,7 +118,6 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log(`[AIMS-SIMPLE] Fetched ${data?.length || 0} activities (page ${page})`);
 
     // Fetch budget data and transaction summaries for each activity
     const activityIds = data?.map((a: any) => a.id) || [];
@@ -161,7 +157,6 @@ export async function GET(request: NextRequest) {
           .in('activity_id', activityIds)
       ]);
 
-      console.log(`[AIMS-SIMPLE] Parallel queries completed in ${Date.now() - startTime}ms`);
 
       // Process budget results
       if (!budgetResult.error && budgetResult.data) {

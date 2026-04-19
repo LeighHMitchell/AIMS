@@ -441,7 +441,7 @@ export function PBSectorsManagement() {
           </div>
 
           {/* Header Row */}
-          <div className="flex items-center gap-4 py-2 px-3 bg-muted/50 border-b font-medium text-sm">
+          <div className="flex items-center gap-4 py-2 px-3 bg-muted/50 border-b font-medium text-body">
             <span className="w-5" />
             <span className="w-[80px]">Code</span>
             <span className="flex-1">Name</span>
@@ -456,7 +456,7 @@ export function PBSectorsManagement() {
               <div className="py-12 text-center text-muted-foreground">
                 <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No sectors found</p>
-                <p className="text-sm mt-1">
+                <p className="text-body mt-1">
                   {searchQuery
                     ? "Try a different search term"
                     : 'Click "Add Sector" to create one'}
@@ -500,11 +500,11 @@ export function PBSectorsManagement() {
                         </span>
                       </span>
 
-                      <span className="text-sm font-medium flex-1 min-w-0">
+                      <span className="text-body font-medium flex-1 min-w-0">
                         {sector.name}
                       </span>
 
-                      <span className="w-[100px] flex-shrink-0 text-sm text-muted-foreground">
+                      <span className="w-[100px] flex-shrink-0 text-body text-muted-foreground">
                         {sector.sub_sectors.length} sub-sector
                         {sector.sub_sectors.length !== 1 ? "s" : ""}
                       </span>
@@ -534,7 +534,7 @@ export function PBSectorsManagement() {
                             <DropdownMenuItem
                               onClick={() => handleEditSector(sector)}
                             >
-                              <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                              <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                               Edit Sector
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -545,9 +545,9 @@ export function PBSectorsManagement() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDeleteSector(sector)}
-                              className="text-red-600"
+                              className="text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                              <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                               Deactivate Sector
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -565,7 +565,7 @@ export function PBSectorsManagement() {
                             style={{ paddingLeft: "56px" }}
                           >
                             <span className="w-[80px] flex-shrink-0" />
-                            <span className="text-sm flex-1 min-w-0 text-muted-foreground">
+                            <span className="text-body flex-1 min-w-0 text-muted-foreground">
                               {ss.name}
                             </span>
                             <span className="w-[100px] flex-shrink-0" />
@@ -585,16 +585,16 @@ export function PBSectorsManagement() {
                                   <DropdownMenuItem
                                     onClick={() => handleEditSubSector(ss)}
                                   >
-                                    <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                                     Edit Sub-sector
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       handleDeleteSubSector(ss, sector.id)
                                     }
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                                    <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                                     Remove Sub-sector
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -611,7 +611,7 @@ export function PBSectorsManagement() {
           </div>
 
           {/* Count */}
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-body text-muted-foreground">
             {sectors.length} sectors,{" "}
             {sectors.reduce((sum, s) => sum + s.sub_sectors.length, 0)}{" "}
             sub-sectors total
@@ -641,6 +641,7 @@ export function PBSectorsManagement() {
               </Label>
               <Input
                 id="sector-code"
+                className="font-mono"
                 value={sectorForm.code}
                 onChange={(e) =>
                   setSectorForm({ ...sectorForm, code: e.target.value })
@@ -648,7 +649,7 @@ export function PBSectorsManagement() {
                 placeholder="e.g., TRAN, ENRG, HLTH"
                 maxLength={8}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 Short uppercase code (auto-uppercased on save)
               </p>
             </div>
@@ -748,7 +749,7 @@ export function PBSectorsManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-destructive" />
               {deleteTarget?.type === "sector"
                 ? "Deactivate Sector"
                 : "Remove Sub-sector"}

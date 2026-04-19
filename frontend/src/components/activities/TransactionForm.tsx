@@ -16,6 +16,7 @@ import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 import { format } from "date-fns";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
   Transaction, 
   TransactionType, 
@@ -145,7 +146,6 @@ export default function TransactionForm({
   // Debug logging to see what transaction data we're getting
   useEffect(() => {
     if (transaction) {
-      console.log('[TransactionForm] Editing transaction:', transaction);
     }
   }, [transaction]);
   
@@ -188,7 +188,6 @@ export default function TransactionForm({
       if (result.success && result.exchange_rate) {
         setExchangeRateUsed(result.exchange_rate);
         setRateError(null);
-        console.log(`[TransactionForm] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
       } else {
         setRateError(result.error || 'Failed to fetch exchange rate');
         setExchangeRateUsed(null);
@@ -601,7 +600,7 @@ export default function TransactionForm({
   const renderFieldIcon = (field: string) => {
     if (fieldStatus[field] === "saving") return <Loader2 className="inline h-4 w-4 text-orange-500 animate-spin ml-2" />;
     if (fieldStatus[field] === "saved") return <CheckCircle className="inline h-4 w-4 text-[hsl(var(--success-icon))] ml-2" />;
-    if (fieldStatus[field] === "error") return <AlertTriangle className="inline h-4 w-4 text-red-500 ml-2" />;
+    if (fieldStatus[field] === "error") return <AlertTriangle className="inline h-4 w-4 text-destructive ml-2" />;
     return null;
   };
 
@@ -691,8 +690,12 @@ export default function TransactionForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Transaction Type */}
             <div className="space-y-2">
-              <Label htmlFor="transaction_type">
+              <Label htmlFor="transaction_type" className="flex items-center gap-2">
                 Transaction Type <RequiredDot />
+                <HelpTextTooltip>
+                  What kind of financial movement this is — e.g. a commitment (money promised),
+                  disbursement (money sent), expenditure (money spent), or incoming funds received.
+                </HelpTextTooltip>
               </Label>
               <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
                 <PopoverTrigger asChild>
@@ -712,7 +715,7 @@ export default function TransactionForm({
                           <span>{selected.label}</span>
                         </span>
                       ) : (
-                        <span className="text-gray-400">Select transaction type...</span>
+                        <span className="text-muted-foreground">Select transaction type...</span>
                       );
                     })()}
                   </Button>
@@ -773,7 +776,7 @@ export default function TransactionForm({
                 Transaction Date <RequiredDot />
               </Label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="transaction_date"
                   type="date"
@@ -797,7 +800,7 @@ export default function TransactionForm({
                 Value <RequiredDot />
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="value"
                   type="number"
@@ -851,7 +854,7 @@ export default function TransactionForm({
               <Label htmlFor="status">
                 Transaction Status <RequiredDot />
               </Label>
-              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-gray-100">
+              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-muted">
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     {formData.status === 'actual' ? '1' : '2'}
@@ -865,8 +868,12 @@ export default function TransactionForm({
 
             {/* Value Date (optional) */}
             <div className="space-y-2">
-              <Label htmlFor="value_date">
+              <Label htmlFor="value_date" className="flex items-center gap-2">
                 Value Date
+                <HelpTextTooltip>
+                  The date used for currency conversion. Usually the same as the transaction
+                  date, but can differ if the exchange rate was locked in earlier.
+                </HelpTextTooltip>
               </Label>
               <Input
                 id="value_date"
@@ -888,12 +895,12 @@ export default function TransactionForm({
             <Card className="border border-green-200 bg-green-50/50">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2">
+                  <CardTitle className="text-body flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     USD Conversion
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       {exchangeRateManual ? 'Manual' : 'API Rate'}
                     </span>
                     <Switch 
@@ -913,7 +920,7 @@ export default function TransactionForm({
                     )}
                   </div>
                 </div>
-                <CardDescription className="text-xs">
+                <CardDescription className="text-helper">
                   {exchangeRateManual 
                     ? 'Enter your own exchange rate below'
                     : 'Exchange rate is automatically fetched based on value date'
@@ -950,7 +957,7 @@ export default function TransactionForm({
                           setExchangeRateUsed(isNaN(value) ? null : value);
                         }}
                         disabled={!exchangeRateManual || isLoadingRate}
-                        className={!exchangeRateManual ? 'bg-gray-100' : ''}
+                        className={!exchangeRateManual ? 'bg-muted' : ''}
                         placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
                       />
                       {isLoadingRate && (
@@ -958,26 +965,26 @@ export default function TransactionForm({
                       )}
                     </div>
                     {exchangeRateUsed && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         1 {formData.currency} = {exchangeRateUsed.toFixed(6)} USD
                       </p>
                     )}
                     {rateError && (
-                      <p className="text-xs text-red-500">{rateError}</p>
+                      <p className="text-helper text-destructive">{rateError}</p>
                     )}
                   </div>
 
                   {/* Calculated USD Value */}
                   <div className="space-y-2">
                     <Label>USD Value</Label>
-                    <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
                       {calculatedUsdValue !== null ? (
                         <>$ {calculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-helper text-muted-foreground">
                       Calculated from {formData.currency} {formData.value?.toLocaleString() || 0}
                     </p>
                   </div>
@@ -990,18 +997,18 @@ export default function TransactionForm({
 
           {/* Organizations Section */}
           <div className="space-y-8"> {/* Add more whitespace between cards */}
-            <h3 className="text-sm font-semibold flex items-center gap-2">
+            <h3 className="text-body font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Organizations
             </h3>
             
             {/* Provider Organization */}
-            <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-gray-50'}`}>
-              <CardHeader className="pb-3 border-b border-gray-200">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-muted'}`}>
+              <CardHeader className="pb-3 border-b border-border">
+                <CardTitle className="text-body flex items-center gap-2">
                   Provider Organization
                   {!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-600 font-normal">
+                    <Badge variant="outline" className="text-helper bg-blue-50 border-blue-200 text-blue-600 font-normal">
                       Auto-filled
                     </Badge>
                   )}
@@ -1027,12 +1034,12 @@ export default function TransactionForm({
             </Card>
 
             {/* Receiver Organization */}
-            <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-gray-50'}`}>
-              <CardHeader className="pb-3 border-b border-gray-200">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-muted'}`}>
+              <CardHeader className="pb-3 border-b border-border">
+                <CardTitle className="text-body flex items-center gap-2">
                   Receiver Organization
                   {typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId && (
-                    <Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] font-normal">
+                    <Badge variant="outline" className="text-helper bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] font-normal">
                       Auto-filled
                     </Badge>
                   )}
@@ -1063,14 +1070,13 @@ export default function TransactionForm({
             {/* Provider Activity */}
             <Card className="border-dashed bg-blue-50">
               <CardHeader className="pb-3 border-b border-blue-200">
-                <CardTitle className="text-sm">Provider Activity</CardTitle>
-                <CardDescription className="text-xs">Link to the activity providing these funds</CardDescription>
+                <CardTitle className="text-body">Provider Activity</CardTitle>
+                <CardDescription className="text-helper">Link to the activity providing these funds</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ActivityCombobox
                   value={formData.provider_activity_uuid || ''}
                   onValueChange={async (activityId) => {
-                    console.log('[TransactionForm] Provider activity selected:', activityId);
                     setFormData(prev => ({ ...prev, provider_activity_uuid: activityId }));
                     
                     if (activityId) {
@@ -1078,7 +1084,6 @@ export default function TransactionForm({
                         const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
-                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
                           setFormData(prev => ({ 
                             ...prev, 
                             provider_org_activity_id: activity.iati_identifier || '' 
@@ -1099,7 +1104,7 @@ export default function TransactionForm({
                   fallbackIatiId={formData.provider_org_activity_id}
                 />
                 {formData.provider_org_activity_id && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-helper text-muted-foreground">
                     IATI ID: {formData.provider_org_activity_id}
                   </p>
                 )}
@@ -1110,14 +1115,13 @@ export default function TransactionForm({
             {/* Receiver Activity */}
             <Card className="border-dashed bg-blue-50">
               <CardHeader className="pb-3 border-b border-blue-200">
-                <CardTitle className="text-sm">Receiver Activity</CardTitle>
-                <CardDescription className="text-xs">Link to the activity receiving these funds</CardDescription>
+                <CardTitle className="text-body">Receiver Activity</CardTitle>
+                <CardDescription className="text-helper">Link to the activity receiving these funds</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ActivityCombobox
                   value={formData.receiver_activity_uuid || ''}
                   onValueChange={async (activityId) => {
-                    console.log('[TransactionForm] Receiver activity selected:', activityId);
                     setFormData(prev => ({ ...prev, receiver_activity_uuid: activityId }));
                     
                     if (activityId) {
@@ -1125,7 +1129,6 @@ export default function TransactionForm({
                         const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
-                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
                           setFormData(prev => ({ 
                             ...prev, 
                             receiver_org_activity_id: activity.iati_identifier || '' 
@@ -1146,7 +1149,7 @@ export default function TransactionForm({
                   fallbackIatiId={formData.receiver_org_activity_id}
                 />
                 {formData.receiver_org_activity_id && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-helper text-muted-foreground">
                     IATI ID: {formData.receiver_org_activity_id}
                   </p>
                 )}
@@ -1178,7 +1181,7 @@ export default function TransactionForm({
           {/* Advanced Fields */}
           <div
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+            className="flex items-center justify-center gap-2 cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             <span>Advanced Fields</span>
             {showAdvanced ? (
@@ -1232,7 +1235,7 @@ export default function TransactionForm({
                         await saveField("is_humanitarian", formData.is_humanitarian);
                       }
                     }}
-                    className="rounded border-gray-300"
+                    className="rounded border-input"
                   />
                   <Label htmlFor="is_humanitarian" className="font-normal cursor-pointer">
                     This is a humanitarian transaction
@@ -1247,6 +1250,7 @@ export default function TransactionForm({
                   </Label>
                   <Input
                     id="sector_code"
+                    className="font-mono"
                     value={formData.sector_code || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, sector_code: e.target.value }))}
                     onBlur={async (e) => {
@@ -1266,6 +1270,7 @@ export default function TransactionForm({
                   </Label>
                   <Input
                     id="recipient_country_code"
+                    className="font-mono"
                     value={formData.recipient_country_code || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, recipient_country_code: e.target.value }))}
                     onBlur={async (e) => {
@@ -1280,8 +1285,12 @@ export default function TransactionForm({
 
                 {/* Flow Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="flow_type">
+                  <Label htmlFor="flow_type" className="flex items-center gap-2">
                     Flow Type
+                    <HelpTextTooltip>
+                      The broad category the money flows under — e.g. ODA (official
+                      development assistance), private flows, or other official flows.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.flow_type || ''}
@@ -1309,8 +1318,12 @@ export default function TransactionForm({
 
                 {/* Finance Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="finance_type">
+                  <Label htmlFor="finance_type" className="flex items-center gap-2">
                     Finance Type
+                    <HelpTextTooltip>
+                      How the money is provided — e.g. grant (no repayment), loan,
+                      equity, or debt relief.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.finance_type || ''}
@@ -1338,8 +1351,12 @@ export default function TransactionForm({
 
                 {/* Aid Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="aid_type">
+                  <Label htmlFor="aid_type" className="flex items-center gap-2">
                     Aid Type
+                    <HelpTextTooltip>
+                      The delivery mechanism — e.g. budget support, project-type
+                      intervention, technical assistance, or scholarships.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.aid_type || ''}
@@ -1367,8 +1384,12 @@ export default function TransactionForm({
 
                 {/* Tied Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="tied_status">
+                  <Label htmlFor="tied_status" className="flex items-center gap-2">
                     Tied Status
+                    <HelpTextTooltip>
+                      Whether the funds are tied to procurement from specific countries
+                      or organisations (tied), fully open (untied), or partially restricted.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.tied_status || ''}
@@ -1424,9 +1445,9 @@ export default function TransactionForm({
       </Card>
 
       {/* System Information - at bottom */}
-      <Card className="bg-gray-50">
+      <Card className="bg-muted">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-gray-600">System Information</CardTitle>
+          <CardTitle className="text-body text-muted-foreground">System Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1435,7 +1456,7 @@ export default function TransactionForm({
               label="Activity ID"
               value={activityId}
               placeholder="System generated"
-              fieldClassName="bg-white border-gray-200"
+              fieldClassName="bg-white border-border"
               toastMessage="Activity ID copied!"
             />
             
@@ -1445,7 +1466,7 @@ export default function TransactionForm({
                 label="Transaction ID"
                 value={transaction.uuid}
                 placeholder="System generated"
-                fieldClassName="bg-white border-gray-200"
+                fieldClassName="bg-white border-border"
                 toastMessage="Transaction ID copied!"
               />
             )}
@@ -1455,7 +1476,7 @@ export default function TransactionForm({
           <div className="space-y-2">
             <Label htmlFor="transaction_reference_bottom">
               Transaction Reference
-              <span className="text-gray-500 text-xs ml-2">(optional internal reference)</span>
+              <span className="text-muted-foreground text-helper ml-2">(optional internal reference)</span>
             </Label>
             <Input
               id="transaction_reference_bottom"
@@ -1467,7 +1488,7 @@ export default function TransactionForm({
                 }
               }}
               placeholder="Internal reference number"
-              className="bg-white border-gray-200 h-10"
+              className="bg-white border-border h-10 font-mono"
             />
             {renderFieldIcon("transaction_reference")}
           </div>

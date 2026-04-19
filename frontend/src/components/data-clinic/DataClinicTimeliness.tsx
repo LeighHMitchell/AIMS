@@ -212,25 +212,25 @@ export function DataClinicTimeliness() {
     if (!active || !payload || payload.length === 0) return null
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-          <p className="font-semibold text-slate-900 text-sm">
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground text-body">
             {label}
           </p>
         </div>
         <div className="p-2">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
               {payload.map((entry: any, index: number) => (
-                <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                <tr key={index} className="border-b border-border last:border-b-0">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-slate-700 font-medium">{entry.name}</span>
+                    <span className="text-foreground font-medium">{entry.name}</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {entry.value}
                   </td>
                 </tr>
@@ -271,7 +271,7 @@ export function DataClinicTimeliness() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -303,7 +303,7 @@ export function DataClinicTimeliness() {
         </CardHeader>
         <CardContent>
           {chartData.length === 0 ? (
-            <div className="flex items-center justify-center h-96 text-slate-400">
+            <div className="flex items-center justify-center h-96 text-muted-foreground">
               <div className="text-center">
                 <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No activity date data available</p>
@@ -373,7 +373,7 @@ export function DataClinicTimeliness() {
           </CardHeader>
           <CardContent>
             {futureEndDateData.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-slate-400">
+              <div className="flex items-center justify-center h-96 text-muted-foreground">
                 <div className="text-center">
                   <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p className="font-medium">No future end date data available</p>
@@ -403,32 +403,32 @@ export function DataClinicTimeliness() {
                     if (!active || !payload || payload.length === 0) return null
                     const data = payload[0].payload
                     return (
-                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-                          <p className="font-semibold text-slate-900 text-sm">
+                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="bg-muted px-3 py-2 border-b border-border">
+                          <p className="font-semibold text-foreground text-body">
                             Year {data.year}
                           </p>
                         </div>
                         <div className="p-2">
-                          <table className="w-full text-sm">
+                          <table className="w-full text-body">
                             <tbody>
-                              <tr className="border-b border-slate-100">
+                              <tr className="border-b border-border">
                                 <td className="py-1.5 pr-4">
-                                  <span className="text-slate-700 font-medium">Activities</span>
+                                  <span className="text-foreground font-medium">Activities</span>
                                 </td>
-                                <td className="py-1.5 text-right font-semibold text-slate-900">
+                                <td className="py-1.5 text-right font-semibold text-foreground">
                                   {data.count}
                                 </td>
                               </tr>
                               <tr>
                                 <td className="py-1.5 pr-4">
-                                  <span className="text-slate-700 font-medium">Status</span>
+                                  <span className="text-foreground font-medium">Status</span>
                                 </td>
                                 <td className="py-1.5 text-right">
                                   {data.isFuture ? (
                                     <span className="text-orange-600 font-semibold">Future</span>
                                   ) : (
-                                    <span className="text-slate-600">Past/Current</span>
+                                    <span className="text-muted-foreground">Past/Current</span>
                                   )}
                                 </td>
                               </tr>
@@ -463,7 +463,7 @@ export function DataClinicTimeliness() {
           </CardHeader>
           <CardContent>
             {finalisationWithActualEndData.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-slate-400">
+              <div className="flex items-center justify-center h-96 text-muted-foreground">
                 <div className="text-center">
                   <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p className="font-medium">No finalisation stage data available</p>
@@ -493,20 +493,20 @@ export function DataClinicTimeliness() {
                     if (!active || !payload || payload.length === 0) return null
                     const data = payload[0].payload
                     return (
-                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-                          <p className="font-semibold text-slate-900 text-sm">
+                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="bg-muted px-3 py-2 border-b border-border">
+                          <p className="font-semibold text-foreground text-body">
                             Year {data.year}
                           </p>
                         </div>
                         <div className="p-2">
-                          <table className="w-full text-sm">
+                          <table className="w-full text-body">
                             <tbody>
                               <tr>
                                 <td className="py-1.5 pr-4">
-                                  <span className="text-slate-700 font-medium">Finalisation Activities</span>
+                                  <span className="text-foreground font-medium">Finalisation Activities</span>
                                 </td>
-                                <td className="py-1.5 text-right font-semibold text-slate-900">
+                                <td className="py-1.5 text-right font-semibold text-foreground">
                                   {data.count}
                                 </td>
                               </tr>
@@ -542,7 +542,7 @@ export function DataClinicTimeliness() {
           </CardHeader>
           <CardContent>
             {closedWithPlannedEndData.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-slate-400">
+              <div className="flex items-center justify-center h-96 text-muted-foreground">
                 <div className="text-center">
                   <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p className="font-medium">No closed activities data available</p>
@@ -572,20 +572,20 @@ export function DataClinicTimeliness() {
                     if (!active || !payload || payload.length === 0) return null
                     const data = payload[0].payload
                     return (
-                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-                          <p className="font-semibold text-slate-900 text-sm">
+                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="bg-muted px-3 py-2 border-b border-border">
+                          <p className="font-semibold text-foreground text-body">
                             Year {data.year}
                           </p>
                         </div>
                         <div className="p-2">
-                          <table className="w-full text-sm">
+                          <table className="w-full text-body">
                             <tbody>
                               <tr>
                                 <td className="py-1.5 pr-4">
-                                  <span className="text-slate-700 font-medium">Closed Activities</span>
+                                  <span className="text-foreground font-medium">Closed Activities</span>
                                 </td>
-                                <td className="py-1.5 text-right font-semibold text-slate-900">
+                                <td className="py-1.5 text-right font-semibold text-foreground">
                                   {data.count}
                                 </td>
                               </tr>

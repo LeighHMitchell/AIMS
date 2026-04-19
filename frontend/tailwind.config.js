@@ -17,6 +17,22 @@ module.exports = {
   		mono: ['var(--font-geist-mono)', 'ui-monospace', 'monospace'],
   	},
   	extend: {
+  		// Semantic typography scale (additive — does NOT override default text-xs/sm/base/...).
+  		// Components opt in by switching their class (e.g. text-sm → text-helper, text-2xl → text-card-title).
+  		// No visual change until components migrate. See typography review for migration order.
+  		fontSize: {
+  			// Body & supporting text
+  			'caption':       ['0.75rem',  { lineHeight: '1.4' }],   // 12px — badges, timestamps, code chips
+  			'helper':        ['0.875rem', { lineHeight: '1.5' }],   // 14px — field helper text, table cell metadata
+  			'body':          ['1rem',     { lineHeight: '1.55' }],  // 16px — DEFAULT body, descriptions, labels
+  			'body-lg':       ['1.125rem', { lineHeight: '1.5' }],   // 18px — emphasized body, lead paragraphs
+  			// Eyebrow / uppercase labels (letter-spacing baked in)
+  			'section-label': ['0.75rem',  { lineHeight: '1.3', letterSpacing: '0.05em' }], // 12px UPPERCASE
+  			// Headings
+  			'card-title':    ['1.25rem',  { lineHeight: '1.3' }],   // 20px — card headings, modal titles
+  			'section-title': ['1.5rem',   { lineHeight: '1.2' }],   // 24px — tab section headings (SectionHeader target)
+  			'page-title':    ['1.875rem', { lineHeight: '1.15' }],  // 30px — top-of-activity title
+  		},
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',

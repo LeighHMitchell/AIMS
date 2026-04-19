@@ -35,17 +35,17 @@ CREATE INDEX idx_activity_relationships_related_activity_id ON activity_relation
       <AlertCircle className="h-4 w-4 text-orange-600" />
               <h4 className="text-orange-900 font-medium mb-2">Database Setup Required</h4>
       <AlertDescription className="space-y-3">
-        <p className="text-sm text-orange-800">
+        <p className="text-body text-orange-800">
           The activity_relationships table needs to be created in your database to enable linked activities.
         </p>
         <div className="bg-white border border-orange-200 rounded-md p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-700">SQL Command:</span>
+            <span className="text-helper font-medium text-foreground">SQL Command:</span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="h-7 px-2 text-xs"
+              className="h-7 px-2 text-helper"
             >
               {copied ? (
                 <>
@@ -60,9 +60,9 @@ CREATE INDEX idx_activity_relationships_related_activity_id ON activity_relation
               )}
             </Button>
           </div>
-          <pre className="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap">{sqlCommand}</pre>
+          <pre className="text-helper text-muted-foreground overflow-x-auto whitespace-pre-wrap">{sqlCommand}</pre>
         </div>
-        <p className="text-xs text-orange-700">
+        <p className="text-helper text-orange-700">
           Run this SQL in your Supabase dashboard: SQL Editor → New Query → Paste & Run
         </p>
       </AlertDescription>

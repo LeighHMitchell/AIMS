@@ -119,7 +119,7 @@ const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: Vis
     case 'organization':
       return <Building2 className={`${className} text-amber-600`} />;
     case 'hidden':
-      return <EyeOff className={`${className} text-red-600`} />;
+      return <EyeOff className={`${className} text-destructive`} />;
     default:
       return <Globe className={`${className} text-[hsl(var(--success-icon))]`} />;
   }
@@ -232,7 +232,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       } catch (error: any) {
         console.error('Error fetching IATI policy markers:', error);
         setAvailableMarkers(FALLBACK_IATI_MARKERS);
-        toast.error(`Failed to load policy markers: ${error.message}. Using offline markers.`);
+        toast.error("Couldn't load the latest policy markers. Showing the saved list instead.");
       } finally {
         setLoading(false);
       }
@@ -317,17 +317,40 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   };
 
   // ---- Remove marker ----
-  const removeMarker = (markerUuid: string) => {
+  const removeMarker = async (markerUuid: string) => {
+    const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
+    const ok = await confirm({
+      title: 'Remove this policy marker?',
+      description: marker
+        ? `"${marker.name}" will be removed from this activity, along with its significance and rationale. You can add it again anytime.`
+        : 'This policy marker will be removed from the activity.',
+      confirmLabel: 'Remove marker',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
+    // Snapshot the removed entry so Undo can restore it with its significance + rationale
+    const removedEntry = selectedMarkers.get(markerUuid);
     const newSelectedMarkers = new Map(selectedMarkers);
     newSelectedMarkers.delete(markerUuid);
     setSelectedMarkers(newSelectedMarkers);
     triggerSave(newSelectedMarkers);
-    toast.success('Policy marker removed');
+    toast.success(marker ? `Removed "${marker.name}"` : 'Policy marker removed', removedEntry ? {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const restored = new Map(newSelectedMarkers);
+          restored.set(markerUuid, removedEntry);
+          setSelectedMarkers(restored);
+          triggerSave(restored);
+        },
+      },
+    } : undefined);
   };
 
   // ---- Delete custom marker definition ----
   const deleteCustomMarker = async (markerId: string) => {
-    if (!(await confirm({ title: 'Delete custom policy marker?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
+    if (!(await confirm({ title: 'Delete custom policy marker?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel', destructive: true }))) return;
     try {
       const response = await apiFetch(`/api/policy-markers?id=${markerId}`, { method: 'DELETE' });
       if (!response.ok) {
@@ -467,7 +490,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   // Loading state
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-9 w-40" />
@@ -485,7 +508,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   const groupTypes = ['environmental', 'social_governance', 'other', 'custom'] as const;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-end gap-2">
         {activeMarkerCount > 0 && (
@@ -520,9 +543,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       {activeMarkerCount === 0 ? (
         <div className="text-center py-12">
           <img src="/images/empty-flag.webp" alt="No policy markers" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No policy markers</h3>
+          <h3 className="text-base font-medium mb-2">No policy markers assigned</h3>
           <p className="text-muted-foreground mb-4">
-            Use the button above to add policy markers to this activity.
+            Tag cross-cutting themes this activity addresses — like gender equality, climate change, or biodiversity.
           </p>
         </div>
       ) : viewMode === 'card' ? (
@@ -536,7 +559,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               <div key={type}>
                 <div className="flex items-center gap-2 mb-3">
                   {MARKER_TYPE_ICONS[type]}
-                  <h3 className="text-sm font-medium text-muted-foreground">{MARKER_TYPE_LABELS[type]}</h3>
+                  <h3 className="text-body font-medium text-muted-foreground">{MARKER_TYPE_LABELS[type]}</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {markersInGroup.map(({ marker, activityMarker }) => {
@@ -565,28 +588,28 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                               )}
                               <code className="text-xs px-1.5 py-0.5 bg-white/20 text-white/90 rounded font-mono">{getDisplayCode(marker)}</code>
                             </div>
-                            <h2 className="text-sm font-bold text-white leading-tight">{marker.name}</h2>
+                            <h2 className="text-body font-bold text-white leading-tight">{marker.name}</h2>
                           </>
                         }
                       >
                         <div className="relative flex-1 p-5 flex flex-col bg-card">
                           {activityMarker.rationale ? (
-                            <p className="text-xs text-muted-foreground line-clamp-3 mb-3">
+                            <p className="text-helper text-muted-foreground line-clamp-3 mb-3">
                               {activityMarker.rationale}
                             </p>
                           ) : marker.description ? (
-                            <p className="text-xs text-muted-foreground line-clamp-3 mb-3">
+                            <p className="text-helper text-muted-foreground line-clamp-3 mb-3">
                               {marker.description}
                             </p>
                           ) : (
-                            <p className="text-xs text-muted-foreground/60 italic mb-3">No rationale provided</p>
+                            <p className="text-helper text-muted-foreground/60 italic mb-3">No rationale provided</p>
                           )}
                           <div className="mt-auto pt-3 border-t border-border">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {activityMarker.significance}
                               </span>
-                              <span className="text-sm font-medium truncate">{significanceLabel}</span>
+                              <span className="text-body font-medium truncate">{significanceLabel}</span>
                             </div>
                             {!readOnly && (
                               <div className="mt-2 flex items-center justify-end gap-1">
@@ -603,10 +626,10 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeMarker(markerUuid)}
-                                  className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                   aria-label={`Remove ${marker.name}`}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
                             )}
@@ -641,7 +664,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     {/* Group header row */}
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableCell colSpan={readOnly ? 3 : 4} className="py-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <div className="flex items-center gap-2 text-body font-medium text-muted-foreground">
                           {MARKER_TYPE_ICONS[type]}
                           {MARKER_TYPE_LABELS[type]}
                         </div>
@@ -658,9 +681,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {getDisplayCode(marker)}
                               </span>
-                              <span className="font-medium text-sm">{marker.name}</span>
+                              <span className="font-medium text-body">{marker.name}</span>
                               {!marker.is_iati_standard && (
-                                <Badge variant="outline" className="text-xs">Custom</Badge>
+                                <Badge variant="outline" className="text-helper">Custom</Badge>
                               )}
                               {!marker.is_iati_standard && (
                                 <VisibilityIcon visibility={effectiveVisibility} />
@@ -672,16 +695,16 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {activityMarker.significance}
                               </span>
-                              <span className="text-sm">
+                              <span className="text-body">
                                 {getSignificanceLabel(marker.iati_code, activityMarker.significance)}
                               </span>
                             </div>
                           </TableCell>
                           <TableCell>
                             {activityMarker.rationale ? (
-                              <p className="text-sm text-muted-foreground line-clamp-2">{activityMarker.rationale}</p>
+                              <p className="text-body text-muted-foreground line-clamp-2">{activityMarker.rationale}</p>
                             ) : (
-                              <span className="text-xs text-muted-foreground/60">—</span>
+                              <span className="text-helper text-muted-foreground/60">—</span>
                             )}
                           </TableCell>
                           {!readOnly && (
@@ -690,8 +713,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                 <Button variant="ghost" size="icon" onClick={() => openEditModal(markerUuid)} className="hover:bg-blue-50 hover:text-blue-600">
                                   <Pencil className="h-4 w-4 text-muted-foreground" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-red-600 hover:bg-red-50 hover:text-red-700">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -747,12 +770,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                   {getDisplayCode(m)}
                                 </span>
-                                <span className="text-sm truncate">{m.name}</span>
+                                <span className="text-body truncate">{m.name}</span>
                               </span>
                             ) : 'Select policy marker';
                           })()
                         ) : (
-                          <span className="text-muted-foreground text-sm">Select policy marker</span>
+                          <span className="text-muted-foreground text-body">Select policy marker</span>
                         )}
                       </span>
                       <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
@@ -785,8 +808,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
                                       {marker.iati_code}
                                     </span>
-                                    <span className="flex-1 text-sm">{marker.name}</span>
-                                    {isAlreadyAdded && <span className="text-xs text-muted-foreground">(Added)</span>}
+                                    <span className="flex-1 text-body">{marker.name}</span>
+                                    {isAlreadyAdded && <span className="text-helper text-muted-foreground">(Added)</span>}
                                     {modalForm.selectedMarkerId === mUuid && <Check className="h-4 w-4 text-primary" />}
                                   </CommandItem>
                                 );
@@ -815,9 +838,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
                                     {getDisplayCode(marker)}
                                   </span>
-                                  <span className="flex-1 text-sm">{marker.name}</span>
-                                  <Badge variant="outline" className="text-xs">Custom</Badge>
-                                  {isAlreadyAdded && <span className="text-xs text-muted-foreground">(Added)</span>}
+                                  <span className="flex-1 text-body">{marker.name}</span>
+                                  <Badge variant="outline" className="text-helper">Custom</Badge>
+                                  {isAlreadyAdded && <span className="text-helper text-muted-foreground">(Added)</span>}
                                 </CommandItem>
                               );
                             })}
@@ -832,7 +855,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                               setModalForm(prev => ({ ...prev, isCreatingCustom: true, selectedMarkerId: null }));
                               setMarkerPopoverOpen(false);
                             }}
-                            className="px-4 py-2.5 text-sm text-primary font-medium"
+                            className="px-4 py-2.5 text-body text-primary font-medium"
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Create custom policy marker...
@@ -858,8 +881,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {getDisplayCode(m)}
                         </span>
-                        <span className="font-medium text-sm">{m.name}</span>
-                        {!m.is_iati_standard && <Badge variant="outline" className="text-xs">Custom</Badge>}
+                        <span className="font-medium text-body">{m.name}</span>
+                        {!m.is_iati_standard && <Badge variant="outline" className="text-helper">Custom</Badge>}
                       </>
                     );
                   })()}
@@ -871,14 +894,14 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             {modalForm.isCreatingCustom && (
               <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">New Custom Marker</Label>
+                  <Label className="text-body font-medium">New Custom Marker</Label>
                   <Button variant="ghost" size="sm" onClick={() => setModalForm(prev => ({ ...prev, isCreatingCustom: false }))}>
                     Cancel
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs">Name <RequiredDot /></Label>
+                    <Label className="text-helper">Name <RequiredDot /></Label>
                     <Input
                       value={modalForm.customName}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customName: e.target.value }))}
@@ -886,7 +909,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Code <RequiredDot /></Label>
+                    <Label className="text-helper">Code <RequiredDot /></Label>
                     <Input
                       value={modalForm.customCode}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customCode: e.target.value }))}
@@ -895,7 +918,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Description</Label>
+                  <Label className="text-helper">Description</Label>
                   <Textarea
                     value={modalForm.customDescription}
                     onChange={(e) => setModalForm(prev => ({ ...prev, customDescription: e.target.value }))}
@@ -905,7 +928,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs">Category</Label>
+                    <Label className="text-helper">Category</Label>
                     <Select value={modalForm.customMarkerType} onValueChange={(value) => setModalForm(prev => ({ ...prev, customMarkerType: value as any }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -916,7 +939,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Default Visibility</Label>
+                    <Label className="text-helper">Default Visibility</Label>
                     <Select value={modalForm.customDefaultVisibility} onValueChange={(value) => setModalForm(prev => ({ ...prev, customDefaultVisibility: value as VisibilityLevel }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -934,7 +957,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs">Vocabulary Name</Label>
+                    <Label className="text-helper">Vocabulary Name</Label>
                     <Input
                       value={modalForm.customVocabularyName}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customVocabularyName: e.target.value }))}
@@ -942,7 +965,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Vocabulary URI</Label>
+                    <Label className="text-helper">Vocabulary URI</Label>
                     <Input
                       value={modalForm.customVocabularyUri}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customVocabularyUri: e.target.value }))}

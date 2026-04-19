@@ -74,7 +74,7 @@ export function CustomYearSelector({
     >
       <SelectTrigger
         className={cn(
-          "min-w-[200px] w-auto h-8 text-xs",
+          "min-w-[200px] w-auto h-8 text-helper",
           className
         )}
       >
@@ -100,7 +100,7 @@ export function CustomYearSelector({
         {sortCustomYearsCalendarFirst(customYears).map((cy) => {
           const isFiscal = crossesCalendarYear(cy);
           return (
-            <SelectItem key={cy.id} value={cy.id} className="text-xs">
+            <SelectItem key={cy.id} value={cy.id} className="text-helper">
               <span className="flex items-center gap-2">
                 {cy.shortName ? (
                   <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">

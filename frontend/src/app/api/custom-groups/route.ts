@@ -13,7 +13,6 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[API] GET /api/custom-groups - Starting request');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -40,7 +39,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('[API] Successfully fetched custom groups:', data?.length || 0);
     
     // If includeMembers is false, remove the members array to reduce payload
     if (!includeMembers && data) {
@@ -59,7 +57,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
-  console.log('[API] POST /api/custom-groups - Starting request');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -138,7 +135,6 @@ export async function POST(request: Request) {
       }
     }
     
-    console.log('[API] Successfully created custom group:', groupData);
     return NextResponse.json(groupData, { status: 201 });
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);

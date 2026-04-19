@@ -262,7 +262,6 @@ export default function ProfilePage() {
   
   // Function to enter edit mode and refresh data
   const handleEditClick = async () => {
-    console.log('[Profile] Entering edit mode, refreshing data...');
     setIsEditing(true);
     
     // Refresh form data when entering edit mode
@@ -271,7 +270,6 @@ export default function ProfilePage() {
         const response = await apiFetch(`/api/users?email=${encodeURIComponent(user.email)}`);
         if (response.ok) {
           const freshData = await response.json();
-          console.log('[Profile] Fresh data for edit mode:', freshData);
           
           setFormData(prev => ({
             ...prev,
@@ -301,11 +299,9 @@ export default function ProfilePage() {
           // Preserve profile photo when entering edit mode
           if (freshData.avatar_url && freshData.avatar_url !== profilePhoto) {
             setProfilePhoto(freshData.avatar_url);
-            console.log('[Profile] Updated profile photo for edit mode:', freshData.avatar_url);
           }
         }
       } catch (error) {
-        console.log('[Profile] Could not refresh data for edit mode:', error);
       }
     }
   };
@@ -405,7 +401,6 @@ export default function ProfilePage() {
   // Refresh form data when user prop changes
   useEffect(() => {
     if (user) {
-      console.log('[Profile] User data changed, updating form data');
       setFormData(prev => ({
         ...prev,
         title: user.title || "",
@@ -639,7 +634,6 @@ export default function ProfilePage() {
     if (!user) return;
 
     try {
-      console.log('[Profile] Saving profile changes...');
       
       // Prepare data for API
       const apiData = {
@@ -669,7 +663,6 @@ export default function ProfilePage() {
         (apiData as any).organization_id = selectedOrgId;
       }
 
-      console.log('[Profile] Sending API data:', apiData);
 
       const response = await apiFetch('/api/users', {
         method: 'PUT',
@@ -681,7 +674,6 @@ export default function ProfilePage() {
 
       if (response.ok) {
         const updatedData = await response.json();
-        console.log('[Profile] Profile updated successfully:', updatedData);
         
         // If organization was changed, fetch the new organization data
         let organizationData = user.organization
@@ -795,15 +787,15 @@ export default function ProfilePage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <User className="h-4 w-4" />
               Personal Info
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="preferences" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Columns3 className="h-4 w-4" />
               Preferences
             </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="system" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Settings className="h-4 w-4" />
               System & Security
             </TabsTrigger>
@@ -870,7 +862,7 @@ export default function ProfilePage() {
                     <div className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                         <div className="md:col-span-2">
-                              <Label htmlFor="title" className="text-xs">Title</Label>
+                              <Label htmlFor="title" className="text-helper">Title</Label>
                           <Select 
                             value={formData.title} 
                             onValueChange={(value) => setFormData({ ...formData, title: value })}
@@ -891,7 +883,7 @@ export default function ProfilePage() {
                           </Select>
                         </div>
                         <div className="md:col-span-3">
-                              <Label htmlFor="firstName" className="text-xs">First Name <RequiredDot /></Label>
+                              <Label htmlFor="firstName" className="text-helper">First Name <RequiredDot /></Label>
                           <Input
                             id="firstName"
                             value={formData.firstName}
@@ -901,7 +893,7 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="md:col-span-3">
-                              <Label htmlFor="middleName" className="text-xs">Middle Name</Label>
+                              <Label htmlFor="middleName" className="text-helper">Middle Name</Label>
                           <Input
                             id="middleName"
                             value={formData.middleName}
@@ -911,7 +903,7 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="md:col-span-2">
-                              <Label htmlFor="lastName" className="text-xs">Last Name <RequiredDot /></Label>
+                              <Label htmlFor="lastName" className="text-helper">Last Name <RequiredDot /></Label>
                           <Input
                             id="lastName"
                             value={formData.lastName}
@@ -921,7 +913,7 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="md:col-span-2">
-                              <Label htmlFor="suffix" className="text-xs">Suffix</Label>
+                              <Label htmlFor="suffix" className="text-helper">Suffix</Label>
                           <Select 
                             value={formData.suffix} 
                             onValueChange={(value) => setFormData({ ...formData, suffix: value })}
@@ -957,7 +949,7 @@ export default function ProfilePage() {
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                              <Label htmlFor="jobTitle" className="text-xs">Position/Role</Label>
+                              <Label htmlFor="jobTitle" className="text-helper">Position/Role</Label>
                           <Input
                             id="jobTitle"
                             value={formData.jobTitle}
@@ -967,7 +959,7 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div>
-                              <Label htmlFor="department" className="text-xs">Department</Label>
+                              <Label htmlFor="department" className="text-helper">Department</Label>
                           <Input
                             id="department"
                             value={formData.department}
@@ -983,7 +975,7 @@ export default function ProfilePage() {
                       <div className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div>
-                              <Label htmlFor="userRole" className="text-xs">User Role</Label>
+                              <Label htmlFor="userRole" className="text-helper">User Role</Label>
                               <div className="relative">
                                 <Input
                                   id="userRole"
@@ -997,7 +989,7 @@ export default function ProfilePage() {
                         <div>
                               {user.role === 'super_user' ? (
                                 <>
-                                  <Label htmlFor="organisation" className="text-xs">Organisation</Label>
+                                  <Label htmlFor="organisation" className="text-helper">Organisation</Label>
                                   <OrganizationCombobox
                                     organizations={organizations.map(org => ({
                                       id: org.id,
@@ -1013,7 +1005,7 @@ export default function ProfilePage() {
                                 </>
                               ) : (
                                 <>
-                                  <Label className="text-xs">Organisation</Label>
+                                  <Label className="text-helper">Organisation</Label>
                                   <div className="relative">
                                     <div className="h-9 px-3 py-2 pr-8 border rounded-md bg-muted flex items-center gap-2">
                                       {user.organization?.logo && (
@@ -1027,7 +1019,7 @@ export default function ProfilePage() {
                                           }}
                                         />
                                       )}
-                                      <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
+                                      <span className="text-body">{user.organization?.name || formData.organisation || "Not assigned"}</span>
                                     </div>
                                     <Lock className="h-3 w-3 text-muted-foreground absolute right-3 top-1/2 transform -translate-y-1/2" />
                                   </div>
@@ -1042,7 +1034,7 @@ export default function ProfilePage() {
                           {/* Primary Email */}
                           <div className="space-y-3">
                         <div>
-                              <Label htmlFor="email" className="text-xs mb-2 block">Primary Email</Label>
+                              <Label htmlFor="email" className="text-helper mb-2 block">Primary Email</Label>
                               <div className="relative">
                                 <Input
                                   id="email"
@@ -1058,7 +1050,7 @@ export default function ProfilePage() {
                             {/* Phone and Fax on same line */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <Label className="text-xs mb-1">Phone</Label>
+                                <Label className="text-helper mb-1">Phone</Label>
                                 <PhoneFields
                                   countryCode={formData.countryCode}
                                   phoneNumber={formData.phoneNumber}
@@ -1071,7 +1063,7 @@ export default function ProfilePage() {
                                 />
                               </div>
                               <div>
-                                <Label className="text-xs mb-1">Fax Number</Label>
+                                <Label className="text-helper mb-1">Fax Number</Label>
                                 <PhoneFields
                                   countryCode={formData.faxCountryCode}
                                   phoneNumber={formData.faxPhoneNumber}
@@ -1089,7 +1081,7 @@ export default function ProfilePage() {
 
                         {/* Notes Section */}
                         <div>
-                          <Label htmlFor="notes" className="text-xs">Notes</Label>
+                          <Label htmlFor="notes" className="text-helper">Notes</Label>
                           <Textarea
                             id="notes"
                             value={formData.notes}
@@ -1113,12 +1105,12 @@ export default function ProfilePage() {
                                   ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}${user.suffix && user.suffix !== "none" ? ` ${user.suffix}` : ''}` 
                                   : user.name || "Not specified"}
                               </h3>
-                              <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                              <Badge variant={getRoleBadgeVariant(user.role)} className="text-helper">
                                 <Shield className="h-3 w-3 mr-1" />
                                 {getRoleDisplayLabel(user.role)}
                               </Badge>
                             </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                               {user.jobTitle || "Position not specified"} 
                               {user.department && ` • ${user.department}`}
                         </p>
@@ -1141,7 +1133,7 @@ export default function ProfilePage() {
                                 <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
                               )}
                               <div>
-                                <p className="text-sm font-medium">{user.organization?.name || user.organisation || "No organization"}</p>
+                                <p className="text-body font-medium">{user.organization?.name || user.organisation || "No organization"}</p>
                               </div>
                             </div>
                           )}
@@ -1151,7 +1143,7 @@ export default function ProfilePage() {
                             <div className="flex items-start gap-3">
                               <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
                               <div className="space-y-1">
-                                <p className="text-sm">{user.email}</p>
+                                <p className="text-body">{user.email}</p>
 
                               </div>
                             </div>
@@ -1160,7 +1152,7 @@ export default function ProfilePage() {
                               <div className="flex items-start gap-3">
                                 <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
                                 <div>
-                                  <p className="text-sm">{formatPhoneNumber(user.telephone)}</p>
+                                  <p className="text-body">{formatPhoneNumber(user.telephone)}</p>
                                 </div>
                               </div>
                             )}
@@ -1169,7 +1161,7 @@ export default function ProfilePage() {
                               <div className="flex items-start gap-3">
                                 <Printer className="h-4 w-4 text-muted-foreground mt-0.5" />
                                 <div>
-                                  <p className="text-sm text-muted-foreground">{formatPhoneNumber(user.faxNumber)} (Fax)</p>
+                                  <p className="text-body text-muted-foreground">{formatPhoneNumber(user.faxNumber)} (Fax)</p>
                                 </div>
                               </div>
                             )}
@@ -1178,7 +1170,7 @@ export default function ProfilePage() {
                           {/* Notes */}
                           {user.notes && (
                             <div className="border-t pt-4">
-                              <p className="text-sm">{user.notes}</p>
+                              <p className="text-body">{user.notes}</p>
                             </div>
                           )}
                         </div>
@@ -1236,7 +1228,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-body text-muted-foreground mb-4">
                       {columnPrefs.length} of {activityColumns.length} columns selected
                     </p>
                     {orderedColumnGroups.map((groupKey) => {
@@ -1259,7 +1251,7 @@ export default function ProfilePage() {
                               onCheckedChange={() => toggleColumnGroupPref(groupKey)}
                               disabled={toggleable.length === 0}
                             />
-                            <span className="text-sm font-medium">
+                            <span className="text-body font-medium">
                               {activityColumnGroups[groupKey] || groupKey}
                             </span>
                           </div>
@@ -1279,12 +1271,12 @@ export default function ProfilePage() {
                                   className="mt-0.5"
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-sm">{column.label}</span>
+                                  <span className="text-body">{column.label}</span>
                                   {column.description && (
-                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{column.description}</p>
+                                    <p className="text-helper text-muted-foreground mt-0.5 line-clamp-2">{column.description}</p>
                                   )}
                                   {column.alwaysVisible && (
-                                    <span className="text-xs text-muted-foreground">(Required)</span>
+                                    <span className="text-helper text-muted-foreground">(Required)</span>
                                   )}
                                 </div>
                               </div>
@@ -1343,7 +1335,7 @@ export default function ProfilePage() {
                     {/* View Mode */}
                     <div className="grid grid-cols-1 gap-6">
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Timezone</Label>
+                        <Label className="text-body font-medium text-muted-foreground">Timezone</Label>
                         <p className="text-lg">
                           {user.timezone === 'UTC' ? 'UTC' :
                            user.timezone === 'Asia/Yangon' ? 'Myanmar Time' :
@@ -1376,7 +1368,7 @@ export default function ProfilePage() {
                     <Key className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Password</p>
-                      <p className="text-sm text-muted-foreground">Change your account password</p>
+                      <p className="text-body text-muted-foreground">Change your account password</p>
                     </div>
                   </div>
                   <Button variant="outline">
@@ -1389,7 +1381,7 @@ export default function ProfilePage() {
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Email Address</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body text-muted-foreground">
                         {user.role === 'super_user' 
                           ? "Update your login email address" 
                           : "Contact administrator to change email"
@@ -1427,7 +1419,7 @@ export default function ProfilePage() {
                     <Download className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Download My Data</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body text-muted-foreground">
                         Export all your personal data as a JSON file
                       </p>
                     </div>
@@ -1454,15 +1446,15 @@ export default function ProfilePage() {
                 {/* Delete Account */}
                 <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
                   <div className="flex items-center gap-3">
-                    <Trash2 className="h-5 w-5 text-red-500" />
+                    <Trash2 className="h-5 w-5 text-destructive" />
                     <div>
                       <p className="font-medium text-destructive">Delete Account</p>
                       {user.role === 'super_user' || user.role === 'admin' ? (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           Admin accounts must be deleted by another administrator from Admin → Users
                         </p>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           Permanently delete your account and all associated data
                         </p>
                       )}
@@ -1473,7 +1465,7 @@ export default function ProfilePage() {
                       variant="destructive"
                       onClick={() => setDeleteAccountDialogOpen(true)}
                     >
-                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                      <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                       Delete Account
                     </Button>
                   )}

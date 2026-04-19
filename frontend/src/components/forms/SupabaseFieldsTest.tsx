@@ -82,7 +82,7 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
       return <Badge variant="outline" className="text-blue-600"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Updating</Badge>;
     }
     if (fieldState.error || defaultsError) {
-      return <Badge variant="outline" className="text-red-600"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>;
+      return <Badge variant="outline" className="text-destructive"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>;
     }
     if (fieldState.lastUpdated) {
       return <Badge variant="outline" className="text-[hsl(var(--success-icon))]"><CheckCircle className="h-3 w-3 mr-1" />Connected</Badge>;
@@ -97,17 +97,17 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
           <CardTitle className="text-lg text-blue-800">🧪 Supabase Integration Test</CardTitle>
           {getStatusBadge()}
         </div>
-        <p className="text-sm text-blue-600">
+        <p className="text-body text-blue-600">
           Test the new Supabase default fields integration before replacing existing components.
         </p>
       </CardHeader>
 
       <CardContent className="space-y-4 pt-4">
         {/* Test Info */}
-        <div className="bg-gray-50 p-3 rounded text-sm">
+        <div className="bg-muted p-3 rounded text-body">
           <div><strong>Activity ID:</strong> {activityId || 'None (will fail)'}</div>
           <div><strong>Current Values:</strong></div>
-          <pre className="text-xs mt-1 overflow-auto max-h-20">
+          <pre className="text-helper mt-1 overflow-auto max-h-20">
             {JSON.stringify(values, null, 2)}
           </pre>
         </div>
@@ -163,9 +163,9 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
 
         {/* Error Display */}
         {(fieldState.error || defaultsError) && (
-          <div className="bg-red-50 border border-red-200 rounded p-3">
+          <div className="bg-destructive/10 border border-destructive/30 rounded p-3">
             <div className="text-red-800 font-medium">Error Details:</div>
-            <div className="text-red-600 text-sm mt-1">
+            <div className="text-destructive text-body mt-1">
               Field State Error: {fieldState.error || 'None'}<br />
               Defaults Error: {defaultsError || 'None'}
             </div>
@@ -175,7 +175,7 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
         {/* Success Info */}
         {fieldState.lastUpdated && !fieldState.error && (
           <div className="bg-green-50 border border-green-200 rounded p-3">
-            <div className="text-green-800 text-sm">
+            <div className="text-green-800 text-body">
               ✅ Last successful update: {fieldState.lastUpdated.toLocaleString()}
             </div>
           </div>
@@ -183,8 +183,8 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
 
         {/* Usage Instructions */}
         <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-          <div className="text-yellow-800 font-medium text-sm">Instructions:</div>
-          <ol className="text-yellow-700 text-xs mt-1 ml-4 list-decimal space-y-1">
+          <div className="text-yellow-800 font-medium text-body">Instructions:</div>
+          <ol className="text-yellow-700 text-helper mt-1 ml-4 list-decimal space-y-1">
             <li>Ensure you have a valid activity ID (activity must be saved first)</li>
             <li>Click test buttons to verify Supabase integration works</li>
             <li>Check browser network tab for API calls to Supabase</li>

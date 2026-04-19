@@ -140,12 +140,12 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
               <img
                 src={previewUrl}
                 alt="Profile"
-                className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 group-hover:opacity-75 transition-opacity"
+                className="w-24 h-24 rounded-full object-cover border-2 border-border group-hover:opacity-75 transition-opacity"
               />
               {!isUploading && (
                 <button
                   onClick={removeAvatar}
-                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                  className="absolute -top-2 -right-2 p-1 bg-destructive/100 text-white rounded-full hover:bg-destructive transition-colors opacity-0 group-hover:opacity-100"
                   type="button"
                   aria-label="Remove profile picture"
                 >
@@ -201,7 +201,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
               </span>
             </Button>
           </label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             JPG, PNG, GIF or WebP. Max 2MB. Images resized to 150x150px.
           </p>
         </div>
@@ -209,7 +209,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
 
       {/* Storage info */}
       <Alert>
-        <AlertDescription className="text-xs">
+        <AlertDescription className="text-helper">
           Images are compressed to 150x150px and stored directly in the database (same as organization logos).
         </AlertDescription>
       </Alert>

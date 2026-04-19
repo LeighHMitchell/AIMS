@@ -103,9 +103,9 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
   const getStatusColor = (status: string, isPublic: boolean) => {
     if (!isPublic) {
       return {
-        bg: 'bg-gray-200',
+        bg: 'bg-muted',
         border: 'border-gray-400',
-        text: 'text-gray-700'
+        text: 'text-foreground'
       };
     }
 
@@ -115,7 +115,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
       case 'Active':
         return { bg: 'bg-blue-200', border: 'border-blue-500', text: 'text-blue-800' };
       case 'Completed':
-        return { bg: 'bg-gray-200', border: 'border-gray-500', text: 'text-gray-800' };
+        return { bg: 'bg-muted', border: 'border-gray-500', text: 'text-foreground' };
       default:
         return { bg: 'bg-orange-200', border: 'border-orange-500', text: 'text-orange-800' };
     }
@@ -141,9 +141,9 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No strategies to display</h3>
-          <p className="text-gray-600">
+          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No strategies to display</h3>
+          <p className="text-muted-foreground">
             {isPublicView 
               ? "No published strategies available for timeline view." 
               : "Add strategies to see them in the timeline view."
@@ -166,14 +166,14 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
         <div className="space-y-6">
           {/* Year headers */}
           <div className="relative">
-            <div className="flex justify-between text-sm text-gray-600 font-medium mb-2">
+            <div className="flex justify-between text-body text-muted-foreground font-medium mb-2">
               {years.map(year => (
                 <span key={year} className="flex-1 text-center">
                   {year}
                 </span>
               ))}
             </div>
-            <div className="border-t border-gray-200"></div>
+            <div className="border-t border-border"></div>
           </div>
 
           {/* Strategy bars */}
@@ -186,10 +186,10 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                 <div key={strategy.id} className="relative">
                   <div className="flex items-center gap-4 mb-2">
                     <div className="w-48 flex-shrink-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
+                      <div className="text-body font-medium text-foreground truncate">
                         {strategy.title}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 text-helper text-muted-foreground">
                         <span>{strategy.organization.acronym || strategy.organization.name}</span>
                         {!strategy.public && (
                           <span className="flex items-center gap-1">
@@ -202,7 +202,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                     
                     <div className="flex-1 relative h-8">
                       {/* Timeline background */}
-                      <div className="absolute inset-0 border-t border-gray-200"></div>
+                      <div className="absolute inset-0 border-t border-border"></div>
                       
                       {/* Strategy bar */}
                       <div
@@ -213,7 +213,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                         title={`${strategy.title} (${strategy.startYear} - ${strategy.endYear})`}
                       >
                         <div className="flex items-center justify-between h-full px-2">
-                          <span className={`text-xs font-medium ${colors.text} truncate`}>
+                          <span className={`text-helper font-medium ${colors.text} truncate`}>
                             {strategy.status}
                           </span>
                           
@@ -260,9 +260,9 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
           </div>
 
           {/* Legend */}
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center gap-6 text-body">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-200 border-2 border-green-500 rounded"></div>
                   <span>Published</span>
@@ -276,12 +276,12 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                   <span>Draft/Estimated</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-200 border-2 border-gray-500 rounded"></div>
+                  <div className="w-4 h-4 bg-muted border-2 border-gray-500 rounded"></div>
                   <span>Completed</span>
                 </div>
               </div>
 
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Hover over bars for more details and actions
               </div>
             </div>

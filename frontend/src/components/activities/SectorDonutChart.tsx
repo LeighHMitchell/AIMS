@@ -85,7 +85,7 @@ export default function SectorDonutChart({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white p-2 rounded text-sm pointer-events-none z-50')
+      .attr('class', 'absolute invisible bg-gray-900 text-white p-2 rounded text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     // Draw inner ring (DAC3)
@@ -141,7 +141,7 @@ export default function SectorDonutChart({
         tooltip.transition().duration(200).style('opacity', 1);
         tooltip.html(`
           <div class="font-semibold">${d.data.dac5_code} - ${d.data.dac5_name}</div>
-          <div class="text-xs opacity-75">DAC3: ${d.data.dac3_code} - ${d.data.dac3_name}</div>
+          <div class="text-helper opacity-75">DAC3: ${d.data.dac3_code} - ${d.data.dac3_name}</div>
           <div>Allocation: ${d.data.percentage.toFixed(1)}%</div>
         `)
           .style('left', `${event.pageX + 10}px`)

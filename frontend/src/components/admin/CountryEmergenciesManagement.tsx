@@ -246,7 +246,7 @@ export function CountryEmergenciesManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>
@@ -322,7 +322,7 @@ export function CountryEmergenciesManagement() {
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <AlertTriangle className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">No country emergencies found</p>
-              <p className="text-sm mb-4">
+              <p className="text-body mb-4">
                 {searchQuery
                   ? "Try adjusting your search"
                   : "Add your first country emergency to get started"}
@@ -337,7 +337,7 @@ export function CountryEmergenciesManagement() {
           ) : (
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">
@@ -377,16 +377,16 @@ export function CountryEmergenciesManagement() {
                         <td className="p-4 font-medium">
                           {emergency.name}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {emergency.description || "—"}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {formatDate(emergency.startDate)}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {formatDate(emergency.endDate)}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {emergency.location || "—"}
                         </td>
                         <td className="p-4 text-center">
@@ -395,7 +395,7 @@ export function CountryEmergenciesManagement() {
                             className={
                               emergency.isActive
                                 ? "bg-green-800"
-                                : "border-gray-300 text-gray-500 bg-gray-50"
+                                : "border-input text-muted-foreground bg-muted"
                             }
                           >
                             {emergency.isActive ? "Active" : "Inactive"}
@@ -411,14 +411,14 @@ export function CountryEmergenciesManagement() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => handleEdit(emergency)}>
-                                  <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                                  <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(emergency)}
-                                  className="text-red-600"
+                                  className="text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -434,7 +434,7 @@ export function CountryEmergenciesManagement() {
           )}
 
           {/* Summary */}
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-body text-muted-foreground">
             Showing {filteredEmergencies.length} emergenc{filteredEmergencies.length !== 1 ? "ies" : "y"}
           </div>
         </CardContent>
@@ -469,6 +469,7 @@ export function CountryEmergenciesManagement() {
               <Label htmlFor="code">Code <RequiredDot /></Label>
               <Input
                 id="code"
+                className="font-mono"
                 value={formData.code}
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })

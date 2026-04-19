@@ -30,11 +30,11 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
       if (filteredPayload.length === 0) return null;
       
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg text-sm max-h-[400px] overflow-hidden">
-          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900">Year: {label}</p>
-            <p className="text-slate-600">
-              Total {dataType === 'planned' ? 'Planned' : 'Actual'}: <span className="font-bold text-slate-900">{formatTooltipCurrency(yearTotal)}</span>
+        <div className="bg-white border border-border rounded-lg shadow-lg text-body max-h-[400px] overflow-hidden">
+          <div className="bg-surface-muted px-4 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">Year: {label}</p>
+            <p className="text-muted-foreground">
+              Total {dataType === 'planned' ? 'Planned' : 'Actual'}: <span className="font-bold text-foreground">{formatTooltipCurrency(yearTotal)}</span>
             </p>
           </div>
           <div className="overflow-y-auto max-h-[300px]">
@@ -43,13 +43,13 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
                 {filteredPayload.map((entry: any, index: number) => {
                   const code = sectorCodes[entry.name] || '';
                   return (
-                    <tr key={`item-${index}`} className="border-b border-slate-100 last:border-b-0">
+                    <tr key={`item-${index}`} className="border-b border-border last:border-b-0">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: entry.color }} />
-                          <span className="text-slate-700">
+                          <span className="text-foreground">
                             {code && (
-                              <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-xs mr-1.5">
+                              <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
                                 {code}
                               </code>
                             )}
@@ -57,7 +57,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
                           </span>
                         </div>
                       </td>
-                      <td className="py-2 px-4 text-right font-medium text-slate-900 whitespace-nowrap">
+                      <td className="py-2 px-4 text-right font-medium text-foreground whitespace-nowrap">
                         {formatTooltipCurrency(entry.value)}
                       </td>
                     </tr>
@@ -105,7 +105,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
           <Tooltip content={<CustomTooltip />} />
           <Legend
             wrapperStyle={{ paddingTop: '20px' }}
-            formatter={(value) => <span className="text-slate-700 text-sm">{value}</span>}
+            formatter={(value) => <span className="text-foreground text-body">{value}</span>}
             iconType="square"
           />
           {sectorNames.map((sectorName, index) => (

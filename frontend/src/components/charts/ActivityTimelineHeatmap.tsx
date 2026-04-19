@@ -69,7 +69,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
   }, {} as Record<number, typeof months>)
   
   const getIntensity = (count: number) => {
-    if (count === 0) return 'bg-gray-100'
+    if (count === 0) return 'bg-muted'
     const intensity = count / maxCount
     if (intensity > 0.75) return 'bg-blue-600'
     if (intensity > 0.5) return 'bg-blue-500'
@@ -79,10 +79,10 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 text-xs">
+      <div className="flex items-center gap-4 text-helper">
         <span className="text-muted-foreground">Less</span>
         <div className="flex gap-1">
-          <div className="w-3 h-3 bg-gray-100 rounded-sm" />
+          <div className="w-3 h-3 bg-muted rounded-sm" />
           <div className="w-3 h-3 bg-blue-300 rounded-sm" />
           <div className="w-3 h-3 bg-blue-400 rounded-sm" />
           <div className="w-3 h-3 bg-blue-500 rounded-sm" />
@@ -94,7 +94,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
       <div className="space-y-3">
         {Object.entries(yearGroups).map(([year, yearMonths]) => (
           <div key={year}>
-            <h4 className="text-sm font-medium mb-2">{year}</h4>
+            <h4 className="text-body font-medium mb-2">{year}</h4>
             <div className="grid grid-cols-12 gap-1">
               {yearMonths.map((month, idx) => (
                 <div
@@ -108,7 +108,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
         ))}
       </div>
       
-      <p className="text-xs text-muted-foreground">
+      <p className="text-helper text-muted-foreground">
         Showing activity coverage across {validActivities.length} activities with date ranges
       </p>
     </div>

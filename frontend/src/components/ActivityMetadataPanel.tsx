@@ -45,17 +45,17 @@ export function ActivityMetadataPanel({
   }
 
   return (
-    <div className={`bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3 ${className}`}>
-      <h3 className="text-sm font-medium text-gray-900 mb-3">Activity Identifiers</h3>
+    <div className={`bg-muted border border-border rounded-lg p-4 space-y-3 ${className}`}>
+      <h3 className="text-body font-medium text-foreground mb-3">Activity Identifiers</h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* System UUID */}
         {systemUUID && (
-          <div className="bg-white rounded-md p-3 border border-gray-100 group hover:border-gray-200 transition-colors">
+          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-gray-700 mb-1">System UUID</div>
-                <div className="text-sm text-gray-600 font-mono break-all" title={systemUUID}>
+                <div className="text-helper font-medium text-foreground mb-1">System UUID</div>
+                <div className="text-sm text-muted-foreground font-mono break-all" title={systemUUID}>
                   {systemUUID}
                 </div>
               </div>
@@ -86,11 +86,11 @@ export function ActivityMetadataPanel({
 
         {/* Activity Partner ID */}
         {activityPartnerID && (
-          <div className="bg-white rounded-md p-3 border border-gray-100 group hover:border-gray-200 transition-colors">
+          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-gray-700 mb-1">Activity Partner ID</div>
-                <div className="text-sm text-gray-600 break-all" title={activityPartnerID}>
+                <div className="text-helper font-medium text-foreground mb-1">Activity Partner ID</div>
+                <div className="text-body text-muted-foreground break-all" title={activityPartnerID}>
                   {activityPartnerID}
                 </div>
               </div>
@@ -121,11 +121,11 @@ export function ActivityMetadataPanel({
 
         {/* IATI Identifier */}
         {iatiIdentifier && (
-          <div className="bg-white rounded-md p-3 border border-gray-100 group hover:border-gray-200 transition-colors">
+          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-gray-700 mb-1">IATI Identifier</div>
-                <div className="text-sm text-gray-600 break-all" title={iatiIdentifier}>
+                <div className="text-helper font-medium text-foreground mb-1">IATI Identifier</div>
+                <div className="text-body text-muted-foreground break-all" title={iatiIdentifier}>
                   {iatiIdentifier}
                 </div>
               </div>
@@ -141,7 +141,7 @@ export function ActivityMetadataPanel({
                       {copiedField === 'IATI Identifier' ? (
                         <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       ) : (
-                        <Copy className="h-3 w-3 text-gray-500" />
+                        <Copy className="h-3 w-3 text-muted-foreground" />
                       )}
                     </Button>
                   </TooltipTrigger>

@@ -387,35 +387,35 @@ export function OrganizationSpendTrajectoryChart({
       const variance = comparisonValue - perfectSpend
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: COLOURS.coolSteel }} />
-                    <span className="text-slate-700 font-medium">Even-spend baseline</span>
+                    <span className="text-foreground font-medium">Even-spend baseline</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipCurrency(perfectSpend)}
                   </td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: getComparisonColor() }} />
-                    <span className="text-slate-700 font-medium capitalize">{getComparisonLabel()}</span>
+                    <span className="text-foreground font-medium capitalize">{getComparisonLabel()}</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipCurrency(comparisonValue)}
                   </td>
                 </tr>
-                <tr className="border-t border-slate-200">
+                <tr className="border-t border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 flex-shrink-0" />
-                    <span className="text-slate-700 font-medium">Gap to baseline</span>
+                    <span className="text-foreground font-medium">Gap to baseline</span>
                   </td>
                   <td className="py-1.5 text-right font-semibold" style={{ color: variance >= 0 ? '#16a34a' : '#dc2626' }}>
                     {Math.abs(variance) < 1 ? '—' : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
@@ -437,8 +437,8 @@ export function OrganizationSpendTrajectoryChart({
     }
     if (error || !data || displayData.length === 0) {
       return (
-        <div className="flex items-center justify-center h-[300px] text-slate-500">
-          <p className="text-sm">{error || 'No data available'}</p>
+        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -540,9 +540,9 @@ export function OrganizationSpendTrajectoryChart({
           <CardTitle className="text-base font-semibold">Portfolio Spend Trajectory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-slate-500">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
-              <Info className="h-12 w-12 mx-auto mb-3 text-slate-400" />
+              <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium">{error}</p>
             </div>
           </div>
@@ -558,11 +558,11 @@ export function OrganizationSpendTrajectoryChart({
           <CardTitle className="text-base font-semibold">Portfolio Spend Trajectory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-slate-500">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
-              <Info className="h-12 w-12 mx-auto mb-3 text-slate-400" />
+              <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium">No activities with budget data found.</p>
-              <p className="text-sm mt-2 text-slate-400">
+              <p className="text-body mt-2 text-muted-foreground">
                 Add budget data to activities to view the spend trajectory.
               </p>
             </div>
@@ -587,12 +587,12 @@ export function OrganizationSpendTrajectoryChart({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold">Portfolio Spend Trajectory</CardTitle>
           <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('chart')}
-                className={cn("h-7 px-2", viewMode === 'chart' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-7 px-2", viewMode === 'chart' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 title="Chart view"
               >
                 <BarChart3 className="h-4 w-4" />
@@ -601,7 +601,7 @@ export function OrganizationSpendTrajectoryChart({
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className={cn("h-7 px-2", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-7 px-2", viewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 title="Table view"
               >
                 <TableIcon className="h-4 w-4" />
@@ -680,7 +680,7 @@ export function OrganizationSpendTrajectoryChart({
                           <button
                             key={index}
                             onClick={() => handleLegendClick(dataKey)}
-                            className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${isHidden ? 'opacity-40' : 'opacity-100'} hover:bg-slate-100`}
+                            className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${isHidden ? 'opacity-40' : 'opacity-100'} hover:bg-muted`}
                           >
                             {isDashed ? (
                               <svg width="16" height="2" className="flex-shrink-0">
@@ -689,7 +689,7 @@ export function OrganizationSpendTrajectoryChart({
                             ) : (
                               <div className="w-4 h-0.5 flex-shrink-0" style={{ backgroundColor: entry.color }} />
                             )}
-                            <span className={`text-xs ${isHidden ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                            <span className={`text-xs ${isHidden ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                               {entry.value}
                             </span>
                           </button>
@@ -804,7 +804,7 @@ export function OrganizationSpendTrajectoryChart({
           )}
         </div>
 
-        <div className="text-xs text-gray-500 mt-4 space-y-1">
+        <div className="text-helper text-muted-foreground mt-4 space-y-1">
           <p>
             Compares <strong>actual cumulative disbursements</strong> (red) against an <strong>even-spend budget baseline</strong> (grey dashed).
             The striped area shows the gap between actual spend and baseline.

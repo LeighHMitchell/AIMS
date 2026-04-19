@@ -119,21 +119,21 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
           <h3 className="text-lg font-semibold">Categorization Complete</h3>
         </div>
         <div className="border border-border rounded-lg p-4 space-y-2">
-          <p className="text-sm">
+          <p className="text-body">
             <span className="text-muted-foreground">Decision:</span>{" "}
             <span className="font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
           </p>
           {project.category_recommendation && (
-            <p className="text-sm">
+            <p className="text-body">
               <span className="text-muted-foreground">System Recommendation:</span>{" "}
               <span className="font-medium">{CATEGORY_SHORT_LABELS[project.category_recommendation]}</span>
               {project.category_recommendation !== project.category_decision && (
-                <span className="ml-2 text-xs text-amber-600 font-medium">(Overridden)</span>
+                <span className="ml-2 text-helper text-amber-600 font-medium">(Overridden)</span>
               )}
             </p>
           )}
           {project.category_rationale && (
-            <p className="text-sm">
+            <p className="text-body">
               <span className="text-muted-foreground">Rationale:</span>{" "}
               {project.category_rationale}
             </p>
@@ -150,10 +150,10 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {/* System recommendation */}
       {recommendation && (
         <div className="rounded-lg border border-[#5f7f7a]/20 bg-[#f6f5f3] px-4 py-3">
-          <p className="text-sm text-foreground">
+          <p className="text-body text-foreground">
             <span className="font-semibold">System Recommendation: {CATEGORY_LABELS[recommendation]}</span>
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-helper text-muted-foreground mt-1">
             Based on FIRR {project.firr ?? "—"}%, EIRR {project.eirr ?? "—"}%,
             NDP-aligned: {project.ndp_aligned ? "Yes" : "No"}, Sector: {project.sector}
           </p>
@@ -163,7 +163,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {error && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-body text-destructive">{error}</p>
         </div>
       )}
 
@@ -191,7 +191,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
               />
               <Icon className={`h-5 w-5 mt-0.5 ${card.color}`} />
               <div className="flex-1">
-                <p className="text-sm font-semibold flex items-center gap-2">
+                <p className="text-body font-semibold flex items-center gap-2">
                   {card.label}
                   {isRec && (
                     <span className="text-[10px] bg-[#5f7f7a]/10 text-[#5f7f7a] px-1.5 py-0.5 rounded font-medium">
@@ -199,7 +199,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{card.description}</p>
+                <p className="text-helper text-muted-foreground mt-0.5">{card.description}</p>
               </div>
             </label>
           )
@@ -209,10 +209,10 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {/* Rationale field — required when overriding */}
       {isOverride && (
         <div className="space-y-2">
-          <Label className="text-sm">
+          <Label className="text-body">
             Rationale for Override <RequiredDot />
           </Label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             You are selecting a different category than the system recommendation. Please explain why.
           </p>
           <Textarea
@@ -227,7 +227,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {/* Optional rationale when not overriding */}
       {selected && !isOverride && (
         <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Rationale (optional)</Label>
+          <Label className="text-body text-muted-foreground">Rationale (optional)</Label>
           <Textarea
             value={rationale}
             onChange={e => setRationale(e.target.value)}

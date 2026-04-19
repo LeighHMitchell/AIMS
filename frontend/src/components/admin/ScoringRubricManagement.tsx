@@ -209,7 +209,7 @@ export function ScoringRubricManagement() {
         <CardContent>
           <table className="w-full">
             <thead className="bg-surface-muted">
-              <tr className="text-xs text-muted-foreground border-b">
+              <tr className="text-helper text-muted-foreground border-b">
                 <th className="text-left py-2 font-medium">Version</th>
                 <th className="text-left py-2 font-medium">Label</th>
                 <th className="text-left py-2 font-medium">Status</th>
@@ -221,7 +221,7 @@ export function ScoringRubricManagement() {
               {versions.map(v => (
                 <tr key={v.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                   <td className="py-2 text-sm font-mono">v{v.version_number}</td>
-                  <td className="py-2 text-sm">
+                  <td className="py-2 text-body">
                     <button
                       className="text-left hover:underline font-medium"
                       onClick={() => setSelectedVersion(v)}
@@ -236,7 +236,7 @@ export function ScoringRubricManagement() {
                       <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                     )}
                   </td>
-                  <td className="py-2 text-sm text-muted-foreground">
+                  <td className="py-2 text-body text-muted-foreground">
                     {new Date(v.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-2 text-right">
@@ -244,7 +244,7 @@ export function ScoringRubricManagement() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs"
+                        className="h-7 text-helper"
                         onClick={() => setSelectedVersion(v)}
                       >
                         <Pencil className="h-3 w-3 mr-1" /> Edit
@@ -254,7 +254,7 @@ export function ScoringRubricManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 text-xs"
+                            className="h-7 text-helper"
                             onClick={() => handleActivate(v.id)}
                           >
                             <Zap className="h-3 w-3 mr-1" /> Activate
@@ -262,7 +262,7 @@ export function ScoringRubricManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 text-xs text-red-600 hover:text-red-700"
+                            className="h-7 text-helper text-destructive hover:text-destructive"
                             onClick={() => handleDelete(v.id)}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -273,7 +273,7 @@ export function ScoringRubricManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 text-xs"
+                          className="h-7 text-helper"
                           onClick={handleRecalculateAll}
                           disabled={recalculating}
                         >
@@ -291,7 +291,7 @@ export function ScoringRubricManagement() {
               ))}
               {versions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={5} className="py-8 text-center text-body text-muted-foreground">
                     No rubric versions yet. Create one to get started.
                   </td>
                 </tr>
@@ -338,7 +338,7 @@ export function ScoringRubricManagement() {
                         const total = getStageWeightTotal(s)
                         const isValid = Math.abs(total - 100) < 0.01
                         return (
-                          <span className={`ml-1.5 text-[10px] ${isValid ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}`}>
+                          <span className={`ml-1.5 text-[10px] ${isValid ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}`}>
                             ({total.toFixed(0)}%)
                           </span>
                         )
@@ -356,26 +356,26 @@ export function ScoringRubricManagement() {
                         <Card key={dim}>
                           <CardHeader className="py-3">
                             <div className="flex items-center justify-between">
-                              <CardTitle className="text-sm">{DIMENSION_LABELS[dim]}</CardTitle>
+                              <CardTitle className="text-body">{DIMENSION_LABELS[dim]}</CardTitle>
                               <div className="flex items-center gap-2">
-                                <Label className="text-xs text-muted-foreground">Weight:</Label>
+                                <Label className="text-helper text-muted-foreground">Weight:</Label>
                                 <Input
                                   type="number"
-                                  className="w-20 h-7 text-sm"
+                                  className="w-20 h-7 text-body"
                                   value={criterion.dimension_weight}
                                   onChange={e => updateWeight(criterion.id, Number(e.target.value))}
                                   min={0}
                                   max={100}
                                   step={1}
                                 />
-                                <span className="text-xs text-muted-foreground">%</span>
+                                <span className="text-helper text-muted-foreground">%</span>
                               </div>
                             </div>
                           </CardHeader>
                           <CardContent className="pt-0">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-body">
                               <thead className="bg-surface-muted">
-                                <tr className="text-xs text-muted-foreground border-b">
+                                <tr className="text-helper text-muted-foreground border-b">
                                   <th className="text-left py-1 font-medium">Key</th>
                                   <th className="text-left py-1 font-medium">Label</th>
                                   <th className="text-left py-1 font-medium">Rule Type</th>
@@ -388,7 +388,7 @@ export function ScoringRubricManagement() {
                                 {(criterion.sub_criteria || []).map((sc, subIdx) => (
                                   <tr key={sc.key} className="border-b last:border-0">
                                     <td className="py-1.5 font-mono text-xs">{sc.key}</td>
-                                    <td className="py-1.5 text-xs">{sc.label}</td>
+                                    <td className="py-1.5 text-helper">{sc.label}</td>
                                     <td className="py-1.5">
                                       <Badge variant="outline" className="text-[10px]">{sc.rule_type}</Badge>
                                     </td>
@@ -410,7 +410,7 @@ export function ScoringRubricManagement() {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-6 w-6 p-0 text-red-500"
+                                          className="h-6 w-6 p-0 text-destructive"
                                           onClick={() => deleteSubCriterion(stage, dim, subIdx)}
                                         >
                                           <Trash2 className="h-3 w-3" />
@@ -424,7 +424,7 @@ export function ScoringRubricManagement() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="mt-2 text-xs"
+                              className="mt-2 text-helper"
                               onClick={() => {
                                 setEditingSubCriterion({ stageIdx, dimIdx, subIdx: null })
                                 setSubCriterionEditorOpen(true)
@@ -463,7 +463,7 @@ export function ScoringRubricManagement() {
             <div>
               <Label>Clone From (optional)</Label>
               <select
-                className="w-full h-9 rounded-md border border-input px-3 text-sm"
+                className="w-full h-9 rounded-md border border-input px-3 text-body"
                 value={cloneFrom}
                 onChange={e => setCloneFrom(e.target.value)}
               >

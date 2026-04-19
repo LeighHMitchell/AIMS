@@ -51,10 +51,10 @@ export function FAQSection() {
           transition={{ duration: 0.6 }}
           className="mb-12 text-center md:mb-16"
         >
-          <h2 className="mb-4 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             Frequently Asked Questions
           </h2>
-          <p className="mx-auto max-w-2xl text-base text-gray-600 md:text-lg">
+          <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
             Common questions about the Development Finance Management Information System
             and how it supports transparency and coordination.
           </p>
@@ -72,7 +72,7 @@ export function FAQSection() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.4 }}
               >
-                <Card className="overflow-hidden border-gray-200 bg-white transition-all hover:border-blue-200 hover:shadow-md">
+                <Card className="overflow-hidden border-border bg-white transition-all hover:border-blue-200 hover:shadow-md">
                   <motion.button
                     onClick={() => setOpenIndex(isOpen ? null : index)}
                     className="flex w-full items-center justify-between p-4 text-left md:p-6"
@@ -80,7 +80,7 @@ export function FAQSection() {
                       backgroundColor: "rgba(59, 130, 246, 0.03)",
                     }}
                   >
-                    <span className="pr-4 text-base font-semibold text-gray-900 md:text-lg">
+                    <span className="pr-4 text-base font-semibold text-foreground md:text-lg">
                       {faq.question}
                     </span>
                     <motion.div
@@ -88,7 +88,7 @@ export function FAQSection() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="flex-shrink-0"
                     >
-                      <ChevronDown className="h-5 w-5 text-gray-500" />
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
                     </motion.div>
                   </motion.button>
 
@@ -101,11 +101,11 @@ export function FAQSection() {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-gray-100 p-4 md:p-6">
+                        <div className="border-t border-border p-4 md:p-6">
                           <motion.p
                             initial={{ y: -10 }}
                             animate={{ y: 0 }}
-                            className="text-sm text-gray-600 md:text-base leading-relaxed"
+                            className="text-body text-muted-foreground md:text-base leading-relaxed"
                           >
                             {faq.answer}
                           </motion.p>

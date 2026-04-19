@@ -228,7 +228,7 @@ export function EventManagement() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-[#4c5568]">
+                    <div className="flex items-center gap-2 text-body text-[#4c5568]">
                       <Clock className="h-4 w-4" />
                       <span>
                         {new Date(event.start).toLocaleString()}
@@ -237,13 +237,13 @@ export function EventManagement() {
                     </div>
                     
                     {event.location && (
-                      <div className="flex items-center gap-2 text-sm text-[#4c5568]">
+                      <div className="flex items-center gap-2 text-body text-[#4c5568]">
                         <MapPin className="h-4 w-4" />
                         <span>{event.location}</span>
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2 text-sm text-[#4c5568]">
+                    <div className="flex items-center gap-2 text-body text-[#4c5568]">
                       <Users className="h-4 w-4" />
                       <span>Organized by {event.organizerName}</span>
                     </div>
@@ -251,15 +251,15 @@ export function EventManagement() {
                   
                   {event.attendees && event.attendees.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium mb-2 text-[#4c5568]">Attendees ({event.attendees.length})</p>
+                      <p className="text-body font-medium mb-2 text-[#4c5568]">Attendees ({event.attendees.length})</p>
                       <div className="flex flex-wrap gap-1">
                         {event.attendees.slice(0, 3).map((attendee, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]">
+                          <Badge key={index} variant="secondary" className="text-helper bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]">
                             {attendee}
                           </Badge>
                         ))}
                         {event.attendees.length > 3 && (
-                          <Badge variant="secondary" className="text-xs bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]">
+                          <Badge variant="secondary" className="text-helper bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]">
                             +{event.attendees.length - 3} more
                           </Badge>
                         )}

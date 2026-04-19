@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
     const nowISO = now.toISOString();
-    console.log('[Cron Overdue] Running at', nowISO);
 
     // Find tasks that:
     // 1. Are in 'sent' status
@@ -60,7 +59,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (!overdueTasks || overdueTasks.length === 0) {
-      console.log('[Cron Overdue] No overdue tasks found');
       return NextResponse.json({
         success: true,
         message: 'No overdue tasks to flag',
@@ -70,7 +68,6 @@ export async function GET(request: NextRequest) {
 
     // Get unique task IDs (avoid duplicates from join)
     const taskIds = Array.from(new Set(overdueTasks.map((t: any) => t.id)));
-    console.log('[Cron Overdue] Found', taskIds.length, 'tasks with overdue assignments');
 
     // Check which tasks have already been flagged recently (within last 24 hours)
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -88,7 +85,6 @@ export async function GET(request: NextRequest) {
     const tasksToFlag = taskIds.filter(id => !recentlyFlaggedIds.has(id));
 
     if (tasksToFlag.length === 0) {
-      console.log('[Cron Overdue] All overdue tasks already flagged recently');
       return NextResponse.json({
         success: true,
         message: 'All overdue tasks already flagged',
@@ -97,7 +93,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Cron Overdue] Flagging', tasksToFlag.length, 'tasks');
 
     // Create overdue_flagged events for each task
     const events = tasksToFlag.map(taskId => {
@@ -198,7 +193,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[Cron Overdue] Complete. Flagged:', tasksToFlag.length, 'Notifications:', notificationsSent, 'Emails:', emailsSent);
 
     return NextResponse.json({
       success: true,

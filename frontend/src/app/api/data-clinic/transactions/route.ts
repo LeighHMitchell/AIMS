@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
   const missingFields = searchParams.get('missing_fields') === 'true';
 
   try {
-    console.log('[Data Clinic API - Transactions] Fetching transactions...');
     
     // First try basic query
     let hasIatiFields = false;
@@ -52,10 +51,8 @@ export async function GET(request: NextRequest) {
       if (!error && data) {
         transactions = data;
         hasIatiFields = true;
-        console.log('[Data Clinic API - Transactions] Successfully loaded with IATI fields');
       }
     } catch (e) {
-      console.log('[Data Clinic API - Transactions] IATI fields not available, trying basic query');
       
       // Fall back to basic query without IATI fields
       const { data: basicData, error: basicError } = await supabase
@@ -84,7 +81,6 @@ export async function GET(request: NextRequest) {
       transactions = basicData || [];
     }
 
-    console.log('[Data Clinic API - Transactions] Found transactions:', transactions.length);
 
     if (!missingFields) {
       return NextResponse.json({ 
@@ -220,7 +216,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Data Clinic API - Transactions] Transactions with gaps:', transactionsWithGaps.length);
 
     return NextResponse.json({
       transactions: transactionsWithGaps,

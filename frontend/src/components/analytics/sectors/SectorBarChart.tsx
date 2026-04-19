@@ -314,7 +314,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                 className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-sm text-slate-700">{entry.value}</span>
+              <span className="text-body text-foreground">{entry.value}</span>
             </li>
           )
         })}
@@ -335,30 +335,30 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
       if (nonZeroPayload.length === 0) return null
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md">
-          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">
-              <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-xs mr-1.5">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md">
+          <div className="bg-surface-muted px-4 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-body">
+              <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
                 {dataPoint.code}
               </code>
               {dataPoint.fullName}
             </p>
           </div>
           <div className="overflow-y-auto max-h-[300px]">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 {nonZeroPayload.map((entry: any, index: number) => (
-                  <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                  <tr key={index} className="border-b border-border last:border-b-0">
                     <td className="py-2 px-4">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-sm flex-shrink-0"
                           style={{ backgroundColor: entry.color }}
                         />
-                        <span className="text-slate-700 font-medium">{entry.name}</span>
+                        <span className="text-foreground font-medium">{entry.name}</span>
                       </div>
                     </td>
-                    <td className="py-2 px-4 text-right font-semibold text-slate-900 whitespace-nowrap">
+                    <td className="py-2 px-4 text-right font-semibold text-foreground whitespace-nowrap">
                       {entry.dataKey === 'projects' || entry.dataKey === 'partners' 
                         ? entry.value.toLocaleString()
                         : formatTooltipCurrency(entry.value)
@@ -471,8 +471,8 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
   if (compact) {
     if (!data || data.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
-          <p className="text-sm">No data available</p>
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -504,7 +504,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
 
   if (!data || data.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -513,11 +513,11 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
           <CardDescription>No sector data available for the selected filters</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-2 opacity-50" />
-              <p className="text-slate-600 font-medium">No data available</p>
-              <p className="text-sm text-slate-500 mt-2">Try adjusting your filters</p>
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-muted-foreground font-medium">No data available</p>
+              <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
             </div>
           </div>
         </CardContent>
@@ -526,7 +526,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div>
@@ -543,12 +543,12 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               {/* View Type Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewType('bar')}
-                  className={cn("h-8", viewType === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", viewType === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -557,7 +557,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewType('table')}
-                  className={cn("h-8", viewType === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", viewType === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
@@ -568,12 +568,12 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               {viewType === 'bar' && (
                 <>
                   {/* Orientation Toggle Buttons */}
-                  <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+                  <div className="flex gap-1 rounded-lg p-1 bg-muted">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setOrientation('horizontal')}
-                      className={cn("h-8", orientation === 'horizontal' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                      className={cn("h-8", orientation === 'horizontal' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                       title="Horizontal"
                     >
                       <AlignLeft className="h-4 w-4" />
@@ -582,7 +582,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                       variant="ghost"
                       size="sm"
                       onClick={() => setOrientation('vertical')}
-                      className={cn("h-8", orientation === 'vertical' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                      className={cn("h-8", orientation === 'vertical' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                       title="Vertical"
                     >
                       <AlignVerticalSpaceAround className="h-4 w-4" />
@@ -604,12 +604,12 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                   </Select>
 
                   {/* Project/Partner Toggle Buttons */}
-                  <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+                  <div className="flex gap-1 rounded-lg p-1 bg-muted">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowProjectCount(!showProjectCount)}
-                      className={cn("h-8", showProjectCount ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                      className={cn("h-8", showProjectCount ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                       title="Projects"
                     >
                       <FolderKanban className="h-4 w-4" />
@@ -618,7 +618,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowPartnerCount(!showPartnerCount)}
-                      className={cn("h-8", showPartnerCount ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                      className={cn("h-8", showPartnerCount ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                       title="Partners"
                     >
                       <Users className="h-4 w-4" />
@@ -630,7 +630,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               {/* Table specific controls */}
               {viewType === 'table' && (
                 <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search sectors..."
                     value={searchQuery}
@@ -868,7 +868,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               <TableBody>
                 {tableData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-slate-500 py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No sectors found matching your search
                     </TableCell>
                   </TableRow>
@@ -882,20 +882,20 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                               <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                                 {item.sectorCode}
                               </code>
-                              <span className="font-semibold text-slate-900">{item.sectorName}</span>
+                              <span className="font-semibold text-foreground">{item.sectorName}</span>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div>
                             <div className="font-medium">{formatCurrency(item.plannedDisbursements)}</div>
-                            <div className="text-xs text-slate-500">{item.plannedPercentage.toFixed(1)}%</div>
+                            <div className="text-helper text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div>
                             <div className="font-semibold" style={{ color: CHART_BAR_COLORS.actual }}>{formatCurrency(item.actualDisbursements)}</div>
-                            <div className="text-xs text-slate-500">{item.actualPercentage.toFixed(1)}%</div>
+                            <div className="text-helper text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
@@ -913,9 +913,9 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                       </TableRow>
                     ))}
                     {/* Totals Row */}
-                    <TableRow className="bg-slate-100 font-semibold sticky bottom-0">
+                    <TableRow className="bg-muted font-semibold sticky bottom-0">
                       <TableCell>
-                        <div className="font-bold text-slate-900">Total</div>
+                        <div className="font-bold text-foreground">Total</div>
                       </TableCell>
                       <TableCell className="text-right font-bold">
                         {formatCurrency(totals.planned)}

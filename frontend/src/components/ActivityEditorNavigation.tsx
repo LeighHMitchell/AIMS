@@ -93,13 +93,18 @@ export default function ActivityEditorNavigation({
       ]
     },
     {
-      title: "Strategic Alignment",
+      title: "Alignment",
       sections: [
         { id: "national_plans", label: "Plan Alignment" },
         { id: "sdg", label: "SDG Alignment" },
-        { id: "tags", label: "Tags" },
-        { id: "working_groups", label: "Working Groups" },
         { id: "policy_markers", label: "Policy Markers" }
+      ]
+    },
+    {
+      title: "Classification",
+      sections: [
+        { id: "tags", label: "Tags" },
+        { id: "working_groups", label: "Working Groups" }
       ]
     },
     {
@@ -133,7 +138,7 @@ export default function ActivityEditorNavigation({
 
   return (
     <TooltipProvider>
-      <nav className="w-64 bg-white border-r border-gray-200 border-b-0 p-4 space-y-6 h-full flex flex-col">
+      <nav className="w-64 bg-white border-r border-border border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Navigation Groups */}
         {navigationGroups.map((group, groupIndex) => (
           <div 
@@ -148,7 +153,7 @@ export default function ActivityEditorNavigation({
             {/* Group Header */}
             <div 
               id={`group-${groupIndex}`}
-              className="text-xs font-bold text-black uppercase mb-2 tracking-wide px-1 flex items-center gap-1"
+              className="text-section-label font-bold text-black uppercase mb-2 px-1 flex items-center gap-1"
               role="heading"
               aria-level={3}
             >
@@ -161,7 +166,7 @@ export default function ActivityEditorNavigation({
               <div
                 className={cn(
                   "absolute left-[12px] top-0 bottom-0 w-px",
-                  "bg-gray-200"
+                  "bg-muted"
                 )}
                 style={{ height: '100%' }}
               />
@@ -172,8 +177,9 @@ export default function ActivityEditorNavigation({
                 // Add subtle visual indicator for linked scrollable groups
                 (group.title === "Activity Overview" || group.title === "Locations" ||
                  group.title === "Stakeholders" ||
-                 group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
-                 group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-gray-100 pl-1"
+                 group.title === "Funding & Delivery" || group.title === "Alignment" ||
+                 group.title === "Classification" ||
+                 group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-border pl-1"
               )}>
                 {group.sections.map((section) => {
                   const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"
@@ -189,15 +195,17 @@ export default function ActivityEditorNavigation({
                       disabled={isLocked || disabled}
                       data-tab={section.id}
                       className={cn(
-                        "w-full text-left py-2 px-3 ml-2 rounded text-sm font-normal transition-all duration-200 ease-in-out",
+                        // Active state is carried by the background fill + text
+                        // weight/color. Removed the 3px left-stripe accent that
+                        // duplicated those signals and is a common AI-slop tell.
+                        "w-full text-left py-2 px-3 ml-2 rounded text-body font-normal transition-all duration-200 ease-in-out",
                         "focus:outline-none focus:ring-2 focus:ring-[#5f7f7a]/50 focus:ring-opacity-50 focus:ring-offset-1",
-                        "border-l-3 border-transparent",
                         !isLocked && !disabled && "active:scale-[0.98] transform",
                         (isLocked || disabled)
-                          ? "text-gray-400 cursor-not-allowed opacity-60"
+                          ? "text-muted-foreground cursor-not-allowed opacity-60"
                           : isActive
-                            ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium border-l-3 border-[#3C6255] shadow-sm"
-                            : "text-gray-600 hover:bg-[#5f7f7a]/8 hover:text-black hover:border-l-3 hover:border-[#5f7f7a]/30"
+                            ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
+                            : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-black"
                       )}
                       aria-current={isActive ? "page" : undefined}
                       aria-describedby={undefined}
@@ -205,7 +213,7 @@ export default function ActivityEditorNavigation({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
+                          {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                           <span>{section.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -248,7 +256,7 @@ export default function ActivityEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-body font-medium bg-destructive/100 text-white hover:bg-destructive transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

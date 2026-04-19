@@ -262,10 +262,10 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
-          <DialogTitle className="text-gray-900">
+          <DialogTitle className="text-foreground">
             {contact?.id ? 'Edit Contact' : 'Add New Contact'}
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-muted-foreground">
             {contact?.id 
               ? 'Update the contact information for this activity.'
               : 'Add a new contact person for this activity.'}
@@ -282,8 +282,8 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
               <div
                 className={cn(
                   "relative w-24 h-24 rounded-full border-2 border-dashed transition-all cursor-pointer",
-                  isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
-                  formData.profilePhoto && "border-solid border-gray-200"
+                  isDragging ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400",
+                  formData.profilePhoto && "border-solid border-border"
                 )}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -303,14 +303,14 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
                         e.stopPropagation();
                         removePhoto();
                       }}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                      className="absolute -top-2 -right-2 bg-destructive/100 text-white rounded-full p-1 hover:bg-destructive transition-colors shadow-lg"
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-full">
-                    <User className="h-10 w-10 text-gray-400" />
+                  <div className="w-full h-full flex items-center justify-center bg-muted rounded-full">
+                    <User className="h-10 w-10 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -334,13 +334,13 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
               </Button>
               
               {/* Upload Instructions */}
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-helper text-muted-foreground text-center">
                 Drag & drop or click to upload
                 <br />
                 Max 2MB • JPEG, PNG, GIF, WebP
               </p>
               {errors.profilePhoto && (
-                <p className="text-xs text-red-500 text-center">{errors.profilePhoto}</p>
+                <p className="text-helper text-destructive text-center">{errors.profilePhoto}</p>
               )}
             </div>
           </div>
@@ -357,7 +357,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
                   role="combobox"
                   aria-expanded={contactTypeOpen}
                   className={cn(
-                    "w-full justify-between h-10 px-3 py-2 text-sm",
+                    "w-full justify-between h-10 px-3 py-2 text-body",
                     !selectedContactType && "text-muted-foreground"
                   )}
                 >
@@ -382,7 +382,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
                         className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                         aria-label="Clear selection"
                       >
-                        <span className="text-xs">×</span>
+                        <span className="text-helper">×</span>
                       </button>
                     )}
                     <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -412,7 +412,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.value}</span>
                             <span className="font-medium text-foreground">{type.label}</span>
                           </div>
-                          <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                          <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                             {type.description}
                           </div>
                         </div>
@@ -422,7 +422,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
                 </Command>
               </PopoverContent>
             </Popover>
-            {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type}</p>}
+            {errors.type && <p className="text-helper text-destructive mt-1">{errors.type}</p>}
           </div>
 
       {/* Name Row */}
@@ -457,7 +457,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
             onChange={(e) => handleChange('firstName', e.target.value)}
             placeholder="John"
           />
-          {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
+          {errors.firstName && <p className="text-helper text-destructive mt-1">{errors.firstName}</p>}
         </div>
         
         <div className="col-span-5">
@@ -470,7 +470,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
             onChange={(e) => handleChange('lastName', e.target.value)}
             placeholder="Smith"
           />
-          {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
+          {errors.lastName && <p className="text-helper text-destructive mt-1">{errors.lastName}</p>}
         </div>
       </div>
 
@@ -481,7 +481,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           checked={formData.isFocalPoint || false}
           onCheckedChange={(checked) => handleChange('isFocalPoint', checked)}
         />
-        <Label htmlFor="isFocalPoint" className="cursor-pointer text-sm">
+        <Label htmlFor="isFocalPoint" className="cursor-pointer text-body">
           This contact is a focal point for the activity
         </Label>
       </div>
@@ -538,7 +538,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           onChange={(e) => handleChange('email', e.target.value)}
           placeholder="john.smith@example.org"
         />
-        {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+        {errors.email && <p className="text-helper text-destructive mt-1">{errors.email}</p>}
       </div>
 
       {/* Phone Number with Country Code */}
@@ -573,7 +573,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           onChange={(e) => handleChange('website', e.target.value)}
           placeholder="https://example.org"
         />
-        {errors.website && <p className="text-xs text-red-500 mt-1">{errors.website}</p>}
+        {errors.website && <p className="text-helper text-destructive mt-1">{errors.website}</p>}
       </div>
 
       {/* Mailing Address */}
@@ -585,7 +585,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           onChange={(e) => handleChange('mailingAddress', e.target.value)}
           placeholder="Street address, city, postal code"
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 

@@ -59,7 +59,7 @@ export function LocationsManager({
   };
 
   const handleDelete = async (locationId: string) => {
-    if (await confirm({ title: 'Delete location reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete location reference?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteLocation(entityType, entityId, locationId);
       if (success) {
         onUpdate();
@@ -71,7 +71,7 @@ export function LocationsManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+        <Label className="text-body font-medium text-foreground flex items-center gap-2">
           <MapPin className="h-4 w-4" />
           Location References {locationType && `(${locationType})`}
         </Label>
@@ -80,7 +80,7 @@ export function LocationsManager({
             size="sm"
             variant="outline"
             onClick={() => setShowAddForm(true)}
-            className="text-xs"
+            className="text-helper"
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Location
@@ -90,9 +90,9 @@ export function LocationsManager({
 
       {/* Add Location Form */}
       {showAddForm && !readOnly && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded border space-y-3">
+        <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-900">Add Location Reference</h4>
+            <h4 className="text-body font-medium text-foreground">Add Location Reference</h4>
             <Button
               type="button"
               variant="ghost"
@@ -104,9 +104,9 @@ export function LocationsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">
+            <Label className="text-helper text-foreground">
               Location Reference * 
-              <span className="text-gray-500 font-normal ml-1">
+              <span className="text-muted-foreground font-normal ml-1">
                 (IATI location code, e.g., AF-KAN, KH-PNH)
               </span>
             </Label>
@@ -115,9 +115,9 @@ export function LocationsManager({
               onChange={(e) => setLocationRef(e.target.value)}
               placeholder="e.g., AF-KAN (Afghanistan - Kandahar)"
               required
-              className="text-sm"
+              className="text-body"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-helper text-muted-foreground mt-1">
               Use ISO 3166 country codes or IATI administrative area codes
             </p>
           </div>
@@ -127,7 +127,7 @@ export function LocationsManager({
               type="submit"
               size="sm"
               disabled={loading || !locationRef.trim()}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+              className="bg-muted hover:bg-gray-300 text-foreground border border-gray-400"
             >
               Add Location
             </Button>
@@ -151,14 +151,14 @@ export function LocationsManager({
               key={loc.id}
               className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border text-sm"
             >
-              <MapPin className="h-3 w-3 text-gray-500" />
-              <span className="text-gray-900 font-medium">{loc.location_ref}</span>
+              <MapPin className="h-3 w-3 text-muted-foreground" />
+              <span className="text-foreground font-medium">{loc.location_ref}</span>
               {!readOnly && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(loc.id)}
-                  className="text-red-600 hover:text-red-800 h-4 w-4 p-0 ml-1"
+                  className="text-destructive hover:text-destructive h-4 w-4 p-0 ml-1"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -169,7 +169,7 @@ export function LocationsManager({
       )}
 
       {filteredLocations.length === 0 && !showAddForm && (
-        <p className="text-xs text-gray-500 italic">No location references</p>
+        <p className="text-helper text-muted-foreground italic">No location references</p>
       )}
       <ConfirmDialog />
     </div>

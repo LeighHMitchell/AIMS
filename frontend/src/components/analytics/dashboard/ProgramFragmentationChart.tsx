@@ -71,7 +71,7 @@ export function ProgramFragmentationChart({
             onClick={() => setViewMode('chart')}
             className={cn(
               "h-8 px-3 rounded-none",
-              viewMode === 'chart' ? "bg-slate-200 text-slate-900" : "text-slate-400"
+              viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground"
             )}
           >
             <BarChart3 className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function ProgramFragmentationChart({
             onClick={() => setViewMode('table')}
             className={cn(
               "h-8 px-3 rounded-none",
-              viewMode === 'table' ? "bg-slate-200 text-slate-900" : "text-slate-400"
+              viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground"
             )}
           >
             <Table className="h-4 w-4" />
@@ -102,7 +102,7 @@ export function ProgramFragmentationChart({
         <div className="h-64 flex items-center justify-center text-muted-foreground">
           <div className="text-center">
             <p>No national priorities data available.</p>
-            <p className="text-sm mt-1">
+            <p className="text-body mt-1">
               Add national priorities in Admin &gt; Chart of Accounts &gt; National Priorities,
               then link them to activities.
             </p>
@@ -113,10 +113,10 @@ export function ProgramFragmentationChart({
       )}
 
       {/* Controls Row - Below Chart */}
-      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100">
+      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
         {/* Measure Dropdown */}
         <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
-          <SelectTrigger className="w-[140px] h-9 text-sm bg-white">
+          <SelectTrigger className="w-[140px] h-9 text-body bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -127,7 +127,7 @@ export function ProgramFragmentationChart({
 
         {/* Dimension Dropdown - National Priority levels */}
         <Select defaultValue="pillars">
-          <SelectTrigger className="w-[240px] h-9 text-sm bg-white">
+          <SelectTrigger className="w-[240px] h-9 text-body bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -148,7 +148,7 @@ export function ProgramFragmentationChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This heatmap shows how each donor distributes their funding across national priority programs. Darker cells indicate a higher share of a donor's total funding allocated to that program. Use swap axes to view from the program perspective.
       </p>
     </div>

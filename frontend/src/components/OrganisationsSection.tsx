@@ -61,7 +61,6 @@ export default function OrganisationsSection({
     const currentCount = participatingOrganizations.length;
 
     if (prevCountRef.current !== currentCount) {
-      console.log('[OrganisationsSection] Notifying parent of organization count change:', prevCountRef.current, '->', currentCount);
       prevCountRef.current = currentCount;
       onParticipatingOrganizationsChange(currentCount);
     }
@@ -73,7 +72,6 @@ export default function OrganisationsSection({
   };
 
   const handleEdit = (org: any) => {
-    console.log('[OrganisationsSection] Editing org data:', org);
     setEditingOrg({
       id: org.id,
       organization_id: org.organization_id,
@@ -146,19 +144,12 @@ export default function OrganisationsSection({
       return;
     }
 
-    console.log('[Delete] Deleting participating organization:', {
-      activityId,
-      participatingOrgId: org.id,
-      organizationName: org.organization?.name || org.narrative
-    });
-
     try {
       // Delete using the participating org ID
       const response = await apiFetch(`/api/activities/${activityId}/participating-organizations?id=${org.id}`,
         { method: 'DELETE' }
       );
 
-      console.log('[Delete] Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -226,9 +217,16 @@ export default function OrganisationsSection({
     return (
       <Card>
         <CardHeader>
+          {/*
+            Unlike the sibling Contacts / Focal Points tabs in this group
+            (which get wrapped with a SectionHeader by StakeholdersGroup),
+            Organisations is rendered bare. So this CardTitle IS the tab
+            title — sized to text-3xl to match SectionHeader's typography
+            so the three tabs read at the same scale.
+          */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-medium text-foreground">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-foreground">Participating Organisations</CardTitle>
             </div>
             <div className="h-9 w-40 bg-muted animate-pulse rounded-md" />
           </div>
@@ -290,9 +288,16 @@ export default function OrganisationsSection({
     <>
       <Card>
         <CardHeader>
+          {/*
+            CardTitle here IS the Organisations tab title — StakeholdersGroup
+            doesn't wrap Organisations with a SectionHeader the way it does
+            Contacts and Focal Points. Sized text-3xl font-semibold to match
+            SectionHeader's scale so all three Stakeholders tabs have the
+            same heading treatment.
+          */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-medium text-foreground">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-foreground">Participating Organisations</CardTitle>
               <HelpTextTooltip content={getSectionHelpText('organisations')}>
                 <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
@@ -307,8 +312,8 @@ export default function OrganisationsSection({
           {participatingOrganizations.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
               <img src="/images/empty-puzzle-piece.webp" alt="No participating organisations" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No participating organisations</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-base font-medium mb-2">No participating organisations</h3>
+              <p className="text-body text-muted-foreground">
                 Use the button above to add your first organisation.
               </p>
             </div>
@@ -375,7 +380,7 @@ export default function OrganisationsSection({
                                 {participatingOrg.organization_id ? (
                                   <Link
                                     href={`/organizations/${participatingOrg.organization_id}`}
-                                    className="text-sm hover:text-foreground transition-colors"
+                                    className="text-body hover:text-foreground transition-colors"
                                   >
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
@@ -384,7 +389,7 @@ export default function OrganisationsSection({
                                      ` (${participatingOrg.organization.acronym})`}
                                   </Link>
                                 ) : (
-                                  <span className="text-sm">
+                                  <span className="text-body">
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
                                      'Unknown Organization'}
@@ -406,12 +411,12 @@ export default function OrganisationsSection({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">
+                          <span className="text-body">
                             {getOrganizationRoleName(participatingOrg.iati_role_code)}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">
+                          <span className="text-body">
                             {participatingOrg.organization?.Organisation_Type_Name || 
                              (participatingOrg.organization?.Organisation_Type_Code ? getOrganizationTypeName(participatingOrg.organization.Organisation_Type_Code) : null) || 
                              <span className="text-muted-foreground">Not set</span>}
@@ -423,7 +428,7 @@ export default function OrganisationsSection({
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(participatingOrg)}
-                              className="hover:bg-blue-50 hover:text-blue-600"
+                              className="hover:bg-accent hover:text-foreground"
                             >
                               <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -431,9 +436,9 @@ export default function OrganisationsSection({
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(participatingOrg)}
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>

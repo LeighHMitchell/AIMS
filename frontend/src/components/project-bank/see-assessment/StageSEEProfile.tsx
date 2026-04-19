@@ -40,7 +40,7 @@ export function StageSEEProfile({ wizard }: StageSEEProfileProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Enterprise Profile</h3>
-        <p className="text-sm text-muted-foreground">Basic information about the State Economic Enterprise.</p>
+        <p className="text-body text-muted-foreground">Basic information about the State Economic Enterprise.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -52,7 +52,7 @@ export function StageSEEProfile({ wizard }: StageSEEProfileProps) {
             onChange={e => updateField('see_name', e.target.value)}
             placeholder="e.g. Myanmar Timber Enterprise"
           />
-          {errors.see_name && <p className="text-xs text-red-500 mt-1">{errors.see_name}</p>}
+          {errors.see_name && <p className="text-helper text-destructive mt-1">{errors.see_name}</p>}
         </div>
 
         <div>
@@ -102,7 +102,7 @@ export function StageSEEProfile({ wizard }: StageSEEProfileProps) {
       </div>
 
       <div className="border-t pt-4">
-        <h4 className="text-sm font-semibold mb-3">Current Financial Overview</h4>
+        <h4 className="text-body font-semibold mb-3">Current Financial Overview</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="employee_count">Employee Count</Label>

@@ -63,7 +63,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
 
   // Handle delete link
   const handleDeleteLink = async (linkId: string) => {
-    if (!(await confirm({ title: 'Remove this link?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
+    if (!(await confirm({ title: 'Remove this link?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Keep' }))) return;
     
     try {
       const response = await apiFetch(`/api/activities/${activityId}/linked/${linkId}`, {
@@ -214,7 +214,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                             target.style.display = 'none'
                             target.parentElement!.innerHTML = `
                               <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span class="text-blue-600 font-semibold text-sm">A</span>
+                                <span class="text-blue-600 font-semibold text-body">A</span>
                               </div>
                             `
                           }}
@@ -222,15 +222,15 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                       </div>
                     ) : (
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold text-sm">A</span>
+                        <span className="text-blue-600 font-semibold text-body">A</span>
                       </div>
                     )}
                   </div>
                   
                   {/* Activity Details */}
                   <div className="flex-1 min-w-0">
-                    <h5 className="font-medium text-sm truncate">{activity.title}</h5>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <h5 className="font-medium text-body truncate">{activity.title}</h5>
+                    <p className="text-helper text-muted-foreground mt-1">
                       IATI ID: {activity.iati_id || 'N/A'} | 
                       Status: {activity.activity_status}
                     </p>
@@ -268,7 +268,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
       return (
         <div className="text-center py-12">
           <img src="/images/empty-carabiner.webp" alt="No linked activities" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No linked activities</h3>
+          <h3 className="text-base font-medium mb-2">No linked activities</h3>
           <p className="text-muted-foreground">
             Use the search above to find and link related activities.
           </p>
@@ -297,16 +297,16 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                 <table className="min-w-full divide-y divide-border">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                         Activity Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                         IATI Identifier
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                         Direction
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                         Created
                       </th>
                     </tr>
@@ -317,13 +317,13 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap">
                           {la.isExternal ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-sm">{la.activityTitle}</span>
+                              <span className="text-body">{la.activityTitle}</span>
                               <ExternalLink className="w-3 h-3 text-muted-foreground" />
                             </div>
                           ) : (
                             <a
                               href={`/activities/${la.activityId}`}
-                              className="text-sm text-blue-600 hover:underline"
+                              className="text-body text-blue-600 hover:underline"
                             >
                               {la.activityTitle}
                             </a>
@@ -331,7 +331,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">{la.iatiIdentifier}</span>
+                            <span className="text-body text-muted-foreground">{la.iatiIdentifier}</span>
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
@@ -355,13 +355,13 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                             {la.direction}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        <td className="px-6 py-4 whitespace-nowrap text-body text-muted-foreground">
                           <div className="flex items-center justify-between">
                             <span>{new Date(la.createdAt).toLocaleDateString()}</span>
                             {currentUserId && (
                               <button
                                 onClick={() => handleDeleteLink(la.id)}
-                                className="text-red-500 hover:text-red-700 transition-colors ml-2"
+                                className="text-destructive hover:text-destructive transition-colors ml-2"
                                 title="Remove link"
                               >
                                 <X className="w-4 h-4" />
@@ -396,19 +396,19 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                     <div className="p-4 border rounded-lg bg-muted">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-medium text-sm">{la.activityTitle}</h4>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <h4 className="font-medium text-body">{la.activityTitle}</h4>
+                          <p className="text-helper text-muted-foreground mt-1">
                             <span className="font-semibold">IATI Identifier:</span> {la.iatiIdentifier}
                           </p>
                         </div>
                         <ExternalLink className="w-4 h-4 text-muted-foreground" />
                       </div>
                       <div className="mt-2 flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">External Activity</span>
+                        <span className="text-helper text-muted-foreground">External Activity</span>
                         {currentUserId && (
                           <button
                             onClick={() => handleDeleteLink(la.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
+                            className="text-destructive hover:text-destructive transition-colors"
                             title="Remove link"
                           >
                             <X className="w-4 h-4" />
@@ -438,7 +438,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                     {currentUserId && !la.isExternal && (
                       <button
                         onClick={() => handleDeleteLink(la.id)}
-                        className="bg-card rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-red-500 hover:text-red-700"
+                        className="bg-card rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-destructive hover:text-destructive"
                         title="Remove link"
                       >
                         <X className="w-3 h-3" />

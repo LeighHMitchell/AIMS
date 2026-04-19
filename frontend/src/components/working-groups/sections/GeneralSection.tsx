@@ -148,13 +148,13 @@ export default function GeneralSection({
   return (
     <div className="w-full space-y-6">
       {workingGroup?.parent_id && parentLabel && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-lg text-body">
           <span className="text-muted-foreground">Creating sub-working group under</span>
           <span className="font-medium text-foreground">{parentLabel}</span>
         </div>
       )}
       <div className="flex items-center gap-2">
-        <h2 className="text-xl font-semibold text-gray-900">General</h2>
+        <h2 className="text-xl font-semibold text-foreground">General</h2>
         <HelpTextTooltip text="Basic information about this working group including its name, code, mandate, type, and status." />
       </div>
 
@@ -191,12 +191,12 @@ export default function GeneralSection({
               </div>
             ) : (
               <div
-                className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
+                className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted"
                 onClick={() => bannerInputRef.current?.click()}
               >
-                <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />
-                <p className="text-sm text-gray-500">Click or drag image to upload</p>
-                <p className="text-xs text-gray-400 mt-0.5">Max size: 5MB</p>
+                <ImageIcon className="h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-body text-muted-foreground">Click or drag image to upload</p>
+                <p className="text-helper text-muted-foreground mt-0.5">Max size: 5MB</p>
               </div>
             )}
             <input
@@ -225,7 +225,7 @@ export default function GeneralSection({
                 <img
                   src={iconUrl}
                   alt="Icon"
-                  className="w-32 h-32 object-contain rounded-lg border bg-gray-50"
+                  className="w-32 h-32 object-contain rounded-lg border bg-muted"
                 />
                 <Button
                   variant="destructive"
@@ -241,12 +241,12 @@ export default function GeneralSection({
               </div>
             ) : (
               <div
-                className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
+                className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted"
                 onClick={() => iconInputRef.current?.click()}
               >
-                <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />
-                <p className="text-[10px] text-gray-500 text-center">Upload icon</p>
-                <p className="text-[9px] text-gray-400 text-center">Max: 2MB</p>
+                <ImageIcon className="h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-[10px] text-muted-foreground text-center">Upload icon</p>
+                <p className="text-[9px] text-muted-foreground text-center">Max: 2MB</p>
               </div>
             )}
             <input
@@ -379,7 +379,7 @@ export default function GeneralSection({
             <HelpTextTooltip size="sm" text="Toggle whether this working group is currently active. Inactive groups are hidden from default views but data is preserved." />
           </div>
           <div className="flex items-center justify-between border rounded-md h-10 px-3">
-            <span className="text-sm text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+            <span className="text-body text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
             <Switch
               checked={isActive}
               onCheckedChange={(checked) => {

@@ -125,7 +125,7 @@ export function FundingTypeTimeSeriesChart({
         </LineChart>
       </ResponsiveContainer>
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart tracks funding by finance type (e.g. grants, loans, equity) over time. Each line represents a different finance type, allowing you to identify trends and shifts in how aid is delivered across years.
       </p>
     </div>

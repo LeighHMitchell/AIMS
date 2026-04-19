@@ -74,7 +74,7 @@ import { apiFetch } from '@/lib/api-fetch';
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-96 items-center justify-center bg-muted text-sm text-muted-foreground">
+    <div className="flex h-96 items-center justify-center bg-muted text-body text-muted-foreground">
       Loading map...
     </div>
   ),
@@ -657,13 +657,11 @@ export default function LocationModal({
   
   // Debug form state
   if (Object.keys(errors).length > 0) {
-    console.log('[LocationModal] ❌ FORM HAS ERRORS:', errors);
     // Extract just the error messages without circular references
     const errorMessages = Object.keys(errors).reduce((acc, key) => {
       acc[key] = (errors as any)[key]?.message || 'Unknown error';
       return acc;
     }, {} as Record<string, string>);
-    console.log('[LocationModal] Error messages:', errorMessages);
   }
 
   // Watch form values
@@ -674,9 +672,6 @@ export default function LocationModal({
   // Initialize form with existing location data
   useEffect(() => {
     if (location) {
-      console.log('Loading location data:', location);
-      console.log('Country code from location:', location.country_code);
-      console.log('Location ref from location:', (location as any).location_ref);
       
       // Convert numeric IATI codes to strings for the form (database stores as integers)
       // Also convert all null values to undefined for Zod validation
@@ -719,9 +714,6 @@ export default function LocationModal({
 
       // Debug: Check form value after reset
       setTimeout(() => {
-        console.log('Form country_code value after reset:', watch('country_code'));
-        console.log('Form location_ref value after reset:', watch('location_ref'));
-        console.log('All form values after reset:', watch());
       }, 100);
 
       if ((location as any).latitude && (location as any).longitude) {
@@ -775,7 +767,6 @@ export default function LocationModal({
       try {
         const options: any = { limit: 30 };
         
-        console.log('[Location Search] Starting cascading search for:', searchQuery.trim());
         
         const results = await smartLocationSearch(searchQuery.trim(), options);
         
@@ -910,24 +901,18 @@ const autoPopulateIatiFields = useCallback((params: {
 
   // Handle map click
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
-    console.log('[MAP CLICK] handleMapClick called with lat:', lat, 'lng:', lng);
     if (!isValidCoordinate(lat, lng)) {
-      console.log('[MAP CLICK] Invalid coordinates, returning');
       return;
     }
 
-    console.log('[MAP CLICK] Setting coordinates and marker position...');
     setValue('latitude', lat);
     setValue('longitude', lng);
     setMarkerPosition([lat, lng]);
 
     // Perform reverse geocoding to populate address fields
     try {
-      console.log('[MAP CLICK] Starting reverse geocoding...');
       const result = await reverseGeocode(lat, lng);
       
-      console.log('[MAP CLICK] Reverse geocoding result:', result);
-      console.log('Address fields:', result.address);
       
       if (result && result.address) {
         // Populate all address fields from reverse geocoding
@@ -1002,8 +987,6 @@ const autoPopulateIatiFields = useCallback((params: {
     try {
       const result = await reverseGeocode(lat, lng);
       
-      console.log('Reverse geocoding result (marker drag):', result);
-      console.log('Address fields (marker drag):', result.address);
       
       if (result && result.address) {
         // Populate all address fields from reverse geocoding
@@ -1055,9 +1038,6 @@ const autoPopulateIatiFields = useCallback((params: {
 
   // Form submission
   const onSubmit = async (data: LocationFormSchema) => {
-    console.log('[LocationModal] 🔥 onSubmit called!');
-    console.log('[LocationModal] Form data:', data);
-    console.log('[LocationModal] Form errors:', errors);
     
     try {
       setIsSaving(true);
@@ -1077,7 +1057,6 @@ const autoPopulateIatiFields = useCallback((params: {
 
 
       if (Object.keys(validationErrors).length > 0) {
-        console.log('[LocationModal] ❌ Validation errors:', validationErrors);
         setValidationErrors(validationErrors);
         return;
       }
@@ -1093,11 +1072,8 @@ const autoPopulateIatiFields = useCallback((params: {
         validation_status: 'valid',
       };
 
-      console.log('[LocationModal] ✅ Submitting location data:', locationData);
 
-      console.log('[LocationModal] 🚀 Calling onSave function...');
       await onSave(locationData);
-      console.log('[LocationModal] ✅ onSave completed successfully');
 
       toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
       onClose();
@@ -1210,7 +1186,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           }
                         }
                       }}
-                      className="h-8 px-2.5 text-xs"
+                      className="h-8 px-2.5 text-helper"
                       title="Toggle 3D View"
                     >
                       <Mountain className="h-3.5 w-3.5 mr-1" />
@@ -1220,7 +1196,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="relative h-[480px] bg-gray-100 rounded-lg overflow-hidden">
+                <div className="relative h-[480px] bg-muted rounded-lg overflow-hidden">
                   <LocationMap
                     mapCenter={mapCenter}
                     mapZoom={mapZoom}
@@ -1236,7 +1212,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     displayLongitude={watchedLongitude}
                   />
 
-                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-xs text-gray-600">
+                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-helper text-muted-foreground">
                     Click on the map to set coordinates
                   </div>
                 </div>
@@ -1247,11 +1223,11 @@ const autoPopulateIatiFields = useCallback((params: {
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-4">
-                  <Label className="text-sm font-medium">Search Locations</Label>
+                  <Label className="text-body font-medium">Search Locations</Label>
                   
                   {/* Search Input */}
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       placeholder="Search for a location"
                       value={searchQuery}
@@ -1261,9 +1237,9 @@ const autoPopulateIatiFields = useCallback((params: {
 
                     {/* Search Results Dropdown */}
                     {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-auto z-50">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-96 overflow-auto z-50">
                         {/* Result count header */}
-                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-xs text-gray-600 font-medium">
+                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-helper text-muted-foreground font-medium">
                           Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
                         </div>
                         
@@ -1272,12 +1248,12 @@ const autoPopulateIatiFields = useCallback((params: {
                             type="button"
                             key={index}
                             onClick={() => handleSelectSearchResult(result)}
-                            className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                            className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-border last:border-b-0 transition-colors"
                           >
-                            <div className="font-medium text-gray-900 truncate">
+                            <div className="font-medium text-foreground truncate">
                               {result.name || result.display_name}
                             </div>
-                            <div className="text-sm text-gray-500 mt-1 line-clamp-2">
+                            <div className="text-body text-muted-foreground mt-1 line-clamp-2">
                               {result.display_name}
                             </div>
                           </button>
@@ -1287,19 +1263,19 @@ const autoPopulateIatiFields = useCallback((params: {
                   </div>
 
                   {isSearching && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-body text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Searching...
                     </div>
                   )}
                   
                   {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
+                    <div className="text-body text-muted-foreground bg-muted p-3 rounded border border-border">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <div>
                           <div className="font-medium">No results found</div>
-                          <div className="text-xs mt-1">
+                          <div className="text-helper mt-1">
                             Try searching with different terms (e.g., city name, street name, address)
                           </div>
                         </div>
@@ -1451,7 +1427,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     </div>
                   </div>
                   {validationErrors.coordinates && (
-                    <p className="text-sm text-red-600">{validationErrors.coordinates}</p>
+                    <p className="text-body text-destructive">{validationErrors.coordinates}</p>
                   )}
 
                   {/* Coverage Scope (Coverage only) */}
@@ -1627,6 +1603,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   </Label>
                   <Input
                     id="location_ref"
+                    className="font-mono"
                     {...register('location_ref')}
                     placeholder="e.g., AF-KAN, KH-PNH"
                   />
@@ -1703,7 +1680,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           type="text"
                           {...register('location_id_code')}
                           placeholder="e.g., 1821306"
-                          className="flex-1"
+                          className="flex-1 font-mono"
                         />
                         {watch('location_id_code') && (
                           <Button
@@ -1762,7 +1739,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           id="admin_code"
                           {...register('admin_code')}
                           placeholder="e.g., MMR013"
-                          className="flex-1"
+                          className="flex-1 font-mono"
                         />
                         {watch('admin_code') && (
                           <Button
@@ -1792,7 +1769,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       {...register('spatial_reference_system')}
                       defaultValue="http://www.opengis.net/def/crs/EPSG/0/4326"
                       placeholder="http://www.opengis.net/def/crs/EPSG/0/4326"
-                      className="w-full"
+                      className="w-full font-mono"
                     />
                   </div>
 
@@ -1812,7 +1789,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 onClick={handleDelete}
                 className="flex items-center gap-2"
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
                 Delete
               </Button>
             )}
@@ -1825,10 +1802,6 @@ const autoPopulateIatiFields = useCallback((params: {
               type="submit"
               disabled={isSaving}
               onClick={() => {
-                console.log('[LocationModal] Submit button clicked!');
-                console.log('[LocationModal] Current form errors:', errors);
-                console.log('[LocationModal] Form values:', watch());
-                console.log('[LocationModal] Is form valid:', isValid);
               }}
               className="flex items-center gap-2"
             >

@@ -12,7 +12,6 @@ export async function PUT(
     const { id } = await params;
     const { reporting_org_id } = await request.json();
     
-    console.log('[AIMS] Reporting org update request:', { activityId: id, reporting_org_id });
     
     if (!id) {
       return NextResponse.json(
@@ -62,7 +61,6 @@ export async function PUT(
       updateData.created_by_org_acronym = null;
     }
 
-    console.log('[AIMS] Updating activity with data:', updateData);
     const { error: updateError } = await supabase
       .from('activities')
       .update(updateData)

@@ -58,7 +58,6 @@ export function useResults(activityId: string) {
       
       // Show helpful message if tables don't exist yet
       if (responseData.message) {
-        console.log('[Results Hook]', responseData.message);
       }
       
     } catch (err) {
@@ -275,8 +274,6 @@ export function useBaselines() {
     try {
       setLoading(true);
       
-      console.log('[useBaselines] Saving baseline for indicator:', data.indicator_id);
-      console.log('[useBaselines] Data:', data);
       
       // Use the database function for a simpler approach
       const { data: result, error } = await supabase.rpc('save_baseline', {
@@ -295,7 +292,6 @@ export function useBaselines() {
         throw new Error(result.error);
       }
 
-      console.log('[useBaselines] Baseline saved successfully:', result);
       toast.success('Baseline saved successfully');
       
       // Return a properly formatted baseline object

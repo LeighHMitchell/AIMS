@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     
     if (checkError) {
       // If exec doesn't work, try a different approach
-      console.log('Using alternative check method...');
       
       // Try to select the column
       const { error: selectError } = await supabase

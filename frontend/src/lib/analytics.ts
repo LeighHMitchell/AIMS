@@ -29,7 +29,6 @@ export function track(event: string, properties?: Record<string, any>): void {
     // In production, you would send this to your analytics service
     // For now, we'll log to console in development and store locally
     if (process.env.NODE_ENV === 'development') {
-      console.log('📊 Analytics Event:', analyticsEvent);
     }
 
     // Store in localStorage for potential batch sending

@@ -130,7 +130,7 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <CalendarClock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground mb-4">Monitoring has not been activated for this project.</p>
+          <p className="text-body text-muted-foreground mb-4">Monitoring has not been activated for this project.</p>
           <Button onClick={activateMonitoring} disabled={actionLoading} className="gap-1.5">
             {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Activate Monitoring
@@ -150,7 +150,7 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
               <CalendarClock className="h-4 w-4" /> Monitoring Schedule
             </CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Active</span>
+              <span className="text-helper text-muted-foreground">Active</span>
               <Switch checked={schedule.is_active} onCheckedChange={toggleActive} />
             </div>
           </div>
@@ -158,15 +158,15 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="text-xs text-muted-foreground">Interval</div>
-              <div className="text-sm font-medium">Every {schedule.interval_months} months</div>
+              <div className="text-helper text-muted-foreground">Interval</div>
+              <div className="text-body font-medium">Every {schedule.interval_months} months</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Next Due</div>
-              <div className="text-sm font-medium">{schedule.next_due_date || '—'}</div>
+              <div className="text-helper text-muted-foreground">Next Due</div>
+              <div className="text-body font-medium">{schedule.next_due_date || '—'}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Status</div>
+              <div className="text-helper text-muted-foreground">Status</div>
               <Badge variant={schedule.is_active ? 'success' : 'gray'}>
                 {schedule.is_active ? 'Active' : 'Paused'}
               </Badge>
@@ -182,10 +182,10 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
         </CardHeader>
         <CardContent>
           {reports.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No reports yet</p>
+            <p className="text-body text-muted-foreground text-center py-4">No reports yet</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted border-b">
                   <tr>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>

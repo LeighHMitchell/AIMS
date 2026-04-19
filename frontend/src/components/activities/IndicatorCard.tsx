@@ -114,7 +114,7 @@ export function IndicatorCard({
 
   // Handle deleting indicator
   const handleDeleteIndicator = async () => {
-    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteIndicator(indicator.id);
       if (success) {
         onUpdate?.();
@@ -181,7 +181,7 @@ export function IndicatorCard({
   // Get status icon component
   const getStatusIcon = () => {
     if (!indicator.status) {
-      return <Clock className="h-4 w-4 text-gray-400" />;
+      return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
 
     switch (indicator.status.color) {
@@ -190,40 +190,40 @@ export function IndicatorCard({
       case 'yellow':
         return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       case 'red':
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   return (
     <>
-    <Card className="border border-gray-200 bg-white">
+    <Card className="border border-border bg-white">
       <Collapsible open={true}>
-          <CardHeader className="hover:bg-gray-50 transition-colors">
+          <CardHeader className="hover:bg-muted transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {getStatusIcon()}
-                    <Badge variant="outline" className="text-xs text-gray-800">
+                    <Badge variant="outline" className="text-helper text-foreground">
                       {MEASURE_TYPE_LABELS[indicator.measure]}
                     </Badge>
                     {indicator.ascending && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-helper">
                         Ascending
                       </Badge>
                     )}
-                    <span className="text-xs text-gray-500">
+                    <span className="text-helper text-muted-foreground">
                       {indicator.periods?.length || 0} periods
                     </span>
                   </div>
                   
-                  <CardTitle className="text-sm">
+                  <CardTitle className="text-body">
                     {indicator.title[defaultLanguage] || Object.values(indicator.title)[0]}
                   </CardTitle>
                   
                   {indicator.description && (
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       {indicator.description[defaultLanguage] || Object.values(indicator.description)[0]}
                     </p>
                   )}
@@ -231,7 +231,7 @@ export function IndicatorCard({
                   {/* Progress bar */}
                   {indicator.status && indicator.status.percentage > 0 && (
                     <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                      <div className="flex items-center justify-between text-helper text-muted-foreground mb-1">
                         <span>Progress: {indicator.status.label}</span>
                         <span>{indicator.status.percentage}%</span>
                       </div>
@@ -240,7 +240,7 @@ export function IndicatorCard({
                         className={cn(
                           "h-1",
                           indicator.status.color === 'green' && "[&>div]:bg-gray-800",
-                          indicator.status.color === 'yellow' && "[&>div]:bg-gray-500",
+                          indicator.status.color === 'yellow' && "[&>div]:bg-muted0",
                           indicator.status.color === 'red' && "[&>div]:bg-gray-400"
                         )}
                       />
@@ -254,17 +254,17 @@ export function IndicatorCard({
                     variant="ghost" 
                     size="sm"
                     onClick={() => setIsEditing(true)}
-                    className="text-gray-800 hover:bg-gray-100"
+                    className="text-foreground hover:bg-muted"
                   >
-                    <Pencil className="h-3 w-3 text-slate-500" />
+                    <Pencil className="h-3 w-3 text-muted-foreground" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm"
                     onClick={handleDeleteIndicator}
-                    className="text-gray-800 hover:bg-gray-100"
+                    className="text-foreground hover:bg-muted"
                   >
-                    <Trash2 className="h-3 w-3 text-red-500" />
+                    <Trash2 className="h-3 w-3 text-destructive" />
                   </Button>
                 </div>
               )}
@@ -276,12 +276,12 @@ export function IndicatorCard({
 
             {/* Edit Form */}
             {isEditing && !readOnly && (
-              <div className="space-y-4 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-4 mb-6 p-4 bg-muted rounded-lg">
                 <h4 className="font-medium">Edit Indicator</h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-gray-800">
+                    <Label className="flex items-center gap-2 text-foreground">
                       Measure Type
                       <HelpTextTooltip>
                         The unit or way this indicator is measured.
@@ -320,7 +320,7 @@ export function IndicatorCard({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-gray-800">
+                  <Label className="flex items-center gap-2 text-foreground">
                     Indicator Title
                     <HelpTextTooltip>
                       How you will measure this result, e.g., “% of girls completing secondary school”.
@@ -338,7 +338,7 @@ export function IndicatorCard({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-gray-800">
+                  <Label className="flex items-center gap-2 text-foreground">
                     Description
                     <HelpTextTooltip>
                       Brief narrative describing what this indicator captures.
@@ -396,7 +396,7 @@ export function IndicatorCard({
             {/* Baseline Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
                   Baseline
                   <HelpTextTooltip>
                     The starting point before the project began.
@@ -416,7 +416,7 @@ export function IndicatorCard({
 
               {indicator.baseline ? (
                 <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-body">
                     <div>
                       <span className="font-medium">Year:</span> {indicator.baseline.baseline_year}
                     </div>
@@ -433,22 +433,22 @@ export function IndicatorCard({
                           size="sm"
                           onClick={() => setShowBaselineForm(true)}
                         >
-                          <Pencil className="h-3 w-3 text-slate-500" />
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
                         </Button>
                       )}
                     </div>
                   </div>
                   {indicator.baseline.comment && (
-                    <p className="text-xs text-gray-600 mt-2">{indicator.baseline.comment}</p>
+                    <p className="text-helper text-muted-foreground mt-2">{indicator.baseline.comment}</p>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 italic">No baseline set</p>
+                <p className="text-body text-muted-foreground italic">No baseline data yet — add a starting value to track progress</p>
               )}
 
               {/* Baseline Form */}
               {showBaselineForm && !readOnly && (
-                <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                <div className="p-4 bg-muted rounded-lg space-y-4">
                   <h5 className="font-medium">Baseline Information</h5>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -517,7 +517,7 @@ export function IndicatorCard({
             {/* Periods Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
                   Periods & Targets
                   <HelpTextTooltip>
                     Define targets and record actuals for each reporting period.
@@ -537,7 +537,7 @@ export function IndicatorCard({
 
               {/* Add Period Form */}
               {showAddPeriod && !readOnly && (
-                <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                <div className="p-4 bg-muted rounded-lg space-y-4">
                   <h5 className="font-medium">Add New Period</h5>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -606,7 +606,7 @@ export function IndicatorCard({
               {indicator.periods && indicator.periods.length > 0 ? (
                 <div className="space-y-2">
                   {/* Table Header */}
-                  <div className="grid grid-cols-6 gap-2 text-xs font-medium text-gray-600 px-3 py-2 bg-gray-100 rounded-lg">
+                  <div className="grid grid-cols-6 gap-2 text-helper font-medium text-muted-foreground px-3 py-2 bg-muted rounded-lg">
                     <div>FACET</div>
                     <div>BASELINE</div>
                     <div>TARGET</div>
@@ -645,12 +645,12 @@ export function IndicatorCard({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
-                  <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">No periods defined</p>
+                <div className="text-center py-6 border-2 border-dashed border-border rounded-lg">
+                  <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-body text-muted-foreground">No periods added yet</p>
                   {!readOnly && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Add periods to track progress over time
+                    <p className="text-helper text-muted-foreground mt-1">
+                      Define time periods to set targets and record progress
                     </p>
                   )}
                 </div>

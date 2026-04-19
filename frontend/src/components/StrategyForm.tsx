@@ -318,7 +318,7 @@ export function StrategyForm({
             <Label>Time Period</Label>
             <div className="grid grid-cols-4 gap-2">
               <div>
-                <Label className="text-xs text-muted-foreground">Start Year</Label>
+                <Label className="text-helper text-muted-foreground">Start Year</Label>
                 <Select value={startYear} onValueChange={setStartYear}>
                   <SelectTrigger>
                     <SelectValue placeholder="Year" />
@@ -333,7 +333,7 @@ export function StrategyForm({
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Start Month</Label>
+                <Label className="text-helper text-muted-foreground">Start Month</Label>
                 <Select value={startMonth} onValueChange={setStartMonth}>
                   <SelectTrigger>
                     <SelectValue placeholder="Month" />
@@ -348,7 +348,7 @@ export function StrategyForm({
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">End Year</Label>
+                <Label className="text-helper text-muted-foreground">End Year</Label>
                 <Select value={endYear} onValueChange={setEndYear}>
                   <SelectTrigger>
                     <SelectValue placeholder="Year" />
@@ -363,7 +363,7 @@ export function StrategyForm({
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">End Month</Label>
+                <Label className="text-helper text-muted-foreground">End Month</Label>
                 <Select value={endMonth} onValueChange={setEndMonth}>
                   <SelectTrigger>
                     <SelectValue placeholder="Month" />
@@ -504,7 +504,7 @@ export function StrategyForm({
               placeholder="Private notes about this strategy..."
               rows={3}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               These notes are for internal use only and will not be publicly visible.
             </p>
           </div>

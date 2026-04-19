@@ -81,7 +81,7 @@ export function ParcelDetailMap({ parcel }: ParcelDetailMapProps) {
   if (!parcel.geometry) {
     return (
       <div className="w-full h-[400px] rounded-lg border flex items-center justify-center bg-muted/50">
-        <p className="text-sm text-muted-foreground">No geometry data available for this parcel.</p>
+        <p className="text-body text-muted-foreground">No geometry data available for this parcel.</p>
       </div>
     )
   }

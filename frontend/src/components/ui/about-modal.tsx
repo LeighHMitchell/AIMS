@@ -43,9 +43,9 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
 
           <TabsContent value="about" className="mt-0 border-0 p-0">
             <ScrollArea className="h-[60vh] px-6 pb-6">
-              <div className="prose prose-sm max-w-none space-y-6 text-gray-700">
+              <div className="prose prose-sm max-w-none space-y-6 text-foreground">
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-4 mb-3">
+                  <h2 className="text-lg font-semibold text-foreground mt-4 mb-3">
                     About the Development Finance Management Information System (DFMIS)
                   </h2>
                   <p className="leading-relaxed">
@@ -59,20 +59,20 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     view of development finance, including non-ODA flows, vertical funds, climate finance, humanitarian 
                     assistance, and other public and publicly backed resources that contribute to national development outcomes.
                   </p>
-                  <p className="leading-relaxed font-medium text-gray-800">
+                  <p className="leading-relaxed font-medium text-foreground">
                     At its core, DFMIS is about making development finance intelligible, comparable, and actionable for decision-makers.
                   </p>
                 </section>
 
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Purpose and scope</h2>
+                  <h2 className="text-lg font-semibold text-foreground mt-6 mb-3">Purpose and scope</h2>
                   <p className="leading-relaxed">
                     DFMIS exists to address a persistent gap in development finance management: while large volumes of data 
                     are reported internationally, governments and partners often lack an integrated, usable system that reflects 
                     how funds are planned, approved, disbursed, and spent in practice.
                   </p>
                   <p className="leading-relaxed mb-2">The system supports:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li>National ownership and oversight of external finance</li>
                     <li>Alignment of development finance with national plans, budgets, and sector priorities</li>
                     <li>Reduced reporting burden through standards-based data reuse</li>
@@ -85,14 +85,14 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-3">What DFMIS enables</h2>
+                  <h2 className="text-lg font-semibold text-foreground mt-6 mb-3">What DFMIS enables</h2>
                   
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Integrated development finance tracking</h3>
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Integrated development finance tracking</h3>
                   <p className="leading-relaxed">
                     DFMIS captures development finance across its full lifecycle, from pipeline and approval to implementation 
                     and closure. It supports detailed tracking of:
                   </p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li>Projects, programmes, and activities</li>
                     <li>Commitments, planned disbursements, disbursements, and expenditure</li>
                     <li>Grants, loans, technical assistance, and other finance instruments</li>
@@ -102,7 +102,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     This allows users to see not just what has been promised, but what is actually flowing and where gaps or delays occur.
                   </p>
 
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Standards-aligned by design</h3>
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Standards-aligned by design</h3>
                   <p className="leading-relaxed">
                     The system is built around the International Aid Transparency Initiative (IATI) Standard, ensuring that activity 
                     and transaction data can be validated, exchanged, and published without rework. Key classifications such as sector, 
@@ -114,11 +114,11 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     management systems.
                   </p>
 
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Government-centred workflows</h3>
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Government-centred workflows</h3>
                   <p className="leading-relaxed">
                     DFMIS places recipient governments at the centre of development finance oversight. Government users can:
                   </p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li>Review and validate reported activities</li>
                     <li>Request clarification or revisions from reporting organisations</li>
                     <li>Monitor alignment with national priorities and budget cycles</li>
@@ -128,11 +128,11 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     This supports stronger coordination, transparency, and accountability without disrupting partner reporting practices.
                   </p>
 
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Analytics for planning and policy</h3>
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Analytics for planning and policy</h3>
                   <p className="leading-relaxed">
                     Built-in analytics transform raw finance data into practical insight. Users can explore:
                   </p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li>Sectoral and geographic distribution of development finance</li>
                     <li>Trends over time across commitments and disbursements</li>
                     <li>Portfolio composition by donor, modality, or implementing partner</li>
@@ -142,7 +142,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     Visualisations, tables, and filters are designed for policy teams and planners, not only data specialists.
                   </p>
 
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Role-based collaboration</h3>
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Role-based collaboration</h3>
                   <p className="leading-relaxed">
                     DFMIS supports multiple user roles, including government officials, donors, implementing partners, and system 
                     administrators. Permissions are managed to balance transparency with appropriate access control, enabling 
@@ -151,36 +151,36 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Design principles</h2>
+                  <h2 className="text-lg font-semibold text-foreground mt-6 mb-3">Design principles</h2>
                   <p className="leading-relaxed mb-2">DFMIS is guided by a clear set of principles:</p>
                   <ul className="space-y-2 ml-2">
-                    <li className="text-gray-600">
-                      <span className="font-medium text-gray-800">Country ownership first:</span> Development finance data 
+                    <li className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Country ownership first:</span> Development finance data 
                       should serve national planning and accountability needs.
                     </li>
-                    <li className="text-gray-600">
-                      <span className="font-medium text-gray-800">Standards, not silos:</span> International standards are 
+                    <li className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Standards, not silos:</span> International standards are 
                       used to reduce duplication and increase interoperability.
                     </li>
-                    <li className="text-gray-600">
-                      <span className="font-medium text-gray-800">Practical realism:</span> The system accommodates partial 
+                    <li className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Practical realism:</span> The system accommodates partial 
                       data, revisions, and evolving project information.
                     </li>
-                    <li className="text-gray-600">
-                      <span className="font-medium text-gray-800">Scalable architecture:</span> DFMIS can grow from an 
+                    <li className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Scalable architecture:</span> DFMIS can grow from an 
                       aid-focused system into a full development finance platform over time.
                     </li>
-                    <li className="text-gray-600">
-                      <span className="font-medium text-gray-800">Usability and clarity:</span> Complex finance concepts 
+                    <li className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Usability and clarity:</span> Complex finance concepts 
                       are presented in clear, structured, and navigable ways.
                     </li>
                   </ul>
                 </section>
 
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Who DFMIS is for</h2>
+                  <h2 className="text-lg font-semibold text-foreground mt-6 mb-3">Who DFMIS is for</h2>
                   <p className="leading-relaxed mb-2">DFMIS is designed for:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li>Government ministries responsible for planning, finance, or aid coordination</li>
                     <li>Bilateral and multilateral development partners</li>
                     <li>International and local implementing organisations</li>
@@ -192,7 +192,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Looking ahead</h2>
+                  <h2 className="text-lg font-semibold text-foreground mt-6 mb-3">Looking ahead</h2>
                   <p className="leading-relaxed">
                     DFMIS is not just a database. It is a digital public good that strengthens how development finance is governed, 
                     coordinated, and understood. By bringing together international standards and national systems in one platform, 
@@ -206,9 +206,9 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
 
           <TabsContent value="acknowledgements" className="mt-0 border-0 p-0">
             <ScrollArea className="h-[60vh] px-6 pb-6">
-              <div className="prose prose-sm max-w-none space-y-6 text-gray-700">
+              <div className="prose prose-sm max-w-none space-y-6 text-foreground">
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-4 mb-3">
+                  <h2 className="text-lg font-semibold text-foreground mt-4 mb-3">
                     Acknowledgements
                   </h2>
                   <p className="leading-relaxed">
@@ -243,9 +243,9 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
 
           <TabsContent value="opensource" className="mt-0 border-0 p-0">
             <ScrollArea className="h-[60vh] px-6 pb-6">
-              <div className="prose prose-sm max-w-none space-y-6 text-gray-700">
+              <div className="prose prose-sm max-w-none space-y-6 text-foreground">
                 <section>
-                  <h2 className="text-lg font-semibold text-gray-900 mt-4 mb-3">
+                  <h2 className="text-lg font-semibold text-foreground mt-4 mb-3">
                     Open Source Software
                   </h2>
                   <p className="leading-relaxed">
@@ -255,8 +255,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Core Frameworks</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Core Frameworks</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">React</span> &ndash; User interface library by Meta (MIT License)</li>
                     <li><span className="font-medium">Next.js</span> &ndash; React framework by Vercel (MIT License)</li>
                     <li><span className="font-medium">TypeScript</span> &ndash; Typed JavaScript by Microsoft (Apache 2.0)</li>
@@ -265,8 +265,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">UI Components & Styling</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">UI Components & Styling</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Radix UI</span> &ndash; Accessible component primitives (MIT License)</li>
                     <li><span className="font-medium">shadcn/ui</span> &ndash; Component library built on Radix UI</li>
                     <li><span className="font-medium">Tailwind CSS</span> &ndash; Utility-first CSS framework (MIT License)</li>
@@ -279,8 +279,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Icons & Graphics</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Icons & Graphics</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Lucide React</span> &ndash; Open source icon library (ISC License)</li>
                     <li><span className="font-medium">Radix UI Icons</span> &ndash; Icon set by Radix (MIT License)</li>
                     <li><span className="font-medium">react-world-flags</span> &ndash; Country flag components (MIT License)</li>
@@ -289,8 +289,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Data Visualisation</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Data Visualisation</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Recharts</span> &ndash; React charting library (MIT License)</li>
                     <li><span className="font-medium">D3.js</span> &ndash; Data-driven documents library (ISC License)</li>
                     <li><span className="font-medium">d3-sankey</span> &ndash; Sankey diagram generator (ISC License)</li>
@@ -299,8 +299,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Maps & Geospatial</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Maps & Geospatial</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">MapLibre GL</span> &ndash; Vector map rendering (ISC License)</li>
                     <li><span className="font-medium">Leaflet</span> &ndash; Interactive mapping library (BSD-2-Clause)</li>
                     <li><span className="font-medium">react-leaflet</span> &ndash; React components for Leaflet (MIT License)</li>
@@ -313,8 +313,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Forms & Validation</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Forms & Validation</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">React Hook Form</span> &ndash; Performant form library (MIT License)</li>
                     <li><span className="font-medium">Zod</span> &ndash; TypeScript-first schema validation (MIT License)</li>
                     <li><span className="font-medium">react-select</span> &ndash; Advanced select/dropdown component (MIT License)</li>
@@ -323,8 +323,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Calendar & Date Handling</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Calendar & Date Handling</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">FullCalendar</span> &ndash; Calendar component framework (MIT License)</li>
                     <li><span className="font-medium">date-fns</span> &ndash; Modern date utility library (MIT License)</li>
                     <li><span className="font-medium">react-datepicker</span> &ndash; Date picker component (MIT License)</li>
@@ -333,8 +333,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Rich Text & Documents</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Rich Text & Documents</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Tiptap</span> &ndash; Headless rich text editor (MIT License)</li>
                     <li><span className="font-medium">jsPDF</span> &ndash; PDF generation library (MIT License)</li>
                     <li><span className="font-medium">pdf.js</span> &ndash; PDF rendering by Mozilla (Apache 2.0)</li>
@@ -343,8 +343,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Data Processing</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Data Processing</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">SheetJS (XLSX)</span> &ndash; Spreadsheet toolkit (Apache 2.0)</li>
                     <li><span className="font-medium">fast-xml-parser</span> &ndash; XML parsing library (MIT License)</li>
                     <li><span className="font-medium">DOMPurify</span> &ndash; HTML sanitisation (MPL-2.0)</li>
@@ -355,39 +355,39 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Menus & Interaction</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Menus & Interaction</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Bloom Menu</span> &ndash; Animated radial action menu component (ISC License)</li>
                     <li><span className="font-medium">dnd-kit</span> &ndash; Modern drag and drop toolkit (MIT License)</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Backend & Services</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Backend & Services</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Supabase</span> &ndash; Open source backend platform (Apache 2.0)</li>
                     <li><span className="font-medium">Resend</span> &ndash; Email delivery service</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Standards & Data</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Standards & Data</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">IATI Standard</span> &ndash; International Aid Transparency Initiative data specification (CC-BY)</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h3 className="text-base font-medium text-gray-800 mt-4 mb-2">Testing</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+                  <h3 className="text-base font-medium text-foreground mt-4 mb-2">Testing</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li><span className="font-medium">Playwright</span> &ndash; End-to-end testing framework (Apache 2.0)</li>
                     <li><span className="font-medium">Jest</span> &ndash; JavaScript testing framework (MIT License)</li>
                     <li><span className="font-medium">Testing Library</span> &ndash; Testing utilities for React (MIT License)</li>
                   </ul>
                 </section>
 
-                <section className="mt-6 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-500 leading-relaxed">
+                <section className="mt-6 pt-4 border-t border-border">
+                  <p className="text-body text-muted-foreground leading-relaxed">
                     This list includes the major dependencies used in DFMIS. For a complete list of all packages
                     and their versions, please refer to the project's package.json file. We extend our thanks to
                     the entire open source community whose work makes projects like this possible.

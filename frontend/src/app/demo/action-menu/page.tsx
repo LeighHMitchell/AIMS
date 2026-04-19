@@ -45,23 +45,23 @@ export default function ActionMenuDemoPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                <span className="text-sm">Click the menu to see available actions:</span>
+                <span className="text-body">Click the menu to see available actions:</span>
                 <Popover>
                   <PopoverTrigger className="p-0 h-auto hover:bg-muted rounded-sm">
                     <MoreVertical className="h-4 w-4" />
                   </PopoverTrigger>
                   <PopoverContent className="w-32 p-1">
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                       onClick={() => handleAction('Edit', 'demo')}
                     >
                       <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-body"
                       onClick={() => handleAction('Delete', 'demo')}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                      <Trash2 className="h-4 w-4 text-destructive" /> Delete
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -107,22 +107,22 @@ export default function ActionMenuDemoPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-32 p-1">
                               <button 
-                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                                 onClick={() => handleAction('View', item.id)}
                               >
                                 <Eye className="h-4 w-4" /> View
                               </button>
                               <button 
-                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                                 onClick={() => handleAction('Edit', item.id)}
                               >
                                 <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                               </button>
                               <button 
-                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-body"
                                 onClick={() => handleAction('Delete', item.id)}
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                                <Trash2 className="h-4 w-4 text-destructive" /> Delete
                               </button>
                             </PopoverContent>
                           </Popover>
@@ -142,48 +142,48 @@ export default function ActionMenuDemoPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                <span className="text-sm">Example with more actions:</span>
+                <span className="text-body">Example with more actions:</span>
                 <Popover>
                   <PopoverTrigger className="p-0 h-auto hover:bg-muted rounded-sm">
                     <MoreVertical className="h-4 w-4" />
                   </PopoverTrigger>
                   <PopoverContent className="w-40 p-1">
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                       onClick={() => handleAction('View Details', 'extended')}
                     >
                       <Eye className="h-4 w-4" /> View Details
                     </button>
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                       onClick={() => handleAction('Edit', 'extended')}
                     >
                       <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                       onClick={() => handleAction('Download', 'extended')}
                     >
                       <Download className="h-4 w-4" /> Download
                     </button>
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                       onClick={() => handleAction('Share', 'extended')}
                     >
                       <Share className="h-4 w-4" /> Share
                     </button>
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body"
                       onClick={() => handleAction('Copy Link', 'extended')}
                     >
                       <Copy className="h-4 w-4" /> Copy Link
                     </button>
                     <div className="border-t border-border my-1" />
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-body"
                       onClick={() => handleAction('Delete', 'extended')}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                      <Trash2 className="h-4 w-4 text-destructive" /> Delete
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -199,7 +199,7 @@ export default function ActionMenuDemoPage() {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-semibold mb-2">Basic Structure:</h3>
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-body">
 {`import { MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -209,11 +209,11 @@ import { Button } from "@/components/ui/button"
     <MoreVertical className="h-4 w-4" />
   </PopoverTrigger>
   <PopoverContent className="w-32 p-1">
-    <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm" onClick={handleEdit}>
+    <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-body" onClick={handleEdit}>
       <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
     </button>
-    <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm" onClick={handleDelete}>
-      <Trash2 className="h-4 w-4 text-red-500" /> Delete
+    <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-body" onClick={handleDelete}>
+      <Trash2 className="h-4 w-4 text-destructive" /> Delete
     </button>
   </PopoverContent>
 </Popover>`}
@@ -222,7 +222,7 @@ import { Button } from "@/components/ui/button"
 
               <div>
                 <h3 className="font-semibold mb-2">Key Features:</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <ul className="text-body text-muted-foreground space-y-1">
                   <li>• <strong>Space Efficient:</strong> Single icon instead of multiple buttons</li>
                   <li>• <strong>Consistent Design:</strong> Uses MoreVertical icon pattern</li>
                   <li>• <strong>Hover States:</strong> Clear feedback on menu items</li>
@@ -234,7 +234,7 @@ import { Button } from "@/components/ui/button"
 
               <div>
                 <h3 className="font-semibold mb-2">Best Practices:</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <ul className="text-body text-muted-foreground space-y-1">
                   <li>• Keep menu width consistent (typically w-32 or w-40)</li>
                   <li>• Use semantic icons that match action names</li>
                   <li>• Place destructive actions at the bottom with red color</li>

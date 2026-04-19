@@ -121,7 +121,7 @@ export function EnhancedSearchableSelect({
         <PopoverTrigger
           data-popover-trigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors cursor-pointer",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors cursor-pointer",
             !selectedOption && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -147,7 +147,7 @@ export function EnhancedSearchableSelect({
                 aria-label="Clear selection"
                 tabIndex={-1}
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -167,7 +167,7 @@ export function EnhancedSearchableSelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {search && (
@@ -178,7 +178,7 @@ export function EnhancedSearchableSelect({
                   aria-label="Clear search"
                   tabIndex={-1}
                 >
-                  <span className="text-xs">×</span>
+                  <span className="text-helper">×</span>
                 </button>
               )}
             </div>
@@ -186,17 +186,17 @@ export function EnhancedSearchableSelect({
             <CommandList>
               {filteredGroups.length === 0 ? (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     {emptyStateMessage}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     {emptyStateSubMessage}
                   </div>
                 </div>
               ) : (
                 filteredGroups.map((group) => (
                   <CommandGroup key={group.label}>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                    <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                       {group.label}
                     </div>
                     {group.options.map((option) => (
@@ -211,7 +211,7 @@ export function EnhancedSearchableSelect({
                             <span>{option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}</span>
                           </span>
                           {option.description && (
-                            <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                            <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                               {option.description}
                             </div>
                           )}

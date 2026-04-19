@@ -15,7 +15,7 @@ import { RegionSearchableSelect } from "@/components/ui/region-searchable-select
 // Dynamic import for MapLibre-based map with zoom-dependent township detail
 const SubnationalChoroplethMap = dynamic(
   () => import('@/components/maps/SubnationalChoroplethMap'),
-  { ssr: false, loading: () => <div className="h-[500px] bg-gray-100 rounded-lg flex items-center justify-center">Loading map...</div> }
+  { ssr: false, loading: () => <div className="h-[500px] bg-muted rounded-lg flex items-center justify-center">Loading map...</div> }
 )
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -94,16 +94,13 @@ export function SubnationalBreakdownTab({
     Object.entries(breakdowns).forEach(([regionName, percentage]) => {
       if (percentage > 0 && !allocationStatus[regionName]) {
         initialStatus[regionName] = 'saved'
-        console.log(`[DEBUG] Marking ${regionName} as 'saved' (${percentage}%)`)
       }
     })
     
     // Only update if we have new regions to mark as saved
     if (Object.keys(initialStatus).length > 0) {
-      console.log('[DEBUG] Setting initial allocation status:', initialStatus)
       setAllocationStatus(prev => ({ ...prev, ...initialStatus }))
     } else {
-      console.log('[DEBUG] No initial status updates needed')
     }
   }, [loading, isLoadingData, Object.keys(breakdowns).join(',')]) // Run when data is fully loaded
 
@@ -445,10 +442,10 @@ export function SubnationalBreakdownTab({
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+              <div key={i} className="h-12 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -574,15 +571,15 @@ export function SubnationalBreakdownTab({
           {/* Show all regions in read-only mode when nationwide is selected */}
           {isNationwide && (
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-700">Nationwide Distribution (Equal across all locations)</h4>
+              <h4 className="text-body font-medium text-foreground">Nationwide Distribution (Equal across all locations)</h4>
               <div className="border rounded-lg overflow-hidden">
                 <div className="max-h-96 overflow-y-auto p-4 space-y-2">
                   {Object.entries(breakdowns)
                     .sort(([a], [b]) => a.localeCompare(b))
                     .map(([regionName, percentage]) => (
-                      <div key={regionName} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">{regionName}</span>
-                        <span className="text-sm text-gray-600">{percentage.toFixed(2)}%</span>
+                      <div key={regionName} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span className="text-body font-medium">{regionName}</span>
+                        <span className="text-body text-muted-foreground">{percentage.toFixed(2)}%</span>
                       </div>
                     ))}
                 </div>

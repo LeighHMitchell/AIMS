@@ -195,7 +195,7 @@ function ChartHelpIcon({ text }: { text: string }) {
           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
-          <p className="text-sm">{text}</p>
+          <p className="text-body">{text}</p>
         </TooltipContent>
       </UITooltip>
     </TooltipProvider>
@@ -205,8 +205,8 @@ function ChartHelpIcon({ text }: { text: string }) {
 type ViewMode = 'bar' | 'line' | 'table';
 
 function ChartViewToggle({ mode, setMode, onExport }: { mode: ViewMode; setMode: (m: ViewMode) => void; onExport?: () => void }) {
-  const active = "bg-slate-200 text-slate-900 font-semibold";
-  const inactive = "text-gray-600 hover:bg-gray-100";
+  const active = "bg-muted text-foreground font-semibold";
+  const inactive = "text-muted-foreground hover:bg-muted";
   return (
     <div className="flex gap-0.5 ml-auto">
       <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${mode === 'bar' ? active : inactive}`} title="Bar chart" onClick={() => setMode('bar')}>
@@ -282,8 +282,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-sm text-red-700">Failed to load visualization data: {error}</p>
+      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+        <p className="text-body text-destructive">Failed to load visualization data: {error}</p>
       </div>
     );
   }
@@ -306,16 +306,16 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
             onClick={() => setExpandedChart('budgets')}
           >
-            <Maximize2 className="h-3.5 w-3.5 text-slate-400" />
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-slate-500" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
               Total Budgets
               <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
             </CardTitle>
             <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-slate-900">{formatCurrency(totalBudget)}</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</p>
               <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Total Budgets')} />
             </div>
           </CardHeader>
@@ -327,15 +327,15 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-xs py-1 h-auto">Year</TableHead>
-                          <TableHead className="text-xs py-1 h-auto text-right">Amount (USD)</TableHead>
+                          <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.budgetTrend.map((point) => (
                           <TableRow key={point.year}>
-                            <TableCell className="text-xs py-1">{point.year}</TableCell>
-                            <TableCell className="text-xs py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                            <TableCell className="text-helper py-1">{point.year}</TableCell>
+                            <TableCell className="text-helper py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -351,17 +351,17 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -382,17 +382,17 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -409,7 +409,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   </ResponsiveContainer>
                 )
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No budget data
                 </div>
               )}
@@ -425,16 +425,16 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
             onClick={() => setExpandedChart('planned')}
           >
-            <Maximize2 className="h-3.5 w-3.5 text-slate-400" />
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-slate-500" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
               Planned Disbursements
               <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
             </CardTitle>
             <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPlanned)}</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totalPlanned)}</p>
               <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Planned Disbursements')} />
             </div>
           </CardHeader>
@@ -446,15 +446,15 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-xs py-1 h-auto">Year</TableHead>
-                          <TableHead className="text-xs py-1 h-auto text-right">Amount (USD)</TableHead>
+                          <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.plannedBudgetTrend.map((point) => (
                           <TableRow key={point.year}>
-                            <TableCell className="text-xs py-1">{point.year}</TableCell>
-                            <TableCell className="text-xs py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                            <TableCell className="text-helper py-1">{point.year}</TableCell>
+                            <TableCell className="text-helper py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -470,17 +470,17 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -501,17 +501,17 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -528,7 +528,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   </ResponsiveContainer>
                 )
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No planned data
                 </div>
               )}
@@ -544,16 +544,16 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
             onClick={() => setExpandedChart('transactions')}
           >
-            <Maximize2 className="h-3.5 w-3.5 text-slate-400" />
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4 text-slate-500" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
               Transactions by Type
               <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
             </CardTitle>
             <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-slate-900">{formatCurrency(totalTransactionValue)}</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totalTransactionValue)}</p>
               <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} onExport={() => data?.transactionTrend && exportChartToCSV(data.transactionTrend.map(p => ({ Month: p.month, Count: p.count, 'Amount (USD)': p.amount })), 'Transactions by Type')} />
             </div>
           </CardHeader>
@@ -573,22 +573,22 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         if (active && payload && payload.length) {
                           const dataPoint = data.transactionTrend.find(t => t.month === label);
                           return (
-                            <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                            <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                               <table className="border-collapse">
                                 <thead className="bg-surface-muted">
                                   <tr className="bg-surface-muted">
-                                    <th className="px-3 py-1.5 text-left font-medium text-slate-700" colSpan={2}>Year {label}</th>
+                                    <th className="px-3 py-1.5 text-left font-medium text-foreground" colSpan={2}>Year {label}</th>
                                   </tr>
                                   <tr className="bg-surface-muted">
-                                    <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
-                                    <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
+                                    <th className="px-3 py-1 text-left font-medium text-muted-foreground">Type</th>
+                                    <th className="px-3 py-1 text-right font-medium text-muted-foreground">USD Value</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {dataPoint?.typeAmounts && Object.entries(dataPoint.typeAmounts)
                                     .sort(([, a], [, b]) => b - a)
                                     .map(([type, amount]) => (
-                                      <tr key={type} className="border-t border-slate-100">
+                                      <tr key={type} className="border-t border-border">
                                         <td className="px-3 py-1">
                                           <span className="flex items-center gap-1.5">
                                             <span
@@ -601,7 +601,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                         <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
                                       </tr>
                                     ))}
-                                  <tr className="border-t-2 border-slate-300">
+                                  <tr className="border-t-2 border-input">
                                     <td className="px-3 py-1.5 font-semibold">Total</td>
                                     <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
                                   </tr>
@@ -621,25 +621,25 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-xs py-1 h-auto">Year</TableHead>
+                              <TableHead className="text-helper py-1 h-auto">Year</TableHead>
                               {uniqueTypes.map(type => (
-                                <TableHead key={type} className="text-xs py-1 h-auto text-right">
+                                <TableHead key={type} className="text-helper py-1 h-auto text-right">
                                   {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                                 </TableHead>
                               ))}
-                              <TableHead className="text-xs py-1 h-auto text-right">Total</TableHead>
+                              <TableHead className="text-helper py-1 h-auto text-right">Total</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {data.transactionTrend.map((point) => (
                               <TableRow key={point.month}>
-                                <TableCell className="text-xs py-1">{point.month}</TableCell>
+                                <TableCell className="text-helper py-1">{point.month}</TableCell>
                                 {uniqueTypes.map(type => (
-                                  <TableCell key={type} className="text-xs py-1 text-right">
+                                  <TableCell key={type} className="text-helper py-1 text-right">
                                     {formatCurrency(point.typeAmounts?.[type] || 0)}
                                   </TableCell>
                                 ))}
-                                <TableCell className="text-xs py-1 text-right font-medium">{formatCurrency(point.amount)}</TableCell>
+                                <TableCell className="text-helper py-1 text-right font-medium">{formatCurrency(point.amount)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -693,7 +693,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   );
                 })()
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No transaction data
                 </div>
               )}
@@ -709,15 +709,15 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
             onClick={() => setExpandedChart('sectors')}
           >
-            <Maximize2 className="h-3.5 w-3.5 text-slate-400" />
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-slate-500" />
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
               Sectors
               <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Hover for financial details including budgets, planned disbursements, and actual disbursements in USD." />
               <div className="flex gap-0.5 ml-auto">
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-100" title="Export CSV" onClick={() => data?.sectorBreakdown && exportChartToCSV(data.sectorBreakdown.map(s => ({ Sector: s.name, Code: s.code, Activities: s.activityCount, 'Budget (USD)': s.totalBudget, 'Planned Disb. (USD)': s.totalPlannedDisbursements, 'Disbursed (USD)': s.totalDisbursements })), 'Sectors')}>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted" title="Export CSV" onClick={() => data?.sectorBreakdown && exportChartToCSV(data.sectorBreakdown.map(s => ({ Sector: s.name, Code: s.code, Activities: s.activityCount, 'Budget (USD)': s.totalBudget, 'Planned Disb. (USD)': s.totalPlannedDisbursements, 'Disbursed (USD)': s.totalDisbursements })), 'Sectors')}>
                   <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -731,7 +731,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
 
                   return (
                     <TooltipProvider>
-                      <div className="h-10 flex rounded-lg overflow-hidden bg-slate-100">
+                      <div className="h-10 flex rounded-lg overflow-hidden bg-muted">
                         {sectors.map((sector, index) => {
                           const pct = totalPlanned > 0 ? (sector.totalPlannedDisbursements / totalPlanned) * 100 : 0;
                           if (pct === 0) return null;
@@ -741,11 +741,11 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <div className="h-full cursor-default transition-opacity hover:opacity-80" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                               </TooltipTrigger>
                               <TooltipContent side="top" className="p-0 overflow-hidden max-w-[220px]">
-                                <div className="bg-white text-xs">
-                                  <div className="px-3 py-1.5 bg-surface-muted font-semibold text-slate-700 border-b border-slate-200 flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-slate-200 text-slate-600 text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
-                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Planned Disb.</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
-                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
-                                  <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-slate-500">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
+                                <div className="bg-white text-helper">
+                                  <div className="px-3 py-1.5 bg-surface-muted font-semibold text-foreground border-b border-border flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground">Planned Disb.</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
+                                  <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-muted-foreground">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
                                 </div>
                               </TooltipContent>
                             </UITooltip>
@@ -756,7 +756,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   );
                 })()
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No sector data
                 </div>
               )}
@@ -800,7 +800,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -832,7 +832,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -895,7 +895,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -927,7 +927,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -973,22 +973,22 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                 if (active && payload && payload.length && data?.transactionTrend) {
                   const dataPoint = data.transactionTrend.find(t => t.month === label);
                   return (
-                    <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                    <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                       <table className="border-collapse w-full">
                         <thead className="bg-surface-muted">
                           <tr className="bg-surface-muted">
                             <th className="px-3 py-1.5 text-left font-medium" colSpan={2}>Year {label}</th>
                           </tr>
-                          <tr className="bg-surface-muted border-b border-slate-200">
-                            <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
-                            <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
+                          <tr className="bg-surface-muted border-b border-border">
+                            <th className="px-3 py-1 text-left font-medium text-muted-foreground">Type</th>
+                            <th className="px-3 py-1 text-right font-medium text-muted-foreground">USD Value</th>
                           </tr>
                         </thead>
                         <tbody>
                           {dataPoint?.typeAmounts && Object.entries(dataPoint.typeAmounts)
                             .sort(([, a], [, b]) => b - a)
                             .map(([type, amount]) => (
-                              <tr key={type} className="border-t border-slate-100">
+                              <tr key={type} className="border-t border-border">
                                 <td className="px-3 py-1">
                                   <span className="flex items-center gap-2">
                                     <span
@@ -1001,7 +1001,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
                               </tr>
                             ))}
-                          <tr className="border-t-2 border-slate-300">
+                          <tr className="border-t-2 border-input">
                             <td className="px-3 py-1.5 font-semibold">Total</td>
                             <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
                           </tr>
@@ -1116,7 +1116,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               <TooltipProvider>
                 <div className="space-y-4">
                   {/* Single stacked bar */}
-                  <div className="h-8 flex rounded-full overflow-hidden bg-slate-100">
+                  <div className="h-8 flex rounded-full overflow-hidden bg-muted">
                     {sectors.map((sector, index) => {
                       const pct = totalPlanned > 0 ? (sector.totalPlannedDisbursements / totalPlanned) * 100 : 0;
                       if (pct === 0) return null;
@@ -1132,28 +1132,28 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="p-0 overflow-hidden">
-                            <div className="bg-white text-sm">
-                              <div className="px-3 py-2 bg-surface-muted font-semibold text-slate-700 border-b border-slate-200">
+                            <div className="bg-white text-body">
+                              <div className="px-3 py-2 bg-surface-muted font-semibold text-foreground border-b border-border">
                                 {sector.name} ({sector.code})
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
-                                <span className="text-slate-500">Planned Disb. (USD)</span>
+                                <span className="text-muted-foreground">Planned Disb. (USD)</span>
                                 <span className="font-medium">{formatCurrencyFull(sector.totalPlannedDisbursements)}</span>
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
-                                <span className="text-slate-500">Share</span>
+                                <span className="text-muted-foreground">Share</span>
                                 <span className="font-medium">{pct.toFixed(1)}%</span>
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
-                                <span className="text-slate-500">Activities</span>
+                                <span className="text-muted-foreground">Activities</span>
                                 <span className="font-medium">{sector.activityCount}</span>
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
-                                <span className="text-slate-500">Budget (USD)</span>
+                                <span className="text-muted-foreground">Budget (USD)</span>
                                 <span className="font-medium">{formatCurrencyFull(sector.totalBudget)}</span>
                               </div>
                               <div className="px-3 py-1.5 pb-2 flex justify-between gap-6">
-                                <span className="text-slate-500">Disbursements (USD)</span>
+                                <span className="text-muted-foreground">Disbursements (USD)</span>
                                 <span className="font-medium">{formatCurrencyFull(sector.totalDisbursements)}</span>
                               </div>
                             </div>
@@ -1165,13 +1165,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   {/* Legend */}
                   <div className="space-y-1.5">
                     {sectors.map((sector, index) => (
-                      <div key={sector.code} className="flex items-center gap-2 text-sm">
+                      <div key={sector.code} className="flex items-center gap-2 text-body">
                         <div
                           className="w-3 h-3 rounded-sm shrink-0"
                           style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }}
                         />
-                        <span className="text-slate-700 font-medium flex-1">{sector.name}</span>
-                        <span className="text-slate-500 shrink-0">{formatCurrencyFull(sector.totalPlannedDisbursements)}</span>
+                        <span className="text-foreground font-medium flex-1">{sector.name}</span>
+                        <span className="text-muted-foreground shrink-0">{formatCurrencyFull(sector.totalPlannedDisbursements)}</span>
                       </div>
                     ))}
                   </div>

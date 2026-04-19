@@ -95,7 +95,7 @@ export function FixOrphanedTransactionsStep({
       <CardContent className="space-y-6">
         {/* Progress */}
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-body">
             <span>Progress</span>
             <span>{currentIndex + 1} of {orphanTransactions.length}</span>
           </div>
@@ -106,24 +106,24 @@ export function FixOrphanedTransactionsStep({
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-green-50 rounded-lg">
             <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
-            <p className="text-sm font-medium">{resolvedCount}</p>
-            <p className="text-xs text-gray-600">Resolved</p>
+            <p className="text-body font-medium">{resolvedCount}</p>
+            <p className="text-helper text-muted-foreground">Resolved</p>
           </div>
           <div className="text-center p-3 bg-yellow-50 rounded-lg">
             <Link2 className="h-5 w-5 mx-auto mb-1 text-yellow-600" />
-            <p className="text-sm font-medium">{orphanTransactions.length - resolvedCount - skippedCount}</p>
-            <p className="text-xs text-gray-600">Remaining</p>
+            <p className="text-body font-medium">{orphanTransactions.length - resolvedCount - skippedCount}</p>
+            <p className="text-helper text-muted-foreground">Remaining</p>
           </div>
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <SkipForward className="h-5 w-5 mx-auto mb-1 text-gray-600" />
-            <p className="text-sm font-medium">{skippedCount}</p>
-            <p className="text-xs text-gray-600">Skipped</p>
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <SkipForward className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+            <p className="text-body font-medium">{skippedCount}</p>
+            <p className="text-helper text-muted-foreground">Skipped</p>
           </div>
         </div>
 
         {/* Orphan List Preview */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Orphaned Transactions</h4>
+          <h4 className="text-body font-medium">Orphaned Transactions</h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {orphanTransactions.map((orphan, idx) => {
               const isResolved = orphan.index in resolvedTransactions;
@@ -136,8 +136,8 @@ export function FixOrphanedTransactionsStep({
                   className={`flex items-center justify-between p-2 rounded-lg border ${
                     isCurrent ? 'border-primary bg-primary/5' : 
                     isResolved ? 'border-green-200 bg-green-50' : 
-                    isSkipped ? 'border-gray-200 bg-gray-50' : 
-                    'border-gray-200'
+                    isSkipped ? 'border-border bg-muted' : 
+                    'border-border'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -152,7 +152,7 @@ export function FixOrphanedTransactionsStep({
                   </div>
                   <div>
                     {isResolved && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
-                    {isSkipped && <SkipForward className="h-4 w-4 text-gray-500" />}
+                    {isSkipped && <SkipForward className="h-4 w-4 text-muted-foreground" />}
                     {isCurrent && !isResolved && !isSkipped && (
                       <ArrowRight className="h-4 w-4 text-primary animate-pulse" />
                     )}

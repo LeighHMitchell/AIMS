@@ -101,7 +101,6 @@ export async function POST(
     const uniqueFilename = `${timestamp}_${uuidv4()}.${fileExtension}`;
     const storagePath = `faq-attachments/${faqId}/${userId}/${uniqueFilename}`;
 
-    console.log('[FAQ Attachment Upload] Uploading to path:', storagePath);
 
     // Convert File to ArrayBuffer for Supabase
     const fileBuffer = await file.arrayBuffer();
@@ -122,7 +121,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[FAQ Attachment Upload] File uploaded successfully:', uploadData);
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
@@ -131,7 +129,6 @@ export async function POST(
 
     const publicUrl = urlData.publicUrl;
 
-    console.log('[FAQ Attachment Upload] Public URL generated:', publicUrl);
 
     return NextResponse.json({
       success: true,

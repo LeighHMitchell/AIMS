@@ -38,7 +38,7 @@ export function VersionBadge() {
         side="right"
         align="start"
         sideOffset={8}
-        className="w-80 shadow-xl border border-gray-200 z-[10001] p-0"
+        className="w-80 shadow-xl border border-border z-[10001] p-0"
         style={{ backgroundColor: '#f6f5f3', opacity: 1 }}
       >
         <div
@@ -48,7 +48,7 @@ export function VersionBadge() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+              <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-helper font-semibold text-primary">
                 v{latestRelease.version}
               </span>
               <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>Latest</span>
@@ -56,14 +56,14 @@ export function VersionBadge() {
           </div>
 
           {/* Date */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-helper text-muted-foreground">
             <Calendar className="h-3 w-3" />
             <span>{formattedDate}</span>
           </div>
 
           {/* Changes */}
           <div className="space-y-1.5">
-            <h4 className="text-xs font-semibold text-foreground">What's New</h4>
+            <h4 className="text-helper font-semibold text-foreground">What's New</h4>
             <ScrollArea className="h-[140px] pr-3">
               <ul className="space-y-1.5">
                 {latestRelease.changes.slice(0, 8).map((change, index) => {
@@ -79,7 +79,7 @@ export function VersionBadge() {
                   )
                 })}
                 {latestRelease.changes.length > 8 && (
-                  <li className="text-xs text-muted-foreground/60 italic pl-3">
+                  <li className="text-helper text-muted-foreground/60 italic pl-3">
                     +{latestRelease.changes.length - 8} more changes...
                   </li>
                 )}
@@ -91,7 +91,7 @@ export function VersionBadge() {
           <div className="pt-2 border-t">
             <Link 
               href="/build-history"
-              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+              className="flex items-center gap-1.5 text-helper font-medium text-primary hover:underline"
             >
               <span>View full build history</span>
               <ExternalLink className="h-3 w-3" />

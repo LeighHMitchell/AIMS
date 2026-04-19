@@ -126,10 +126,10 @@ export default function IATIImportPage() {
             <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-border border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                 <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
-                <p className="mb-2 text-sm text-muted-foreground">
+                <p className="mb-2 text-body text-muted-foreground">
                   <span className="font-semibold">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-xs text-muted-foreground">IATI XML files only</p>
+                <p className="text-helper text-muted-foreground">IATI XML files only</p>
               </div>
               <input
                 type="file"
@@ -144,7 +144,7 @@ export default function IATIImportPage() {
             <div className="mt-4">
               <div className="flex items-center">
                 <FileText className="w-5 h-5 text-muted-foreground mr-2" />
-                <span className="text-sm text-muted-foreground">{file.name}</span>
+                <span className="text-body text-muted-foreground">{file.name}</span>
                 <button
                   onClick={handleParse}
                   disabled={isUploading}
@@ -166,13 +166,12 @@ export default function IATIImportPage() {
                         body: formData,
                       });
                       const result = await response.json();
-                      console.log('Debug result:', result);
                       toast.info(`Debug: ${result.recommendation}\n\nCheck console for details.`);
                     } catch (err) {
                       console.error('Debug error:', err);
                     }
                   }}
-                  className="mt-2 text-sm text-muted-foreground hover:text-foreground underline"
+                  className="mt-2 text-body text-muted-foreground hover:text-foreground underline"
                 >
                   Debug Transaction Structure
                 </button>
@@ -188,30 +187,30 @@ export default function IATIImportPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded">
-                <p className="text-sm text-blue-600 font-medium">Activities</p>
+                <p className="text-body text-blue-600 font-medium">Activities</p>
                 <p className="text-2xl font-bold text-blue-900">{parseResult.activities.length}</p>
                 {parseResult.activities.filter(a => a.matched).length > 0 && (
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-helper text-blue-600 mt-1">
                     {parseResult.activities.filter(a => a.matched).length} existing
                   </p>
                 )}
               </div>
               
               <div className="bg-green-50 p-4 rounded">
-                <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Organizations</p>
+                <p className="text-body text-[hsl(var(--success-icon))] font-medium">Organizations</p>
                 <p className="text-2xl font-bold text-green-900">{parseResult.organizations.length}</p>
                 {parseResult.organizations.filter(o => o.matched).length > 0 && (
-                  <p className="text-xs text-[hsl(var(--success-icon))] mt-1">
+                  <p className="text-helper text-[hsl(var(--success-icon))] mt-1">
                     {parseResult.organizations.filter(o => o.matched).length} existing
                   </p>
                 )}
               </div>
               
               <div className="bg-purple-50 p-4 rounded">
-                <p className="text-sm text-purple-600 font-medium">Transactions</p>
+                <p className="text-body text-purple-600 font-medium">Transactions</p>
                 <p className="text-2xl font-bold text-purple-900">{parseResult.transactions.length}</p>
                 {parseResult.transactions.length > 0 && (
-                  <p className="text-xs text-purple-600 mt-1">
+                  <p className="text-helper text-purple-600 mt-1">
                     Total: ${parseResult.transactions.reduce((sum, t) => sum + t.value, 0).toLocaleString()}
                   </p>
                 )}
@@ -222,7 +221,7 @@ export default function IATIImportPage() {
             {parseResult.activities.length > 0 && (
               <div className="mb-4">
                 <h3 className="font-medium text-foreground mb-2">Activities:</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <ul className="text-body text-muted-foreground space-y-1">
                   {parseResult.activities.slice(0, 5).map((activity, idx) => (
                     <li key={idx} className="flex items-center">
                       {activity.matched ? (
@@ -241,9 +240,9 @@ export default function IATIImportPage() {
             )}
 
             {parseResult.errors.length > 0 && (
-              <div className="mb-4 p-4 bg-red-50 rounded">
+              <div className="mb-4 p-4 bg-destructive/10 rounded">
                 <h3 className="font-medium text-red-800 mb-2">Errors:</h3>
-                <ul className="text-sm text-red-600 space-y-1">
+                <ul className="text-body text-destructive space-y-1">
                   {parseResult.errors.map((error, idx) => (
                     <li key={idx}>{error}</li>
                   ))}
@@ -273,7 +272,7 @@ export default function IATIImportPage() {
                   <span className="font-medium">Import completed successfully!</span>
                 </div>
                 
-                <ul className="text-sm text-muted-foreground space-y-1 ml-7">
+                <ul className="text-body text-muted-foreground space-y-1 ml-7">
                   {importResult.results.organizationsCreated > 0 && (
                     <li>Created {importResult.results.organizationsCreated} organizations</li>
                   )}
@@ -294,7 +293,7 @@ export default function IATIImportPage() {
                 {importResult.results.errors.length > 0 && (
                   <div className="mt-4 p-4 bg-yellow-50 rounded">
                     <h3 className="font-medium text-yellow-800 mb-2">Import Warnings:</h3>
-                    <ul className="text-sm text-yellow-600 space-y-1">
+                    <ul className="text-body text-yellow-600 space-y-1">
                       {importResult.results.errors.map((error, idx) => (
                         <li key={idx}>{error}</li>
                       ))}
@@ -305,7 +304,7 @@ export default function IATIImportPage() {
                 {importResult.verification && (
                   <div className="mt-4 p-4 bg-blue-50 rounded">
                     <h3 className="font-medium text-blue-800 mb-2">Database Verification:</h3>
-                    <ul className="text-sm text-blue-600 space-y-1">
+                    <ul className="text-body text-blue-600 space-y-1">
                       <li>Total Organizations in DB: {importResult.verification.totalOrganizations || 0}</li>
                       <li>Total Activities in DB: {importResult.verification.totalActivities || 0}</li>
                       <li>Total Transactions in DB: {importResult.verification.totalTransactions || 0}</li>
@@ -314,7 +313,7 @@ export default function IATIImportPage() {
                     {importResult.verification.recentTransactions && importResult.verification.recentTransactions.length > 0 && (
                       <div className="mt-3">
                         <h4 className="font-medium text-blue-800 mb-1">Recent Transactions:</h4>
-                        <ul className="text-xs text-blue-600 space-y-1">
+                        <ul className="text-helper text-blue-600 space-y-1">
                           {importResult.verification.recentTransactions.map((trans: any, idx: number) => (
                             <li key={idx}>
                               {trans.transaction_type}: {trans.currency} {trans.value?.toLocaleString()} 
@@ -328,14 +327,14 @@ export default function IATIImportPage() {
                 )}
               </div>
             ) : (
-              <div className="text-red-600">Import failed. Please check the errors above.</div>
+              <div className="text-destructive">Import failed. Please check the errors above.</div>
             )}
           </div>
         )}
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
             <p className="text-red-800">{error}</p>
           </div>
         )}

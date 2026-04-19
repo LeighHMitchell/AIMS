@@ -180,8 +180,8 @@ export function FundingByModalityChart() {
       const yearTotal = nonZeroPayload.reduce((sum: number, entry: any) => sum + entry.value, 0);
       
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground mb-2">Year {label}</p>
           <div className="border-t pt-2 space-y-1">
             {nonZeroPayload.map((entry: any, index: number) => (
               <div key={index} className="flex items-center justify-between gap-4">
@@ -190,9 +190,9 @@ export function FundingByModalityChart() {
                     className="w-3 h-3 rounded-sm" 
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-sm text-slate-700">{entry.name}</span>
+                  <span className="text-body text-foreground">{entry.name}</span>
                 </div>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-body font-medium text-foreground">
                   {formatCurrency(entry.value)}
                 </span>
               </div>
@@ -200,8 +200,8 @@ export function FundingByModalityChart() {
           </div>
           <div className="border-t mt-2 pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-700">Total</span>
-              <span className="text-sm font-bold text-slate-900">
+              <span className="text-body font-semibold text-foreground">Total</span>
+              <span className="text-body font-bold text-foreground">
                 {formatCurrency(yearTotal)}
               </span>
             </div>
@@ -220,7 +220,7 @@ export function FundingByModalityChart() {
             className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
             style={{ backgroundColor: MODALITY_COLORS[modality] }}
           />
-          <span className={cn("text-xs text-gray-600", expanded ? "" : "truncate max-w-[80px]")} title={modality}>
+          <span className={cn("text-helper text-muted-foreground", expanded ? "" : "truncate max-w-[80px]")} title={modality}>
             {modality}
           </span>
         </div>
@@ -445,7 +445,7 @@ export function FundingByModalityChart() {
       <div className="flex items-center gap-2">
         {/* Transaction type dropdown */}
         <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectTrigger className="w-[160px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -476,7 +476,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'bar' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType('bar')}
               title="Bar Chart"
             >
@@ -485,7 +485,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'line' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === 'line' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType('line')}
               title="Line Chart"
             >
@@ -494,7 +494,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'area' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === 'area' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType('area')}
               title="Area Chart"
             >
@@ -509,7 +509,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartMode === 'stacked' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartMode === 'stacked' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartMode('stacked')}
               title="Stacked"
             >
@@ -518,7 +518,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartMode === 'grouped' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartMode === 'grouped' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartMode('grouped')}
               title="Grouped"
             >
@@ -533,7 +533,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === 'chart' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setViewMode('chart')}
               title="Chart"
             >
@@ -542,7 +542,7 @@ export function FundingByModalityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === 'table' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setViewMode('table')}
               title="Table"
             >
@@ -570,14 +570,14 @@ export function FundingByModalityChart() {
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Funding Over Time
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 By aid modality type
               </CardDescription>
             </div>
@@ -585,17 +585,17 @@ export function FundingByModalityChart() {
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart breaks down funding over time by aid modality (grant, loan, technical assistance, etc.). Use the stacked view to see total volumes and the grouped view to compare modalities side by side. Switch between bar, line, and area chart types for different perspectives.
           </p>
         </CardContent>
@@ -607,7 +607,7 @@ export function FundingByModalityChart() {
           <DialogHeader className="flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   Funding Over Time
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">

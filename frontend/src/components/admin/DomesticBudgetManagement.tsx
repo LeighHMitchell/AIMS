@@ -459,7 +459,7 @@ export function DomesticBudgetManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>
@@ -498,7 +498,7 @@ export function DomesticBudgetManagement() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <div className="flex items-center gap-2 text-body text-muted-foreground mb-1">
                   <Wallet className="h-4 w-4" />
                   Total Budget
                 </div>
@@ -509,7 +509,7 @@ export function DomesticBudgetManagement() {
             </Card>
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <div className="flex items-center gap-2 text-body text-muted-foreground mb-1">
                   <Receipt className="h-4 w-4" />
                   Total Expenditure
                 </div>
@@ -520,7 +520,7 @@ export function DomesticBudgetManagement() {
             </Card>
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <div className="flex items-center gap-2 text-body text-muted-foreground mb-1">
                   <TrendingUp className="h-4 w-4" />
                   Execution Rate
                 </div>
@@ -532,7 +532,7 @@ export function DomesticBudgetManagement() {
             </Card>
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <div className="flex items-center gap-2 text-body text-muted-foreground mb-1">
                   <Calculator className="h-4 w-4" />
                   Entries
                 </div>
@@ -602,7 +602,7 @@ export function DomesticBudgetManagement() {
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                   <DollarSign className="h-12 w-12 mb-4" />
                   <p className="text-lg font-medium">No budget data for {selectedYear}</p>
-                  <p className="text-sm mb-4">
+                  <p className="text-body mb-4">
                     Add budget entries for your budget classifications
                   </p>
                   <Button onClick={handleAdd}>
@@ -700,13 +700,13 @@ export function DomesticBudgetManagement() {
                                   {item.budgetClassification?.name || "Unknown"}
                                 </div>
                                 {item.notes && (
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-helper text-muted-foreground">
                                     {item.notes}
                                   </div>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="text-body text-muted-foreground">
                               {item.budgetClassification?.classificationType
                                 ? CLASSIFICATION_TYPE_LABELS[
                                     item.budgetClassification.classificationType
@@ -753,15 +753,15 @@ export function DomesticBudgetManagement() {
                                   onClick={() => handleEdit(item)}
                                   className="h-8 w-8 p-0"
                                 >
-                                  <Pencil className="h-4 w-4 text-slate-500" />
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDelete(item)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -780,7 +780,7 @@ export function DomesticBudgetManagement() {
               <div className="flex items-center justify-end gap-3 mb-4 p-3 rounded-lg" style={{ backgroundColor: '#f1f4f8' }}>
                 <span
                   className={cn(
-                    "text-sm font-medium transition-colors",
+                    "text-body font-medium transition-colors",
                     treemapValueKey === "budget" ? "text-foreground" : "text-muted-foreground"
                   )}
                 >
@@ -794,7 +794,7 @@ export function DomesticBudgetManagement() {
                 />
                 <span
                   className={cn(
-                    "text-sm font-medium transition-colors",
+                    "text-body font-medium transition-colors",
                     treemapValueKey === "expenditure" ? "text-foreground" : "text-muted-foreground"
                   )}
                 >
@@ -830,7 +830,7 @@ export function DomesticBudgetManagement() {
               <Popover open={classificationOpen} onOpenChange={setClassificationOpen}>
                 <PopoverTrigger
                   className={cn(
-                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
                     !selectedClassification && "text-muted-foreground",
                     !!editingItem && "cursor-not-allowed opacity-50"
                   )}
@@ -867,7 +867,7 @@ export function DomesticBudgetManagement() {
                         className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
                         aria-label="Clear selection"
                       >
-                        <span className="text-xs">×</span>
+                        <span className="text-helper">×</span>
                       </div>
                     )}
                     <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -891,7 +891,7 @@ export function DomesticBudgetManagement() {
                             setClassificationSearch("");
                           }
                         }}
-                        className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                        className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                         autoFocus
                       />
                       {classificationSearch && (
@@ -901,14 +901,14 @@ export function DomesticBudgetManagement() {
                           className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                           aria-label="Clear search"
                         >
-                          <span className="text-xs">×</span>
+                          <span className="text-helper">×</span>
                         </button>
                       )}
                     </div>
                     <CommandList className="max-h-[300px] overflow-y-auto">
                       {Object.entries(groupedClassifications).map(([type, items]) => (
                         <CommandGroup key={type}>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                          <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                             {CLASSIFICATION_TYPE_LABELS[type as ClassificationType] || type}
                           </div>
                           {items.map((classification) => (
@@ -941,10 +941,10 @@ export function DomesticBudgetManagement() {
                       ))}
                       {Object.keys(groupedClassifications).length === 0 && (
                         <div className="py-8 text-center">
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-body text-muted-foreground">
                             No classifications found.
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="text-helper text-muted-foreground mt-1">
                             Try adjusting your search terms
                           </div>
                         </div>
@@ -1072,7 +1072,7 @@ export function DomesticBudgetManagement() {
             {/* Preview execution rate */}
             {formData.budgetAmount > 0 && (
               <div className="bg-muted p-3 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">
+                <div className="text-body text-muted-foreground mb-1">
                   Execution Rate Preview
                 </div>
                 <div className="flex items-center gap-2">

@@ -4,7 +4,6 @@ import { requireAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
-  console.log('[Add Contact Columns] Starting to add contact columns');
   
   const { supabase, response: authResponse } = await requireAuth();
   
@@ -25,7 +24,6 @@ export async function POST() {
       .limit(1);
     
     if (testError) {
-      console.log('[Add Contact Columns] Columns do not exist, they need to be added manually');
       
       return NextResponse.json({
         success: false,
@@ -53,7 +51,6 @@ CREATE INDEX IF NOT EXISTS idx_users_secondary_email ON users(secondary_email);
       });
     }
     
-    console.log('[Add Contact Columns] All contact columns already exist!');
     
     return NextResponse.json({ 
       success: true, 

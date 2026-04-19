@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('[Focal Points Data Clinic] Fetching activities for org:', organizationId);
 
     // 1. Fetch activities where reporting_org_id matches the organization
     const { data: activities, error: activitiesError } = await supabase
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Focal Points Data Clinic] Found activities:', activities.length);
 
     // 2. Get all activity IDs for batch query
     const activityIds = activities.map(a => a.id);
@@ -76,7 +74,6 @@ export async function GET(request: NextRequest) {
       throw focalPointsError;
     }
 
-    console.log('[Focal Points Data Clinic] Found focal points:', focalPoints?.length || 0);
 
     // 4. Group focal points by activity_id and type
     const focalPointsByActivity = new Map<string, {
@@ -131,7 +128,6 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('[Focal Points Data Clinic] Activities missing focal points:', activitiesWithMissingFPs.length);
 
     return NextResponse.json({
       activities: activitiesWithMissingFPs,

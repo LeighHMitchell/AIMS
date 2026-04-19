@@ -19,7 +19,7 @@ export function MiniChartCard({ title, children, expandedContent }: MiniChartCar
     <>
       <Card className="border-border">
         <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-sm font-medium text-foreground">{title}</CardTitle>
+          <CardTitle className="text-body font-medium text-foreground">{title}</CardTitle>
           <Button
             variant="ghost"
             size="sm"

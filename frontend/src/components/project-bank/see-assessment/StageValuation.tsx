@@ -31,7 +31,7 @@ export function StageValuation({ wizard }: StageValuationProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Valuation</h3>
-        <p className="text-sm text-muted-foreground">Enterprise valuation details and supporting documentation.</p>
+        <p className="text-body text-muted-foreground">Enterprise valuation details and supporting documentation.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -91,7 +91,7 @@ export function StageValuation({ wizard }: StageValuationProps) {
             checked={!!formData.fixed_asset_register_maintained}
             onCheckedChange={v => updateField('fixed_asset_register_maintained', !!v)}
           />
-          <Label htmlFor="fixed_asset_register_maintained" className="text-sm">
+          <Label htmlFor="fixed_asset_register_maintained" className="text-body">
             Fixed asset register is maintained and up to date
           </Label>
         </div>

@@ -6,7 +6,6 @@ async function runMigrations() {
   const supabase = getSupabaseAdmin();
   
   try {
-    console.log('Running database migrations...');
     
     // Read the SQL files
     const activitySectorsSQL = fs.readFileSync(
@@ -20,7 +19,6 @@ async function runMigrations() {
     );
     
     // Run activity_sectors migration
-    console.log('Creating activity_sectors table...');
     const { error: sectorsError } = await supabase.rpc('exec_sql', {
       sql: activitySectorsSQL
     });
@@ -28,11 +26,9 @@ async function runMigrations() {
     if (sectorsError) {
       console.error('Error creating activity_sectors:', sectorsError);
     } else {
-      console.log('✓ activity_sectors table created successfully');
     }
     
     // Run custom_groups migration
-    console.log('Creating custom_groups table...');
     const { error: groupsError } = await supabase.rpc('exec_sql', {
       sql: customGroupsSQL
     });
@@ -40,10 +36,8 @@ async function runMigrations() {
     if (groupsError) {
       console.error('Error creating custom_groups:', groupsError);
     } else {
-      console.log('✓ custom_groups table created successfully');
     }
     
-    console.log('Migrations completed!');
     
   } catch (error) {
     console.error('Migration failed:', error);

@@ -152,8 +152,8 @@ export function TaskAttachmentsStep({
         <div className="flex items-start gap-3">
           <Paperclip className="h-5 w-5 text-muted-foreground mt-0.5" />
           <div>
-            <h4 className="font-medium text-sm">Attach Supporting Documents</h4>
-            <p className="text-xs text-muted-foreground mt-1">
+            <h4 className="font-medium text-body">Attach Supporting Documents</h4>
+            <p className="text-helper text-muted-foreground mt-1">
               Add documents, templates, or guidance notes that recipients may need.
               Supported formats: PDF, Word, Excel, PowerPoint, images, CSV, JSON, XML.
             </p>
@@ -181,12 +181,12 @@ export function TaskAttachmentsStep({
           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.json,.xml,.jpg,.jpeg,.png,.gif,.webp"
         />
         <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-        <div className="font-medium text-sm">
+        <div className="font-medium text-body">
           {attachments.length >= MAX_FILES
             ? 'Maximum files reached'
             : 'Drop files here or click to upload'}
         </div>
-        <div className="text-xs text-muted-foreground mt-1">
+        <div className="text-helper text-muted-foreground mt-1">
           {attachments.length} / {MAX_FILES} files · Max 50MB per file
         </div>
       </div>
@@ -194,7 +194,7 @@ export function TaskAttachmentsStep({
       {/* File List */}
       {attachments.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Attached Files</Label>
+          <Label className="text-body font-medium">Attached Files</Label>
           <div className="space-y-2">
             {attachments.map((file, index) => {
               const IconComponent = getIcon(file);
@@ -218,10 +218,10 @@ export function TaskAttachmentsStep({
                             if (e.key === 'Enter') confirmRename(index);
                             if (e.key === 'Escape') { setEditingIndex(null); setEditName(''); }
                           }}
-                          className="h-7 text-sm"
+                          className="h-7 text-body"
                           autoFocus
                         />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        <span className="text-helper text-muted-foreground whitespace-nowrap">
                           {file.name.substring(file.name.lastIndexOf('.'))}
                         </span>
                         <Button
@@ -236,7 +236,7 @@ export function TaskAttachmentsStep({
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
-                        <span className="font-medium text-sm truncate">{displayName}</span>
+                        <span className="font-medium text-body truncate">{displayName}</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -248,7 +248,7 @@ export function TaskAttachmentsStep({
                         </Button>
                       </div>
                     )}
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-helper text-muted-foreground">
                       {formatFileSize(file.size)}
                     </div>
                   </div>
@@ -270,7 +270,7 @@ export function TaskAttachmentsStep({
 
       {/* Empty State */}
       {attachments.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
+        <p className="text-body text-muted-foreground text-center py-4">
           No attachments added. This step is optional.
         </p>
       )}

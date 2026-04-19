@@ -519,14 +519,14 @@ export default function IATIImportEnhancedPage() {
                   <div className={`flex flex-col items-center ${index > 0 ? 'flex-1' : ''}`}>
                     {index > 0 && (
                       <div className={`h-0.5 w-full mb-4 ${
-                        isComplete ? 'bg-primary' : 'bg-gray-200'
+                        isComplete ? 'bg-primary' : 'bg-muted'
                       }`} />
                     )}
                     <div className={`
                       w-12 h-12 rounded-full flex items-center justify-center mb-2
                       ${isActive ? 'bg-primary text-primary-foreground' : 
                         isComplete ? 'bg-primary/20 text-primary' : 
-                        'bg-gray-100 text-gray-400'}
+                        'bg-muted text-muted-foreground'}
                     `}>
                       {isComplete ? (
                         <CheckCircle className="h-6 w-6" />
@@ -537,12 +537,12 @@ export default function IATIImportEnhancedPage() {
                     <div className="text-center">
                       <p className={`text-sm font-medium ${
                         isActive ? 'text-primary' : 
-                        isComplete ? 'text-gray-700' : 
-                        'text-gray-400'
+                        isComplete ? 'text-foreground' : 
+                        'text-muted-foreground'
                       }`}>
                         {step.label}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{step.description}</p>
+                      <p className="text-helper text-muted-foreground mt-1">{step.description}</p>
                     </div>
                   </div>
                 </React.Fragment>
@@ -573,7 +573,6 @@ export default function IATIImportEnhancedPage() {
                   invalidTransactions: parseResult.transactions.filter(tx => tx._hasIssues).length
                 }}
                 onViewDetails={(issueType) => {
-                  console.log('View details for:', issueType);
                   // Open appropriate modal based on issue type
                   if (issueType === 'missing_activity') {
                     setShowAssignmentModal(true);

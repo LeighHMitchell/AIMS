@@ -414,7 +414,6 @@ export async function POST(request: NextRequest) {
               }
 
               // Convert to USD following the same pattern as budgets and planned disbursements
-              console.log(`[IATI Import] Converting transaction to USD: ${transactionData.value} ${transactionData.currency} (resolved from ${(transaction as any).currency || 'missing'})`);
               const usdResult = await convertTransactionToUSD(
                 transactionData.value,
                 transactionData.currency,
@@ -422,7 +421,6 @@ export async function POST(request: NextRequest) {
               );
 
               if (usdResult.success) {
-                console.log(`[IATI Import] USD conversion successful: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
               } else {
                 console.warn(`[IATI Import] USD conversion failed: ${usdResult.error}`);
               }
@@ -453,7 +451,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Default branch: multipart upload (external publisher detection flow)
-    console.log('[IATI Import] Starting external publisher detection import process');
 
     // Parse multipart form data
     const formData = await request.formData();
@@ -474,14 +471,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[IATI Import] Processing file:', file.name, 'Size:', file.size);
 
     // Extract metadata from XML
     let meta;
     try {
       meta = await extractIatiMeta(file);
       iatiAnalytics.parsed(file.size, file.name);
-      console.log('[IATI Import] Parsed meta:', meta);
     } catch (error) {
       console.error('[IATI Import] Parse error:', error);
       
@@ -522,14 +517,12 @@ export async function POST(request: NextRequest) {
     const userPublisherRefs: string[] = userData?.publisher_refs || [];
     const userOrgName = userData?.org_name || 'Your Organisation';
 
-    console.log('[IATI Import] User refs:', userPublisherRefs, 'Activity ref:', meta.reportingOrgRef);
 
     // Check if reporting org matches user's publisher refs
     const isOwnedActivity = userPublisherRefs.includes(meta.reportingOrgRef);
 
     if (isOwnedActivity) {
       // Short-circuit: create as owned activity
-      console.log('[IATI Import] Creating as owned activity');
       
       try {
         const { data: activity, error: createError } = await supabase
@@ -624,10 +617,6 @@ export async function POST_LEGACY(request: NextRequest) {
     
     // Debug transaction data
     if (transactions.length > 0) {
-      console.log('[IATI Import] Transaction overview:');
-      console.log('[IATI Import] - First transaction:', JSON.stringify(transactions[0], null, 2));
-      console.log('[IATI Import] - Unique activityRefs:', Array.from(new Set(transactions.map(t => t.activityRef))));
-      console.log('[IATI Import] - Activity identifiers:', activities.map(a => a.iatiIdentifier));
     }
 
     const results = {
@@ -659,7 +648,6 @@ export async function POST_LEGACY(request: NextRequest) {
       '90': 'other'           // Other
     };
 
-    console.log('[IATI Import] Using IATI to DB type mapping');
 
     // Import organizations first
     for (const org of organizations) {
@@ -697,9 +685,7 @@ export async function POST_LEGACY(request: NextRequest) {
             throw new Error(`No rows updated for organization ID ${org.existingId}`);
           }
           
-          console.log(`[IATI Import] Update result:`, updateResult);
           results.organizationsUpdated++;
-          console.log(`[IATI Import] Updated organization: ${org.name}`);
         } else {
           // Create new organization
           const insertData: any = {
@@ -718,7 +704,6 @@ export async function POST_LEGACY(request: NextRequest) {
 
           if (error) throw error;
           results.organizationsCreated++;
-          console.log(`[IATI Import] Created organization: ${org.name} with ID: ${newOrg.id}`);
         }
       } catch (error) {
         const errorMsg = getErrorMessage(error);
@@ -736,7 +721,6 @@ export async function POST_LEGACY(request: NextRequest) {
       (allOrgs || []).map((o: any) => [o.iati_org_id || o.name, o.id])
     );
 
-    console.log('[IATI Import] Organization mapping for activities:', orgMap.size, 'organizations');
 
     // Import activities
     for (const activity of activities) {
@@ -768,7 +752,6 @@ export async function POST_LEGACY(request: NextRequest) {
 
         if (activity.matched && activity.existingId) {
           // Update existing activity
-          console.log(`[IATI Import] Updating activity ${activity.existingId}: ${activity.title}`);
           
           const { data: updateResult, error } = await supabase
             .from('activities')
@@ -782,10 +765,8 @@ export async function POST_LEGACY(request: NextRequest) {
             throw new Error(`No rows updated for activity ID ${activity.existingId}`);
           }
           
-          console.log(`[IATI Import] Activity update result:`, updateResult);
           activityId = activity.existingId;
           results.activitiesUpdated++;
-          console.log(`[IATI Import] Updated activity: ${activity.title}`);
         } else {
           // Create new activity - add required fields for new activities
           activityData.publication_status = 'draft';
@@ -800,7 +781,6 @@ export async function POST_LEGACY(request: NextRequest) {
           if (error) throw error;
           activityId = newActivity.id;
           results.activitiesCreated++;
-          console.log(`[IATI Import] Created activity: ${activity.title} with ID: ${activityId}`);
         }
 
         // Link participating organizations
@@ -834,17 +814,12 @@ export async function POST_LEGACY(request: NextRequest) {
             t.activityRef && t.activityRef.toLowerCase() === lowerIatiId
           );
           if (activityTransactions.length > 0) {
-            console.log(`[IATI Import] Found transactions using case-insensitive match`);
           }
         }
         
-        console.log(`[IATI Import] Activity ${activity.iatiIdentifier}:`);
-        console.log(`[IATI Import] - Looking for transactions with activityRef = "${activity.iatiIdentifier}"`);
-        console.log(`[IATI Import] - Found ${activityTransactions.length} matching transactions`);
         
         // Debug: Show all transaction activityRefs if no matches found
         if (activityTransactions.length === 0 && transactions.length > 0) {
-          console.log(`[IATI Import] - No transactions found for this activity.`);
           console.log(`[IATI Import] - Available transaction activityRefs:`, 
             Array.from(new Set(transactions.map(t => t.activityRef))).slice(0, 5)
           );
@@ -940,7 +915,6 @@ export async function POST_LEGACY(request: NextRequest) {
               is_humanitarian: transaction.isHumanitarian || false,
             };
             
-            console.log(`[IATI Import] Inserting transaction:`, transactionData);
             
             // Before insert, verify we have required fields
             if (!transactionData.transaction_type || transactionData.value === undefined || transactionData.value === null) {
@@ -976,9 +950,7 @@ export async function POST_LEGACY(request: NextRequest) {
               throw new Error('Transaction insert returned no data');
             }
             
-            console.log(`[IATI Import] Transaction insert successful, UUID:`, insertResult);
             results.transactionsCreated++;
-            console.log(`[IATI Import] Created transaction: ${transaction.type} - ${transaction.value} ${transaction.currency}`);
           } catch (error) {
             const errorMsg = getErrorMessage(error);
             console.error('[IATI Import] Error importing transaction:', errorMsg);
@@ -993,7 +965,6 @@ export async function POST_LEGACY(request: NextRequest) {
     }
 
     // Handle orphan transactions (transactions without matching activities)
-    console.log('[IATI Import] Checking for orphan transactions...');
     
     // Get all activity identifiers we just processed
     const processedActivityIds = new Set(activities.map(a => a.iatiIdentifier));
@@ -1016,12 +987,10 @@ export async function POST_LEGACY(request: NextRequest) {
       return acc;
     }, {} as Record<string, typeof transactions>);
     
-    console.log(`[IATI Import] Found ${Object.keys(orphansByActivity).length} activities with orphan transactions`);
     
     // Create minimal activities for orphan transactions
     for (const [activityRef, orphanTrans] of Object.entries(orphansByActivity)) {
       try {
-        console.log(`[IATI Import] Creating minimal activity for ${activityRef} with ${orphanTrans.length} transactions`);
         
         // Check if activity already exists in database
         const { data: existingActivity } = await supabase
@@ -1033,7 +1002,6 @@ export async function POST_LEGACY(request: NextRequest) {
         let activityId: string;
         
         if (existingActivity) {
-          console.log(`[IATI Import] Activity ${activityRef} already exists in database`);
           activityId = existingActivity.id;
         } else {
           // Create minimal activity
@@ -1066,7 +1034,6 @@ export async function POST_LEGACY(request: NextRequest) {
           
           activityId = newActivity.id;
           results.activitiesCreated++;
-          console.log(`[IATI Import] Created minimal activity: ${activityRef} with ID: ${activityId}`);
         }
         
         // Now import the orphan transactions
@@ -1158,7 +1125,6 @@ export async function POST_LEGACY(request: NextRequest) {
               is_humanitarian: transaction.isHumanitarian || false,
             };
             
-            console.log(`[IATI Import] Inserting orphan transaction:`, transactionData);
             
             // Use RPC function to bypass schema cache
             const { data: insertResult, error } = await supabase
@@ -1184,7 +1150,6 @@ export async function POST_LEGACY(request: NextRequest) {
             }
             
             results.transactionsCreated++;
-            console.log(`[IATI Import] Created orphan transaction: ${transaction.type} - ${transaction.value} ${transaction.currency}`);
           } catch (error) {
             const errorMsg = getErrorMessage(error);
             console.error('[IATI Import] Error importing orphan transaction:', errorMsg);
@@ -1199,7 +1164,6 @@ export async function POST_LEGACY(request: NextRequest) {
       }
     }
 
-    console.log('[IATI Import] Import completed:', results);
 
     // Verify what was actually saved
     const verificationResults: any = {};
@@ -1240,10 +1204,8 @@ export async function POST_LEGACY(request: NextRequest) {
           .limit(5);
         
         verificationResults.recentTransactions = recentTransactions;
-        console.log('[IATI Import] Recent transactions sample:', recentTransactions);
       }
       
-      console.log('[IATI Import] Verification results:', verificationResults);
     } catch (verifyError) {
       console.error('[IATI Import] Verification error:', verifyError);
     }

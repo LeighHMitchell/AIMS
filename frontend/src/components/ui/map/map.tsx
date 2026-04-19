@@ -290,7 +290,7 @@ export const Map = ({
     return (
       <div className="relative w-full h-full">
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-destructive text-sm">{error}</div>
+          <div className="text-destructive text-body">{error}</div>
         </div>
       </div>
     )

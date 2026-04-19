@@ -88,8 +88,6 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
         }
       });
 
-      console.log('[useRolodexData] Fetching with params:', params.toString());
-      console.log('[useRolodexData] Full filters object:', filtersToUse);
 
       const response = await fetch(`/api/rolodex?${params.toString()}`);
       
@@ -100,7 +98,6 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
 
       const result: RolodexResponse = await response.json();
       setData(result);
-      console.log('[useRolodexData] Successfully fetched', result.people.length, 'people');
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch rolodex data';
@@ -114,7 +111,6 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
 
   // Auto-fetch on filter changes
   useEffect(() => {
-    console.log('[useRolodexData] Effect triggered:', { autoFetch, filters: debouncedFilters });
     if (autoFetch) {
       fetchData(debouncedFilters);
     }
@@ -123,7 +119,6 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
   const refetch = useCallback(() => fetchData(debouncedFilters), [fetchData, debouncedFilters]);
 
   const setFilters = useCallback((newFilters: Partial<RolodexFilters>) => {
-    console.log('[useRolodexData] Setting filters:', newFilters);
     setInternalFilters(prev => {
       const updated = {
         ...prev,
@@ -131,7 +126,6 @@ export function useRolodexData(options: UseRolodexDataOptions = {}): UseRolodexD
         // Reset to page 1 when filters change (except when explicitly setting page)
         page: newFilters.page !== undefined ? newFilters.page : 1,
       };
-      console.log('[useRolodexData] Updated filters:', updated);
       return updated;
     });
   }, []);

@@ -62,7 +62,6 @@ export async function POST(
     // Save activities
     await fs.writeFile(DATA_FILE_PATH, JSON.stringify(activities, null, 2));
 
-    console.log(`[AIMS] Activity ${id} ${action}ed by ${user.name}`);
     
     return NextResponse.json(activity);
   } catch (error) {

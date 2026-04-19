@@ -28,6 +28,7 @@ import { formatLanguageDisplay } from '@/data/language-codes';
 import { HumanitarianScopeModal } from '@/components/modals/HumanitarianScopeModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface HumanitarianTabProps {
   activityId: string;
@@ -48,6 +49,7 @@ export function HumanitarianTab({
   const [isSaving, setIsSaving] = useState(false);
   const [humanitarian, setHumanitarian] = useState(false);
   const [scopes, setScopes] = useState<HumanitarianScope[]>([]);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<HumanitarianScope | null>(null);
   const [emergencyMap, setEmergencyMap] = useState<Record<string, CountryEmergency>>({});
@@ -179,18 +181,40 @@ export function HumanitarianTab({
   };
 
   const handleDeleteScope = async (scopeId?: string) => {
+    const snapshot = scopes.find(s => s.id === scopeId);
+    const scopeLabel = snapshot
+      ? [getScopeTypeName((snapshot as any).type), (snapshot as any).code].filter(Boolean).join(' ')
+      : 'this scope';
+    const ok = await confirm({
+      title: 'Remove this humanitarian scope?',
+      description: `"${scopeLabel || 'This scope'}" will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: 'Remove scope',
+      cancelLabel: 'Keep',
+    });
+    if (!ok) return;
+
+    const previousScopes = scopes;
     const newScopes = scopes.filter(s => s.id !== scopeId);
     setScopes(newScopes);
     await saveHumanitarianData(humanitarian, newScopes);
-    toast.success('Humanitarian scope deleted');
+    toast.success(`Removed ${scopeLabel || 'humanitarian scope'}`, snapshot ? {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          setScopes(previousScopes);
+          await saveHumanitarianData(humanitarian, previousScopes);
+          toast.success('Scope restored');
+        },
+      },
+    } : undefined);
   };
 
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
         <div className="animate-pulse space-y-4">
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-40 bg-gray-200 rounded"></div>
+          <div className="h-20 bg-muted rounded"></div>
+          <div className="h-40 bg-muted rounded"></div>
         </div>
       </div>
     );
@@ -200,7 +224,7 @@ export function HumanitarianTab({
     <div className={`space-y-6 ${className}`}>
       {/*
         Humanitarian flag — a metadata marker, not a warning. Dropped the
-        border-red-300 / text-red-* / bg-red-600 styling that dressed this
+        border-destructive/30 / text-red-* / bg-destructive styling that dressed this
         section like an error zone. A single <Heart /> icon at the heading
         carries the thematic cue; the active-state Switch keeps a calm red
         tint via accent tokens.
@@ -222,7 +246,7 @@ export function HumanitarianTab({
                 isSaving={isSaving}
                 isSaved={!isLoading && activityId !== 'NEW'}
                 hasValue={humanitarian}
-                className="text-sm font-medium cursor-pointer text-foreground"
+                className="text-body font-medium cursor-pointer text-foreground"
               >
                 <span className="flex items-center gap-2">
                   Humanitarian Activity
@@ -230,7 +254,7 @@ export function HumanitarianTab({
                 </span>
               </LabelSaveIndicator>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-helper text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
             </p>
             <Switch
@@ -275,9 +299,9 @@ export function HumanitarianTab({
             {scopes.length === 0 && (
               <div className="text-center py-12">
                 <img src="/images/empty-pallet.webp" alt="No humanitarian scopes" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No emergencies or appeals</h3>
+                <h3 className="text-base font-medium mb-2">No emergencies or appeals linked</h3>
                 <p className="text-muted-foreground">
-                  Use the button above to link to a specific emergency or appeal.
+                  Click &ldquo;Add Emergency / Appeal&rdquo; above to identify specific emergencies or humanitarian appeals this activity responds to.
                 </p>
               </div>
             )}
@@ -288,7 +312,7 @@ export function HumanitarianTab({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Type</TableHead>
-                      <TableHead className="whitespace-nowrap">Vocabulary</TableHead>
+                      <TableHead className="whitespace-nowrap">Vocabulary (GLIDE / OCHA)</TableHead>
                       <TableHead className="whitespace-nowrap">Emergency/Appeal</TableHead>
                       <TableHead className="whitespace-nowrap">Location</TableHead>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
@@ -298,7 +322,7 @@ export function HumanitarianTab({
                   <TableBody>
                     {scopes.map((scope) => (
                       <TableRow key={scope.id}>
-                        <TableCell className="text-sm align-top whitespace-nowrap">
+                        <TableCell className="text-body align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             {scope.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
@@ -306,7 +330,7 @@ export function HumanitarianTab({
                             {getScopeTypeName(scope.type)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm align-top whitespace-nowrap">
+                        <TableCell className="text-body align-top whitespace-nowrap">
                           <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">{scope.vocabulary}</code>{' '}
                           {getVocabularyName(scope.vocabulary)}
                         </TableCell>
@@ -317,7 +341,7 @@ export function HumanitarianTab({
                               .filter(Boolean)
                               .join(' \u2014 ');
                             const inner = scope.vocabulary === '98' && emergencyMap[scope.code] ? (
-                              <div className="text-sm">
+                              <div className="text-body">
                                 <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
                                   {scope.code}
                                 </code>{' '}
@@ -330,7 +354,7 @@ export function HumanitarianTab({
                                 rel="noopener noreferrer"
                                 className="inline-block"
                               >
-                                <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-gray-200 cursor-pointer transition-colors whitespace-nowrap">
+                                <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-muted cursor-pointer transition-colors whitespace-nowrap">
                                   {scope.code}
                                 </code>
                               </a>
@@ -347,25 +371,25 @@ export function HumanitarianTab({
                                     <span className="inline-block cursor-help">{inner}</span>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="max-w-sm">
-                                    <p className="text-xs">{narrativeText}</p>
+                                    <p className="text-helper">{narrativeText}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             );
                           })()}
                         </TableCell>
-                        <TableCell className="align-top text-sm">
+                        <TableCell className="align-top text-body">
                           {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (
                             <span>{emergencyMap[scope.code].location}</span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="align-top text-sm whitespace-nowrap">
+                        <TableCell className="align-top text-body whitespace-nowrap">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] && formatEmergencyDateRange(emergencyMap[scope.code]) ? (
                             <span>{formatEmergencyDateRange(emergencyMap[scope.code])}</span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                         {!readOnly && (
@@ -375,19 +399,19 @@ export function HumanitarianTab({
                                 type="button"
                                 onClick={() => handleEditScope(scope)}
                                 disabled={isSaving}
-                                className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                                className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                                 title="Edit"
                               >
-                                <Pencil className="h-4 w-4 text-slate-500" />
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteScope(scope.id)}
                                 disabled={isSaving}
-                                className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                                className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </button>
                             </div>
                           </TableCell>
@@ -408,6 +432,7 @@ export function HumanitarianTab({
         onSave={handleSaveScope}
         editingScope={editingScope}
       />
+      <ConfirmDialog />
     </div>
   );
 }

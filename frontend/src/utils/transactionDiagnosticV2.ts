@@ -177,7 +177,6 @@ export class TransactionDiagnosticV2 {
   }
 
   async diagnoseXmlFile(xmlContent: string): Promise<ImportSummary> {
-    console.log('🔍 Starting Enhanced Transaction Diagnostic Analysis...\n');
 
     // Parse XML
     const parser = new XMLParser({
@@ -199,8 +198,6 @@ export class TransactionDiagnosticV2 {
       const iatiIdentifier = this.extractIatiIdentifier(activity);
       const transactions = this.ensureArray(activity.transaction || []);
 
-      console.log(`\n📋 Processing Activity: ${iatiIdentifier}`);
-      console.log(`   Found ${transactions.length} transactions`);
 
       // Check if activity exists in database
       const activityLookup = await this.findActivity(iatiIdentifier);
@@ -224,7 +221,6 @@ export class TransactionDiagnosticV2 {
   }
 
   private performPreValidation(activities: any[]) {
-    console.log('📝 Pre-validation Checks:');
     
     // Check for activities without identifiers
     const noIdActivities = activities.filter(a => !this.extractIatiIdentifier(a));
@@ -236,10 +232,8 @@ export class TransactionDiagnosticV2 {
     const noTransActivities = activities.filter(a => !a.transaction || 
       (Array.isArray(a.transaction) && a.transaction.length === 0));
     if (noTransActivities.length > 0) {
-      console.log(`   ⚠️  ${noTransActivities.length} activities have no transactions`);
     }
 
-    console.log('');
   }
 
   private async diagnoseTransaction(
@@ -260,7 +254,6 @@ export class TransactionDiagnosticV2 {
       }
     };
 
-    console.log(`\n🔄 Transaction #${index}:`);
 
     // 1. Extract transaction type (REQUIRED)
     const typeCode = transaction['transaction-type']?.['@_code'] || 
@@ -269,9 +262,7 @@ export class TransactionDiagnosticV2 {
     result.values.transaction_type = this.mapTransactionType(typeCode);
     if (!result.values.transaction_type) {
       result.errors.push(`❌ Invalid transaction type: "${typeCode}" (not mapped)`);
-      console.log(`   ❌ Type: INVALID "${typeCode}"`);
     } else {
-      console.log(`   ✅ Type: ${result.values.transaction_type} (from "${typeCode}")`);
     }
 
     // 2. Extract and validate value (REQUIRED)
@@ -286,24 +277,18 @@ export class TransactionDiagnosticV2 {
 
       if (result.values.value === null || result.values.value === undefined) {
         result.errors.push(`❌ Invalid value format: "${rawValue}"`);
-        console.log(`   ❌ Value: INVALID "${rawValue}"`);
       } else {
-        console.log(`   ✅ Value: ${result.values.value}`);
       }
 
       // CRITICAL CHECK: Currency is REQUIRED
       if (!result.values.currency) {
         result.errors.push('❌ MISSING CURRENCY - <value> element must have currency attribute!');
-        console.log('   ❌ Currency: MISSING (REQUIRED!)');
       } else if (!this.isValidCurrency(result.values.currency)) {
         result.warnings.push(`⚠️  Non-standard currency: "${result.values.currency}"`);
-        console.log(`   ⚠️  Currency: ${result.values.currency} (non-standard)`);
       } else {
-        console.log(`   ✅ Currency: ${result.values.currency}`);
       }
     } else {
       result.errors.push('❌ Missing <value> element (REQUIRED)');
-      console.log('   ❌ Value: MISSING ELEMENT');
     }
 
     // 3. Extract and validate transaction date (REQUIRED)
@@ -313,16 +298,13 @@ export class TransactionDiagnosticV2 {
     
     if (!result.values.transaction_date) {
       result.errors.push(`❌ Invalid or missing transaction date: "${rawDate}"`);
-      console.log(`   ❌ Date: INVALID "${rawDate}"`);
     } else {
-      console.log(`   ✅ Date: ${result.values.transaction_date}`);
     }
 
     // 4. Extract description (OPTIONAL)
     const description = this.extractNarrative(transaction.description);
     if (description) {
       result.values.description = description;
-      console.log(`   ✅ Description: "${description.substring(0, 50)}..."`);
     }
 
     // 5. Extract provider organization (OPTIONAL but recommended)
@@ -331,10 +313,8 @@ export class TransactionDiagnosticV2 {
       result.values.provider_org_ref = providerOrg['@_ref'];
       result.values.provider_org_type = providerOrg['@_type'];
       result.values.provider_org_name = this.extractNarrative(providerOrg) || providerOrg['@_ref'];
-      console.log(`   ✅ Provider: ${result.values.provider_org_name || result.values.provider_org_ref || '[name not found]'}`);
     } else {
       // Not an error - these fields are optional
-      console.log('   ℹ️  Provider: Not specified (optional)');
     }
 
     // 6. Extract receiver organization (OPTIONAL but recommended)
@@ -343,10 +323,8 @@ export class TransactionDiagnosticV2 {
       result.values.receiver_org_ref = receiverOrg['@_ref'];
       result.values.receiver_org_type = receiverOrg['@_type'];
       result.values.receiver_org_name = this.extractNarrative(receiverOrg) || receiverOrg['@_ref'];
-      console.log(`   ✅ Receiver: ${result.values.receiver_org_name || result.values.receiver_org_ref || '[name not found]'}`);
     } else {
       // Not an error - these fields are optional
-      console.log('   ℹ️  Receiver: Not specified (optional)');
     }
 
     // 7. Extract classifications (all OPTIONAL)
@@ -358,7 +336,6 @@ export class TransactionDiagnosticV2 {
         result.warnings.push(`⚠️  Unknown aid type: "${aidTypeCode}" - will be stored as-is`);
         result.values.aid_type = aidTypeCode; // Store raw value
       }
-      console.log(`   ℹ️  Aid Type: ${result.values.aid_type}`);
     }
 
     // Tied Status
@@ -369,7 +346,6 @@ export class TransactionDiagnosticV2 {
         result.warnings.push(`⚠️  Unknown tied status: "${tiedStatusCode}" - defaulting to untied`);
         result.values.tied_status = '5'; // Default to untied
       }
-      console.log(`   ℹ️  Tied Status: ${result.values.tied_status}`);
     }
 
     // Flow Type
@@ -380,7 +356,6 @@ export class TransactionDiagnosticV2 {
         result.warnings.push(`⚠️  Unknown flow type: "${flowTypeCode}" - will be stored as-is`);
         result.values.flow_type = flowTypeCode; // Store raw value
       }
-      console.log(`   ℹ️  Flow Type: ${result.values.flow_type}`);
     }
 
     // Finance Type
@@ -391,7 +366,6 @@ export class TransactionDiagnosticV2 {
         result.warnings.push(`⚠️  Unknown finance type: "${financeTypeCode}" - will be stored as-is`);
         result.values.finance_type = financeTypeCode;
       }
-      console.log(`   ℹ️  Finance Type: ${result.values.finance_type}`);
     }
 
     // Disbursement Channel
@@ -402,7 +376,6 @@ export class TransactionDiagnosticV2 {
         result.warnings.push(`⚠️  Unknown disbursement channel: "${channelCode}" - will be stored as-is`);
         result.values.disbursement_channel = channelCode;
       }
-      console.log(`   ℹ️  Disbursement Channel: ${result.values.disbursement_channel}`);
     }
 
     // 8. Additional IATI fields (all OPTIONAL)
@@ -425,20 +398,15 @@ export class TransactionDiagnosticV2 {
     // 12. Check activity resolution (CRITICAL)
     if (!activityLookup.found) {
       result.errors.push(`❌ ACTIVITY NOT FOUND: "${iatiIdentifier}" - must exist before importing transactions`);
-      console.log(`   ❌ Activity: NOT FOUND IN DATABASE`);
     } else {
       result.values.activity_id = activityLookup.activityId;
-      console.log(`   ✅ Activity: Found (${activityLookup.activityId})`);
     }
 
     // Determine final status
     if (result.errors.length > 0) {
       result.status = 'invalid';
-      console.log(`   ❌ STATUS: INVALID - ${result.errors.length} error(s)`);
     } else {
-      console.log(`   ✅ STATUS: Valid for import`);
       if (result.warnings.length > 0) {
-        console.log(`   ⚠️  WARNINGS: ${result.warnings.length} warning(s)`);
       }
     }
 
@@ -448,9 +416,7 @@ export class TransactionDiagnosticV2 {
       if (!insertResult.success) {
         result.status = 'invalid';
         result.errors.push(`❌ Database insert failed: ${insertResult.error}`);
-        console.log(`   ❌ INSERT FAILED: ${insertResult.error}`);
       } else {
-        console.log(`   ✅ INSERT SUCCESSFUL (ID: ${insertResult.transactionId})`);
       }
     }
 
@@ -712,38 +678,24 @@ export class TransactionDiagnosticV2 {
   }
 
   private printSummary() {
-    console.log('\n' + '='.repeat(80));
-    console.log('📊 ENHANCED TRANSACTION IMPORT DIAGNOSTIC SUMMARY');
-    console.log('='.repeat(80));
-    console.log(`Total Transactions Parsed: ${this.summary.totalParsed}`);
-    console.log(`✅ Valid & Imported: ${this.summary.totalValid}`);
-    console.log(`⏭️  Skipped: ${this.summary.totalSkipped}`);
-    console.log(`❌ Failed: ${this.summary.totalFailed}`);
     
     if (this.summary.criticalIssues.length > 0) {
-      console.log('\n🚨 CRITICAL ISSUES:');
       this.summary.criticalIssues.forEach(issue => {
-        console.log(`   ${issue}`);
       });
     }
     
     if (Object.keys(this.summary.failureReasons).length > 0) {
-      console.log('\n🔍 Failure Breakdown:');
       Object.entries(this.summary.failureReasons)
         .sort((a, b) => b[1] - a[1])
         .forEach(([reason, count]) => {
-          console.log(`   ${reason}: ${count}`);
         });
     }
     
     if (this.summary.recommendations.length > 0) {
-      console.log('\n💡 Recommendations:');
       this.summary.recommendations.forEach(rec => {
-        console.log(`   ${rec}`);
       });
     }
     
-    console.log('\n' + '='.repeat(80));
   }
 }
 

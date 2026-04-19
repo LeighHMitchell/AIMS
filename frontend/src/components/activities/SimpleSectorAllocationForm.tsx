@@ -46,10 +46,7 @@ export default function SimpleSectorAllocationForm({
 }: SimpleSectorAllocationFormProps) {
   // Debug logging for allocations
   useEffect(() => {
-    console.log('[SimpleSectorAllocationForm] Allocations prop changed:', allocations);
-    console.log('[SimpleSectorAllocationForm] Allocations count:', allocations.length);
     if (allocations.length > 0) {
-      console.log('[SimpleSectorAllocationForm] First allocation:', allocations[0]);
     }
   }, [allocations]);
 
@@ -311,7 +308,7 @@ export default function SimpleSectorAllocationForm({
         <CardHeader className="pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <span>Select Sectors</span>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-helper">
               IATI Compliant
             </Badge>
           </CardTitle>
@@ -331,7 +328,7 @@ export default function SimpleSectorAllocationForm({
                 variant="outline" 
                 size="sm" 
                 onClick={clearAll}
-                className="text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
+                className="text-helper text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
               >
                 Clear All
               </Button>
@@ -346,15 +343,15 @@ export default function SimpleSectorAllocationForm({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Percentage Allocation</CardTitle>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-body">
                 <span className={`font-medium ${
                   validation.totalPercentage === 100 ? 'text-[hsl(var(--success-icon))]' : 
-                  validation.totalPercentage > 100 ? 'text-red-600' : 'text-amber-600'
+                  validation.totalPercentage > 100 ? 'text-destructive' : 'text-amber-600'
                 }`}>
                   Total: {formatPercentage(validation.totalPercentage)}%
                 </span>
                 {validation.totalPercentage !== 100 && (
-                  <span className="text-gray-500">
+                  <span className="text-muted-foreground">
                     ({validation.remainingPercentage > 0 ? '+' : ''}{formatPercentage(validation.remainingPercentage)}%)
                   </span>
                 )}
@@ -366,14 +363,14 @@ export default function SimpleSectorAllocationForm({
               {allocations.map((allocation) => (
                 <div 
                   key={allocation.id} 
-                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 truncate">
+                    <div className="font-medium text-body text-foreground truncate">
                       {allocation.name || getSectorLabel(allocation.code)}
                     </div>
                     {getSectorDescription(allocation.code) && (
-                      <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                      <div className="text-helper text-muted-foreground mt-1 line-clamp-2">
                         {getSectorDescription(allocation.code)}
                       </div>
                     )}
@@ -388,19 +385,19 @@ export default function SimpleSectorAllocationForm({
                         step="0.1"
                         value={allocation.percentage || ''}
                         onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm text-right"
+                        className="w-20 h-8 text-body text-right"
                         placeholder="0"
                       />
-                      <span className="text-sm text-gray-500">%</span>
+                      <span className="text-body text-muted-foreground">%</span>
                     </div>
                     
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removeSector(allocation.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </div>
@@ -409,12 +406,12 @@ export default function SimpleSectorAllocationForm({
             
             {/* Distribute Equally Button at bottom of sector list */}
             {allocations.length > 1 && (
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-border">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={distributeEqually}
-                  className="text-xs w-full"
+                  className="text-helper w-full"
                 >
                   Distribute Equally
                 </Button>
@@ -456,11 +453,11 @@ export default function SimpleSectorAllocationForm({
                               <div className="w-full">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {allocations.map((allocation, index) => (
-                        <div key={index} className="p-4 border rounded-lg bg-gray-50">
-                          <div className="font-medium text-sm text-gray-900">
+                        <div key={index} className="p-4 border rounded-lg bg-muted">
+                          <div className="font-medium text-body text-foreground">
                             {allocation.code}
                           </div>
-                          <div className="text-xs text-gray-600 mt-1">
+                          <div className="text-helper text-muted-foreground mt-1">
                             {allocation.name}
                           </div>
                           <div className="text-lg font-semibold text-blue-600 mt-2">
@@ -475,7 +472,7 @@ export default function SimpleSectorAllocationForm({
       )}
 
       {/* Help Text */}
-      <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+      <div className="text-helper text-muted-foreground bg-muted p-3 rounded-lg">
         <p><strong>OECD DAC Sector Codes:</strong> These are standardized codes used by the Development Assistance Committee (DAC) of the Organisation for Economic Co-operation and Development (OECD) to classify development assistance by purpose. All percentages must add up to exactly 100%.</p>
       </div>
     </div>

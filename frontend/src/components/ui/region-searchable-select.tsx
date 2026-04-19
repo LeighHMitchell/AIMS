@@ -78,7 +78,7 @@ export function RegionSearchableSelect({
     <div className={cn("space-y-4", className)}>
       {/* Dropdown for adding regions */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Add Locations</label>
+        <label className="text-body font-medium">Add Locations</label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -103,12 +103,12 @@ export function RegionSearchableSelect({
                   placeholder="Search states, regions, or union territories..."
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
-                  className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-11 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <CommandList>
                 {filteredRegions.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
+                  <div className="py-6 text-center text-body text-muted-foreground">
                     {searchValue ? "No matching locations found." : "All locations have been added."}
                   </div>
                 ) : (
@@ -155,7 +155,7 @@ export function RegionSearchableSelect({
       {Object.keys(selectedRegions).length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Selected Locations</label>
+            <label className="text-body font-medium">Selected Locations</label>
             <div className="flex items-center gap-3">
               {Object.keys(selectedRegions).length > 1 && (
                 <button
@@ -166,7 +166,7 @@ export function RegionSearchableSelect({
                     })
                   }}
                   disabled={disabled}
-                  className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
+                  className="text-helper text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
                   title="Clear all locations"
                 >
                   <X className="h-3 w-3" />
@@ -174,8 +174,8 @@ export function RegionSearchableSelect({
                 </button>
               )}
               <div className={cn(
-                "text-sm font-medium",
-                isValidTotal ? "text-[hsl(var(--success-icon))]" : totalPercentage > 100 ? "text-red-600" : "text-amber-600"
+                "text-body font-medium",
+                isValidTotal ? "text-[hsl(var(--success-icon))]" : totalPercentage > 100 ? "text-destructive" : "text-amber-600"
               )}>
                 Total: {totalPercentage.toFixed(1)}%
               </div>
@@ -196,9 +196,9 @@ export function RegionSearchableSelect({
                     <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                     
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{regionName}</div>
+                      <div className="font-medium text-body">{regionName}</div>
                       {region && (
-                        <div className="text-xs text-muted-foreground">{region.type}</div>
+                        <div className="text-helper text-muted-foreground">{region.type}</div>
                       )}
                     </div>
                     
@@ -217,7 +217,7 @@ export function RegionSearchableSelect({
                         className="w-24 text-right"
                         disabled={disabled}
                       />
-                      <span className="text-sm text-muted-foreground">%</span>
+                      <span className="text-body text-muted-foreground">%</span>
                       
                       {/* Save Status Icons */}
                       <div className="flex items-center ml-2">
@@ -228,7 +228,7 @@ export function RegionSearchableSelect({
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         {allocationStatus[regionName] === 'error' && (
-                          <AlertCircle className="h-4 w-4 text-red-600" />
+                          <AlertCircle className="h-4 w-4 text-destructive" />
                         )}
                       </div>
                     </div>
@@ -250,8 +250,8 @@ export function RegionSearchableSelect({
           
           {!isValidTotal && Object.keys(selectedRegions).length > 0 && (
             <div className={cn(
-              "text-xs",
-              totalPercentage > 100 ? "text-red-600" : "text-amber-600"
+              "text-helper",
+              totalPercentage > 100 ? "text-destructive" : "text-amber-600"
             )}>
               {totalPercentage > 100 
                 ? `Reduce allocations by ${(totalPercentage - 100).toFixed(1)}% to reach 100%`

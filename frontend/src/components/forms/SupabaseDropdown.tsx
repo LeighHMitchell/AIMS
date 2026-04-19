@@ -147,7 +147,7 @@ export function SupabaseDropdown({
                   <Info className="h-3 w-3 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">{tooltip}</p>
+                  <p className="text-helper">{tooltip}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -188,7 +188,7 @@ export function SupabaseDropdown({
       </div>
       
       {error && (
-        <p className="text-xs text-destructive">{error}</p>
+        <p className="text-helper text-destructive">{error}</p>
       )}
     </div>
   );

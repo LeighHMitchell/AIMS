@@ -56,7 +56,6 @@ export const IconUpload: React.FC<IconUploadProps> = ({
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);
-        console.log(`Icon compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
 
         // Create preview from compressed file
         const reader = new FileReader();
@@ -143,18 +142,18 @@ export const IconUpload: React.FC<IconUploadProps> = ({
         {...getRootProps()}
         className={`
           h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors flex items-center justify-center
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
+          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400"}
           ${uploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full flex flex-col items-center justify-center text-gray-500">
-          <ImageIcon className="h-16 w-16 text-gray-400 mb-3" />
-          <p className="text-sm font-medium">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+          <ImageIcon className="h-16 w-16 text-muted-foreground mb-3" />
+          <p className="text-body font-medium">
             {isDragActive ? "Drop the icon here" : "Drag & drop an icon here"}
           </p>
-          <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400 text-center">PNG, JPG, GIF up to 5MB (auto-compressed)</p>
+          <p className="text-helper mt-1">or click to select</p>
+          <p className="text-helper mt-2 text-muted-foreground text-center">PNG, JPG, GIF up to 5MB (auto-compressed)</p>
         </div>
       </div>
 

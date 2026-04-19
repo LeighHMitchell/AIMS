@@ -75,7 +75,7 @@ export const FieldHelp: React.FC<FieldHelpProps> = ({ field, className = "" }) =
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className={`w-4 h-4 text-slate-500 cursor-help inline-block ml-1 ${className}`} />
+          <HelpCircle className={`w-4 h-4 text-muted-foreground cursor-help inline-block ml-1 ${className}`} />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>{helpText}</p>
@@ -106,7 +106,7 @@ export const RequiredFieldIndicator: React.FC<RequiredFieldIndicatorProps> = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <AlertCircle className={`h-3.5 w-3.5 text-red-600 inline-block ml-1 ${className}`} />
+          <AlertCircle className={`h-3.5 w-3.5 text-destructive inline-block ml-1 ${className}`} />
         </TooltipTrigger>
         <TooltipContent>
           <p>Required before publishing</p>
@@ -197,34 +197,34 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
   
   // Get completion status
   const getCompletionStatus = () => {
-    if (completionPercentage === 100) return { text: 'Excellent', color: 'text-slate-700', bgColor: 'bg-slate-600' };
-    if (completionPercentage >= 80) return { text: 'Good', color: 'text-slate-600', bgColor: 'bg-slate-500' };
-    if (completionPercentage >= 60) return { text: 'Fair', color: 'text-slate-500', bgColor: 'bg-slate-400' };
-    return { text: 'Needs Work', color: 'text-slate-400', bgColor: 'bg-slate-300' };
+    if (completionPercentage === 100) return { text: 'Excellent', color: 'text-foreground', bgColor: 'bg-slate-600' };
+    if (completionPercentage >= 80) return { text: 'Good', color: 'text-muted-foreground', bgColor: 'bg-muted0' };
+    if (completionPercentage >= 60) return { text: 'Fair', color: 'text-muted-foreground', bgColor: 'bg-slate-400' };
+    return { text: 'Needs Work', color: 'text-muted-foreground', bgColor: 'bg-slate-300' };
   };
   
   const status = getCompletionStatus();
   
   return (
-    <div className="bg-slate-50 rounded-lg border border-slate-200">
+    <div className="bg-muted rounded-lg border border-border">
       {/* Compact Header */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-slate-600" />
-            <h3 className="text-sm font-semibold text-slate-700">Completion Rating</h3>
+            <Target className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-body font-semibold text-foreground">Completion Rating</h3>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-lg font-bold ${status.color}`}>{completionPercentage}%</span>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 hover:bg-slate-200 rounded transition-colors"
+              className="p-1 hover:bg-muted rounded transition-colors"
               aria-label="Toggle completion details"
             >
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4 text-slate-500" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-slate-500" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               )}
             </button>
           </div>
@@ -233,10 +233,10 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-500">Data quality</span>
+            <span className="text-helper text-muted-foreground">Data quality</span>
             <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div 
               className={`h-2 rounded-full transition-all duration-300 ${status.bgColor}`}
               style={{ width: `${completionPercentage}%` }}
@@ -247,15 +247,15 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
       
       {/* Expandable Content */}
       {isExpanded && (
-        <div className="border-t border-slate-200 p-4 bg-white">
+        <div className="border-t border-border p-4 bg-white">
           <div className="space-y-4">
             {/* Completion Summary */}
-            <div className="bg-slate-50 rounded-md p-3">
-              <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+            <div className="bg-muted rounded-md p-3">
+              <h4 className="text-body font-medium text-foreground mb-2 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />
                 How to Improve Your Rating
               </h4>
-              <p className="text-xs text-slate-600 mb-2">
+              <p className="text-helper text-muted-foreground mb-2">
                 Complete missing fields to improve your activity's data quality and visibility.
               </p>
             </div>
@@ -265,13 +265,13 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
-                  <h4 className="text-sm font-semibold text-slate-700">Required Fields</h4>
+                  <h4 className="text-body font-semibold text-foreground">Required Fields</h4>
                 </div>
-                <p className="text-xs text-slate-600 mb-2">These fields are essential for publishing your activity:</p>
+                <p className="text-helper text-muted-foreground mb-2">These fields are essential for publishing your activity:</p>
                 <ul className="space-y-1">
                   {missingFields.required.map((field, idx) => (
-                    <li key={idx} className="text-xs text-slate-700 flex items-start gap-2 pl-4">
-                      <span className="text-slate-500 mt-1">•</span>
+                    <li key={idx} className="text-helper text-foreground flex items-start gap-2 pl-4">
+                      <span className="text-muted-foreground mt-1">•</span>
                       <span>{field}</span>
                     </li>
                   ))}
@@ -283,14 +283,14 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
             {missingFields.recommended.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
-                  <h4 className="text-sm font-semibold text-slate-700">Recommended Fields</h4>
+                  <div className="w-2 h-2 bg-muted0 rounded-full"></div>
+                  <h4 className="text-body font-semibold text-foreground">Recommended Fields</h4>
                 </div>
-                <p className="text-xs text-slate-600 mb-2">Adding these will improve data quality and discoverability:</p>
+                <p className="text-helper text-muted-foreground mb-2">Adding these will improve data quality and discoverability:</p>
                 <ul className="space-y-1">
                   {missingFields.recommended.map((field, idx) => (
-                    <li key={idx} className="text-xs text-slate-700 flex items-start gap-2 pl-4">
-                      <span className="text-slate-400 mt-1">•</span>
+                    <li key={idx} className="text-helper text-foreground flex items-start gap-2 pl-4">
+                      <span className="text-muted-foreground mt-1">•</span>
                       <span>{field}</span>
                     </li>
                   ))}
@@ -300,12 +300,12 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
 
             {/* Perfect Score */}
             {completionPercentage === 100 && (
-              <div className="bg-slate-50 border border-slate-300 rounded-md p-3">
-                <div className="flex items-center gap-2 text-slate-700">
+              <div className="bg-muted border border-input rounded-md p-3">
+                <div className="flex items-center gap-2 text-foreground">
                   <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Perfect Score!</span>
+                  <span className="text-body font-medium">Perfect Score!</span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-helper text-muted-foreground mt-1">
                   Your activity has excellent data quality. All required and recommended fields are complete.
                 </p>
               </div>
@@ -313,12 +313,12 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
 
             {/* Tips */}
             {completionPercentage < 100 && (
-              <div className="bg-slate-50 border border-slate-300 rounded-md p-3">
-                <div className="flex items-center gap-2 text-slate-700 mb-1">
+              <div className="bg-muted border border-input rounded-md p-3">
+                <div className="flex items-center gap-2 text-foreground mb-1">
                   <Clock className="w-4 h-4" />
-                  <span className="text-sm font-medium">Quick Tips</span>
+                  <span className="text-body font-medium">Quick Tips</span>
                 </div>
-                <ul className="text-xs text-slate-600 space-y-1">
+                <ul className="text-helper text-muted-foreground space-y-1">
                   <li>• Focus on required fields first to enable publishing</li>
                   <li>• Add descriptions and target groups for better context</li>
                   <li>• Include financial data in the Finances tab</li>

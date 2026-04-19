@@ -155,7 +155,7 @@ function TimelineView({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <p className="font-medium">No transactions to display</p>
       </div>
     )
@@ -165,9 +165,9 @@ function TimelineView({
     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
       {groupedByMonth.map(([monthKey, days]) => (
         <div key={monthKey}>
-          <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-slate-700 py-2 px-3 border-b border-slate-200 rounded-t-lg">
+          <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-foreground py-2 px-3 border-b border-border rounded-t-lg">
             {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
-            <span className="ml-2 text-sm font-normal text-slate-500">
+            <span className="ml-2 text-body font-normal text-muted-foreground">
               {days.length} day{days.length !== 1 ? 's' : ''} · {days.reduce((sum, d) => sum + d.count, 0)} transaction{days.reduce((sum, d) => sum + d.count, 0) !== 1 ? 's' : ''}
             </span>
           </div>
@@ -175,12 +175,12 @@ function TimelineView({
             {days.map(day => (
                 <div
                   key={day.date.toISOString()}
-                  className="w-full px-3 py-3 flex items-center hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  className="w-full px-3 py-3 flex items-center hover:bg-muted transition-colors text-left cursor-pointer"
                   onMouseEnter={(e) => onHoverDay(day, e)}
                   onMouseLeave={onLeaveDay}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-slate-900 w-16">
+                    <div className="text-body font-medium text-foreground w-16">
                       {format(day.date, 'MMM dd')}
                     </div>
                     <div className="flex gap-1">
@@ -193,7 +193,7 @@ function TimelineView({
                         />
                       ))}
                     </div>
-                    <span className="text-sm text-slate-500">
+                    <span className="text-body text-muted-foreground">
                       {day.count} transaction{day.count !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -242,7 +242,7 @@ function MonthlySummaryView({
 
   if (monthlyData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <p className="font-medium">No transactions to display</p>
       </div>
     )
@@ -257,27 +257,27 @@ function MonthlySummaryView({
         return (
           <div
             key={month.month}
-            className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-left cursor-pointer"
+            className="w-full p-3 bg-muted hover:bg-muted rounded-lg transition-colors text-left cursor-pointer"
             onMouseEnter={(e) => onHoverMonth(month.daysList, e)}
             onMouseLeave={onLeaveMonth}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="font-medium text-slate-900">
+              <div className="font-medium text-foreground">
                 {format(parseISO(month.month + '-01'), 'MMMM yyyy')}
               </div>
               <div className="text-right">
-                <div className="font-semibold text-slate-900">
+                <div className="font-semibold text-foreground">
                   {intensityMode === 'count' 
                     ? `${month.count} transactions` 
                     : `$${formatCurrencyAbbreviated(month.value)}`
                   }
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-helper text-muted-foreground">
                   {month.days} active day{month.days !== 1 ? 's' : ''}
                 </div>
               </div>
             </div>
-            <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-3 bg-muted rounded-full overflow-hidden">
               <div 
                 className="h-full rounded-full transition-all"
                 style={{ 
@@ -311,7 +311,7 @@ function MonthlySparkline({
   useEffect(() => {
     if (!sparklineTooltipRef.current) {
       sparklineTooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'absolute bg-slate-900 text-white text-xs rounded px-2 py-1 pointer-events-none z-50')
+        .attr('class', 'absolute bg-slate-900 text-white text-helper rounded px-2 py-1 pointer-events-none z-50')
         .style('opacity', 0)
     }
     return () => {
@@ -454,7 +454,7 @@ function MonthlySparkline({
 
   return (
     <div className="mb-4">
-      <div className="text-xs text-slate-500 mb-2">Monthly Trend</div>
+      <div className="text-helper text-muted-foreground mb-2">Monthly Trend</div>
       <svg ref={sparklineRef} className="w-full" />
     </div>
   )
@@ -681,7 +681,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none')
+        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none')
         .style('opacity', 0)
         .style('min-width', '280px')
         .style('max-width', '350px')
@@ -907,10 +907,10 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
   if (processedData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No transaction data available</p>
-          <p className="text-xs mt-2">Add transactions to see the calendar heat map</p>
+          <p className="text-helper mt-2">Add transactions to see the calendar heat map</p>
         </div>
       </div>
     )
@@ -922,12 +922,12 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {/* View Mode Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('heatmap')}
-              className={cn("h-7 px-2", viewMode === 'heatmap' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-7 px-2", viewMode === 'heatmap' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Heatmap view"
             >
               <Grid3x3 className="h-4 w-4" />
@@ -936,7 +936,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('timeline')}
-              className={cn("h-7 px-2", viewMode === 'timeline' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-7 px-2", viewMode === 'timeline' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Timeline view"
             >
               <List className="h-4 w-4" />
@@ -945,7 +945,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('monthly')}
-              className={cn("h-7 px-2", viewMode === 'monthly' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-7 px-2", viewMode === 'monthly' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Monthly summary"
             >
               <BarChart3 className="h-4 w-4" />
@@ -964,8 +964,8 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
           {/* Legend */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4 text-xs">
-              <span className="text-slate-600 font-medium">Transaction types:</span>
+            <div className="flex flex-wrap items-center gap-4 text-helper">
+              <span className="text-muted-foreground font-medium">Transaction types:</span>
               {Object.entries(TRANSACTION_TYPE_COLORS)
                 .filter(([type]) => processedData.some((d) => d.typeBreakdown[type]))
                 .map(([type, color]) => (
@@ -974,7 +974,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
                       className="w-3 h-3 rounded-sm"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-slate-600">
+                    <span className="text-muted-foreground">
                       {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
                     </span>
                   </div>
@@ -1023,7 +1023,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
       {/* Detailed Tooltip (for Timeline and Monthly views only) */}
       {viewMode !== 'heatmap' && hoveredDay && tooltipPosition && (
         <div
-          className="fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none"
+          className="fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none"
           style={{
             left: `${tooltipPosition.x}px`,
             top: `${tooltipPosition.y}px`,
@@ -1033,40 +1033,40 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
             maxWidth: '350px',
           }}
         >
-          <p className="font-semibold text-slate-900 mb-3 text-base">
+          <p className="font-semibold text-foreground mb-3 text-base">
             {format(hoveredDay.date, 'EEEE, MMMM dd, yyyy')}
           </p>
           
           {/* Summary Stats */}
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="bg-slate-50 p-2 rounded">
-              <div className="text-lg font-bold text-slate-900">{hoveredDay.count}</div>
-              <div className="text-xs text-slate-500">Transactions</div>
+            <div className="bg-muted p-2 rounded">
+              <div className="text-lg font-bold text-foreground">{hoveredDay.count}</div>
+              <div className="text-helper text-muted-foreground">Transactions</div>
             </div>
-            <div className="bg-slate-50 p-2 rounded">
-              <div className="text-lg font-bold text-slate-900">${formatCurrencyAbbreviated(hoveredDay.value)}</div>
-              <div className="text-xs text-slate-500">Total Value</div>
+            <div className="bg-muted p-2 rounded">
+              <div className="text-lg font-bold text-foreground">${formatCurrencyAbbreviated(hoveredDay.value)}</div>
+              <div className="text-helper text-muted-foreground">Total Value</div>
             </div>
           </div>
 
           {/* Type Breakdown */}
-          <div className="border-t border-slate-200 pt-3">
-            <p className="text-xs font-medium text-slate-700 mb-2">By Transaction Type</p>
+          <div className="border-t border-border pt-3">
+            <p className="text-helper font-medium text-foreground mb-2">By Transaction Type</p>
             <div className="space-y-1.5">
               {Object.entries(hoveredDay.typeBreakdown)
                 .sort((a, b) => b[1].value - a[1].value)
                 .map(([type, breakdown]) => (
-                  <div key={type} className="flex items-center justify-between text-xs">
+                  <div key={type} className="flex items-center justify-between text-helper">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"
                         style={{ backgroundColor: TRANSACTION_TYPE_COLORS[type] || '#64748B' }}
                       />
-                      <span className="text-slate-600 truncate">
+                      <span className="text-muted-foreground truncate">
                         {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
                       </span>
                     </div>
-                    <div className="text-slate-900 font-medium ml-2">
+                    <div className="text-foreground font-medium ml-2">
                       {breakdown.count} • ${formatCurrencyAbbreviated(breakdown.value)}
                     </div>
                   </div>

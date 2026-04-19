@@ -68,21 +68,21 @@ function SimpleLocationMarker({
 
   const infoContent = (
     <div className="p-2.5">
-      <div className="font-semibold text-xs text-slate-700 mb-1.5">
+      <div className="font-semibold text-helper text-foreground mb-1.5">
         {location.location_name || 'Unnamed Location'}
       </div>
       <div className="text-[10px] space-y-1">
         {location.location_description && (
-          <div className="text-slate-600 leading-snug">{location.location_description}</div>
+          <div className="text-muted-foreground leading-snug">{location.location_description}</div>
         )}
         {location.activity_location_description && (
-          <div className="text-slate-500 leading-snug">{location.activity_location_description}</div>
+          <div className="text-muted-foreground leading-snug">{location.activity_location_description}</div>
         )}
         {address && (
-          <div className="text-slate-600 leading-snug">{address}</div>
+          <div className="text-muted-foreground leading-snug">{address}</div>
         )}
         <div className="flex items-center gap-1.5 pt-0.5">
-          <span className="font-mono text-slate-500">{lat.toFixed(6)}, {lng.toFixed(6)}</span>
+          <span className="font-mono text-muted-foreground">{lat.toFixed(6)}, {lng.toFixed(6)}</span>
           <a
             href={`https://www.google.com/maps?q=${lat},${lng}&t=k`}
             target="_blank"

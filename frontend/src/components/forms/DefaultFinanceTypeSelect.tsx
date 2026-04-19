@@ -63,7 +63,7 @@ export function DefaultFinanceTypeSelect({
       >
         {Object.entries(FINANCE_TYPES_CATEGORIZED).map(([category, types]) => (
           <React.Fragment key={category}>
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{category}</div>
+            <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground">{category}</div>
             {Object.entries(types).map(([code, label]) => (
               <SelectItem 
                 key={code} 

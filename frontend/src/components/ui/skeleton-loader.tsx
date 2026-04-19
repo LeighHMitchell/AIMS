@@ -17,7 +17,7 @@ export function Skeleton({
   ...props
 }: SkeletonProps) {
   const baseClasses = cn(
-    animation === 'shimmer-blush' ? "bg-rose-100/50" : "bg-gray-200/50",
+    animation === 'shimmer-blush' ? "bg-rose-100/50" : "bg-muted/50",
     animation === 'pulse' && "animate-pulse",
     animation === 'shimmer' && "skeleton-shimmer",
     animation === 'shimmer-blush' && "skeleton-shimmer-blush",
@@ -94,7 +94,7 @@ export function OrganisationCardSkeleton() {
         </div>
         <Skeleton variant="text" width="100%" height="0.875rem" />
         <Skeleton variant="text" width="80%" height="0.875rem" />
-        <div className="flex justify-between pt-3 border-t border-gray-100">
+        <div className="flex justify-between pt-3 border-t border-border">
           <Skeleton variant="text" width="80px" height="1rem" />
           <Skeleton variant="text" width="80px" height="1rem" />
         </div>
@@ -127,7 +127,7 @@ export function DashboardStatsSkeleton() {
 export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; columns?: number }) {
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-6 py-3">
+      <div className="border-b border-border bg-muted px-6 py-3">
         <div className="flex gap-4">
           {[...Array(columns)].map((_, i) => (
             <Skeleton key={i} variant="text" width={`${100 / columns}%`} height="1rem" />
@@ -190,7 +190,7 @@ export function BarChartSkeleton({ height = "384px", bars = 6, showLegend = true
     <div className="w-full">
       {/* Legend skeleton */}
       {showLegend && (
-        <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-2">
               <Skeleton variant="rectangular" width="16px" height="16px" />
@@ -293,7 +293,7 @@ export function MapSkeleton({ height = "600px" }: { height?: string }) {
           <Skeleton variant="rounded" width="100px" height="32px" />
         </div>
         <div 
-          className="bg-gray-100/50 skeleton-shimmer rounded-md"
+          className="bg-muted/50 skeleton-shimmer rounded-md"
           style={{ height }}
         />
       </div>
@@ -362,7 +362,7 @@ export function SearchResultsSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div key={i} className="bg-white rounded-lg shadow-sm p-4 border border-border">
           <div className="flex items-start gap-3">
             <Skeleton variant="circular" width="40px" height="40px" />
             <div className="flex-1 space-y-2">
@@ -433,8 +433,8 @@ export function FAQSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
+        <div key={i} className="bg-card rounded-lg shadow-sm border border-border">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <Skeleton variant="text" width="70%" height="1.25rem" />
               <Skeleton variant="circular" width="24px" height="24px" />

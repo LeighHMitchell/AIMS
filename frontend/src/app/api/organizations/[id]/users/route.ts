@@ -28,7 +28,6 @@ export async function GET(
       );
     }
 
-    console.log('[OrgUsers API] Fetching users for organization:', organizationId);
 
     // Fetch users belonging to this organization
     const { data: users, error } = await supabase
@@ -57,7 +56,6 @@ export async function GET(
       );
     }
 
-    console.log('[OrgUsers API] Found users:', users?.length || 0, users?.map(u => ({ email: u.email, org_id: u.organization_id })));
 
     // Transform to include full_name for frontend
     const transformedUsers = (users || []).map((user: any) => ({

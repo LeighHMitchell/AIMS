@@ -83,7 +83,6 @@ export async function POST(request: NextRequest) {
       console.error('Supabase admin client not available')
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
-    console.log('[Calendar API] Using Supabase admin client')
 
     // First, test if the table exists by doing a simple query
     const { data: testData, error: testError } = await supabase
@@ -91,7 +90,6 @@ export async function POST(request: NextRequest) {
       .select('id')
       .limit(1)
     
-    console.log('[Calendar API] Table test:', { hasData: !!testData, error: testError ? JSON.stringify(testError) : null })
     
     if (testError) {
       console.error('[Calendar API] Table test failed:', testError)
@@ -102,7 +100,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('[Calendar API] Request body:', JSON.stringify(body, null, 2))
     const {
       title,
       description,
@@ -182,7 +179,6 @@ export async function POST(request: NextRequest) {
 
     // Note: Optional fields like meeting_link, notification_minutes, etc. 
     // are not in the current database schema, so we don't insert them
-    console.log('[Calendar API] Insert data:', JSON.stringify(insertData, null, 2))
 
     const { data: event, error } = await supabase
       .from('calendar_events')
@@ -190,7 +186,6 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    console.log('[Calendar API] Insert result:', { data: event, error: JSON.stringify(error) })
 
     if (error) {
       console.error('Supabase insert error:', error)

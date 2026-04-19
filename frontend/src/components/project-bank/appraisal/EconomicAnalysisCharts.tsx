@@ -202,7 +202,7 @@ export function EconomicAnalysisCharts({
         {(eirr != null || eirrNpv != null || eirrBcr != null) && (
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 bg-surface-muted rounded-lg">
-              <div className="text-xs text-muted-foreground">EIRR</div>
+              <div className="text-helper text-muted-foreground">EIRR</div>
               <div
                 className="text-lg font-bold tabular-nums mt-0.5"
                 style={{ color: eirr != null ? (eirr >= 15 ? '#4c5568' : '#dc2625') : undefined }}
@@ -212,7 +212,7 @@ export function EconomicAnalysisCharts({
             </div>
             {eirrNpv != null && (
               <div className="p-3 bg-surface-muted rounded-lg">
-                <div className="text-xs text-muted-foreground">ENPV</div>
+                <div className="text-helper text-muted-foreground">ENPV</div>
                 <div className="text-lg font-bold tabular-nums mt-0.5">
                   {formatCurrency(eirrNpv)}
                 </div>
@@ -220,7 +220,7 @@ export function EconomicAnalysisCharts({
             )}
             {eirrBcr != null && (
               <div className="p-3 bg-surface-muted rounded-lg">
-                <div className="text-xs text-muted-foreground">BCR</div>
+                <div className="text-helper text-muted-foreground">BCR</div>
                 <div
                   className="text-lg font-bold tabular-nums mt-0.5"
                   style={{ color: eirrBcr >= 1 ? '#4c5568' : '#dc2625' }}
@@ -236,7 +236,7 @@ export function EconomicAnalysisCharts({
         {hasCosts && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-muted-foreground">Economic Costs by Component</p>
+              <p className="text-helper font-medium text-muted-foreground">Economic Costs by Component</p>
               {chartToggle(costMode, setCostMode)}
             </div>
             <div className="border rounded-lg p-4 bg-background">
@@ -279,7 +279,7 @@ export function EconomicAnalysisCharts({
         {hasBenefits && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-muted-foreground">Economic Benefits by Category</p>
+              <p className="text-helper font-medium text-muted-foreground">Economic Benefits by Category</p>
               {chartToggle(benefitMode, setBenefitMode)}
             </div>
             <div className="border rounded-lg p-4 bg-background">
@@ -322,7 +322,7 @@ export function EconomicAnalysisCharts({
         {hasCosts && hasBenefits && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-muted-foreground">Net Economic Flow (Benefits minus Costs)</p>
+              <p className="text-helper font-medium text-muted-foreground">Net Economic Flow (Benefits minus Costs)</p>
               {chartToggle(netMode, setNetMode)}
             </div>
             <div className="border rounded-lg p-4 bg-background">

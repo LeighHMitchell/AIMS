@@ -11,7 +11,6 @@ export const dynamic = 'force-dynamic';
 // The handler still requires authentication before returning data
 const getCachedOrganizationStats = unstable_cache(
   async (limit: number, offset: number) => {
-    console.log('[AIMS] Cache MISS - Fetching fresh organization stats from database');
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       throw new Error('Database not available');
@@ -126,7 +125,6 @@ function deriveCategory(organisationType: string, countryRepresented: string): s
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/organizations/bulk-stats - Starting bulk statistics request');
   
   // Require authentication
   const { supabase, response: authResponse } = await requireAuth();
@@ -154,7 +152,6 @@ export async function GET(request: NextRequest) {
     let orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, budgetsResult, countResult;
 
     if (bustCache && supabase) {
-      console.log('[AIMS] Cache BUST - Fetching fresh data');
       // Fetch directly without cache when busting
       [orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, budgetsResult, countResult] = await Promise.all([
         supabase
@@ -212,7 +209,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (!organizations || organizations.length === 0) {
-      console.log('[AIMS] No organizations found');
       return NextResponse.json({
         data: [],
         pagination: {
@@ -225,7 +221,6 @@ export async function GET(request: NextRequest) {
       }, { headers });
     }
 
-    console.log(`[AIMS] Processing ${organizations.length} organizations with bulk statistics`);
 
     // Create maps for efficient lookups
     const reportingOrgActivityCount = new Map<string, number>();
@@ -413,7 +408,6 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log(`[AIMS] Successfully processed ${enhancedOrganizations.length} organizations with bulk statistics`);
     
     // Return paginated response with metadata
     const totalPages = Math.ceil((totalCount || 0) / limit);

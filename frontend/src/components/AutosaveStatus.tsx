@@ -60,7 +60,7 @@ export function AutosaveStatus({
         icon: <AlertCircle className="h-3 w-3" />,
         text: 'Save Failed',
         variant: 'outline' as const,
-        className: 'text-red-600 border-red-300 bg-red-50'
+        className: 'text-destructive border-destructive/30 bg-destructive/10'
       };
     }
 
@@ -86,7 +86,7 @@ export function AutosaveStatus({
       icon: <Save className="h-3 w-3" />,
       text: '',
       variant: 'outline' as const,
-      className: 'text-gray-600 border-gray-300 bg-gray-50'
+      className: 'text-muted-foreground border-input bg-muted'
     };
   };
 
@@ -104,7 +104,7 @@ export function AutosaveStatus({
       
       {/* Save count indicator */}
       {saveCount > 0 && (
-        <span className="text-xs text-gray-500">
+        <span className="text-helper text-muted-foreground">
           ({saveCount} saves)
         </span>
       )}
@@ -112,7 +112,7 @@ export function AutosaveStatus({
       {/* Error details on hover */}
       {lastError && (
         <span 
-          className="text-xs text-red-500 cursor-help" 
+          className="text-helper text-destructive cursor-help" 
           title={lastError.message}
         >
           ⚠️
@@ -134,16 +134,16 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-blue-600">
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span className="text-xs">Saving</span>
+        <span className="text-helper">Saving</span>
       </div>
     );
   }
 
   if (lastError) {
     return (
-      <div className="flex items-center gap-1 text-red-600" title={lastError.message}>
+      <div className="flex items-center gap-1 text-destructive" title={lastError.message}>
         <AlertCircle className="h-3 w-3" />
-        <span className="text-xs">Error</span>
+        <span className="text-helper">Error</span>
       </div>
     );
   }
@@ -152,7 +152,7 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-orange-600">
         <Clock className="h-3 w-3" />
-        <span className="text-xs">Unsaved</span>
+        <span className="text-helper">Unsaved</span>
       </div>
     );
   }
@@ -161,15 +161,15 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-[hsl(var(--success-icon))]">
         <CheckCircle className="h-3 w-3" />
-        <span className="text-xs">Saved</span>
+        <span className="text-helper">Saved</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1 text-gray-500">
+    <div className="flex items-center gap-1 text-muted-foreground">
       <Save className="h-3 w-3" />
-      <span className="text-xs">Draft</span>
+      <span className="text-helper">Draft</span>
     </div>
   );
 }

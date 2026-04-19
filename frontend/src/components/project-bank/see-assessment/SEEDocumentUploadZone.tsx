@@ -108,16 +108,16 @@ export function SEEDocumentUploadZone({
       >
         <input {...getInputProps()} />
         {uploading ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 text-body text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Uploading...
           </div>
         ) : (
           <div className="space-y-1">
             <Upload className="h-5 w-5 mx-auto text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {isDragActive ? 'Drop files here' : `Drag ${DOCUMENT_TYPE_LABELS[documentType]} here or click to upload`}
             </p>
-            <p className="text-xs text-muted-foreground">PDF, Excel, Word, CSV, images (max 50 MB)</p>
+            <p className="text-helper text-muted-foreground">PDF, Excel, Word, CSV, images (max 50 MB)</p>
           </div>
         )}
       </div>
@@ -132,8 +132,8 @@ export function SEEDocumentUploadZone({
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-sm truncate">{doc.file_name}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-body truncate">{doc.file_name}</div>
+                  <div className="text-helper text-muted-foreground">
                     {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                     {doc.file_size && ` · ${formatFileSize(doc.file_size)}`}
                   </div>

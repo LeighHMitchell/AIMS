@@ -204,7 +204,7 @@ export function AddIndicatorForm({
                       setFormData(prev => ({ ...prev, ascending: checked }))
                     }
                   />
-                  <Label htmlFor="ascending" className="text-sm">
+                  <Label htmlFor="ascending" className="text-body">
                     Ascending (higher is better)
                   </Label>
                 </div>
@@ -217,7 +217,7 @@ export function AddIndicatorForm({
                       setFormData(prev => ({ ...prev, aggregation_status: checked }))
                     }
                   />
-                  <Label htmlFor="aggregation-status" className="text-sm">
+                  <Label htmlFor="aggregation-status" className="text-body">
                     Aggregation Status
                   </Label>
                 </div>
@@ -246,7 +246,7 @@ export function AddIndicatorForm({
                     setFormData(prev => ({ ...prev, reference_code: e.target.value }))
                   }
                   placeholder="Reference code"
-                  className="w-full"
+                  className="w-full font-mono"
                 />
               </div>
 
@@ -259,14 +259,14 @@ export function AddIndicatorForm({
                     setFormData(prev => ({ ...prev, reference_uri: e.target.value }))
                   }
                   placeholder="http://..."
-                  className="w-full"
+                  className="w-full font-mono"
                 />
               </div>
             </div>
 
             {/* Baseline Section */}
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-medium text-gray-900">Baseline</h4>
+              <h4 className="text-body font-medium text-foreground">Baseline</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

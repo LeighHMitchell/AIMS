@@ -72,13 +72,11 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
       return;
     }
 
-    console.log('[Download] Fetching signed URL for:', { taskId, attachmentId, fileName });
 
     // Get signed URL from API
     const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`);
     const data = await response.json();
 
-    console.log('[Download] API response:', data);
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);
@@ -202,7 +200,7 @@ export function TaskCard({
     <Card
       className={cn(
         'relative transition-all hover:shadow-md',
-        isOverdue && 'border-red-300 bg-red-50/30',
+        isOverdue && 'border-destructive/30 bg-destructive/10/30',
         isDueSoon && !isOverdue && 'border-amber-300 bg-amber-50/30',
         onViewDetails && 'cursor-pointer'
       )}
@@ -212,14 +210,14 @@ export function TaskCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <Badge variant="outline" className={cn('text-xs', priorityClasses)}>
+              <Badge variant="outline" className={cn('text-helper', priorityClasses)}>
                 {getPriorityLabel(task.priority)}
               </Badge>
-              <Badge variant="outline" className={cn('text-xs', statusClasses)}>
+              <Badge variant="outline" className={cn('text-helper', statusClasses)}>
                 {getStatusLabel(assignment.status)}
               </Badge>
               {isOverdue && (
-                <Badge variant="destructive" className="text-xs">
+                <Badge variant="destructive" className="text-helper">
                   <AlertTriangle className="h-3 w-3 mr-1" />
                   Overdue
                 </Badge>
@@ -247,7 +245,7 @@ export function TaskCard({
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
-                            <div className="text-xs">
+                            <div className="text-helper">
                               <p className="font-medium">{attachment.file_name}</p>
                               <p className="text-muted-foreground flex items-center gap-1">
                                 <Download className="h-3 w-3" /> Click to download
@@ -267,7 +265,7 @@ export function TaskCard({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="max-w-xs">
-                          <div className="text-xs">
+                          <div className="text-helper">
                             <p className="font-medium mb-1">{attachments.length - 3} more attachment{attachments.length - 3 !== 1 ? 's' : ''}</p>
                             <ul className="space-y-0.5">
                               {attachments.slice(3).map((a: any) => (
@@ -301,14 +299,14 @@ export function TaskCard({
 
       <CardContent className="pt-0 space-y-3">
         {task.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-body text-muted-foreground line-clamp-2">
             {task.description}
           </p>
         )}
 
         {/* Entity Link */}
         {task.entity_type && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-body">
             {task.entity_type === 'activity' && task.activity && (
               <>
                 <FileText className="h-4 w-4 text-blue-500" />
@@ -331,7 +329,7 @@ export function TaskCard({
         {/* Deadline */}
         {deadline && (
           <div className={cn(
-            'flex items-center gap-2 text-sm',
+            'flex items-center gap-2 text-body',
             isOverdue && 'text-[#DC2625] font-medium',
             isDueSoon && !isOverdue && 'text-[#DC2625] font-medium'
           )}>
@@ -344,17 +342,17 @@ export function TaskCard({
         {(hasEmail || hasInApp || hasRecurrence) && (
           <div className="flex items-center gap-3 text-muted-foreground">
             {hasEmail && (
-              <div className="flex items-center gap-1 text-xs" title="Email notifications enabled">
+              <div className="flex items-center gap-1 text-helper" title="Email notifications enabled">
                 <Mail className="h-3.5 w-3.5" />
               </div>
             )}
             {hasInApp && (
-              <div className="flex items-center gap-1 text-xs" title="In-app notifications enabled">
+              <div className="flex items-center gap-1 text-helper" title="In-app notifications enabled">
                 <Bell className="h-3.5 w-3.5" />
               </div>
             )}
             {hasRecurrence && (
-              <div className="flex items-center gap-1 text-xs" title="Recurring task">
+              <div className="flex items-center gap-1 text-helper" title="Recurring task">
                 <Repeat className="h-3.5 w-3.5" />
               </div>
             )}
@@ -367,26 +365,26 @@ export function TaskCard({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Avatar className="h-6 w-6 flex-shrink-0">
                 <AvatarImage src={assignment.assigner.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
+                <AvatarFallback className="text-helper">
                   {assignerName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <span className="text-xs text-muted-foreground block">
+                <span className="text-helper text-muted-foreground block">
                   Assigned by {assignerName}
                 </span>
                 {getAssignerRole() && (
-                  <span className="text-xs text-muted-foreground/70 block">
+                  <span className="text-helper text-muted-foreground/70 block">
                     {getAssignerRole()}
                   </span>
                 )}
                 {getAssignerDepartment() && (
-                  <span className="text-xs text-muted-foreground/70 block">
+                  <span className="text-helper text-muted-foreground/70 block">
                     {getAssignerDepartment()}
                   </span>
                 )}
                 {getAssignerOrganization() && (
-                  <span className="text-xs text-muted-foreground/70 block">
+                  <span className="text-helper text-muted-foreground/70 block">
                     {getAssignerOrganization()}
                   </span>
                 )}
@@ -398,17 +396,17 @@ export function TaskCard({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Avatar className="h-6 w-6 flex-shrink-0">
                 <AvatarImage src={assignment.assignee.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
+                <AvatarFallback className="text-helper">
                   {assigneeName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs text-muted-foreground truncate">
+              <span className="text-helper text-muted-foreground truncate">
                 Assigned to {assigneeName}
               </span>
             </div>
           )}
 
-          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+          <div className="flex items-center gap-1 text-helper text-muted-foreground flex-shrink-0">
             <Clock className="h-3 w-3" />
             {formatDistanceToNow(new Date(assignment.created_at), { addSuffix: true })}
           </div>
@@ -416,7 +414,7 @@ export function TaskCard({
 
         {/* Completion Note */}
         {assignment.completion_note && (
-          <div className="bg-muted/50 rounded p-2 text-sm">
+          <div className="bg-muted/50 rounded p-2 text-body">
             <span className="text-muted-foreground">Note: </span>
             {assignment.completion_note}
           </div>

@@ -298,7 +298,7 @@ export function CustomYearsManagement() {
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8 text-red-600">
+      <div className="flex items-center justify-center py-8 text-destructive">
         <AlertCircle className="h-5 w-5 mr-2" />
         <span>{error}</span>
       </div>
@@ -321,7 +321,7 @@ export function CustomYearsManagement() {
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No custom years defined yet.</p>
-            <p className="text-sm">Click &quot;Add Custom Year&quot; to create one.</p>
+            <p className="text-body">Click &quot;Add Custom Year&quot; to create one.</p>
           </div>
         ) : (
           customYears.map((year) => (
@@ -344,7 +344,7 @@ export function CustomYearsManagement() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-3 mt-1 text-body text-muted-foreground">
                   {year.shortName && (
                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                       {year.shortName}
@@ -354,7 +354,7 @@ export function CustomYearsManagement() {
                     {formatMonthDay(year.startMonth, year.startDay)} –{" "}
                     {formatMonthDay(year.endMonth, year.endDay)}
                   </span>
-                  <span className="text-xs opacity-75">
+                  <span className="text-helper opacity-75">
                     (e.g., {getCustomYearLabel(year, new Date().getFullYear())})
                   </span>
                 </div>
@@ -368,7 +368,7 @@ export function CustomYearsManagement() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleEdit(year)}>
-                    <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                     Edit
                   </DropdownMenuItem>
                   {!year.isDefault && (
@@ -380,9 +380,9 @@ export function CustomYearsManagement() {
                   {!year.isDefault && (
                     <DropdownMenuItem
                       onClick={() => handleDelete(year)}
-                      className="text-red-600 focus:text-red-600"
+                      className="text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                      <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                       Delete
                     </DropdownMenuItem>
                   )}
@@ -431,7 +431,7 @@ export function CustomYearsManagement() {
                 placeholder="e.g., AU FY"
                 maxLength={20}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 Add a trailing space if you want separation from the year (e.g., &quot;AU FY &quot; → &quot;AU FY 2026&quot;)
               </p>
             </div>
@@ -479,12 +479,12 @@ export function CustomYearsManagement() {
 
             {/* Period Definition */}
             <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
-              <Label className="text-sm font-medium">Period Definition</Label>
+              <Label className="text-body font-medium">Period Definition</Label>
 
               {/* Start Date */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Start Month</Label>
+                  <Label className="text-helper text-muted-foreground">Start Month</Label>
                   <Select
                     value={String(formData.startMonth)}
                     onValueChange={(v) => {
@@ -516,7 +516,7 @@ export function CustomYearsManagement() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Start Day</Label>
+                  <Label className="text-helper text-muted-foreground">Start Day</Label>
                   <Select
                     value={String(formData.startDay)}
                     onValueChange={(v) => {
@@ -547,7 +547,7 @@ export function CustomYearsManagement() {
               {/* End Date */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">End Month</Label>
+                  <Label className="text-helper text-muted-foreground">End Month</Label>
                   <Select
                     value={String(formData.endMonth)}
                     onValueChange={(v) =>
@@ -574,7 +574,7 @@ export function CustomYearsManagement() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">End Day</Label>
+                  <Label className="text-helper text-muted-foreground">End Day</Label>
                   <Select
                     value={String(formData.endDay)}
                     onValueChange={(v) =>
@@ -597,11 +597,11 @@ export function CustomYearsManagement() {
 
               {/* Preview */}
               <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground">Preview:</p>
-                <p className="text-sm font-medium">
+                <p className="text-helper text-muted-foreground">Preview:</p>
+                <p className="text-body font-medium">
                   {getCustomYearPreview(formData)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-helper text-muted-foreground mt-1">
                   Label: &quot;{getCustomYearLabel(formData, new Date().getFullYear())}&quot;
                 </p>
               </div>
@@ -616,7 +616,7 @@ export function CustomYearsManagement() {
                   setFormData({ ...formData, isActive: checked === true })
                 }
               />
-              <Label htmlFor="isActive" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="isActive" className="text-body font-normal cursor-pointer">
                 Active (visible in chart dropdowns)
               </Label>
             </div>
@@ -630,7 +630,7 @@ export function CustomYearsManagement() {
                   setFormData({ ...formData, isDefault: checked === true })
                 }
               />
-              <Label htmlFor="isDefault" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="isDefault" className="text-body font-normal cursor-pointer">
                 Set as system default
               </Label>
             </div>

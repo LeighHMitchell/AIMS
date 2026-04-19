@@ -58,7 +58,6 @@ export async function GET(
 
   try {
     const { id: activityId } = await params;
-    console.log('[AIMS] GET /api/activities/[id]/participating-organizations for activity:', activityId);
     
     const supabaseAdmin = supabase;
     
@@ -85,7 +84,6 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Found participating organizations:', data?.length || 0);
     
     // Process narratives JSON field
     const processedData = data?.map(org => ({
@@ -114,8 +112,6 @@ export async function POST(
   try {
     const { id: activityId } = await params;
     const body = await request.json();
-    console.log('[AIMS] POST /api/activities/[id]/participating-organizations for activity:', activityId);
-    console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
 
     const { 
       organization_id, 
@@ -134,8 +130,6 @@ export async function POST(
       secondary_reporter = false
     } = body;
 
-    console.log('[AIMS] Parsed body:', { organization_id, role_type, iati_role_code, display_order });
-    console.log('[AIMS] Activity ID from URL:', activityId);
 
     if (!organization_id || !role_type) {
       console.error('[AIMS] Missing required fields:', { organization_id, role_type });
@@ -225,7 +219,6 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Created participating organization:', data);
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('[AIMS] Unexpected error in POST participating organizations:', error);
@@ -247,8 +240,6 @@ export async function PUT(
   try {
     const { id: activityId } = await params;
     const body = await request.json();
-    console.log('[AIMS] PUT /api/activities/[id]/participating-organizations for activity:', activityId);
-    console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
 
     const { 
       participating_org_id,  // ID of the participating org record to update
@@ -336,7 +327,6 @@ export async function PUT(
       );
     }
 
-    console.log('[AIMS] Updated participating organization:', data);
     
     // Process narratives JSON field
     const processedData = {
@@ -369,14 +359,11 @@ export async function DELETE(
     const organizationId = url.searchParams.get('organization_id');
     const roleType = url.searchParams.get('role_type');
 
-    console.log('[AIMS] DELETE /api/activities/[id]/participating-organizations for activity:', activityId);
-    console.log('[AIMS] Participating Org ID:', participatingOrgId, 'Organization ID:', organizationId, 'Role type:', roleType);
 
     const supabaseAdmin = supabase;
     
     // If no specific parameters provided, delete all participating organizations for this activity
     if (!participatingOrgId && !organizationId && !roleType) {
-      console.log('[AIMS] No specific parameters provided, deleting all participating organizations for activity:', activityId);
       
       const { data, error } = await supabaseAdmin
         .from('activity_participating_organizations')
@@ -389,13 +376,11 @@ export async function DELETE(
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log('[AIMS] Deleted all participating organizations for activity:', activityId, 'Count:', data?.length || 0);
       return NextResponse.json({ success: true, deletedCount: data?.length || 0 });
     }
     
     // Support deleting by ID (preferred) or by organization_id + role_type (backward compatibility)
     if (participatingOrgId) {
-      console.log('[AIMS] Attempting to delete by ID:', participatingOrgId, 'from activity:', activityId);
       
       const { data, error } = await supabaseAdmin
         .from('activity_participating_organizations')
@@ -426,7 +411,6 @@ export async function DELETE(
         }, { status: 404 });
       }
 
-      console.log('[AIMS] Successfully deleted participating organization:', data);
     } else if (organizationId && roleType) {
       const { error } = await supabaseAdmin
         .from('activity_participating_organizations')
@@ -446,7 +430,6 @@ export async function DELETE(
       );
     }
 
-    console.log('[AIMS] Deleted participating organization');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[AIMS] Unexpected error in DELETE participating organizations:', error);

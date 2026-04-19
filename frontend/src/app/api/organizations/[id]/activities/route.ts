@@ -31,7 +31,6 @@ export async function GET(
     const transactionType = searchParams.get('transactionType') || 'C';
     const transactionTypeCodes = transactionType === 'C' ? ['1', '2', '11'] : ['3', '4'];
     
-    console.log('[AIMS] GET /api/organizations/[id]/activities - Fetching activities for org:', orgId, 'transactionType:', transactionType);
     
     // Check if supabase is properly initialized
     
@@ -50,7 +49,6 @@ export async function GET(
       );
     }
 
-    console.log('[AIMS] Found organization:', organization.name, '(', organization.acronym, ')');
 
     // Get transactions where this organization is the provider (not receiver) to find activities they report/fund
     const { data: transactions, error: transError } = await supabase
@@ -81,7 +79,6 @@ export async function GET(
       }
     });
 
-    console.log('[AIMS] Found', activityIdsFromTransactions.size, 'unique activities from transactions');
 
     // Also get activities where this organization is the reporting organization
     const { data: reportingActivities, error: reportingError } = await supabase
@@ -100,7 +97,6 @@ export async function GET(
       console.error('[AIMS] Error fetching participating org activities:', participatingError);
     }
     
-    console.log('[AIMS] Found', participatingOrgActivities?.length || 0, 'activities as participating org');
 
     // Combine all sets of activity IDs
     const allActivityIds = new Set([
@@ -109,7 +105,6 @@ export async function GET(
       ...(participatingOrgActivities || []).map((po: any) => po.activity_id)
     ]);
 
-    console.log('[AIMS] Total unique activities for', organization.name, ':', allActivityIds.size);
 
     // Fetch full activity details for all related activities
     const { data: activities, error } = allActivityIds.size > 0 ? await supabase
@@ -136,16 +131,12 @@ export async function GET(
       .in('activity_status', ['2', '3']) // Only active statuses
       .order('created_at', { ascending: false }) : { data: [], error: null };
 
-    console.log('[AIMS] Found', activities?.length || 0, 'activities with reporting_org_id =', orgId);
     
     // Debug logging (same as partners summary)
     if (activities && activities.length > 0) {
-      console.log(`[AIMS] Activities for ${organization.name}:`);
       activities.forEach((activity: any) => {
-        console.log(`  - Activity: ${activity.id}, title: "${activity.activity_title}", created_by_org_name: "${activity.created_by_org_name}", reporting_org_id: "${activity.reporting_org_id}"`);
       });
     } else {
-      console.log(`[AIMS] No activities found for ${organization.name} with reporting_org_id = ${orgId}`);
     }
     
     if (error) {
@@ -156,7 +147,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS] Found activities for organization:', activities?.length || 0);
     
     // Add financial data calculation for each activity (same logic as organization level)
     const activitiesWithFinancialData = (activities || []).map((activity: any) => {

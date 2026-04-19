@@ -69,19 +69,19 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">AIMS Transfer Preparation</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Collect donor and financing details to pre-populate an AIMS activity, then transfer this project to the Aid Information Management System.
         </p>
       </div>
 
       {/* Development Partner */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Development Partner</Label>
+        <Label className="text-body font-medium text-foreground">Development Partner</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Donor Type <HelpTooltip text="Type of development partner providing funding." /></label>
+            <label className="text-helper text-muted-foreground">Donor Type <HelpTooltip text="Type of development partner providing funding." /></label>
             <Select value={formData.oda_donor_type || ''} onValueChange={v => updateField('oda_donor_type', v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select type..." /></SelectTrigger>
+              <SelectTrigger className="h-8 text-body"><SelectValue placeholder="Select type..." /></SelectTrigger>
               <SelectContent>
                 {ODA_DONOR_TYPES.map(dt => (
                   <SelectItem key={dt.value} value={dt.value}>
@@ -95,11 +95,11 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
             </Select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Donor Name <HelpTooltip text="Name of the development partner or funding agency." /></label>
+            <label className="text-helper text-muted-foreground">Donor Name <HelpTooltip text="Name of the development partner or funding agency." /></label>
             <Input
               value={formData.oda_donor_name || ''}
               onChange={e => updateField('oda_donor_name', e.target.value)}
-              className="h-8 text-sm"
+              className="h-8 text-body"
               placeholder="e.g. World Bank, JICA, UNDP"
             />
           </div>
@@ -108,12 +108,12 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
 
       {/* Financing */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Financing</Label>
+        <Label className="text-body font-medium text-foreground">Financing</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Financing Type <HelpTooltip text="Primary financing instrument for this ODA project." /></label>
+            <label className="text-helper text-muted-foreground">Financing Type <HelpTooltip text="Primary financing instrument for this ODA project." /></label>
             <Select value={formData.oda_financing_type || ''} onValueChange={v => updateField('oda_financing_type', v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select type..." /></SelectTrigger>
+              <SelectTrigger className="h-8 text-body"><SelectValue placeholder="Select type..." /></SelectTrigger>
               <SelectContent>
                 {ODA_FINANCING_TYPES.map(ft => (
                   <SelectItem key={ft.value} value={ft.value}>
@@ -128,48 +128,48 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
           </div>
           <div />
           <div>
-            <label className="text-xs text-muted-foreground">Grant Amount (USD) <HelpTooltip text="Total grant component from the development partner." /></label>
+            <label className="text-helper text-muted-foreground">Grant Amount (USD) <HelpTooltip text="Total grant component from the development partner." /></label>
             <FormattedNumberInput
               value={formData.oda_grant_amount ?? null}
               onChange={v => updateField('oda_grant_amount', v)}
               placeholder="e.g. 5,000,000"
               decimals={2}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Loan Amount (USD) <HelpTooltip text="Total concessional loan component." /></label>
+            <label className="text-helper text-muted-foreground">Loan Amount (USD) <HelpTooltip text="Total concessional loan component." /></label>
             <FormattedNumberInput
               value={formData.oda_loan_amount ?? null}
               onChange={v => updateField('oda_loan_amount', v)}
               placeholder="e.g. 10,000,000"
               decimals={2}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Counterpart Funding (USD) <HelpTooltip text="Government co-financing contribution." /></label>
+            <label className="text-helper text-muted-foreground">Counterpart Funding (USD) <HelpTooltip text="Government co-financing contribution." /></label>
             <FormattedNumberInput
               value={formData.oda_counterpart_funding ?? null}
               onChange={v => updateField('oda_counterpart_funding', v)}
               placeholder="e.g. 2,000,000"
               decimals={2}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Total Financing</label>
+            <label className="text-helper text-muted-foreground">Total Financing</label>
             <div className="text-lg font-bold font-mono text-foreground mt-1">
               {formatCurrency(totalFinancing > 0 ? totalFinancing : null)}
             </div>
           </div>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Conditions / Notes <HelpTooltip text="Any conditionalities, disbursement conditions, or special terms attached to the financing." /></label>
+          <label className="text-helper text-muted-foreground">Conditions / Notes <HelpTooltip text="Any conditionalities, disbursement conditions, or special terms attached to the financing." /></label>
           <Textarea
             value={formData.oda_conditions || ''}
             onChange={e => updateField('oda_conditions', e.target.value)}
-            rows={2} className="text-sm"
+            rows={2} className="text-body"
             placeholder="Describe disbursement conditions, procurement requirements, etc."
           />
         </div>
@@ -179,20 +179,20 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
       <div className="space-y-3">
         <Label>AIMS Activity Details <HelpTooltip text="These fields will pre-populate the AIMS activity when you transfer this project." /></Label>
         <div>
-          <label className="text-xs text-muted-foreground">Activity Description</label>
+          <label className="text-helper text-muted-foreground">Activity Description</label>
           <Textarea
             value={formData.oda_activity_description || formData.description || ''}
             onChange={e => updateField('oda_activity_description', e.target.value)}
-            rows={3} className="text-sm"
+            rows={3} className="text-body"
             placeholder="Description that will appear in the AIMS activity record..."
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">DAC Sector Code <HelpTooltip text="OECD DAC 5-digit sector code for IATI reporting (e.g. 21010 for Transport Policy)." /></label>
+          <label className="text-helper text-muted-foreground">DAC Sector Code <HelpTooltip text="OECD DAC 5-digit sector code for IATI reporting (e.g. 21010 for Transport Policy)." /></label>
           <Input
             value={formData.oda_iati_sector_code || ''}
             onChange={e => updateField('oda_iati_sector_code', e.target.value)}
-            className="h-8 text-sm"
+            className="h-8 text-body"
             placeholder="e.g. 21010"
           />
         </div>
@@ -200,9 +200,9 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
 
       {/* AIMS Transfer Review Card */}
       <div className="p-4 border-2 border-dashed border-border rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-foreground">Transfer Preview</Label>
-        <p className="text-xs text-muted-foreground">The following data will be used to create an AIMS activity record.</p>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <Label className="text-body font-medium text-foreground">Transfer Preview</Label>
+        <p className="text-helper text-muted-foreground">The following data will be used to create an AIMS activity record.</p>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-body">
           <div>
             <span className="text-muted-foreground">Title:</span>{' '}
             <span className="font-medium">{formData.name || '—'}</span>
@@ -233,8 +233,8 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
           <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
             <CheckCircle2 className="h-5 w-5 text-[hsl(var(--success-icon))] shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-green-800">Transferred to AIMS</p>
-              <p className="text-xs text-green-700">This project has been linked to an AIMS activity.</p>
+              <p className="text-body font-medium text-green-800">Transferred to AIMS</p>
+              <p className="text-helper text-green-700">This project has been linked to an AIMS activity.</p>
             </div>
             <Button
               size="sm"
@@ -256,10 +256,10 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
               Transfer to AIMS
             </Button>
             {!formData.oda_donor_name && (
-              <p className="text-xs text-muted-foreground">Enter a donor name to enable transfer.</p>
+              <p className="text-helper text-muted-foreground">Enter a donor name to enable transfer.</p>
             )}
             {transferError && (
-              <p className="text-xs text-red-600">{transferError}</p>
+              <p className="text-helper text-destructive">{transferError}</p>
             )}
           </div>
         )}

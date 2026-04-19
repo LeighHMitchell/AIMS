@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { DocumentCardInlineFixed } from './DocumentCardInlineFixed';
 import {
   IatiDocumentLink,
@@ -95,7 +96,7 @@ function DocumentTypeFilter({ value, onValueChange }: DocumentTypeFilterProps) {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
         )}
       >
         <span className="truncate">
@@ -109,7 +110,7 @@ function DocumentTypeFilter({ value, onValueChange }: DocumentTypeFilterProps) {
             <button
               key={option.value}
               className={cn(
-                "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                "w-full text-left px-2 py-2 rounded-md text-body hover:bg-accent hover:text-accent-foreground transition-colors",
                 value === option.value && "bg-blue-100 text-blue-900"
               )}
               onClick={() => {
@@ -158,7 +159,7 @@ function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilter
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
         )}
       >
         <span className="truncate">
@@ -192,7 +193,7 @@ function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilter
               <button
                 key={option.code}
                 className={cn(
-                  "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                  "w-full text-left px-2 py-2 rounded-md text-body hover:bg-accent hover:text-accent-foreground transition-colors",
                   value === option.code && "bg-blue-100 text-blue-900"
                 )}
                 onClick={() => {
@@ -210,7 +211,7 @@ function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilter
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{option.name}</div>
                     {option.description && (
-                      <div className="text-xs text-muted-foreground truncate">{option.description}</div>
+                      <div className="text-helper text-muted-foreground truncate">{option.description}</div>
                     )}
                   </div>
                 </div>
@@ -267,11 +268,9 @@ export function DocumentsAndImagesTabInline({
       if (!activityId) return;
       
       try {
-        console.log('[DocumentsTab] Loading documents for activity:', activityId);
         const response = await apiFetch(`/api/activities/${activityId}/documents`);
         if (response.ok) {
           const data = await response.json();
-          console.log('[DocumentsTab] Loaded documents:', data);
           // Always update with backend data (it's the source of truth)
           onChange(data.documents || []);
         } else {
@@ -294,7 +293,8 @@ export function DocumentsAndImagesTabInline({
   const [pendingUploadedDocument, setPendingUploadedDocument] = React.useState<IatiDocumentLink | null>(null);
   const [showMetadataModal, setShowMetadataModal] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
-  
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Track new document being added
@@ -353,8 +353,6 @@ export function DocumentsAndImagesTabInline({
   
   const handleSaveUploadedDocument = async (document: IatiDocumentLink) => {
     try {
-      console.log('[DocumentsTab] Saving document (skipping database update - already saved during upload)');
-      console.log('[DocumentsTab] Document:', document);
       
       // The document is already in the parent state, just update it with new metadata
       const updatedDocuments = documents.map(doc => 
@@ -409,9 +407,28 @@ export function DocumentsAndImagesTabInline({
     setShowMetadataModal(false);
   };
   
-  const handleDeleteDocument = (url: string) => {
+  const handleDeleteDocument = async (url: string) => {
+    const snapshot = documents.find(doc => doc.url === url);
+    const label = snapshot?.title?.[0]?.text || snapshot?.url || 'this document';
+    const ok = await confirm({
+      title: 'Remove this document?',
+      description: `"${label}" will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Keep',
+    });
+    if (!ok) return;
+
+    const previousDocuments = documents;
     onChange(documents.filter(doc => doc.url !== url));
-    toast.success('Document deleted successfully');
+    toast.success(`Removed ${label}`, snapshot ? {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          onChange(previousDocuments);
+          toast.success('Document restored');
+        },
+      },
+    } : undefined);
   };
 
   const handleDownloadDocument = (doc: IatiDocumentLink) => {
@@ -478,7 +495,6 @@ export function DocumentsAndImagesTabInline({
 
   // Real file upload function
   const uploadFile = async (file: File, uploadId: string) => {
-    console.log('[DocumentsTab] Starting upload for file:', file.name, 'to activity:', activityId);
     
     const formData = new FormData();
     formData.append('file', file);
@@ -492,7 +508,6 @@ export function DocumentsAndImagesTabInline({
         f.id === uploadId ? { ...f, progress: 10 } : f
       ));
       
-      console.log('[DocumentsTab] Making upload request to:', `/api/activities/${activityId}/documents/upload`);
       const response = await apiFetch(`/api/activities/${activityId}/documents/upload`, {
         method: 'POST',
         body: formData,
@@ -505,8 +520,6 @@ export function DocumentsAndImagesTabInline({
       }
       
       const data = await response.json();
-      console.log('[DocumentsTab] Upload API response:', data);
-      console.log('[DocumentsTab] Document from response:', data.document);
       
       // Update to processing
       setUploadingFiles(prev => prev.map(f => 
@@ -670,10 +683,10 @@ export function DocumentsAndImagesTabInline({
           {/* Add Documents Section */}
           <div className="w-full">
             <div className="mt-4">
-              <div 
+              <div
                 className={cn(
-                  "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
+                  "bg-card rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+                  isDragOver ? "border-blue-500 bg-blue-50 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted/30",
                   !activityId && "opacity-50 cursor-not-allowed"
                 )}
                 onDragOver={handleDragOver}
@@ -684,15 +697,19 @@ export function DocumentsAndImagesTabInline({
                 <div className="text-center max-w-md">
                   <div className="mb-6">
                     {isDragOver ? (
-                      <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
+                      <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse" />
                     ) : (
-                      <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <img
+                        src="/images/empty-message-bottle.png"
+                        alt=""
+                        className="h-40 mx-auto mb-4 opacity-80"
+                      />
                     )}
                   </div>
-                  <h4 className="text-2xl font-medium text-gray-900 mb-3">
+                  <h4 className="text-2xl font-medium text-foreground mb-3">
                     {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
                   </h4>
-                  <p className="text-gray-600 mb-6 text-lg">
+                  <p className="text-muted-foreground mb-6 text-lg">
                     Drag and drop files anywhere in this area, or click to browse your computer
                   </p>
                   <Button 
@@ -705,9 +722,9 @@ export function DocumentsAndImagesTabInline({
                     size="lg"
                   >
                     <Upload className="w-5 h-5" />
-                    Choose Files
+                    Choose Files to Upload
                   </Button>
-                  <p className="text-sm text-gray-500 mt-4">
+                  <p className="text-body text-muted-foreground mt-4">
                     Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
                   </p>
                   <input
@@ -726,14 +743,14 @@ export function DocumentsAndImagesTabInline({
           {/* Uploading Files */}
           {uploadingFiles.length > 0 && (
             <div className="space-y-2 mt-6">
-              <h4 className="text-sm font-medium text-gray-700">Uploading Files</h4>
+              <h4 className="text-body font-medium text-foreground">Uploading Files</h4>
               {uploadingFiles.map(upload => (
-                <div key={upload.id} className="bg-gray-50 rounded-lg p-3">
+                <div key={upload.id} className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium truncate flex-1">
+                    <span className="text-body font-medium truncate flex-1">
                       {upload.file.name}
                     </span>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-helper text-muted-foreground ml-2">
                       {upload.status === 'uploading' && `${Math.round(upload.progress)}%`}
                       {upload.status === 'success' && 'Complete'}
                       {upload.status === 'error' && 'Failed'}
@@ -743,8 +760,8 @@ export function DocumentsAndImagesTabInline({
                     value={upload.progress} 
                     className={cn(
                       "h-2",
-                      upload.status === 'success' && "bg-gray-100",
-                      upload.status === 'error' && "bg-red-100"
+                      upload.status === 'success' && "bg-muted",
+                      upload.status === 'error' && "bg-destructive/10"
                     )}
                   />
                 </div>
@@ -775,7 +792,7 @@ export function DocumentsAndImagesTabInline({
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="w-[640px]">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                       placeholder="Search documents..."
                       value={searchTerm}
@@ -801,10 +818,10 @@ export function DocumentsAndImagesTabInline({
           {documents.length > 0 ? (
             <div className="space-y-6">
               {filteredDocuments.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                <div className="text-center py-12 text-muted-foreground bg-muted rounded-lg">
                   <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-lg font-medium mb-2">No matching documents</h3>
-                  <p>Try adjusting your search or filters</p>
+                  <p>Try clearing your filters, using part of a title, or browsing all documents by clearing the search.</p>
                 </div>
               ) : (
                 <>
@@ -818,8 +835,8 @@ export function DocumentsAndImagesTabInline({
                         {uploadedDocs.length > 0 && (
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b">
-                              <Cloud className="w-5 h-5 text-gray-600" />
-                              <h4 className="font-medium text-gray-900">Uploaded Files</h4>
+                              <Cloud className="w-5 h-5 text-muted-foreground" />
+                              <h4 className="font-medium text-foreground">Uploaded Files</h4>
                             </div>
                             
                             {/* Uploaded Files Table */}
@@ -839,21 +856,21 @@ export function DocumentsAndImagesTabInline({
                                   {uploadedDocs.slice(startIndex, endIndex).map((doc) => (
                                     <TableRow key={doc.url}>
                                       <TableCell>
-                                        <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                                           {isImageMime(doc.format) ? (
-                                            <FileImage className="w-4 h-4 text-gray-600" />
+                                            <FileImage className="w-4 h-4 text-muted-foreground" />
                                           ) : (
-                                            <FileText className="w-4 h-4 text-gray-600" />
+                                            <FileText className="w-4 h-4 text-muted-foreground" />
                                           )}
                                         </div>
                                       </TableCell>
                                       <TableCell>
                                         <div className="max-w-xs">
-                                          <div className="font-medium text-gray-900 truncate">
+                                          <div className="font-medium text-foreground truncate">
                                             {doc.title[0]?.text || 'Untitled Document'}
                                           </div>
                                           {doc.description?.[0]?.text && (
-                                            <div className="text-sm text-gray-500 truncate">
+                                            <div className="text-body text-muted-foreground truncate">
                                               {doc.description[0].text}
                                             </div>
                                           )}
@@ -865,7 +882,7 @@ export function DocumentsAndImagesTabInline({
                                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                               {doc.categoryCode}
                                             </span>
-                                            <span className="text-sm">
+                                            <span className="text-body">
                                               {DOCUMENT_CATEGORIES.find(cat => cat.code === doc.categoryCode)?.name || doc.categoryCode}
                                             </span>
                                           </div>
@@ -877,7 +894,7 @@ export function DocumentsAndImagesTabInline({
                                             {doc.languageCodes.map(code => {
                                               const lang = (customLanguages || COMMON_LANGUAGES).find(l => l.code === code);
                                               return (
-                                                <span key={code} className="text-xs text-sm">
+                                                <span key={code} className="text-helper text-body">
                                                   <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{code.toUpperCase()}</span>
                                                   {lang && <span className="ml-1 text-foreground">{lang.name}</span>}
                                                 </span>
@@ -888,7 +905,7 @@ export function DocumentsAndImagesTabInline({
                                       </TableCell>
                                       <TableCell>
                                         {doc.documentDate && (
-                                          <span className="text-sm text-gray-600">
+                                          <span className="text-body text-muted-foreground">
                                             {new Date(doc.documentDate).toLocaleDateString()}
                                           </span>
                                         )}
@@ -898,26 +915,26 @@ export function DocumentsAndImagesTabInline({
                                           <button
                                             type="button"
                                             onClick={() => handleDownloadDocument(doc)}
-                                            className="p-2 rounded hover:bg-gray-100"
+                                            className="p-2 rounded hover:bg-muted"
                                             title="Download"
                                           >
-                                            <Download style={{ width: 18, height: 18 }} className="text-slate-500" />
+                                            <Download style={{ width: 18, height: 18 }} className="text-muted-foreground" />
                                           </button>
                                           <button
                                             type="button"
                                             onClick={() => handleEditDocument(doc)}
-                                            className="p-2 rounded hover:bg-gray-100"
+                                            className="p-2 rounded hover:bg-muted"
                                             title="Edit"
                                           >
-                                            <Pencil style={{ width: 18, height: 18 }} className="text-slate-500" />
+                                            <Pencil style={{ width: 18, height: 18 }} className="text-muted-foreground" />
                                           </button>
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteDocument(doc.url)}
-                                            className="p-2 rounded hover:bg-gray-100"
+                                            className="p-2 rounded hover:bg-muted"
                                             title="Delete"
                                           >
-                                            <Trash2 style={{ width: 18, height: 18 }} className="text-red-500" />
+                                            <Trash2 style={{ width: 18, height: 18 }} className="text-destructive" />
                                           </button>
                                         </div>
                                       </TableCell>
@@ -930,7 +947,7 @@ export function DocumentsAndImagesTabInline({
                             {/* Pagination for Uploaded Files */}
                             {uploadedDocs.length > itemsPerPage && (
                               <div className="flex items-center justify-between px-2">
-                                <div className="text-sm text-gray-700">
+                                <div className="text-body text-foreground">
                                   Showing {startIndex + 1} to {Math.min(endIndex, uploadedDocs.length)} of {uploadedDocs.length} uploaded files
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -950,7 +967,7 @@ export function DocumentsAndImagesTabInline({
                                   >
                                     <ChevronLeft className="h-4 w-4" />
                                   </Button>
-                                  <span className="text-sm text-gray-700">
+                                  <span className="text-body text-foreground">
                                     Page {currentPage} of {Math.ceil(uploadedDocs.length / itemsPerPage)}
                                   </span>
                                   <Button
@@ -978,14 +995,14 @@ export function DocumentsAndImagesTabInline({
                         {linkedDocs.length > 0 && (
                           <div className="space-y-3">
                             <div className="flex items-center gap-2 pb-2 border-b">
-                              <ExternalLink className="w-5 h-5 text-gray-600" />
-                              <h4 className="font-medium text-gray-900">Linked Documents</h4>
+                              <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                              <h4 className="font-medium text-foreground">Linked Documents</h4>
                             </div>
                             <div className="space-y-3">
                               {linkedDocs.map((doc, index) => (
                                 <div
                                   key={doc.url}
-                                  className="bg-white border border-gray-200 rounded-lg p-1"
+                                  className="bg-white border border-border rounded-lg p-1"
                                 >
                                   <DocumentCardInlineFixed
                                     document={doc}
@@ -1008,18 +1025,15 @@ export function DocumentsAndImagesTabInline({
             </div>
           ) : (
             /* Empty State */
-            <div className="text-center py-16 text-gray-500">
-              <div className="flex justify-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Cloud className="w-8 h-8 text-gray-400" />
-                </div>
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <ExternalLink className="w-8 h-8 text-gray-400" />
-                </div>
-              </div>
-              <h3 className="text-xl font-medium mb-2 text-gray-900">No documents yet</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Get started by uploading files from your computer or linking to documents hosted elsewhere
+            <div className="text-center py-16 text-muted-foreground">
+              <img
+                src="/images/empty-bookshelf.png"
+                alt="Empty library"
+                className="h-40 mx-auto mb-6 opacity-80"
+              />
+              <h3 className="text-xl font-medium mb-2 text-foreground">No documents added yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Upload files (PDFs, images, Word docs) or paste links to documents hosted online to build your activity&rsquo;s library.
               </p>
             </div>
           )}
@@ -1037,6 +1051,7 @@ export function DocumentsAndImagesTabInline({
           isEditing={!!editingDocument}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

@@ -167,7 +167,7 @@ export default function ParcelDetailPage() {
               <TitleStatusBadge status={parcel.title_status} />
               <LeaseExpiryBadge leaseEndDate={parcel.lease_end_date} />
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-body text-muted-foreground">
               <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{parcel.parcel_code}</span>
               <span>{parcel.state_region}{parcel.township ? `, ${parcel.township}` : ""}</span>
               {parcel.size_hectares && <span>{formatHectares(parcel.size_hectares)}</span>}
@@ -255,7 +255,7 @@ export default function ParcelDetailPage() {
                           <CardTitle className="text-base">Parcel Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <dl className="grid grid-cols-2 gap-4 text-sm">
+                          <dl className="grid grid-cols-2 gap-4 text-body">
                             <div>
                               <dt className="text-muted-foreground mb-1">Parcel Code</dt>
                               <dd><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{parcel.parcel_code}</span></dd>
@@ -328,7 +328,7 @@ export default function ParcelDetailPage() {
                             <CardTitle className="text-base">Allocation</CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <dl className="grid grid-cols-2 gap-4 text-sm">
+                            <dl className="grid grid-cols-2 gap-4 text-body">
                               <div>
                                 <dt className="text-muted-foreground mb-1">Allocated To</dt>
                                 <dd className="font-medium">{parcel.organization.name}</dd>
@@ -361,8 +361,8 @@ export default function ParcelDetailPage() {
                                   className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
                                   onClick={() => router.push(`/project-bank/${lp.project.id}`)}
                                 >
-                                  <p className="text-sm font-medium">{lp.project.name}</p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-body font-medium">{lp.project.name}</p>
+                                  <p className="text-helper text-muted-foreground">
                                     {lp.project.project_code} &middot; {lp.project.sector} &middot; {lp.project.status}
                                   </p>
                                 </div>
@@ -417,8 +417,8 @@ export default function ParcelDetailPage() {
                 <div className="space-y-4">
                   <Card>
                     <CardContent className="p-6">
-                      <h3 className="text-sm font-medium mb-3">Quick Info</h3>
-                      <div className="space-y-3 text-sm">
+                      <h3 className="text-body font-medium mb-3">Quick Info</h3>
+                      <div className="space-y-3 text-body">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
                           <span>{parcel.state_region}</span>
@@ -460,8 +460,8 @@ export default function ParcelDetailPage() {
                   {parcel.geometry && (
                     <Card>
                       <CardContent className="p-6">
-                        <h3 className="text-sm font-medium mb-2">Geometry</h3>
-                        <p className="text-xs text-muted-foreground">
+                        <h3 className="text-body font-medium mb-2">Geometry</h3>
+                        <p className="text-helper text-muted-foreground">
                           Type: {parcel.geometry.type}
                         </p>
                       </CardContent>

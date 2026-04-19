@@ -17,7 +17,6 @@ export async function POST(
 
   try {
     const { id } = await params;
-    console.log('[Upload Fallback API] Starting upload for activity:', id);
     if (!supabase) {
       console.error('[Upload Fallback API] Failed to get Supabase admin client');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -44,7 +43,6 @@ export async function POST(
     const fileExtension = file.name.split('.').pop();
     const storagePath = `${activityId}/${uniqueId}.${fileExtension}`;
 
-    console.log('[Upload Fallback API] Uploading to storage path:', storagePath);
     
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -62,7 +60,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[Upload Fallback API] File uploaded successfully');
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
@@ -171,7 +168,6 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to save document' }, { status: 500 });
     }
 
-    console.log('[Upload Fallback API] Document saved successfully');
 
     // Return the created document
     return NextResponse.json({

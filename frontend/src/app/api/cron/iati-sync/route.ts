@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  console.log('[IATI Sync] Starting daily sync at', new Date().toISOString())
 
   // 2. Query sync-eligible activities
   //    auto_sync=true, sync_status != 'outdated', has iati_identifier
@@ -81,7 +80,6 @@ export async function GET(request: NextRequest) {
   }
 
   if (!activities?.length) {
-    console.log('[IATI Sync] No activities to sync')
     return NextResponse.json({
       success: true,
       message: 'No activities to sync',
@@ -90,7 +88,6 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  console.log(`[IATI Sync] Found ${activities.length} sync-eligible activities`)
 
   // Fetch child record counts for change detection
   // We do this in a single pass to avoid N+1 queries
@@ -152,7 +149,6 @@ export async function GET(request: NextRequest) {
     byOrg.get(ref)!.push(a)
   }
 
-  console.log(`[IATI Sync] Grouped into ${byOrg.size} reporting orgs`)
 
   // 4. Process each org with timeout guard
   const startTime = Date.now()
@@ -169,7 +165,6 @@ export async function GET(request: NextRequest) {
   const orgEntries = Array.from(byOrg.entries())
   for (const [orgRef, orgActivities] of orgEntries) {
     if (Date.now() - startTime > MAX_RUNTIME) {
-      console.log('[IATI Sync] Approaching timeout, stopping')
       break
     }
 
@@ -180,7 +175,6 @@ export async function GET(request: NextRequest) {
         iatiActivities.map(a => [a.iatiIdentifier, a])
       )
 
-      console.log(`[IATI Sync] Org ${orgRef}: ${iatiActivities.length} from Datastore, ${orgActivities.length} local`)
 
       // Sync each local activity
       for (const local of orgActivities) {
@@ -242,7 +236,6 @@ export async function GET(request: NextRequest) {
   }
 
   const duration = Date.now() - startTime
-  console.log(`[IATI Sync] Complete: ${synced} synced, ${unchanged} unchanged, ${skipped} skipped, ${failed} failed (${duration}ms)`)
 
   // 5. Return summary
   return NextResponse.json({

@@ -34,7 +34,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 async function createTestUser() {
-  console.log('🔄 Creating test user for development...\n');
 
   const testUserId = randomUUID();
   const testUserData = {
@@ -53,9 +52,6 @@ async function createTestUser() {
       .single();
 
     if (existingUser) {
-      console.log('✅ Test user already exists:');
-      console.log(`   ID: ${existingUser.id}`);
-      console.log(`   Email: ${existingUser.email}`);
       return existingUser.id;
     }
 
@@ -71,7 +67,6 @@ async function createTestUser() {
       
       // If organization_id is required, try with a null value
       if (error.message.includes('organization_id')) {
-        console.log('🔄 Retrying with null organization_id...');
         
         const { data: retryUser, error: retryError } = await supabase
           .from('users')
@@ -87,20 +82,12 @@ async function createTestUser() {
           process.exit(1);
         }
         
-        console.log('✅ Test user created successfully:');
-        console.log(`   ID: ${retryUser.id}`);
-        console.log(`   Email: ${retryUser.email}`);
-        console.log(`   Role: ${retryUser.role}`);
         return retryUser.id;
       }
       
       process.exit(1);
     }
 
-    console.log('✅ Test user created successfully:');
-    console.log(`   ID: ${newUser.id}`);
-    console.log(`   Email: ${newUser.email}`);
-    console.log(`   Role: ${newUser.role}`);
     
     return newUser.id;
     
@@ -113,8 +100,6 @@ async function createTestUser() {
 // Run the function
 createTestUser()
   .then((userId) => {
-    console.log('\n📝 You can use this user ID for testing:');
-    console.log(`   ${userId}\n`);
     process.exit(0);
   })
   .catch((error) => {

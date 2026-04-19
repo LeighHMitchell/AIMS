@@ -67,7 +67,6 @@ export function Top10TotalFinancialValueChart({
         params.append('sector', filters.sector)
       }
 
-      console.log('[Top10TotalFinancialValue] Fetching from:', `/api/analytics/top-10/total-financial-value?${params}`)
       const response = await apiFetch(`/api/analytics/top-10/total-financial-value?${params}`)
       if (!response.ok) {
         const errorText = await response.text()
@@ -76,14 +75,12 @@ export function Top10TotalFinancialValueChart({
       }
 
       const result = await response.json()
-      console.log('[Top10TotalFinancialValue] API response full:', JSON.stringify(result, null, 2))
       
       const donors = (result.donors || []).map((d: any) => ({
         ...d,
         shortName: d.acronym || d.name.split(' ').slice(0, 2).join(' ')
       }))
 
-      console.log('[Top10TotalFinancialValue] Final data count:', donors.length, 'items:', donors)
       setData(donors)
       onDataChange?.(donors)
     } catch (error) {
@@ -138,11 +135,11 @@ export function Top10TotalFinancialValueChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
         <div className="text-center">
-          <BarChart3 className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No financial data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No financial data available</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )
@@ -197,7 +194,7 @@ export function Top10TotalFinancialValueChart({
       </ResponsiveContainer>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+      <p className="text-body text-muted-foreground leading-relaxed mt-4">
         This chart ranks the top 10 organisations by total financial value, combining all transaction types within the selected date range. The horizontal bars make it easy to compare relative scale across organisations. Hover over any bar to see the exact USD amount.
       </p>
     </div>

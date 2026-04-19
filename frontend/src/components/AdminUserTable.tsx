@@ -182,7 +182,6 @@ export function AdminUserTable() {
         authProvider: user.authProvider || user.auth_provider
       }))
 
-      console.log('[AdminUserTable] Fetched users:', mappedUsers.length)
 
       setUsers(mappedUsers)
       setFilteredUsers(mappedUsers)
@@ -215,7 +214,6 @@ export function AdminUserTable() {
     } catch (error: any) {
       // Ignore abort errors - they're expected when we cancel stale requests
       if (error.name === 'AbortError') {
-        console.log('[AdminUserTable] Request aborted (superseded by newer request)')
         return
       }
       console.error('Error fetching data:', error)
@@ -524,7 +522,7 @@ export function AdminUserTable() {
       <Card>
         <CardContent className="py-12">
           <div className="text-center">
-            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
             <p className="text-lg font-semibold mb-2">Access Denied</p>
             <p className="text-muted-foreground">Only super users can access user management</p>
           </div>
@@ -573,11 +571,11 @@ export function AdminUserTable() {
       <CardContent>
         {error && (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <div className="rounded-full bg-red-100 p-3 mb-4">
-              <AlertCircle className="h-8 w-8 text-red-600" />
+            <div className="rounded-full bg-destructive/10 p-3 mb-4">
+              <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load users</h3>
-            <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load users</h3>
+            <p className="text-body text-muted-foreground mb-4 text-center max-w-md">
               {error}
             </p>
             <Button 
@@ -597,7 +595,7 @@ export function AdminUserTable() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6 items-end">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, email, or organization..."
               value={searchQuery}
@@ -608,7 +606,7 @@ export function AdminUserTable() {
           
           {/* Role Filter */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Role</Label>
+            <Label className="text-helper text-muted-foreground">Role</Label>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder="Filter by role" />
@@ -626,7 +624,7 @@ export function AdminUserTable() {
           
           {/* Organization Filter with Search */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Organisation</Label>
+            <Label className="text-helper text-muted-foreground">Organisation</Label>
             <Popover open={orgFilterOpen} onOpenChange={setOrgFilterOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -662,7 +660,7 @@ export function AdminUserTable() {
                       >
                         <Check className={cn("h-4 w-4 flex-shrink-0", orgFilter === "all" ? "opacity-100" : "opacity-0")} />
                         <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center ml-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <span className="ml-2">All Organisations</span>
                       </CommandItem>
@@ -695,7 +693,7 @@ export function AdminUserTable() {
                                   }}
                                 />
                               ) : null}
-                              <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
+                              <Building2 className={cn("h-4 w-4 text-muted-foreground", org.logo ? "hidden" : "")} />
                             </div>
                             <span className="truncate ml-2">
                               {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
@@ -711,7 +709,7 @@ export function AdminUserTable() {
         </div>
 
         {/* Results count */}
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-body text-muted-foreground mb-4">
           Showing {filteredUsers.length} of {users.length} users
         </p>
 
@@ -800,7 +798,7 @@ export function AdminUserTable() {
                             ? `${user.firstName} ${user.lastName}`
                             : user.name || user.email || '')}
                         />
-                        <p className="text-sm text-foreground">
+                        <p className="text-body text-foreground">
                           {user.firstName && user.lastName
                             ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}`
                             : user.name}
@@ -828,7 +826,7 @@ export function AdminUserTable() {
                                 cancelEmailEdit()
                               }
                             }}
-                            className="h-7 text-sm w-48"
+                            className="h-7 text-body w-48"
                             disabled={savingUserId === user.id}
                           />
                           {savingUserId === user.id ? (
@@ -849,7 +847,7 @@ export function AdminUserTable() {
                                 className="h-5 w-5 p-0"
                                 onClick={cancelEmailEdit}
                               >
-                                <X className="h-3 w-3 text-red-600" />
+                                <X className="h-3 w-3 text-destructive" />
                               </Button>
                             </>
                           )}
@@ -858,7 +856,7 @@ export function AdminUserTable() {
                         <span className="flex items-center gap-1 group">
                           <a
                             href={`mailto:${user.email}`}
-                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                            className="text-body text-blue-600 hover:text-blue-800 hover:underline"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {user.email}
@@ -873,7 +871,7 @@ export function AdminUserTable() {
                             }}
                             title="Edit email"
                           >
-                            <Pencil className="h-3 w-3 text-slate-500" />
+                            <Pencil className="h-3 w-3 text-muted-foreground" />
                           </Button>
                         </span>
                       )}
@@ -882,7 +880,7 @@ export function AdminUserTable() {
                     {/* Role with lock icon */}
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm text-foreground">
+                        <span className="text-body text-foreground">
                           {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
                         </span>
                         <Tooltip>
@@ -903,20 +901,20 @@ export function AdminUserTable() {
                           {user.organization.logo ? (
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={user.organization.logo} alt={user.organization.name} />
-                              <AvatarFallback className="text-xs">
+                              <AvatarFallback className="text-helper">
                                 {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                           ) : (
-                            <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           )}
-                          <span className="text-sm text-foreground">
+                          <span className="text-body text-foreground">
                             {user.organization.name}
                             {user.organization.acronym && user.organization.acronym !== user.organization.name && ` (${user.organization.acronym})`}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">No organization</span>
+                        <span className="text-body text-muted-foreground">No organization</span>
                       )}
                     </TableCell>
 
@@ -929,7 +927,7 @@ export function AdminUserTable() {
                           disabled={savingUserId === user.id}
                           aria-label={`Toggle ${user.name} active status`}
                         />
-                        <span className={`text-xs ${user.isActive ? 'text-[#4C5568]' : 'text-gray-500'}`}>
+                        <span className={`text-xs ${user.isActive ? 'text-[#4C5568]' : 'text-muted-foreground'}`}>
                           {savingUserId === user.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
@@ -941,7 +939,7 @@ export function AdminUserTable() {
 
                     {/* Last Login */}
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-body text-muted-foreground">
                         {user.lastLogin
                           ? formatDistanceToNow(new Date(user.lastLogin), { addSuffix: true })
                           : "Never"}
@@ -959,7 +957,7 @@ export function AdminUserTable() {
                               className="h-8 w-8"
                               onClick={() => handleEditUser(user.id)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -1012,9 +1010,9 @@ export function AdminUserTable() {
                               size="icon"
                               onClick={() => setDeleteUserTarget(user)}
                               disabled={user.id === currentUser?.id}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -1039,9 +1037,9 @@ export function AdminUserTable() {
 
         {/* Pagination */}
         {filteredUsers.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+          <div className="bg-white rounded-lg border border-border shadow-sm p-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-body text-muted-foreground">
                 Showing {startIndex + 1} to {endIndex} of {filteredUsers.length} users
               </div>
               
@@ -1084,7 +1082,7 @@ export function AdminUserTable() {
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -1113,7 +1111,7 @@ export function AdminUserTable() {
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-body text-muted-foreground">Items per page:</label>
                 <Select 
                   value={pageLimit.toString()} 
                   onValueChange={(value) => handlePageLimitChange(Number(value))}

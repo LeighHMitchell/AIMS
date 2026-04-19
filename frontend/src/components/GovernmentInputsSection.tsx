@@ -221,24 +221,24 @@ export default function GovernmentInputsSection({
     <TooltipProvider>
       <div className="max-w-6xl space-y-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Government Inputs</h2>
-          <p className="text-gray-600 mt-2">
+          <h2 className="text-2xl font-bold text-foreground">Government Inputs</h2>
+          <p className="text-muted-foreground mt-2">
             Government-specific information and alignment details
           </p>
         </div>
 
         <Tabs defaultValue="budget-classification" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-100 border border-gray-200">
-            <TabsTrigger value="budget-classification" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">
+          <TabsList className="grid w-full grid-cols-4 bg-muted border border-border">
+            <TabsTrigger value="budget-classification" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
               Budget Classification
             </TabsTrigger>
-            <TabsTrigger value="planning-coordination" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">
+            <TabsTrigger value="planning-coordination" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
               Planning & Coordination
             </TabsTrigger>
-            <TabsTrigger value="oversight-context" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">
+            <TabsTrigger value="oversight-context" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
               Oversight & Context
             </TabsTrigger>
-            <TabsTrigger value="evaluation-results" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">
+            <TabsTrigger value="evaluation-results" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
               Evaluation & Results
             </TabsTrigger>
           </TabsList>
@@ -248,13 +248,13 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* 1. On-Budget Classification */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   On-Budget Classification (per CABRI/SPA model)
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="w-4 h-4 text-gray-500" />
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>Classification based on the CABRI/SPA 2008 "Putting Aid on Budget" Good Practice Note six dimensions</p>
@@ -263,24 +263,24 @@ export default function GovernmentInputsSection({
                 </CardTitle>
                 {/* Dimensions Status Badge */}
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="border-gray-300 text-gray-700">
+                  <Badge variant="outline" className="border-input text-foreground">
                     {dimensionsMet.met} of {dimensionsMet.total} dimensions met
                   </Badge>
                   {dimensionsMet.partial > 0 && (
-                    <Badge variant="outline" className="border-gray-300 text-gray-600">{dimensionsMet.partial} partial</Badge>
+                    <Badge variant="outline" className="border-input text-muted-foreground">{dimensionsMet.partial} partial</Badge>
                   )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* On Plan */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                    <label className="text-body font-medium flex items-center gap-2 text-foreground">
                       On Plan
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="w-4 h-4 text-gray-500" />
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>Reflected in government strategic planning documents or sector strategies</p>
@@ -295,28 +295,28 @@ export default function GovernmentInputsSection({
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Yes" id="plan-yes" />
-                  <label htmlFor="plan-yes" className="cursor-pointer text-sm">Yes</label>
+                  <label htmlFor="plan-yes" className="cursor-pointer text-body">Yes</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="No" id="plan-no" />
-                  <label htmlFor="plan-no" className="cursor-pointer text-sm">No</label>
+                  <label htmlFor="plan-no" className="cursor-pointer text-body">No</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Partial" id="plan-partial" />
-                  <label htmlFor="plan-partial" className="cursor-pointer text-sm">Partial</label>
+                  <label htmlFor="plan-partial" className="cursor-pointer text-body">Partial</label>
                 </div>
               </RadioGroup>
             </div>
 
                 {/* On Budget */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                    <label className="text-body font-medium flex items-center gap-2 text-foreground">
                       On Budget
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="w-4 h-4 text-gray-500" />
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>Included in the government budget documentation (national budget book)</p>
@@ -331,28 +331,28 @@ export default function GovernmentInputsSection({
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Yes" id="budget-yes" />
-                  <label htmlFor="budget-yes" className="cursor-pointer text-sm">Yes</label>
+                  <label htmlFor="budget-yes" className="cursor-pointer text-body">Yes</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="No" id="budget-no" />
-                  <label htmlFor="budget-no" className="cursor-pointer text-sm">No</label>
+                  <label htmlFor="budget-no" className="cursor-pointer text-body">No</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Partial" id="budget-partial" />
-                  <label htmlFor="budget-partial" className="cursor-pointer text-sm">Partial</label>
+                  <label htmlFor="budget-partial" className="cursor-pointer text-body">Partial</label>
                 </div>
               </RadioGroup>
             </div>
 
                 {/* On Treasury */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                    <label className="text-body font-medium flex items-center gap-2 text-foreground">
                       On Treasury
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="w-4 h-4 text-gray-500" />
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>Funds are disbursed through the government's main Treasury system</p>
@@ -367,28 +367,28 @@ export default function GovernmentInputsSection({
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Yes" id="treasury-yes" />
-                  <label htmlFor="treasury-yes" className="cursor-pointer text-sm">Yes</label>
+                  <label htmlFor="treasury-yes" className="cursor-pointer text-body">Yes</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="No" id="treasury-no" />
-                  <label htmlFor="treasury-no" className="cursor-pointer text-sm">No</label>
+                  <label htmlFor="treasury-no" className="cursor-pointer text-body">No</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Partial" id="treasury-partial" />
-                  <label htmlFor="treasury-partial" className="cursor-pointer text-sm">Partial</label>
+                  <label htmlFor="treasury-partial" className="cursor-pointer text-body">Partial</label>
                 </div>
               </RadioGroup>
             </div>
 
                 {/* On Parliament */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                    <label className="text-body font-medium flex items-center gap-2 text-foreground">
                       On Parliament
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="w-4 h-4 text-gray-500" />
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>Subject to parliamentary scrutiny (appropriated or reported in public financial statements)</p>
@@ -403,28 +403,28 @@ export default function GovernmentInputsSection({
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Yes" id="parliament-yes" />
-                  <label htmlFor="parliament-yes" className="cursor-pointer text-sm">Yes</label>
+                  <label htmlFor="parliament-yes" className="cursor-pointer text-body">Yes</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="No" id="parliament-no" />
-                  <label htmlFor="parliament-no" className="cursor-pointer text-sm">No</label>
+                  <label htmlFor="parliament-no" className="cursor-pointer text-body">No</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Partial" id="parliament-partial" />
-                  <label htmlFor="parliament-partial" className="cursor-pointer text-sm">Partial</label>
+                  <label htmlFor="parliament-partial" className="cursor-pointer text-body">Partial</label>
                 </div>
               </RadioGroup>
             </div>
 
                 {/* On Procurement */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                    <label className="text-body font-medium flex items-center gap-2 text-foreground">
                       On Procurement
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="w-4 h-4 text-gray-500" />
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>Uses national procurement systems and follows national procurement rules</p>
@@ -439,28 +439,28 @@ export default function GovernmentInputsSection({
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Yes" id="procurement-yes" />
-                  <label htmlFor="procurement-yes" className="cursor-pointer text-sm">Yes</label>
+                  <label htmlFor="procurement-yes" className="cursor-pointer text-body">Yes</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="No" id="procurement-no" />
-                  <label htmlFor="procurement-no" className="cursor-pointer text-sm">No</label>
+                  <label htmlFor="procurement-no" className="cursor-pointer text-body">No</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Partial" id="procurement-partial" />
-                  <label htmlFor="procurement-partial" className="cursor-pointer text-sm">Partial</label>
+                  <label htmlFor="procurement-partial" className="cursor-pointer text-body">Partial</label>
                 </div>
               </RadioGroup>
             </div>
 
                 {/* On Accounting/Audit */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                    <label className="text-body font-medium flex items-center gap-2 text-foreground">
                       On Accounting/Audit
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="w-4 h-4 text-gray-500" />
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p>Reported through the government's accounting system and audited by national audit systems</p>
@@ -475,29 +475,29 @@ export default function GovernmentInputsSection({
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Yes" id="audit-yes" />
-                  <label htmlFor="audit-yes" className="cursor-pointer text-sm">Yes</label>
+                  <label htmlFor="audit-yes" className="cursor-pointer text-body">Yes</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="No" id="audit-no" />
-                  <label htmlFor="audit-no" className="cursor-pointer text-sm">No</label>
+                  <label htmlFor="audit-no" className="cursor-pointer text-body">No</label>
                 </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="Partial" id="audit-partial" />
-                  <label htmlFor="audit-partial" className="cursor-pointer text-sm">Partial</label>
+                  <label htmlFor="audit-partial" className="cursor-pointer text-body">Partial</label>
                 </div>
               </RadioGroup>
             </div>
 
                 {/* Supporting Documents Section */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="text-sm font-medium mb-2 text-gray-900">Supporting Documents</h4>
-                  <p className="text-xs text-gray-600 mb-3">Upload or link documents that support "Yes" classifications</p>
+                <div className="mt-6 p-4 bg-muted rounded-lg border border-border">
+                  <h4 className="text-body font-medium mb-2 text-foreground">Supporting Documents</h4>
+                  <p className="text-helper text-muted-foreground mb-3">Upload or link documents that support "Yes" classifications</p>
                   <div className="space-y-2">
                     {(governmentInputs.onBudgetClassification?.supportingDocs || []).map((doc, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <FileText className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">{doc.dimension}:</span>
-                        <span className="text-gray-700">{doc.docName}</span>
+                      <div key={index} className="flex items-center gap-2 text-body">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium text-foreground">{doc.dimension}:</span>
+                        <span className="text-foreground">{doc.docName}</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -505,7 +505,7 @@ export default function GovernmentInputsSection({
                             const docs = governmentInputs.onBudgetClassification?.supportingDocs || [];
                             updateField('onBudgetClassification.supportingDocs', docs.filter((_, i) => i !== index));
                           }}
-                          className="text-gray-500 hover:text-gray-700"
+                          className="text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -524,7 +524,7 @@ export default function GovernmentInputsSection({
                           }
                         }
                       }}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      className="border-input text-foreground hover:bg-muted"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Document Reference
@@ -535,24 +535,24 @@ export default function GovernmentInputsSection({
             </Card>
 
             {/* 2. Government Financial Contribution */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-gray-900">Government Financial Contribution</CardTitle>
+                <CardTitle className="text-foreground">Government Financial Contribution</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900">Is counterpart (RGC) funding provided?</label>
+                  <label className="text-body font-medium text-foreground">Is counterpart (RGC) funding provided?</label>
                   <RadioGroup
                     value={governmentInputs.rgcContribution?.isProvided ? "yes" : "no"}
                     onValueChange={(value) => updateField('rgcContribution.isProvided', value === "yes")}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="rgc-yes" />
-                      <label htmlFor="rgc-yes" className="cursor-pointer text-sm text-gray-700">Yes</label>
+                      <label htmlFor="rgc-yes" className="cursor-pointer text-body text-foreground">Yes</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="rgc-no" />
-                      <label htmlFor="rgc-no" className="cursor-pointer text-sm text-gray-700">No</label>
+                      <label htmlFor="rgc-no" className="cursor-pointer text-body text-foreground">No</label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -560,19 +560,19 @@ export default function GovernmentInputsSection({
                 {governmentInputs.rgcContribution?.isProvided && (
                   <>
                     <div className="space-y-3">
-                      <label className="text-sm font-medium text-gray-900">Annual breakdown</label>
+                      <label className="text-body font-medium text-foreground">Annual breakdown</label>
                       <div className="space-y-2">
                         {(governmentInputs.rgcContribution?.annual || []).map((item) => (
-                          <div key={item.year} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
-                            <span className="font-medium text-gray-900">{item.year}:</span>
-                            <span className="text-gray-700">{item.amountLocal.toLocaleString()} KHR</span>
-                            <span className="text-gray-500">|</span>
-                            <span className="text-gray-700">${item.amountUSD.toLocaleString()}</span>
+                          <div key={item.year} className="flex items-center gap-2 p-2 bg-muted rounded border border-border">
+                            <span className="font-medium text-foreground">{item.year}:</span>
+                            <span className="text-foreground">{item.amountLocal.toLocaleString()} KHR</span>
+                            <span className="text-muted-foreground">|</span>
+                            <span className="text-foreground">${item.amountUSD.toLocaleString()}</span>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => removeAnnualContribution(item.year)}
-                              className="ml-auto text-gray-500 hover:text-gray-700"
+                              className="ml-auto text-muted-foreground hover:text-foreground"
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -589,7 +589,7 @@ export default function GovernmentInputsSection({
                             ...annualContribution,
                             year: parseInt(e.target.value) || new Date().getFullYear()
                           })}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                         <Input
                           type="number"
@@ -599,7 +599,7 @@ export default function GovernmentInputsSection({
                             ...annualContribution,
                             amountLocal: parseFloat(e.target.value) || 0
                           })}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                         <Input
                           type="number"
@@ -609,7 +609,7 @@ export default function GovernmentInputsSection({
                             ...annualContribution,
                             amountUSD: parseFloat(e.target.value) || 0
                           })}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                         <Button onClick={addAnnualContribution} className="bg-gray-800 text-white hover:bg-gray-700">
                           <Plus className="h-4 w-4 mr-1" />
@@ -619,25 +619,25 @@ export default function GovernmentInputsSection({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="in-kind">In-kind contributions</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="in-kind">In-kind contributions</label>
                       <Textarea
                         id="in-kind"
                         placeholder="Describe any in-kind contributions..."
                         value={governmentInputs.rgcContribution?.inKindContributions || ""}
                         onChange={(e) => updateField('rgcContribution.inKindContributions', e.target.value)}
                         rows={3}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="funding-source">Source of funding</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="funding-source">Source of funding</label>
                       <Input
                         id="funding-source"
                         placeholder="e.g., Treasury, subnational, external loan repayment"
                         value={governmentInputs.rgcContribution?.sourceOfFunding || ""}
                         onChange={(e) => updateField('rgcContribution.sourceOfFunding', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                   </>
@@ -652,24 +652,24 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* National Planning Alignment */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-gray-900">National Planning Alignment</CardTitle>
+                <CardTitle className="text-foreground">National Planning Alignment</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900">Aligned with national/sector plans?</label>
+                  <label className="text-body font-medium text-foreground">Aligned with national/sector plans?</label>
                   <RadioGroup
                     value={governmentInputs.nationalPlanAlignment?.isAligned ? "yes" : "no"}
                     onValueChange={(value) => updateField('nationalPlanAlignment.isAligned', value === "yes")}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="aligned-yes" />
-                      <label htmlFor="aligned-yes" className="cursor-pointer text-sm text-gray-700">Yes</label>
+                      <label htmlFor="aligned-yes" className="cursor-pointer text-body text-foreground">Yes</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="aligned-no" />
-                      <label htmlFor="aligned-no" className="cursor-pointer text-sm text-gray-700">No</label>
+                      <label htmlFor="aligned-no" className="cursor-pointer text-body text-foreground">No</label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -677,12 +677,12 @@ export default function GovernmentInputsSection({
                 {governmentInputs.nationalPlanAlignment?.isAligned && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900">Select plan name</label>
+                      <label className="text-body font-medium text-foreground">Select plan name</label>
                       <Select
                         value={governmentInputs.nationalPlanAlignment?.planName || ""}
                         onValueChange={(value) => updateField('nationalPlanAlignment.planName', value)}
                       >
-                        <SelectTrigger className="border-gray-300">
+                        <SelectTrigger className="border-input">
                           <SelectValue placeholder="Select a national plan" />
                         </SelectTrigger>
                         <SelectContent>
@@ -696,24 +696,24 @@ export default function GovernmentInputsSection({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="sub-goal">Sub-goal / Priority area</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="sub-goal">Sub-goal / Priority area</label>
                       <Input
                         id="sub-goal"
                         value={governmentInputs.nationalPlanAlignment?.subGoal || ""}
                         onChange={(e) => updateField('nationalPlanAlignment.subGoal', e.target.value)}
                         placeholder="e.g., Goal 2.1 - Improve primary education access"
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="indicator-code">National indicator code</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="indicator-code">National indicator code</label>
                       <Input
                         id="indicator-code"
                         value={governmentInputs.nationalPlanAlignment?.nationalIndicatorCode || ""}
                         onChange={(e) => updateField('nationalPlanAlignment.nationalIndicatorCode', e.target.value)}
                         placeholder="e.g., NSP-EDU-12"
-                        className="border-gray-300"
+                        className="border-input font-mono"
                       />
                     </div>
                   </>
@@ -722,13 +722,13 @@ export default function GovernmentInputsSection({
             </Card>
 
             {/* Technical Coordination */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-gray-900">Technical Coordination</CardTitle>
+                <CardTitle className="text-foreground">Technical Coordination</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">Which Technical Working Groups (TWGs) are associated?</label>
+                  <label className="text-body font-medium text-foreground">Which Technical Working Groups (TWGs) are associated?</label>
                   <Select
                     value=""
                     onValueChange={(value) => {
@@ -738,7 +738,7 @@ export default function GovernmentInputsSection({
                       }
                     }}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select TWGs" />
                     </SelectTrigger>
                     <SelectContent>
@@ -752,12 +752,12 @@ export default function GovernmentInputsSection({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(governmentInputs.technicalCoordination?.workingGroups || []).map((twg) => (
-                      <div key={twg} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-300">
+                      <div key={twg} className="bg-muted text-foreground px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-input">
                         {twg}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-4 w-4 p-0 text-gray-500 hover:text-gray-700"
+                          className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
                           onClick={() => {
                             const current = governmentInputs.technicalCoordination?.workingGroups || [];
                             updateField('technicalCoordination.workingGroups', current.filter(t => t !== twg));
@@ -771,12 +771,12 @@ export default function GovernmentInputsSection({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">Accountable Ministry or Subnational Body</label>
+                  <label className="text-body font-medium text-foreground">Accountable Ministry or Subnational Body</label>
                   <Select
                     value={governmentInputs.technicalCoordination?.accountableMinistry || ""}
                     onValueChange={(value) => updateField('technicalCoordination.accountableMinistry', value)}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select ministry/department" />
                     </SelectTrigger>
                     <SelectContent>
@@ -790,7 +790,7 @@ export default function GovernmentInputsSection({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">Region/Province</label>
+                  <label className="text-body font-medium text-foreground">Region/Province</label>
                   <Select
                     value=""
                     onValueChange={(value) => {
@@ -800,7 +800,7 @@ export default function GovernmentInputsSection({
                       }
                     }}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select provinces" />
                     </SelectTrigger>
                     <SelectContent>
@@ -814,12 +814,12 @@ export default function GovernmentInputsSection({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(governmentInputs.technicalCoordination?.regions || []).map((region) => (
-                      <div key={region} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-300">
+                      <div key={region} className="bg-muted text-foreground px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-input">
                         {region}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-4 w-4 p-0 text-gray-500 hover:text-gray-700"
+                          className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
                           onClick={() => {
                             const current = governmentInputs.technicalCoordination?.regions || [];
                             updateField('technicalCoordination.regions', current.filter(r => r !== region));
@@ -832,44 +832,44 @@ export default function GovernmentInputsSection({
                   </div>
                 </div>
 
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="font-medium text-gray-900">Government Focal Point</h4>
+                <div className="space-y-4 p-4 bg-muted rounded-lg border border-border">
+                  <h4 className="font-medium text-foreground">Government Focal Point</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="focal-name">Name</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="focal-name">Name</label>
                       <Input
                         id="focal-name"
                         value={governmentInputs.technicalCoordination?.focalPoint?.name || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.name', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="focal-title">Title</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="focal-title">Title</label>
                       <Input
                         id="focal-title"
                         value={governmentInputs.technicalCoordination?.focalPoint?.title || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.title', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="focal-email">Email</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="focal-email">Email</label>
                       <Input
                         id="focal-email"
                         type="email"
                         value={governmentInputs.technicalCoordination?.focalPoint?.email || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.email', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="focal-phone">Phone</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="focal-phone">Phone</label>
                       <Input
                         id="focal-phone"
                         value={governmentInputs.technicalCoordination?.focalPoint?.phone || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.phone', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                   </div>
@@ -884,28 +884,28 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* Oversight & Agreement Status */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-gray-900">Oversight & Agreement Status</CardTitle>
+                <CardTitle className="text-foreground">Oversight & Agreement Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900">MOU or Agreement Signed?</label>
+                  <label className="text-body font-medium text-foreground">MOU or Agreement Signed?</label>
                   <RadioGroup
                     value={governmentInputs.oversightAgreement?.mouStatus || ""}
                     onValueChange={(value) => updateField('oversightAgreement.mouStatus', value)}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="mou-yes" />
-                      <label htmlFor="mou-yes" className="cursor-pointer text-sm text-gray-700">Yes</label>
+                      <label htmlFor="mou-yes" className="cursor-pointer text-body text-foreground">Yes</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="mou-no" />
-                      <label htmlFor="mou-no" className="cursor-pointer text-sm text-gray-700">No</label>
+                      <label htmlFor="mou-no" className="cursor-pointer text-body text-foreground">No</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="drafted" id="mou-drafted" />
-                      <label htmlFor="mou-drafted" className="cursor-pointer text-sm text-gray-700">Drafted</label>
+                      <label htmlFor="mou-drafted" className="cursor-pointer text-body text-foreground">Drafted</label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -913,7 +913,7 @@ export default function GovernmentInputsSection({
                 {governmentInputs.oversightAgreement?.mouStatus === "yes" && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900">Upload scanned agreement</label>
+                      <label className="text-body font-medium text-foreground">Upload scanned agreement</label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="file"
@@ -928,13 +928,13 @@ export default function GovernmentInputsSection({
                         <Button
                           variant="outline"
                           onClick={() => document.getElementById('agreement-upload')?.click()}
-                          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          className="border-input text-foreground hover:bg-muted"
                         >
                           <Upload className="h-4 w-4 mr-2" />
                           Upload Document
                         </Button>
                         {governmentInputs.oversightAgreement?.agreementFile && (
-                          <span className="text-sm text-gray-600 flex items-center gap-1">
+                          <span className="text-body text-muted-foreground flex items-center gap-1">
                             <FileText className="h-4 w-4" />
                             {governmentInputs.oversightAgreement.agreementFile}
                           </span>
@@ -943,12 +943,12 @@ export default function GovernmentInputsSection({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900">Name of signing agency/department</label>
+                      <label className="text-body font-medium text-foreground">Name of signing agency/department</label>
                       <Select
                         value={governmentInputs.oversightAgreement?.signingAgency || ""}
                         onValueChange={(value) => updateField('oversightAgreement.signingAgency', value)}
                       >
-                        <SelectTrigger className="border-gray-300">
+                        <SelectTrigger className="border-input">
                           <SelectValue placeholder="Select agency/department" />
                         </SelectTrigger>
                         <SelectContent>
@@ -964,26 +964,26 @@ export default function GovernmentInputsSection({
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900" htmlFor="oversight-ministry">Oversight Ministry or Coordination Department</label>
+                  <label className="text-body font-medium text-foreground" htmlFor="oversight-ministry">Oversight Ministry or Coordination Department</label>
                   <Input
                     id="oversight-ministry"
                     value={governmentInputs.oversightAgreement?.oversightMinistry || ""}
                     onChange={(e) => updateField('oversightAgreement.oversightMinistry', e.target.value)}
                     placeholder="Enter ministry or department name"
-                    className="border-gray-300"
+                    className="border-input"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Geographic and Risk Context */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-gray-900">Geographic and Risk Context</CardTitle>
+                <CardTitle className="text-foreground">Geographic and Risk Context</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">Location-specific context: Provinces/Districts</label>
+                  <label className="text-body font-medium text-foreground">Location-specific context: Provinces/Districts</label>
                   <Select
                     value=""
                     onValueChange={(value) => {
@@ -993,7 +993,7 @@ export default function GovernmentInputsSection({
                       }
                     }}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select provinces/districts" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1007,12 +1007,12 @@ export default function GovernmentInputsSection({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(governmentInputs.geographicContext?.locations || []).map((location) => (
-                      <div key={location} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-300">
+                      <div key={location} className="bg-muted text-foreground px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-input">
                         {location}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-4 w-4 p-0 text-gray-500 hover:text-gray-700"
+                          className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
                           onClick={() => {
                             const current = governmentInputs.geographicContext?.locations || [];
                             updateField('geographicContext.locations', current.filter(l => l !== location));
@@ -1026,7 +1026,7 @@ export default function GovernmentInputsSection({
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900">Is the project in a high-risk or special classification area?</label>
+                  <label className="text-body font-medium text-foreground">Is the project in a high-risk or special classification area?</label>
                   <div className="space-y-2">
                     {["Conflict-affected", "Disaster-prone", "Mine-affected", "Other"].map((risk) => (
                       <div key={risk} className="flex items-center space-x-2">
@@ -1041,7 +1041,7 @@ export default function GovernmentInputsSection({
                             }
                           }}
                         />
-                        <label htmlFor={`risk-${risk}`} className="cursor-pointer text-sm text-gray-700">
+                        <label htmlFor={`risk-${risk}`} className="cursor-pointer text-body text-foreground">
                           {risk}
                         </label>
                       </div>
@@ -1053,29 +1053,29 @@ export default function GovernmentInputsSection({
                       placeholder="Please specify..."
                       value={governmentInputs.geographicContext?.otherRiskSpecification || ""}
                       onChange={(e) => updateField('geographicContext.otherRiskSpecification', e.target.value)}
-                      className="border-gray-300"
+                      className="border-input"
                     />
                   )}
                 </div>
 
                 {/* Strategic and Funding Considerations */}
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="font-medium text-gray-900">Strategic Considerations</h4>
+                <div className="space-y-4 p-4 bg-muted rounded-lg border border-border">
+                  <h4 className="font-medium text-foreground">Strategic Considerations</h4>
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-900">Is the project politically sensitive or visibility-restricted?</label>
+                    <label className="text-body font-medium text-foreground">Is the project politically sensitive or visibility-restricted?</label>
                     <RadioGroup
                       value={governmentInputs.strategicConsiderations?.isPoliticallySensitive ? "yes" : "no"}
                       onValueChange={(value) => updateField('strategicConsiderations.isPoliticallySensitive', value === "yes")}
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="yes" id="sensitive-yes" />
-                        <label htmlFor="sensitive-yes" className="cursor-pointer text-sm text-gray-700">
+                        <label htmlFor="sensitive-yes" className="cursor-pointer text-body text-foreground">
                           Yes — limit visibility to government and lead development partner
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="no" id="sensitive-no" />
-                        <label htmlFor="sensitive-no" className="cursor-pointer text-sm text-gray-700">
+                        <label htmlFor="sensitive-no" className="cursor-pointer text-body text-foreground">
                           No — open visibility
                         </label>
                       </div>
@@ -1083,18 +1083,18 @@ export default function GovernmentInputsSection({
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-900">Pooled Funding Eligibility</label>
+                    <label className="text-body font-medium text-foreground">Pooled Funding Eligibility</label>
                     <RadioGroup
                       value={governmentInputs.strategicConsiderations?.pooledFundingEligible ? "yes" : "no"}
                       onValueChange={(value) => updateField('strategicConsiderations.pooledFundingEligible', value === "yes")}
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="yes" id="pooled-yes" />
-                        <label htmlFor="pooled-yes" className="cursor-pointer text-sm text-gray-700">Yes</label>
+                        <label htmlFor="pooled-yes" className="cursor-pointer text-body text-foreground">Yes</label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="no" id="pooled-no" />
-                        <label htmlFor="pooled-no" className="cursor-pointer text-sm text-gray-700">No</label>
+                        <label htmlFor="pooled-no" className="cursor-pointer text-body text-foreground">No</label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -1102,21 +1102,21 @@ export default function GovernmentInputsSection({
                   {governmentInputs.strategicConsiderations?.pooledFundingEligible && (
                     <>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-900" htmlFor="pooled-fund-name">Name of pooled fund</label>
+                        <label className="text-body font-medium text-foreground" htmlFor="pooled-fund-name">Name of pooled fund</label>
                         <Input
                           id="pooled-fund-name"
                           value={governmentInputs.strategicConsiderations?.pooledFundName || ""}
                           onChange={(e) => updateField('strategicConsiderations.pooledFundName', e.target.value)}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-900" htmlFor="fund-manager">Fund manager</label>
+                        <label className="text-body font-medium text-foreground" htmlFor="fund-manager">Fund manager</label>
                         <Input
                           id="fund-manager"
                           value={governmentInputs.strategicConsiderations?.fundManager || ""}
                           onChange={(e) => updateField('strategicConsiderations.fundManager', e.target.value)}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                       </div>
                     </>
@@ -1132,31 +1132,31 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* Evaluation and Results */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-gray-900">Evaluation and Results</CardTitle>
+                <CardTitle className="text-foreground">Evaluation and Results</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900">Has the government received an evaluation from the partner?</label>
+                  <label className="text-body font-medium text-foreground">Has the government received an evaluation from the partner?</label>
                   <RadioGroup
                     value={governmentInputs.evaluationResults?.hasEvaluation ? "yes" : "no"}
                     onValueChange={(value) => updateField('evaluationResults.hasEvaluation', value === "yes")}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="eval-yes" />
-                      <label htmlFor="eval-yes" className="cursor-pointer text-sm text-gray-700">Yes</label>
+                      <label htmlFor="eval-yes" className="cursor-pointer text-body text-foreground">Yes</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="eval-no" />
-                      <label htmlFor="eval-no" className="cursor-pointer text-sm text-gray-700">No</label>
+                      <label htmlFor="eval-no" className="cursor-pointer text-body text-foreground">No</label>
                     </div>
                   </RadioGroup>
                 </div>
 
                 {governmentInputs.evaluationResults?.hasEvaluation && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">Upload document or paste link</label>
+                    <label className="text-body font-medium text-foreground">Upload document or paste link</label>
                     <div className="flex items-center gap-2">
                       <Input
                         type="file"
@@ -1171,48 +1171,48 @@ export default function GovernmentInputsSection({
                       <Button
                         variant="outline"
                         onClick={() => document.getElementById('evaluation-upload')?.click()}
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        className="border-input text-foreground hover:bg-muted"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         Upload Document
                       </Button>
-                      <span className="text-sm text-gray-500">or</span>
+                      <span className="text-body text-muted-foreground">or</span>
                       <Input
                         placeholder="Paste document link"
                         value={governmentInputs.evaluationResults?.evaluationDocument || ""}
                         onChange={(e) => updateField('evaluationResults.evaluationDocument', e.target.value)}
-                        className="flex-1 border-gray-300"
+                        className="flex-1 border-input"
                       />
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900">Is this activity in the national results framework?</label>
+                  <label className="text-body font-medium text-foreground">Is this activity in the national results framework?</label>
                   <RadioGroup
                     value={governmentInputs.evaluationResults?.inNationalFramework ? "yes" : "no"}
                     onValueChange={(value) => updateField('evaluationResults.inNationalFramework', value === "yes")}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="framework-yes" />
-                      <label htmlFor="framework-yes" className="cursor-pointer text-sm text-gray-700">Yes</label>
+                      <label htmlFor="framework-yes" className="cursor-pointer text-body text-foreground">Yes</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="framework-no" />
-                      <label htmlFor="framework-no" className="cursor-pointer text-sm text-gray-700">No</label>
+                      <label htmlFor="framework-no" className="cursor-pointer text-body text-foreground">No</label>
                     </div>
                   </RadioGroup>
                 </div>
 
                 {governmentInputs.evaluationResults?.inNationalFramework && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900" htmlFor="national-ref">National indicator reference code</label>
+                    <label className="text-body font-medium text-foreground" htmlFor="national-ref">National indicator reference code</label>
                     <Input
                       id="national-ref"
                       value={governmentInputs.evaluationResults?.nationalIndicatorRef || ""}
                       onChange={(e) => updateField('evaluationResults.nationalIndicatorRef', e.target.value)}
                       placeholder="e.g., NSP-GEN-01"
-                      className="border-gray-300"
+                      className="border-input font-mono"
                     />
                   </div>
                 )}

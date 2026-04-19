@@ -201,7 +201,7 @@ export default function ManageGroupsPage() {
                       <div className="min-w-0">
                         <CardTitle className="text-lg">{group.name}</CardTitle>
                         {group.group_code && (
-                          <p className="text-sm text-muted-foreground mt-1">{group.group_code}</p>
+                          <p className="text-body text-muted-foreground mt-1">{group.group_code}</p>
                         )}
                       </div>
                     </div>
@@ -218,12 +218,12 @@ export default function ManageGroupsPage() {
                   {group.tags && group.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-4">
                       {group.tags.slice(0, 3).map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge key={index} variant="outline" className="text-helper">
                           {tag}
                         </Badge>
                       ))}
                       {group.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           +{group.tags.length - 3} more
                         </Badge>
                       )}
@@ -231,13 +231,13 @@ export default function ManageGroupsPage() {
                   )}
 
                   {/* Member count */}
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
+                  <div className="flex items-center gap-1 text-body text-muted-foreground mb-4">
                     <Users className="h-4 w-4" />
                     <span>{group.member_count} member{group.member_count !== 1 ? 's' : ''}</span>
                   </div>
 
                   {/* Metadata */}
-                  <div className="text-xs text-muted-foreground mb-4">
+                  <div className="text-helper text-muted-foreground mb-4">
                     Created by {group.created_by_name || 'Unknown'} • {formatRelativeDate(group.created_at)}
                   </div>
 
@@ -258,16 +258,16 @@ export default function ManageGroupsPage() {
                       onClick={() => router.push(`/partners/groups/${group.id}/edit`)}
                       className="flex-1"
                     >
-                      <Pencil className="h-3 w-3 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                      <Pencil className="h-3 w-3 mr-1 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                       Edit
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(group.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-3 w-3 text-red-500" />
+                      <Trash2 className="h-3 w-3 text-destructive" />
                     </Button>
                   </div>
                 </CardContent>

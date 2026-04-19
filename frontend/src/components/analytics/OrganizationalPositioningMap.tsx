@@ -219,39 +219,39 @@ export function OrganizationalPositioningMap({
       : '0'
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 max-w-xs">
+      <div className="bg-white border border-border rounded-lg shadow-lg p-3 max-w-xs">
         <div className="flex items-center gap-2 mb-2">
           <div
             className="w-3 h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: org.color }}
           />
-          <span className="font-semibold text-slate-900 text-sm truncate">
+          <span className="font-semibold text-foreground text-body truncate">
             {org.name}
           </span>
         </div>
         {org.organisationType && (
-          <p className="text-xs text-slate-500 mb-2">
+          <p className="text-helper text-muted-foreground mb-2">
             {getOrgTypeLabel(org.organisationType)}
           </p>
         )}
-        <div className="space-y-1 text-xs">
+        <div className="space-y-1 text-helper">
           <div className="flex justify-between">
-            <span className="text-slate-600">Total Value:</span>
-            <span className="font-medium text-slate-900">{formatCurrency(org.totalValue)}</span>
+            <span className="text-muted-foreground">Total Value:</span>
+            <span className="font-medium text-foreground">{formatCurrency(org.totalValue)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600">Humanitarian Share:</span>
-            <span className="font-medium text-slate-900">{humanitarianPct}%</span>
+            <span className="text-muted-foreground">Humanitarian Share:</span>
+            <span className="font-medium text-foreground">{humanitarianPct}%</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600">Position:</span>
-            <span className="font-medium text-slate-900">
+            <span className="text-muted-foreground">Position:</span>
+            <span className="font-medium text-foreground">
               {org.funderScore > 0 ? 'Net Funder' : 'Net Implementer'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600">Rank:</span>
-            <span className="font-medium text-slate-900">#{org.rank}</span>
+            <span className="text-muted-foreground">Rank:</span>
+            <span className="font-medium text-foreground">#{org.rank}</span>
           </div>
         </div>
       </div>
@@ -266,9 +266,9 @@ export function OrganizationalPositioningMap({
   // Render error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
-        <p className="text-sm">{error}</p>
+        <p className="text-body">{error}</p>
       </div>
     )
   }
@@ -276,9 +276,9 @@ export function OrganizationalPositioningMap({
   // Render empty state
   if (!chartData.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
-        <p className="text-sm">No organization data available</p>
+        <p className="text-body">No organization data available</p>
       </div>
     )
   }
@@ -325,7 +325,7 @@ export function OrganizationalPositioningMap({
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600">Show labels for top:</span>
+          <span className="text-body text-muted-foreground">Show labels for top:</span>
           <Select
             value={topNLabels.toString()}
             onValueChange={(v) => setTopNLabels(parseInt(v))}
@@ -341,7 +341,7 @@ export function OrganizationalPositioningMap({
               <SelectItem value="30">30</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-sm text-slate-600">organizations</span>
+          <span className="text-body text-muted-foreground">organizations</span>
         </div>
 
       </div>
@@ -436,7 +436,7 @@ export function OrganizationalPositioningMap({
         </ResponsiveContainer>
 
         {/* Quadrant labels */}
-        <div className="grid grid-cols-2 gap-4 mt-4 text-xs" style={{ color: '#7b95a7' }}>
+        <div className="grid grid-cols-2 gap-4 mt-4 text-helper" style={{ color: '#7b95a7' }}>
           <div className="text-center">
             <span className="font-medium" style={{ color: '#4c5568' }}>Top-Left:</span> Humanitarian Funders
           </div>
@@ -454,7 +454,7 @@ export function OrganizationalPositioningMap({
 
       {/* Legend */}
       <div className="rounded-lg p-4" style={{ backgroundColor: '#f1f4f8' }}>
-        <p className="text-xs font-medium mb-2" style={{ color: '#4c5568' }}>Organization Types</p>
+        <p className="text-helper font-medium mb-2" style={{ color: '#4c5568' }}>Organization Types</p>
         <div className="flex flex-wrap gap-3">
           {legendItems.map(item => (
             <div key={item.value} className="flex items-center gap-1.5">
@@ -462,7 +462,7 @@ export function OrganizationalPositioningMap({
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-xs" style={{ color: '#4c5568' }}>{item.label}</span>
+              <span className="text-helper" style={{ color: '#4c5568' }}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -470,10 +470,10 @@ export function OrganizationalPositioningMap({
 
       {/* Explanatory text */}
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           This chart shows where organisations sit in the aid ecosystem based on observed financial behaviour, rather than stated mandates or organisational labels. Each organisation is positioned using two dimensions derived from transaction data. The horizontal axis reflects whether an organisation's funding is directed primarily toward humanitarian activities such as emergency relief and disaster response, or toward development activities such as infrastructure, education, and long-term service delivery. The vertical axis reflects whether an organisation acts mainly as a net funder, providing resources to others, or as a net implementer, receiving funding to deliver programmes. Together, these axes form four quadrants that highlight different functional roles within the system, including humanitarian funders, development funders, humanitarian implementers, and development implementers. The size of each bubble represents the total volume of disbursement transactions associated with that organisation over the selected period. Positions are calculated from actual financial flows, using transaction-level data with activity-level fallback where needed, ensuring that organisational roles reflect how money moves in practice rather than how organisations self-identify.
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           <strong>METHODOLOGY:</strong> X-axis (Humanitarian / Development) is calculated from transaction humanitarian flags with activity-level fallback. Y-axis (Funder / Implementer) shows net provider vs receiver transaction flows, normalized across all organizations. Data source is disbursement transactions only, reflecting realized behavior.
         </p>
       </div>

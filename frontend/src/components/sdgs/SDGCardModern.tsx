@@ -47,13 +47,13 @@ const SDGCardModern: React.FC<SDGCardModernProps> = ({
     >
       {/* Details Section */}
       <div className="relative flex-1 p-5 flex flex-col bg-card">
-        <p className="text-sm line-clamp-3 text-muted-foreground mb-4">
+        <p className="text-body line-clamp-3 text-muted-foreground mb-4">
           {goal.description}
         </p>
 
         <div className="mt-auto flex items-center gap-2">
           <Target className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">
+          <span className="text-body font-medium">
             {activityCount} {activityCount === 1 ? 'activity' : 'activities'}
           </span>
         </div>

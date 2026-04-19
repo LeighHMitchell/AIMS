@@ -4,7 +4,6 @@ import { apiFetch } from '@/lib/api-fetch';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  console.log('[TEST] Testing email change functionality');
   
   try {
     // Test the email change API
@@ -56,7 +55,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   // Reset test data
-  console.log('[TEST] Resetting test data');
   
   try {
     // This will trigger re-initialization of the local database

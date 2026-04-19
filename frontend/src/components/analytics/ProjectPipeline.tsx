@@ -170,7 +170,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
       case '4':
         return 'bg-muted text-foreground' // Closed
       case '5':
-        return 'bg-red-100 text-red-800' // Cancelled
+        return 'bg-destructive/10 text-red-800' // Cancelled
       case '6':
         return 'bg-orange-100 text-orange-800' // Suspended
       default:
@@ -209,13 +209,13 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
         <table className="w-full">
           <thead className="bg-surface-muted">
             <tr className="border-b border-border">
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Project Name</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Donor</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Sector</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Budget</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Disbursed</th>
-              <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Last Updated</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Project Name</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Donor</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Sector</th>
+              <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground">Budget</th>
+              <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground">Disbursed</th>
+              <th className="text-center py-3 px-4 text-body font-medium text-muted-foreground">Status</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Last Updated</th>
             </tr>
           </thead>
           <tbody>
@@ -224,22 +224,22 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
                 key={project.id}
                 className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}
               >
-                <td className="py-3 px-4 text-sm text-foreground font-medium">
+                <td className="py-3 px-4 text-body text-foreground font-medium">
                   {project.name}
                 </td>
-                <td className="py-3 px-4 text-sm text-muted-foreground">
+                <td className="py-3 px-4 text-body text-muted-foreground">
                   {project.donor}
                 </td>
-                <td className="py-3 px-4 text-sm text-muted-foreground">
+                <td className="py-3 px-4 text-body text-muted-foreground">
                   {project.sector}
                 </td>
-                <td className="py-3 px-4 text-sm text-foreground text-right">
+                <td className="py-3 px-4 text-body text-foreground text-right">
                   {formatCurrency(project.budget)}
                 </td>
-                <td className="py-3 px-4 text-sm text-foreground text-right">
+                <td className="py-3 px-4 text-body text-foreground text-right">
                   {formatCurrency(project.disbursed)}
                   {project.budget > 0 && !isNaN(project.disbursed) && !isNaN(project.budget) && (
-                    <span className="text-xs text-muted-foreground ml-1">
+                    <span className="text-helper text-muted-foreground ml-1">
                       ({(() => {
                         const percentage = (project.disbursed / project.budget) * 100
                         return isNaN(percentage) || !isFinite(percentage) ? 0 : Math.round(percentage)
@@ -255,7 +255,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
                     {getStatusLabel(project.status)}
                   </Badge>
                 </td>
-                <td className="py-3 px-4 text-sm text-muted-foreground">
+                <td className="py-3 px-4 text-body text-muted-foreground">
                   {format(new Date(project.lastUpdated), 'MMM d, yyyy')}
                 </td>
               </tr>

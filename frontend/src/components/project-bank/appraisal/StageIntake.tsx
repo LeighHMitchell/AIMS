@@ -188,7 +188,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         {formData.project_code && (
           <p className="text-xs text-muted-foreground font-mono mb-1">{formData.project_code}</p>
         )}
-        <p className="text-sm text-muted-foreground">Enter basic project information and contact details.</p>
+        <p className="text-body text-muted-foreground">Enter basic project information and contact details.</p>
       </div>
 
       {/* ─── Banner Image Upload ─── */}
@@ -258,10 +258,10 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 e.target.value = '';
               }}
             />
-            <div className="h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
-              <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-sm font-medium text-gray-700 mb-1">Click or drag image to upload</p>
-              <p className="text-xs text-gray-500">Max size: 5 MB</p>
+            <div className="h-48 border-2 border-dashed border-input rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
+              <p className="text-body font-medium text-foreground mb-1">Click or drag image to upload</p>
+              <p className="text-helper text-muted-foreground">Max size: 5 MB</p>
             </div>
           </label>
         )}
@@ -289,8 +289,8 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               </div>
             )}
             <div className="relative z-10 p-3">
-              <h4 className="text-sm font-semibold">Government Nominated <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">GOV</span></h4>
-              <p className="mt-1 text-xs text-muted-foreground">Nominated by a government ministry</p>
+              <h4 className="text-body font-semibold">Government Nominated <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">GOV</span></h4>
+              <p className="mt-1 text-helper text-muted-foreground">Nominated by a government ministry</p>
             </div>
           </button>
 
@@ -312,8 +312,8 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               </div>
             )}
             <div className="relative z-10 p-3">
-              <h4 className="text-sm font-semibold">Unsolicited Proposal <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">UNSOL</span></h4>
-              <p className="mt-1 text-xs text-muted-foreground">Proposed by a private entity or partner</p>
+              <h4 className="text-body font-semibold">Unsolicited Proposal <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">UNSOL</span></h4>
+              <p className="mt-1 text-helper text-muted-foreground">Proposed by a private entity or partner</p>
             </div>
           </button>
         </div>
@@ -321,11 +321,11 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         {/* Contact Officer (shown when GOV) */}
         {!isUnsolicited && (
           <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-            <h5 className="text-sm font-medium text-foreground">Contact Officer</h5>
-            <p className="text-xs text-muted-foreground -mt-1">The government officer responsible for coordinating this project.</p>
+            <h5 className="text-body font-medium text-foreground">Contact Officer</h5>
+            <p className="text-helper text-muted-foreground -mt-1">The government officer responsible for coordinating this project.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">First Name <FieldCheck value={formData.contact_officer_first_name} /></Label>
+                <Label className="text-helper text-muted-foreground">First Name <FieldCheck value={formData.contact_officer_first_name} /></Label>
                 <Input
                   value={formData.contact_officer_first_name || ''}
                   onChange={e => updateField('contact_officer_first_name', e.target.value)}
@@ -333,7 +333,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Last Name <FieldCheck value={formData.contact_officer_last_name} /></Label>
+                <Label className="text-helper text-muted-foreground">Last Name <FieldCheck value={formData.contact_officer_last_name} /></Label>
                 <Input
                   value={formData.contact_officer_last_name || ''}
                   onChange={e => updateField('contact_officer_last_name', e.target.value)}
@@ -341,7 +341,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Position / Job Title <FieldCheck value={formData.contact_position} /></Label>
+                <Label className="text-helper text-muted-foreground">Position / Job Title <FieldCheck value={formData.contact_position} /></Label>
                 <Input
                   value={formData.contact_position || ''}
                   onChange={e => updateField('contact_position', e.target.value)}
@@ -349,7 +349,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Ministry <FieldCheck value={formData.contact_ministry} /></Label>
+                <Label className="text-helper text-muted-foreground">Ministry <FieldCheck value={formData.contact_ministry} /></Label>
                 <Select
                   value={formData.contact_ministry || ''}
                   onValueChange={v => {
@@ -374,7 +374,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Department <FieldCheck value={formData.contact_department} /></Label>
+                <Label className="text-helper text-muted-foreground">Department <FieldCheck value={formData.contact_department} /></Label>
                 {(() => {
                   const contactMin = ministries.find(m => m.name === formData.contact_ministry);
                   const depts = contactMin ? getAllDescendants(contactMin.id) : [];
@@ -401,7 +401,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 })()}
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Email <FieldCheck value={formData.contact_email} /></Label>
+                <Label className="text-helper text-muted-foreground">Email <FieldCheck value={formData.contact_email} /></Label>
                 <Input
                   type="email"
                   value={formData.contact_email || ''}
@@ -410,7 +410,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Phone <FieldCheck value={formData.contact_phone} /></Label>
+                <Label className="text-helper text-muted-foreground">Phone <FieldCheck value={formData.contact_phone} /></Label>
                 <Input
                   value={formData.contact_phone || ''}
                   onChange={e => {
@@ -432,11 +432,11 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         {/* Proponent Details (shown when UNSOL) */}
         {isUnsolicited && (
           <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-            <h5 className="text-sm font-medium text-foreground">Proponent Details</h5>
-            <p className="text-xs text-muted-foreground -mt-1">The primary contact from the proposing entity.</p>
+            <h5 className="text-body font-medium text-foreground">Proponent Details</h5>
+            <p className="text-helper text-muted-foreground -mt-1">The primary contact from the proposing entity.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">First Name <FieldCheck value={formData.proponent_first_name} /></Label>
+                <Label className="text-helper text-muted-foreground">First Name <FieldCheck value={formData.proponent_first_name} /></Label>
                 <Input
                   value={formData.proponent_first_name || ''}
                   onChange={e => updateField('proponent_first_name', e.target.value)}
@@ -444,7 +444,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Last Name <FieldCheck value={formData.proponent_last_name} /></Label>
+                <Label className="text-helper text-muted-foreground">Last Name <FieldCheck value={formData.proponent_last_name} /></Label>
                 <Input
                   value={formData.proponent_last_name || ''}
                   onChange={e => updateField('proponent_last_name', e.target.value)}
@@ -452,7 +452,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Company <FieldCheck value={formData.proponent_company} /></Label>
+                <Label className="text-helper text-muted-foreground">Company <FieldCheck value={formData.proponent_company} /></Label>
                 <Input
                   value={formData.proponent_company || ''}
                   onChange={e => updateField('proponent_company', e.target.value)}
@@ -460,7 +460,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Contact Info <FieldCheck value={formData.proponent_contact} /></Label>
+                <Label className="text-helper text-muted-foreground">Contact Info <FieldCheck value={formData.proponent_contact} /></Label>
                 <Input
                   value={formData.proponent_contact || ''}
                   onChange={e => updateField('proponent_contact', e.target.value)}
@@ -567,7 +567,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             <Label>Estimated Cost <HelpTooltip text="The total estimated project cost including all phases." /> <FieldCheck value={formData.estimated_cost} /></Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-body text-muted-foreground font-medium">$</span>
                 <Input
                   value={costDisplay}
                   onChange={e => handleCostChange(e.target.value, e.target)}
@@ -588,9 +588,9 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           {/* Minimum project size compliance warning */}
           {minSizeResult && !minSizeResult.passed && (
             <div className={cn(
-              "md:col-span-2 flex items-start gap-2 p-3 rounded-lg border text-sm",
+              "md:col-span-2 flex items-start gap-2 p-3 rounded-lg border text-body",
               minSizeResult.enforcement === 'enforce'
-                ? "bg-red-50 border-red-200 text-red-800"
+                ? "bg-destructive/10 border-destructive/30 text-red-800"
                 : "bg-amber-50 border-amber-200 text-amber-800"
             )}>
               {minSizeResult.enforcement === 'enforce' ? (
@@ -627,7 +627,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 placeholder="0"
                 className="w-20"
               />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">years</span>
+              <span className="text-helper text-muted-foreground whitespace-nowrap">years</span>
               <Input
                 type="number"
                 min={0}
@@ -640,7 +640,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 placeholder="0"
                 className="w-20"
               />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">months</span>
+              <span className="text-helper text-muted-foreground whitespace-nowrap">months</span>
             </div>
           </div>
 

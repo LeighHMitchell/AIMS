@@ -83,8 +83,8 @@ const getRoleBadgeColor = (role: string) => {
     case 'deputy_chair': return 'bg-violet-100 text-violet-800'
     case 'secretariat': return 'bg-blue-100 text-blue-800'
     case 'member': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-    case 'observer': return 'bg-muted text-gray-800'
-    default: return 'bg-muted text-gray-800'
+    case 'observer': return 'bg-muted text-foreground'
+    default: return 'bg-muted text-foreground'
   }
 }
 
@@ -383,8 +383,8 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
       {members.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
           <UserPlus className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">No members yet</p>
-          <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
+          <p className="text-body text-muted-foreground">No members yet</p>
+          <p className="text-helper text-muted-foreground mt-1">Add members to this working group to get started</p>
           <Button onClick={() => { resetForm(); setShowAddDialog(true) }} variant="outline" className="mt-4 gap-2">
             <UserPlus className="h-4 w-4" />
             Add First Member
@@ -410,7 +410,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                 <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('joined')}>
                   <span className="flex items-center gap-1">Joined {getSortIcon('joined', sortField, sortDirection)}</span>
                 </th>
-                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3" />
+                <th className="text-right text-section-label font-medium text-muted-foreground uppercase px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -422,30 +422,30 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                         {(member as any).avatar_url ? (
                           <img src={(member as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
-                          <span className="text-xs font-medium text-muted-foreground">
+                          <span className="text-helper font-medium text-muted-foreground">
                             {member.person_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                           </span>
                         )}
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-foreground">{member.person_name}</span>
+                        <span className="text-body font-medium text-foreground">{member.person_name}</span>
                         {!member.is_active && (
-                          <Badge variant="secondary" className="text-xs ml-1.5">Inactive</Badge>
+                          <Badge variant="secondary" className="text-helper ml-1.5">Inactive</Badge>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{getRoleLabel(member.role)}</td>
+                  <td className="px-4 py-3 text-body text-muted-foreground">{getRoleLabel(member.role)}</td>
                   <td className="px-4 py-3">
-                    <div className="text-sm text-foreground">{member.person_organization || '—'}</div>
+                    <div className="text-body text-foreground">{member.person_organization || '—'}</div>
                     {(member.job_title || member.department) && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                      <div className="text-helper text-muted-foreground mt-0.5">
                         {[member.department, member.job_title].filter(Boolean).join(' · ')}
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.person_email || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-3 text-body text-muted-foreground">{member.person_email || '—'}</td>
+                  <td className="px-4 py-3 text-body text-muted-foreground whitespace-nowrap">
                     {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -466,10 +466,10 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="text-destructive"
                           onClick={() => setMemberToDelete(member)}
                         >
-                          <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                          <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -536,7 +536,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                       />
                       <CommandList>
                         {searchingPeople ? (
-                          <div className="py-6 text-center text-sm text-muted-foreground">
+                          <div className="py-6 text-center text-body text-muted-foreground">
                             {contactSearchQuery.trim().length === 0 ? 'Loading contacts...' : 'Searching...'}
                           </div>
                         ) : rolodexPeople.length === 0 ? (
@@ -555,14 +555,14 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                               >
                                 <Avatar className="h-6 w-6 flex-shrink-0">
                                   <AvatarImage src={person.profile_photo} />
-                                  <AvatarFallback className="text-xs bg-[#7b95a7] text-white">
+                                  <AvatarFallback className="text-helper bg-[#7b95a7] text-white">
                                     {getInitials(person.name || '')}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col min-w-0">
                                   <span className="truncate">{person.name}</span>
                                   {person.email && (
-                                    <span className="text-xs text-muted-foreground truncate">{person.email}</span>
+                                    <span className="text-helper text-muted-foreground truncate">{person.email}</span>
                                   )}
                                 </div>
                               </CommandItem>
@@ -583,29 +583,29 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarImage src={selectedContact.profile_photo} />
-                      <AvatarFallback className="text-sm bg-blue-200 text-blue-700">
+                      <AvatarFallback className="text-body bg-blue-200 text-blue-700">
                         {getInitials(selectedContact.name || '')}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-semibold text-foreground">
+                      <p className="text-body font-semibold text-foreground">
                         {selectedContact.name}
                       </p>
                       {selectedContact.email && (
-                        <p className="text-xs text-muted-foreground">{selectedContact.email}</p>
+                        <p className="text-helper text-muted-foreground">{selectedContact.email}</p>
                       )}
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-red-500"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
                     onClick={clearSelectedContact}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex items-center gap-1 mt-2 text-xs text-blue-600">
+                <div className="flex items-center gap-1 mt-2 text-helper text-blue-600">
                   <Check className="h-3 w-3" />
                   Linked to existing contact record
                 </div>

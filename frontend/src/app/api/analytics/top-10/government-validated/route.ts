@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 });
     }
 
-    console.log('[Top10GovernmentValidated] Found activities:', activities?.length || 0);
 
     // Query government endorsements separately
     // Handle case where table might not exist or be empty gracefully
@@ -74,7 +73,6 @@ export async function GET(request: NextRequest) {
 
     // If no validated activities, fall back to all published activities
     if (targetActivityIds.length === 0) {
-      console.log('[Top10GovernmentValidated] No validated activities found, using all published activities as fallback');
       isUsingFallback = true;
       const activityIds = activities?.map((a: any) => a.id) || [];
       targetActivityIds = activityIds;
@@ -110,7 +108,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
     }
 
-    console.log('[Top10GovernmentValidated] Transactions found:', transactions?.length || 0);
 
     // Aggregate by organization
     const orgTotals = new Map<string, { value: number; projectCount: Set<string> }>();
@@ -128,12 +125,9 @@ export async function GET(request: NextRequest) {
       orgTotals.set(t.provider_org_id, current);
     });
 
-    console.log('[Top10GovernmentValidated] Transactions with provider_org_id:', transactionsWithProvider);
-    console.log('[Top10GovernmentValidated] Unique orgs from transactions:', orgTotals.size);
 
     // If no provider_org_id data, fall back to using activity_participating_organizations
     if (orgTotals.size === 0 && targetActivityIds.length > 0) {
-      console.log('[Top10GovernmentValidated] Falling back to activity_participating_organizations');
 
       // Get participating organizations with Funding role (1) for these activities
       const { data: participatingOrgs } = await supabase
@@ -160,7 +154,6 @@ export async function GET(request: NextRequest) {
         orgTotals.set(po.organization_id, current);
       });
 
-      console.log('[Top10GovernmentValidated] Organizations from participating orgs:', orgTotals.size);
     }
 
     // Get organization names
@@ -203,9 +196,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Top10GovernmentValidated] Final result count:', result.length);
     if (result.length > 0) {
-      console.log('[Top10GovernmentValidated] Top result:', result[0]?.name, 'value:', result[0]?.totalValue);
     }
 
     return NextResponse.json({ partners: result });

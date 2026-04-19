@@ -88,7 +88,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
 
   if (timelineData.length === 0) {
     return (
-      <div className={cn("flex items-center justify-center text-slate-400 py-8", className)}>
+      <div className={cn("flex items-center justify-center text-muted-foreground py-8", className)}>
         No periods defined
       </div>
     );
@@ -99,7 +99,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
     high: { bg: 'bg-[#6b9080]', border: 'border-[#6b9080]', text: 'text-[#4a6a5a]' },
     medium: { bg: 'bg-[#c4a35a]', border: 'border-[#c4a35a]', text: 'text-[#806830]' },
     low: { bg: 'bg-[#b87070]', border: 'border-[#b87070]', text: 'text-[#904848]' },
-    none: { bg: 'bg-slate-300', border: 'border-slate-300', text: 'text-slate-500' }
+    none: { bg: 'bg-slate-300', border: 'border-input', text: 'text-muted-foreground' }
   };
 
   return (
@@ -108,7 +108,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
         {/* Timeline container */}
         <div className="relative">
           {/* Timeline line */}
-          <div className="absolute top-4 left-0 right-0 h-0.5 bg-slate-200" />
+          <div className="absolute top-4 left-0 right-0 h-0.5 bg-muted" />
           
           {/* Period markers */}
           <div className="relative flex justify-between items-start">
@@ -129,7 +129,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
                         "relative z-10 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110",
                         statusColors[point.status].bg,
                         statusColors[point.status].border,
-                        "text-white text-xs font-medium"
+                        "text-white text-helper font-medium"
                       )}
                     >
                       {point.achievement !== null ? (
@@ -141,8 +141,8 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
                     <div className="space-y-1">
-                      <div className="font-medium text-sm">{point.label}</div>
-                      <div className="text-xs text-slate-400 space-y-0.5">
+                      <div className="font-medium text-body">{point.label}</div>
+                      <div className="text-helper text-muted-foreground space-y-0.5">
                         <div>Target: {formatValue(point.target, measure)}</div>
                         <div>Actual: {formatValue(point.actual, measure)}</div>
                         {point.achievement !== null && (
@@ -157,18 +157,18 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
 
                 {/* Date label below */}
                 <div className="mt-3 text-center">
-                  <div className="text-xs text-slate-500 whitespace-nowrap">
+                  <div className="text-helper text-muted-foreground whitespace-nowrap">
                     {formatDate(point.periodEnd)}
                   </div>
                 </div>
 
                 {/* Values below date */}
                 <div className="mt-1 text-center">
-                  <div className="text-xs text-slate-600">
-                    <span className="text-slate-400">T:</span> {formatValue(point.target, measure)}
+                  <div className="text-helper text-muted-foreground">
+                    <span className="text-muted-foreground">T:</span> {formatValue(point.target, measure)}
                   </div>
-                  <div className="text-xs text-slate-700 font-medium">
-                    <span className="text-slate-400">A:</span> {formatValue(point.actual, measure)}
+                  <div className="text-helper text-foreground font-medium">
+                    <span className="text-muted-foreground">A:</span> {formatValue(point.actual, measure)}
                   </div>
                 </div>
               </div>
@@ -177,7 +177,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
         </div>
 
         {/* Legend */}
-        <div className="flex justify-center gap-4 mt-6 text-xs text-slate-500">
+        <div className="flex justify-center gap-4 mt-6 text-helper text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-full bg-[#6b9080]" />
             <span>≥80%</span>

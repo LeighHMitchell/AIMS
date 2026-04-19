@@ -265,7 +265,7 @@ export function FundFlowSankey({
   if (!layout) {
     return (
       <div ref={containerRef} className={className} style={{ width: '100%' }}>
-        <div className="flex items-center justify-center text-xs text-muted-foreground" style={{ width, height }}>
+        <div className="flex items-center justify-center text-helper text-muted-foreground" style={{ width, height }}>
           No flow data
         </div>
       </div>
@@ -290,10 +290,10 @@ export function FundFlowSankey({
             top: hoveredLink.y + 10,
           }}
         >
-          <p className="text-xs font-medium text-foreground">
+          <p className="text-helper font-medium text-foreground">
             {tooltipInfo.sourceName} → {tooltipInfo.targetName}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-helper text-muted-foreground mt-0.5">
             {tooltipInfo.type === 'donor-to-fund' ? 'Contribution' : 'Disbursement'}: {formatUSD(tooltipInfo.value)}
           </p>
         </div>

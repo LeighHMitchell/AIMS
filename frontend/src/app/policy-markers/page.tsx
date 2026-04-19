@@ -98,7 +98,7 @@ export default function PolicyMarkersListingPage() {
           <div className="w-full p-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Policy Markers</h2>
                 <p className="text-muted-foreground">{error}</p>
               </CardContent>
@@ -140,7 +140,7 @@ export default function PolicyMarkersListingPage() {
           {/* List View */}
           {viewMode === 'list' && (
             <div className="border border-border rounded-lg overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border text-section-label font-medium text-muted-foreground uppercase">
                 <div className="w-10 flex-shrink-0" />
                 <div className="flex-1">Name</div>
                 <div className="w-40 hidden md:block">Category</div>
@@ -162,11 +162,11 @@ export default function PolicyMarkersListingPage() {
                         <IconComponent className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground text-sm truncate">{marker.name}</h3>
-                        <p className="text-xs text-muted-foreground truncate">{marker.description}</p>
+                        <h3 className="font-medium text-foreground text-body truncate">{marker.name}</h3>
+                        <p className="text-helper text-muted-foreground truncate">{marker.description}</p>
                       </div>
                       <div className="w-40 hidden md:block">
-                        <span className="text-xs text-muted-foreground">{group.label}</span>
+                        <span className="text-helper text-muted-foreground">{group.label}</span>
                       </div>
                       <div className="w-16 text-center">
                         {marker.is_iati_standard && (
@@ -219,7 +219,7 @@ export default function PolicyMarkersListingPage() {
                                 <code className="text-xs px-1.5 py-0.5 bg-white/20 text-white/90 rounded font-mono">{marker.iati_code}</code>
                               )}
                             </div>
-                            <h2 className="text-sm font-bold text-white leading-tight">
+                            <h2 className="text-body font-bold text-white leading-tight">
                               <Link
                                 href={`/policy-markers/${marker.uuid}`}
                                 className="relative z-10 hover:underline inline"
@@ -232,12 +232,12 @@ export default function PolicyMarkersListingPage() {
                         }
                       >
                         <div className="relative flex-1 p-5 flex flex-col bg-card">
-                          <p className="text-xs text-muted-foreground line-clamp-3 mb-3">
+                          <p className="text-helper text-muted-foreground line-clamp-3 mb-3">
                             {marker.description}
                           </p>
                           <div className="flex items-center gap-2 mt-auto pt-3 border-t border-border">
                             <Activity className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
+                            <span className="text-body font-medium">
                               {marker.activityCount} {marker.activityCount === 1 ? 'activity' : 'activities'}
                             </span>
                           </div>

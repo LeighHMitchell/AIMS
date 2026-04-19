@@ -173,7 +173,6 @@ export async function POST(
           });
         }
 
-        console.log('[Send API] Task sent with', assignments?.length, 'assignments');
 
         return NextResponse.json({
           success: true,
@@ -189,7 +188,6 @@ export async function POST(
       .select('id', { count: 'exact', head: true })
       .eq('task_id', taskId);
 
-    console.log('[Send API] Task sent. Existing assignments:', existingAssignments);
 
     return NextResponse.json({
       success: true,

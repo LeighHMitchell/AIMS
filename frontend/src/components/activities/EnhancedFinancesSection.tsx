@@ -80,13 +80,6 @@ export function EnhancedFinancesSection({
   geographyLevel = 'activity',
   activitySectors = []
 }: EnhancedFinancesSectionProps) {
-  const [updateStats, setUpdateStats] = useState({
-    totalUpdates: 0,
-    successfulUpdates: 0,
-    failedUpdates: 0,
-    lastUpdate: null as Date | null
-  });
-
   // State for modality override toggle
   const [modalityOverride, setModalityOverride] = useState(
     general.defaultModalityOverride ?? false
@@ -131,30 +124,12 @@ export function EnhancedFinancesSection({
   onDefaultsChangeRef.current = onDefaultsChange;
 
   const handleFieldUpdate = useCallback((field: string, value: string | null) => {
-    console.log(`[EnhancedFinancesSection] Field updated: ${field} = ${value}`);
-
-    // Update stats
-    setUpdateStats(prev => ({
-      ...prev,
-      totalUpdates: prev.totalUpdates + 1,
-      successfulUpdates: prev.successfulUpdates + 1,
-      lastUpdate: new Date()
-    }));
-
     // Call parent callback via ref to avoid stale closure
     onDefaultsChangeRef.current?.(field, value);
   }, []);
 
   const handleFieldError = useCallback((field: string, error: Error) => {
     console.error(`[EnhancedFinancesSection] Field update error for ${field}:`, error);
-
-    // Update stats
-    setUpdateStats(prev => ({
-      ...prev,
-      totalUpdates: prev.totalUpdates + 1,
-      failedUpdates: prev.failedUpdates + 1,
-      lastUpdate: new Date()
-    }));
   }, []);
 
   const handleMissingColumnError = useCallback((field: string, error: Error) => {
@@ -208,7 +183,6 @@ export function EnhancedFinancesSection({
   }, [general.defaultAidType, general.defaultFinanceType, modalityOverride, general.defaultModality]);
 
   const handleModalityOverrideChange = async (checked: boolean) => {
-    console.log(`[EnhancedFinancesSection] Modality override changed: ${checked}`);
     setModalityOverride(checked);
     
     // Save to Supabase (gracefully handle missing columns)
@@ -227,7 +201,6 @@ export function EnhancedFinancesSection({
         general.defaultAidType,
         general.defaultFinanceType
       );
-      console.log('[EnhancedFinancesSection] Recalculating modality after disabling override:', calculatedModality);
       try {
         await updateSupabaseField('defaultModality', calculatedModality);
       } catch (error) {
@@ -247,13 +220,6 @@ export function EnhancedFinancesSection({
 
   return (
     <div className="space-y-6">
-      {/* Status Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* Update statistics badges removed per user request */}
-        </div>
-      </div>
-
       <Tabs defaultValue="transactions" className="space-y-4">
         <TabsList>
           <TabsTrigger value="transactions" className="flex items-center gap-2">
@@ -303,7 +269,7 @@ export function EnhancedFinancesSection({
         <TabsContent value="defaults" className="space-y-4">
           {/* Pooled fund aid type guidance */}
           {general?.is_pooled_fund === true && !general?.defaultAidType?.match(/^B0/) && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-body text-amber-900">
               <span className="mt-0.5 shrink-0 text-amber-500">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -336,9 +302,9 @@ export function EnhancedFinancesSection({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Default Aid Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Aid Type
-                        <HelpTextTooltip content="The type of aid for this activity" />
+                        <HelpTextTooltip content="How aid is delivered (e.g., grant, loan, scholarship). Applied to new transactions unless overridden." />
                         {fieldCompletion.aidType && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
@@ -358,9 +324,9 @@ export function EnhancedFinancesSection({
 
                     {/* Default Currency */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Currency
-                        <HelpTextTooltip content="The default currency for financial transactions" />
+                        <HelpTextTooltip content="Used for all transactions and budgets in this activity (e.g., USD, EUR, GBP)" />
                         {fieldCompletion.currency && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
@@ -380,7 +346,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Flow Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Flow Type
                         <HelpTextTooltip content="The flow type for this activity" />
                         {fieldCompletion.flowType && (
@@ -402,7 +368,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Tied Status */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Tied Status
                         <HelpTextTooltip content="The tied status for this activity" />
                         {fieldCompletion.tiedStatus && (
@@ -424,7 +390,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Finance Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Finance Type
                         <HelpTextTooltip content="The finance type for this activity" />
                         {fieldCompletion.financeType && (
@@ -445,7 +411,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Disbursement Channel */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Disbursement Channel
                         <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies." />
                         {fieldCompletion.disbursementChannel && (
@@ -492,8 +458,8 @@ export function EnhancedFinancesSection({
                         disabled={disabled}
                       />
                       <Label htmlFor="override-auto-modality" className="flex items-center gap-2">
-                        Override Auto Modality
-                        <HelpTextTooltip content="When enabled, manually set modality instead of automatic detection" />
+                        Manually Set Modality
+                        <HelpTextTooltip content="Modality describes how aid is delivered. Enable this to choose manually instead of auto-detecting from aid type and finance type." />
                       </Label>
                     </div>
                   </div>

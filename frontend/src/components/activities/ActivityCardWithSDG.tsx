@@ -152,7 +152,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         maximumFractionDigits: 0,
       }).format(value);
     }
-    return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
+    return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
   };
 
 
@@ -251,8 +251,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
     <div 
       ref={cardRef}
       className={`
-      bg-white rounded-xl border border-gray-100 
-      hover:border-gray-200 hover:shadow-lg 
+      bg-white rounded-xl border border-border 
+      hover:border-border hover:shadow-lg 
       transition-all duration-300 ease-in-out
       relative group shadow-sm
       ${className}
@@ -260,7 +260,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
       {/* Last Updated - Bottom left */}
       {activity.updated_at && (
         <div className="absolute bottom-4 left-4 z-10">
-          <div className="flex items-center gap-1 text-xs leading-normal text-gray-400">
+          <div className="flex items-center gap-1 text-helper leading-normal text-muted-foreground">
             <Clock className="w-3 h-3 flex-shrink-0" />
             <span className="truncate">
               Updated {formatRelativeTime(activity.updated_at)}
@@ -292,7 +292,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             >
               {isBookmarked(activity.id) ? (
                 <>
-                  <BookmarkCheck className="mr-2 h-4 w-4 text-slate-600" />
+                  <BookmarkCheck className="mr-2 h-4 w-4 text-muted-foreground" />
                   Remove Bookmark
                 </>
               ) : (
@@ -304,7 +304,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
-                <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
             )}
@@ -313,9 +313,9 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleDelete}
-                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                   Delete
                 </DropdownMenuItem>
               </>
@@ -351,12 +351,10 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     alt={`Icon for ${activity.title}`}
                     className="w-full h-full object-contain"
                     onError={(e) => {
-                      console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                     }}
                     onLoad={() => {
-                      console.log("Icon loaded successfully for:", activity.title);
                     }}
                   />
                 </div>
@@ -374,12 +372,10 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   alt={`Icon for ${activity.title}`}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
-                    console.log("Icon loaded successfully for:", activity.title);
                   }}
                 />
               </div>
@@ -408,7 +404,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     navigator.clipboard.writeText(activity.acronym || activity.title);
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
-                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground"
                   title={activity.acronym ? "Copy Acronym" : "Copy Activity Title"}
                 >
                   <Copy className="w-3 h-3" />
@@ -416,7 +412,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               </h3>
               
               {/* Activity ID and IATI ID - Always displayed */}
-              <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
+              <div className="text-helper text-muted-foreground line-clamp-1 flex items-center gap-1">
                 {activity.partner_id ? (
                   <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.partner_id}</span>
                 ) : (
@@ -427,7 +423,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     type="button"
                     onClick={(e) => handleCopy(activity.partner_id!, e)}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground"
                     title="Copy Activity ID"
                   >
                     <Copy className="w-3 h-3" />
@@ -443,7 +439,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     type="button"
                     onClick={(e) => handleCopy(activity.iati_id!, e)}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground"
                     title="Copy IATI Identifier"
                   >
                     <Copy className="w-3 h-3" />
@@ -453,20 +449,20 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
 
               {/* Dates Section - Under IDs */}
               <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs leading-normal text-gray-500">
+                <div className="flex items-center gap-1 text-helper leading-normal text-muted-foreground">
                   <Calendar className="w-3 h-3 flex-shrink-0" />
                   <span className="truncate">
                     {activity.planned_start_date || activity.planned_end_date ? (
                       <>
                         {formatDateRange(activity.planned_start_date, activity.planned_end_date)}
                         {activity.planned_start_date && activity.planned_end_date && (
-                          <span className="text-gray-400 hidden sm:inline">
+                          <span className="text-muted-foreground hidden sm:inline">
                             • {calculateDuration(activity.planned_start_date, activity.planned_end_date)}
                           </span>
                         )}
                       </>
                     ) : (
-                      <span className="text-gray-400">
+                      <span className="text-muted-foreground">
                         Start date not reported • End date not reported
                       </span>
                     )}
@@ -480,7 +476,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {activity.activity_status && (
                 <Badge 
                   variant={statusColors[activity.activity_status as keyof typeof statusColors] || 'secondary'}
-                  className="text-xs font-medium leading-tight"
+                  className="text-helper font-medium leading-tight"
                 >
                   {getStatusLabel(activity.activity_status)}
                 </Badge>
@@ -488,7 +484,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {activity.submission_status && (
                 <Badge 
                   variant={submissionColors[activity.submission_status as keyof typeof submissionColors] || 'secondary'}
-                  className="text-xs font-medium leading-tight"
+                  className="text-helper font-medium leading-tight"
                 >
                   {activity.submission_status === 'pending_validation' ? 'Pending Validation' :
                    activity.submission_status === 'validated' ? 'Validated' :
@@ -498,7 +494,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {activity.publication_status && (
                 <Badge 
                   variant={activity.publication_status === 'published' ? 'success' : 'secondary'}
-                  className="text-xs font-medium leading-tight"
+                  className="text-helper font-medium leading-tight"
                 >
                   {activity.publication_status === 'published' ? 'Published' : 'Unpublished'}
                 </Badge>
@@ -506,7 +502,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {activity.default_aid_modality && (
                 <Badge 
                   variant={modalityColors[activity.default_aid_modality as keyof typeof modalityColors] || 'outline'}
-                  className="text-xs font-medium leading-tight"
+                  className="text-helper font-medium leading-tight"
                 >
                   {MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality}
                 </Badge>
@@ -520,9 +516,9 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             {/* Activity Details - Always displayed */}
             <div className="space-y-2">
               {(activity.created_by_org_acronym || activity.created_by_org_name) && (
-                <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-gray-200">
-                  <span className="text-sm font-medium text-gray-700">Reported by</span>
-                  <span className="text-sm text-gray-900 text-right">
+                <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-border">
+                  <span className="text-body font-medium text-foreground">Reported by</span>
+                  <span className="text-body text-foreground text-right">
                     {activity.created_by_org_name}
                     {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
                       <span> ({activity.created_by_org_acronym})</span>
@@ -536,36 +532,36 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {activity.publication_status === 'published' && (
                 <>
                   <div className="flex justify-between items-center">
-                    <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
-                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget || 0)}</div>
+                    <div className="text-body font-medium text-foreground">Total Budgeted</div>
+                    <div className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</div>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
-                    <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                  <div className="flex justify-between items-center pb-2 border-b border-border">
+                    <div className="text-body font-medium text-foreground">Total Disbursed</div>
+                    <div className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</div>
                   </div>
                 </>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Default Aid Type</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-body font-medium text-foreground">Default Aid Type</span>
+                <span className="text-body text-foreground">
                   {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Default Finance Type</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-body font-medium text-foreground">Default Finance Type</span>
+                <span className="text-body text-foreground">
                   {activity.default_finance_type ? (FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type) : 'Not reported'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Default Flow Type</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-body font-medium text-foreground">Default Flow Type</span>
+                <span className="text-body text-foreground">
                   {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Default Tied Status</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-body font-medium text-foreground">Default Tied Status</span>
+                <span className="text-body text-foreground">
                   {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
                 </span>
               </div>

@@ -58,7 +58,7 @@ export function KeyboardShortcutsCheatsheet({
           <ShortcutTable heading="Actions" rows={actions} />
         </div>
 
-        <p className="border-t pt-3 text-xs text-muted-foreground">
+        <p className="border-t pt-3 text-helper text-muted-foreground">
           Tip: use the sidebar to jump to any section, or <Kbd>{mod}</Kbd>
           <span className="mx-1">+</span>
           <Kbd>↓</Kbd> to step through them in order.
@@ -77,12 +77,12 @@ function ShortcutTable({
 }) {
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold text-foreground">{heading}</h3>
+      <h3 className="mb-2 text-body font-semibold text-foreground">{heading}</h3>
       <ul className="space-y-1.5">
         {rows.map((row) => (
           <li
             key={row.label}
-            className="flex items-center justify-between text-sm"
+            className="flex items-center justify-between text-body"
           >
             <span className="text-foreground">{row.label}</span>
             <span className="flex items-center gap-1">

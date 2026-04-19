@@ -15,7 +15,6 @@ async function canCreateTasks(supabase: any, userId: string): Promise<{ canCreat
     .single();
 
   if (error || !user) {
-    console.log('[Tasks API] User not found:', userId, error);
     return { canCreate: false, user: null };
   }
 
@@ -34,11 +33,9 @@ async function canCreateTasks(supabase: any, userId: string): Promise<{ canCreat
 
     isOrgAdmin = userOrgs?.some((uo: any) => uo.role === 'admin') ?? false;
   } catch (e) {
-    console.log('[Tasks API] user_organizations query failed, skipping:', e);
   }
 
   const canCreate = isSuperUser || isTier1 || isOrgAdmin;
-  console.log('[Tasks API] Permission check:', { userId, role: user.role, isSuperUser, isTier1, isOrgAdmin, canCreate });
 
   return { canCreate, user };
 }
@@ -111,7 +108,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Tasks API] GET request for user:', userId);
 
     // Fetch tasks created by this user
     let query = supabase
@@ -254,8 +250,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'At least one assignee is required' }, { status: 400 });
     }
 
-    console.log('[Tasks API] POST request from user:', userId);
-    console.log('[Tasks API] Received assignees:', JSON.stringify(assignees, null, 2));
 
     // Verify user can create tasks
     const { canCreate, user } = await canCreateTasks(supabase, userId);
@@ -293,7 +287,6 @@ export async function POST(request: NextRequest) {
       }
 
       recurrenceId = recurrenceData.id;
-      console.log('[Tasks API] Created recurrence rule:', recurrenceId);
     }
 
     // Determine effective status
@@ -345,12 +338,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: taskError.message }, { status: 500 });
     }
 
-    console.log('[Tasks API] Task created:', task.id, 'with status:', effectiveStatus);
 
     // For scheduled or draft tasks, don't create assignments yet
     // They will be created when the task is dispatched
     if (effectiveStatus !== 'sent') {
-      console.log('[Tasks API] Task is', effectiveStatus, '- assignments will be created on dispatch');
       return NextResponse.json({
         success: true,
         data: task,
@@ -367,12 +358,10 @@ export async function POST(request: NextRequest) {
     if (assignees.user_ids?.length) {
       for (const assigneeId of assignees.user_ids) {
         if (processedUserIds.has(assigneeId)) {
-          console.log('[Tasks API] Skipping duplicate assignee:', assigneeId);
           continue;
         }
 
         const canAssign = isSuperUser || await checkReachability(supabase, userId, assigneeId);
-        console.log('[Tasks API] Assignment check:', { assigneeId, isSuperUser, canAssign });
         if (canAssign) {
           assignmentRecords.push({
             task_id: task.id,
@@ -389,7 +378,6 @@ export async function POST(request: NextRequest) {
 
     // Organization members
     if (assignees.organization_ids?.length) {
-      console.log('[Tasks API] Processing org assignments for orgs:', assignees.organization_ids);
       for (const orgId of assignees.organization_ids) {
         // Get all users in this org (via user_organizations and users.organization_id)
         const { data: orgMembers, error: orgMembersError } = await supabase
@@ -397,20 +385,17 @@ export async function POST(request: NextRequest) {
           .select('user_id')
           .eq('organization_id', orgId);
 
-        console.log('[Tasks API] user_organizations for org', orgId, ':', orgMembers, orgMembersError);
 
         const { data: directMembers, error: directMembersError } = await supabase
           .from('users')
           .select('id')
           .eq('organization_id', orgId);
 
-        console.log('[Tasks API] direct users for org', orgId, ':', directMembers, directMembersError);
 
         const allMemberIds = new Set<string>();
         orgMembers?.forEach((m: any) => allMemberIds.add(m.user_id));
         directMembers?.forEach((m: any) => allMemberIds.add(m.id));
 
-        console.log('[Tasks API] Total members found for org', orgId, ':', allMemberIds.size, Array.from(allMemberIds));
 
         for (const memberId of Array.from(allMemberIds)) {
           if (processedUserIds.has(memberId)) continue;
@@ -476,7 +461,6 @@ export async function POST(request: NextRequest) {
       assignmentsCreated = assignments?.length || 0;
     }
 
-    console.log('[Tasks API] Created', assignmentsCreated, 'assignments');
 
     return NextResponse.json({
       success: true,

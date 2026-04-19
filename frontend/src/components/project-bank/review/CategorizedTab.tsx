@@ -43,7 +43,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     label: "Project",
     render: (p: CategorizedProject) => (
       <div className="min-w-0">
-        <span className="text-sm font-medium">{p.name}</span>{" "}
+        <span className="text-body font-medium">{p.name}</span>{" "}
         <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap inline-block">{p.project_code}</span>
       </div>
     ),
@@ -54,7 +54,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: CategorizedProject) => (
       <div>
         <span>{p.nominating_ministry}</span>
-        {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
+        {p.implementing_agency && <p className="text-helper text-muted-foreground">{p.implementing_agency}</p>}
       </div>
     ),
   },
@@ -64,7 +64,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: CategorizedProject) => (
       <div>
         <span>{p.sector}</span>
-        {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
+        {p.sub_sector && <p className="text-helper text-muted-foreground">{p.sub_sector}</p>}
       </div>
     ),
   },
@@ -135,10 +135,10 @@ function CategorizedKanbanCard({ project, onProfile, onForm }: { project: Catego
       )}
       <div className="relative p-3">
         <div className="min-w-0">
-          <span className="text-sm font-medium">{project.name}</span>{" "}
+          <span className="text-body font-medium">{project.name}</span>{" "}
           <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap inline-block">{project.project_code}</span>
         </div>
-        <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <div className="mt-2 space-y-0.5 text-helper text-muted-foreground">
           <div>
             <span>{project.nominating_ministry}</span>
             {project.implementing_agency && (
@@ -154,7 +154,7 @@ function CategorizedKanbanCard({ project, onProfile, onForm }: { project: Catego
         </div>
         {costParts && (
           <div className="mt-1.5">
-            <span className="text-xs font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
+            <span className="text-helper font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
           </div>
         )}
         <div className="mt-2 flex items-center justify-between">
@@ -164,16 +164,16 @@ function CategorizedKanbanCard({ project, onProfile, onForm }: { project: Catego
           >
             {PROJECT_STAGE_LABELS[project.project_stage]}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             {new Date(project.updated_at).toLocaleDateString()}
           </span>
         </div>
         {expanded && (
           <div className="mt-2 flex items-center gap-1.5 border-t pt-2">
-            <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={e => { e.stopPropagation(); onProfile() }}>
+            <Button variant="outline" size="sm" className="flex-1 h-7 text-helper gap-1" onClick={e => { e.stopPropagation(); onProfile() }}>
               <FileText className="h-3 w-3" /> Profile
             </Button>
-            <Button size="sm" className="flex-1 h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
+            <Button size="sm" className="flex-1 h-7 text-helper gap-1 bg-black hover:bg-black/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
               <ClipboardList className="h-3 w-3" /> Project Appraisal
             </Button>
           </div>
@@ -249,7 +249,7 @@ export function CategorizedTab() {
       {/* Filters + View Toggle */}
       <FilterBar>
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-          <Label className="text-xs text-muted-foreground">Search</Label>
+          <Label className="text-helper text-muted-foreground">Search</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -261,7 +261,7 @@ export function CategorizedTab() {
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <Label className="text-helper text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
@@ -280,7 +280,7 @@ export function CategorizedTab() {
           </Select>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Label className="text-helper text-muted-foreground">Region</Label>
           <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[160px] h-9">
               <SelectValue placeholder="All" />
@@ -292,7 +292,7 @@ export function CategorizedTab() {
           </Select>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Category</Label>
+          <Label className="text-helper text-muted-foreground">Category</Label>
           <Select value={categoryFilter || "all"} onValueChange={v => setCategoryFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[180px] h-9">
               <SelectValue placeholder="All" />
@@ -308,7 +308,7 @@ export function CategorizedTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("kanban")}
-            className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <KanbanSquare className="h-4 w-4" />
           </Button>
@@ -316,7 +316,7 @@ export function CategorizedTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("table")}
-            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <Table2 className="h-4 w-4" />
           </Button>
@@ -331,14 +331,14 @@ export function CategorizedTab() {
             return (
               <div key={col.key} className="flex-1 min-w-[280px]">
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-sm font-semibold">{col.title}</h3>
+                  <h3 className="text-body font-semibold">{col.title}</h3>
                   <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                     {kanbanColumns[col.key].length}
                   </span>
                 </div>
                 <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
                   {filtered.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
+                    <p className="text-helper text-muted-foreground text-center py-8">No projects</p>
                   ) : (
                     filtered.map(p => (
                       <CategorizedKanbanCard
@@ -367,10 +367,10 @@ export function CategorizedTab() {
               label: "",
               render: (p: CategorizedProject) => (
                 <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                  <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => router.push(`/project-bank/${p.id}`)}>
+                  <Button variant="outline" size="sm" className="h-7 text-helper gap-1" onClick={() => router.push(`/project-bank/${p.id}`)}>
                     <FileText className="h-3 w-3" /> Profile
                   </Button>
-                  <Button size="sm" className="h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={() => router.push(`/project-bank/${p.id}/appraisal`)}>
+                  <Button size="sm" className="h-7 text-helper gap-1 bg-black hover:bg-black/90 text-white" onClick={() => router.push(`/project-bank/${p.id}/appraisal`)}>
                     <ClipboardList className="h-3 w-3" /> Project Appraisal
                   </Button>
                 </div>

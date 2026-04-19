@@ -22,7 +22,6 @@ export default function TestFeedbackDebugPage() {
       if (response.ok) {
         const data = await response.json();
         setDebugData(data);
-        console.log('[Debug] Data received:', data);
       } else {
         const error = await response.json();
         toast.error(`Debug check failed: ${error.error}`);
@@ -65,7 +64,6 @@ export default function TestFeedbackDebugPage() {
       }
 
       const uploadData = await uploadResponse.json();
-      console.log('[Test] File uploaded:', uploadData);
 
       // Then submit feedback with attachment
       const feedbackResponse = await apiFetch('/api/feedback', {
@@ -115,7 +113,7 @@ export default function TestFeedbackDebugPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {!user ? (
-            <div className="text-center text-red-600">
+            <div className="text-center text-destructive">
               Please log in to test feedback attachments
             </div>
           ) : (
@@ -134,7 +132,7 @@ export default function TestFeedbackDebugPage() {
                   </Button>
                   
                   {debugData && (
-                    <div className="bg-gray-50 p-4 rounded-lg text-sm">
+                    <div className="bg-muted p-4 rounded-lg text-body">
                       <h4 className="font-medium mb-2">Summary:</h4>
                       <ul className="space-y-1">
                         <li>• Attachment columns exist: {debugData.summary.hasAttachmentColumns ? '✅ Yes' : '❌ No'}</li>
@@ -145,7 +143,7 @@ export default function TestFeedbackDebugPage() {
                       {debugData.feedbackWithAttachments.length > 0 && (
                         <div className="mt-3">
                           <h4 className="font-medium mb-2">Sample Attachment Data:</h4>
-                          <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+                          <pre className="text-helper bg-white p-2 rounded border overflow-auto">
                             {JSON.stringify(debugData.feedbackWithAttachments[0], null, 2)}
                           </pre>
                         </div>
@@ -162,12 +160,12 @@ export default function TestFeedbackDebugPage() {
                       type="file"
                       onChange={handleFileSelect}
                       accept="image/*,.pdf,.txt,.doc,.docx"
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="block w-full text-body text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-body file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
                     
                     {selectedFile && (
                       <div className="bg-blue-50 p-3 rounded-lg">
-                        <p className="text-sm">
+                        <p className="text-body">
                           <strong>Selected:</strong> {selectedFile.name} 
                           ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
                         </p>
@@ -199,9 +197,9 @@ export default function TestFeedbackDebugPage() {
               {debugData && (
                 <div>
                   <h3 className="font-medium mb-3">Raw Debug Data</h3>
-                  <details className="bg-gray-50 p-4 rounded-lg">
+                  <details className="bg-muted p-4 rounded-lg">
                     <summary className="cursor-pointer font-medium">Click to expand</summary>
-                    <pre className="text-xs mt-2 overflow-auto">
+                    <pre className="text-helper mt-2 overflow-auto">
                       {JSON.stringify(debugData, null, 2)}
                     </pre>
                   </details>

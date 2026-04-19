@@ -103,7 +103,7 @@ export function AutosaveSelect({
         isSaved={shouldShowSaved()}
         hasValue={hasValue}
         isFocused={isFocused}
-        className="text-gray-700"
+        className="text-foreground"
       >
         <div className="flex items-center gap-2">
           <span>
@@ -132,7 +132,7 @@ export function AutosaveSelect({
           </SelectContent>
         </Select>
         {autosaveState.error && (
-          <p className="text-xs text-red-600 mt-1">{autosaveState.error.toString()}</p>
+          <p className="text-helper text-destructive mt-1">{autosaveState.error.toString()}</p>
         )}
       </div>
     </div>

@@ -16,14 +16,12 @@ export async function POST(
 
   try {
     const { id } = await params;
-    console.log('[Upload API] Starting upload for activity:', id);
     if (!supabase) {
       console.error('[Upload API] Failed to get Supabase admin client');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
     const { id: activityId } = await params;
-    console.log('[Upload API] Activity ID:', activityId);
 
     // TODO: Add authentication when auth pattern is established
     const user = { id: 'system' }; // Temporary user for development
@@ -88,7 +86,6 @@ export async function POST(
 
     // Simplified permission check - allow all authenticated users for now
     // TODO: Implement proper permission checking later
-    console.log('Activity found:', activity.id);
 
     // Generate unique filename and storage path
     const timestamp = Date.now();
@@ -98,7 +95,6 @@ export async function POST(
     const storagePath = `${activityId}/${uniqueId}.${fileExtension}`;
     const originalStoragePath = `${activityId}/originals/${uniqueId}_${sanitizedFileName}`;
 
-    console.log('[Upload API] Uploading to storage path:', storagePath);
     
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -116,7 +112,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[Upload API] File uploaded successfully:', uploadData);
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
@@ -192,7 +187,6 @@ export async function POST(
       documentData.thumbnail_url = thumbnailUrl;
     }
 
-    console.log('[Upload API] Inserting document record:', documentData);
 
     const { data: document, error: dbError } = await supabase
       .from('activity_documents')

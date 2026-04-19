@@ -863,7 +863,6 @@ export default function TransactionModal({
   const generateTransactionReference = async () => {
     setIsGeneratingReference(true);
     try {
-      console.log('[TransactionModal] Generating transaction reference for activity:', activityId);
       
       // Generate a highly unique reference using multiple factors
       const timestamp = Date.now();
@@ -873,7 +872,6 @@ export default function TransactionModal({
       
       const reference = `${activityPartnerId || 'TXN'}-TRANS-${timestamp}-${microseconds}-${random}-${userSuffix}`;
       
-      console.log('[TransactionModal] Generated reference:', reference);
       return reference;
     } catch (error) {
       console.error('[TransactionModal] Error generating transaction reference:', error);
@@ -1071,7 +1069,6 @@ export default function TransactionModal({
   const handleSubmit = async (statusOverride?: string) => {
     // Prevent concurrent submissions using ref to avoid race conditions
     if (isSubmittingRef.current || isSubmitting || isInternallySubmitting) {
-      console.log('[TransactionModal] Submission already in progress, ignoring duplicate call');
       return;
     }
 
@@ -1083,7 +1080,6 @@ export default function TransactionModal({
 
     // Wait for any in-progress autosave creation to complete
     if (isCreatingRef.current) {
-      console.log('[TransactionModal] Waiting for autosave to complete...');
       // Wait a bit for the autosave to finish
       await new Promise(resolve => setTimeout(resolve, 600));
     }
@@ -1158,14 +1154,12 @@ export default function TransactionModal({
       
       // If we have an autosaved transaction, update it instead of creating a new one
       if (createdTransactionId) {
-        console.log('[TransactionModal] Updating autosaved transaction:', createdTransactionId);
         response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: createdTransactionId })
         });
       } else if (isEditing && (transaction?.uuid || transaction?.id)) {
-        console.log('[TransactionModal] Updating existing transaction:', transaction.uuid || transaction.id);
         // Update existing transaction (edit mode)
         response = await apiFetch('/api/transactions', {
           method: 'PUT',
@@ -1173,7 +1167,6 @@ export default function TransactionModal({
           body: JSON.stringify({ ...submissionData, id: transaction.uuid || transaction.id })
         });
       } else {
-        console.log('[TransactionModal] Creating new transaction');
         // Create new transaction
         response = await apiFetch('/api/transactions', {
           method: 'POST',
@@ -1284,9 +1277,9 @@ export default function TransactionModal({
 
   // Add missing imports and components needed
   const LabelSaveIndicator = ({ children, isSaving, isSaved }: { children: React.ReactNode; isSaving?: boolean; isSaved?: boolean }) => (
-    <Label className="text-sm font-medium flex items-center gap-2">
+    <Label className="text-body font-medium flex items-center gap-2">
       {children}
-      {isSaving && <span className="text-xs text-blue-500">(saving...)</span>}
+      {isSaving && <span className="text-helper text-blue-500">(saving...)</span>}
       {isSaved && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
     </Label>
   );
@@ -1295,7 +1288,7 @@ export default function TransactionModal({
 
   const CopyField = ({ label, value, placeholder }: any) => (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-body font-medium">{label}</Label>
       <Input value={value} placeholder={placeholder} readOnly />
     </div>
   );
@@ -1331,7 +1324,7 @@ export default function TransactionModal({
   );
 
   const FieldDescription = ({ children }: { children: React.ReactNode }) => (
-    <p className="text-xs text-muted-foreground mt-1">{children}</p>
+    <p className="text-helper text-muted-foreground mt-1">{children}</p>
   );
 
   // Enhanced constants with descriptions
@@ -1489,7 +1482,6 @@ export default function TransactionModal({
     createTransactionTimeoutRef.current = setTimeout(async () => {
       // Prevent concurrent requests
       if (isCreatingRef.current) {
-        console.log('[TransactionModal] Skipping concurrent autosave request');
         return;
       }
       
@@ -1778,7 +1770,7 @@ export default function TransactionModal({
                                     {opt.name}
                                   </span>
                                 </div>
-                                <div className="text-sm text-muted-foreground pl-10 leading-relaxed w-full">
+                                <div className="text-body text-muted-foreground pl-10 leading-relaxed w-full">
                                   {opt.desc}
                                 </div>
                               </CommandItem>
@@ -1796,10 +1788,10 @@ export default function TransactionModal({
                             );
                           }).length === 0 && (
                             <div className="py-8 text-center">
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-body text-muted-foreground">
                                 No transaction types found.
                               </div>
-                              <div className="text-xs text-muted-foreground mt-1">
+                              <div className="text-helper text-muted-foreground mt-1">
                                 Try adjusting your search terms
                               </div>
                             </div>
@@ -1811,7 +1803,7 @@ export default function TransactionModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium">
+                  <Label htmlFor="status" className="text-body font-medium">
                     Validation Status
                     <InfoTooltip text="Indicates whether this transaction has been reviewed and validated by an authorized user" />
                   </Label>
@@ -1830,7 +1822,7 @@ export default function TransactionModal({
                           }}
                           className="h-5 w-5"
                         />
-                        <Label htmlFor="validated" className="text-sm font-medium cursor-pointer flex items-center gap-1">
+                        <Label htmlFor="validated" className="text-body font-medium cursor-pointer flex items-center gap-1">
                           Mark as Validated
                           <InfoTooltip text="Check this box to mark the transaction as validated and approved" />
                         </Label>
@@ -1838,7 +1830,7 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual'
                           ? 'bg-green-700 text-white'
-                          : 'bg-muted text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
@@ -1847,17 +1839,17 @@ export default function TransactionModal({
                     // Read-only status display for users without permission
                     <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-muted/50 px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-500">
+                        <span className="text-body font-medium text-muted-foreground">
                           {formData.status === 'actual' ? 'Validated Transaction' : 'Pending Validation'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-helper text-muted-foreground">
                           Transaction is pending validation by relevant government focal points
                         </span>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
                           ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-                          : 'bg-muted text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Pending'}
                       </div>
@@ -1968,7 +1960,7 @@ export default function TransactionModal({
                       isSaving={valueDateAutosave.isSaving}
                       isSaved={valueDateAutosave.isSaved}
                       hasValue={!!formData.value_date}
-                      className="text-sm font-medium"
+                      className="text-body font-medium"
                     >
                       Value Date
                     </LabelWithInfoAndSave>
@@ -1988,7 +1980,7 @@ export default function TransactionModal({
                       />
                       <Label
                         htmlFor="fx_date_different"
-                        className="text-sm font-normal cursor-pointer text-muted-foreground"
+                        className="text-body font-normal cursor-pointer text-muted-foreground"
                       >
                         FX settlement date is different
                       </Label>
@@ -2022,7 +2014,7 @@ export default function TransactionModal({
                     </LabelWithInfoAndSave>
                     {formData.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="exchange_rate_mode" className={cn("text-sm font-normal cursor-pointer", exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
+                        <Label htmlFor="exchange_rate_mode" className={cn("text-body font-normal cursor-pointer", exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                           {exchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
@@ -2070,16 +2062,16 @@ export default function TransactionModal({
                       </Button>
                     )}
                     {exchangeRate != null && formData.currency !== 'USD' && !isLoadingRate && (
-                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                      <span className="absolute right-10 top-2.5 text-helper text-muted-foreground select-all cursor-text">
                         1 {formData.currency} = {exchangeRate.toFixed(6)} USD
                       </span>
                     )}
                   </div>
                   {rateError && (
-                    <p className="text-xs text-red-500">{rateError}</p>
+                    <p className="text-helper text-destructive">{rateError}</p>
                   )}
                   {rateInfoMessage && !rateError && (
-                    <p className="text-xs text-muted-foreground">{rateInfoMessage}</p>
+                    <p className="text-helper text-muted-foreground">{rateInfoMessage}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -2093,7 +2085,7 @@ export default function TransactionModal({
                       USD Value
                     </LabelWithInfoAndSave>
                   </div>
-                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-body">
                     {calculatedUsdValue !== null ? (
                       <>$ {calculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                     ) : (
@@ -2169,7 +2161,7 @@ export default function TransactionModal({
                         <div className="text-sm font-medium text-foreground truncate font-mono">
                           {formData.provider_org_activity_id}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-helper text-muted-foreground">
                           IATI reference - not linked to database
                         </div>
                       </div>
@@ -2180,7 +2172,7 @@ export default function TransactionModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-7 text-xs"
+                        className="h-7 text-helper"
                         onClick={async () => {
                           setIsCheckingProviderActivity(true);
                           try {
@@ -2368,7 +2360,7 @@ export default function TransactionModal({
                         <div className="text-sm font-medium text-foreground truncate font-mono">
                           {formData.receiver_org_activity_id}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-helper text-muted-foreground">
                           IATI reference - not linked to database
                         </div>
                       </div>
@@ -2378,7 +2370,7 @@ export default function TransactionModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-7 text-xs"
+                        className="h-7 text-helper"
                         onClick={async () => {
                           setIsCheckingReceiverActivity(true);
                           try {
@@ -2568,12 +2560,12 @@ export default function TransactionModal({
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {formData.disbursement_channel}
                               </span>
-                              <span className="text-sm truncate">
+                              <span className="text-body truncate">
                                 {DISBURSEMENT_CHANNELS_WITH_DESC[formData.disbursement_channel]?.label}
                               </span>
                             </span>
                           ) : (
-                            <span className="text-muted-foreground text-sm">Select disbursement channel</span>
+                            <span className="text-muted-foreground text-body">Select disbursement channel</span>
                           )}
                         </span>
                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2 mt-0.5" />
@@ -2614,11 +2606,11 @@ export default function TransactionModal({
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded min-w-[28px] text-center flex-shrink-0">
                                     {code}
                                   </span>
-                                  <span className="text-sm text-foreground">
+                                  <span className="text-body text-foreground">
                                     {option.label}
                                   </span>
                                 </div>
-                                <div className="text-xs text-muted-foreground pl-10 leading-relaxed w-full">
+                                <div className="text-helper text-muted-foreground pl-10 leading-relaxed w-full">
                                   {option.desc}
                                 </div>
                               </CommandItem>
@@ -2636,10 +2628,10 @@ export default function TransactionModal({
                           );
                         }).length === 0 && (
                           <div className="py-8 text-center">
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-body text-muted-foreground">
                               No disbursement channels found.
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="text-helper text-muted-foreground mt-1">
                               Try adjusting your search terms
                             </div>
                           </div>
@@ -2733,19 +2725,19 @@ export default function TransactionModal({
                   </LabelWithInfoAndSave>
                   <div className={cn(
                     "flex items-center justify-between h-10 px-3 border rounded-md",
-                    formData.is_humanitarian && "border-red-200 bg-red-50"
+                    formData.is_humanitarian && "border-destructive/30 bg-destructive/10"
                   )}>
                     <span className={cn(
-                      "text-sm flex items-center gap-1.5",
-                      formData.is_humanitarian ? "text-red-700 font-medium" : "text-muted-foreground"
+                      "text-body flex items-center gap-1.5",
+                      formData.is_humanitarian ? "text-destructive font-medium" : "text-muted-foreground"
                     )}>
-                      {formData.is_humanitarian && <Flag className="h-3.5 w-3.5 text-red-500" />}
+                      {formData.is_humanitarian && <Flag className="h-3.5 w-3.5 text-destructive" />}
                       {formData.is_humanitarian ? 'Yes — humanitarian transaction' : 'No'}
                     </span>
                     <Switch
                       id="is_humanitarian"
                       checked={formData.is_humanitarian}
-                      className={cn(formData.is_humanitarian && "data-[state=checked]:bg-red-500")}
+                      className={cn(formData.is_humanitarian && "data-[state=checked]:bg-destructive/100")}
                       onCheckedChange={checked => {
                         setFormData({ ...formData, is_humanitarian: checked });
                         humanitarianAutosave.triggerFieldSave(checked);
@@ -2768,11 +2760,11 @@ export default function TransactionModal({
                       </div>
                       <div>
                         <h3 className="font-semibold">Upload Transaction Evidence</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-body text-muted-foreground mt-1">
                           Drag and drop documents here, or click to browse
                         </p>
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-helper text-muted-foreground">
                         <p>Supported: PDF, Images, Excel, Word, CSV (Max 50MB each)</p>
                         <p>Maximum 10 documents per transaction</p>
                       </div>
@@ -2781,7 +2773,7 @@ export default function TransactionModal({
                       </Button>
                     </div>
                   </div>
-                  {creationError && <p className="text-destructive text-sm text-center mt-2">{creationError}</p>}
+                  {creationError && <p className="text-destructive text-body text-center mt-2">{creationError}</p>}
                 </div>
               ) : (
                 <TransactionDocumentUpload
@@ -2799,7 +2791,7 @@ export default function TransactionModal({
             {/* Advanced Fields */}
             <div
               onClick={() => setShowAdvancedFields(!showAdvancedFields)}
-              className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              className="flex items-center justify-center gap-2 cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors py-2"
             >
               <span>Advanced Fields</span>
               {showAdvancedFields ? (
@@ -2821,9 +2813,9 @@ export default function TransactionModal({
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
-                        <span className="text-sm font-medium text-gray-700">Geographic Targeting</span>
+                        <span className="text-body font-medium text-foreground">Geographic Targeting</span>
                         {hasGeographicTargeting && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-helper">
                             {formData.recipient_country_code
                               ? IATI_COUNTRIES.find(c => c.code === formData.recipient_country_code)?.name || formData.recipient_country_code
                               : IATI_REGIONS.find(r => r.code === formData.recipient_region_code)?.name || formData.recipient_region_code
@@ -2831,7 +2823,7 @@ export default function TransactionModal({
                           </Badge>
                         )}
                       </div>
-                      <Badge variant="outline" className="text-xs text-gray-500">
+                      <Badge variant="outline" className="text-helper text-muted-foreground">
                         {geographyLevel === 'activity' ? 'Activity level' : 'Transaction level'}
                       </Badge>
                     </div>
@@ -2841,7 +2833,7 @@ export default function TransactionModal({
                   <div className="space-y-4 p-4 border-t">
                     {/* Activity-level geography message */}
                     {geographyLevel === 'activity' && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         Geography is set at the activity level. Transaction-level geographic targeting is disabled.
                         To change this, go to the{' '}
                         <button
@@ -2860,7 +2852,7 @@ export default function TransactionModal({
                     {/* Transaction-level geography form */}
                     {geographyLevel === 'transaction' && (
                       <>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-helper text-muted-foreground">
                           Per IATI standard, each transaction can have one country OR one region (not both).
                         </p>
 
@@ -2883,7 +2875,7 @@ export default function TransactionModal({
                               className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
-                            <span className="text-sm text-gray-600">Activity-level default</span>
+                            <span className="text-body text-muted-foreground">Activity-level default</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -2901,7 +2893,7 @@ export default function TransactionModal({
                               className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
-                            <span className="text-sm">Country</span>
+                            <span className="text-body">Country</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -2918,7 +2910,7 @@ export default function TransactionModal({
                               className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
-                            <span className="text-sm">Region</span>
+                            <span className="text-body">Region</span>
                           </label>
                         </div>
 
@@ -3069,12 +3061,12 @@ export default function TransactionModal({
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
-                        <span className="text-sm font-medium text-gray-700">Sector Classifications</span>
+                        <span className="text-body font-medium text-foreground">Sector Classifications</span>
                         {activitySectors.length === 0 && multipleSectorsCount > 0 && (
-                          <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
+                          <Badge variant="secondary" className="text-helper">{multipleSectorsCount}</Badge>
                         )}
                       </div>
-                      <Badge variant="outline" className="text-xs text-gray-500">
+                      <Badge variant="outline" className="text-helper text-muted-foreground">
                         {activitySectors.length > 0 ? 'Activity level' : 'Transaction level'}
                       </Badge>
                     </div>
@@ -3085,7 +3077,7 @@ export default function TransactionModal({
                     {/* Activity-level sectors: read-only display */}
                     {activitySectors.length > 0 && (
                       <>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-helper text-muted-foreground">
                           Sectors are set at the activity level. Transaction-level sector classification is disabled.
                           To change this, go to the{' '}
                           <button
@@ -3099,8 +3091,8 @@ export default function TransactionModal({
                             Sectors tab
                           </button>.
                         </p>
-                        <div className="p-3 bg-white rounded-md border border-gray-200">
-                          <table className="w-full text-xs">
+                        <div className="p-3 bg-white rounded-md border border-border">
+                          <table className="w-full text-helper">
                             <thead className="bg-surface-muted">
                               <tr className="text-muted-foreground border-b">
                                 <th className="text-left py-1 font-medium">Sector</th>
@@ -3164,7 +3156,7 @@ export default function TransactionModal({
                     {/* No activity-level sectors: allow transaction-level entry */}
                     {activitySectors.length === 0 && (
                       <div>
-                        <p className="text-xs text-gray-600 mb-3">
+                        <p className="text-helper text-muted-foreground mb-3">
                           No sectors are defined at the activity level. You can specify sector allocations for this transaction below.
                           Percentages must sum to 100%.
                         </p>
@@ -3193,16 +3185,16 @@ export default function TransactionModal({
                   >
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleAidTypes && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Multiple Aid Types</span>
+                      <span className="text-body font-medium text-foreground">Multiple Aid Types</span>
                       {multipleAidTypesCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">{multipleAidTypesCount}</Badge>
+                        <Badge variant="secondary" className="text-helper">{multipleAidTypesCount}</Badge>
                       )}
                     </div>
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="space-y-4 p-4 border-t">
-                    <p className="text-xs text-gray-600">
+                    <p className="text-helper text-muted-foreground">
                       Specify multiple aid type classifications with different vocabularies.
                     </p>
                     <TransactionAidTypeManager
@@ -3224,7 +3216,7 @@ export default function TransactionModal({
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown className={cn("h-4 w-4 transition-transform", showSystemIdentifiers && "rotate-180")} />
-                    <span className="text-sm font-medium text-gray-700">System Identifiers</span>
+                    <span className="text-body font-medium text-foreground">System Identifiers</span>
                   </div>
                 </button>
               </CollapsibleTrigger>
@@ -3232,9 +3224,9 @@ export default function TransactionModal({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-t">
                 {/* Activity ID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Activity ID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
-                    <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
+                  <label className="text-body font-medium text-foreground">Activity ID</label>
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
+                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
                       {activityPartnerId || 'Not reported'}
                     </span>
                     {activityPartnerId && (
@@ -3248,7 +3240,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Activity ID to clipboard"
                       >
                         <Copy className="h-4 w-4" />
@@ -3259,9 +3251,9 @@ export default function TransactionModal({
 
                 {/* Activity UUID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Activity UUID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
-                    <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
+                  <label className="text-body font-medium text-foreground">Activity UUID</label>
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
+                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
                       {activityId || 'Not available'}
                     </span>
                     {activityId && (
@@ -3275,7 +3267,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Activity UUID to clipboard"
                       >
                         <Copy className="h-4 w-4" />
@@ -3286,13 +3278,13 @@ export default function TransactionModal({
 
                 {/* Transaction ID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Transaction ID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <label className="text-body font-medium text-foreground">Transaction ID</label>
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
                     <input
                       value={formData.transaction_reference || ''}
                       onChange={e => handleFieldChange('transaction_reference', e.target.value)}
                       placeholder="Will be auto-generated on save"
-                      className="border-0 bg-transparent p-0 text-sm text-gray-600 placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
+                      className="border-0 bg-transparent p-0 text-sm text-muted-foreground placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
                     />
                     {formData.transaction_reference && (
                       <button
@@ -3305,7 +3297,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Transaction ID to clipboard"
                       >
                         <Copy className="h-4 w-4" />
@@ -3316,9 +3308,9 @@ export default function TransactionModal({
 
                 {/* Transaction UUID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Transaction UUID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
-                    <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
+                  <label className="text-body font-medium text-foreground">Transaction UUID</label>
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
+                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
                       {transaction?.uuid || 'Generated after save'}
                     </span>
                     {transaction?.uuid && (
@@ -3332,7 +3324,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Transaction UUID to clipboard"
                       >
                         <Copy className="h-4 w-4" />

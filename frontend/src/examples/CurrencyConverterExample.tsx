@@ -180,7 +180,7 @@ export function CurrencyConverterExample() {
     return (
       <div className="p-8 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading currency converter example...</p>
+        <p className="mt-4 text-muted-foreground">Loading currency converter example...</p>
       </div>
     );
   }
@@ -188,8 +188,8 @@ export function CurrencyConverterExample() {
   return (
     <div className="space-y-6 p-6">
       <div className="border-b pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Currency Converter Integration Example</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-2xl font-bold text-foreground">Currency Converter Integration Example</h1>
+        <p className="text-muted-foreground mt-2">
           This example demonstrates how to integrate the historical currency converter with transaction displays.
         </p>
       </div>
@@ -198,19 +198,19 @@ export function CurrencyConverterExample() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-          <div className="text-sm text-blue-600">Total Transactions</div>
+          <div className="text-body text-blue-600">Total Transactions</div>
         </div>
         <div className="bg-green-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-green-600">{stats.converted}</div>
-          <div className="text-sm text-green-600">Converted to USD</div>
+          <div className="text-body text-green-600">Converted to USD</div>
         </div>
         <div className="bg-yellow-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-          <div className="text-sm text-yellow-600">Pending Conversion</div>
+          <div className="text-body text-yellow-600">Pending Conversion</div>
         </div>
-        <div className="bg-red-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-red-600">{stats.unconvertible}</div>
-          <div className="text-sm text-red-600">Unconvertible</div>
+        <div className="bg-destructive/10 rounded-lg p-4">
+          <div className="text-2xl font-bold text-destructive">{stats.unconvertible}</div>
+          <div className="text-body text-destructive">Unconvertible</div>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ export function CurrencyConverterExample() {
                 <h3 className="font-medium">
                   {transaction.provider_org_name} → {transaction.receiver_org_name}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-body text-muted-foreground">
                   Transaction Date: {new Date(transaction.transaction_date).toLocaleDateString()}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export function CurrencyConverterExample() {
 
             {/* Full Display */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Full Display Mode:</h4>
+              <h4 className="text-body font-medium text-foreground mb-2">Full Display Mode:</h4>
               <TransactionValueDisplay
                 transaction={transaction}
                 onConvert={handleConvertTransaction}
@@ -268,7 +268,7 @@ export function CurrencyConverterExample() {
 
             {/* Compact Display */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Compact Display Mode:</h4>
+              <h4 className="text-body font-medium text-foreground mb-2">Compact Display Mode:</h4>
               <TransactionValueDisplay
                 transaction={transaction}
                 onConvert={handleConvertTransaction}
@@ -299,9 +299,9 @@ export function CurrencyConverterExample() {
       </div>
 
       {/* Integration Notes */}
-      <div className="bg-gray-50 rounded-lg p-6">
+      <div className="bg-muted rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">Integration Notes</h2>
-        <div className="space-y-3 text-sm">
+        <div className="space-y-3 text-body">
           <div>
             <strong>1. Currency Converter Service:</strong> Located at <code>/lib/currency-converter.ts</code>
           </div>

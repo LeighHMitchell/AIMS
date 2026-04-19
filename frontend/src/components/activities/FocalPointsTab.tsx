@@ -9,13 +9,14 @@ import { useUser } from '@/hooks/useUser';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
-import { 
-  UserPlus, 
-  HandPlatter, 
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import {
+  UserPlus,
+  ArrowRightLeft,
   Check,
   CheckCircle,
   X,
-  Users, 
+  Users,
   Building2,
   AlertCircle,
   Loader2,
@@ -159,11 +160,11 @@ export default function FocalPointsTab({
   const handleRemove = async (focalPoint: FocalPoint) => {
     if (!user) return;
     
-    const confirmMessage = focalPoint.email === user.email 
-      ? 'Are you sure you want to remove yourself as focal point?'
-      : `Are you sure you want to remove ${focalPoint.name} as focal point?`;
-    
-    if (!(await confirm({ title: 'Remove focal point?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
+    const confirmMessage = focalPoint.email === user.email
+      ? "Remove yourself as focal point? You'll have a moment to undo, and you can reassign this role to someone else."
+      : `Remove ${focalPoint.name} as focal point? You'll have a moment to undo.`;
+
+    if (!(await confirm({ title: 'Remove focal point?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Keep', destructive: true }))) return;
 
     setActionLoading(`remove-${focalPoint.id}`);
     try {
@@ -183,11 +184,32 @@ export default function FocalPointsTab({
         throw new Error(error.error || 'Failed to remove focal point');
       }
 
-      toast.success('Focal point removed');
+      const restoreFocalPoint = async () => {
+        try {
+          const res = await apiFetch(`/api/activities/${activityId}/focal-points`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: focalPoint.id,
+              type: focalPoint.type,
+              action: 'assign',
+              current_user_id: user.id,
+            }),
+          });
+          if (!res.ok) throw new Error('Failed to restore focal point');
+          toast.success('Focal point restored');
+          fetchFocalPoints();
+        } catch {
+          toast.error("Couldn't restore the focal point. Please reassign manually.");
+        }
+      };
+      toast.success(`Removed ${focalPoint.name} as focal point`, {
+        action: { label: 'Undo', onClick: restoreFocalPoint },
+      });
       fetchFocalPoints();
     } catch (error) {
       console.error('Error removing focal point:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to remove focal point');
+      toast.error("Couldn't remove the focal point. Please try again in a moment.");
     } finally {
       setActionLoading(null);
     }
@@ -343,7 +365,7 @@ export default function FocalPointsTab({
       : focalPoint.organization?.name || focalPoint.organisation || '';
 
     return (
-      <div key={focalPoint.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+      <div key={focalPoint.id} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
         {/* Top: Avatar + Name + Status */}
         <div className="flex items-start gap-3">
           <UserAvatar
@@ -355,26 +377,26 @@ export default function FocalPointsTab({
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-slate-900">{displayName}</span>
+              <span className="text-body font-medium text-foreground">{displayName}</span>
               {isCurrentUserFocalPoint(focalPoint) && (
-                <Badge variant="secondary" className="text-xs bg-slate-100">You</Badge>
+                <Badge variant="secondary" className="text-helper bg-muted">You</Badge>
               )}
               {getStatusBadge(focalPoint.status)}
             </div>
             {(focalPoint.job_title || focalPoint.department) && (
-              <div className="text-xs text-slate-500 mt-0.5">
+              <div className="text-helper text-muted-foreground mt-0.5">
                 {[focalPoint.job_title, focalPoint.department].filter(Boolean).join(' · ')}
               </div>
             )}
             {orgDisplay && (
-              <div className="text-xs text-slate-500">{orgDisplay}</div>
+              <div className="text-helper text-muted-foreground">{orgDisplay}</div>
             )}
           </div>
         </div>
 
         {/* Bottom: Assigned info + Actions */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-          <div className="text-xs text-slate-400">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+          <div className="text-helper text-muted-foreground">
             {focalPoint.assigned_by_name && (
               <span>Assigned by {focalPoint.assigned_by_name}</span>
             )}
@@ -398,7 +420,7 @@ export default function FocalPointsTab({
                   {isLoading && actionLoading?.startsWith('handoff') ? (
                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                   ) : (
-                    <HandPlatter className="h-4 w-4 mr-1" />
+                    <ArrowRightLeft className="h-4 w-4 mr-1" />
                   )}
                   Handoff
                 </Button>
@@ -407,7 +429,7 @@ export default function FocalPointsTab({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 backdrop-blur-sm bg-white/50 rounded-full"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => handleRemove(focalPoint)}
                   disabled={isLoading}
                   title="Remove focal point"
@@ -415,7 +437,7 @@ export default function FocalPointsTab({
                   {isLoading && actionLoading?.startsWith('remove') ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   )}
                 </Button>
               )}
@@ -447,7 +469,7 @@ export default function FocalPointsTab({
               <h3 className="font-semibold text-yellow-800 mb-1">
                 Pending {typeLabel} Handoff
               </h3>
-              <p className="text-sm text-yellow-700 mb-4">
+              <p className="text-body text-yellow-700 mb-4">
                 {pendingHandoff.handed_off_by_name || 'Someone'} wants to hand off 
                 the {typeLabel} role to you for this activity.
               </p>
@@ -488,8 +510,8 @@ export default function FocalPointsTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-        <span className="ml-2 text-slate-500">Loading focal points...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading focal points...</span>
       </div>
     );
   }
@@ -528,14 +550,20 @@ export default function FocalPointsTab({
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Building2 className="h-5 w-5 text-slate-600" />
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
                   Government Focal Points
                   {governmentFocalPoints.length > 0 && (
                     <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                   )}
+                  <HelpTextTooltip>
+                    Government officials who can review, endorse, and approve this
+                    activity. They'll receive notifications when updates need their
+                    attention. You can assign multiple focal points, and the role
+                    can be handed off to another person at any time.
+                  </HelpTextTooltip>
                 </CardTitle>
-                <CardDescription className="text-xs mt-1.5">
+                <CardDescription className="text-helper mt-1.5">
                   Government officials responsible for reviewing, endorsing, and approving this activity.
                 </CardDescription>
               </div>
@@ -549,10 +577,10 @@ export default function FocalPointsTab({
           </CardHeader>
           <CardContent>
             {governmentFocalPoints.length === 0 ? (
-              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
+              <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-key-ornate.webp" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">No government focal points</p>
-                <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
+                <p className="text-base font-medium">No government focal points</p>
+                <p className="text-body text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -567,14 +595,20 @@ export default function FocalPointsTab({
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="h-5 w-5 text-slate-600" />
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                  <Users className="h-5 w-5 text-muted-foreground" />
                   Development Partner Focal Points
                   {developmentPartnerFocalPoints.length > 0 && (
                     <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                   )}
+                  <HelpTextTooltip>
+                    Staff from the funding or implementing organisation who own the
+                    day-to-day information for this activity. They'll be the main
+                    point of contact for updates and questions, and will receive
+                    notifications about activity changes.
+                  </HelpTextTooltip>
                 </CardTitle>
-                <CardDescription className="text-xs mt-1.5">
+                <CardDescription className="text-helper mt-1.5">
                   Main contacts responsible for updating and managing the activity information.
                 </CardDescription>
               </div>
@@ -588,10 +622,10 @@ export default function FocalPointsTab({
           </CardHeader>
           <CardContent>
             {developmentPartnerFocalPoints.length === 0 ? (
-              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
+              <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-key-modern.webp" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">No development partner focal points</p>
-                <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
+                <p className="text-base font-medium">No development partner focal points</p>
+                <p className="text-body text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">

@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[Import as Reporting Org] 🚀 POST handler called');
   const homeCountryCode = await getSystemHomeCountry(supabase);
   try {
     const { xmlContent, userId, userRole, replaceActivityIds, activityId, fields, iati_data, selectedReportingOrgId, acronyms } = await request.json();
@@ -140,7 +139,6 @@ export async function POST(request: NextRequest) {
       const blob = new Blob([xmlContent], { type: 'text/xml' });
       const file = new File([blob], 'import.xml', { type: 'text/xml' });
       meta = await extractIatiMeta(file);
-      console.log('[Import as Reporting Org] Extracted meta:', meta);
     } catch (error) {
       console.error('[Import as Reporting Org] Parse error:', error);
       if (error instanceof IatiParseError) {
@@ -240,7 +238,6 @@ export async function POST(request: NextRequest) {
     }
 
     const xmlActivities = ensureArray(iatiActivities['iati-activity']);
-    console.log(`[Import as Reporting Org] Found ${xmlActivities.length} activities in XML`);
 
     // Parse activities to extract basic info
     const activities = [];
@@ -351,7 +348,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[Import as Reporting Org] Parsed ${activities.length} activities`);
 
     // Check for duplicates and collect them with details
     const skippedIdentifiers: string[] = [];
@@ -367,7 +363,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (existing) {
-        console.log(`[Import as Reporting Org] Found duplicate: ${iatiIdentifier}`);
         duplicates.push({
           iatiIdentifier,
           existingId: existing.id,
@@ -376,7 +371,6 @@ export async function POST(request: NextRequest) {
         
         // If this activity ID is in the replace list, delete it first
         if (replaceActivityIds && Array.isArray(replaceActivityIds) && replaceActivityIds.includes(existing.id)) {
-          console.log(`[Import as Reporting Org] Replacing existing activity: ${existing.id}`);
           const { error: deleteError } = await supabase
             .from('activities')
             .delete()
@@ -388,10 +382,8 @@ export async function POST(request: NextRequest) {
             skippedIdentifiers.push(iatiIdentifier);
             continue;
           } else {
-            console.log(`[Import as Reporting Org] Deleted existing activity: ${existing.id}`);
             // Now we can import this one
             activitiesToImport.push({ iatiIdentifier, activityData });
-            console.log(`[Import as Reporting Org] Added ${iatiIdentifier} to import list after deletion`);
             continue;
           }
         } else {
@@ -405,7 +397,6 @@ export async function POST(request: NextRequest) {
 
     // If duplicates found and no activities to import (and no replacements requested), return duplicate info
     if (duplicates.length > 0 && activitiesToImport.length === 0 && (!replaceActivityIds || replaceActivityIds.length === 0)) {
-      console.log(`[Import as Reporting Org] All activities are duplicates`);
       return NextResponse.json({
         success: false,
         hasDuplicates: true,
@@ -414,8 +405,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Import as Reporting Org] Importing ${activitiesToImport.length} activities, skipping ${skippedIdentifiers.length} duplicates`);
-    console.log(`[Import as Reporting Org] Activities to import:`, activitiesToImport.map(a => a.iatiIdentifier));
 
     // Check if reporting organization exists, create if it doesn't
     let reportingOrgId: string | null = null;
@@ -432,7 +421,6 @@ export async function POST(request: NextRequest) {
 
     // If user selected a reporting org in the modal, use it
     if (selectedReportingOrgId) {
-      console.log(`[Import as Reporting Org] ✅ Using user-selected reporting org ID: ${selectedReportingOrgId}`);
       const { data: selectedOrg, error: selectedOrgError } = await supabase
         .from('organizations')
         .select('id, name, acronym, iati_org_id')
@@ -446,7 +434,6 @@ export async function POST(request: NextRequest) {
         reportingOrgId = selectedOrg.id;
         reportingOrgAcronym = selectedOrg.acronym;
         reportingOrgNameFromDB = selectedOrg.name;
-        console.log(`[Import as Reporting Org] ✅ Using selected organization: ${selectedOrg.name} (ID: ${reportingOrgId})`);
         // Skip auto-detection and proceed with selected org
       }
     }
@@ -458,7 +445,6 @@ export async function POST(request: NextRequest) {
     // Step 1: Try exact match by iati_org_id first
     let matchingOrg = null;
     if (reportingOrgRef) {
-      console.log(`[Import as Reporting Org] Searching for org with iati_org_id = "${reportingOrgRef}"`);
       const { data: orgByRef, error: orgByRefError } = await supabase
         .from('organizations')
         .select('id, name, iati_org_id, alias_refs, acronym')
@@ -471,9 +457,7 @@ export async function POST(request: NextRequest) {
 
       if (orgByRef) {
         matchingOrg = orgByRef;
-        console.log(`[Import as Reporting Org] ✅ Found organization by IATI ID: ${matchingOrg.name} (ID: ${matchingOrg.id}, Acronym: ${matchingOrg.acronym || 'N/A'})`);
       } else {
-        console.log(`[Import as Reporting Org] ❌ No organization found with iati_org_id = "${reportingOrgRef}"`);
       }
     }
 
@@ -490,7 +474,6 @@ export async function POST(request: NextRequest) {
 
       if (aliasMatch) {
         matchingOrg = aliasMatch;
-        console.log(`[Import as Reporting Org] Found organization by alias_refs: ${matchingOrg.name} (ID: ${matchingOrg.id}, Acronym: ${matchingOrg.acronym})`);
       }
     }
 
@@ -511,7 +494,6 @@ export async function POST(request: NextRequest) {
 
       if (nameMatch) {
         matchingOrg = nameMatch;
-        console.log(`[Import as Reporting Org] Found organization by name: ${matchingOrg.name} (ID: ${matchingOrg.id}, Acronym: ${matchingOrg.acronym})`);
       }
     }
 
@@ -532,7 +514,6 @@ export async function POST(request: NextRequest) {
         reportingOrgId = matchingOrg.id;
         reportingOrgAcronym = matchingOrg.acronym;
         reportingOrgNameFromDB = matchingOrg.name; // Use the name from the database
-        console.log(`[Import as Reporting Org] ✅ FOUND organization from XML: ${matchingOrg.name} (ID: ${reportingOrgId}, Acronym: ${reportingOrgAcronym || 'N/A'})`);
         console.log(`[Import as Reporting Org] 🔒 Organization values that WILL be saved (from XML):`, {
           reportingOrgId,
           reportingOrgAcronym,
@@ -547,7 +528,6 @@ export async function POST(request: NextRequest) {
     
     // If we rejected the match (because it was user's org), try to find/create the correct one
     if (!matchingOrg && reportingOrgRef) {
-      console.log(`[Import as Reporting Org] 🔍 Previous match was rejected or not found. Searching more carefully...`);
       
       // Try a more specific search - exclude user's org explicitly
       let excludeUserOrgFilter = supabase
@@ -566,7 +546,6 @@ export async function POST(request: NextRequest) {
         reportingOrgId = matchingOrg.id;
         reportingOrgAcronym = matchingOrg.acronym;
         reportingOrgNameFromDB = matchingOrg.name;
-        console.log(`[Import as Reporting Org] ✅ FOUND correct organization (excluding user's org): ${matchingOrg.name} (ID: ${reportingOrgId})`);
       } else {
         // Try alias_refs search, but exclude user's org
         const { data: orgsByAlias } = await supabase
@@ -588,7 +567,6 @@ export async function POST(request: NextRequest) {
             reportingOrgId = matchingOrg.id;
             reportingOrgAcronym = matchingOrg.acronym;
             reportingOrgNameFromDB = matchingOrg.name;
-            console.log(`[Import as Reporting Org] ✅ FOUND organization by alias_refs (excluding user's org): ${matchingOrg.name} (ID: ${reportingOrgId})`);
           }
         }
       }
@@ -596,7 +574,6 @@ export async function POST(request: NextRequest) {
     
     if (!matchingOrg) {
       // Create the reporting organization
-      console.log(`[Import as Reporting Org] Creating new organization: ${reportingOrgName}`);
 
       const { data: newOrg, error: orgError } = await supabase
         .from('organizations')
@@ -617,7 +594,6 @@ export async function POST(request: NextRequest) {
         reportingOrgId = newOrg.id;
         reportingOrgAcronym = newOrg.acronym;
         reportingOrgNameFromDB = newOrg.name; // Use the name from the newly created org
-        console.log(`[Import as Reporting Org] ✅ CREATED new organization from XML: ${newOrg.name} (ID: ${reportingOrgId})`);
         console.log(`[Import as Reporting Org] 🔒 New org values that WILL be saved (from XML):`, {
           reportingOrgId,
           reportingOrgAcronym,
@@ -670,13 +646,7 @@ export async function POST(request: NextRequest) {
     const importErrors: Array<{ iatiIdentifier: string; error: string }> = [];
     
     for (const { iatiIdentifier, activityData } of activitiesToImport) {
-      console.log(`[Import as Reporting Org] Processing import for: ${iatiIdentifier}`);
-      console.log(`[Import as Reporting Org] Fields provided:`, fields ? Object.keys(fields).length : 0);
-      console.log(`[Import as Reporting Org] IATI data provided:`, iati_data ? Object.keys(iati_data).length : 0);
-      console.log(`[Import as Reporting Org] IATI data keys:`, iati_data ? Object.keys(iati_data) : 'N/A');
-      console.log(`[Import as Reporting Org] Has _parsedActivity:`, iati_data?._parsedActivity ? 'Yes' : 'No');
       if (fields) {
-        console.log(`[Import as Reporting Org] All field keys:`, Object.keys(fields));
       }
       try {
         // Check if activity still exists (in case deletion didn't fully commit or there's a race condition)
@@ -693,7 +663,6 @@ export async function POST(request: NextRequest) {
           if (data) {
             existingCheck = data;
             foundByActivityId = true;
-            console.log(`[Import as Reporting Org] Found activity by activityId: ${activityId}`);
           }
         }
         // If not found by activityId, fall back to iati_identifier matching
@@ -705,7 +674,6 @@ export async function POST(request: NextRequest) {
             .single();
           existingCheck = data;
           if (existingCheck) {
-            console.log(`[Import as Reporting Org] Found activity by iati_identifier: ${iatiIdentifier}`);
           }
         }
 
@@ -734,7 +702,6 @@ export async function POST(request: NextRequest) {
         // Explicitly remove any reporting org fields from iati_data to prevent override
         // This ensures we ALWAYS use the XML's reporting org, never values from the frontend
         if (iati_data) {
-          console.log(`[Import as Reporting Org] 🧹 Cleaning iati_data - removing any reporting org fields that might override XML values`);
           delete iati_data.reporting_org_name;
           delete iati_data.reporting_org_ref;
           delete iati_data.reporting_org_type;
@@ -778,7 +745,6 @@ export async function POST(request: NextRequest) {
         // Ensure we always have a display name - use IATI ref as fallback
         if (!activityInsert.created_by_org_name || activityInsert.created_by_org_name === '') {
           activityInsert.created_by_org_name = reportingOrgRef || meta.reportingOrgName || 'Unknown';
-          console.log(`[Import as Reporting Org] ⚠️  No org name found, using IATI ref as fallback: ${activityInsert.created_by_org_name}`);
         }
         
         // Verify all organization fields are set before insert/update
@@ -794,7 +760,6 @@ export async function POST(request: NextRequest) {
         // Check if there's a user-provided acronym for this activity
         const userProvidedAcronym = acronyms && acronyms[iatiIdentifier];
         if (userProvidedAcronym) {
-          console.log(`[Import as Reporting Org] User provided acronym: "${userProvidedAcronym}" for activity ${iatiIdentifier}`);
         }
         
         // If fields and iati_data are provided, use field selection
@@ -844,7 +809,6 @@ export async function POST(request: NextRequest) {
             
             if (value !== undefined && value !== null) {
               activityInsert[mapping.dbField] = value;
-              console.log(`[Import as Reporting Org] Set ${mapping.dbField} = ${value}`);
             }
           }
 
@@ -887,39 +851,30 @@ export async function POST(request: NextRequest) {
             // Classification fields fallback from parsedActivity
             if (!activityInsert.collaboration_type && parsedActivity.collaborationType) {
               activityInsert.collaboration_type = extractCodeValue(parsedActivity.collaborationType);
-              console.log(`[Import as Reporting Org] Set collaboration_type from parsedActivity = ${activityInsert.collaboration_type}`);
             }
             if (!activityInsert.default_aid_type && parsedActivity.defaultAidType) {
               activityInsert.default_aid_type = extractCodeValue(parsedActivity.defaultAidType);
-              console.log(`[Import as Reporting Org] Set default_aid_type from parsedActivity = ${activityInsert.default_aid_type}`);
             }
             if (!activityInsert.default_flow_type && parsedActivity.defaultFlowType) {
               activityInsert.default_flow_type = extractCodeValue(parsedActivity.defaultFlowType);
-              console.log(`[Import as Reporting Org] Set default_flow_type from parsedActivity = ${activityInsert.default_flow_type}`);
             }
             if (!activityInsert.default_finance_type && parsedActivity.defaultFinanceType) {
               activityInsert.default_finance_type = extractCodeValue(parsedActivity.defaultFinanceType);
-              console.log(`[Import as Reporting Org] Set default_finance_type from parsedActivity = ${activityInsert.default_finance_type}`);
             }
             if (!activityInsert.default_tied_status && parsedActivity.defaultTiedStatus) {
               activityInsert.default_tied_status = extractCodeValue(parsedActivity.defaultTiedStatus);
-              console.log(`[Import as Reporting Org] Set default_tied_status from parsedActivity = ${activityInsert.default_tied_status}`);
             }
             if (!activityInsert.activity_scope && parsedActivity.activityScope) {
               activityInsert.activity_scope = extractCodeValue(parsedActivity.activityScope);
-              console.log(`[Import as Reporting Org] Set activity_scope from parsedActivity = ${activityInsert.activity_scope}`);
             }
             if (!activityInsert.hierarchy && parsedActivity.hierarchy) {
               activityInsert.hierarchy = parsedActivity.hierarchy;
-              console.log(`[Import as Reporting Org] Set hierarchy from parsedActivity = ${activityInsert.hierarchy}`);
             }
             if (!activityInsert.capital_spend_percentage && parsedActivity.capitalSpendPercentage) {
               activityInsert.capital_spend_percentage = parsedActivity.capitalSpendPercentage;
-              console.log(`[Import as Reporting Org] Set capital_spend_percentage from parsedActivity = ${activityInsert.capital_spend_percentage}`);
             }
             if (parsedActivity.humanitarian !== undefined && activityInsert.humanitarian === undefined) {
               activityInsert.humanitarian = parsedActivity.humanitarian;
-              console.log(`[Import as Reporting Org] Set humanitarian from parsedActivity = ${activityInsert.humanitarian}`);
             }
           }
 
@@ -943,80 +898,63 @@ export async function POST(request: NextRequest) {
             if (activityData.title) {
               const oldTitle = activityInsert.title_narrative;
               activityInsert.title_narrative = activityData.title;
-              console.log(`[Import as Reporting Org] ✓ Set title from server XML: "${oldTitle}" → "${activityData.title}"`);
             }
 
             // ALWAYS overwrite description with server-parsed value
             if (activityData.description) {
               activityInsert.description_narrative = activityData.description;
-              console.log(`[Import as Reporting Org] ✓ Set description from server XML`);
             }
 
             // ALWAYS overwrite activity_scope with server-parsed value
             if (activityData.activityScope) {
               const oldScope = activityInsert.activity_scope;
               activityInsert.activity_scope = activityData.activityScope;
-              console.log(`[Import as Reporting Org] ✓ Set activity_scope from server XML: "${oldScope}" → "${activityData.activityScope}"`);
             }
 
             // Overwrite dates if available from XML
             if (activityData.plannedStartDate) {
               activityInsert.planned_start_date = activityData.plannedStartDate;
-              console.log(`[Import as Reporting Org] ✓ Set planned_start_date from server XML = ${activityData.plannedStartDate}`);
             }
             if (activityData.actualStartDate) {
               activityInsert.actual_start_date = activityData.actualStartDate;
-              console.log(`[Import as Reporting Org] ✓ Set actual_start_date from server XML = ${activityData.actualStartDate}`);
             }
             if (activityData.plannedEndDate) {
               activityInsert.planned_end_date = activityData.plannedEndDate;
-              console.log(`[Import as Reporting Org] ✓ Set planned_end_date from server XML = ${activityData.plannedEndDate}`);
             }
             if (activityData.actualEndDate) {
               activityInsert.actual_end_date = activityData.actualEndDate;
-              console.log(`[Import as Reporting Org] ✓ Set actual_end_date from server XML = ${activityData.actualEndDate}`);
             }
 
             // Overwrite currency and classifications if available from XML
             if (activityData.defaultCurrency) {
               activityInsert.default_currency = activityData.defaultCurrency;
-              console.log(`[Import as Reporting Org] ✓ Set default_currency from server XML = ${activityData.defaultCurrency}`);
             }
             if (activityData.defaultAidType) {
               activityInsert.default_aid_type = activityData.defaultAidType;
-              console.log(`[Import as Reporting Org] ✓ Set default_aid_type from server XML = ${activityData.defaultAidType}`);
             }
             if (activityData.defaultFlowType) {
               activityInsert.default_flow_type = activityData.defaultFlowType;
-              console.log(`[Import as Reporting Org] ✓ Set default_flow_type from server XML = ${activityData.defaultFlowType}`);
             }
             if (activityData.defaultFinanceType) {
               activityInsert.default_finance_type = activityData.defaultFinanceType;
-              console.log(`[Import as Reporting Org] ✓ Set default_finance_type from server XML = ${activityData.defaultFinanceType}`);
             }
             if (activityData.defaultTiedStatus) {
               activityInsert.default_tied_status = activityData.defaultTiedStatus;
-              console.log(`[Import as Reporting Org] ✓ Set default_tied_status from server XML = ${activityData.defaultTiedStatus}`);
             }
             if (activityData.collaborationType) {
               activityInsert.collaboration_type = activityData.collaborationType;
-              console.log(`[Import as Reporting Org] ✓ Set collaboration_type from server XML = ${activityData.collaborationType}`);
             }
             if (activityData.hierarchy) {
               activityInsert.hierarchy = activityData.hierarchy;
-              console.log(`[Import as Reporting Org] ✓ Set hierarchy from server XML = ${activityData.hierarchy}`);
             }
             if (activityData.capitalSpendPercentage !== null && activityData.capitalSpendPercentage !== undefined) {
               activityInsert.capital_spend_percentage = activityData.capitalSpendPercentage;
-              console.log(`[Import as Reporting Org] ✓ Set capital_spend_percentage from server XML = ${activityData.capitalSpendPercentage}`);
             }
             if (activityData.humanitarian !== undefined) {
               activityInsert.humanitarian = activityData.humanitarian;
-              console.log(`[Import as Reporting Org] ✓ Set humanitarian from server XML = ${activityData.humanitarian}`);
             }
             if (activityData.activityStatus) {
               activityInsert.activity_status = activityData.activityStatus;
-              console.log(`[Import as Reporting Org] ✓ Set activity_status from server XML = ${activityData.activityStatus}`);
             }
 
             console.log(`[Import as Reporting Org] 📋 Final values after server XML override:`, {
@@ -1086,7 +1024,6 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        console.log(`[Import as Reporting Org] Activity ${iatiIdentifier} exists check:`, existingCheck ? `Found (ID: ${existingCheck.id})` : 'Not found');
 
         // Declare variables outside the if/else blocks
         let finalActivityId: string | null = null;
@@ -1094,7 +1031,6 @@ export async function POST(request: NextRequest) {
 
         // If activity exists, update it; otherwise insert
         if (existingCheck) {
-          console.log(`[Import as Reporting Org] Activity exists, updating instead of inserting: ${iatiIdentifier}`);
           
           // Get current activity state before update for comparison
           // Use the same query method we'll use for update
@@ -1169,14 +1105,12 @@ export async function POST(request: NextRequest) {
               .from('activities')
               .update(updatePayload)
               .eq('id', activityId);
-            console.log(`[Import as Reporting Org] Updating activity by ID: ${activityId}`);
           } else {
             // Update by iati_identifier (fallback behavior)
             updateQuery = supabase
               .from('activities')
               .update(updatePayload)
               .eq('iati_identifier', iatiIdentifier);
-            console.log(`[Import as Reporting Org] Updating activity by iati_identifier: ${iatiIdentifier}`);
           }
           
           const { data: updated, error: updateError } = await updateQuery
@@ -1200,7 +1134,6 @@ export async function POST(request: NextRequest) {
           finalActivityId = updated.id;
           activityResult = updated;
           importedActivities.push(updated);
-          console.log(`[Import as Reporting Org] Successfully updated activity: ${iatiIdentifier} (ID: ${updated.id})`);
         } else {
           console.log(`[Import as Reporting Org] 🔍 FINAL activityInsert object before insert:`, {
             reporting_org_id: activityInsert.reporting_org_id,
@@ -1210,7 +1143,6 @@ export async function POST(request: NextRequest) {
             created_by_org_acronym: activityInsert.created_by_org_acronym,
             created_by: activityInsert.created_by
           });
-          console.log(`[Import as Reporting Org] Attempting to insert activity:`, JSON.stringify(activityInsert, null, 2));
 
           const { data: inserted, error: insertError } = await supabase
             .from('activities')
@@ -1226,7 +1158,6 @@ export async function POST(request: NextRequest) {
             
             // If it's a unique constraint error, try to update instead
             if (insertError.code === '23505' || insertError.message?.includes('unique') || insertError.message?.includes('duplicate')) {
-              console.log(`[Import as Reporting Org] Unique constraint violation, attempting update instead`);
               
               // Use explicit update payload with reporting org fields
               // CRITICAL: Always use XML reporting org values, never from activityInsert
@@ -1266,14 +1197,12 @@ export async function POST(request: NextRequest) {
                   .from('activities')
                   .update(updatePayload)
                   .eq('id', activityId);
-                console.log(`[Import as Reporting Org] Fallback: Updating activity by ID: ${activityId}`);
               } else {
                 // Update by iati_identifier (fallback behavior)
                 fallbackUpdateQuery = supabase
                   .from('activities')
                   .update(updatePayload)
                   .eq('iati_identifier', iatiIdentifier);
-                console.log(`[Import as Reporting Org] Fallback: Updating activity by iati_identifier: ${iatiIdentifier}`);
               }
               
               const { data: updated, error: updateError } = await fallbackUpdateQuery
@@ -1295,7 +1224,6 @@ export async function POST(request: NextRequest) {
               finalActivityId = updated.id;
               activityResult = updated;
               importedActivities.push(updated);
-              console.log(`[Import as Reporting Org] Updated activity after insert conflict: ${iatiIdentifier} (ID: ${updated.id})`);
             } else {
               importErrors.push({ iatiIdentifier, error: errorMsg });
               continue;
@@ -1310,7 +1238,6 @@ export async function POST(request: NextRequest) {
             finalActivityId = inserted.id;
             activityResult = inserted;
             importedActivities.push(inserted);
-            console.log(`[Import as Reporting Org] Successfully imported activity: ${iatiIdentifier} (ID: ${inserted.id})`);
           }
         }
 
@@ -1410,7 +1337,6 @@ export async function POST(request: NextRequest) {
             // Success message if everything matches
             if (expectedOrgId && verifyActivity.reporting_org_id === expectedOrgId && 
                 expectedOrgName && verifyActivity.created_by_org_name === expectedOrgName) {
-              console.log(`[Import as Reporting Org] ✅ SUCCESS: Reporting org correctly set to ${expectedOrgName} (${expectedOrgRef})`);
             }
           }
         }
@@ -1423,46 +1349,29 @@ export async function POST(request: NextRequest) {
 
         // Handle budgets, transactions, and planned disbursements if selected
         const parsedActivity = iati_data?._parsedActivity;
-        console.log(`[Import as Reporting Org] DEBUG - Checking for complex fields for activity ${finalActivityId}`);
-        console.log(`[Import as Reporting Org] DEBUG - parsedActivity exists:`, !!parsedActivity);
-        console.log(`[Import as Reporting Org] DEBUG - fields exists:`, !!fields);
-        console.log(`[Import as Reporting Org] DEBUG - fields type:`, typeof fields);
-        console.log(`[Import as Reporting Org] DEBUG - fields keys count:`, fields ? Object.keys(fields).length : 0);
-        console.log(`[Import as Reporting Org] DEBUG - fields keys (first 20):`, fields ? Object.keys(fields).slice(0, 20) : 'N/A');
         
         // Log all budget/transaction/planned disbursement field keys
         if (fields) {
           const budgetKeys = Object.keys(fields).filter(key => key.includes('budget'));
           const transactionKeys = Object.keys(fields).filter(key => key.includes('transaction'));
           const plannedDisbursementKeys = Object.keys(fields).filter(key => key.includes('planned-disbursement') || key.includes('plannedDisbursement'));
-          console.log(`[Import as Reporting Org] DEBUG - Budget field keys found:`, budgetKeys);
-          console.log(`[Import as Reporting Org] DEBUG - Transaction field keys found:`, transactionKeys);
-          console.log(`[Import as Reporting Org] DEBUG - Planned Disbursement field keys found:`, plannedDisbursementKeys);
         }
         
         if (parsedActivity) {
-          console.log(`[Import as Reporting Org] DEBUG - parsedActivity.budgets:`, parsedActivity.budgets ? `${parsedActivity.budgets.length} items` : 'undefined');
-          console.log(`[Import as Reporting Org] DEBUG - parsedActivity.transactions:`, parsedActivity.transactions ? `${parsedActivity.transactions.length} items` : 'undefined');
-          console.log(`[Import as Reporting Org] DEBUG - parsedActivity.plannedDisbursements:`, parsedActivity.plannedDisbursements ? `${parsedActivity.plannedDisbursements.length} items` : 'undefined');
           
           // Log sample budget/transaction/planned disbursement data
           if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
-            console.log(`[Import as Reporting Org] DEBUG - Sample budget:`, JSON.stringify(parsedActivity.budgets[0], null, 2));
           }
           if (parsedActivity.transactions && parsedActivity.transactions.length > 0) {
-            console.log(`[Import as Reporting Org] DEBUG - Sample transaction:`, JSON.stringify(parsedActivity.transactions[0], null, 2));
           }
           if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
-            console.log(`[Import as Reporting Org] DEBUG - Sample planned disbursement:`, JSON.stringify(parsedActivity.plannedDisbursements[0], null, 2));
           }
         } else {
-          console.log(`[Import as Reporting Org] DEBUG - iati_data structure:`, iati_data ? Object.keys(iati_data) : 'iati_data is null/undefined');
         }
         
         if (parsedActivity && fields) {
           // Check if any budget field is selected
           const hasBudgetFields = Object.keys(fields).some(key => key.startsWith('iati-activity/budget['));
-          console.log(`[Import as Reporting Org] DEBUG - hasBudgetFields:`, hasBudgetFields);
           console.log(`[Import as Reporting Org] DEBUG - Budget field check details:`, {
             fieldsIsObject: typeof fields === 'object',
             fieldsKeysLength: Object.keys(fields).length,
@@ -1475,7 +1384,6 @@ export async function POST(request: NextRequest) {
           const shouldImportBudgets = hasBudgetFields || (hasAnyFieldsSelected && parsedActivity.budgets && Array.isArray(parsedActivity.budgets) && parsedActivity.budgets.length > 0);
           
           if (shouldImportBudgets && parsedActivity.budgets && Array.isArray(parsedActivity.budgets)) {
-            console.log(`[Import as Reporting Org] Importing ${parsedActivity.budgets.length} budgets for activity ${finalActivityId}`);
             
             // Clear existing budgets
             await supabase
@@ -1510,20 +1418,17 @@ export async function POST(request: NextRequest) {
               if (budgetsError) {
                 console.error(`[Import as Reporting Org] Error inserting budgets:`, budgetsError);
               } else {
-                console.log(`[Import as Reporting Org] ✓ Imported ${validBudgets.length} budgets`);
               }
             }
           }
 
           // Check if any transaction field is selected
           const hasTransactionFields = Object.keys(fields).some(key => key.startsWith('iati-activity/transaction['));
-          console.log(`[Import as Reporting Org] DEBUG - hasTransactionFields:`, hasTransactionFields);
           
           // Fallback: If any fields are selected and parsedActivity has transactions, import them
           const shouldImportTransactions = hasTransactionFields || (hasAnyFieldsSelected && parsedActivity.transactions && Array.isArray(parsedActivity.transactions) && parsedActivity.transactions.length > 0);
           
           if (shouldImportTransactions && parsedActivity.transactions && Array.isArray(parsedActivity.transactions)) {
-            console.log(`[Import as Reporting Org] Importing ${parsedActivity.transactions.length} transactions for activity ${finalActivityId}`);
             
             // Get existing transactions to check for duplicates
             const { data: existingTransactions } = await supabase
@@ -1576,7 +1481,6 @@ export async function POST(request: NextRequest) {
               );
               
               if (usdResult.success) {
-                console.log(`[Import as Reporting Org] USD conversion: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
               } else {
                 console.warn(`[Import as Reporting Org] USD conversion failed: ${usdResult.error}`);
               }
@@ -1594,20 +1498,17 @@ export async function POST(request: NextRequest) {
               if (transactionsError) {
                 console.error(`[Import as Reporting Org] Error inserting transactions:`, transactionsError);
               } else {
-                console.log(`[Import as Reporting Org] ✓ Imported ${validTransactions.length} transactions`);
               }
             }
           }
 
           // Check if any planned disbursement field is selected
           const hasPlannedDisbursementFields = Object.keys(fields).some(key => key.startsWith('iati-activity/planned-disbursement['));
-          console.log(`[Import as Reporting Org] DEBUG - hasPlannedDisbursementFields:`, hasPlannedDisbursementFields);
           
           // Fallback: If any fields are selected and parsedActivity has planned disbursements, import them
           const shouldImportPlannedDisbursements = hasPlannedDisbursementFields || (hasAnyFieldsSelected && parsedActivity.plannedDisbursements && Array.isArray(parsedActivity.plannedDisbursements) && parsedActivity.plannedDisbursements.length > 0);
           
           if (shouldImportPlannedDisbursements && parsedActivity.plannedDisbursements && Array.isArray(parsedActivity.plannedDisbursements)) {
-            console.log(`[Import as Reporting Org] Importing ${parsedActivity.plannedDisbursements.length} planned disbursements for activity ${finalActivityId}`);
             
             // Clear existing planned disbursements
             await supabase
@@ -1696,7 +1597,6 @@ export async function POST(request: NextRequest) {
               if (pdError) {
                 console.error(`[Import as Reporting Org] Error inserting planned disbursements:`, pdError);
               } else {
-                console.log(`[Import as Reporting Org] ✓ Imported ${validPDs.length} planned disbursements`);
               }
             }
           }
@@ -1709,7 +1609,6 @@ export async function POST(request: NextRequest) {
           [];
 
         if (sectorsData && Array.isArray(sectorsData) && sectorsData.length > 0) {
-          console.log(`[Import as Reporting Org] Importing ${sectorsData.length} sectors`);
 
           // Clear existing sectors
           await supabase
@@ -1737,7 +1636,6 @@ export async function POST(request: NextRequest) {
             if (sectorsError) {
               console.error(`[Import as Reporting Org] Error inserting sectors:`, sectorsError);
             } else {
-              console.log(`[Import as Reporting Org] ✓ Imported ${sectorRelations.length} sectors`);
             }
           }
         }
@@ -1758,7 +1656,6 @@ export async function POST(request: NextRequest) {
         });
 
         if (recipientCountries && Array.isArray(recipientCountries) && recipientCountries.length > 0) {
-          console.log(`[Import as Reporting Org] Processing ${recipientCountries.length} recipient countries`);
           
           const formattedCountries = recipientCountries.map((country: any) => ({
             id: country.id || `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1782,7 +1679,6 @@ export async function POST(request: NextRequest) {
           if (countriesError) {
             console.error(`[Import as Reporting Org] Error updating recipient countries:`, countriesError);
           } else {
-            console.log(`[Import as Reporting Org] ✓ Processed ${formattedCountries.length} recipient countries`);
           }
         }
 
@@ -1802,7 +1698,6 @@ export async function POST(request: NextRequest) {
         });
 
         if (recipientRegions && Array.isArray(recipientRegions) && recipientRegions.length > 0) {
-          console.log(`[Import as Reporting Org] Processing ${recipientRegions.length} recipient regions`);
           
           const formattedRegions = recipientRegions.map((region: any) => ({
             id: region.id || `region-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1825,7 +1720,6 @@ export async function POST(request: NextRequest) {
           if (regionsError) {
             console.error(`[Import as Reporting Org] Error updating recipient regions:`, regionsError);
           } else {
-            console.log(`[Import as Reporting Org] ✓ Processed ${formattedRegions.length} recipient regions`);
           }
         }
 
@@ -1836,7 +1730,6 @@ export async function POST(request: NextRequest) {
           [];
 
         if (customGeographies && Array.isArray(customGeographies) && customGeographies.length > 0) {
-          console.log(`[Import as Reporting Org] Processing ${customGeographies.length} custom geographies`);
           
           const formattedGeos = customGeographies.map((geo: any) => ({
             id: geo.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1856,7 +1749,6 @@ export async function POST(request: NextRequest) {
           if (geoError) {
             console.error(`[Import as Reporting Org] Error updating custom geographies:`, geoError);
           } else {
-            console.log(`[Import as Reporting Org] ✓ Processed ${formattedGeos.length} custom geographies`);
           }
         }
 
@@ -1867,7 +1759,6 @@ export async function POST(request: NextRequest) {
           [];
 
         if (tagsData && Array.isArray(tagsData) && tagsData.length > 0) {
-          console.log(`[Import as Reporting Org] Processing ${tagsData.length} tags`);
           
           try {
             // Clear existing activity_tags relationships
@@ -1918,7 +1809,6 @@ export async function POST(request: NextRequest) {
                 });
             }
 
-            console.log(`[Import as Reporting Org] ✓ Imported ${tagsData.length} tags`);
           } catch (error) {
             console.error('[Import as Reporting Org] Error importing tags:', error);
           }
@@ -1931,7 +1821,6 @@ export async function POST(request: NextRequest) {
           [];
 
         if (locationsData && Array.isArray(locationsData) && locationsData.length > 0) {
-          console.log(`[Import as Reporting Org] Importing ${locationsData.length} locations`);
           
           // Clear existing locations
           await supabase
@@ -2011,7 +1900,6 @@ export async function POST(request: NextRequest) {
             if (locationsError) {
               console.error(`[Import as Reporting Org] Error inserting locations:`, locationsError);
             } else {
-              console.log(`[Import as Reporting Org] ✓ Imported ${locationEntries.length} locations`);
             }
           }
         }
@@ -2023,7 +1911,6 @@ export async function POST(request: NextRequest) {
           [];
 
         if (documentLinks && Array.isArray(documentLinks) && documentLinks.length > 0) {
-          console.log(`[Import as Reporting Org] Importing ${documentLinks.length} document links`);
           
           // Get existing documents to delete their categories first
           const { data: existingDocs } = await supabase
@@ -2108,7 +1995,6 @@ export async function POST(request: NextRequest) {
             }
           }
           
-          console.log(`[Import as Reporting Org] ✓ Imported ${importedDocsCount} document links`);
         }
 
         // Handle participating organizations
@@ -2129,7 +2015,6 @@ export async function POST(request: NextRequest) {
         });
 
         if (participatingOrgsData && participatingOrgsData.length > 0) {
-          console.log(`[Import as Reporting Org] Importing ${participatingOrgsData.length} participating organizations`);
           
           // Clear existing participating organizations for this activity
           await supabase
@@ -2156,7 +2041,6 @@ export async function POST(request: NextRequest) {
               
               if (existingOrg) {
                 orgId = existingOrg.id;
-                console.log(`[Import as Reporting Org] ✓ Found org by IATI ID: ${existingOrg.name}`);
               } else {
                 // Try alias_refs
                 const { data: aliasOrgs } = await supabase
@@ -2170,7 +2054,6 @@ export async function POST(request: NextRequest) {
                 
                 if (aliasMatch) {
                   orgId = aliasMatch.id;
-                  console.log(`[Import as Reporting Org] ✓ Found org by alias: ${aliasMatch.name}`);
                 }
               }
             }
@@ -2187,7 +2070,6 @@ export async function POST(request: NextRequest) {
               
               if (nameMatch) {
                 orgId = nameMatch.id;
-                console.log(`[Import as Reporting Org] ✓ Found org by name: ${nameMatch.name}`);
               }
             }
             
@@ -2208,7 +2090,6 @@ export async function POST(request: NextRequest) {
                 
                 if (newOrg && !createError) {
                   orgId = newOrg.id;
-                  console.log(`[Import as Reporting Org] ✓ Created new org: ${newOrg.name}`);
                 } else if (createError) {
                   // Try to find it again (might be duplicate)
                   if (orgRef) {
@@ -2277,7 +2158,6 @@ export async function POST(request: NextRequest) {
             if (insertError) {
               console.error(`[Import as Reporting Org] Error inserting participating orgs:`, insertError);
             } else {
-              console.log(`[Import as Reporting Org] ✓ Imported ${processedOrgs.length} participating organizations`);
             }
           }
         }
@@ -2316,7 +2196,6 @@ export async function POST(request: NextRequest) {
       iatiAnalytics.importCompleted('reporting_org', activity.id);
     });
 
-    console.log(`[Import as Reporting Org] Successfully imported ${importedActivities.length} activities under ${reportingOrgRef}`);
 
     return NextResponse.json({
       success: true,

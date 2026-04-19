@@ -144,12 +144,29 @@ export default function GovernmentEndorsementTab({
   };
 
   const handleDelete = async () => {
-    if (await confirm({ title: 'Delete government endorsement?', description: 'This action cannot be undone. The endorsement will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete government endorsement?', description: "The endorsement will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+      const snapshot = { ...formData };
       const success = await deleteEndorsement();
       if (success) {
         setFormData({});
         setHasUnsavedChanges(false);
         setLastSaved(null);
+        toast.success('Endorsement removed', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                const ok = await saveEndorsement(snapshot, false);
+                if (ok) {
+                  setFormData(snapshot);
+                  toast.success('Endorsement restored');
+                }
+              } catch {
+                toast.error("Couldn't restore the endorsement. Please re-enter manually.");
+              }
+            },
+          },
+        });
       }
     }
   };
@@ -208,7 +225,7 @@ export default function GovernmentEndorsementTab({
 
   const handleSaveRef = async () => {
     if (!refFormData.code.trim()) {
-      toast.error('Code is required');
+      toast.error('Reference code is required.');
       return;
     }
 
@@ -232,17 +249,19 @@ export default function GovernmentEndorsementTab({
         fetchProjectReferences();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to save reference');
+        toast.error(error.error || 'Couldn\u2019t save the reference. Check your input and try again.');
       }
     } catch (error) {
-      toast.error('Failed to save reference');
+      toast.error('Couldn\u2019t save the reference. Check your connection and try again.');
     } finally {
       setSavingRef(false);
     }
   };
 
   const handleDeleteRef = async (refId: string) => {
-    if (!(await confirm({ title: 'Delete project reference?', description: 'This action cannot be undone. The project reference will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
+    if (!(await confirm({ title: 'Delete project reference?', description: "The reference will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' }))) return;
+
+    const snapshot = projectReferences.find(r => r.id === refId);
 
     try {
       const response = await apiFetch(`/api/activities/${activityId}/project-references?referenceId=${refId}`,
@@ -250,13 +269,34 @@ export default function GovernmentEndorsementTab({
       );
 
       if (response.ok) {
-        toast.success('Reference deleted');
+        toast.success('Reference removed', snapshot ? {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                await apiFetch(`/api/activities/${activityId}/project-references`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    code: (snapshot as any).code,
+                    description: (snapshot as any).description,
+                    is_primary: (snapshot as any).is_primary,
+                  }),
+                });
+                await fetchProjectReferences();
+                toast.success('Reference restored');
+              } catch {
+                toast.error("Couldn't restore the reference. Please add it again manually.");
+              }
+            },
+          },
+        } : undefined);
         fetchProjectReferences();
       } else {
-        toast.error('Failed to delete reference');
+        toast.error("Couldn't remove the reference. Please try again in a moment.");
       }
     } catch (error) {
-      toast.error('Failed to delete reference');
+      toast.error("Couldn't remove the reference. Please try again in a moment.");
     }
   };
 
@@ -290,7 +330,7 @@ export default function GovernmentEndorsementTab({
       return (
         <div className="flex items-center gap-2 text-blue-600">
           <Clock className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Saving...</span>
+          <span className="text-body">Saving...</span>
         </div>
       );
     }
@@ -299,7 +339,7 @@ export default function GovernmentEndorsementTab({
       return (
         <div className="flex items-center gap-2 text-amber-600">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Unsaved changes</span>
+          <span className="text-body">Unsaved changes</span>
         </div>
       );
     }
@@ -308,7 +348,7 @@ export default function GovernmentEndorsementTab({
       return (
         <div className="flex items-center gap-2 text-[hsl(var(--success-icon))]">
           <CheckCircle className="h-4 w-4" />
-          <span className="text-sm">
+          <span className="text-body">
             Saved {format(lastSaved, 'HH:mm:ss')}
           </span>
         </div>
@@ -376,7 +416,7 @@ export default function GovernmentEndorsementTab({
                   size="sm"
                   variant="destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                   Delete
                 </Button>
               )}
@@ -394,7 +434,7 @@ export default function GovernmentEndorsementTab({
 
       {/* Validation Status Overview */}
       {formData.validation_status && (
-        <Card className="border-l-4 border-l-blue-500">
+        <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -402,7 +442,7 @@ export default function GovernmentEndorsementTab({
                   <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                 )}
                 {formData.validation_status === 'rejected' && (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <AlertCircle className="h-5 w-5 text-destructive" />
                 )}
                 {formData.validation_status === 'more_info_requested' && (
                   <Clock className="h-5 w-5 text-amber-600" />
@@ -417,13 +457,13 @@ export default function GovernmentEndorsementTab({
                 </Badge>
               </div>
               {formData.validating_authority && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-body text-muted-foreground">
                   <Building className="h-4 w-4" />
                   {formData.validating_authority}
                 </div>
               )}
               {formData.validation_date && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-body text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   {format(new Date(formData.validation_date), 'MMM dd, yyyy')}
                 </div>
@@ -461,7 +501,7 @@ export default function GovernmentEndorsementTab({
                   <SelectItem key={option.value} value={option.value}>
                     <div>
                       <div className="font-medium">{option.label}</div>
-                      <div className="text-xs text-gray-500">{option.description}</div>
+                      <div className="text-helper text-muted-foreground">{option.description}</div>
                     </div>
                   </SelectItem>
                 ))}
@@ -592,7 +632,7 @@ export default function GovernmentEndorsementTab({
                     <SelectItem key={category.value} value={category.value}>
                       <div>
                         <div className="font-medium">{category.value} - {category.label}</div>
-                        <div className="text-xs text-gray-500">{category.description}</div>
+                        <div className="text-helper text-muted-foreground">{category.description}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -670,7 +710,7 @@ export default function GovernmentEndorsementTab({
           )}
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-body text-muted-foreground mb-4">
             Link this activity to government budget codes, donor project IDs, or internal tracking numbers.
             These references enable reconciliation with the national budget system.
           </p>
@@ -681,9 +721,9 @@ export default function GovernmentEndorsementTab({
               <Skeleton className="h-10 w-full" />
             </div>
           ) : projectReferences.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
               <img src="/images/empty-bee.webp" alt="No project references" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No project references</h3>
+              <h3 className="text-base font-semibold mb-2">No project references</h3>
               <p className="text-muted-foreground mb-2">Add government project reference codes for this activity.</p>
               {canEdit && (
                 <Button variant="outline" size="sm" className="mt-2" onClick={() => openRefDialog()}>
@@ -744,14 +784,14 @@ export default function GovernmentEndorsementTab({
                               size="sm"
                               onClick={() => openRefDialog(ref)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRef(ref.id)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </>
                         )}
@@ -792,7 +832,7 @@ export default function GovernmentEndorsementTab({
                     <SelectItem key={type} value={type}>
                       <div>
                         <div className="font-medium">{REFERENCE_TYPE_LABELS[type]}</div>
-                        <div className="text-xs text-gray-500">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
+                        <div className="text-helper text-muted-foreground">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -825,7 +865,7 @@ export default function GovernmentEndorsementTab({
                 onChange={(e) => handleRefFormChange('vocabulary', e.target.value)}
                 placeholder="e.g., national_pip, ministry_code"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 The standard or system this code comes from
               </p>
             </div>

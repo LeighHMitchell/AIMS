@@ -134,13 +134,13 @@ export function DeleteAccountModal({
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <p className="font-medium mb-2">The following will be permanently deleted:</p>
-              <ul className="list-disc list-inside text-sm space-y-1">
+              <ul className="list-disc list-inside text-body space-y-1">
                 <li>Your profile and personal information</li>
                 <li>Your activity bookmarks</li>
                 <li>Your notifications</li>
                 <li>Your feedback submissions</li>
               </ul>
-              <p className="mt-2 text-sm">
+              <p className="mt-2 text-body">
                 Your comments will be anonymized and focal point assignments will be removed.
               </p>
             </AlertDescription>
@@ -149,8 +149,8 @@ export function DeleteAccountModal({
           <div className="border rounded-lg p-4 bg-muted/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">Download Your Data First</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-medium text-body">Download Your Data First</p>
+                <p className="text-helper text-muted-foreground">
                   Export all your data before deleting your account
                 </p>
               </div>
@@ -187,7 +187,7 @@ export function DeleteAccountModal({
               className={error ? "border-destructive" : ""}
             />
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-body text-destructive">{error}</p>
             )}
           </div>
         </div>
@@ -212,7 +212,7 @@ export function DeleteAccountModal({
               </>
             ) : (
               <>
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                 Delete My Account
               </>
             )}

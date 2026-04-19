@@ -93,7 +93,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch strategies' }, { status: 500 });
     }
 
-    console.log(`[AIMS] Successfully fetched ${strategies?.length || 0} strategies`);
     return NextResponse.json(strategies || []);
 
   } catch (error) {
@@ -204,7 +203,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create strategy' }, { status: 500 });
     }
 
-    console.log('[AIMS] Successfully created strategy:', strategy.id);
     return NextResponse.json(strategy, { status: 201 });
 
   } catch (error) {
@@ -272,7 +270,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update strategy' }, { status: 500 });
     }
 
-    console.log('[AIMS] Successfully updated strategy:', id);
     return NextResponse.json(strategy);
 
   } catch (error) {
@@ -331,7 +328,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete strategy' }, { status: 500 });
     }
 
-    console.log('[AIMS] Successfully deleted strategy:', id);
     return NextResponse.json({ message: 'Strategy deleted successfully' });
 
   } catch (error) {

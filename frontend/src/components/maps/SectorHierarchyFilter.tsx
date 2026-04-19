@@ -316,11 +316,11 @@ export function SectorHierarchyFilter({
           disabled={disabled}
         >
           <div className="flex items-center gap-2 truncate">
-            <Layers2 className="h-4 w-4 text-gray-600 shrink-0" />
+            <Layers2 className="h-4 w-4 text-muted-foreground shrink-0" />
             {totalSelected === 0 ? (
-              <span className="text-xs">All Sectors</span>
+              <span className="text-helper">All Sectors</span>
             ) : (
-              <span className="text-xs truncate">
+              <span className="text-helper truncate">
                 {getSelectionSummary()}
               </span>
             )}
@@ -361,7 +361,7 @@ export function SectorHierarchyFilter({
           
           {/* Show Only Active Sectors Toggle */}
           <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-            <span className="text-xs font-medium text-muted-foreground">Show only active sectors</span>
+            <span className="text-helper font-medium text-muted-foreground">Show only active sectors</span>
             <Switch 
               checked={showOnlyActiveSectors} 
               onCheckedChange={onShowOnlyActiveSectorsChange}
@@ -381,10 +381,10 @@ export function SectorHierarchyFilter({
                   <CommandGroup 
                     heading={
                       <div className={cn("flex items-center justify-between w-full", groupInactive && "opacity-50")}>
-                        <span className={cn("font-semibold", groupInactive ? "text-gray-400" : "text-foreground")}>
+                        <span className={cn("font-semibold", groupInactive ? "text-muted-foreground" : "text-foreground")}>
                           <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2">{group.code}</code>
                           {group.name}
-                          <span className="text-gray-500 font-normal ml-1">({groupCount})</span>
+                          <span className="text-muted-foreground font-normal ml-1">({groupCount})</span>
                         </span>
                         <Badge 
                           variant={selected.sectorCategories.includes(group.code) ? "default" : "outline"}
@@ -417,8 +417,8 @@ export function SectorHierarchyFilter({
                             )}
                           />
                           <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
-                          <span className={cn("min-w-0 whitespace-normal", categoryInactive && "text-gray-400")}>{category.name}</span>
-                          <span className="text-gray-500 ml-1">({categoryCount})</span>
+                          <span className={cn("min-w-0 whitespace-normal", categoryInactive && "text-muted-foreground")}>{category.name}</span>
+                          <span className="text-muted-foreground ml-1">({categoryCount})</span>
                         </CommandItem>
                         
                         {/* Sub-sector Level (5-digit) */}
@@ -439,8 +439,8 @@ export function SectorHierarchyFilter({
                               )}
                             />
                             <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
-                            <span className={cn("min-w-0 whitespace-normal", sectorInactive && "text-gray-400")}>{sector.name}</span>
-                            <span className="text-gray-500 ml-1">({sectorCount})</span>
+                            <span className={cn("min-w-0 whitespace-normal", sectorInactive && "text-muted-foreground")}>{sector.name}</span>
+                            <span className="text-muted-foreground ml-1">({sectorCount})</span>
                           </CommandItem>
                           );
                         })}
@@ -458,14 +458,14 @@ export function SectorHierarchyFilter({
           {/* Selection Summary Footer */}
           {totalSelected > 0 && (
             <div className="border-t p-2 bg-muted/50">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center justify-between text-helper text-muted-foreground">
                 <span>
                   {totalSelected} item{totalSelected !== 1 ? 's' : ''} selected
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 text-xs"
+                  className="h-6 text-helper"
                   onClick={handleClear}
                 >
                   Clear all

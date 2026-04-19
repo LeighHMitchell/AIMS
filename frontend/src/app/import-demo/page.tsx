@@ -10,7 +10,6 @@ import { FileSpreadsheet, Activity, Building2, DollarSign } from 'lucide-react';
 export default function ImportDemoPage() {
   const handleImport = async (data: any[], mappings: FieldMapping[], fileName?: string): Promise<ImportResults> => {
     // Simulate API call
-    console.log('Import Data:', { data, mappings, fileName });
     
     // Mock successful import
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -78,7 +77,7 @@ export default function ImportDemoPage() {
           </Tabs>
         </Card>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-body text-muted-foreground">
           <p>This is a demo page. In the real app, import functionality requires authentication.</p>
           <p className="mt-2">
             <a href="/login" className="text-primary hover:underline">

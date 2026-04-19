@@ -60,7 +60,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log('[AIMS Comments API] GET request for activity:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -75,7 +74,6 @@ export async function GET(
     const type = url.searchParams.get('type');
     const status = url.searchParams.get('status');
 
-    console.log('[AIMS Comments API] Search params:', { searchTerm, contextSection, type, status });
     
     // First check if activity exists
     const { data: activity, error: activityError } = await supabase
@@ -89,7 +87,6 @@ export async function GET(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    console.log('[AIMS Comments API] Activity found, fetching comments...');
     
     // Get comments from the enhanced database schema
     const { data: comments, error: commentsError } = await supabase
@@ -126,7 +123,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS Comments API] Found', comments?.length || 0, 'comments');
     
     // Get replies for these comments
     const commentIds = (comments || []).map((c: any) => c.id);
@@ -251,9 +247,6 @@ export async function POST(
     const body = await request.json();
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
-    console.log('[AIMS Comments API] POST request for activity:', id);
-    console.log('[AIMS Comments API] User:', user);
-    console.log('[AIMS Comments API] Content:', content);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -273,13 +266,11 @@ export async function POST(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    console.log('[AIMS Comments API] Activity found, preparing to insert comment...');
     
     // Map mock user ID to real database user ID if needed
     let userId = user.id;
     if (!isValidUUID(userId)) {
       userId = USER_ID_MAP[userId] || userId;
-      console.log(`[AIMS Comments API] Mapped mock user ID ${user.id} to database ID ${userId}`);
     }
     
     // Validate that we have a valid UUID now
@@ -287,12 +278,10 @@ export async function POST(
       console.error('[AIMS Comments API] Invalid user ID after mapping:', userId);
       // Use the first available user as fallback for testing
       userId = "85a65398-5d71-4633-a50b-2f167a0b6f7a"; // John Doe
-      console.log('[AIMS Comments API] Using fallback user ID:', userId);
     }
     
     // Parse mentions from the content
     const mentions = parseMentions(content);
-    console.log('[AIMS Comments API] Parsed mentions:', mentions);
 
     // Check if this is a reply to an existing comment
     if (parentCommentId) {
@@ -309,7 +298,6 @@ export async function POST(
         is_read: JSON.stringify({}),
       };
       
-      console.log('[AIMS Comments API] Inserting reply with data:', replyData);
       
       const { data: newReply, error: replyError } = await supabase
         .from('activity_comment_replies')
@@ -325,7 +313,6 @@ export async function POST(
         );
       }
       
-      console.log(`[AIMS Comments API] Reply added successfully:`, newReply);
     } else {
       // Insert new comment
       const commentData = {
@@ -343,7 +330,6 @@ export async function POST(
         is_read: JSON.stringify({}),
       };
       
-      console.log('[AIMS Comments API] Inserting comment with data:', commentData);
       
       const { data: newComment, error: commentError } = await supabase
         .from('activity_comments')
@@ -365,7 +351,6 @@ export async function POST(
         );
       }
       
-      console.log(`[AIMS Comments API] Comment added successfully:`, newComment);
     }
     
     // Return all comments for the activity
@@ -389,7 +374,6 @@ export async function PATCH(
     const body = await request.json();
     const { user, commentId, action, resolutionNote } = body;
     
-    console.log(`[AIMS Comments API] Comment ${commentId} action: ${action} by ${user.name}`);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -458,7 +442,6 @@ export async function PATCH(
       );
     }
     
-    console.log(`[AIMS Comments API] Comment updated successfully:`, updatedComment);
     
     return NextResponse.json({ success: true, comment: updatedComment });
   } catch (error) {

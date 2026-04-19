@@ -159,7 +159,6 @@ export async function GET(
       endDate = startDate
     }
 
-    console.log(`[SpendTrajectory] Activity ${activityId}: totalBudget=${totalBudget}, disbursements=${disbursements.length}, startDate=${startDate}, endDate=${endDate}`)
 
     return NextResponse.json({
       totalBudget,

@@ -17,7 +17,6 @@ export const AutosaveInput = React.forwardRef<
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log('[AutosaveInput] Value changed:', { field: props.name || props.id, value });
     
     onValueChange?.(value);
     onChange?.(e);
@@ -40,7 +39,6 @@ export const AutosaveTextarea = React.forwardRef<
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-    console.log('[AutosaveTextarea] Value changed:', { field: props.name || props.id, length: value.length });
     
     onValueChange?.(value);
     onChange?.(e);
@@ -189,7 +187,6 @@ export function withAutosaveTrigger<P extends Record<string, any>>(
         const originalHandler = wrapped[propName] as any;
         if (typeof originalHandler === 'function') {
           wrapped[propName] = ((...args: any[]) => {
-            console.log(`[withAutosaveTrigger] ${String(propName)} called on`, Component.displayName || Component.name);
             
             const result = originalHandler(...args);
             triggerSave(); // Trigger autosave after original handler

@@ -96,14 +96,14 @@ export function TaskScheduleStep({
     <div className="space-y-6">
       {/* Error Banner */}
       {hasError && (
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-body">
           {errors[0]}
         </div>
       )}
 
       {/* Dispatch Mode Selection */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">When should this task be sent?</Label>
+        <Label className="text-body font-medium">When should this task be sent?</Label>
         <div className="space-y-2">
           {DISPATCH_MODES.map((mode) => {
             const Icon = mode.icon;
@@ -136,7 +136,7 @@ export function TaskScheduleStep({
                   <div className={cn('font-medium', isSelected && 'text-primary')}>
                     {mode.label}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     {mode.description}
                   </div>
                 </div>
@@ -150,7 +150,7 @@ export function TaskScheduleStep({
       {formData.dispatch_mode === 'scheduled' && (
         <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
           <div className="space-y-2">
-            <Label htmlFor="scheduled_send_at" className="text-sm font-medium flex items-center gap-2">
+            <Label htmlFor="scheduled_send_at" className="text-body font-medium flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
               Send Date & Time
             </Label>
@@ -164,7 +164,7 @@ export function TaskScheduleStep({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+            <Label className="text-body font-medium flex items-center gap-2">
               <Globe className="h-4 w-4" />
               Timezone
             </Label>
@@ -186,7 +186,7 @@ export function TaskScheduleStep({
           </div>
 
           {formData.scheduled_send_at && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               Task will be sent on{' '}
               <span className="font-medium text-foreground">
                 {new Date(formData.scheduled_send_at).toLocaleString()}
@@ -203,15 +203,15 @@ export function TaskScheduleStep({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-sm">Recurrence Pattern</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="font-medium text-body">Recurrence Pattern</div>
+                  <div className="text-body text-muted-foreground">
                     {formatRecurrenceRule(formData.recurrence)}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowRecurrenceSelector(true)}
-                  className="text-sm text-primary hover:underline"
+                  className="text-body text-primary hover:underline"
                 >
                   Edit
                 </button>
@@ -219,10 +219,10 @@ export function TaskScheduleStep({
 
               {recurrencePreview.length > 0 && (
                 <div className="pt-2 border-t">
-                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                  <div className="text-helper font-medium text-muted-foreground mb-2">
                     Next occurrences:
                   </div>
-                  <ul className="text-sm space-y-1">
+                  <ul className="text-body space-y-1">
                     {recurrencePreview.map((date, i) => (
                       <li key={i} className="text-muted-foreground">
                         {date.toLocaleDateString(undefined, {
@@ -244,15 +244,15 @@ export function TaskScheduleStep({
               className="w-full p-4 border-2 border-dashed rounded-lg text-center hover:border-primary/50 transition-colors"
             >
               <Repeat className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <div className="font-medium text-sm">Configure Recurrence</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="font-medium text-body">Configure Recurrence</div>
+              <div className="text-helper text-muted-foreground">
                 Set up a recurring schedule for this task
               </div>
             </button>
           )}
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+            <Label className="text-body font-medium flex items-center gap-2">
               <Globe className="h-4 w-4" />
               Timezone
             </Label>

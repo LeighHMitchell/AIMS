@@ -22,17 +22,14 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function importActivitiesSimple() {
-  console.log('📥 Starting simplified Myanmar data import...\n')
   
   try {
     // Get the fixed files
     const activitiesPath = resolve(__dirname, '../../myanmar-activities-fixed.json')
     const activities = JSON.parse(readFileSync(activitiesPath, 'utf-8'))
     
-    console.log(`📋 Found ${activities.length} activities to import\n`)
     
     // First, let's check what columns actually exist
-    console.log('🔍 Checking activities table structure...')
     const { data: columns, error: schemaError } = await supabase
       .from('activities')
       .select('*')
@@ -44,7 +41,6 @@ async function importActivitiesSimple() {
     }
     
     // Import activities with only basic fields
-    console.log('\n🔄 Importing activities with basic fields...')
     let successCount = 0
     let errorCount = 0
     
@@ -75,19 +71,12 @@ async function importActivitiesSimple() {
         
         errorCount++
       } else {
-        console.log(`✅ Imported: ${activity.title}`)
         successCount++
       }
     }
     
-    console.log(`\n📊 Import complete: ${successCount} succeeded, ${errorCount} failed`)
     
     if (successCount > 0) {
-      console.log('\n🎉 Activities imported successfully!')
-      console.log('\n💡 Next steps:')
-      console.log('1. Check the activities at http://localhost:3002/activities')
-      console.log('2. View organization timelines at http://localhost:3002/organizations')
-      console.log('3. Import sectors and transactions separately if needed')
     }
     
   } catch (error) {

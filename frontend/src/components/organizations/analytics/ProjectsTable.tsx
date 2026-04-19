@@ -63,10 +63,10 @@ const STATUS_COLORS: { [key: string]: string } = {
   'active': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   '1': 'bg-blue-100 text-blue-800',
   'pipeline': 'bg-blue-100 text-blue-800',
-  '3': 'bg-gray-100 text-gray-800',
-  'completed': 'bg-gray-100 text-gray-800',
-  '5': 'bg-red-100 text-red-800',
-  'cancelled': 'bg-red-100 text-red-800',
+  '3': 'bg-muted text-foreground',
+  'completed': 'bg-muted text-foreground',
+  '5': 'bg-destructive/10 text-red-800',
+  'cancelled': 'bg-destructive/10 text-red-800',
 };
 
 export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps) {
@@ -277,31 +277,31 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                       <TableCell>
                         <Badge
                           className={
-                            STATUS_COLORS[project.status] || 'bg-gray-100 text-gray-800'
+                            STATUS_COLORS[project.status] || 'bg-muted text-foreground'
                           }
                         >
                           {STATUS_LABELS[project.status] || project.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs">
+                      <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.sectors}>
                           {project.sectors || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs">
+                      <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.developmentPartners}>
                           {project.developmentPartners || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs">
+                      <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.executingAgencies}>
                           {project.executingAgencies || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right text-sm font-medium">
+                      <TableCell className="text-right text-body font-medium">
                         {formatCurrency(project.commitments)}
                       </TableCell>
-                      <TableCell className="text-right text-sm font-medium">
+                      <TableCell className="text-right text-body font-medium">
                         {formatCurrency(project.disbursements)}
                       </TableCell>
                     </TableRow>
@@ -315,7 +315,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               Showing {((currentPage - 1) * itemsPerPage) + 1} to{' '}
               {Math.min(currentPage * itemsPerPage, filteredAndSortedProjects.length)} of{' '}
               {filteredAndSortedProjects.length} projects

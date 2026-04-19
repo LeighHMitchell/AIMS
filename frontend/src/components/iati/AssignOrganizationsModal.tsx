@@ -212,7 +212,7 @@ export function AssignOrganizationsModal({
                               <Badge variant="outline">
                                 {getTransactionTypeLabel(tx.transaction_type)}
                               </Badge>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-body text-muted-foreground">
                                 {tx.transaction_date}
                               </span>
                               <span className="font-mono text-sm">
@@ -220,7 +220,7 @@ export function AssignOrganizationsModal({
                               </span>
                             </div>
                             {tx.description && (
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-body text-muted-foreground">
                                 {tx.description}
                               </p>
                             )}
@@ -234,17 +234,17 @@ export function AssignOrganizationsModal({
                         <div className="space-y-3">
                           {/* Provider Organization */}
                           <div className="grid grid-cols-12 gap-2 items-center">
-                            <div className="col-span-3 text-sm font-medium">Provider:</div>
+                            <div className="col-span-3 text-body font-medium">Provider:</div>
                             <div className="col-span-9">
                               {tx.provider_org_id ? (
                                 <div className="flex items-center gap-2">
                                   <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                                  <span className="text-sm">{tx.provider_org_name || tx.provider_org_ref}</span>
+                                  <span className="text-body">{tx.provider_org_name || tx.provider_org_ref}</span>
                                 </div>
                               ) : (
                                 <div className="space-y-1">
                                   {tx.provider_org_name && (
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-body text-muted-foreground">
                                       IATI: {tx.provider_org_name} {tx.provider_org_ref && `(${tx.provider_org_ref})`}
                                     </p>
                                   )}
@@ -272,17 +272,17 @@ export function AssignOrganizationsModal({
 
                           {/* Receiver Organization */}
                           <div className="grid grid-cols-12 gap-2 items-center">
-                            <div className="col-span-3 text-sm font-medium">Receiver:</div>
+                            <div className="col-span-3 text-body font-medium">Receiver:</div>
                             <div className="col-span-9">
                               {tx.receiver_org_id ? (
                                 <div className="flex items-center gap-2">
                                   <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                                  <span className="text-sm">{tx.receiver_org_name || tx.receiver_org_ref}</span>
+                                  <span className="text-body">{tx.receiver_org_name || tx.receiver_org_ref}</span>
                                 </div>
                               ) : (
                                 <div className="space-y-1">
                                   {tx.receiver_org_name && (
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-body text-muted-foreground">
                                       IATI: {tx.receiver_org_name} {tx.receiver_org_ref && `(${tx.receiver_org_ref})`}
                                     </p>
                                   )}
@@ -316,7 +316,7 @@ export function AssignOrganizationsModal({
 
           {/* Progress Summary */}
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <span className="text-sm font-medium">
+            <span className="text-body font-medium">
               Organizations assigned: {Object.keys(assignments).length} / {transactionsNeedingAssignment.length} transactions
             </span>
             {allAssigned && (

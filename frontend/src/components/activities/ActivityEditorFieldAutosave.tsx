@@ -111,7 +111,7 @@ export function ActivityEditorFieldAutosave({
           <LabelSaveIndicator
             isSaving={titleAutosave.state.isSaving}
             isSaved={titleAutosave.state.isPersistentlySaved}
-            className="text-gray-700"
+            className="text-foreground"
           >
             Activity Title
           </LabelSaveIndicator>
@@ -134,7 +134,7 @@ export function ActivityEditorFieldAutosave({
               }}
             />
             {titleAutosave.state.error && (
-              <p className="text-xs text-red-600 mt-1">{titleAutosave.state.error.toString()}</p>
+              <p className="text-helper text-destructive mt-1">{titleAutosave.state.error.toString()}</p>
             )}
           </div>
         </div>
@@ -147,7 +147,7 @@ export function ActivityEditorFieldAutosave({
             isSaving={statusAutosave.state.isSaving}
             isSaved={statusAutosave.state.isPersistentlySaved || !!activity.activityStatus}
             hasValue={!!activity.activityStatus}
-            className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
+            className={fieldLockStatus?.isLocked ? 'text-muted-foreground' : 'text-foreground'}
           >
             {!showOnlyStatus ? (
               <>
@@ -156,7 +156,7 @@ export function ActivityEditorFieldAutosave({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                        <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{fieldLockStatus.tooltipMessage}</p>
@@ -167,7 +167,7 @@ export function ActivityEditorFieldAutosave({
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Activity Status</span>
+                <span className="text-body font-medium text-foreground">Activity Status</span>
                 <HelpTextTooltip>
                   Indicates the current phase of the activity. This field should be regularly updated to reflect the activity's progress over time.
                 </HelpTextTooltip>
@@ -175,7 +175,7 @@ export function ActivityEditorFieldAutosave({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                        <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{fieldLockStatus.tooltipMessage}</p>
@@ -200,7 +200,7 @@ export function ActivityEditorFieldAutosave({
               dropdownId={dropdownId ? `${dropdownId}-status` : 'activity-status-select'}
             />
             {statusAutosave.state.error && (
-              <p className="text-xs text-red-600 mt-1">{statusAutosave.state.error.toString()}</p>
+              <p className="text-helper text-destructive mt-1">{statusAutosave.state.error.toString()}</p>
             )}
           </div>
         </div>
@@ -212,14 +212,14 @@ export function ActivityEditorFieldAutosave({
           <LabelSaveIndicator
             isSaving={aidTypeAutosave.state.isSaving}
             isSaved={aidTypeAutosave.state.isPersistentlySaved}
-            className={fieldLockStatus?.isLocked ? 'text-gray-400' : 'text-gray-700'}
+            className={fieldLockStatus?.isLocked ? 'text-muted-foreground' : 'text-foreground'}
           >
             Default Aid Type
             {fieldLockStatus?.isLocked && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                    <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{fieldLockStatus.tooltipMessage}</p>
@@ -235,7 +235,7 @@ export function ActivityEditorFieldAutosave({
               placeholder="Select default aid type"
             />
             {aidTypeAutosave.state.error && (
-              <p className="text-xs text-red-600 mt-1">{aidTypeAutosave.state.error.toString()}</p>
+              <p className="text-helper text-destructive mt-1">{aidTypeAutosave.state.error.toString()}</p>
             )}
           </div>
         </div>
@@ -243,9 +243,9 @@ export function ActivityEditorFieldAutosave({
 
       {/* Autosave Status Summary - only show if showing all fields */}
       {showAll && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Autosave Status</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="mt-6 p-4 bg-muted rounded-lg">
+          <h4 className="text-body font-medium text-foreground mb-2">Autosave Status</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-helper">
             <div>
               <span className="font-medium">Title:</span>
               <span className={`ml-1 ${titleAutosave.state.isSaving ? 'text-blue-600' : 'text-[hsl(var(--success-icon))]'}`}>

@@ -128,7 +128,6 @@ export function LocationsGroup({
         }
       } catch (e) {
         // Non-critical — suggestedRegions will just be empty until LocationsTab loads
-        console.log('[LocationsGroup] Could not pre-fetch locations:', e)
       }
     }
 
@@ -169,9 +168,6 @@ export function LocationsGroup({
         township_name: loc.township_name || '(empty)',
         city: loc.city || '(empty)',
       }))
-      console.log('[LocationsGroup] currentLocations fields:', JSON.stringify(mapped, null, 2))
-      console.log('[LocationsGroup] suggestedRegions:', JSON.stringify(suggestedRegions))
-      console.log('[LocationsGroup] suggestedTownships:', JSON.stringify(suggestedTownships))
     }
   }, [currentLocations, suggestedRegions, suggestedTownships])
 
@@ -226,14 +222,8 @@ export function LocationsGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -331,7 +321,7 @@ export function LocationsGroup({
     <div className="locations-group space-y-0">
       {/* Show message if activity not created */}
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access location sections.</p>
         </div>
       )}
@@ -347,7 +337,7 @@ export function LocationsGroup({
             style={{ minHeight: getSectionMinHeight('country-region') }}
           >
             {isSectionActive('country-region') || activeSections.has('country-region') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="country-region"
                   title={getSectionLabel('country-region')}
@@ -374,11 +364,11 @@ export function LocationsGroup({
           <section
             id="locations"
             ref={locationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('locations') }}
           >
             {isSectionActive('locations') || activeSections.has('locations') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="locations"
                   title={getSectionLabel('locations')}
@@ -402,11 +392,11 @@ export function LocationsGroup({
           <section
             id="subnational-allocation"
             ref={subnationalRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('subnational-allocation') || 400 }}
           >
             {isSectionActive('subnational-allocation') || activeSections.has('subnational-allocation') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <EnhancedSubnationalBreakdown
                   activityId={activityId}
                   canEdit={permissions?.canEditActivity ?? true}

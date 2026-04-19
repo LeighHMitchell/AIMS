@@ -84,7 +84,7 @@ type ChartViewType = 'line' | 'bar' | 'area' | 'table'
 
 // Legend item component for data types
 const DataTypeLegendItem = ({ color, label, isDashed = false }: { color: string; label: string; isDashed?: boolean }) => (
-  <div className="flex items-center gap-2 text-sm">
+  <div className="flex items-center gap-2 text-body">
     <div className="flex items-center">
       {isDashed ? (
         <svg width="24" height="2" className="flex-shrink-0">
@@ -94,7 +94,7 @@ const DataTypeLegendItem = ({ color, label, isDashed = false }: { color: string;
         <div className="w-6 h-0.5 flex-shrink-0" style={{ backgroundColor: color }} />
       )}
     </div>
-    <span className="text-gray-600">{label}</span>
+    <span className="text-muted-foreground">{label}</span>
   </div>
 )
 
@@ -259,11 +259,11 @@ export function FundingOverTimeAnalytics() {
       const yearLabel = typeof label === 'number' ? label : parseInt(label)
 
       return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
-          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-slate-200 text-slate-900">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
+          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-border text-foreground">
             {label}
           </div>
-          <table className="min-w-full text-sm border-collapse">
+          <table className="min-w-full text-body border-collapse">
             <thead className="bg-surface-muted">
               <tr style={{ backgroundColor: COLORS.platinum }}>
                 <th className="px-3 py-2 text-left font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
@@ -289,12 +289,12 @@ export function FundingOverTimeAnalytics() {
                     </td>
                     <td className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                       {formatCurrency(entry.value)}
-                      {txCount && <span className="text-xs text-gray-400 ml-1">({txCount} txns)</span>}
+                      {txCount && <span className="text-helper text-muted-foreground ml-1">({txCount} txns)</span>}
                     </td>
                     <td className="px-3 py-2 text-center" style={{ borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                       <Badge 
                         variant="outline" 
-                        className="text-xs"
+                        className="text-helper"
                         style={{ 
                           borderColor: getDataTypeColor(dataType),
                           color: getDataTypeColor(dataType)
@@ -308,7 +308,7 @@ export function FundingOverTimeAnalytics() {
               })}
             </tbody>
           </table>
-          <div className="px-3 py-2 text-xs text-gray-500" style={{ borderTop: `1px solid ${COLORS.paleSlate}`, backgroundColor: COLORS.platinum }}>
+          <div className="px-3 py-2 text-helper text-muted-foreground" style={{ borderTop: `1px solid ${COLORS.paleSlate}`, backgroundColor: COLORS.platinum }}>
             {yearLabel < currentYear && 'Source: Activity transactions (disbursements + expenditures)'}
             {yearLabel === currentYear && 'Source: Activity transactions (year-to-date)'}
             {yearLabel > currentYear && 'Source: Organisation indicative budgets'}
@@ -389,18 +389,18 @@ export function FundingOverTimeAnalytics() {
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-sm p-4 bg-white border shadow-lg">
-                    <div className="space-y-2 text-sm">
-                      <p className="font-semibold text-gray-900">About this data</p>
-                      <ul className="space-y-1 text-gray-600">
+                    <div className="space-y-2 text-body">
+                      <p className="font-semibold text-foreground">About this data</p>
+                      <ul className="space-y-1 text-muted-foreground">
                         <li><span className="font-medium" style={{ color: COLORS.actual }}>Past years:</span> Aggregated from published IATI activity transactions (disbursements + expenditures)</li>
                         <li><span className="font-medium" style={{ color: COLORS.partial }}>Current year:</span> Year-to-date transaction totals (partial data)</li>
                         <li><span className="font-medium" style={{ color: COLORS.indicative }}>Future years:</span> Indicative organisation-level budgets (subject to change)</li>
                       </ul>
-                      <p className="text-xs text-gray-500 pt-2 border-t">
+                      <p className="text-helper text-muted-foreground pt-2 border-t">
                         Future projections should not be treated as commitments.
                       </p>
                     </div>
@@ -422,7 +422,7 @@ export function FundingOverTimeAnalytics() {
           <div className="space-y-4">
             {/* Donor Multi-Select */}
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2" style={{ color: COLORS.blueSlate }}>
+              <label className="text-body font-medium flex items-center gap-2" style={{ color: COLORS.blueSlate }}>
                 <Building2 className="h-4 w-4" />
                 Select Donors
               </label>
@@ -525,7 +525,7 @@ export function FundingOverTimeAnalytics() {
             <div className="text-center" style={{ color: COLORS.blueSlate }}>
               <Building2 className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
               <p className="font-medium mb-1">No donors selected</p>
-              <p className="text-sm">Select one or more organizations to compare funding over time</p>
+              <p className="text-body">Select one or more organizations to compare funding over time</p>
             </div>
           </CardContent>
         </Card>
@@ -541,7 +541,7 @@ export function FundingOverTimeAnalytics() {
             <div className="text-center" style={{ color: COLORS.blueSlate }}>
               <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
               <p className="font-medium mb-1">No data available</p>
-              <p className="text-sm">The selected organizations don&apos;t have funding data for this period</p>
+              <p className="text-body">The selected organizations don&apos;t have funding data for this period</p>
             </div>
           </CardContent>
         </Card>
@@ -767,7 +767,7 @@ export function FundingOverTimeAnalytics() {
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 mt-0.5" style={{ color: COLORS.primaryScarlet }} />
-            <div className="text-sm" style={{ color: COLORS.blueSlate }}>
+            <div className="text-body" style={{ color: COLORS.blueSlate }}>
               <p className="font-medium mb-1">Important: Data Interpretation</p>
               <p>
                 <strong>Past years</strong> show confirmed transaction data (disbursements and expenditures). 

@@ -162,20 +162,20 @@ const CustomTooltip = ({ active, payload }: any) => {
       className="bg-white p-4 rounded-lg shadow-lg border"
       style={{ backgroundColor: "#f1f4f8", borderColor: "#cfd0d5" }}
     >
-      <div className="font-semibold text-sm mb-2" style={{ color: "#4c5568" }}>
+      <div className="font-semibold text-body mb-2" style={{ color: "#4c5568" }}>
         {data.code} - {data.name}
       </div>
-      <div className="space-y-1 text-sm">
+      <div className="space-y-1 text-body">
         <div className="flex justify-between gap-4">
-          <span className="text-gray-600">Budget:</span>
+          <span className="text-muted-foreground">Budget:</span>
           <span className="font-medium">{formatCurrency(data.budgetAmount, data.currency)}</span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-gray-600">Expenditure:</span>
+          <span className="text-muted-foreground">Expenditure:</span>
           <span className="font-medium">{formatCurrency(data.expenditureAmount, data.currency)}</span>
         </div>
         <div className="flex justify-between gap-4 pt-1 border-t" style={{ borderColor: "#cfd0d5" }}>
-          <span className="text-gray-600">Execution Rate:</span>
+          <span className="text-muted-foreground">Execution Rate:</span>
           <span
             className="font-medium"
             style={{ color: data.executionRate > 100 ? "#dc2625" : "#4c5568" }}
@@ -221,7 +221,7 @@ export function DomesticBudgetTreemap({ data, valueKey }: DomesticBudgetTreemapP
           <p className="text-lg font-medium" style={{ color: "#4c5568" }}>
             No data to visualize
           </p>
-          <p className="text-sm mt-1" style={{ color: "#7b95a7" }}>
+          <p className="text-body mt-1" style={{ color: "#7b95a7" }}>
             {valueKey === "budget"
               ? "Add budget entries with budget amounts to see the treemap"
               : "Add budget entries with expenditure amounts to see the treemap"}

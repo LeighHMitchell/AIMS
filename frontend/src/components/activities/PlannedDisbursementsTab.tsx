@@ -115,9 +115,9 @@ function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
     <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-body text-muted-foreground">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
@@ -500,7 +500,6 @@ export default function PlannedDisbursementsTab({
       if (result.success && result.exchange_rate) {
         setModalExchangeRate(result.exchange_rate);
         setModalRateError(null);
-        console.log(`[PlannedDisbursementsTab] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
       } else {
         setModalRateError(result.error || 'Failed to fetch exchange rate');
         setModalExchangeRate(null);
@@ -715,7 +714,6 @@ export default function PlannedDisbursementsTab({
         }
 
         const data = await response.json();
-        console.log('[PlannedDisbursementsTab] Fetched planned disbursements:', data?.length || 0);
 
         // If no disbursements exist, show empty state (users can create custom periods)
         if (!data || data.length === 0) {
@@ -800,10 +798,8 @@ export default function PlannedDisbursementsTab({
     if (onDisbursementsChange && !loading) {
       // Filter out generated empty disbursements - only count actual saved disbursements with IDs
       const actualDisbursements = disbursements.filter(d => d.id);
-      console.log('[PlannedDisbursementsTab] Notifying parent with disbursements:', actualDisbursements.length);
       onDisbursementsChange(actualDisbursements);
     } else {
-      console.log('[PlannedDisbursementsTab] NOT notifying parent - loading:', loading);
     }
   }, [disbursements, onDisbursementsChange, loading]);
 
@@ -1551,7 +1547,7 @@ export default function PlannedDisbursementsTab({
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground mb-2">Please save the activity first before adding planned disbursements.</p>
-        <p className="text-sm text-muted-foreground">Planned disbursements can only be added to saved activities.</p>
+        <p className="text-body text-muted-foreground">Planned disbursements can only be added to saved activities.</p>
       </div>
     );
   }
@@ -1571,7 +1567,7 @@ export default function PlannedDisbursementsTab({
           )}
 
           {/* Planned Disbursements Table */}
-          <Card data-planned-tab className="border-0 shadow-none">
+          <Card data-planned-tab className={hideSummaryCards ? "border-0 shadow-none" : ""}>
         <CardHeader className={hideSummaryCards ? "hidden" : ""}>
           <div className="flex items-center justify-between">
             <div>
@@ -1601,7 +1597,7 @@ export default function PlannedDisbursementsTab({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>
@@ -1641,7 +1637,7 @@ export default function PlannedDisbursementsTab({
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1652,7 +1648,10 @@ export default function PlannedDisbursementsTab({
           {renderFilters && hideSummaryCards && disbursements.length > 0 && !loading && renderFilters(
             <div className="flex items-end gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <label className="flex items-center gap-1 text-helper font-medium text-muted-foreground">
+                  Status
+                  <HelpTextTooltip content="IATI planned-disbursement revision type: Original (1) is the initial disbursement entry; Revised (2) is a subsequent update to that entry." />
+                </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px] h-9">
                     <SelectValue placeholder="Status" />
@@ -1674,7 +1673,7 @@ export default function PlannedDisbursementsTab({
                   </SelectContent>
                 </Select>
               </div>
-              <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+              <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
@@ -1686,7 +1685,7 @@ export default function PlannedDisbursementsTab({
           {disbursements.length === 0 ? (
             <div className="text-center py-12">
               <img src="/images/empty-stork.webp" alt="No planned disbursements" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No planned disbursements</h3>
+              <h3 className="text-base font-medium mb-2">No planned disbursements</h3>
               <p className="text-muted-foreground mb-4">
                 Use the button above to add your first planned disbursement.
               </p>
@@ -1801,7 +1800,7 @@ export default function PlannedDisbursementsTab({
                         <TableRow
                           className={cn(
                             "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                            disbursement.hasError ? 'bg-red-50' : '',
+                            disbursement.hasError ? 'bg-destructive/10' : '',
                             selectedDisbursementIds.has(disbursement.id!) && "bg-blue-50 border-blue-200"
                           )}
                         >
@@ -1827,7 +1826,7 @@ export default function PlannedDisbursementsTab({
                           </TableCell>
 
                           {/* Status/Type */}
-                          <TableCell className="py-3 px-4 whitespace-nowrap text-sm">
+                          <TableCell className="py-3 px-4 whitespace-nowrap text-body">
                             <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">
                               {(disbursement.status || 'original') === 'original' ? '1' : '2'}
                             </code>
@@ -1896,7 +1895,7 @@ export default function PlannedDisbursementsTab({
                           <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="font-medium">
                               {disbursement.amount > 0 
-                                ? <><span className="text-muted-foreground text-xs">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
+                                ? <><span className="text-muted-foreground text-helper">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
                                 : '-'
                               }
                             </div>
@@ -1924,11 +1923,11 @@ export default function PlannedDisbursementsTab({
                                             <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                           )}
                                         </span>
-                                        <span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        <span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent className="min-w-[200px]">
-                                      <table className="text-xs w-full">
+                                      <table className="text-helper w-full">
                                         <tbody>
                                           <tr>
                                             <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
@@ -1962,7 +1961,7 @@ export default function PlannedDisbursementsTab({
                               ) : (
                                 <div className="flex items-center gap-1">
                                   {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.error ? (
-                                    <span className="text-sm text-red-500">
+                                    <span className="text-body text-destructive">
                                       {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].error}
                                     </span>
                                   ) : (
@@ -1977,7 +1976,7 @@ export default function PlannedDisbursementsTab({
                                 <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" aria-label="Saved" />
                               )}
                               {saveStatus[disbursement.id || ''] === 'error' && (
-                                <span className="text-xs text-red-500">Failed</span>
+                                <span className="text-helper text-destructive">Failed</span>
                               )}
                             </div>
                           </TableCell>
@@ -2001,12 +2000,12 @@ export default function PlannedDisbursementsTab({
                                   <DropdownMenuItem
                                     onClick={() => setDeleteConfirmId(disbursement.id || '')}
                                     disabled={isReadOnly || deleteLoading === disbursement.id}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     {deleteLoading === disbursement.id ? (
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
-                                      <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                      <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                                     )}
                                     Delete
                                   </DropdownMenuItem>
@@ -2025,7 +2024,7 @@ export default function PlannedDisbursementsTab({
               {/* Pagination Controls */}
               {disbursements.length > itemsPerPage && (
                 <div className="flex items-center justify-between mt-4 px-2">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedFilteredDisbursements.length)} of {sortedFilteredDisbursements.length} planned disbursements
                   </div>
                   <div className="flex items-center gap-2">
@@ -2066,7 +2065,7 @@ export default function PlannedDisbursementsTab({
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                           >
                             {pageNum}
                           </Button>
@@ -2150,10 +2149,10 @@ export default function PlannedDisbursementsTab({
           <div className="space-y-6">
             {/* Validation Alert */}
             {validationAlert && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+              <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-body text-red-800">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                 <span>{validationAlert}</span>
-                <button onClick={() => setValidationAlert(null)} className="ml-auto text-red-500 hover:text-red-700">
+                <button onClick={() => setValidationAlert(null)} className="ml-auto text-destructive hover:text-destructive">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -2171,8 +2170,8 @@ export default function PlannedDisbursementsTab({
               <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
                 <PopoverTrigger
                   className={cn(
-                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-                    fieldErrors.type && "border-red-500",
+                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                    fieldErrors.type && "border-destructive",
                     !modalDisbursement?.type && "text-muted-foreground"
                   )}
                   disabled={savingId === modalDisbursement?.id}
@@ -2204,20 +2203,20 @@ export default function PlannedDisbursementsTab({
                         className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                         aria-label="Clear selection"
                       >
-                        <span className="text-xs">×</span>
+                        <span className="text-helper">×</span>
                       </button>
                     )}
                     <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-0" align="start">
-                  <div className="max-h-[200px] overflow-y-auto">
+                <PopoverContent className="w-80 p-0" align="start">
+                  <div className="max-h-[240px] overflow-y-auto">
                     {BUDGET_TYPES.map(type => (
                       <button
                         key={type.code}
                         type="button"
                         className={cn(
-                          "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                          "flex w-full items-start gap-2 px-3 py-2 text-body text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                           modalDisbursement?.type === type.code && "bg-accent text-accent-foreground"
                         )}
                         onClick={() => {
@@ -2225,15 +2224,18 @@ export default function PlannedDisbursementsTab({
                           setTypePopoverOpen(false);
                         }}
                       >
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
-                        <span className="font-medium">{type.name}</span>
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{type.code}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium">{type.name}</span>
+                          <span className="text-helper text-muted-foreground leading-snug">{type.description}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </PopoverContent>
               </Popover>
               {fieldErrors.type && (
-                <p className="text-xs text-red-500">{fieldErrors.type}</p>
+                <p className="text-helper text-destructive">{fieldErrors.type}</p>
               )}
             </div>
 
@@ -2256,7 +2258,7 @@ export default function PlannedDisbursementsTab({
                   dropdownId="pd-modal-period-start"
                 />
                 {fieldErrors.period_start && (
-                  <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
+                  <p className="text-helper text-destructive">{fieldErrors.period_start}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -2276,7 +2278,7 @@ export default function PlannedDisbursementsTab({
                   dropdownId="pd-modal-period-end"
                 />
                 {fieldErrors.period_end && (
-                  <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
+                  <p className="text-helper text-destructive">{fieldErrors.period_end}</p>
                 )}
               </div>
             </div>
@@ -2324,12 +2326,12 @@ export default function PlannedDisbursementsTab({
                       setAmountInputValue('');
                     }
                   }}
-                  className={cn("h-10", fieldErrors.amount && "border-red-500")}
+                  className={cn("h-10", fieldErrors.amount && "border-destructive")}
                   placeholder="0.00"
                   disabled={savingId === modalDisbursement?.id}
                 />
                 {fieldErrors.amount && (
-                  <p className="text-xs text-red-500">{fieldErrors.amount}</p>
+                  <p className="text-helper text-destructive">{fieldErrors.amount}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -2348,7 +2350,7 @@ export default function PlannedDisbursementsTab({
                   placeholder="Select currency"
                 />
                 {fieldErrors.currency && (
-                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                  <p className="text-helper text-destructive">{fieldErrors.currency}</p>
                 )}
               </div>
             </div>
@@ -2372,13 +2374,13 @@ export default function PlannedDisbursementsTab({
                   dropdownId="pd-modal-value-date"
                 />
                 {fieldErrors.value_date && (
-                  <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
+                  <p className="text-helper text-destructive">{fieldErrors.value_date}</p>
                 )}
               </div>
               {modalDisbursement?.currency && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between min-h-[24px]">
-                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    <Label className="flex items-center gap-1.5 text-body font-medium">
                       Exchange Rate
                       <TooltipProvider>
                         <UITooltip>
@@ -2386,14 +2388,14 @@ export default function PlannedDisbursementsTab({
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p className="text-sm">The exchange rate used to convert the disbursement value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                            <p className="text-body">The exchange rate used to convert the disbursement value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
                           </TooltipContent>
                         </UITooltip>
                       </TooltipProvider>
                     </Label>
                     {modalDisbursement.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="pd_exchange_rate_mode" className={cn("text-xs cursor-pointer", modalExchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
+                        <Label htmlFor="pd_exchange_rate_mode" className={cn("text-helper cursor-pointer", modalExchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                           {modalExchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
@@ -2440,13 +2442,13 @@ export default function PlannedDisbursementsTab({
                       </Button>
                     )}
                     {modalExchangeRate != null && modalDisbursement.currency !== 'USD' && !isLoadingModalRate && (
-                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                      <span className="absolute right-10 top-2.5 text-helper text-muted-foreground select-all cursor-text">
                         1 {modalDisbursement.currency} = {modalExchangeRate.toFixed(6)} USD
                       </span>
                     )}
                   </div>
                   {modalRateError && (
-                    <p className="text-xs text-red-500">{modalRateError}</p>
+                    <p className="text-helper text-destructive">{modalRateError}</p>
                   )}
                 </div>
               )}
@@ -2456,7 +2458,7 @@ export default function PlannedDisbursementsTab({
             {modalDisbursement?.currency && (
               <div className="space-y-2">
                 <div className="flex items-center min-h-[24px]">
-                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                  <Label className="flex items-center gap-1.5 text-body font-medium">
                     USD Value
                     <TooltipProvider>
                       <UITooltip>
@@ -2464,13 +2466,13 @@ export default function PlannedDisbursementsTab({
                           <Info className="h-3 w-3 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p className="text-sm">The disbursement value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                          <p className="text-body">The disbursement value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
                         </TooltipContent>
                       </UITooltip>
                     </TooltipProvider>
                   </Label>
                 </div>
-                <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-body">
                   {modalCalculatedUsdValue !== null ? (
                     <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                   ) : (
@@ -2528,16 +2530,13 @@ export default function PlannedDisbursementsTab({
               <ActivityCombobox
                 value={modalDisbursement?.provider_activity_uuid || ''}
                 onValueChange={async (activityId) => {
-                  console.log('[PlannedDisbursement] Provider activity selected:', activityId);
                   updateFormField('provider_activity_uuid', activityId);
-                  console.log('[PlannedDisbursement] Updated provider_activity_uuid to:', activityId);
 
                   if (activityId) {
                     try {
                       const response = await apiFetch(`/api/activities/${activityId}`);
                       if (response.ok) {
                         const activity = await response.json();
-                        console.log('[PlannedDisbursement] Fetched activity IATI ID:', activity.iati_identifier);
                         updateFormField('provider_activity_id', activity.iati_identifier || '');
                       }
                     } catch (error) {
@@ -2672,21 +2671,30 @@ export default function PlannedDisbursementsTab({
       <Sheet open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <SheetContent side="bottom" className="max-w-md mx-auto">
           <SheetHeader>
-            <SheetTitle>Delete Planned Disbursement</SheetTitle>
+            <SheetTitle>Delete this planned disbursement?</SheetTitle>
             <SheetDescription>
-              Are you sure you want to delete this planned disbursement? This action cannot be undone.
+              {(() => {
+                const d = disbursements.find(x => x.id === deleteConfirmId);
+                if (!d) return "This planned disbursement will be permanently deleted. This can't be undone.";
+                const amount = d.amount != null ? `${d.currency || ''} ${Number(d.amount).toLocaleString()}`.trim() : null;
+                const period = d.period_start && d.period_end ? `${d.period_start} → ${d.period_end}` : null;
+                const details = [amount, period].filter(Boolean).join(' • ');
+                return details
+                  ? `This disbursement (${details}) will be permanently deleted. This can't be undone.`
+                  : "This planned disbursement will be permanently deleted. This can't be undone.";
+              })()}
             </SheetDescription>
           </SheetHeader>
           <SheetFooter className="flex-row gap-2 mt-4">
             <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="flex-1">
-              Cancel
+              Keep
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               className="flex-1"
             >
-              Delete Disbursement
+              Delete disbursement
             </Button>
           </SheetFooter>
         </SheetContent>

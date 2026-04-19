@@ -69,12 +69,12 @@ export function FieldSaveStatus({
     return (
       <div className={`flex items-center gap-1 ${className}`}>
         <XCircle 
-          className={`${iconSize} text-red-600`} 
+          className={`${iconSize} text-destructive`} 
           aria-label={error?.message || 'Save failed'}
           title={error?.message}
         />
         {error?.message && (
-          <span className="text-xs text-red-600">{error.message}</span>
+          <span className="text-helper text-destructive">{error.message}</span>
         )}
       </div>
     );

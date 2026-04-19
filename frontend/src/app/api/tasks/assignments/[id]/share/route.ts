@@ -28,7 +28,6 @@ export async function POST(
       return NextResponse.json({ error: 'shared_with_id is required' }, { status: 400 });
     }
 
-    console.log('[Task Share API] POST share for assignment:', id, 'by user:', userId);
 
     // Fetch the assignment
     const { data: assignment, error: fetchError } = await supabase
@@ -154,7 +153,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'share_id is required' }, { status: 400 });
     }
 
-    console.log('[Task Share API] DELETE share:', share_id, 'by user:', userId);
 
     // Fetch the share
     const { data: share, error: fetchError } = await supabase

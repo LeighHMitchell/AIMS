@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
 
   try {
 
-    console.log('[Backfill Planned Disbursements USD] Starting backfill process');
 
     // Get all planned disbursements without USD values
     const { data: disbursements, error: fetchError } = await supabase
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!disbursements || disbursements.length === 0) {
-      console.log('[Backfill Planned Disbursements USD] No disbursements need backfilling');
       return NextResponse.json({
         message: 'No planned disbursements need backfilling',
         processed: 0,
@@ -38,7 +36,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Backfill Planned Disbursements USD] Found ${disbursements.length} disbursements without USD values`);
 
     const results = {
       processed: 0,
@@ -71,7 +68,6 @@ export async function POST(request: NextRequest) {
           if (result.success && result.usd_amount !== null) {
             usdAmount = result.usd_amount;
             results.converted++;
-            console.log(`[Backfill Planned Disbursements USD] Converted disbursement ${disbursement.id}: ${disbursement.amount} ${disbursement.currency} → $${usdAmount} USD`);
           } else {
             results.failed++;
             results.errors.push({
@@ -117,7 +113,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[Backfill Planned Disbursements USD] Backfill complete:', results);
 
     return NextResponse.json({
       message: 'Backfill complete',

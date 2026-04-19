@@ -116,10 +116,10 @@ export function PDFThumbnail({
   if (loading && !rendered) {
     return (
       <div
-        className={`flex items-center justify-center bg-slate-100 rounded-lg ${className}`}
+        className={`flex items-center justify-center bg-muted rounded-lg ${className}`}
         style={{ width, height }}
       >
-        <Loader2 className="h-6 w-6 text-slate-400 animate-spin" />
+        <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
       </div>
     )
   }
@@ -128,10 +128,10 @@ export function PDFThumbnail({
   if (error || !rendered) {
     return (
       <div
-        className={`flex items-center justify-center bg-slate-100 rounded-lg ${className}`}
+        className={`flex items-center justify-center bg-muted rounded-lg ${className}`}
         style={{ width, height }}
       >
-        {fallbackIcon || <FileText className="h-8 w-8 text-slate-400" />}
+        {fallbackIcon || <FileText className="h-8 w-8 text-muted-foreground" />}
       </div>
     )
   }

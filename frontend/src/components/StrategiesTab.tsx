@@ -141,11 +141,11 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
     switch (status) {
       case 'Published': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
       case 'Active': return 'bg-blue-100 text-blue-800';
-      case 'Completed': return 'bg-gray-100 text-gray-800';
+      case 'Completed': return 'bg-muted text-foreground';
       case 'Draft – Internal Only': return 'bg-yellow-100 text-yellow-800';
       case 'Under Government Consultation': return 'bg-orange-100 text-orange-800';
       case 'Pending Publication / Approval': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -167,7 +167,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading strategies...</p>
+          <p className="text-muted-foreground">Loading strategies...</p>
         </div>
       </div>
     );
@@ -178,8 +178,8 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Development Strategies</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-foreground">Development Strategies</h2>
+          <p className="text-muted-foreground mt-1">
             {isPublicView 
               ? `Published strategies from ${organizationName}` 
               : `Manage development strategies for ${organizationName}`
@@ -202,7 +202,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total</p>
+                  <p className="text-body text-muted-foreground">Total</p>
                   <p className="text-2xl font-bold">{strategies.length}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-600" />
@@ -214,7 +214,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Published</p>
+                  <p className="text-body text-muted-foreground">Published</p>
                   <p className="text-2xl font-bold">{publishedStrategies.length}</p>
                 </div>
                 <Eye className="h-8 w-8 text-[hsl(var(--success-icon))]" />
@@ -226,7 +226,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Draft/Internal</p>
+                  <p className="text-body text-muted-foreground">Draft/Internal</p>
                   <p className="text-2xl font-bold">{draftStrategies.length}</p>
                 </div>
                 <EyeOff className="h-8 w-8 text-orange-600" />
@@ -238,7 +238,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">With Files</p>
+                  <p className="text-body text-muted-foreground">With Files</p>
                   <p className="text-2xl font-bold">{strategies.filter(s => s.has_file).length}</p>
                 </div>
                 <Download className="h-8 w-8 text-purple-600" />
@@ -259,9 +259,9 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
           {strategies.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No strategies found</h3>
-                <p className="text-gray-600 mb-4">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No strategies found</h3>
+                <p className="text-muted-foreground mb-4">
                   {isPublicView 
                     ? "This organization hasn't published any development strategies yet."
                     : "Get started by adding your first development strategy."
@@ -284,10 +284,10 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                       <div className="flex-1">
                         <div className="flex items-start gap-3 mb-3">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            <h3 className="text-lg font-semibold text-foreground mb-1">
                               {strategy.title}
                             </h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                            <div className="flex items-center gap-2 text-body text-muted-foreground mb-2">
                               <span>{strategy.document_type}</span>
                               <span>•</span>
                               <span>{formatDateRange(strategy)}</span>
@@ -317,14 +317,14 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                             {strategy.thematic_pillars && strategy.thematic_pillars.length > 0 && (
                               <div className="flex flex-wrap gap-1 mb-3">
                                 {strategy.thematic_pillars.map((pillar, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
+                                  <Badge key={index} variant="secondary" className="text-helper">
                                     {pillar}
                                   </Badge>
                                 ))}
                               </div>
                             )}
 
-                            <div className="text-sm text-gray-600">
+                            <div className="text-body text-muted-foreground">
                               Created by {strategy.created_by_user.name} on{' '}
                               {new Date(strategy.created_at).toLocaleDateString()}
                               {strategy.last_edited_by_user && (
@@ -365,15 +365,15 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                               size="sm"
                               onClick={() => handleEditStrategy(strategy)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeleteStrategy(strategy.id)}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </>
                         )}

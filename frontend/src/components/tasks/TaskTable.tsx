@@ -82,13 +82,11 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
       return;
     }
 
-    console.log('[Download] Fetching signed URL for:', { taskId, attachmentId, fileName });
 
     // Get signed URL from API
     const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`);
     const data = await response.json();
 
-    console.log('[Download] API response:', data);
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);
@@ -293,16 +291,16 @@ export function TaskTable({
                 key={assignment.id}
                 className={cn(
                   'cursor-pointer hover:bg-muted/50',
-                  isOverdue && 'bg-red-50/50',
+                  isOverdue && 'bg-destructive/10/50',
                   isDueSoon && !isOverdue && 'bg-amber-50/50'
                 )}
                 onClick={() => onViewDetails?.(assignment)}
               >
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="text-sm text-foreground line-clamp-1">{task.title}</div>
+                    <div className="text-body text-foreground line-clamp-1">{task.title}</div>
                     {task.description && (
-                      <div className="text-xs text-muted-foreground line-clamp-1">
+                      <div className="text-helper text-muted-foreground line-clamp-1">
                         {task.description}
                       </div>
                     )}
@@ -310,18 +308,18 @@ export function TaskTable({
                 </TableCell>
 
                 <TableCell>
-                  <span className="text-sm text-foreground">
+                  <span className="text-body text-foreground">
                     {getPriorityLabel(task.priority)}
                   </span>
                 </TableCell>
 
                 <TableCell>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm">
+                    <span className="text-body">
                       {getStatusLabel(assignment.status)}
                     </span>
                     {isOverdue && (
-                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
                     )}
                   </div>
                 </TableCell>
@@ -329,13 +327,13 @@ export function TaskTable({
                 <TableCell>
                   {deadline ? (
                     <div className={cn(
-                      'text-sm',
+                      'text-body',
                       isOverdue && 'text-[#DC2625]',
                       isDueSoon && !isOverdue && 'text-[#DC2625]'
                     )}>
                       {format(deadline, 'MMM d, yyyy')}
                       {daysUntil !== null && (
-                        <div className="text-xs">
+                        <div className="text-helper">
                           {isOverdue
                             ? `${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''} overdue`
                             : daysUntil === 0
@@ -347,7 +345,7 @@ export function TaskTable({
                       )}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">No deadline</span>
+                    <span className="text-muted-foreground text-body">No deadline</span>
                   )}
                 </TableCell>
 
@@ -355,19 +353,19 @@ export function TaskTable({
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={personToShow?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
+                      <AvatarFallback className="text-helper">
                         {personName.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <span className="text-sm block truncate">{personName}</span>
+                      <span className="text-body block truncate">{personName}</span>
                       {(getPersonRole() || getPersonDepartment()) && (
-                        <span className="text-xs text-muted-foreground block truncate">
+                        <span className="text-helper text-muted-foreground block truncate">
                           {[getPersonRole(), getPersonDepartment()].filter(Boolean).join(', ')}
                         </span>
                       )}
                       {getPersonOrganization() && (
-                        <span className="text-xs text-muted-foreground block truncate">
+                        <span className="text-helper text-muted-foreground block truncate">
                           {getPersonOrganization()}
                         </span>
                       )}
@@ -380,7 +378,7 @@ export function TaskTable({
                   {(() => {
                     const attachments = (task as any).task_attachments || [];
                     if (attachments.length === 0) {
-                      return <span className="text-muted-foreground text-xs">-</span>;
+                      return <span className="text-muted-foreground text-helper">-</span>;
                     }
                     return (
                       <div className="flex items-center gap-1 flex-wrap">
@@ -404,7 +402,7 @@ export function TaskTable({
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">
-                                  <div className="text-xs">
+                                  <div className="text-helper">
                                     <p className="font-medium">{attachment.file_name}</p>
                                     <p className="text-muted-foreground flex items-center gap-1">
                                       <Download className="h-3 w-3" /> Click to download
@@ -419,12 +417,12 @@ export function TaskTable({
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="h-7 w-7 rounded bg-muted border border-muted-foreground/20 flex items-center justify-center text-xs font-medium text-muted-foreground">
+                                <div className="h-7 w-7 rounded bg-muted border border-muted-foreground/20 flex items-center justify-center text-helper font-medium text-muted-foreground">
                                   +{attachments.length - 4}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
-                                <div className="text-xs">
+                                <div className="text-helper">
                                   <p className="font-medium mb-1">{attachments.length - 4} more attachment{attachments.length - 4 !== 1 ? 's' : ''}</p>
                                   <ul className="space-y-0.5">
                                     {attachments.slice(4).map((a: any) => (

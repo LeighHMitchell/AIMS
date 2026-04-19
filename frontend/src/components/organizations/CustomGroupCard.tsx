@@ -143,7 +143,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 View
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(group)}>
-                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -151,7 +151,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 onClick={() => onDelete(group)}
                 style={{ color: colors.primaryScarlet }}
               >
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -187,7 +187,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
             <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
               {group.name}
             </h2>
-            <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+            <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 {memberCount} {memberCount === 1 ? 'member' : 'members'}
@@ -215,7 +215,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
         <div className="flex-1">
           {/* Description */}
           {group.description && (
-            <p className="text-sm line-clamp-2 mb-3" style={{ color: colors.coolSteel }}>
+            <p className="text-body line-clamp-2 mb-3" style={{ color: colors.coolSteel }}>
               {group.description}
             </p>
           )}
@@ -283,7 +283,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                         ? { duration: 0 }
                         : { delay: 0.05 * displayedMembers.length, duration: 0.25, ease: "easeOut" }
                     }
-                    className="ml-2 text-xs font-medium"
+                    className="ml-2 text-helper font-medium"
                     style={{ color: colors.coolSteel }}
                   >
                     +{remainingCount}

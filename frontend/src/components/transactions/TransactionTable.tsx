@@ -540,14 +540,14 @@ export function TransactionTable({
       }).format(value);
 
       // Return as JSX with gray currency code
-      return <><span className="text-muted-foreground text-xs">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-helper">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[TransactionTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-muted-foreground text-xs font-normal">USD</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-helper font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -586,7 +586,7 @@ export function TransactionTable({
             </div>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p className="text-sm">{actualStatus ? 'Actual' : 'Draft'}</p>
+            <p className="text-body">{actualStatus ? 'Actual' : 'Draft'}</p>
           </TooltipContent>
         </Tooltip>
     );
@@ -617,7 +617,7 @@ export function TransactionTable({
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading transactions: {error}</p>
+        <p className="text-destructive">Error loading transactions: {error}</p>
       </div>
     );
   }
@@ -625,7 +625,7 @@ export function TransactionTable({
   if (transactions.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="text-gray-600">No transactions found</p>
+        <p className="text-muted-foreground">No transactions found</p>
       </div>
     );
   }
@@ -644,7 +644,6 @@ export function TransactionTable({
                     checked={selectedIds.size === transactions.length && transactions.length > 0}
                     indeterminate={selectedIds.size > 0 && selectedIds.size < transactions.length}
                     onCheckedChange={(checked) => {
-                      console.log('[TransactionTable] Select all clicked:', checked, 'transactions.length:', transactions.length);
                       onSelectAll(!!checked);
                     }}
                     aria-label="Select all transactions"
@@ -735,14 +734,14 @@ export function TransactionTable({
                     <TableCell colSpan={100} className="py-3 px-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="font-semibold text-sm">
+                          <span className="font-semibold text-body">
                             {getGroupedLabel(type)}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-helper text-muted-foreground">
                             {groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'}
                           </span>
                         </div>
-                        <span className="font-semibold text-sm">
+                        <span className="font-semibold text-body">
                           {formatCurrencyString(groupTotal?.total || 0, 'USD')}
                         </span>
                       </div>
@@ -839,7 +838,9 @@ export function TransactionTable({
               className={cn(
                 "border-b border-border/40 hover:bg-muted/30 transition-colors",
                 isSelected && "bg-blue-50 border-blue-200",
-                transaction.transaction_source === 'linked' && "border-l-4 border-l-orange-400 bg-orange-50/30",
+                // Linked transactions: subtle background tint only (removed the
+                // 4px left-stripe accent that flagged as AI-slop).
+                transaction.transaction_source === 'linked' && "bg-orange-50/40",
                 transaction.acceptance_status === 'rejected' && "opacity-60"
               )}
             >
@@ -885,7 +886,7 @@ export function TransactionTable({
                     activity: variant === "full" ? (
                       <td key="activity" className="py-3 px-4">
                         <div className="cursor-pointer hover:opacity-75 group" onClick={(e) => { e.stopPropagation(); if (transaction.activity_id) { window.location.href = `/activities/${transaction.activity_id}`; } }}>
-                          <div className="text-sm">
+                          <div className="text-body">
                             {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
                             {(transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier) && (
                               <span className="text-xs font-mono font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
@@ -895,7 +896,7 @@ export function TransactionTable({
                             {(() => {
                               const iatiId = transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier;
                               return iatiId ? (
-                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(iatiId, 'iati', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-iati` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy IATI Identifier</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(iatiId, 'iati', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-iati` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-body">Copy IATI Identifier</p></TooltipContent></Tooltip>
                               ) : null;
                             })()}
                           </div>
@@ -926,7 +927,7 @@ export function TransactionTable({
                       const acronym = transaction.activity?.created_by_org_acronym || fetched?.reporting_org_acronym;
                       const display = acronym && name && acronym !== name ? `${name} (${acronym})` : (name || acronym);
                       return (
-                        <td key="reportingOrg" className="py-3 px-4 whitespace-nowrap"><span className="text-sm">{display || '—'}</span></td>
+                        <td key="reportingOrg" className="py-3 px-4 whitespace-nowrap"><span className="text-body">{display || '—'}</span></td>
                       );
                     })(),
                     transactionDate: (
@@ -935,7 +936,7 @@ export function TransactionTable({
                     transactionType: (
                       <td key="transactionType" className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Tooltip><TooltipTrigger asChild><span className="text-sm cursor-help inline-flex items-center gap-1.5"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.transaction_type}</span><span className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="text-body cursor-help inline-flex items-center gap-1.5"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.transaction_type}</span><span className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-helper text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
                           {transaction.status === 'draft' && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -952,7 +953,7 @@ export function TransactionTable({
                     linkedStatus: (
                       <td key="linkedStatus" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.transaction_source === 'linked' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-orange-50 border-orange-200 text-orange-700 px-1 cursor-help"><Link2 className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Linked Transaction</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-helper bg-orange-50 border-orange-200 text-orange-700 px-1 cursor-help"><Link2 className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-body">Linked Transaction</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -962,14 +963,14 @@ export function TransactionTable({
                           (['1', '11', '13'].includes(transaction.transaction_type) && transaction.provider_activity_uuid)) ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Badge variant="outline" className="text-xs bg-indigo-50 border-indigo-200 text-indigo-700 px-1.5 cursor-help gap-1">
+                              <Badge variant="outline" className="text-helper bg-indigo-50 border-indigo-200 text-indigo-700 px-1.5 cursor-help gap-1">
                                 <Shuffle className="h-3 w-3" />
                                 Internal
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="text-sm">This transaction is an internal fund transfer</p>
-                              <p className="text-xs text-muted-foreground mt-1">Excluded from portfolio totals to avoid double-counting</p>
+                              <p className="text-body">This transaction is an internal fund transfer</p>
+                              <p className="text-helper text-muted-foreground mt-1">Excluded from portfolio totals to avoid double-counting</p>
                             </TooltipContent>
                           </Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
@@ -978,21 +979,21 @@ export function TransactionTable({
                     acceptanceStatus: (
                       <td key="acceptanceStatus" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.acceptance_status === 'pending' && transaction.transaction_source === 'linked' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200 text-yellow-700 px-1 cursor-help"><Clock className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Pending Acceptance</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-helper bg-yellow-50 border-yellow-200 text-yellow-700 px-1 cursor-help"><Clock className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-body">Pending Acceptance</p></TooltipContent></Tooltip>
                         ) : transaction.acceptance_status === 'accepted' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Accepted Transaction</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-helper bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-body">Accepted Transaction</p></TooltipContent></Tooltip>
                         ) : transaction.acceptance_status === 'rejected' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-red-50 border-red-200 text-red-700 px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-helper bg-destructive/10 border-destructive/30 text-destructive px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-body">Rejected Transaction</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     organizations: (
                       <td key="organizations" className="py-3 px-4">
-                        <div className="text-sm">
+                        <div className="text-body">
                           <div className="flex items-start gap-2">
-                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-sm cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-body cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
                             <span className="text-muted-foreground mt-1">→</span>
-                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-sm cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-body cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div></div>
                           </div>
                         </div>
                       </td>
@@ -1000,10 +1001,10 @@ export function TransactionTable({
                     providerActivity: (
                       <td key="providerActivity" className="py-3 px-4" style={{ maxWidth: '260px' }}>
                         {paId || transaction.provider_org_activity_id ? (
-                          <Link href={`/activities/${paId || transaction.provider_org_activity_id}`} className="text-xs hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
+                          <Link href={`/activities/${paId || transaction.provider_org_activity_id}`} className="text-helper hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
                             <div className="space-y-0.5">
-                              {paDetails?.acronym && <div className="text-sm">{paDetails.acronym}</div>}
-                              {(paDetails?.title_narrative || paDetails?.title) && <div className="text-sm">{paDetails.title_narrative || paDetails.title}</div>}
+                              {paDetails?.acronym && <div className="text-body">{paDetails.acronym}</div>}
+                              {(paDetails?.title_narrative || paDetails?.title) && <div className="text-body">{paDetails.title_narrative || paDetails.title}</div>}
                               <div className="whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{paDetails?.iati_identifier || transaction.provider_org_activity_id}</span></div>
                             </div>
                           </Link>
@@ -1013,10 +1014,10 @@ export function TransactionTable({
                     receiverActivity: (
                       <td key="receiverActivity" className="py-3 px-4" style={{ maxWidth: '260px' }}>
                         {raId || transaction.receiver_org_activity_id ? (
-                          <Link href={`/activities/${raId || transaction.receiver_org_activity_id}`} className="text-xs hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
+                          <Link href={`/activities/${raId || transaction.receiver_org_activity_id}`} className="text-helper hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
                             <div className="space-y-0.5">
-                              {raDetails?.acronym && <div className="text-sm">{raDetails.acronym}</div>}
-                              {(raDetails?.title_narrative || raDetails?.title) && <div className="text-sm">{raDetails.title_narrative || raDetails.title}</div>}
+                              {raDetails?.acronym && <div className="text-body">{raDetails.acronym}</div>}
+                              {(raDetails?.title_narrative || raDetails?.title) && <div className="text-body">{raDetails.title_narrative || raDetails.title}</div>}
                               <div className="whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{raDetails?.iati_identifier || transaction.receiver_org_activity_id}</span></div>
                             </div>
                           </Link>
@@ -1026,12 +1027,12 @@ export function TransactionTable({
                     amount: (
                       <td key="amount" className="py-3 px-4 text-right whitespace-nowrap">
                         {transaction.value != null && transaction.currency ? (
-                          <div className="text-sm"><span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(transaction.value)}</div>
+                          <div className="text-body"><span className="text-muted-foreground text-helper">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(transaction.value)}</div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     currency: (
-                      <td key="currency" className="py-3 px-4 text-center whitespace-nowrap"><span className="text-sm font-medium">{transaction.currency?.toUpperCase() || '—'}</span></td>
+                      <td key="currency" className="py-3 px-4 text-center whitespace-nowrap"><span className="text-body font-medium">{transaction.currency?.toUpperCase() || '—'}</span></td>
                     ),
                     valueDate: (
                       <td key="valueDate" className="py-3 px-4 whitespace-nowrap">{formatTransactionDate(transaction.value_date || transaction.transaction_date)}</td>
@@ -1044,7 +1045,7 @@ export function TransactionTable({
                           ) : usdValues[transactionId]?.usd != null ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="text-sm cursor-help flex items-center gap-1">
+                                <span className="text-body cursor-help flex items-center gap-1">
                                   <span className="w-4 shrink-0 flex items-center justify-center">
                                     {(transaction as any).exchange_rate_manual && (
                                       <PenLine className="h-3.5 w-3.5 text-orange-500" />
@@ -1054,7 +1055,7 @@ export function TransactionTable({
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="min-w-[200px]">
-                                <table className="text-xs w-full">
+                                <table className="text-helper w-full">
                                   <tbody>
                                     <tr>
                                       <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
@@ -1094,8 +1095,8 @@ export function TransactionTable({
                       return (
                         <td key="financeType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-xs">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
-                          ) : <span className="text-sm font-normal text-muted-foreground">—</span>}
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-helper">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                          ) : <span className="text-body font-normal text-muted-foreground">—</span>}
                         </td>
                       );
                     })(),
@@ -1105,7 +1106,7 @@ export function TransactionTable({
                       return (
                         <td key="aidType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1116,7 +1117,7 @@ export function TransactionTable({
                       return (
                         <td key="flowType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.flow_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.flow_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1127,7 +1128,7 @@ export function TransactionTable({
                       return (
                         <td key="tiedStatus" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.tied_status_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.tied_status_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1135,28 +1136,28 @@ export function TransactionTable({
                     humanitarian: (
                       <td key="humanitarian" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.is_humanitarian ? (
-                          <Tooltip><TooltipTrigger asChild><Heart className="h-4 w-4 text-red-500 fill-red-500 inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Humanitarian</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Heart className="h-4 w-4 text-destructive fill-red-500 inline" /></TooltipTrigger><TooltipContent><p className="text-body">Humanitarian</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     description: (
                       <td key="description" className="py-3 px-4 max-w-[200px]">
                         {transaction.description ? (
-                          <Tooltip><TooltipTrigger asChild><span className="text-sm line-clamp-2 cursor-help">{transaction.description}</span></TooltipTrigger><TooltipContent side="left" className="max-w-[300px]"><p className="text-sm">{transaction.description}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="text-body line-clamp-2 cursor-help">{transaction.description}</span></TooltipTrigger><TooltipContent side="left" className="max-w-[300px]"><p className="text-body">{transaction.description}</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     disbursementChannel: (
                       <td key="disbursementChannel" className="py-3 px-4 whitespace-nowrap">
                         {transaction.disbursement_channel ? (
-                          <Tooltip><TooltipTrigger asChild><span className="text-sm cursor-help">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="text-body cursor-help">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     validatedStatus: (
                       <td key="validatedStatus" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.validated_by ? (
-                          <Tooltip><TooltipTrigger asChild><CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Validated by {transaction.validated_by}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] inline" /></TooltipTrigger><TooltipContent><p className="text-body">Validated by {transaction.validated_by}</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -1164,7 +1165,7 @@ export function TransactionTable({
                       <td key="transactionUuid" className="py-3 px-4 whitespace-nowrap"><span className="text-xs font-mono text-muted-foreground">{(transaction.uuid || transaction.id).slice(0, 8)}...</span></td>
                     ),
                     transactionReference: (
-                      <td key="transactionReference" className="py-3 px-4 whitespace-nowrap"><span className="text-xs text-muted-foreground">{transaction.transaction_reference || '—'}</span></td>
+                      <td key="transactionReference" className="py-3 px-4 whitespace-nowrap"><span className="text-helper text-muted-foreground">{transaction.transaction_reference || '—'}</span></td>
                     ),
                   };
                   return txCellMap[colId] || null;
@@ -1194,21 +1195,21 @@ export function TransactionTable({
             
             {/* Expanded Row Content - Data-Rich Card Dashboard */}
             {isExpanded && (
-              <TableRow className="bg-slate-50/50">
+              <TableRow className="bg-muted/50">
                 <td colSpan={100} className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* LEFT COLUMN */}
                   <div className="space-y-4">
                       
                       {/* Transaction Summary Header */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                      <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-slate-600" />
+                            <Calendar className="h-5 w-5 text-muted-foreground" />
                             <span className="text-lg font-semibold text-foreground">
                               {TRANSACTION_TYPE_LABELS[transaction.transaction_type]}
                             </span>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-body text-muted-foreground">
                               — {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
                             </span>
                           </div>
@@ -1219,7 +1220,7 @@ export function TransactionTable({
                         </div>
                         
                         {/* Organization Flow */}
-                        <div className="flex items-center gap-2 mb-3 text-sm">
+                        <div className="flex items-center gap-2 mb-3 text-body">
                           <span className="font-medium">{providerDisplay}</span>
                           <ArrowRight className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{receiverDisplay}</span>
@@ -1242,7 +1243,7 @@ export function TransactionTable({
                               </TooltipTrigger>
                               {transaction.flow_type_inherited && (
                                 <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default flow type</p>
+                                  <p className="text-helper">Inherited from activity's default flow type</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1257,7 +1258,7 @@ export function TransactionTable({
                               </TooltipTrigger>
                               {transaction.finance_type_inherited && (
                                 <TooltipContent className="max-w-[220px]">
-                                  <p className="text-xs">Inherited from activity default</p>
+                                  <p className="text-helper">Inherited from activity default</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1272,7 +1273,7 @@ export function TransactionTable({
                               </TooltipTrigger>
                               {transaction.tied_status_inherited && (
                                 <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default tied status</p>
+                                  <p className="text-helper">Inherited from activity's default tied status</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1293,21 +1294,21 @@ export function TransactionTable({
                       </div>
                       
                       {/* Parties Involved Flowcard */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Parties Involved</h3>
+                      <div className="bg-white rounded-lg border border-border p-4">
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">Parties Involved</h3>
                         <div className="flex items-center gap-3">
-                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-slate-200">
+                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-border">
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{providerDisplay}</p>
+                                <p className="font-medium text-body truncate">{providerDisplay}</p>
                                 {transaction.provider_org_ref && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <p className="text-xs text-muted-foreground truncate cursor-help">{transaction.provider_org_ref}</p>
+                                        <p className="text-helper text-muted-foreground truncate cursor-help">{transaction.provider_org_ref}</p>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className="text-xs">Provider Reference: {transaction.provider_org_ref}</p>
+                                        <p className="text-helper">Provider Reference: {transaction.provider_org_ref}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                 )}
@@ -1317,18 +1318,18 @@ export function TransactionTable({
                           
                           <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           
-                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-slate-200">
+                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-border">
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{receiverDisplay}</p>
+                                <p className="font-medium text-body truncate">{receiverDisplay}</p>
                                 {transaction.receiver_org_ref && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <p className="text-xs text-muted-foreground truncate cursor-help">{transaction.receiver_org_ref}</p>
+                                        <p className="text-helper text-muted-foreground truncate cursor-help">{transaction.receiver_org_ref}</p>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className="text-xs">Receiver Reference: {transaction.receiver_org_ref}</p>
+                                        <p className="text-helper">Receiver Reference: {transaction.receiver_org_ref}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                 )}
@@ -1340,36 +1341,36 @@ export function TransactionTable({
                       
                       {/* Description Section */}
                     {transaction.description && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xs uppercase tracking-wide text-muted-foreground">Description</h3>
+                            <h3 className="text-section-label uppercase text-muted-foreground">Description</h3>
                             {onEdit && (
                               <button className="text-muted-foreground hover:text-foreground transition-colors">
-                                <Pencil className="h-3 w-3 text-slate-500" />
+                                <Pencil className="h-3 w-3 text-muted-foreground" />
                               </button>
                             )}
                         </div>
-                          <p className="text-sm text-slate-700 leading-relaxed">{transaction.description}</p>
+                          <p className="text-body text-foreground leading-relaxed">{transaction.description}</p>
                         </div>
                       )}
                       
                       {!transaction.description && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Description</h3>
-                          <p className="text-sm text-muted-foreground italic">No additional details provided.</p>
+                        <div className="bg-white rounded-lg border border-border p-4">
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-2">Description</h3>
+                          <p className="text-body text-muted-foreground italic">No additional details provided.</p>
                       </div>
                     )}
                     
                       {/* Humanitarian & Validation Status */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Status Indicators</h3>
+                      <div className="bg-white rounded-lg border border-border p-4">
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">Status Indicators</h3>
                         <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <Heart className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Humanitarian</span>
+                              <span className="text-body font-medium">Humanitarian</span>
                         </div>
-                            <p className="text-xs text-muted-foreground pl-6">
+                            <p className="text-helper text-muted-foreground pl-6">
                               {transaction.is_humanitarian ? 'Emergency response or disaster relief' : 'Not humanitarian'}
                             </p>
                           </div>
@@ -1377,9 +1378,9 @@ export function TransactionTable({
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Validation</span>
+                              <span className="text-body font-medium">Validation</span>
                             </div>
-                            <p className="text-xs text-muted-foreground pl-6">
+                            <p className="text-helper text-muted-foreground pl-6">
                               {transaction.status === 'actual' ? 'Verified by organisation' : 'Not yet validated'}
                             </p>
                           </div>
@@ -1392,13 +1393,13 @@ export function TransactionTable({
                       
                       {/* Linked Activities */}
                       {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Linked Activities</h3>
+                        <div className="bg-white rounded-lg border border-border p-4">
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">Linked Activities</h3>
                           <div className="space-y-3">
                             {transaction.provider_org_activity_id && (
-                              <div className="p-3 bg-muted/30 rounded-lg border border-slate-200">
+                              <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Provider Activity</span>
+                                  <span className="text-section-label font-semibold text-foreground uppercase">Provider Activity</span>
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(transaction.provider_org_activity_id || '');
@@ -1410,31 +1411,31 @@ export function TransactionTable({
                                   </button>
                                 </div>
                                 {loadingActivities.has(transaction.provider_org_activity_id) ? (
-                                  <p className="text-sm text-muted-foreground">Loading...</p>
+                                  <p className="text-body text-muted-foreground">Loading...</p>
                                 ) : activityDetails[transaction.provider_org_activity_id] ? (
                                   <div className="space-y-1">
-                                    <p className="font-medium text-sm">{activityDetails[transaction.provider_org_activity_id]?.acronym || activityDetails[transaction.provider_org_activity_id]?.title}</p>
+                                    <p className="font-medium text-body">{activityDetails[transaction.provider_org_activity_id]?.acronym || activityDetails[transaction.provider_org_activity_id]?.title}</p>
                                     {activityDetails[transaction.provider_org_activity_id]?.iati_identifier && (
                                       <p className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded inline-block">
                                         {activityDetails[transaction.provider_org_activity_id]?.iati_identifier}
                                       </p>
                                     )}
                                     {activityDetails[transaction.provider_org_activity_id]?.reporting_org && (
-                                      <p className="text-xs text-muted-foreground">
+                                      <p className="text-helper text-muted-foreground">
                                         Org: {activityDetails[transaction.provider_org_activity_id]?.reporting_org}
                                       </p>
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-muted-foreground">Activity not found</p>
+                                  <p className="text-body text-muted-foreground">Activity not found</p>
                                 )}
                       </div>
                     )}
                     
                             {transaction.receiver_org_activity_id && (
-                              <div className="p-3 bg-muted/30 rounded-lg border border-slate-200">
+                              <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Receiver Activity</span>
+                                  <span className="text-section-label font-semibold text-foreground uppercase">Receiver Activity</span>
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(transaction.receiver_org_activity_id || '');
@@ -1446,23 +1447,23 @@ export function TransactionTable({
                                   </button>
                           </div>
                                 {loadingActivities.has(transaction.receiver_org_activity_id) ? (
-                                  <p className="text-sm text-muted-foreground">Loading...</p>
+                                  <p className="text-body text-muted-foreground">Loading...</p>
                                 ) : activityDetails[transaction.receiver_org_activity_id] ? (
                                   <div className="space-y-1">
-                                    <p className="font-medium text-sm">{activityDetails[transaction.receiver_org_activity_id]?.acronym || activityDetails[transaction.receiver_org_activity_id]?.title}</p>
+                                    <p className="font-medium text-body">{activityDetails[transaction.receiver_org_activity_id]?.acronym || activityDetails[transaction.receiver_org_activity_id]?.title}</p>
                                     {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier && (
                                       <p className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded inline-block">
                                         {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier}
                                       </p>
                                     )}
                                     {activityDetails[transaction.receiver_org_activity_id]?.reporting_org && (
-                                      <p className="text-xs text-muted-foreground">
+                                      <p className="text-helper text-muted-foreground">
                                         Org: {activityDetails[transaction.receiver_org_activity_id]?.reporting_org}
                                       </p>
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-muted-foreground">Activity not found</p>
+                                  <p className="text-body text-muted-foreground">Activity not found</p>
                                 )}
                               </div>
                             )}
@@ -1471,26 +1472,26 @@ export function TransactionTable({
                       )}
                       
                       {/* Classifications Grid */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">IATI Classifications</h3>
+                      <div className="bg-white rounded-lg border border-border p-4">
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">IATI Classifications</h3>
                         <div className="grid grid-cols-1 gap-2">
                           {(transaction.aid_type || transaction.effective_aid_type) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Handshake className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-xs font-medium text-muted-foreground">Aid Type</span>
-                                    {transaction.aid_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    <span className="text-helper font-medium text-muted-foreground">Aid Type</span>
+                                    {transaction.aid_type_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.aid_type_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.aid_type_inherited ? 'text-muted-foreground' : ''}`}>
                                     {AID_TYPE_LABELS[transaction.effective_aid_type || transaction.aid_type]?.short || transaction.effective_aid_type || transaction.aid_type}
                                   </span>
                                 </div>
                               </TooltipTrigger>
                               {transaction.aid_type_inherited && (
                                 <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default aid type</p>
+                                  <p className="text-helper">Inherited from activity's default aid type</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1498,20 +1499,20 @@ export function TransactionTable({
                           {(transaction.flow_type || transaction.effective_flow_type) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Shuffle className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-xs font-medium text-muted-foreground">Flow Type</span>
-                                    {transaction.flow_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    <span className="text-helper font-medium text-muted-foreground">Flow Type</span>
+                                    {transaction.flow_type_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.flow_type_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.flow_type_inherited ? 'text-muted-foreground' : ''}`}>
                                     {FLOW_TYPE_LABELS[transaction.effective_flow_type || transaction.flow_type] || transaction.effective_flow_type || transaction.flow_type}
                                   </span>
                                 </div>
                               </TooltipTrigger>
                               {transaction.flow_type_inherited && (
                                 <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default flow type</p>
+                                  <p className="text-helper">Inherited from activity's default flow type</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1519,20 +1520,20 @@ export function TransactionTable({
                           {(transaction.finance_type || transaction.effective_finance_type) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Coins className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-xs font-medium text-muted-foreground">Finance Type</span>
-                                    {transaction.finance_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    <span className="text-helper font-medium text-muted-foreground">Finance Type</span>
+                                    {transaction.finance_type_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.finance_type_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.finance_type_inherited ? 'text-muted-foreground' : ''}`}>
                                     {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}
                                   </span>
                                 </div>
                               </TooltipTrigger>
                               {transaction.finance_type_inherited && (
                                 <TooltipContent className="max-w-[220px]">
-                                  <p className="text-xs">Inherited from activity default</p>
+                                  <p className="text-helper">Inherited from activity default</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1540,31 +1541,31 @@ export function TransactionTable({
                           {(transaction.tied_status || transaction.effective_tied_status) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Link2 className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-xs font-medium text-muted-foreground">Tied Status</span>
-                                    {transaction.tied_status_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    <span className="text-helper font-medium text-muted-foreground">Tied Status</span>
+                                    {transaction.tied_status_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.tied_status_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.tied_status_inherited ? 'text-muted-foreground' : ''}`}>
                                     {TIED_STATUS_LABELS[(transaction.effective_tied_status || transaction.tied_status) as keyof typeof TIED_STATUS_LABELS] || transaction.effective_tied_status || transaction.tied_status}
                                   </span>
                                 </div>
                               </TooltipTrigger>
                               {transaction.tied_status_inherited && (
                                 <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default tied status</p>
+                                  <p className="text-helper">Inherited from activity's default tied status</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
                           )}
                           {transaction.disbursement_channel && (
-                            <div className="flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200">
+                            <div className="flex items-center justify-between p-2 bg-muted/30 rounded border border-border">
                               <div className="flex items-center gap-2">
                                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-xs font-medium text-muted-foreground">Channel</span>
+                                <span className="text-helper font-medium text-muted-foreground">Channel</span>
                               </div>
-                              <span className="text-sm font-medium">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span>
+                              <span className="text-body font-medium">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span>
                             </div>
                           )}
                         </div>
@@ -1572,25 +1573,25 @@ export function TransactionTable({
                       
                       {/* Geographic & Sector Targeting */}
                       {(transaction.sector_code || transaction.sectors?.length || transaction.recipient_country_code || transaction.recipient_countries?.length || transaction.recipient_region_code || transaction.recipient_regions?.length) && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Geographic & Sector Targeting</h3>
+                        <div className="bg-white rounded-lg border border-border p-4">
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">Geographic & Sector Targeting</h3>
                           <div className="space-y-2">
                           {transaction.sector_code && (
                               <div className="flex items-center gap-2">
                                 <Target className="h-3 w-3 text-muted-foreground" />
                                 <Badge variant="outline">{transaction.sector_code}</Badge>
-                                {transaction.sector_vocabulary && <span className="text-xs text-muted-foreground">Vocab: {transaction.sector_vocabulary}</span>}
+                                {transaction.sector_vocabulary && <span className="text-helper text-muted-foreground">Vocab: {transaction.sector_vocabulary}</span>}
                             </div>
                           )}
                           
                           {transaction.sectors && transaction.sectors.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Sectors:</p>
+                                <p className="text-helper font-medium text-muted-foreground mb-1">Sectors:</p>
                                 <div className="flex flex-wrap gap-2">
                               {transaction.sectors.map((sector, idx) => (
                                     <div key={idx} className="flex items-center gap-1">
                                   <Badge variant="outline">{sector.code}</Badge>
-                                      {sector.percentage && <span className="text-xs text-muted-foreground">{sector.percentage}%</span>}
+                                      {sector.percentage && <span className="text-helper text-muted-foreground">{sector.percentage}%</span>}
                                 </div>
                               ))}
                                 </div>
@@ -1606,12 +1607,12 @@ export function TransactionTable({
                           
                           {transaction.recipient_countries && transaction.recipient_countries.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Countries:</p>
+                                <p className="text-helper font-medium text-muted-foreground mb-1">Countries:</p>
                                 <div className="flex flex-wrap gap-2">
                               {transaction.recipient_countries.map((country, idx) => (
                                     <div key={idx} className="flex items-center gap-1">
                                   <Badge variant="outline">{country.code}</Badge>
-                                      {country.percentage && <span className="text-xs text-muted-foreground">{country.percentage}%</span>}
+                                      {country.percentage && <span className="text-helper text-muted-foreground">{country.percentage}%</span>}
                                 </div>
                               ))}
                                 </div>
@@ -1622,18 +1623,18 @@ export function TransactionTable({
                               <div className="flex items-center gap-2">
                                 <MapPin className="h-3 w-3 text-muted-foreground" />
                                 <Badge variant="outline">{transaction.recipient_region_code}</Badge>
-                                {transaction.recipient_region_vocab && <span className="text-xs text-muted-foreground">Vocab: {transaction.recipient_region_vocab}</span>}
+                                {transaction.recipient_region_vocab && <span className="text-helper text-muted-foreground">Vocab: {transaction.recipient_region_vocab}</span>}
                             </div>
                           )}
                           
                           {transaction.recipient_regions && transaction.recipient_regions.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Regions:</p>
+                                <p className="text-helper font-medium text-muted-foreground mb-1">Regions:</p>
                                 <div className="flex flex-wrap gap-2">
                               {transaction.recipient_regions.map((region, idx) => (
                                     <div key={idx} className="flex items-center gap-1">
                                   <Badge variant="outline">{region.code}</Badge>
-                                      {region.percentage && <span className="text-xs text-muted-foreground">{region.percentage}%</span>}
+                                      {region.percentage && <span className="text-helper text-muted-foreground">{region.percentage}%</span>}
                                 </div>
                               ))}
                             </div>
@@ -1645,13 +1646,13 @@ export function TransactionTable({
                       
                       {/* Aid Types (Multiple) */}
                         {transaction.aid_types && transaction.aid_types.length > 0 && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Aid Types</h3>
+                        <div className="bg-white rounded-lg border border-border p-4">
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">Aid Types</h3>
                           <div className="flex flex-wrap gap-2">
                             {transaction.aid_types.map((aidType, idx) => (
                               <div key={idx} className="flex items-center gap-2">
                                 <Badge variant="outline">{aidType.code}</Badge>
-                                {aidType.vocabulary && <span className="text-xs text-muted-foreground">Vocab: {aidType.vocabulary}</span>}
+                                {aidType.vocabulary && <span className="text-helper text-muted-foreground">Vocab: {aidType.vocabulary}</span>}
                         </div>
                             ))}
                           </div>
@@ -1660,11 +1661,11 @@ export function TransactionTable({
                         
                       {/* System Identifiers */}
                       {transaction.transaction_reference && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">System Identifiers</h3>
+                        <div className="bg-white rounded-lg border border-border p-4">
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">System Identifiers</h3>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">Transaction Reference</span>
+                              <span className="text-helper text-muted-foreground">Transaction Reference</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{transaction.transaction_reference}</span>
                                 <button
@@ -1683,15 +1684,15 @@ export function TransactionTable({
                         )}
                         
                       {/* Transaction Metadata */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Transaction Metadata</h3>
+                      <div className="bg-white rounded-lg border border-border p-4">
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">Transaction Metadata</h3>
                         <div className="space-y-3">
                           {/* Created By */}
                           {transaction.created_by && (
                             <div className="flex items-center gap-2">
                               <User className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Created by:</span>
-                              <span className="text-xs font-medium">{transaction.created_by}</span>
+                              <span className="text-helper text-muted-foreground">Created by:</span>
+                              <span className="text-helper font-medium">{transaction.created_by}</span>
                           </div>
                         )}
                         
@@ -1699,8 +1700,8 @@ export function TransactionTable({
                           {transaction.created_at && (
                             <div className="flex items-center gap-2">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Created:</span>
-                              <span className="text-xs font-medium">{format(new Date(transaction.created_at), 'dd MMM yyyy, HH:mm')}</span>
+                              <span className="text-helper text-muted-foreground">Created:</span>
+                              <span className="text-helper font-medium">{format(new Date(transaction.created_at), 'dd MMM yyyy, HH:mm')}</span>
                               </div>
                           )}
                           
@@ -1708,8 +1709,8 @@ export function TransactionTable({
                           {transaction.updated_at && (
                             <div className="flex items-center gap-2">
                               <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Last updated:</span>
-                              <span className="text-xs font-medium">{format(new Date(transaction.updated_at), 'dd MMM yyyy, HH:mm')}</span>
+                              <span className="text-helper text-muted-foreground">Last updated:</span>
+                              <span className="text-helper font-medium">{format(new Date(transaction.updated_at), 'dd MMM yyyy, HH:mm')}</span>
                           </div>
                         )}
                         
@@ -1717,8 +1718,8 @@ export function TransactionTable({
                           {transaction.updated_by && (
                             <div className="flex items-center gap-2">
                               <User className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Updated by:</span>
-                              <span className="text-xs font-medium">{transaction.updated_by}</span>
+                              <span className="text-helper text-muted-foreground">Updated by:</span>
+                              <span className="text-helper font-medium">{transaction.updated_by}</span>
                             </div>
                           )}
                           
@@ -1726,10 +1727,10 @@ export function TransactionTable({
                           {transaction.validated_by && (
                             <div className="flex items-center gap-2">
                               <UserCheck className="h-3 w-3 text-[hsl(var(--success-icon))]" />
-                              <span className="text-xs text-muted-foreground">Validated by:</span>
-                              <span className="text-xs font-medium text-green-700">{transaction.validated_by}</span>
+                              <span className="text-helper text-muted-foreground">Validated by:</span>
+                              <span className="text-helper font-medium text-green-700">{transaction.validated_by}</span>
                               {transaction.validated_at && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-helper text-muted-foreground">
                                   on {format(new Date(transaction.validated_at), 'dd MMM yyyy, HH:mm')}
                                 </span>
                               )}
@@ -1739,11 +1740,11 @@ export function TransactionTable({
                           {/* Rejected By */}
                           {transaction.rejected_by && (
                             <div className="flex items-center gap-2">
-                              <UserX className="h-3 w-3 text-red-600" />
-                              <span className="text-xs text-muted-foreground">Rejected by:</span>
-                              <span className="text-xs font-medium text-red-700">{transaction.rejected_by}</span>
+                              <UserX className="h-3 w-3 text-destructive" />
+                              <span className="text-helper text-muted-foreground">Rejected by:</span>
+                              <span className="text-helper font-medium text-destructive">{transaction.rejected_by}</span>
                               {transaction.rejected_at && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-helper text-muted-foreground">
                                   on {format(new Date(transaction.rejected_at), 'dd MMM yyyy, HH:mm')}
                                 </span>
                           )}
@@ -1755,8 +1756,8 @@ export function TransactionTable({
                             <div className="flex items-start gap-2">
                               <FileText className="h-3 w-3 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="text-xs text-muted-foreground">Validation comments:</span>
-                                <p className="text-xs font-medium mt-1 p-2 bg-muted/50 rounded border">
+                                <span className="text-helper text-muted-foreground">Validation comments:</span>
+                                <p className="text-helper font-medium mt-1 p-2 bg-muted/50 rounded border">
                                   {transaction.validation_comments}
                                 </p>
                               </div>
@@ -1767,8 +1768,8 @@ export function TransactionTable({
                           {!transaction.created_by && (
                             <div className="flex items-center gap-2">
                               <FileText className="h-3 w-3 text-blue-600" />
-                              <span className="text-xs text-muted-foreground">Source:</span>
-                              <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                              <span className="text-helper text-muted-foreground">Source:</span>
+                              <Badge variant="outline" className="text-helper bg-blue-50 border-blue-200 text-blue-700">
                                 Imported Transaction
                               </Badge>
                             </div>

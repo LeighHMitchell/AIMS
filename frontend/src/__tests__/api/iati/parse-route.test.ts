@@ -49,7 +49,6 @@ describe('IATI Parse Route - /api/iati/parse', () => {
   describe('TC-PARSE-API-001: Parse valid IATI XML', () => {
     it('should successfully parse valid IATI XML', async () => {
       if (!apiAvailable) {
-        console.log('Skipping: API not available');
         return;
       }
 
@@ -62,7 +61,6 @@ describe('IATI Parse Route - /api/iati/parse', () => {
 
       // May get 401 if not authenticated - that's expected in test env
       if (response.status === 401) {
-        console.log('Skipping: Authentication required');
         return;
       }
 

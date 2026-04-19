@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q')?.trim() || '';
     const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-    console.log('[Contacts Search API] Searching for:', query || '(all)', 'limit:', limit);
 
     // ---- Build both queries ----
     let contactsQuery = supabase
@@ -203,7 +202,6 @@ export async function GET(request: NextRequest) {
 
     const results = combined.slice(0, limit);
 
-    console.log('[Contacts Search API] Found:', results.length, 'results (', normalizedContacts.length, 'contacts,', normalizedUsers.length, 'users)');
 
     return NextResponse.json(results);
   } catch (error) {

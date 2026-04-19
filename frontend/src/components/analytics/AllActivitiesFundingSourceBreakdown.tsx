@@ -215,7 +215,7 @@ export function AllActivitiesFundingSourceBreakdown({
     if (error || !fundingSourceData.providers || fundingSourceData.providers.length === 0) {
       return (
         <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">{error || 'No data available'}</p>
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -325,7 +325,7 @@ export function AllActivitiesFundingSourceBreakdown({
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.value}
                       </code>
-                      <span className="text-sm">{option.label}</span>
+                      <span className="text-body">{option.label}</span>
                     </span>
                   )}
                 />
@@ -381,7 +381,7 @@ export function AllActivitiesFundingSourceBreakdown({
         {fundingSourceData.providers && fundingSourceData.providers.length > 0 ? (
           fundingChartType === 'table' ? (
             <div className="overflow-auto h-[500px] border border-border rounded-lg">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="sticky top-0 bg-surface-muted z-10">
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Provider</th>
@@ -429,13 +429,13 @@ export function AllActivitiesFundingSourceBreakdown({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No funding source data available</p>
-              <p className="text-xs mt-2">Add participating organizations or transactions to see funding breakdown</p>
+              <p className="text-helper mt-2">Add participating organizations or transactions to see funding breakdown</p>
             </div>
           </div>
         )}
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This Sankey diagram maps financial flows from funding providers to receiving organisations across all activities. Toggle between transaction-based and planned disbursement views, and filter by transaction type to focus on specific flow categories.
           Use this to understand which donors are channelling funds to which implementing partners and to identify the largest funding relationships in your portfolio.
         </p>

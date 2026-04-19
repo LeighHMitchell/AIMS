@@ -75,7 +75,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
     } catch (error) {
       setLinkStatus({
         status: 'error',
-        message: 'Failed to check link status'
+        message: 'Couldn\u2019t check link status. Verify the IATI identifier and try again.'
       });
     } finally {
       setIsLoading(false);
@@ -137,7 +137,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
     const statusColors = {
       match: 'text-[hsl(var(--success-icon))]',
       conflict: 'text-orange-600',
-      missing: 'text-gray-400'
+      missing: 'text-muted-foreground'
     };
 
     const statusIcons = {
@@ -149,17 +149,17 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
     const Icon = statusIcons[field.status as keyof typeof statusIcons];
 
     return (
-      <div className="flex items-center justify-between p-3 rounded-lg border bg-gray-50">
+      <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
         <div className="flex items-center gap-3">
           <Icon className={`h-4 w-4 ${statusColors[field.status as keyof typeof statusColors]}`} />
           <div>
-            <p className="font-medium text-sm">{field.field}</p>
+            <p className="font-medium text-body">{field.field}</p>
             <div className="flex gap-4 mt-1">
-              <span className="text-xs text-gray-600">
+              <span className="text-helper text-muted-foreground">
                 Local: <code className="bg-white px-1 rounded">{field.localValue || 'null'}</code>
               </span>
               {field.status !== 'match' && (
-                <span className="text-xs text-gray-600">
+                <span className="text-helper text-muted-foreground">
                   IATI: <code className="bg-white px-1 rounded">{field.iatiValue || 'null'}</code>
                 </span>
               )}
@@ -211,7 +211,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 )}
               </div>
               {!iatiIdentifier && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-helper text-muted-foreground mt-1">
                   No IATI identifier set. Enter one to enable IATI linking.
                 </p>
               )}
@@ -244,7 +244,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 variant="outline"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Pull from IATI
+                Import from IATI
               </Button>
               <Button
                 onClick={() => performLink('push')}
@@ -252,7 +252,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 variant="outline"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Push to IATI
+                Publish to IATI
               </Button>
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
               {linkStatus.fields && linkStatus.fields.length > 0 ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Field Comparison</h3>
+                    <h3 className="text-body font-medium">Field Comparison</h3>
                     <Badge variant="outline">
                       {linkStatus.fields.filter(f => f.status === 'match').length}/{linkStatus.fields.length} matched
                     </Badge>
@@ -288,10 +288,10 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-                  <img src="/images/empty-swan.webp" alt="No link data available" className="h-32 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">No link data available</h3>
-                  <p className="text-muted-foreground">Check status to compare fields.</p>
+                <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
+                  <img src="/images/empty-swan.webp" alt="No comparison yet" className="h-32 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-base font-semibold mb-2">No comparison yet</h3>
+                  <p className="text-muted-foreground">Click &ldquo;Compare with IATI&rdquo; above to see which fields match, differ, or are missing.</p>
                 </div>
               )}
             </TabsContent>
@@ -306,24 +306,24 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 </AlertDescription>
               </Alert>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Local Field</p>
-                    <code className="text-xs">title_narrative</code>
+                    <p className="text-body font-medium">Local Field</p>
+                    <code className="text-helper">title_narrative</code>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">IATI Field</p>
-                    <code className="text-xs">iati-activity/title/narrative</code>
+                    <p className="text-body font-medium">IATI Field</p>
+                    <code className="text-helper">iati-activity/title/narrative</code>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Local Field</p>
-                    <code className="text-xs">description_narrative</code>
+                    <p className="text-body font-medium">Local Field</p>
+                    <code className="text-helper">description_narrative</code>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">IATI Field</p>
-                    <code className="text-xs">iati-activity/description/narrative</code>
+                    <p className="text-body font-medium">IATI Field</p>
+                    <code className="text-helper">iati-activity/description/narrative</code>
                   </div>
                 </div>
               </div>
@@ -331,10 +331,10 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
 
             {/* History Tab */}
             <TabsContent value="history" className="space-y-4">
-              <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-                <img src="/images/empty-grandfather-clock.webp" alt="No link history" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No link history</h3>
-                <p className="text-muted-foreground">Link operations will be logged here.</p>
+              <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
+                <img src="/images/empty-grandfather-clock.webp" alt="No sync history" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-base font-semibold mb-2">No sync history yet</h3>
+                <p className="text-muted-foreground">Your import and publish history will appear here once you sync data with IATI.</p>
               </div>
             </TabsContent>
 
@@ -392,15 +392,15 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                   <div className="space-y-2 mt-2">
                     <label className="flex items-center gap-2">
                       <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Auto-link on save</span>
+                      <span className="text-body">Auto-link on save</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Validate against IATI schema</span>
+                      <span className="text-body">Validate against IATI schema</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Preserve local changes on conflict</span>
+                      <span className="text-body">Preserve local changes on conflict</span>
                     </label>
                   </div>
                 </div>

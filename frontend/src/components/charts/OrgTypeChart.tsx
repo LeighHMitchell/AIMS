@@ -106,12 +106,12 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{`Organization Type: ${label}`}</p>
+        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground mb-2">{`Organization Type: ${label}`}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: entry.color }}
             >
               {`${entry.name}: ${formatTooltipValue(entry.value)}`}
@@ -119,7 +119,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
           ))}
           {payload.length >= 3 && (
             <div className="border-t pt-2 mt-2">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-body font-medium text-foreground">
                 Execution Rate: {payload[0]?.payload?.budget > 0 
                   ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
                   : 0}%
@@ -139,7 +139,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>
@@ -153,7 +153,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
         <div className="text-center text-muted-foreground">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No data available</p>
-          <p className="text-sm">Try adjusting your filters to see results.</p>
+          <p className="text-body">Try adjusting your filters to see results.</p>
         </div>
       </div>
     );
@@ -161,22 +161,22 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm font-medium">Budget</span>
+          <span className="text-body font-medium">Budget</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
-          <span className="text-sm font-medium">Disbursements</span>
+          <span className="text-body font-medium">Disbursements</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-          <span className="text-sm font-medium">Expenditures</span>
+          <span className="text-body font-medium">Expenditures</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-sm font-medium">Total Spending</span>
+          <span className="text-body font-medium">Total Spending</span>
         </div>
       </div>
 
@@ -237,7 +237,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="mt-4 text-sm text-muted-foreground">
+      <div className="mt-4 text-body text-muted-foreground">
         <p>
           <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organization types by total budget | 
           <strong> Currency:</strong> {currency} | 

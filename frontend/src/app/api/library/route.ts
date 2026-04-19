@@ -620,7 +620,6 @@ async function queryStandaloneDocuments(supabase: any, filters: LibraryFilters):
     return [];
   }
 
-  console.log('[Library] Standalone documents found:', data?.length || 0);
 
   return (data || []).map((doc: any): UnifiedDocument => {
     const orgDetails = extractOrgDetails(doc.organizations);

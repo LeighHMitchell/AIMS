@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,10 +32,7 @@ import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
-import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
-import { useCustomYears } from "@/hooks/useCustomYears";
 import { apiFetch } from '@/lib/api-fetch';
 
 type FilterState = {
@@ -87,41 +84,6 @@ export default function TransactionsPage() {
     transactionSource: "all",
   });
 
-  // Yearly summary state for chart
-  const [yearlySummary, setYearlySummary] = useState<MultiSeriesDataPoint[]>([]);
-  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
-
-  // Custom year selection for chart
-  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
-
-  // Year range filter for chart
-  const [chartStartYear, setChartStartYear] = useState<number | null>(null);
-  const [chartEndYear, setChartEndYear] = useState<number | null>(null);
-
-  // Filter yearly summary data by year range
-  const filteredYearlySummary = useMemo(() => {
-    if (!yearlySummary) return [];
-    return yearlySummary.filter(item => {
-      if (chartStartYear && item.year < chartStartYear) return false;
-      if (chartEndYear && item.year > chartEndYear) return false;
-      return true;
-    });
-  }, [yearlySummary, chartStartYear, chartEndYear]);
-
-  // Calculate actual data year range (from unfiltered data)
-  const dataYearRange = useMemo(() => {
-    if (!yearlySummary || yearlySummary.length === 0) return { min: null, max: null };
-    const years = yearlySummary.map(d => d.year);
-    return { min: Math.min(...years), max: Math.max(...years) };
-  }, [yearlySummary]);
-
-  // Auto-select "Data" range when data first loads
-  useEffect(() => {
-    if (dataYearRange.min !== null && dataYearRange.max !== null && chartStartYear === null && chartEndYear === null) {
-      setChartStartYear(dataYearRange.min);
-      setChartEndYear(dataYearRange.max);
-    }
-  }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
 
   // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
   const { transactions, loading, error, refetch, deleteTransaction, addTransaction, acceptTransaction, rejectTransaction } = useTransactions({
@@ -216,44 +178,6 @@ export default function TransactionsPage() {
       console.error('Error fetching finance types:', error);
     }
   };
-
-  // Fetch yearly summary when filters change
-  useEffect(() => {
-    const fetchYearlySummary = async () => {
-      setYearlySummaryLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (filters.transactionTypes.length > 0) params.append('transactionTypes', filters.transactionTypes.join(','));
-        if (filters.statuses.length > 0) params.append('statuses', filters.statuses.join(','));
-        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
-        if (filters.financeTypes.length > 0) params.append('financeTypes', filters.financeTypes.join(','));
-        if (filters.flowType !== 'all') params.append('flowType', filters.flowType);
-        if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
-        if (filters.dateTo) params.append('dateTo', filters.dateTo);
-        if (searchQuery) params.append('search', searchQuery);
-        
-        // Add custom year params if selected
-        if (selectedYear) {
-          params.append('startMonth', selectedYear.startMonth.toString());
-          params.append('startDay', selectedYear.startDay.toString());
-          params.append('endMonth', selectedYear.endMonth.toString());
-          params.append('endDay', selectedYear.endDay.toString());
-        }
-
-        const response = await apiFetch(`/api/transactions/yearly-summary?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          setYearlySummary(data.years || []);
-        }
-      } catch (error) {
-        console.error('Error fetching yearly summary:', error);
-      } finally {
-        setYearlySummaryLoading(false);
-      }
-    };
-
-    fetchYearlySummary();
-  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change (but not when sorting changes)
   useEffect(() => {
@@ -718,7 +642,7 @@ export default function TransactionsPage() {
         <FilterBar data-tour="transactions-filters">
           {/* Search */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -732,7 +656,7 @@ export default function TransactionsPage() {
 
           {/* Filters */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Type</Label>
+              <Label className="text-helper text-muted-foreground">Type</Label>
               <MultiSelectFilter
                 options={[
                   { value: "1", label: "Incoming Funds", code: "1", color: "#4c5568" },
@@ -760,7 +684,7 @@ export default function TransactionsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Status</Label>
+              <Label className="text-helper text-muted-foreground">Status</Label>
               <MultiSelectFilter
                 options={[
                   { value: "draft", label: "Draft", color: "#94a3b8" },
@@ -780,7 +704,7 @@ export default function TransactionsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Organisation</Label>
+              <Label className="text-helper text-muted-foreground">Organisation</Label>
               <MultiSelectFilter
                 options={organizations.map((org) => ({
                   value: org.id,
@@ -798,7 +722,7 @@ export default function TransactionsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Finance Type</Label>
+              <Label className="text-helper text-muted-foreground">Finance Type</Label>
               <MultiSelectFilter
                 options={financeTypes.map((ft) => ({
                   value: ft.code,
@@ -821,7 +745,7 @@ export default function TransactionsPage() {
 
           {/* Column Selector */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Columns</Label>
+            <Label className="text-helper text-muted-foreground">Columns</Label>
             <ColumnSelector<TransactionColumnId>
               columns={transactionColumns}
               visibleColumns={visibleColumns}
@@ -834,37 +758,10 @@ export default function TransactionsPage() {
 
         {/* Performance Warning (if applicable) */}
         {(transactions?.total || 0) > 500 && pageLimit === 9999 && (
-          <div className="text-xs text-amber-600 px-4">
+          <div className="text-helper text-amber-600 px-4">
             ⚠️ Showing {transactions?.total || 0} items may affect performance
           </div>
         )}
-
-        {/* Yearly Summary Chart */}
-        <div data-tour="transactions-chart">
-        <YearlyTotalsBarChart
-          title="Transaction Totals by Year"
-          description="Yearly totals by transaction type (filtered)"
-          loading={yearlySummaryLoading}
-          multiSeriesData={filteredYearlySummary}
-          height={280}
-          selectedYear={selectedYear}
-          startYear={chartStartYear}
-          endYear={chartEndYear}
-          onStartYearChange={setChartStartYear}
-          onEndYearChange={setChartEndYear}
-          dataMinYear={dataYearRange.min}
-          dataMaxYear={dataYearRange.max}
-          headerControls={
-            <CustomYearSelector
-              customYears={customYears}
-              selectedId={selectedCustomYearId}
-              onSelect={setSelectedCustomYearId}
-              loading={customYearsLoading}
-              placeholder="Year Type"
-            />
-          }
-        />
-        </div>
 
         {/* Transactions Table */}
         {loading ? (
@@ -923,7 +820,7 @@ export default function TransactionsPage() {
           <Card data-tour="transactions-pagination">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalTransactions)} to {Math.min(endIndex, totalTransactions)} of {totalTransactions} transactions
                 </div>
                 
@@ -969,7 +866,7 @@ export default function TransactionsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>
@@ -1001,7 +898,7 @@ export default function TransactionsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground">Items per page:</label>
+                  <label className="text-body text-muted-foreground">Items per page:</label>
                   <Select 
                     value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

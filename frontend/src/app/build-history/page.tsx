@@ -70,8 +70,8 @@ export default function BuildHistoryPage() {
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="max-w-xs p-3">
                         <div className="space-y-1">
-                          <p className="font-medium text-sm">About Build History</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="font-medium text-body">About Build History</p>
+                          <p className="text-helper text-muted-foreground">
                             This page shows all production releases of æther Myanmar. Each release includes bug fixes, new features, and improvements. You can also hover over the version badge in the sidebar to see the latest changes at a glance.
                           </p>
                         </div>
@@ -84,7 +84,7 @@ export default function BuildHistoryPage() {
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="outline" className="text-body">
               Current: v{releases.currentVersion}
             </Badge>
           </div>
@@ -105,10 +105,10 @@ export default function BuildHistoryPage() {
                     <h3 className="text-base font-semibold text-foreground">
                       What&apos;s in this release (v{releaseList[0].version})
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-body text-muted-foreground leading-relaxed">
                       {releaseList[0].narrativeSummary}
                     </p>
-                    <p className="text-xs text-muted-foreground/60 pt-1">
+                    <p className="text-helper text-muted-foreground/60 pt-1">
                       Released {formatDate(releaseList[0].date)}
                     </p>
                   </div>
@@ -120,7 +120,7 @@ export default function BuildHistoryPage() {
           {/* Timeline */}
           <div className="relative">
             {/* Vertical timeline line */}
-            <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-200" />
+            <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-muted" />
 
             {/* Release entries */}
             <div className="space-y-6">
@@ -136,7 +136,7 @@ export default function BuildHistoryPage() {
                       className={`absolute left-0 top-6 w-10 h-10 rounded-full flex items-center justify-center ${
                         isLatest 
                           ? 'bg-primary text-primary-foreground' 
-                          : 'bg-gray-100 text-gray-500 border-2 border-gray-200'
+                          : 'bg-muted text-muted-foreground border-2 border-border'
                       }`}
                     >
                       {isLatest ? (
@@ -154,7 +154,7 @@ export default function BuildHistoryPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <CardTitle className="text-lg font-semibold">
-                              <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-sm font-semibold text-primary">
+                              <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-body font-semibold text-primary">
                                 v{release.version}
                               </span>
                             </CardTitle>
@@ -169,7 +169,7 @@ export default function BuildHistoryPage() {
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-body text-muted-foreground">
                             <Calendar className="h-4 w-4" />
                             <span>{formatDate(release.date)}</span>
                           </div>
@@ -178,7 +178,7 @@ export default function BuildHistoryPage() {
 
                       <CardContent className="pt-0">
                         <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-foreground">Changes in this release:</h4>
+                          <h4 className="text-body font-medium text-foreground">Changes in this release:</h4>
                           <ul className="space-y-2">
                             {release.changes.map((change, changeIndex) => {
                               const isHeader = /^<b>.*<\/b>$/.test(change)
@@ -204,10 +204,10 @@ export default function BuildHistoryPage() {
             {/* End of timeline marker (only show on last page) */}
             {currentPage === totalPages && (
               <div className="relative pl-12 pt-6">
-                <div className="absolute left-0 top-6 w-10 h-10 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <span className="text-gray-400 text-xs font-medium">...</span>
+                <div className="absolute left-0 top-6 w-10 h-10 rounded-full bg-muted border-2 border-dashed border-input flex items-center justify-center">
+                  <span className="text-muted-foreground text-helper font-medium">...</span>
                 </div>
-                <p className="text-sm text-muted-foreground pt-2 pl-2">
+                <p className="text-body text-muted-foreground pt-2 pl-2">
                   End of release history
                 </p>
               </div>
@@ -218,7 +218,7 @@ export default function BuildHistoryPage() {
           {totalReleases > 0 && (
             <div className="bg-white rounded-lg border border-border shadow-sm p-4 mt-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-body text-muted-foreground">
                   Showing {startIndex + 1} to {endIndex} of {totalReleases} releases
                 </div>
 
@@ -261,7 +261,7 @@ export default function BuildHistoryPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>
@@ -290,7 +290,7 @@ export default function BuildHistoryPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Releases per page:</label>
+                  <label className="text-body text-muted-foreground">Releases per page:</label>
                   <Select
                     value={pageLimit.toString()}
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

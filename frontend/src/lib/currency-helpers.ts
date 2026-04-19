@@ -44,7 +44,6 @@ export async function resolveCurrency(
       .single();
 
     if (activity?.default_currency) {
-      console.log(`[Currency Helpers] Using activity default_currency: ${activity.default_currency}`);
       return activity.default_currency;
     }
 
@@ -57,13 +56,11 @@ export async function resolveCurrency(
         .single();
 
       if (org?.default_currency) {
-        console.log(`[Currency Helpers] Using provider org default_currency: ${org.default_currency}`);
         return org.default_currency;
       }
     }
 
     // 4. Fallback to USD
-    console.log('[Currency Helpers] No defaults found, using USD');
     return 'USD';
 
   } catch (error) {

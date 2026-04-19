@@ -333,7 +333,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
       {/* Search and Add Section */}
       <div className="bg-card p-6 rounded-lg border border-border">
         <h2 className="text-lg font-semibold mb-4">Add Contact to Organization Profile</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-body text-muted-foreground mb-4">
           Add contacts that will be displayed on your public organization profile page. You can search for existing users in your organization or create new contact records.
         </p>
 
@@ -368,7 +368,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
           {showUserSearch && (
             <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
               {filteredUsers.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">
+                <div className="p-4 text-body text-muted-foreground text-center">
                   {searchQuery ? `No users found matching "${searchQuery}"` : 'No users found in your organization'}
                 </div>
               ) : (
@@ -385,10 +385,10 @@ export default function OrganizationContactsTab({ organizationId, organization }
                       size="lg"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{user.full_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      <p className="text-body font-medium text-foreground truncate">{user.full_name}</p>
+                      <p className="text-helper text-muted-foreground truncate">{user.email}</p>
                       {user.job_title && (
-                        <p className="text-xs text-muted-foreground truncate">{user.job_title}</p>
+                        <p className="text-helper text-muted-foreground truncate">{user.job_title}</p>
                       )}
                     </div>
                   </button>
@@ -399,7 +399,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">Or</span>
+          <span className="text-body text-muted-foreground">Or</span>
           <Button onClick={handleCreateNew} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Create New Contact
@@ -426,7 +426,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
             <h2 className="text-lg font-semibold">
               Organization Contacts
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               These contacts will be displayed on your public organization profile page.
             </p>
           </div>
@@ -539,10 +539,10 @@ function ContactCard({
           variant="ghost"
           size="sm"
           onClick={() => contact.id && onDelete(contact.id)}
-          className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-md"
+          className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive rounded-md"
           title="Delete contact"
         >
-          <Trash2 className="h-4 w-4 text-red-500" />
+          <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
 
@@ -565,7 +565,7 @@ function ContactCard({
           </h3>
 
           {jobLine && (
-            <p className="text-sm text-muted-foreground break-words">{jobLine}</p>
+            <p className="text-body text-muted-foreground break-words">{jobLine}</p>
           )}
 
           {organization && (
@@ -583,7 +583,7 @@ function ContactCard({
                   </span>
                 </div>
               )}
-              <span className="text-sm text-muted-foreground">
+              <span className="text-body text-muted-foreground">
                 {organization.name}
                 {organization.acronym && ` (${organization.acronym})`}
               </span>
@@ -598,7 +598,7 @@ function ContactCard({
             <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <a
               href={`mailto:${contact.email}`}
-              className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
+              className="text-body text-foreground hover:text-blue-600 transition-colors truncate"
             >
               {contact.email}
             </a>
@@ -608,7 +608,7 @@ function ContactCard({
         {(contact.phone || contact.phoneNumber) && (
           <div className="flex items-center space-x-2">
             <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-sm text-foreground">
+            <span className="text-body text-foreground">
               {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
             </span>
           </div>
@@ -621,7 +621,7 @@ function ContactCard({
               href={contact.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
+              className="text-body text-foreground hover:text-blue-600 transition-colors truncate"
             >
               {contact.website.replace(/^https?:\/\//, '')}
             </a>
@@ -690,18 +690,18 @@ function ContactsTable({
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
               <div className="flex items-center gap-1">Contact {getSortIcon('name', sortField, sortDirection)}</div>
             </th>
-            <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('role')}>
+            <th className={`text-left py-3 px-4 text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('role')}>
               <div className="flex items-center gap-1">Role {getSortIcon('role', sortField, sortDirection)}</div>
             </th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Organization</th>
+            <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Organization</th>
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('email')}>
               <div className="flex items-center gap-1">Email {getSortIcon('email', sortField, sortDirection)}</div>
             </th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
+            <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Phone</th>
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
               <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
             </th>
-            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground" />
+            <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground" />
           </tr>
         </thead>
         <tbody>
@@ -721,15 +721,15 @@ function ContactsTable({
                       size="md"
                     />
                     <div>
-                      <p className="text-sm font-medium text-foreground">{fullName}</p>
+                      <p className="text-body font-medium text-foreground">{fullName}</p>
                       {contact.isPrimary && (
-                        <span className="text-xs text-blue-600">Primary Contact</span>
+                        <span className="text-helper text-blue-600">Primary Contact</span>
                       )}
                     </div>
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <p className="text-sm text-foreground">{jobLine || '—'}</p>
+                  <p className="text-body text-foreground">{jobLine || '—'}</p>
                 </td>
                 <td className="py-3 px-4">
                   {organization ? (
@@ -747,28 +747,28 @@ function ContactsTable({
                           </span>
                         </div>
                       )}
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-body text-muted-foreground">
                         {organization.acronym || organization.name}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
+                    <span className="text-body text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="py-3 px-4">
                   {contact.email ? (
                     <a
                       href={`mailto:${contact.email}`}
-                      className="text-sm text-foreground hover:text-blue-600"
+                      className="text-body text-foreground hover:text-blue-600"
                     >
                       {contact.email}
                     </a>
                   ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
+                    <span className="text-body text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="py-3 px-4">
-                  <span className="text-sm text-foreground">
+                  <span className="text-body text-foreground">
                     {contact.phone || contact.phoneNumber
                       ? `${contact.countryCode ? contact.countryCode + ' ' : ''}${contact.phoneNumber || contact.phone}`
                       : '—'}
@@ -794,10 +794,10 @@ function ContactsTable({
                       variant="ghost"
                       size="sm"
                       onClick={() => contact.id && onDelete(contact.id)}
-                      className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive"
                       title="Delete contact"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </td>
@@ -1014,7 +1014,7 @@ function ContactFormDialog({
                         e.stopPropagation();
                         removePhoto();
                       }}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                      className="absolute -top-2 -right-2 bg-destructive/100 text-white rounded-full p-1 hover:bg-destructive transition-colors shadow-lg"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -1043,11 +1043,11 @@ function ContactFormDialog({
                 {formData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
               </Button>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-helper text-muted-foreground text-center">
                 Drag & drop or click to upload<br />Max 2MB
               </p>
               {errors.profilePhoto && (
-                <p className="text-xs text-red-500 text-center">{errors.profilePhoto}</p>
+                <p className="text-helper text-destructive text-center">{errors.profilePhoto}</p>
               )}
             </div>
           </div>
@@ -1064,7 +1064,7 @@ function ContactFormDialog({
                   role="combobox"
                   aria-expanded={contactTypeOpen}
                   className={cn(
-                    "w-full justify-between h-10 px-3 py-2 text-sm",
+                    "w-full justify-between h-10 px-3 py-2 text-body",
                     !selectedContactType && "text-muted-foreground"
                   )}
                 >
@@ -1104,7 +1104,7 @@ function ContactFormDialog({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.value}</span>
                             <span className="font-medium text-foreground">{type.label}</span>
                           </div>
-                          <div className="text-sm text-muted-foreground mt-1">
+                          <div className="text-body text-muted-foreground mt-1">
                             {type.description}
                           </div>
                         </div>
@@ -1114,7 +1114,7 @@ function ContactFormDialog({
                 </Command>
               </PopoverContent>
             </Popover>
-            {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type}</p>}
+            {errors.type && <p className="text-helper text-destructive mt-1">{errors.type}</p>}
           </div>
 
           {/* Name Row */}
@@ -1149,7 +1149,7 @@ function ContactFormDialog({
                 onChange={(e) => handleChange('firstName', e.target.value)}
                 placeholder="John"
               />
-              {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
+              {errors.firstName && <p className="text-helper text-destructive mt-1">{errors.firstName}</p>}
             </div>
 
             <div className="col-span-5">
@@ -1162,7 +1162,7 @@ function ContactFormDialog({
                 onChange={(e) => handleChange('lastName', e.target.value)}
                 placeholder="Smith"
               />
-              {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
+              {errors.lastName && <p className="text-helper text-destructive mt-1">{errors.lastName}</p>}
             </div>
           </div>
 
@@ -1173,7 +1173,7 @@ function ContactFormDialog({
               checked={formData.isPrimary || false}
               onCheckedChange={(checked) => handleChange('isPrimary', checked)}
             />
-            <Label htmlFor="isPrimary" className="cursor-pointer text-sm">
+            <Label htmlFor="isPrimary" className="cursor-pointer text-body">
               This is the primary contact for the organization
             </Label>
           </div>
@@ -1211,7 +1211,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="john.smith@example.org"
             />
-            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-helper text-destructive mt-1">{errors.email}</p>}
           </div>
 
           {/* Phone Number with Country Code */}
@@ -1246,7 +1246,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('website', e.target.value)}
               placeholder="https://example.org"
             />
-            {errors.website && <p className="text-xs text-red-500 mt-1">{errors.website}</p>}
+            {errors.website && <p className="text-helper text-destructive mt-1">{errors.website}</p>}
           </div>
 
           {/* Mailing Address */}

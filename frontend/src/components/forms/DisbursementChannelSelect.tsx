@@ -47,7 +47,7 @@ export function DisbursementChannelSelect({
         id={id}
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           !value && "text-muted-foreground",
           className
         )}
@@ -81,7 +81,7 @@ export function DisbursementChannelSelect({
               className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
               aria-label="Clear selection"
             >
-              <span className="text-xs">×</span>
+              <span className="text-helper">×</span>
             </div>
           )}
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -117,7 +117,7 @@ export function DisbursementChannelSelect({
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{code}</span>
                         <span className="font-medium text-foreground">{shortLabel}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                      <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                         {fullLabel}
                       </div>
                     </div>

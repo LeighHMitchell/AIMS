@@ -316,12 +316,12 @@ export function TransactionDocumentUpload({
             
             <div>
               <h3 className="font-semibold">Upload Transaction Evidence</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 Drag and drop documents here, or click to browse
               </p>
             </div>
             
-            <div className="text-xs text-muted-foreground">
+            <div className="text-helper text-muted-foreground">
               <p>Supported: PDF, Images, Excel, Word, CSV (Max {maxFileSize}MB each)</p>
               <p>Maximum {maxFiles} documents per transaction</p>
             </div>
@@ -350,7 +350,7 @@ export function TransactionDocumentUpload({
 
       {/* External Document Links Section */}
       <div>
-        <h4 className="text-sm font-medium mb-3">Add External Document Links</h4>
+        <h4 className="text-body font-medium mb-3">Add External Document Links</h4>
         <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="external-url">URL</Label>
@@ -389,7 +389,7 @@ export function TransactionDocumentUpload({
                 <div key={idx} className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-mono text-sm text-blue-700 truncate">{link.url}</p>
-                    {link.description && <p className="text-xs text-muted-foreground mt-0.5">{link.description}</p>}
+                    {link.description && <p className="text-helper text-muted-foreground mt-0.5">{link.description}</p>}
                   </div>
                   <Button
                     type="button"
@@ -410,11 +410,11 @@ export function TransactionDocumentUpload({
       {/* Uploaded Documents and Links */}
       {documents.length > 0 && (
         <div>
-          <div style={{ border: '1px solid #d1d5db', borderRadius: '0.375rem', overflow: 'hidden' }}>
-            <div className="bg-surface-muted px-3 py-2" style={{ borderBottom: '1px solid #d1d5db' }}>
-              <h4 className="text-sm font-medium">Uploaded Documents and Links</h4>
+          <div className="rounded-md border border-border overflow-hidden">
+            <div className="bg-surface-muted px-3 py-2 border-b border-border">
+              <h4 className="text-body font-medium">Uploaded Documents and Links</h4>
             </div>
-            <table className="w-full text-xs">
+            <table className="w-full text-helper">
               <thead className="bg-surface-muted">
                 <tr className="bg-muted/50 text-muted-foreground border-b">
                   <th className="text-left py-2 px-3 font-medium w-8"></th>
@@ -438,7 +438,7 @@ export function TransactionDocumentUpload({
                               if (e.key === 'Enter') handleRename(doc.id, renameValue);
                               if (e.key === 'Escape') setRenamingId(null);
                             }}
-                            className="h-7 text-xs"
+                            className="h-7 text-helper"
                             autoFocus
                           />
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleRename(doc.id, renameValue)}>
@@ -450,7 +450,7 @@ export function TransactionDocumentUpload({
                         </div>
                       ) : (
                         <div>
-                          <span className="text-sm truncate block">{doc.fileName}</span>
+                          <span className="text-body truncate block">{doc.fileName}</span>
                           {doc.externalUrl && (
                             <span className="text-blue-600 truncate block font-mono">{doc.externalUrl}</span>
                           )}
@@ -469,7 +469,7 @@ export function TransactionDocumentUpload({
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => doc.externalUrl ? window.open(doc.externalUrl, '_blank') : doc.fileUrl && window.open(doc.fileUrl, '_blank')}>
                           {doc.externalUrl ? <ExternalLink className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-red-700" onClick={() => removeDocument(doc.id)} disabled={disabled}>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeDocument(doc.id)} disabled={disabled}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>

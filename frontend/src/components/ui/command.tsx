@@ -33,7 +33,7 @@ const CommandInput = React.forwardRef<
     <input
       ref={ref}
       className={cn(
-        "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-11 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       onChange={(e) => onValueChange?.(e.target.value)}
@@ -61,7 +61,7 @@ const CommandEmpty = React.forwardRef<
 >((props, ref) => (
   <div
     ref={ref}
-    className="py-6 text-center text-sm"
+    className="py-6 text-center text-body"
     {...props}
   />
 ))
@@ -84,7 +84,7 @@ const CommandGroup = React.forwardRef<
     {...props}
   >
     {heading && (
-      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+      <div className="px-2 py-1.5 text-helper font-medium text-muted-foreground">
         {heading}
       </div>
     )}
@@ -126,7 +126,7 @@ const CommandItem = React.forwardRef<
       ref={ref}
       role="option"
       className={cn(
-        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-accent hover:text-accent-foreground",
+        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-body outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-accent hover:text-accent-foreground",
         className
       )}
       onClick={handleClick}

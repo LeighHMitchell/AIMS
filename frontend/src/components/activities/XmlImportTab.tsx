@@ -487,7 +487,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     // Return JSX with grey, smaller currency code
     return (
       <>
-        <span className="text-xs text-muted-foreground">{currencyCode}</span> {formattedValue}
+        <span className="text-helper text-muted-foreground">{currencyCode}</span> {formattedValue}
       </>
     );
   };
@@ -589,7 +589,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             </div>
             
             {/* Essential Info - Three Column Layout */}
-            <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
+            <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-helper">
               {/* Column 1: Reported by */}
               {activity.reportingOrg && (
                 <div>
@@ -619,16 +619,16 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           
                           return (
                             <span className="flex items-center gap-1 mt-0.5">
-                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                 {refDisplay.normalized}
                               </code>
                               {!refDisplay.isValid && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                    <span className="text-destructive text-helper cursor-help">⚠</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs">Invalid IATI organization identifier format</p>
+                                    <p className="text-helper">Invalid IATI organization identifier format</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -686,7 +686,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             e.stopPropagation();
             setIsExpanded(!isExpanded);
           }}
-          className="mt-3 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="mt-3 flex items-center gap-1 text-helper text-muted-foreground hover:text-foreground transition-colors"
         >
           {isExpanded ? (
             <>
@@ -705,7 +705,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
       {/* Expanded View - All data in 3 columns */}
       {isExpanded && (
         <div className="border-t border-border bg-card p-4">
-          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs min-w-0">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-helper min-w-0">
             {/* Column 1 */}
             {activity.description && (
               <div className="col-span-1 min-w-0 max-w-full overflow-hidden">
@@ -804,16 +804,16 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               <>
                                 <span className="text-muted-foreground">|</span>
                                 <span className="flex items-center gap-1">
-                                  <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                  <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                     {refDisplay.normalized}
                                   </code>
                                   {!refDisplay.isValid && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                        <span className="text-destructive text-helper cursor-help">⚠</span>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className="text-xs">Invalid IATI organization identifier format</p>
+                                        <p className="text-helper">Invalid IATI organization identifier format</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
@@ -1012,7 +1012,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     ).join(' ') : ''}`;
     
     setDebugLogs(prev => [...prev, logMessage]);
-    console.log(message, ...args);
   };
 
   // Check for pre-loaded XML from IATI Datastore
@@ -1022,12 +1021,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   useEffect(() => {
     // Only check once
     if (hasCheckedLocalStorage.current) {
-      console.log('[XML Import] Already checked localStorage, skipping...');
       return;
     }
     hasCheckedLocalStorage.current = true;
     
-    console.log('[XML Import] 🔍 Checking for preloaded XML from IATI Datastore...')
     const preloadedXml = localStorage.getItem('iati_import_xml')
     const source = localStorage.getItem('iati_import_source')
     const choice = localStorage.getItem('iati_import_choice')
@@ -1054,7 +1051,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       localStorage.removeItem('iati_import_timestamp')
       
       // Set all required state immediately
-      console.log('[XML Import] 🎯 Setting import method to snippet and loading XML')
       setImportMethod('snippet')
       setSnippetContent(preloadedXml)
       
@@ -1064,7 +1060,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       const toastId = toast.loading(`Parsing IATI activity for ${choice === 'fork' ? 'fork' : 'merge'}...`);
       loadingToastRef.current = toastId;
     } else {
-      console.log('[XML Import] ❌ No preloaded XML found or source mismatch')
     }
   }, [activityId])
 
@@ -1077,7 +1072,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     navigator.clipboard.writeText(logText).then(() => {
       toast.success('Debug logs copied to clipboard');
     }).catch(() => {
-      toast.error('Failed to copy debug logs');
+      toast.error('Couldn’t copy debug logs. Please try again in a moment.');
     });
   };
   
@@ -1085,7 +1080,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   useEffect(() => {
     const loadOrgPreferences = async () => {
       if (!user?.organizationId) {
-        console.log('[XML Import] No organization ID, skipping preferences load');
         return;
       }
       
@@ -1094,9 +1088,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         if (response.ok) {
           const prefs = await response.json();
           setOrgPreferences(prefs);
-          console.log('[XML Import] Loaded organization IATI import preferences:', prefs);
         } else {
-          console.log('[XML Import] No preferences found for organization');
         }
       } catch (error) {
         console.error('[XML Import] Failed to load org preferences:', error);
@@ -1138,7 +1130,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     const selectionRatio = selectedFields.length / totalFields;
     const isComprehensiveSelection = selectionRatio > 0.8;
     
-    console.log(`[XML Import] generateDetailedFields: Comprehensive selection active: ${isComprehensiveSelection}, defaulting detailed fields to selected`);
     
     if (itemType === 'budget') {
       if (itemData.type) {
@@ -1477,23 +1468,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       const selectionRatio = selectedFields.length / totalFields;
       const isComprehensiveSelection = selectionRatio > 0.8;
       
-      console.log(`[XML Import] Modal Opening: Selection analysis - ${selectedFields.length}/${totalFields} fields selected (${(selectionRatio * 100).toFixed(1)}%)`);
-      console.log(`[XML Import] Modal Opening: Comprehensive selection active: ${isComprehensiveSelection}`);
-      console.log(`[XML Import] Modal Opening: Generated ${detailFields.length} detailed fields for ${field.itemType} ${field.itemIndex + 1}`);
       
       if (isComprehensiveSelection) {
-        console.log(`[XML Import] Modal Opening: FORCING all transaction field toggles to selected=true`);
         // Force ALL detailed fields to selected for comprehensive imports
         detailFields.forEach((detailField, index) => {
           const wasSelected = detailField.selected;
           detailField.selected = true;
-          console.log(`[XML Import] Modal Opening: Field ${index + 1} "${detailField.fieldName}": ${wasSelected} → true`);
         });
-        console.log(`[XML Import] Modal Opening: All ${detailFields.length} transaction fields forced to selected=true`);
       } else {
-        console.log(`[XML Import] Modal Opening: Not comprehensive selection - keeping default field states`);
         detailFields.forEach((detailField, index) => {
-          console.log(`[XML Import] Modal Opening: Field ${index + 1} "${detailField.fieldName}": selected=${detailField.selected} (unchanged)`);
         });
       }
       
@@ -1512,7 +1495,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   // Fetch user and organization data
   useEffect(() => {
     const fetchOrgData = async () => {
-      console.log('[XML Import] User data from hook:', user);
       
       // First set user's organization name if available
       if (user?.organisation) {
@@ -1530,7 +1512,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           if (response.ok) {
             const data = await response.json();
-            console.log('[XML Import] Organizations response:', data);
             
             // Find the matching organization
             const orgs = Array.isArray(data) ? data : data.organizations || [];
@@ -1540,7 +1521,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             );
             
             if (matchingOrg) {
-              console.log('[XML Import] Found matching org:', matchingOrg);
               
               // Set the organization name properly
               setUserOrgName(matchingOrg.name || orgName);
@@ -1550,18 +1530,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 // IATI org IDs can be comma-separated or single values
                 const refs = matchingOrg.iati_org_id.split(',').map((ref: string) => ref.trim());
                 setUserPublisherRefs(refs);
-                console.log('[XML Import] Set publisher refs:', refs);
               } else if (matchingOrg.acronym === 'AFD' || matchingOrg.name?.includes('AFD')) {
                 // Special case for AFD
                 setUserPublisherRefs(['FR-AFD', 'FR-3']);
-                console.log('[XML Import] Set AFD publisher refs');
               }
             } else {
               // If no exact match, but we know it's AFD
               if (orgName?.includes('AFD') || orgName?.includes('Agence Française')) {
                 setUserOrgName('Agence Française de Développement');
                 setUserPublisherRefs(['FR-AFD', 'FR-3']);
-                console.log('[XML Import] Defaulting to AFD publisher refs');
               }
             }
           }
@@ -1605,9 +1582,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       
       try {
         // Fetch full activity data to include location data
-        console.log('[XmlImportTab] Fetching activity data for:', activityId);
         const data = await fetchBasicActivityWithCache(activityId);
-        console.log('[XmlImportTab] Fetched activity data:', data);
         console.log('[XmlImportTab] Location data:', {
           recipient_countries: data.recipient_countries,
           recipient_regions: data.recipient_regions,
@@ -1617,23 +1592,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         
         // Also fetch current activity locations
         
-        console.log('[XmlImportTab] Fetching current activity locations...');
         
         const locationsResponse = await apiFetch(`/api/activities/${activityId}/locations`);
         
         const locationsData = locationsResponse.ok ? await locationsResponse.json() : { locations: [] };
         currentLocations = locationsData.locations || [];
         
-        console.log('[XmlImportTab] Current locations:', currentLocations);
 
         // Fetch current participating organizations
-        console.log('[XmlImportTab] Fetching current participating organizations...');
         
         const participatingOrgsResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`);
         
         currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
         
-        console.log('[XmlImportTab] Current participating organizations:', currentParticipatingOrgs);
         
         
         // Map the data correctly - the API returns both camelCase and snake_case versions
@@ -1665,12 +1636,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           locations: currentLocations || [],
           participatingOrgs: currentParticipatingOrgs || [],
         });
-        console.log('[XmlImportTab] Set current activity data with title:', data.title_narrative || data.title);
       } catch (error) {
         console.error('[XmlImportTab] Error fetching activity data:', error);
         // If basic endpoint fails, try the full endpoint as fallback
         try {
-          console.log('[XmlImportTab] Trying full endpoint as fallback');
           const response = await apiFetch(`/api/activities/${activityId}`);
           if (response.ok) {
             const data = await response.json();
@@ -1706,7 +1675,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               custom_geographies: data.custom_geographies || [],
               participatingOrgs: currentParticipatingOrgs || [],
             });
-            console.log('[XmlImportTab] Fallback successful, got title:', data.title_narrative || data.title);
           }
         } catch (fallbackError) {
           console.error('[XmlImportTab] Fallback also failed:', fallbackError);
@@ -1720,14 +1688,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('[XML Import Debug] File selected:', file?.name, 'Type:', file?.type);
     if (file) {
       if (file.type !== 'text/xml' && !file.name.endsWith('.xml')) {
-        console.log('[XML Import Debug] Invalid file type:', file.type);
         toast.error('Please select a valid XML file');
         return;
       }
-      console.log('[XML Import Debug] Setting selected file and resetting state');
       setSelectedFile(file);
       setImportStatus({ stage: 'idle' });
       setParsedFields([]);
@@ -1755,14 +1720,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Try to read clipboard with better error handling
       const text = await navigator.clipboard.readText();
-      console.log('[XML Import Debug] Paste button - clipboard text:', text);
       if (text && text.trim()) {
         // Extract the clean URL by finding the first occurrence of the URL pattern
         const urlPattern = /https?:\/\/[^\s]+/;
         const match = text.match(urlPattern);
         const cleanUrl = match ? match[0] : text.trim();
         
-        console.log('[XML Import Debug] Paste button - clean URL:', cleanUrl);
         setXmlUrl(cleanUrl);
         toast.success('URL pasted from clipboard');
       } else {
@@ -1812,12 +1775,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   // Fetch XML from URL via server-side proxy to avoid CORS issues
   const fetchXmlFromUrl = async (url: string): Promise<string> => {
     try {
-      console.log('[XML Import Debug] Fetching XML from URL via proxy:', url);
-      console.log('[XML Import Debug] URL length:', url.length);
-      console.log('[XML Import Debug] URL first 100 chars:', url.substring(0, 100));
-      console.log('[XML Import Debug] URL last 100 chars:', url.substring(url.length - 100));
-      console.log('[XML Import Debug] Timestamp:', new Date().toISOString());
-      console.log('[XML Import Debug] Fetch API endpoint:', '/api/xml/fetch');
       
       // Use our server-side API to fetch the XML
       const response = await apiFetch('/api/xml/fetch', {
@@ -1850,7 +1807,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         throw new Error('Empty XML content received from URL');
       }
 
-      console.log('[XML Import Debug] Successfully fetched XML via proxy, size:', data.size);
       return data.content;
     } catch (error) {
       console.error('[XML Import Debug] Error fetching XML from URL:', error);
@@ -1904,31 +1860,23 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
   // Parse XML file or URL or Snippet
   const parseXmlFile = async () => {
-    console.log('[XML Import Debug] parseXmlFile called, method:', importMethod);
-    console.log('[XML Import Debug] Environment:', typeof window !== 'undefined' ? 'browser' : 'server');
-    console.log('[XML Import Debug] User Agent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A');
-    console.log('[XML Import Debug] Origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
     
     if (importMethod === 'file' && !selectedFile) {
-      console.log('[XML Import Debug] No selected file, returning');
       return;
     }
     
     if (importMethod === 'url' && !xmlUrl.trim()) {
-      console.log('[XML Import Debug] No URL provided, returning');
       toast.error('Please enter a valid XML URL');
       return;
     }
     
     if (importMethod === 'snippet' && !snippetContent.trim()) {
-      console.log('[XML Import Debug] No snippet content, returning');
       toast.error('Please paste some XML content');
       return;
     }
 
     // Ensure we have the latest activity data before parsing
     if (!currentActivityData.id && activityId) {
-      console.log('[XML Import Debug] Fetching activity data before parsing');
       try {
         const data = await fetchBasicActivityWithCache(activityId);
         setCurrentActivityData({
@@ -1963,8 +1911,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
     }
 
-    console.log('[XML Import Debug] Current activity data:', currentActivityData);
-    console.log('[XML Import Debug] Setting status to uploading');
     setImportStatus({ stage: 'uploading', progress: 10 });
 
     setIsParsing(true);
@@ -1980,26 +1926,21 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         }
         
         // Read file content
-        console.log('[XML Import Debug] Reading file content, size:', selectedFile.size);
         setImportStatus({ stage: 'uploading', progress: 30 });
         content = await selectedFile.text();
         fileToCheck = selectedFile;
       } else if (importMethod === 'url') {
         // Fetch from URL
-        console.log('[XML Import Debug] Fetching from URL');
         setImportStatus({ stage: 'uploading', progress: 30 });
         content = await fetchXmlFromUrl(xmlUrl.trim());
         // Create a File object from the fetched content for metadata extraction
         fileToCheck = new File([content], 'fetched.xml', { type: 'text/xml' });
       } else {
         // Use snippet content
-        console.log('[XML Import Debug] Using snippet content');
         setImportStatus({ stage: 'uploading', progress: 30 });
         
         // Detect snippet type BEFORE wrapping
         const snippetType = detectSnippetType(snippetContent.trim());
-        console.log('[XML Import Debug] Detected snippet type:', snippetType);
-        console.log('[XML Import Debug] Original snippet content:', snippetContent.trim().substring(0, 200));
         
         // Store snippet type in state for filtering later
         (window as any).__snippetType = snippetType;
@@ -2013,7 +1954,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         
         // Wrap snippet if needed to make it a valid IATI XML
         const wrappedContent = wrapSnippetIfNeeded(snippetContent.trim());
-        console.log('[XML Import Debug] Wrapped content:', wrappedContent.substring(0, 500));
         content = wrappedContent;
         // Create a File object from the snippet for metadata extraction
         fileToCheck = new File([content], 'snippet.xml', { type: 'text/xml' });
@@ -2022,15 +1962,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Ensure valid IATI structure across all import methods
       const wrappedAll = wrapSnippetIfNeeded(content);
       if (wrappedAll !== content) {
-        console.log('[XML Import Debug] Applied wrapping to', importMethod, 'import');
-        console.log('[XML Import Debug] Original content length:', content.length);
-        console.log('[XML Import Debug] Wrapped content length:', wrappedAll.length);
         content = wrappedAll;
       }
       
       setXmlContent(content);
       
-      console.log('[XML Import Debug] Setting status to parsing');
       setImportStatus({ stage: 'parsing', progress: 40 });
       
       // Check if content is HTML instead of XML (common error response)
@@ -2053,28 +1989,23 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
 
       // Parse the IATI XML
-      console.log('[XML Import Debug] Parsing IATI XML with real parser');
       setImportStatus({ stage: 'parsing', progress: 60 });
       const parser = new IATIXMLParser(content);
       
       // Multi-activity detection
       const activityCount = parser.countActivities();
-      console.log(`[Multi-Activity] Detected ${activityCount} activities in XML`);
       
       if (activityCount > 1) {
-        console.log('[Multi-Activity] Multiple activities detected, showing preview modal');
         setImportStatus({ stage: 'parsing', progress: 70 });
         
         try {
           // Parse metadata for all activities
           const activitiesMetadata = parser.parseAllActivitiesMetadata();
-          console.log('[Multi-Activity] Parsed metadata for all activities:', activitiesMetadata);
           
           // Check which exist in database
           setImportStatus({ stage: 'parsing', progress: 80 });
           const iatiIds = activitiesMetadata.map(a => a.iatiIdentifier);
           const existingMap = await checkExistingActivities(iatiIds);
-          console.log('[Multi-Activity] Checked existing activities:', existingMap.size, 'found');
           
           // Show preview modal
           setMultiActivityData({ 
@@ -2091,7 +2022,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           return;
         } catch (error) {
           console.error('[Multi-Activity] Error during multi-activity detection:', error);
-          toast.error('Failed to parse multiple activities: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast.error('Couldn’t parse multiple activities:. Please try again in a moment.' + (error instanceof Error ? error.message : 'Unknown error'));
           setImportStatus({ stage: 'idle', progress: 0 });
           setIsParsing(false);
           return;
@@ -2099,16 +2030,13 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
       
       // Single activity - continue existing flow
-      console.log('[Multi-Activity] Single activity detected, continuing normal flow');
       const parsedActivity = parser.parseActivity();
       
       // Store parsed activity data in state for use by import function
       setParsedActivity(parsedActivity);
       
-      console.log('[XML Import Debug] Parsed activity data:', parsedActivity);
       
       // PHASE 1: Comprehensive diagnostic logging for URL import debugging
-      console.log('🔍 [XML Import] DIAGNOSTIC - Parsed Activity Analysis:');
       console.log('🔍 [XML Import] DIAGNOSTIC - Transactions:', {
         exists: !!parsedActivity.transactions,
         count: parsedActivity.transactions?.length || 0,
@@ -2123,8 +2051,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         exists: !!parsedActivity.capitalSpendPercentage,
         value: parsedActivity.capitalSpendPercentage
       });
-      console.log('🔍 [XML Import] DIAGNOSTIC - Import Method:', importMethod);
-      console.log('🔍 [XML Import] DIAGNOSTIC - Is Snippet:', importMethod === 'snippet');
       
       // Update progress for field processing
       setImportStatus({ stage: 'parsing', progress: 80 });
@@ -2238,7 +2164,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Check if this is a snippet import and what type
       const snippetType = (window as any).__snippetType;
       const isSnippetImport = importMethod === 'snippet' && snippetType;
-      console.log('[XML Import Debug] Is snippet import:', isSnippetImport, 'Type:', snippetType);
 
       // === BASIC INFO TAB ===
       
@@ -3113,8 +3038,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           })
         : null;
       
-      console.log('[XML Import Debug] Current country info:', currentCountryInfo);
-      console.log('[XML Import Debug] Current activity data recipient_countries:', currentActivityData.recipient_countries);
       
       // Only add the field if there's either current data or import data
       // For snippet imports, ONLY show if the import has this data (not just current data)
@@ -3255,18 +3178,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const locationSummary = (
             <div className="flex flex-wrap items-center gap-2">
               {/* Location code badge - matches AF/AG/489/A1 style */}
-              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                 {locationCode}
               </span>
               
               {/* Location name - matches Afghanistan (25%) style */}
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-body font-medium text-foreground">
                 {locationName}
               </span>
               
               {/* Coordinates as gray pill badge - matches AF/AG style */}
               {coordinates && (
-                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                   {coordinates}
                 </span>
               )}
@@ -3278,9 +3201,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
             currentValue: (() => {
             // Get current location at this index - this will be evaluated when displayed
-            console.log('[XmlImportTab] Debug - locIndex:', locIndex, 'currentActivityData.locations:', currentActivityData.locations);
             const currentLocation = currentActivityData.locations && currentActivityData.locations[locIndex];
-            console.log('[XmlImportTab] Debug - currentLocation:', currentLocation);
             if (!currentLocation) return null;
             
             // Format current location to match the import value format
@@ -3292,14 +3213,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             
             return (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                   {currentLocationCode}
                 </span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-body font-medium text-foreground">
                   {currentLocationName}
                 </span>
                 {currentCoordinates && (
-                  <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                     {currentCoordinates}
                   </span>
                 )}
@@ -3367,9 +3288,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) &&
           (s.vocabulary === '1' || !s.vocabulary) // Only vocabulary 1 or missing
         );
-        console.log('[Sector Import Debug] Parsed sectors:', parsedActivity.sectors);
-        console.log('[Sector Import Debug] 3-digit sectors needing refinement:', has3DigitSectors);
-        console.log('[Sector Import Debug] Sector codes:', parsedActivity.sectors.map(s => s.code));
         
         const hasConflict = !!currentActivityData.sectors?.length;
         const hasNonDacSectors = nonDacSectors.length > 0;
@@ -3412,7 +3330,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const policyMarkersResponse = await apiFetch(`/api/activities/${activityId}/policy-markers`);
           if (policyMarkersResponse.ok) {
             existingPolicyMarkers = await policyMarkersResponse.json();
-            console.log('[XML Import] Fetched existing policy markers:', existingPolicyMarkers);
           }
         } catch (error) {
           console.warn('[XML Import] Failed to fetch existing policy markers:', error);
@@ -3498,7 +3415,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const tagsResponse = await apiFetch(`/api/activities/${activityId}/tags`);
           if (tagsResponse.ok) {
             existingTags = await tagsResponse.json();
-            console.log('[XML Import] Fetched existing tags:', existingTags);
           } else if (tagsResponse.status === 405) {
             console.warn('[XML Import] Tags GET endpoint not available (405), skipping conflict detection');
           } else {
@@ -3701,7 +3617,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           if (!error && data) {
             existingConditions = data;
-            console.log('[XML Import] Fetched existing conditions:', existingConditions);
           }
         } catch (error) {
           console.warn('[XML Import] Error fetching existing conditions:', error);
@@ -3753,7 +3668,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             const linkedResponse = await apiFetch(`/api/activities/${activityId}/linked`);
             if (linkedResponse.ok) {
               existingLinkedActivities = await linkedResponse.json();
-              console.log(`[XML Import] Found ${existingLinkedActivities.length} existing linked activities`);
             }
           } catch (error) {
             console.warn('[XML Import] Failed to fetch existing linked activities:', error);
@@ -3784,7 +3698,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           });
         });
         
-        console.log(`[XML Import] Found ${parsedActivity.relatedActivities.length} related activities`);
       }
 
       // === CONTACTS TAB ===
@@ -3803,7 +3716,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const contactTypeLabel = contactTypeLabels[contactTypeCode] || 'Contact';
           const contactName = contact.personName || contact.organization || 'Contact';
           
-          console.log('[XML Import Debug] Processing contact:', contact);
           
         fields.push({
             fieldName: `Contact ${index + 1}: ${contactName}`,
@@ -3891,13 +3803,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         throw new Error('No importable fields found in the XML file. Please check that it contains valid IATI activity data.');
       }
 
-        console.log('[XML Import Debug] Setting parsed fields:', fields.length, 'fields');
         
         // PHASE 1: Diagnostic logging for field creation analysis
         const transactionFields = fields.filter(f => f.fieldName.includes('Transaction'));
         const financingFields = fields.filter(f => f.fieldName.includes('Financing') || f.fieldName.includes('Capital'));
         
-        console.log('🔍 [XML Import] DIAGNOSTIC - Field Creation Results:');
         console.log('🔍 [XML Import] DIAGNOSTIC - Transaction Fields Created:', {
           count: transactionFields.length,
           names: transactionFields.map(f => f.fieldName),
@@ -3911,12 +3821,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       setParsedFields(fields);
       
       // EXTERNAL PUBLISHER DETECTION - After parsing is complete
-      console.log('[XML Import] Checking for external publisher...');
       if (fileToCheck) {
         try {
           const meta = await extractIatiMeta(fileToCheck);
-          console.log('[XML Import] Extracted metadata:', meta);
-          console.log('[XML Import] User publisher refs:', userPublisherRefs);
           
           // Store metadata for display in the modal
           setXmlMetadata(meta);
@@ -3928,9 +3835,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           );
           
           if (!isOwnedActivity) {
-            console.log('[XML Import] EXTERNAL PUBLISHER DETECTED!');
-            console.log('[XML Import] Reporting org:', meta.reportingOrgRef);
-            console.log('[XML Import] User refs:', userPublisherRefs);
             
             // Check if this IATI ID already exists
             let existingAct = null;
@@ -3967,7 +3871,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             toast.success(`XML file parsed successfully! Found ${fields.length} importable fields.`);
             return; // Exit here, modal is shown and preview is visible
           } else {
-            console.log('[XML Import] Activity is owned by user, proceeding with normal import');
           }
         } catch (metaError) {
           console.error('[XML Import] Error extracting metadata:', metaError);
@@ -3975,13 +3878,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         }
       }
       
-      console.log('[XML Import Debug] Setting status to previewing');
       setImportStatus({ stage: 'previewing', progress: 100 });
       
       // AUTO-TRIGGER SECTOR REFINEMENT for 3-digit sectors
       const sectorField = fields.find(f => f.fieldName === 'Sectors');
       if (sectorField && (sectorField as any).needsRefinement) {
-        console.log('[XML Import] Auto-triggering sector refinement for 3-digit DAC 5 Digit sectors');
         const importedSectors = (sectorField as any).importedSectors || [];
         
         // Filter to only include 3-digit DAC 5 Digit (vocabulary=1) sectors that need refinement
@@ -4020,7 +3921,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         stage: 'error', 
         message: error instanceof Error ? error.message : 'Failed to parse XML file. Please ensure it\'s a valid IATI XML document.' 
       });
-      toast.error('Failed to parse XML file', {
+      toast.error('Couldn’t parse XML file. Please try again in a moment.', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
     } finally {
@@ -4040,7 +3941,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     });
     
     if (shouldAutoParseRef && snippetContent && (importMethod === 'snippet' || importMethod === 'iatiSearch') && !isParsing && importStatus.stage === 'idle') {
-      console.log('[XML Import] 🚀 Auto-triggering parse from IATI Search/Datastore');
       setShouldAutoParseRef(false); // Reset flag
       parseXmlFile();
     }
@@ -4057,81 +3957,66 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
   // Enhanced Select all fields - selects main fields AND all sub-toggles
   const selectAllFields = (select: boolean) => {
-    console.log(`[XML Import] Enhanced Select All: ${select ? 'Selecting' : 'Clearing'} all fields and sub-items`);
     
     // 1. Select all main fields (existing behavior)
     setParsedFields(prev => prev.map(field => ({ ...field, selected: select })));
     
     if (select) {
-      console.log('[XML Import] Enhanced Select All: Setting all sub-selection flags');
       
       // 2. Select all financial items - set flags to import ALL items
       if (parsedActivity?.budgets?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.budgets.length} budgets`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       if (parsedActivity?.transactions?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.transactions.length} transactions`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       if (parsedActivity?.plannedDisbursements?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.plannedDisbursements.length} planned disbursements`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 3. Select all policy markers
       if (parsedActivity?.policyMarkers?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.policyMarkers.length} policy markers`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 4. Select all locations
       if (parsedActivity?.locations?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.locations.length} locations`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 5. Select all tags
       if (parsedActivity?.tagClassifications?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.tagClassifications.length} tags`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 6. Select all conditions
       if (parsedActivity?.conditions?.conditions?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.conditions.conditions.length} conditions`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 7. Select all FSS items
       if (parsedActivity?.forwardSpendingPlans?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.forwardSpendingPlans.length} FSS items`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 8. Select all humanitarian scopes
       if (parsedActivity?.humanitarianScopes?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.humanitarianScopes.length} humanitarian scopes`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 9. Select all document links
       if (parsedActivity?.document_links?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.document_links.length} document links`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 10. Select all results
       if (parsedActivity?.results?.length > 0) {
-        console.log(`[XML Import] Enhanced Select All: Selecting all ${parsedActivity.results.length} results`);
         // This will be processed in importSelectedFields as bulk import
       }
       
-      console.log('[XML Import] Enhanced Select All: All items selected for comprehensive import');
     } else {
-      console.log('[XML Import] Enhanced Select All: Cleared all selections');
     }
   };
 
@@ -4188,8 +4073,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       return;
     }
 
-    console.log('[Multi-Activity Import] Starting import with mode:', multiActivityImportMode);
-    console.log('[Multi-Activity Import] Selected indices:', selectedActivityIndices);
 
     setShowActivityPreview(false);
     setImportStatus({ stage: 'importing', progress: 0 });
@@ -4198,13 +4081,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     try {
       if (multiActivityImportMode === 'update_current' && selectedActivityIndices.length === 1) {
         // Parse selected activity and continue with existing import flow
-        console.log('[Multi-Activity Import] Update current mode - parsing activity at index', selectedActivityIndices[0]);
         
         const parser = new IATIXMLParser(xmlContent);
         const parsedActivity = parser.parseActivityByIndex(selectedActivityIndices[0]);
         setParsedActivity(parsedActivity);
         
-        console.log('[Multi-Activity Import] Parsed selected activity:', parsedActivity);
         
         // Continue with existing field mapping and import flow
         // This will trigger the normal field selection UI
@@ -4217,7 +4098,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         
       } else if (multiActivityImportMode === 'create_new' && selectedActivityIndices.length === 1) {
         // Create a single new activity
-        console.log('[Multi-Activity Import] Create new mode - single activity');
         
         const response = await apiFetch('/api/activities/bulk-import-iati', {
           method: 'POST',
@@ -4235,7 +4115,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         }
 
         const result = await response.json();
-        console.log('[Multi-Activity Import] Create new result:', result);
         
         setImportStatus({ stage: 'complete', progress: 100 });
         toast.success(`Created 1 new activity successfully`);
@@ -4249,7 +4128,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         
       } else if (multiActivityImportMode === 'bulk_create') {
         // Bulk create multiple activities
-        console.log('[Multi-Activity Import] Bulk create mode - creating', selectedActivityIndices.length, 'activities');
         
         const response = await apiFetch('/api/activities/bulk-import-iati', {
           method: 'POST',
@@ -4267,7 +4145,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         }
 
         const result = await response.json();
-        console.log('[Multi-Activity Import] Bulk create result:', result);
         
         setImportStatus({ stage: 'complete', progress: 100 });
         toast.success(`Created ${result.created || selectedActivityIndices.length} new activities successfully`);
@@ -4293,8 +4170,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
   // Handle sector refinement
   const handleSectorRefinement = (importedSectors: any[]) => {
-    console.log('[Sector Refinement] Opening refinement dialog for sectors:', importedSectors);
-    console.log('[Sector Refinement] Sector count:', importedSectors.length);
     console.log('[Sector Refinement] Sector details:', importedSectors.map(s => ({
       code: s.code,
       narrative: s.narrative,
@@ -4318,7 +4193,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
   // IATI Search handlers
   const handleIatiSearch = useCallback(async () => {
-    console.log('[IATI Search] Starting search with filters:', iatiSearchFilters);
 
     if (!iatiSearchFilters.activityTitle.trim()) {
       toast.error('Please enter an activity title to search');
@@ -4371,7 +4245,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
   // Handle External Publisher modal choice
   const handleExternalPublisherChoice = async (choice: 'merge' | 'import_as_reporting_org') => {
-    console.log('[External Publisher] User chose:', choice);
     console.log('[External Publisher] Current state:', {
       parsedFieldsCount: parsedFields.length,
       importStage: importStatus.stage,
@@ -4382,7 +4255,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     
     // For merge, the fields are already parsed and preview is already showing
     // Ensure the import status is set correctly
-    console.log('[External Publisher] Ensuring preview mode is active');
     setImportStatus({ stage: 'previewing', progress: 100 });
     toast.success(`Proceeding with ${choice}. Review and select fields to import below.`);
   };
@@ -4420,7 +4292,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         throw new Error('No XML data received from IATI Datastore');
       }
       
-      console.log('[IATI Search] Fetched XML for:', activity.iatiIdentifier);
       console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Structure Analysis:', {
         xmlLength: data.xml.length,
         hasIatiActivities: data.xml.includes('<iati-activities'),
@@ -4432,7 +4303,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       let singleActivityXml = data.xml;
       
       if (data.xml.includes('<iati-activities')) {
-        console.log('[IATI Search] Multi-activity XML detected, extracting single activity');
         
         try {
           // Parse the XML DOM
@@ -4440,7 +4310,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const xmlDoc = parser.parseFromString(data.xml, 'text/xml');
           const activities = xmlDoc.getElementsByTagName('iati-activity');
           
-          console.log('[IATI Search] Found', activities.length, 'activities in XML');
           
           // DIAGNOSTIC: Log transaction count per activity
           const activityTransactionCounts: Array<{identifier: string, transactionCount: number, index: number}> = [];
@@ -4454,7 +4323,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               index: i
             });
           }
-          console.log('[IATI Search] 🔍 DIAGNOSTIC - Transaction counts per activity:', activityTransactionCounts);
           
           // Find the activity with matching identifier
           let matchingActivity = null;
@@ -4464,7 +4332,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             if (identifierEl && identifierEl.textContent?.trim() === activity.iatiIdentifier) {
               matchingActivity = activities[i];
               matchingIndex = i;
-              console.log('[IATI Search] Found matching activity at index', i);
               console.log('[IATI Search] 🔍 DIAGNOSTIC - Matching activity details:', {
                 index: i,
                 identifier: activity.iatiIdentifier,
@@ -4480,7 +4347,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             const activityXml = serializer.serializeToString(matchingActivity);
             // Wrap in proper root element with XML declaration
             singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
-            console.log('[IATI Search] Extracted single activity, length:', singleActivityXml.length);
             console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Extraction:', {
               originalLength: data.xml.length,
               extractedLength: singleActivityXml.length,
@@ -4494,29 +4360,24 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               const activityXml = serializer.serializeToString(activities[0]);
               // Wrap in proper root element with XML declaration
               singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
-              console.log('[IATI Search] Using first activity, length:', singleActivityXml.length);
               console.warn('[IATI Search] 🔍 DIAGNOSTIC - Using fallback activity (first activity in XML)');
             }
           }
         } catch (extractError) {
           console.error('[IATI Search] Error extracting single activity:', extractError);
-          console.log('[IATI Search] Falling back to original XML');
           // Fall back to using the original XML
         }
       } else {
         // Single activity XML - ensure it's properly wrapped
         if (!singleActivityXml.includes('<iati-activities>') && singleActivityXml.includes('<iati-activity')) {
-          console.log('[IATI Search] 🔍 DIAGNOSTIC - Single activity XML detected, ensuring proper wrapper');
           // Check if it needs wrapping
           if (!singleActivityXml.trim().startsWith('<?xml')) {
             singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${singleActivityXml}</iati-activities>`;
-            console.log('[IATI Search] Wrapped single activity XML in iati-activities root');
           }
         }
       }
       
       // Parse the XML to check for external publisher
-      console.log('[IATI Search] 🔍 DIAGNOSTIC - About to parse XML, length:', singleActivityXml.length);
       const parser = new IATIXMLParser(singleActivityXml);
       const parsedActivity = parser.parseActivity();
       
@@ -4556,12 +4417,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       );
       
       // Store the extracted single activity XML
-      console.log('[IATI Search] Setting snippet content, length:', singleActivityXml.length);
       setSnippetContent(singleActivityXml);
       
       if (!isOwnedActivity && reportingOrgRef) {
         // External publisher detected - parse after state updates
-        console.log('[IATI Search] External publisher detected, will parse after state update');
         
         const meta = {
           iatiId: parsedActivity.iatiIdentifier || activity.iatiIdentifier,
@@ -4578,7 +4437,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         setShouldAutoParseRef(true);
       } else {
         // Activity is owned by user or no reporting org - proceed with automatic import
-        console.log('[IATI Search] Activity is owned by user, will parse after state update');
         
         const toastId = toast.loading('Parsing IATI activity from Datastore...');
         loadingToastRef.current = toastId;
@@ -4634,7 +4492,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       originalConsoleWarn.apply(console, args);
     };
     
-    console.log('🚀 [XML Import] Starting enhanced import process with comprehensive selection support...');
     
     // Initialize comprehensive import summary tracker
     const importSummary: any = {
@@ -4732,82 +4589,64 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     const selectionRatio = selectedFields.length / totalFields;
     const isComprehensiveSelection = selectionRatio > 0.8; // If more than 80% of fields are selected
     
-    console.log(`[XML Import] Selection analysis: ${selectedFields.length}/${totalFields} fields selected (${(selectionRatio * 100).toFixed(1)}%)`);
-    console.log(`[XML Import] Comprehensive selection detected: ${isComprehensiveSelection}`);
     
     if (isComprehensiveSelection) {
-      console.log('[XML Import] Comprehensive selection detected - enabling bulk import for all available sub-items');
       
       // Auto-enable bulk import flags for comprehensive selection
       const updateData: any = {};
       
       if (parsedActivity?.transactions?.length > 0) {
         updateData._importTransactions = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.transactions.length} transactions`);
       }
       
       if (parsedActivity?.budgets?.length > 0) {
         updateData._importBudgets = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.budgets.length} budgets`);
       }
       
       if (parsedActivity?.plannedDisbursements?.length > 0) {
         updateData._importPlannedDisbursements = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.plannedDisbursements.length} planned disbursements`);
       }
       
       if (parsedActivity?.policyMarkers?.length > 0) {
         updateData._importPolicyMarkers = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.policyMarkers.length} policy markers`);
       }
       
       if (parsedActivity?.locations?.length > 0) {
         updateData._importLocations = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.locations.length} locations`);
       }
       
       if (parsedActivity?.tagClassifications?.length > 0) {
         updateData._importTags = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.tagClassifications.length} tags`);
       }
       
       if (parsedActivity?.conditions?.conditions?.length > 0) {
         updateData._importConditions = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.conditions.conditions.length} conditions`);
       }
       
       if (parsedActivity?.humanitarianScopes?.length > 0) {
         updateData._importHumanitarianScopes = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.humanitarianScopes.length} humanitarian scopes`);
       }
       
       if (parsedActivity?.document_links?.length > 0) {
         updateData._importDocumentLinks = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.document_links.length} document links`);
       }
       
       if (parsedActivity?.results?.length > 0) {
         updateData._importResults = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.results.length} results`);
       }
       
       if (parsedActivity?.sectors?.length > 0) {
         updateData._importSectors = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.sectors.length} sectors`);
       }
       
       if (parsedActivity?.forwardSpendingPlans?.length > 0) {
         updateData._importFss = true;
-        console.log(`[XML Import] Auto-enabled bulk import for ${parsedActivity.forwardSpendingPlans.length} FSS items`);
       }
       
       // Store the comprehensive selection flags
       (window as any).__comprehensiveImportFlags = updateData;
-      console.log('[XML Import] Comprehensive import flags stored for processing');
     }
     const selectedFieldsList = parsedFields.filter(f => f.selected);
-    console.log('📋 [XML Import] Selected fields:', selectedFieldsList);
-    console.log('📋 [XML Import] Selected fields count:', selectedFieldsList.length);
     
     // Track selected fields in summary
     importSummary.selectedFields = selectedFieldsList.map(f => ({
@@ -4831,7 +4670,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       const comprehensiveFlags = (window as any).__comprehensiveImportFlags;
       if (comprehensiveFlags) {
         Object.assign(updateData, comprehensiveFlags);
-        console.log('[XML Import] Merged comprehensive import flags:', Object.keys(comprehensiveFlags));
         // Clear the flags after use
         delete (window as any).__comprehensiveImportFlags;
       }
@@ -4840,26 +4678,21 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // When Enhanced Select All is used, collect bulk data BEFORE processing individual fields
       if (updateData._importTransactions === true && !updateData.importedTransactions) {
         updateData.importedTransactions = parsedActivity.transactions || [];
-        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedTransactions.length} transactions from parsed activity for comprehensive import`);
       }
       
       if (updateData._importBudgets === true && !updateData.importedBudgets) {
         updateData.importedBudgets = parsedActivity.budgets || [];
-        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedBudgets.length} budgets from parsed activity for comprehensive import`);
       }
       
       if (updateData._importPlannedDisbursements === true && !updateData.importedPlannedDisbursements) {
         updateData.importedPlannedDisbursements = parsedActivity.plannedDisbursements || [];
-        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedPlannedDisbursements.length} planned disbursements from parsed activity for comprehensive import`);
       }
       
       if (updateData._importLocations === true && !updateData.importedLocations) {
         updateData.importedLocations = parsedActivity.locations || [];
-        console.log(`[XML Import] 🎯 BULK MODE: Collected ${updateData.importedLocations.length} locations from parsed activity for comprehensive import`);
       }
       
       // PHASE 1: Comprehensive diagnostic logging for field processing
-      console.log('🔍 [XML Import] DIAGNOSTIC - Field Processing Analysis:');
       console.log('🔍 [XML Import] DIAGNOSTIC - Fields to Process:', selectedFieldsList.map(f => ({ 
         name: f.fieldName, 
         hasItemData: !!f.itemData, 
@@ -4882,7 +4715,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
         
         // PHASE 1: Diagnostic logging for each field being processed
-        console.log(`🔍 [XML Import] DIAGNOSTIC - Processing Field: ${field.fieldName} (tab: ${field.tab})`);
         console.log(`🔍 [XML Import] DIAGNOSTIC - Field Data:`, {
           hasImportValue: !!field.importValue,
           hasItemData: !!field.itemData,
@@ -4897,19 +4729,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             importSummary.basicFields.push({ field: 'Activity Title', value: field.importValue });
             break;
           case 'Activity Description':
-            console.log('[Import Update] Setting description_narrative:', field.importValue?.substring(0, 100));
             updateData.description_narrative = field.importValue;
             break;
           case 'Activity Description - Objectives':
-            console.log('[Import Update] Setting description_objectives:', field.importValue?.substring(0, 100));
             updateData.description_objectives = field.importValue;
             break;
           case 'Activity Description - Target Groups':
-            console.log('[Import Update] Setting description_target_groups:', field.importValue?.substring(0, 100));
             updateData.description_target_groups = field.importValue;
             break;
           case 'Activity Description - Other':
-            console.log('[Import Update] Setting description_other:', field.importValue?.substring(0, 100));
             updateData.description_other = field.importValue;
             break;
           case 'Planned Start Date':
@@ -4958,11 +4786,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             // Extract numeric value from string like "88.8%"
             const percentageStr = typeof field.importValue === 'string' ? field.importValue : String(field.importValue);
             const numericValue = parseFloat(percentageStr.replace('%', ''));
-            console.log(`[XML Import] Processing Capital Spend Percentage: ${percentageStr} -> ${numericValue}`);
             // Validate range 0-100 and round to 2 decimal places
             if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 100) {
               updateData.capital_spend_percentage = Math.round(numericValue * 100) / 100;
-              console.log(`[XML Import] ✅ Capital spend percentage set to: ${updateData.capital_spend_percentage}`);
             } else if (!isNaN(numericValue)) {
               console.warn(`[XML Import] Capital spend percentage ${numericValue} is out of range (0-100), skipping`);
             } else {
@@ -5093,12 +4919,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   mailingAddress: contact.mailingAddress
                 });
               });
-              console.log(`[XML Import] Adding ${parsedActivity.contactInfo.length} contacts for import`);
             }
             break;
           case 'Conditions':
             // Handle conditions import
-            console.log('[XML Import DEBUG] Conditions case triggered!', parsedActivity.conditions);
             if (parsedActivity.conditions && parsedActivity.conditions.conditions.length > 0) {
               updateData._importConditions = true;
               updateData.conditionsData = {
@@ -5110,7 +4934,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   }
                 }))
               };
-              console.log(`[XML Import] Adding ${parsedActivity.conditions.conditions.length} conditions for import`);
             }
             break;
           case 'Budgets':
@@ -5118,13 +4941,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
               // Check if bulk mode is already active to avoid duplicates
               if (updateData._importBudgets === true) {
-                console.log(`[XML Import] Skipping individual budget addition - bulk mode already active with ${updateData.importedBudgets?.length || 0} budgets`);
               } else {
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
                 parsedActivity.budgets.forEach((budget: any) => {
                   updateData.importedBudgets.push(budget);
                 });
-                console.log(`[XML Import] Adding ${parsedActivity.budgets.length} budgets for import`);
               }
             }
             break;
@@ -5135,7 +4956,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               parsedActivity.plannedDisbursements.forEach((pd: any) => {
                 updateData.importedPlannedDisbursements.push(pd);
               });
-              console.log(`[XML Import] Adding ${parsedActivity.plannedDisbursements.length} planned disbursements for import`);
             }
             break;
           case 'Locations':
@@ -5144,7 +4964,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             if (parsedActivity.locations && parsedActivity.locations.length > 0) {
               updateData._importLocations = true;
               updateData.locationsData = parsedActivity.locations;
-              console.log(`[XML Import] Adding ${parsedActivity.locations.length} locations for import`);
             }
             break;
           case 'Humanitarian Scope':
@@ -5163,7 +4982,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (parsedActivity.humanitarian) {
                 updateData.humanitarian = parsedActivity.humanitarian;
               }
-              console.log(`[XML Import] Adding ${parsedActivity.humanitarianScopes.length} humanitarian scopes for import`);
             }
             break;
           case 'Document Links':
@@ -5180,12 +4998,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 language_code: doc.language_code || 'en',
                 document_date: doc.document_date
               }));
-              console.log(`[XML Import] Adding ${parsedActivity.document_links.length} document links for import`);
             }
             break;
           case 'DAC CRS Reporting':
             // Handle full DAC CRS Reporting import (includes all financing terms data)
-            console.log('[XML Import DEBUG] DAC CRS Reporting case triggered!');
             if (parsedActivity.financingTerms) {
               updateData._importFinancingTerms = true;
               updateData.financingTermsData = {
@@ -5200,7 +5016,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             break;
           case 'Loan Terms':
             // Handle loan terms import (part of CRS financing)
-            console.log('[XML Import DEBUG] Loan Terms case triggered!');
             if (parsedActivity.financingTerms?.loanTerms) {
               updateData._importFinancingTerms = true;
               if (!updateData.financingTermsData) {
@@ -5210,12 +5025,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (parsedActivity.financingTerms.channel_code) {
                 updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
               }
-              console.log('[XML Import] Adding loan terms for import:', parsedActivity.financingTerms.loanTerms);
             }
             break;
           case 'Loan Status (Yearly)':
             // Handle loan status import (part of CRS financing)
-            console.log('[XML Import DEBUG] Loan Status case triggered!');
             if (parsedActivity.financingTerms?.loanStatuses) {
               updateData._importFinancingTerms = true;
               if (!updateData.financingTermsData) {
@@ -5225,12 +5038,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (parsedActivity.financingTerms.channel_code) {
                 updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
               }
-              console.log('[XML Import] Adding loan statuses for import:', parsedActivity.financingTerms.loanStatuses.length);
             }
             break;
           case 'OECD CRS Flags':
             // Handle CRS flags import (part of CRS financing)
-            console.log('[XML Import DEBUG] OECD CRS Flags case triggered!');
             if (parsedActivity.financingTerms?.other_flags) {
               updateData._importFinancingTerms = true;
               if (!updateData.financingTermsData) {
@@ -5240,13 +5051,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (parsedActivity.financingTerms.channel_code) {
                 updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
               }
-              console.log('[XML Import] Adding CRS flags for import:', parsedActivity.financingTerms.other_flags.length);
             }
             break;
           case 'Financing Terms':
           case 'CRS Financing':
             // Handle grouped CRS financing terms import (fallback - should not normally be used)
-            console.log('[XML Import DEBUG] Grouped Financing Terms case triggered!', parsedActivity.financingTerms);
             if (parsedActivity.financingTerms) {
               updateData._importFinancingTerms = true;
               updateData.financingTermsData = {
@@ -5255,7 +5064,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 loanStatuses: parsedActivity.financingTerms.loanStatuses,
                 channelCode: parsedActivity.financingTerms.channel_code
               };
-              console.log('[XML Import] Adding all financing terms for import');
             }
             break;
           default:
@@ -5264,24 +5072,20 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (!updateData.importedOtherIdentifiers) updateData.importedOtherIdentifiers = [];
               const rawData = (field.importValue as any)?._rawData || field.importValue;
               updateData.importedOtherIdentifiers.push(rawData);
-              console.log(`[XML Import] Adding other identifier for import:`, rawData);
             } else if (field.fieldName === 'Participating Organization' || field.fieldName.startsWith('Participating Organization:')) {
               // Collect participating organization data for import
               if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
               updateData.importedParticipatingOrgs.push(field.importValue);
-              console.log(`[XML Import] Adding participating organization for import:`, field.importValue);
             } else if (field.fieldName.startsWith('Related Activity')) {
               // Collect related activity data for import
               if (!updateData.importedRelatedActivities) updateData.importedRelatedActivities = [];
               updateData.importedRelatedActivities.push(field.importValue);
-              console.log(`[XML Import] Adding related activity for import:`, field.importValue);
             } else
             if (field.fieldName.startsWith('Policy Marker:')) {
               // Handle individual policy marker import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPolicyMarkers === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[XML Import] Skipping individual policy marker processing - comprehensive selection active');
               } else {
                 // Individual selection mode
               if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
@@ -5306,17 +5110,13 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (updateData._importTransactions === true) {
                 // Comprehensive mode: Get from parsedActivity (for URL imports)
                 txData = parsedActivity.transactions?.[transactionIndex];
-                console.log('🔍 [XML Import] DIAGNOSTIC - Comprehensive mode: Getting transaction from parsedActivity:', !!txData);
               } else {
                 // Individual mode: Get from field data (for snippet imports)
                 txData = field.itemData;
-                console.log('🔍 [XML Import] DIAGNOSTIC - Individual mode: Getting transaction from field.itemData:', !!txData);
               }
               
               if (txData) {
-                console.log('[XML Import DEBUG] Adding transaction to array:', txData);
                 updateData.importedTransactions.push(txData);
-                console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
               } else {
                 console.warn('🔍 [XML Import] DIAGNOSTIC - No transaction data found for:', field.fieldName);
               }
@@ -5325,7 +5125,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importBudgets === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[XML Import] Skipping individual budget processing - comprehensive selection active');
               } else {
                 // Individual selection mode
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
@@ -5336,7 +5135,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPlannedDisbursements === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[XML Import] Skipping individual planned disbursement processing - comprehensive selection active');
               } else {
                 // Individual selection mode
                 if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
@@ -5347,7 +5145,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importLocations === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[XML Import] Skipping individual location processing - comprehensive selection active');
               } else {
                 // Individual selection mode
                 if (!updateData.importedLocations) updateData.importedLocations = [];
@@ -5373,19 +5170,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   parsedActivity: parsedActivity.countryBudgetItems
                 });
               }
-              console.log(`[XML Import] Total budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
             } else if (field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
               // Check if bulk mode is already active to avoid duplicates
               if (updateData._importBudgets === true) {
-                console.log(`[XML Import] Skipping individual budget ${field.fieldName} - bulk mode already active`);
               } else {
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
                 const budgetIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
                 if (parsedActivity.budgets && parsedActivity.budgets[budgetIndex]) {
                   updateData.importedBudgets.push(parsedActivity.budgets[budgetIndex]);
                 }
-                console.log(`[XML Import] Adding budget ${budgetIndex + 1} for import`);
               }
             } else if (field.fieldName.startsWith('Planned Disbursement ')) {
               // Collect planned disbursement data for import
@@ -5394,18 +5188,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements[disbursementIndex]) {
                 updateData.importedPlannedDisbursements.push(parsedActivity.plannedDisbursements[disbursementIndex]);
               }
-              console.log(`[XML Import] Adding planned disbursement ${disbursementIndex + 1} for import`);
             } else if (field.fieldName === 'Forward Spend') {
               // Collect FSS data for import
               if (field.fssData) {
                 updateData.importedFss = field.fssData;
-                console.log('[XML Import] Adding FSS for import');
               }
             } else if (field.fieldName.startsWith('Document Links')) {
               // Collect document links for import
               if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
                 updateData.importedDocuments = parsedActivity.document_links;
-                console.log('[XML Import] Adding', parsedActivity.document_links.length, 'documents for import');
               }
               // PHASE 2: Transaction processing is now handled earlier in the unified logic (line 3824-3856)
             } else if (field.fieldName.startsWith('Location ')) {
@@ -5415,17 +5206,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (parsedActivity.locations && parsedActivity.locations[locationIndex]) {
                 updateData.importedLocations.push(parsedActivity.locations[locationIndex]);
               }
-              console.log(`[XML Import] Adding location ${locationIndex + 1} for import`);
             } else if (field.tab === 'contacts' || field.fieldName.includes('Contact')) {
               // Collect contact data for import
               if (!updateData.importedContacts) updateData.importedContacts = [];
               updateData.importedContacts.push(field.importValue);
-              console.log(`[XML Import] Adding contact for import:`, field.importValue);
             } else if (field.fieldName === 'Humanitarian Activity') {
               // Collect humanitarian flag for import
               if (!updateData.importedHumanitarian) updateData.importedHumanitarian = {};
               updateData.importedHumanitarian.humanitarian = field.importValue === 'Yes';
-              console.log(`[XML Import] Adding humanitarian flag for import:`, field.importValue);
             } else if (field.fieldName.startsWith('Humanitarian Scope ')) {
               // Collect humanitarian scope data for import
               if (!updateData.importedHumanitarian) updateData.importedHumanitarian = {};
@@ -5448,7 +5236,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               };
               
               updateData.importedHumanitarian.humanitarian_scopes.push(transformedScope);
-              console.log(`[XML Import] Adding humanitarian scope for import (flag auto-set to true):`, transformedScope);
             }
             break;
         }
@@ -5481,8 +5268,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
 
       // Make API call to update the activity
-      console.log('[XML Import] Making API call with data:', updateData);
-      console.log('[XML Import] API URL:', `/api/activities/${activityId}`);
       
       // Log budget mapping data specifically if present
       if (updateData.importedCountryBudgetItems) {
@@ -5500,8 +5285,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         body: JSON.stringify(updateData),
       });
 
-      console.log('[XML Import] API Response status:', response.status);
-      console.log('[XML Import] API Response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -5510,8 +5293,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
 
       // Refresh activity data to ensure subsequent imports use updated default_currency
-      console.log('[XML Import] Refreshing activity data after field updates...');
-      console.log('[XML Import] Current default_currency before refresh:', currentActivityData.default_currency);
       
       // Invalidate cache to force fresh fetch
       await invalidateActivityCache(activityId);
@@ -5530,11 +5311,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       
       // Update state for UI
       setCurrentActivityData(freshActivityData);
-      console.log('[XML Import] ✅ Refreshed default_currency:', freshActivityData.default_currency);
 
       // Handle other identifiers import if any
       if (updateData.importedOtherIdentifiers && updateData.importedOtherIdentifiers.length > 0) {
-        console.log('[XML Import] Processing other identifiers import...');
         const totalIdentifiers = updateData.importedOtherIdentifiers.length;
         setImportStatus({
           stage: 'importing',
@@ -5550,7 +5329,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             ownerOrg: identifier.ownerOrg || identifier._rawData?.ownerOrg
           }));
 
-          console.log('[XML Import] Saving other identifiers:', otherIdentifiersData);
 
           // Save using the field API
           const otherIdentifiersResponse = await apiFetch(`/api/activities/field`, {
@@ -5568,19 +5346,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (!otherIdentifiersResponse.ok) {
             const errorData = await otherIdentifiersResponse.json();
             console.error('[XML Import] Other identifiers import API error:', errorData);
-            toast.error('Failed to import other identifiers', {
+            toast.error('Couldn’t import other identifiers. Please try again in a moment.', {
               description: errorData.error || 'Could not import other identifier data. Main activity data was imported successfully.'
             });
           } else {
             const successData = await otherIdentifiersResponse.json();
-            console.log('[XML Import] Other identifiers imported successfully:', successData);
             toast.success(`Other identifiers imported successfully`, {
               description: `${otherIdentifiersData.length} identifier(s) added to the activity`
             });
           }
         } catch (otherIdentifiersError) {
           console.error('[XML Import] Other identifiers import network error:', otherIdentifiersError);
-          toast.error('Failed to import other identifiers', {
+          toast.error('Couldn’t import other identifiers. Please try again in a moment.', {
             description: 'Network error occurred while importing other identifiers. Please check your connection and try again.'
           });
         }
@@ -5588,7 +5365,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle sector imports if any
       if (updateData._importSectors) {
-        console.log('[XML Import] Processing sector imports...');
         // Initial message - will be updated once we know the count
         setImportStatus({
           stage: 'importing',
@@ -5602,7 +5378,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           // Check if we have refined sectors
           if ((sectorField as any).refinedSectors && (sectorField as any).refinedSectors.length > 0) {
-            console.log('[XML Import] Using refined sectors:', (sectorField as any).refinedSectors);
             sectorsToImport = (sectorField as any).refinedSectors.map((sector: any) => ({
               sector_code: sector.code,
               sector_name: sector.name,
@@ -5611,7 +5386,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               level: 'subsector' // Refined sectors are always 5-digit subsectors
             }));
           } else if (savedRefinedSectors.length > 0) {
-            console.log('[XML Import] Using saved refined sectors:', savedRefinedSectors);
             sectorsToImport = savedRefinedSectors.map((sector: any) => ({
               sector_code: sector.code,
               sector_name: sector.name,
@@ -5622,7 +5396,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           } else {
             // Use original sectors from import if no refinement was done
             // Filter out locked (non-DAC) sectors
-            console.log('[XML Import] Using original sectors from field');
             const importableSectors = (sectorField.importValue || []).filter((sector: any) => !sector.locked);
             sectorsToImport = importableSectors.map((sector: any) => ({
               sector_code: sector.code,
@@ -5635,7 +5408,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
 
           if (sectorsToImport.length > 0) {
-            console.log('[XML Import] Importing sectors to database:', sectorsToImport);
 
             // Update progress with sector count and details
             const sectorNames = sectorsToImport.slice(0, 2).map((s: any) => s.sector_name || s.sector_code).join(', ');
@@ -5713,7 +5485,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 const isValid = isValidSectorCode(s.sector_code, s.vocabulary);
                 
                 // Log validation for debugging
-                console.log('[Sector Validation] Checking code:', s.sector_code, 'vocabulary:', s.vocabulary, 'result:', isValid ? 'VALID' : 'INVALID');
                 
                 if (!isValid) {
                   console.warn('[Sector Validation] Invalid sector:', {
@@ -5761,13 +5532,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   });
                 } else {
                   importSummary.errors.push(`Sector import failed: ${errorData.error || sectorResponse.statusText}`);
-                  toast.error('Failed to import sectors', {
+                  toast.error('Couldn’t import sectors. Please try again in a moment.', {
                     description: `API Error: ${errorData.error || sectorResponse.statusText}. Main activity data was imported successfully.`
                   });
                 }
               } else {
                 const successData = await sectorResponse.json();
-                console.log('[XML Import] Sectors imported successfully:', successData);
                 importSummary.sectors.successful = sectorsToImport.length;
                 toast.success(`Sectors imported successfully`, {
                   description: `${sectorsToImport.length} sector(s) added to the activity`
@@ -5777,21 +5547,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               console.error('[XML Import] Sector import network error:', sectorError);
               importSummary.sectors.failed = sectorsToImport.length;
               importSummary.errors.push(`Sector import exception: ${sectorError instanceof Error ? sectorError.message : 'Unknown error'}`);
-              toast.error('Failed to import sectors', {
+              toast.error('Couldn’t import sectors. Please try again in a moment.', {
                 description: 'Network error occurred while importing sectors. Please check your connection and try again.'
               });
             }
               }
             }
           } else {
-            console.log('[XML Import] No sectors to import');
           }
         }
       }
 
       // Handle locations import if any
       if (updateData.importedLocations && updateData.importedLocations.length > 0) {
-        console.log('[XML Import] Processing locations import...');
 
         // Track locations in summary
         const totalLocations = updateData.importedLocations.length;
@@ -5848,12 +5616,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
                 // Perform reverse geocoding to populate address fields
                 try {
-                  console.log(`[XML Import] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
                   const geocodeResponse = await apiFetch(`/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`);
                   
                   if (geocodeResponse.ok) {
                     const geocodeData = await geocodeResponse.json();
-                    console.log('[XML Import] Geocoding result:', geocodeData);
                     
                     // Populate address fields from geocoding
                     if (geocodeData.address) {
@@ -5873,7 +5639,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       locationData.village_name = geocodeData.address.village || 
                                                  geocodeData.address.hamlet;
                       
-                      console.log('[XML Import] Address fields populated from geocoding');
                     }
                   } else {
                     console.warn('[XML Import] Reverse geocoding failed, continuing without address data');
@@ -5893,7 +5658,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             })
           );
 
-          console.log('[XML Import] Importing locations to database:', locationsToImport);
           
           // Track location details in summary
           importSummary.locations.list = locationsToImport.map((loc: any) => ({
@@ -5915,12 +5679,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             console.error('[XML Import] Locations import API error:', errorData);
             importSummary.locations.failed = locationsToImport.length;
             importSummary.errors.push(`Locations import failed: ${errorData.error || 'Unknown error'}`);
-            toast.error('Failed to import locations', {
+            toast.error('Couldn’t import locations. Please try again in a moment.', {
               description: errorData.error || 'Could not import location data. Main activity data was imported successfully.'
             });
           } else {
             const successData = await locationsResponse.json();
-            console.log('[XML Import] Locations imported successfully:', successData);
             importSummary.locations.successful = locationsToImport.length;
             toast.success(`Locations imported successfully`, {
               description: `${locationsToImport.length} location(s) added to the activity`
@@ -5930,7 +5693,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           console.error('[XML Import] Locations import network error:', locationError);
           importSummary.locations.failed = importSummary.locations.attempted;
           importSummary.errors.push(`Locations import exception: ${locationError instanceof Error ? locationError.message : 'Unknown error'}`);
-          toast.error('Failed to import locations', {
+          toast.error('Couldn’t import locations. Please try again in a moment.', {
             description: 'Network error occurred while importing locations. Please check your connection and try again.'
           });
         }
@@ -5938,7 +5701,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle FSS import if any
       if (updateData.importedFss) {
-        console.log('[XML Import] Processing FSS import...');
         const forecastCount = updateData.importedFss.forecasts?.length || 0;
         const fssDesc = forecastCount > 0
           ? `${forecastCount} FSS forecast${forecastCount !== 1 ? 's' : ''}`
@@ -5961,19 +5723,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (!fssResponse.ok) {
             const errorData = await fssResponse.json();
             console.error('[XML Import] FSS import API error:', errorData);
-            toast.error('Failed to import Forward Spending Survey', {
+            toast.error('Couldn’t import Forward Spending Survey. Please try again in a moment.', {
               description: errorData.error || 'Could not import FSS data. Main activity data was imported successfully.'
             });
           } else {
             const successData = await fssResponse.json();
-            console.log('[XML Import] FSS imported successfully:', successData);
             toast.success(`Forward Spending Survey imported successfully`, {
               description: `${successData.imported_forecasts} forecast(s) added to the activity`
             });
           }
         } catch (fssError) {
           console.error('[XML Import] FSS import network error:', fssError);
-          toast.error('Failed to import FSS', {
+          toast.error('Couldn’t import FSS. Please try again in a moment.', {
             description: 'Network error occurred while importing FSS. Please check your connection and try again.'
           });
         }
@@ -5981,7 +5742,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle document links import if any
       if (updateData.importedDocuments && updateData.importedDocuments.length > 0) {
-        console.log('[XML Import] Processing document links import...');
         const totalDocuments = updateData.importedDocuments.length;
         setImportStatus({
           stage: 'importing',
@@ -6001,19 +5761,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (!docResponse.ok) {
             const errorData = await docResponse.json();
             console.error('[XML Import] Document import API error:', errorData);
-            toast.error('Failed to import document links', {
+            toast.error('Couldn’t import document links. Please try again in a moment.', {
               description: errorData.error || 'Could not import documents. Main activity data was imported successfully.'
             });
           } else {
             const successData = await docResponse.json();
-            console.log('[XML Import] Documents imported successfully:', successData);
             toast.success(`Document links imported successfully`, {
               description: `${successData.success} of ${updateData.importedDocuments.length} document(s) added to the activity`
             });
           }
         } catch (docError) {
           console.error('[XML Import] Document import network error:', docError);
-          toast.error('Failed to import documents', {
+          toast.error('Couldn’t import documents. Please try again in a moment.', {
             description: 'Network error occurred while importing documents. Please check your connection and try again.'
           });
         }
@@ -6021,7 +5780,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle contacts import if any
       if (updateData.importedContacts && updateData.importedContacts.length > 0) {
-        console.log('[XML Import] Processing contacts import...');
         const totalContacts = updateData.importedContacts.length;
         setImportStatus({
           stage: 'importing',
@@ -6038,7 +5796,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             return mapIatiContactToDb(contact);
           });
 
-          console.log('[XML Import] Transformed contacts data:', newContacts);
 
           // Fetch existing contacts for deduplication
           let existingContacts: any[] = [];
@@ -6077,19 +5834,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (!contactsResponse.ok) {
             const errorData = await contactsResponse.json();
             console.error('[XML Import] Contacts import API error:', errorData);
-            toast.error('Failed to import contacts', {
+            toast.error('Couldn’t import contacts. Please try again in a moment.', {
               description: errorData.error || 'Could not import contact data. Main activity data was imported successfully.'
             });
           } else {
             const successData = await contactsResponse.json();
-            console.log('[XML Import] Contacts imported successfully:', successData);
             toast.success(`Contacts imported successfully`, {
               description: `${contactsData.length} contact(s) added to the activity`
             });
           }
         } catch (contactError) {
           console.error('[XML Import] Contacts import network error:', contactError);
-          toast.error('Failed to import contacts', {
+          toast.error('Couldn’t import contacts. Please try again in a moment.', {
             description: 'Network error occurred while importing contacts. Please check your connection and try again.'
           });
         }
@@ -6097,7 +5853,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle humanitarian data import if any
       if (updateData.importedHumanitarian) {
-        console.log('[XML Import] Processing humanitarian data import...');
 
         // Build descriptive message
         const scopeCount = updateData.importedHumanitarian.humanitarian_scopes?.length || 0;
@@ -6112,7 +5867,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
 
         try {
-          console.log('[XML Import] Saving humanitarian data:', updateData.importedHumanitarian);
 
           const humanitarianResponse = await apiFetch(`/api/activities/${activityId}/humanitarian`, {
             method: 'POST',
@@ -6125,12 +5879,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (!humanitarianResponse.ok) {
             const errorText = await humanitarianResponse.text();
             console.error('[XML Import] Humanitarian data import error:', errorText);
-            toast.error('Failed to import humanitarian data', {
+            toast.error('Couldn’t import humanitarian data. Please try again in a moment.', {
               description: 'Could not import humanitarian data. Main activity data was imported successfully.'
             });
           } else {
             const successData = await humanitarianResponse.json();
-            console.log('[XML Import] Humanitarian data imported successfully:', successData);
             const scopeCount = updateData.importedHumanitarian.humanitarian_scopes?.length || 0;
             toast.success(`Humanitarian data imported successfully`, {
               description: scopeCount > 0 ? `Humanitarian flag set with ${scopeCount} scope(s)` : 'Humanitarian flag set'
@@ -6138,7 +5891,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
         } catch (error) {
           console.error('[XML Import] Error importing humanitarian data:', error);
-          toast.error('Failed to import humanitarian data', {
+          toast.error('Couldn’t import humanitarian data. Please try again in a moment.', {
             description: 'Network error occurred while importing humanitarian data.'
           });
         }
@@ -6146,7 +5899,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle budgets import if any
       if (updateData.importedBudgets && updateData.importedBudgets.length > 0) {
-        console.log('[XML Import] Processing budgets import...');
 
         // Track budgets in summary
         importSummary.budgets.attempted = updateData.importedBudgets.length;
@@ -6278,7 +6030,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
         } catch (budgetsError) {
           console.error('[XML Import] Budgets import error:', budgetsError);
-          toast.error('Failed to import budgets', {
+          toast.error('Couldn’t import budgets. Please try again in a moment.', {
             description: 'Main activity data was imported successfully.'
           });
         }
@@ -6286,7 +6038,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle planned disbursements import if any
       if (updateData.importedPlannedDisbursements && updateData.importedPlannedDisbursements.length > 0) {
-        console.log('[XML Import] Processing planned disbursements import...');
         const totalPlannedDisbursements = updateData.importedPlannedDisbursements.length;
         setImportStatus({
           stage: 'importing',
@@ -6296,7 +6047,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
         try {
           // Build organization lookup map for planned disbursements
-          console.log('[XML Import] Building organization lookup map for planned disbursements...');
           const pdOrgRefToIdMap = new Map<string, string>();
           const pdOrgNameToIdMap = new Map<string, string>(); // NEW: Track by name too
           let pdOrgsCreated = 0;
@@ -6324,8 +6074,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             }
           });
 
-          console.log(`[IATI Import] Building organization lookup map for planned disbursements...`);
-          console.log(`[IATI Import] Found ${pdUniqueOrgRefs.size} orgs with refs, ${pdUniqueOrgNames.size} orgs name-only`);
 
           // Fetch and create organizations if needed
           if (pdUniqueOrgRefs.size > 0 || pdUniqueOrgNames.size > 0) {
@@ -6333,7 +6081,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               const orgsResponse = await apiFetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
-                console.log(`[IATI Import] Fetched ${allOrgs.length} organizations for planned disbursements`);
 
                 // Build lookup map for existing organizations
                 const existingOrgRefs = new Set<string>();
@@ -6345,7 +6092,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     pdOrgRefToIdMap.set(org.iati_org_id, org.id);
                     existingOrgRefs.add(org.iati_org_id);
                     pdOrgsLinked++;
-                    console.log(`[IATI Import] Linked existing org for PD: "${org.iati_org_id}" -> "${org.name}"`);
                   }
 
                   // NEW: Link by name (for name-only orgs)
@@ -6353,14 +6099,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     pdOrgNameToIdMap.set(org.name, org.id);
                     existingOrgNames.add(org.name);
                     pdOrgsLinked++;
-                    console.log(`[IATI Import] Linked existing org by name for PD: "${org.name}" (${org.acronym || 'no acronym'})`);
                   }
                 });
                 
                 // Create missing organizations (by ref)
                 const missingOrgRefs = Array.from(pdUniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
                 if (missingOrgRefs.length > 0) {
-                  console.log(`[IATI Import] Creating ${missingOrgRefs.length} missing organizations (with refs) for planned disbursements...`);
 
                   for (const ref of missingOrgRefs) {
                     const orgName = pdOrgRefToNameMap.get(ref) || ref;
@@ -6379,7 +6123,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         const newOrg = await createResponse.json();
                         pdOrgRefToIdMap.set(ref, newOrg.id);
                         pdOrgsCreated++;
-                        console.log(`[IATI Import] Created new org for PD: "${ref}" -> "${orgName}"`);
                       }
                     } catch (createError) {
                       console.error(`[IATI Import] Error creating org ${ref}:`, createError);
@@ -6390,7 +6133,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 // NEW: Create missing name-only organizations
                 const missingOrgNames = Array.from(pdUniqueOrgNames).filter(name => !existingOrgNames.has(name));
                 if (missingOrgNames.length > 0) {
-                  console.log(`[IATI Import] Creating ${missingOrgNames.length} missing name-only organizations for planned disbursements...`);
 
                   for (const name of missingOrgNames) {
                     try {
@@ -6408,7 +6150,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         const newOrg = await createResponse.json();
                         pdOrgNameToIdMap.set(name, newOrg.id);
                         pdOrgsCreated++;
-                        console.log(`[IATI Import] Created new name-only org for PD: "${name}"`);
                       }
                     } catch (createError) {
                       console.error(`[IATI Import] Error creating name-only org ${name}:`, createError);
@@ -6502,7 +6243,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
         } catch (disbursementsError) {
           console.error('[XML Import] Planned disbursements import error:', disbursementsError);
-          toast.error('Failed to import planned disbursements', {
+          toast.error('Couldn’t import planned disbursements. Please try again in a moment.', {
             description: 'Main activity data was imported successfully.'
           });
         }
@@ -6761,7 +6502,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               importSummary.policyMarkers.failed = importedPolicyMarkers.length;
               importSummary.errors.push(`Policy markers import failed: ${errorMessage}`);
               
-                toast.error('Failed to import policy markers', {
+                toast.error('Couldn’t import policy markers. Please try again in a moment.', {
                 description: errorMessage
                 });
               } else {
@@ -6785,7 +6526,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             stack: policyMarkersError.stack,
             name: policyMarkersError.name
           });
-          toast.error('Failed to import policy markers', {
+          toast.error('Couldn’t import policy markers. Please try again in a moment.', {
             description: `An error occurred while processing policy markers: ${policyMarkersError.message}`
           });
         }
@@ -6793,7 +6534,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle tags import if any
       if (updateData._importTags) {
-        console.log('[XML Import] Processing tags import...');
 
         try {
           // Get the tag field data
@@ -6809,8 +6549,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             });
             const existingTags = tagField.existingTags || [];
             
-            console.log('[XML Import] Tags to import:', tagsToImport);
-            console.log('[XML Import] Existing tags:', existingTags);
             
             // Track import results
             const importResults = {
@@ -6848,7 +6586,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 }
 
                 const tag = await tagResponse.json();
-                console.log('[XML Import] Tag created/found:', tag);
                 
                 // Link tag to activity
                 const linkResponse = await apiFetch(`/api/activities/${activityId}/tags`, {
@@ -6859,7 +6596,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
                 if (linkResponse.ok) {
                   importResults.successful.push(tag.name);
-                  console.log('[XML Import] Tag linked to activity:', tag.name);
                 } else {
                   const linkError = await linkResponse.json();
                   if (linkError.message === 'Tag already linked to activity') {
@@ -6883,7 +6619,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             
             // Provide comprehensive feedback
             if (importResults.successful.length > 0) {
-              console.log('[XML Import] Successfully imported tags:', importResults.successful);
               toast.success(`${importResults.successful.length} tag(s) imported successfully`);
               
               // Invalidate cache - page will be refreshed manually by user after reviewing import results
@@ -6891,7 +6626,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             }
             
             if (importResults.skipped.length > 0) {
-              console.log('[XML Import] Skipped tags:', importResults.skipped);
               toast.info(`${importResults.skipped.length} tag(s) already linked to activity`);
             }
             
@@ -6914,7 +6648,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
         } catch (tagsError: any) {
           console.error('[XML Import] Tags import error:', tagsError);
-          toast.error('Failed to import tags', {
+          toast.error('Couldn’t import tags. Please try again in a moment.', {
             description: `An error occurred while processing tags: ${tagsError.message}`
           });
         }
@@ -6922,12 +6656,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle results import
       if (updateData._importResults) {
-        console.log('[XML Import] Processing results import...');
 
         try {
           if (parsedActivity.results && parsedActivity.results.length > 0) {
             const totalResults = parsedActivity.results.length;
-            console.log(`[XML Import] Importing ${totalResults} result(s)...`);
 
             setImportStatus({
               stage: 'importing',
@@ -6962,13 +6694,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 errorMessage = errorText || errorMessage;
               }
               
-              toast.error('Failed to import results', {
+              toast.error('Couldn’t import results. Please try again in a moment.', {
                 description: errorMessage
               });
             } else {
               const successData = await importResponse.json();
               const summary = successData.summary;
-              console.log('[XML Import] Results imported successfully:', summary);
               
               // Store summary for detailed validation report
               setResultsImportSummary(summary);
@@ -6992,12 +6723,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               }
             }
           } else {
-            console.log('[XML Import] No results found in parsed activity');
             toast.info('No results found in XML');
           }
         } catch (resultsError: any) {
           console.error('[XML Import] Results import error:', resultsError);
-          toast.error('Failed to import results', {
+          toast.error('Couldn’t import results. Please try again in a moment.', {
             description: `An error occurred while processing results: ${resultsError.message}`
           });
         }
@@ -7012,8 +6742,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       });
       
       if (updateData._importConditions && updateData.conditionsData) {
-        console.log('[XML Import] Processing conditions import...');
-        console.log('[XML Import] Conditions data:', updateData.conditionsData);
 
         try {
           const conditionsData = updateData.conditionsData;
@@ -7024,7 +6752,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             progress: 87,
             message: `Importing ${totalConditions} condition${totalConditions !== 1 ? 's' : ''}...`
           });
-          console.log('[XML Import] Total conditions to process:', totalConditions);
           
           // Delete existing conditions for this activity
           const { error: deleteError } = await supabase
@@ -7061,7 +6788,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               attached: conditionsData.attached
             }));
           
-          console.log('[XML Import] Conditions to insert:', JSON.stringify(conditionsToInsert, null, 2));
           
           if (conditionsToInsert.length > 0) {
             const { data: insertedConditions, error: insertError } = await supabase
@@ -7075,7 +6801,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               throw insertError;
             }
             
-            console.log('[XML Import] Successfully imported conditions:', insertedConditions);
             
             // Also update conditions_attached flag on activity
             await supabase
@@ -7101,7 +6826,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
         } catch (conditionsError: any) {
           console.error('[XML Import] Conditions import error:', conditionsError);
-          toast.error('Failed to import conditions', {
+          toast.error('Couldn’t import conditions. Please try again in a moment.', {
             description: `An error occurred while processing conditions: ${conditionsError.message}`
           });
         }
@@ -7115,9 +6840,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       });
       
       if (updateData.importedTransactions && updateData.importedTransactions.length > 0) {
-        console.log('[XML Import] Processing transactions import...');
-        console.log('[XML Import] Transactions array:', updateData.importedTransactions);
-        console.log('[XML Import] Transaction count:', updateData.importedTransactions.length);
         
         // Track transactions in summary
         importSummary.transactions.attempted = updateData.importedTransactions.length;
@@ -7141,7 +6863,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           let errorCount = 0;
           
           // Build organization lookup map and auto-create missing organizations
-          console.log('[XML Import] Building organization lookup map...');
           const orgRefToIdMap = new Map<string, string>();
           let orgsCreated = 0;
           let orgsLinked = 0;
@@ -7166,7 +6887,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               const orgsResponse = await apiFetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
-                console.log(`[XML Import] Fetched ${allOrgs.length} organizations for lookup`);
                 
                 // Build lookup map for existing organizations
                 const existingOrgRefs = new Set<string>();
@@ -7175,14 +6895,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     orgRefToIdMap.set(org.iati_org_id, org.id);
                     existingOrgRefs.add(org.iati_org_id);
                     orgsLinked++;
-                    console.log(`[XML Import] Linked existing org: "${org.iati_org_id}" -> ID "${org.id}" (${org.name})`);
                   }
                 });
                 
                 // Create missing organizations
                 const missingOrgRefs = Array.from(uniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
                 if (missingOrgRefs.length > 0) {
-                  console.log(`[XML Import] Creating ${missingOrgRefs.length} missing organizations...`);
                   
                   for (const ref of missingOrgRefs) {
                     const orgName = orgRefToNameMap.get(ref) || ref;
@@ -7201,7 +6919,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         const newOrg = await createResponse.json();
                         orgRefToIdMap.set(ref, newOrg.id);
                         orgsCreated++;
-                        console.log(`[XML Import] Created new org: "${ref}" -> ID "${newOrg.id}" (${orgName})`);
                       } else {
                         console.error(`[XML Import] Failed to create org: ${ref}`);
                       }
@@ -7216,7 +6933,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             }
           }
 
-          console.log('[XML Import] Starting transaction loop...');
 
           for (let txIndex = 0; txIndex < updateData.importedTransactions.length; txIndex++) {
             const transaction = updateData.importedTransactions[txIndex];
@@ -7230,7 +6946,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               message: `Importing transaction ${txIndex + 1} of ${totalTransactions}: ${formatCurrencyValue(transaction.value, txCurrency)} (${txTypeName})`
             });
 
-            console.log('[XML Import] Processing transaction:', transaction);
             
             try {
               // Look up organization IDs by their IATI refs
@@ -7279,8 +6994,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 updated_at: new Date().toISOString()
               };
 
-              console.log('[XML Import] Prepared transaction data:', transactionData);
-              console.log('[XML Import] Calling API to create transaction...');
 
               const apiRes = await apiFetch(`/api/activities/${activityId}/transactions`, {
                 method: 'POST',
@@ -7290,7 +7003,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
               if (apiRes.ok) {
                 successCount++;
-                console.log('[XML Import] ✓ Transaction inserted via API');
                 
                 // Track successful transaction in summary with detailed info
                 importSummary.transactions.successful++;
@@ -7371,7 +7083,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             }
           }
 
-          console.log('[XML Import] Transaction import complete:', { successCount, errorCount });
 
           if (successCount > 0) {
             toast.success(`Transactions imported successfully`, {
@@ -7395,7 +7106,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             
             invalidateActivityCache(activityId);
           } else if (errorCount > 0) {
-            toast.error('Failed to import transactions', {
+            toast.error('Couldn’t import transactions. Please try again in a moment.', {
               description: `All ${errorCount} transaction(s) failed to import`
             });
           } else {
@@ -7406,7 +7117,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
         } catch (transactionsError: any) {
           console.error('[XML Import] Transactions import error:', transactionsError);
-          toast.error('Failed to import transactions', {
+          toast.error('Couldn’t import transactions. Please try again in a moment.', {
             description: 'An error occurred while processing transactions.'
           });
         }
@@ -7426,7 +7137,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       });
       
       if (updateData._importFinancingTerms && updateData.financingTermsData) {
-        console.log('[XML Import] Processing financing terms import...');
 
         try {
           const ftData = updateData.financingTermsData;
@@ -7446,7 +7156,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           });
           
           // Use Supabase directly to save to correct table: activity_financing_terms
-          console.log('[XML Import] Preparing financing terms data for activity_financing_terms table');
           
           // Prepare loan terms data (stored directly in activity_financing_terms)
           const financingTermsData: any = {
@@ -7456,7 +7165,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Add channel code if provided (from <crs-add>/<channel-code>)
           if (ftData.channelCode) {
             financingTermsData.channel_code = ftData.channelCode;
-            console.log('[XML Import] Adding channel code:', ftData.channelCode);
           }
           
           // Add loan terms fields if provided
@@ -7491,7 +7199,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Count what was added
           if (ftData.loanTerms) {
             componentsAdded++;
-            console.log('[XML Import] ✓ Loan terms saved to activity_financing_terms');
             importSummary.financingTerms.attempted++;
             importSummary.financingTerms.successful++;
             importSummary.financingTerms.details.push({
@@ -7505,7 +7212,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           if (ftData.otherFlags && ftData.otherFlags.length > 0) {
             componentsAdded++;
-            console.log('[XML Import] ✓ Other flags saved to activity_financing_terms');
             importSummary.financingTerms.attempted++;
             importSummary.financingTerms.successful++;
             importSummary.financingTerms.details.push({
@@ -7516,7 +7222,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           // Insert loan statuses to activity_loan_status table (separate table)
           if (ftData.loanStatuses && Array.isArray(ftData.loanStatuses) && ftData.loanStatuses.length > 0) {
-            console.log('[XML Import] Inserting', ftData.loanStatuses.length, 'loan statuses to activity_loan_status');
             
             // Clear existing loan statuses for this activity first
             await supabase
@@ -7541,7 +7246,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             
             if (!statusesError) {
               componentsAdded++;
-              console.log('[XML Import] ✓ Loan statuses saved to activity_loan_status');
               importSummary.financingTerms.attempted++;
               importSummary.financingTerms.successful++;
               importSummary.financingTerms.details.push({
@@ -7563,7 +7267,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Note: Other flags are already saved in activity_financing_terms.other_flags as JSONB
           // No need for separate table insert
           
-          console.log('[XML Import] ✅ Financing terms import complete. Components added:', componentsAdded);
           
         } catch (error) {
           console.error('[XML Import] Error importing financing terms:', error);
@@ -7581,7 +7284,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       
       // Process participating organizations import
       if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
-        console.log('[XML Import] Processing participating organizations import...');
         const totalOrgs = updateData.importedParticipatingOrgs.length;
         setImportStatus({
           stage: 'importing',
@@ -7599,15 +7301,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           };
 
           // Clear existing participating organizations to avoid duplicates
-          console.log('[XML Import] Clearing existing participating organizations...');
           const clearResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`, {
             method: 'DELETE'
           });
           
           if (clearResponse.ok) {
-            console.log('[XML Import] ✅ Cleared existing participating organizations');
           } else {
-            console.log('[XML Import] ⚠️ Could not clear existing participating organizations (this is okay if none exist)');
           }
 
           let successCount = 0;
@@ -7626,7 +7325,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               
               // Determine role_type from IATI role code
               const roleType = roleMap[orgData.role] || 'implementing';
-              console.log('[XML Import] Mapped role', orgData.role, 'to role_type:', roleType);
               
               // Use shared helper to find or create organization
               const organizationId = await getOrCreateOrganization(supabase, {
@@ -7658,7 +7356,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 secondary_reporter: false
               };
               
-              console.log('[XML Import] Creating participating org with data:', requestBody);
               
               const participatingOrgResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`,
                 {
@@ -7668,7 +7365,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 }
               );
 
-              console.log('[XML Import] API response status:', participatingOrgResponse.status);
               
               if (participatingOrgResponse.ok) {
                 successCount++;
@@ -7718,13 +7414,13 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
 
           if (errorCount > 0 && successCount === 0) {
-            toast.error('Failed to import participating organizations', {
+            toast.error('Couldn’t import participating organizations. Please try again in a moment.', {
               description: `${errorCount} organization(s) could not be imported`
             });
           }
         } catch (participatingOrgsError: any) {
           console.error('[XML Import] Participating organizations import error:', participatingOrgsError);
-          toast.error('Failed to import participating organizations', {
+          toast.error('Couldn’t import participating organizations. Please try again in a moment.', {
             description: `An error occurred: ${participatingOrgsError.message}`
           });
         }
@@ -7732,7 +7428,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle related activities import if any
       if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
-        console.log('[XML Import] Processing related activities import...');
         const totalRelatedActivities = updateData.importedRelatedActivities.length;
         setImportStatus({
           stage: 'importing',
@@ -7768,7 +7463,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               });
 
               // First, try to find the activity by IATI identifier using Supabase directly
-              console.log(`[XML Import] Searching for activity with IATI ID: ${relatedActivityData.ref}`);
               
               // Use Supabase directly instead of search API to avoid CORS issues
               const { data: matchingActivities, error: searchError } = await supabase
@@ -7787,7 +7481,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 continue;
               }
 
-              console.log(`[XML Import] Found ${matchingActivities?.length || 0} matching activities`);
               
               if (matchingActivities && matchingActivities.length > 0) {
                 console.log(`[XML Import] First match:`, {
@@ -7832,7 +7525,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               });
 
               if (createResponse.ok) {
-                console.log(`[XML Import] ✅ Successfully linked activity: ${relatedActivityData.ref}`);
                 successCount++;
                 if (importSummary.relatedActivities) {
                   importSummary.relatedActivities.successful++;
@@ -7893,14 +7585,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
 
           if (errorCount > 0 && successCount === 0) {
-            toast.error('Failed to import related activities', {
+            toast.error('Couldn’t import related activities. Please try again in a moment.', {
               description: `${errorCount} relationship(s) could not be created`
             });
           }
 
         } catch (relatedActivitiesError: any) {
           console.error('[XML Import] Related activities import error:', relatedActivitiesError);
-          toast.error('Failed to import related activities', {
+          toast.error('Couldn’t import related activities. Please try again in a moment.', {
             description: `An error occurred: ${relatedActivitiesError.message}`
           });
         }
@@ -7968,19 +7660,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               break;
             case 'Planned Start Date':
               saveKey = 'plannedStartDate';
-              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Planned End Date':
               saveKey = 'plannedEndDate';
-              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Actual Start Date':
               saveKey = 'actualStartDate';
-              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Actual End Date':
               saveKey = 'actualEndDate';
-              console.log(`[XML Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Recipient Countries':
               saveKey = 'recipient_countries';
@@ -7994,12 +7682,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
           
           if (saveKey) {
-            console.log(`[XML Import] Marking field as saved: ${saveKey}`);
             setFieldSaved(activityId, user.id, saveKey);
           }
         });
         
-        console.log('[XML Import] All imported fields marked as saved - green ticks should appear');
         
         // Trigger a gentle refresh to show the green ticks
         setTimeout(() => {
@@ -8231,13 +7917,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       const completeLogText = summaryLines.join('\n');
       
       // Output comprehensive summary to console
-      console.log('\n' + completeLogText + '\n');
       
       // Also output as a single copyable string
-      console.log('COPYABLE IMPORT SUMMARY (or click the copy button in the UI):\n' + completeLogText);
       
       // Show a prominent message about the copy button
-      console.log('%c✨ TIP: Click the "Copy Full Import Log" button in the UI instead of copying from console!', 'color: #4CAF50; font-size: 16px; font-weight: bold; padding: 10px;');
 
       // Restore original console methods
       console.log = originalConsoleLog;
@@ -8384,7 +8067,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
   // Individual field row component for table display
   const FieldRow = ({ field, globalIndex }: { field: ParsedField; globalIndex: number }) => (
-    <tr className="bg-card hover:bg-gray-50">
+    <tr className="bg-card hover:bg-muted">
       <td className="px-4 py-3 text-center">
         <Switch
           checked={field.selected}
@@ -8393,14 +8076,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       </td>
       <td className="px-4 py-3 w-32">
         <div>
-          <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
+          <p className="font-medium text-body text-foreground">{field.fieldName}</p>
           {(field as any).needsRefinement && (
             <div className="mt-2">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleSectorRefinement((field as any).importedSectors)}
-                className="text-xs"
+                className="text-helper"
               >
                 <Settings className="h-3 w-3 mr-1" />
                 Refine Sectors
@@ -8413,7 +8096,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => openFinancialDetailModal(field)}
-                className="text-xs"
+                className="text-helper"
               >
                 <Eye className="h-3 w-3 mr-1" />
                 Select Fields
@@ -8422,7 +8105,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           )}
           {field.isTagField && (
             <div className="mt-1">
-              <p className="text-xs text-gray-500">{(field as any).tagData?.length || 0} tag(s) from XML</p>
+              <p className="text-helper text-muted-foreground">{(field as any).tagData?.length || 0} tag(s) from XML</p>
             </div>
           )}
         </div>
@@ -8435,14 +8118,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 <div key={index} className="flex flex-col gap-1">
                   <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
-                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                    <span className="text-body font-medium text-foreground">{item.name}</span>
                     {item.percentage && (
-                      <span className="text-xs text-gray-500 font-normal">({Number(item.percentage).toFixed(2)}%)</span>
+                      <span className="text-helper text-muted-foreground font-normal">({Number(item.percentage).toFixed(2)}%)</span>
                     )}
                     {item.vocabulary && (
                       <>
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.vocabulary.split(' ')[0]}</span>
-                        <span className="text-xs text-gray-400 font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
+                        <span className="text-helper text-muted-foreground font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
                       </>
                     )}
                   </div>
@@ -8452,22 +8135,22 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
-                  <span className="text-sm font-medium text-gray-900">Policy Marker</span>
+                  <span className="text-body font-medium text-foreground">Policy Marker</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Significance:</span>
+                  <span className="text-helper text-muted-foreground">Significance:</span>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.significance}</span>
                   {field.currentValue.vocabulary && (
                     <>
-                      <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
+                      <span className="text-helper text-muted-foreground ml-2">Vocabulary:</span>
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary}</span>
                     </>
                   )}
                 </div>
                 {field.currentValue.rationale && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Rationale:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.rationale}</span>
+                    <span className="text-helper text-muted-foreground">Rationale:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.rationale}</span>
                   </div>
                 )}
               </div>
@@ -8475,36 +8158,36 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.type}</span>
-                  <span className="text-sm font-medium text-gray-900">Contact</span>
+                  <span className="text-body font-medium text-foreground">Contact</span>
                 </div>
                 {field.currentValue.personName && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Name:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
+                    <span className="text-helper text-muted-foreground">Name:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.personName}</span>
                   </div>
                 )}
                 {field.currentValue.organization && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Organization:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.organization}</span>
+                    <span className="text-helper text-muted-foreground">Organization:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
                 {field.currentValue.jobTitle && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Position:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.jobTitle}</span>
+                    <span className="text-helper text-muted-foreground">Position:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.jobTitle}</span>
                   </div>
                 )}
                 {field.currentValue.email && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Email:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.email}</span>
+                    <span className="text-helper text-muted-foreground">Email:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.email}</span>
                   </div>
                 )}
                 {field.currentValue.telephone && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Phone:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.telephone}</span>
+                    <span className="text-helper text-muted-foreground">Phone:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.telephone}</span>
                   </div>
                 )}
               </div>
@@ -8512,26 +8195,26 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.role}</span>
-                  <span className="text-sm font-medium text-gray-900">Participating Org</span>
+                  <span className="text-body font-medium text-foreground">Participating Org</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Name:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                  <span className="text-helper text-muted-foreground">Name:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Role:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.role}</span>
+                  <span className="text-helper text-muted-foreground">Role:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.role}</span>
                 </div>
                 {field.currentValue.ref && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Ref:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.ref}</span>
+                    <span className="text-helper text-muted-foreground">Ref:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.ref}</span>
                   </div>
                 )}
                 {field.currentValue.type && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Type:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.type}</span>
+                    <span className="text-helper text-muted-foreground">Type:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.type}</span>
                   </div>
                 )}
               </div>
@@ -8539,18 +8222,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                  <span className="text-sm font-medium text-gray-900">Organization</span>
+                  <span className="text-body font-medium text-foreground">Organization</span>
                 </div>
                 {field.currentValue.name && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Name:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                    <span className="text-helper text-muted-foreground">Name:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.name}</span>
                   </div>
                 )}
                 {field.currentValue.acronym && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Acronym:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.acronym}</span>
+                    <span className="text-helper text-muted-foreground">Acronym:</span>
+                    <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.acronym}</span>
                   </div>
                 )}
               </div>
@@ -8562,7 +8245,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
                         tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
                         tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
-                        'bg-gray-100 text-gray-700'
+                        'bg-muted text-foreground'
                       }`}>
                         {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
                       </span>
@@ -8570,40 +8253,40 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     {tag.code && (
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
                     )}
-                    <span className="text-sm font-medium text-gray-900">{tag.name || tag.narrative || 'Unnamed tag'}</span>
+                    <span className="text-body font-medium text-foreground">{tag.name || tag.narrative || 'Unnamed tag'}</span>
                     {tag.vocabulary_uri && (
-                      <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabulary_uri}>
+                      <span className="text-helper text-muted-foreground italic truncate max-w-32" title={tag.vocabulary_uri}>
                         {tag.vocabulary_uri.substring(0, 30)}...
                       </span>
                     )}
                   </div>
                 ))}
                 {((field as any).existingTags || []).length > 3 && (
-                  <span className="text-xs text-gray-500 italic">
+                  <span className="text-helper text-muted-foreground italic">
                     +{((field as any).existingTags || []).length - 3} more tag(s)
                   </span>
                 )}
               </div>
             ) : field.isTagField ? (
-              <span className="text-sm text-gray-400 italic">No existing tags</span>
+              <span className="text-body text-muted-foreground italic">No existing tags</span>
             ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
-              <span className="text-sm font-medium text-gray-900">{field.currentValue.name}</span>
+              <span className="text-body font-medium text-foreground">{field.currentValue.name}</span>
                 {field.currentValue.vocabulary && (
                   <>
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary.split(' ')[0]}</span>
-                    <span className="text-xs text-gray-400 font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                    <span className="text-helper text-muted-foreground font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
                   </>
                 )}
             </div>
           ) : field.fieldName === 'IATI Identifier' ? (
             <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue}</span>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{field.currentValue}</span>
+            <span className="text-body font-medium text-foreground">{field.currentValue}</span>
           )
         ) : (
-          <span className="text-sm text-gray-400 italic">Empty</span>
+          <span className="text-body text-muted-foreground italic">Empty</span>
         )}
         </div>
       </td>
@@ -8616,29 +8299,29 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               </div>
               <div className="flex items-center gap-1 flex-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                <span className="text-sm text-gray-900 whitespace-nowrap">{field.importValue.name}</span>
+                <span className="text-body text-foreground whitespace-nowrap">{field.importValue.name}</span>
               </div>
             </div>
           ) : field.isPolicyMarker ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-                <span className="text-sm font-medium text-gray-900">Policy Marker</span>
+                <span className="text-body font-medium text-foreground">Policy Marker</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">Significance:</span>
+                <span className="text-helper text-muted-foreground">Significance:</span>
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.significance}</span>
                 {field.importValue.vocabulary && (
                   <>
-                    <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
+                    <span className="text-helper text-muted-foreground ml-2">Vocabulary:</span>
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary}</span>
                   </>
                 )}
               </div>
               {field.importValue.rationale && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Rationale:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.rationale}</span>
+                  <span className="text-helper text-muted-foreground">Rationale:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.rationale}</span>
                 </div>
               )}
             </div>
@@ -8650,7 +8333,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
                       tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
                       tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
-                      'bg-gray-100 text-gray-700'
+                      'bg-muted text-foreground'
                     }`}>
                       {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
                     </span>
@@ -8658,16 +8341,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   {tag.code && (
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
                   )}
-                  <span className="text-sm font-medium text-gray-900">{tag.narrative || 'Unnamed tag'}</span>
+                  <span className="text-body font-medium text-foreground">{tag.narrative || 'Unnamed tag'}</span>
                   {tag.vocabularyUri && (
-                    <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabularyUri}>
+                    <span className="text-helper text-muted-foreground italic truncate max-w-32" title={tag.vocabularyUri}>
                       {tag.vocabularyUri.substring(0, 30)}...
                     </span>
                   )}
                 </div>
               ))}
               {((field as any).tagData || []).length > 3 && (
-                <span className="text-xs text-gray-500 italic">
+                <span className="text-helper text-muted-foreground italic">
                   +{((field as any).tagData || []).length - 3} more tag(s)
                 </span>
               )}
@@ -8676,51 +8359,51 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                <span className="text-sm font-medium text-gray-900">Contact</span>
+                <span className="text-body font-medium text-foreground">Contact</span>
               </div>
               {field.importValue.personName && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Name:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.personName}</span>
+                  <span className="text-helper text-muted-foreground">Name:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.personName}</span>
                 </div>
               )}
               {field.importValue.jobTitle && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Position:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.jobTitle}</span>
+                  <span className="text-helper text-muted-foreground">Position:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.jobTitle}</span>
                 </div>
               )}
               {field.importValue.organization && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Organization:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.organization}</span>
+                  <span className="text-helper text-muted-foreground">Organization:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.organization}</span>
                 </div>
               )}
               {field.importValue.email && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Email:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.email}</span>
+                  <span className="text-helper text-muted-foreground">Email:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.email}</span>
                 </div>
               )}
               {field.importValue.telephone && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Phone:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.telephone}</span>
+                  <span className="text-helper text-muted-foreground">Phone:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.telephone}</span>
                 </div>
               )}
             </div>
           ) : field.tab === 'participating_orgs' && typeof field.importValue === 'object' ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                <span className="text-sm font-medium text-gray-900">Participating Org</span>
+                <span className="text-body font-medium text-foreground">Participating Org</span>
               </div>
-              <div className="text-xs text-gray-900 truncate max-w-32">{field.importValue.name}</div>
+              <div className="text-helper text-foreground truncate max-w-32">{field.importValue.name}</div>
               {field.importValue.role && (() => {
                 const roleInfo = getOrganizationRoleLabel(field.importValue.role);
                 return roleInfo ? (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{roleInfo.code}</span>
-                    <span className="text-xs text-gray-600">{roleInfo.name}</span>
+                    <span className="text-helper text-muted-foreground">{roleInfo.name}</span>
                   </div>
                 ) : null;
               })()}
@@ -8734,7 +8417,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 return typeInfo ? (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{typeInfo.code}</span>
-                    <span className="text-xs text-gray-600">{typeInfo.name}</span>
+                    <span className="text-helper text-muted-foreground">{typeInfo.name}</span>
                   </div>
                 ) : null;
               })()}
@@ -8743,16 +8426,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                <span className="text-sm font-medium text-gray-900">Organization</span>
+                <span className="text-body font-medium text-foreground">Organization</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">Name:</span>
-                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name || field.importValue.narrative}</span>
+                <span className="text-helper text-muted-foreground">Name:</span>
+                <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.name || field.importValue.narrative}</span>
               </div>
               {field.importValue.ref && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Ref:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.ref}</span>
+                  <span className="text-helper text-muted-foreground">Ref:</span>
+                  <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.ref}</span>
                 </div>
               )}
             </div>
@@ -8761,17 +8444,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div key={index} className={`flex flex-col gap-1 ${item.locked ? 'opacity-50' : ''}`}>
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
-                  <span className={`text-sm font-medium ${item.locked ? 'text-gray-500' : 'text-gray-900'}`}>{item.name}</span>
+                  <span className={`text-sm font-medium ${item.locked ? 'text-muted-foreground' : 'text-foreground'}`}>{item.name}</span>
                   {item.percentage && (
-                    <span className="text-xs text-gray-500 font-normal">({Number(item.percentage).toFixed(2)}%)</span>
+                    <span className="text-helper text-muted-foreground font-normal">({Number(item.percentage).toFixed(2)}%)</span>
                   )}
                   {item.locked && (
-                    <Lock className="h-3 w-3 text-gray-500" />
+                    <Lock className="h-3 w-3 text-muted-foreground" />
                   )}
                   {item.vocabulary && (
                     <>
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.vocabulary.split(' ')[0]}</span>
-                      <span className="text-xs text-gray-400 font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
+                      <span className="text-helper text-muted-foreground font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
                     </>
                   )}
                 </div>
@@ -8784,60 +8467,60 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               </div>
               <div className="flex items-center gap-1 flex-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                <span className="text-sm text-gray-900 whitespace-nowrap">{field.importValue.name}</span>
+                <span className="text-body text-foreground whitespace-nowrap">{field.importValue.name}</span>
               </div>
             </div>
           ) : typeof field.importValue === 'object' && field.importValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-                <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+                <span className="text-body font-medium text-foreground">{field.importValue.name}</span>
                     {field.importValue.vocabulary && (
                 <>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary.split(' ')[0]}</span>
-                  <span className="text-xs text-gray-400 font-normal ml-1">{field.importValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                  <span className="text-helper text-muted-foreground font-normal ml-1">{field.importValue.vocabulary.split(' ').slice(1).join(' ')}</span>
                 </>
               )}
             </div>
           ) : typeof field.importValue === 'object' ? (
-            <span className="text-sm text-gray-600 italic">Complex data</span>
+            <span className="text-body text-muted-foreground italic">Complex data</span>
           ) : field.fieldName === 'IATI Identifier' ? (
             <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue}</span>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{field.importValue}</span>
+            <span className="text-body font-medium text-foreground">{field.importValue}</span>
           )}
         </div>
       </td>
       <td className="px-4 py-3 text-left w-40">
         <div className="space-y-1 text-left">
         {field.hasConflict ? (
-          <Badge variant="outline" className="text-xs" style={{ borderColor: '#dc2625', color: '#dc2625' }}>
+          <Badge variant="outline" className="text-helper" style={{ borderColor: '#dc2625', color: '#dc2625' }}>
             <AlertCircle className="h-3 w-3 mr-1" />
             Conflict
           </Badge>
         ) : (field as any).refinedSectors ? (
-          <Badge variant="outline" className="text-xs" style={{ borderColor: '#7b95a7', color: '#7b95a7' }}>
+          <Badge variant="outline" className="text-helper" style={{ borderColor: '#7b95a7', color: '#7b95a7' }}>
             <CheckCircle className="h-3 w-3 mr-1" />
             Resolved
           </Badge>
         ) : field.currentValue ? (
-          <Badge variant="outline" className="text-xs" style={{ borderColor: '#7b95a7', color: '#7b95a7' }}>
+          <Badge variant="outline" className="text-helper" style={{ borderColor: '#7b95a7', color: '#7b95a7' }}>
             <CheckCircle className="h-3 w-3 mr-1" />
             Match
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-xs" style={{ borderColor: '#4c5568', color: '#4c5568' }}>
+          <Badge variant="outline" className="text-helper" style={{ borderColor: '#4c5568', color: '#4c5568' }}>
             <Info className="h-3 w-3 mr-1" />
             New
           </Badge>
         )}
           {(field as any).needsRefinement && !(field as any).refinedSectors && (
-            <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-700">
+            <Badge variant="outline" className="text-helper border-yellow-400 text-yellow-700">
               <AlertCircle className="h-3 w-3 mr-1" />
               3-digit categories detected
             </Badge>
           )}
           {(field as any).hasNonDacSectors && !(field as any).refinedSectors && (
-            <Badge variant="outline" className="text-xs border-red-400 text-red-700">
+            <Badge variant="outline" className="text-helper border-destructive text-destructive">
               <AlertCircle className="h-3 w-3 mr-1" />
               {(field as any).nonDacSectors?.length || 0} non-DAC sectors excluded
             </Badge>
@@ -8867,10 +8550,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         <Tabs value={activeFinancialTab} onValueChange={setActiveFinancialTab}>
           <TabsList className="grid w-full grid-cols-4">
             {Object.entries(financialSubTabs).map(([key, subTab]) => (
-              <TabsTrigger key={key} value={key} className="text-sm">
+              <TabsTrigger key={key} value={key} className="text-body">
                 {subTab.name}
                 {subTab.fields.length > 0 && (
-                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full">
                     {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
                   </span>
                 )}
@@ -8904,10 +8587,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         <Tabs value={activeBasicTab} onValueChange={setActiveBasicTab}>
           <TabsList className="grid w-full grid-cols-4">
             {Object.entries(basicSubTabs).map(([key, subTab]) => (
-              <TabsTrigger key={key} value={key} className="text-sm">
+              <TabsTrigger key={key} value={key} className="text-body">
                 {subTab.name}
                 {subTab.fields.length > 0 && (
-                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full">
                     {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
                   </span>
                 )}
@@ -8939,10 +8622,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab}>
           <TabsList className="grid w-full grid-cols-2">
             {Object.entries(partnerSubTabs).map(([key, subTab]) => (
-              <TabsTrigger key={key} value={key} className="text-sm">
+              <TabsTrigger key={key} value={key} className="text-body">
                 {subTab.name}
                 {subTab.fields.length > 0 && (
-                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full">
                     {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
                   </span>
                 )}
@@ -8977,7 +8660,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               variant="outline"
               size="sm"
               onClick={() => {
-                console.log(`[XML Import] Tab-level Select All clicked for tab: ${tabName}`);
                 
                 // Select main fields for this tab
                 fields.forEach((field) => {
@@ -8987,40 +8669,32 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 
                 // Enhanced: Also select all sub-toggles for fields in this tab
                 fields.forEach((field) => {
-                  console.log(`[XML Import] Tab Select All: Processing field ${field.fieldName}, type: ${field.itemType}`);
                   
                   // For financial items, the bulk import flags will be set during importSelectedFields
                   if (field.isFinancialItem) {
-                    console.log(`[XML Import] Tab Select All: Financial item ${field.itemType} selected for bulk import`);
                   }
                   
                   // For policy markers, the bulk import flags will be set during importSelectedFields
                   if (field.isPolicyMarker) {
-                    console.log(`[XML Import] Tab Select All: Policy marker selected for bulk import`);
                   }
                   
                   // For location items, the bulk import flags will be set during importSelectedFields
                   if (field.isLocationItem) {
-                    console.log(`[XML Import] Tab Select All: Location item selected for bulk import`);
                   }
                   
                   // For tag fields, the bulk import flags will be set during importSelectedFields
                   if (field.isTagField) {
-                    console.log(`[XML Import] Tab Select All: Tag field selected for bulk import`);
                   }
                   
                   // For conditions, the bulk import flags will be set during importSelectedFields
                   if (field.isConditionsField) {
-                    console.log(`[XML Import] Tab Select All: Conditions field selected for bulk import`);
                   }
                   
                   // For FSS items, the bulk import flags will be set during importSelectedFields
                   if (field.isFssItem) {
-                    console.log(`[XML Import] Tab Select All: FSS item selected for bulk import`);
                   }
                 });
                 
-                console.log(`[XML Import] Tab-level Select All completed for tab: ${tabName}`);
               }}
             >
               Select All
@@ -9045,19 +8719,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center w-20">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase text-center w-20">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-32">
                   Field
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-40">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-40">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-40">
                   Status
                 </th>
               </tr>
@@ -9114,7 +8788,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-medium">{tabName}</h3>
-            <div className="text-sm text-gray-600">
+            <div className="text-body text-muted-foreground">
               {selectedCount} of {totalCount} policy markers selected
             </div>
           </div>
@@ -9143,19 +8817,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-12">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Policy Marker
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Status
                 </th>
               </tr>
@@ -9211,7 +8885,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     }
                   />
                 </div>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   {importStatus.progress || 0}%
                 </span>
               </div>
@@ -9227,6 +8901,37 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       {/* Import Method Selection and Input */}
       {importStatus.stage === 'idle' && !selectedFile && !xmlContent && !snippetContent && (
         <div>
+            {/* Plain instruction line — matches Excel / IATI Link below-header pattern. */}
+            <p className="text-body text-muted-foreground mb-2">
+              Pull in data that&rsquo;s already been prepared in the IATI Standard format. Search the
+              IATI registry, upload an XML file, or paste a URL. You&rsquo;ll review every field before
+              it&rsquo;s applied &mdash; nothing is saved until you confirm.
+            </p>
+            <details className="mb-6 group">
+              <summary className="cursor-pointer text-muted-foreground text-helper inline-flex items-center gap-1 hover:text-foreground hover:underline">
+                <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+                New to IATI? Quick primer and glossary
+              </summary>
+              <div className="mt-2 pl-4 space-y-2 text-helper text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">IATI</strong> (International Aid Transparency Initiative) is a global
+                  standard for publishing aid data. Organisations publish activity data in a
+                  shared XML format so everyone &mdash; governments, donors, researchers &mdash;
+                  can see the same consistent information.
+                </p>
+                <p className="font-medium text-foreground pt-2">Common terms you&rsquo;ll see:</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li><strong className="text-foreground">IATI identifier</strong> &mdash; a unique code for this activity (e.g. <code className="text-[11px]">XM-DAC-41114-PROJ-001</code>).</li>
+                  <li><strong className="text-foreground">Reporting organisation</strong> &mdash; who publishes the data.</li>
+                  <li><strong className="text-foreground">Aid type</strong> &mdash; how the money is delivered (e.g. project aid, technical assistance, budget support).</li>
+                  <li><strong className="text-foreground">Flow type</strong> &mdash; broad category (ODA, private flows, other official flows).</li>
+                  <li><strong className="text-foreground">Finance type</strong> &mdash; grant, loan, equity, or debt relief.</li>
+                  <li><strong className="text-foreground">Tied status</strong> &mdash; whether funds must be spent with specific suppliers (tied) or can be spent freely (untied).</li>
+                  <li><strong className="text-foreground">Collaboration type</strong> &mdash; bilateral, multilateral, or public-private.</li>
+                </ul>
+              </div>
+            </details>
+
             {/* Method Selection */}
             <div className="mb-6">
               <Label className="text-base font-medium">Import Method</Label>
@@ -9319,12 +9024,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-border transition-colors cursor-pointer"
+                className="border-2 border-dashed border-input rounded-lg p-8 text-center hover:border-border transition-colors cursor-pointer"
                 onClick={() => document.getElementById('xml-upload')?.click()}
               >
-                <FileCode className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">Drop your IATI XML file here, or click to browse</p>
-                <p className="text-sm text-gray-500 mb-4">Supports standard IATI Activity XML format</p>
+                <FileCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">Drop your IATI XML file here, or click to browse</p>
+                <p className="text-body text-muted-foreground mb-4">Supports standard IATI Activity XML format</p>
                 <input
                   type="file"
                   accept=".xml,text/xml"
@@ -9342,10 +9047,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             {/* URL Input Section */}
             {importMethod === 'url' && (
               <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Link className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">Enter the URL of an IATI XML file</p>
-                  <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
+                <div className="border-2 border-dashed border-input rounded-lg p-8 text-center">
+                  <Link className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">Enter the URL of an IATI XML file</p>
+                  <p className="text-body text-muted-foreground mb-4">Must be a publicly accessible XML document</p>
                   
                   <div className="max-w-md mx-auto space-y-3">
                     <div className="relative">
@@ -9355,7 +9060,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         placeholder="https://example.com/iati-activity.xml"
                         value={xmlUrl}
                         onChange={(e) => {
-                          console.log('[XML Import Debug] URL input onChange:', e.target.value);
                           setXmlUrl(e.target.value);
                         }}
                         onPaste={(e) => {
@@ -9367,14 +9071,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                           // Prevent default to avoid duplication, then manually set the value
                           e.preventDefault();
                           const pastedText = e.clipboardData.getData('text');
-                          console.log('[XML Import Debug] Manual paste - pasted text:', pastedText);
                           if (pastedText && pastedText.trim()) {
                             // Extract the clean URL by finding the first occurrence of the URL pattern
                             const urlPattern = /https?:\/\/[^\s]+/;
                             const match = pastedText.match(urlPattern);
                             const cleanUrl = match ? match[0] : pastedText.trim();
                             
-                            console.log('[XML Import Debug] Manual paste - clean URL:', cleanUrl);
                             setXmlUrl(cleanUrl);
                           }
                         }}
@@ -9385,7 +9087,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         variant="ghost"
                         size="sm"
                         onClick={handlePasteUrl}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted"
                         title="Paste from clipboard"
                       >
                         <ClipboardPaste className="h-4 w-4" />
@@ -9428,7 +9130,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             {importMethod === 'snippet' && (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="xml-snippet" className="text-sm font-medium">Paste IATI XML Snippet</Label>
+                  <Label htmlFor="xml-snippet" className="text-body font-medium">Paste IATI XML Snippet</Label>
                   <Textarea
                     id="xml-snippet"
                     placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
@@ -9436,7 +9138,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     onChange={(e) => setSnippetContent(e.target.value)}
                     className="font-mono text-sm min-h-[300px] mt-2"
                   />
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                  <div className="flex items-center justify-between mt-2 text-helper text-muted-foreground">
                     <span>{snippetContent.length} characters</span>
                     <Button
                       type="button"
@@ -9482,17 +9184,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     <p className="font-medium mb-2">Snippet Import supports:</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;location&gt;</code> - Location data</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;iati-activity&gt;</code> - Full or partial activities</li>
+                    <ul className="list-disc list-inside space-y-1 text-body">
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;iati-activity&gt;</code> - Full or partial activities</li>
                     </ul>
-                    <p className="mt-2 text-sm">
+                    <p className="mt-2 text-body">
                       The system will automatically wrap your snippet in proper IATI XML structure.
                     </p>
                   </AlertDescription>
@@ -9603,7 +9305,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     <p className="font-medium mb-2">How IATI Search works:</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
+                    <ul className="list-disc list-inside space-y-1 text-body">
                       <li>Searches the global IATI Datastore with 40,000+ activities</li>
                       <li>Fetches the full IATI XML directly from the registry</li>
                       <li>Automatically parses and shows field toggle options</li>
@@ -9620,10 +9322,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       {showXmlPreview && xmlContent && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">XML Content Preview</CardTitle>
+            <CardTitle className="text-body">XML Content Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-64 text-xs">
+            <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-64 text-helper">
               <code>{xmlContent.substring(0, 2000)}...</code>
             </pre>
           </CardContent>
@@ -9666,11 +9368,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               
               {/* Summary Stats */}
               <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                <div className="text-sm text-gray-600">
+                <div className="text-body text-muted-foreground">
                   <strong>{parsedFields.filter(f => f.selected).length}</strong> of <strong>{parsedFields.length}</strong> fields selected
                 </div>
                 {parsedFields.filter(f => f.selected && f.hasConflict).length > 0 && (
-                  <div className="text-sm text-orange-700">
+                  <div className="text-body text-orange-700">
                     <AlertCircle className="h-4 w-4 inline mr-1" />
                     <strong>{parsedFields.filter(f => f.selected && f.hasConflict).length}</strong> conflicts to resolve
                   </div>
@@ -9701,7 +9403,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             </Button>
             <Button 
               onClick={() => {
-                console.log('[XML Import] Button clicked!');
                 importSelectedFields();
               }}
               disabled={parsedFields.filter(f => f.selected).length === 0}
@@ -9723,18 +9424,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div className="text-center py-6">
                 <CheckCircle className="h-16 w-16 text-[hsl(var(--success-icon))] mx-auto mb-4" />
                 <h3 className="text-2xl font-semibold mb-2">Import Completed Successfully!</h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-muted-foreground mb-6">
                   {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.
                 </p>
                 
                 {/* Comprehensive Log Copy Button - Prominent */}
                 {comprehensiveLog && (
                   <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                    <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center justify-center gap-2">
+                    <h4 className="text-body font-semibold text-blue-900 mb-2 flex items-center justify-center gap-2">
                       <Info className="h-4 w-4" />
                       Full Import Log
                     </h4>
-                    <p className="text-xs text-blue-700 mb-3">
+                    <p className="text-helper text-blue-700 mb-3">
                       Copy the complete log including all successes and failures
                     </p>
                     <Button 
@@ -9745,7 +9446,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                           });
                         }).catch((err) => {
                           console.error('Failed to copy:', err);
-                          toast.error('Failed to copy log', {
+                          toast.error('Couldn’t copy log. Please try again in a moment.', {
                             description: 'Please try copying from the console instead'
                           });
                         });
@@ -9756,7 +9457,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Full Import Log
                     </Button>
-                    <p className="text-xs text-blue-600 mt-2">
+                    <p className="text-helper text-blue-600 mt-2">
                       This includes structured summary with success/failure details
                     </p>
                   </div>
@@ -9829,8 +9530,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         onClose={() => setShowSectorRefinement(false)}
         originalSectors={sectorRefinementData.originalSectors}
         onSave={(refinedSectors) => {
-          console.log('[Sector Refinement] Saving refined sectors:', refinedSectors);
-          console.log('[Sector Refinement] Refined sectors count:', refinedSectors.length);
           console.log('[Sector Refinement] Refined sectors details:', refinedSectors.map(s => ({
             code: s.code,
             name: s.name,
@@ -9840,7 +9539,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           })));
           
           const totalPercentage = refinedSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
-          console.log('[Sector Refinement] Total percentage:', totalPercentage);
           
           // Store the refined sectors for later import
           setSavedRefinedSectors(refinedSectors);
@@ -9892,7 +9590,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           currentActivityIatiId={currentActivityData.iati_identifier}
           existingActivity={existingActivity}
           onChoose={async (choice, targetActivityId) => {
-            console.log('[XML Import] External publisher choice:', choice, targetActivityId);
             
             // Check if user is authenticated
             if (!user?.id) {
@@ -10007,9 +9704,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h4 className="font-medium text-gray-700 mb-2">Item Summary:</h4>
-                <div className="text-sm text-gray-600">
+              <div className="bg-muted p-3 rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">Item Summary:</h4>
+                <div className="text-body text-muted-foreground">
                   {selectedItem.type === 'budget' && selectedItem.data && (
                     <div className="space-y-1">
                       {selectedItem.data.type && <div><strong>Type:</strong> {selectedItem.data.type}</div>}
@@ -10066,13 +9763,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
               {/* Enhanced Select All for Detail Fields */}
               <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium text-gray-900">Field Selection</h4>
+                <h4 className="font-medium text-foreground">Field Selection</h4>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      console.log(`[XML Import] Detail Modal: Selecting all fields for ${selectedItem.type} ${selectedItem.index + 1}`);
                       const updatedFields = selectedItem.fields.map(field => ({ ...field, selected: true }));
                       setSelectedItem({
                         ...selectedItem,
@@ -10086,7 +9782,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      console.log(`[XML Import] Detail Modal: Clearing all fields for ${selectedItem.type} ${selectedItem.index + 1}`);
                       const updatedFields = selectedItem.fields.map(field => ({ ...field, selected: false }));
                       setSelectedItem({
                         ...selectedItem,
@@ -10104,14 +9799,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="text-left px-4 py-2 font-medium text-gray-700 w-12">Import</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-700">Field</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-700">Value</th>
+                      <th className="text-left px-4 py-2 font-medium text-foreground w-12">Import</th>
+                      <th className="text-left px-4 py-2 font-medium text-foreground">Field</th>
+                      <th className="text-left px-4 py-2 font-medium text-foreground">Value</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {selectedItem.fields.map((field, index) => (
-                      <tr key={index} className="bg-card hover:bg-gray-50">
+                      <tr key={index} className="bg-card hover:bg-muted">
                         <td className="px-4 py-3 text-center">
                           <Switch
                             checked={field.selected}
@@ -10126,7 +9821,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
+                          <p className="font-medium text-body text-foreground">{field.fieldName}</p>
                         </td>
                         <td className="px-4 py-3">
                           <div className="space-y-1">
@@ -10134,10 +9829,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-sm font-medium text-gray-400 opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
+                                    <span className="text-body font-medium text-muted-foreground opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs">{field.inheritedFrom}</p>
+                                    <p className="text-helper">{field.inheritedFrom}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -10148,20 +9843,20 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                                 </div>
                                 <div className="flex items-center gap-1 flex-wrap">
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                                  <span className="text-sm text-gray-900">{field.importValue.name}</span>
+                                  <span className="text-body text-foreground">{field.importValue.name}</span>
                                 </div>
                               </div>
                             ) : typeof field.importValue === 'object' && field.importValue?.code ? (
                               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-                                <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+                                <span className="text-body font-medium text-foreground">{field.importValue.name}</span>
                               </div>
                             ) : typeof field.importValue === 'object' ? (
-                              <span className="text-sm text-gray-600 italic">Complex data</span>
+                              <span className="text-body text-muted-foreground italic">Complex data</span>
                             ) : field.fieldName === 'IATI Identifier' ? (
                               <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || 'N/A'}</span>
                             ) : (
-                              <span className="text-sm font-medium text-gray-900">{field.importValue || 'N/A'}</span>
+                              <span className="text-body font-medium text-foreground">{field.importValue || 'N/A'}</span>
                             )}
                           </div>
                         </td>
@@ -10233,16 +9928,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 variant="outline"
                 size="sm"
                 onClick={clearDebugLogs}
-                className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                className="flex items-center gap-2 text-destructive hover:text-destructive"
               >
                 <X className="h-4 w-4" />
                 Clear Logs
               </Button>
             </div>
             
-            <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+            <div className="bg-zinc-950 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
               {debugLogs.length === 0 ? (
-                <div className="text-gray-500">No debug logs captured yet. Try importing an XML file to see logs here.</div>
+                <div className="text-muted-foreground">No debug logs captured yet. Try importing an XML file to see logs here.</div>
               ) : (
                 debugLogs.map((log, index) => (
                   <div key={index} className="whitespace-pre-wrap break-words">
@@ -10372,7 +10067,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
   const dropdownContent = isOpen && buttonRect && (
     <div 
       ref={dropdownRef}
-      className="fixed bg-card border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
+      className="fixed bg-card border border-border rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
       style={{
         top: buttonRect.bottom + 4,
         left: buttonRect.left,
@@ -10383,12 +10078,12 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
         <div
           key={subsector.code}
           onClick={() => onSelect(subsector.code)}
-          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-gray-100 last:border-b-0 whitespace-nowrap"
+          className="flex items-center gap-2 px-3 py-2 text-body cursor-pointer hover:bg-accent border-b border-border last:border-b-0 whitespace-nowrap"
         >
           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[50px]">
             {subsector.code}
           </span>
-          <span className="font-medium text-gray-900 flex-1 truncate">
+          <span className="font-medium text-foreground flex-1 truncate">
             {subsector.name}
           </span>
           {sector.code === subsector.code && (
@@ -10406,12 +10101,12 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
         variant="outline"
         role="combobox"
         onClick={onToggle}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
       >
         <span className="truncate">
           <span className="flex items-center gap-2">
             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
-            <span className="font-medium text-gray-900">{sector.name}</span>
+            <span className="font-medium text-foreground">{sector.name}</span>
           </span>
         </span>
         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -10783,11 +10478,9 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
 
   useEffect(() => {
     if (isOpen && originalSectors.length > 0) {
-      console.log('[SectorRefinement] Initializing with original sectors:', originalSectors);
       
       // Process original sectors with validation
       const processedSectors = originalSectors.map(sector => {
-        console.log('[SectorRefinement] Processing sector:', sector);
         
         if (!isValidSectorCode(sector.code)) {
           console.warn('[SectorRefinement] Invalid sector code detected:', sector.code);
@@ -10795,7 +10488,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
         
         if (sector.code && sector.code.length === 3) {
           const subsectors = getSubsectorsFor3DigitCode(sector.code);
-          console.log('[SectorRefinement] Found', subsectors.length, 'subsectors for code:', sector.code);
           
           // Default to first subsector for this category
           return {
@@ -10827,7 +10519,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
       
       // Normalize percentages if needed
       const normalizedSectors = normalizePercentages(processedSectors);
-      console.log('[SectorRefinement] Normalized sectors:', normalizedSectors);
       
       setRefinedSectors(normalizedSectors);
       calculateTotal(normalizedSectors);
@@ -10844,7 +10535,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     // Only calculate total for DAC sectors (valid 5-digit codes)
     const dacSectors = sectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
     const total = dacSectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
-    console.log('[Calculate Total] DAC sectors:', dacSectors.length, 'Total:', total);
     setTotalPercentage(total);
   };
 
@@ -10933,7 +10623,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   const handleEqualDistribution = () => {
     // Only distribute equally among DAC sectors
     const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
-    console.log('[Distribute Equally] DAC sectors found:', dacSectors.length, dacSectors);
     
     if (dacSectors.length === 0) return;
     
@@ -10941,7 +10630,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     const basePercentage = Math.floor((100 / dacSectors.length) * 100) / 100; // Round down to 2 decimal places
     const remainder = 100 - (basePercentage * dacSectors.length);
     
-    console.log('[Distribute Equally] Base percentage:', basePercentage, 'Remainder:', remainder);
     
     let dacSectorIndex = 0;
     const updated = refinedSectors.map(s => {
@@ -10952,13 +10640,11 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
         const finalPercentage = Math.round((basePercentage + extraAmount) * 100) / 100; // Round to 2 decimal places
         dacSectorIndex++;
         
-        console.log('[Distribute Equally] Sector', s.code, 'gets percentage:', finalPercentage);
         return { ...s, percentage: finalPercentage };
       }
       return s; // Keep non-DAC sectors unchanged
     });
     
-    console.log('[Distribute Equally] Updated sectors:', updated);
     setRefinedSectors(updated);
     
     // Use setTimeout to ensure state update happens before calculation
@@ -10991,16 +10677,16 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
 
         <div className="space-y-4">
           {/* Progress indicator and controls */}
-          <div className="bg-gray-50 p-3 rounded-lg space-y-3">
+          <div className="bg-muted p-3 rounded-lg space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-body font-medium text-foreground">
                 Total Percentage (DAC Sectors Only): 
               </span>
               <div className="flex items-center gap-3">
                 <span className={`font-bold ${
                   Math.abs(totalPercentage - 100) < 0.01 
-                    ? 'text-gray-800' 
-                    : 'text-gray-600'
+                    ? 'text-foreground' 
+                    : 'text-muted-foreground'
                 }`}>
                   {totalPercentage.toFixed(1)}%
                 </span>
@@ -11010,7 +10696,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     variant="outline"
                     size="sm"
                     onClick={handleEqualDistribution}
-                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    className="text-helper px-2 py-1 bg-muted text-foreground border-input hover:bg-muted"
                   >
                     Distribute Equally
                   </Button>
@@ -11018,7 +10704,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
               </div>
             </div>
             
-            <div className="w-full bg-gray-100 rounded-full h-1">
+            <div className="w-full bg-muted rounded-full h-1">
               <div 
                 className={`h-1 rounded-full transition-all ${
                   Math.abs(totalPercentage - 100) < 0.01 
@@ -11036,13 +10722,13 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
             <table className="w-full">
               <thead className="bg-surface-muted">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 py-2 text-left text-helper font-medium text-muted-foreground uppercase">
                     Original (3-digit)
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 py-2 text-left text-helper font-medium text-muted-foreground uppercase">
                     Refined (5-digit)
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">
+                  <th className="px-3 py-2 text-left text-helper font-medium text-muted-foreground uppercase w-24">
                     %
                   </th>
                 </tr>
@@ -11070,11 +10756,11 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                           {/* Original Code Column - only show for first row of each group */}
                           <td className="px-3 py-3">
                             {isFirstInGroup && (
-                              <div className="text-sm">
-                                <div className="font-mono text-xs text-gray-600">
+                              <div className="text-body">
+                                <div className="font-mono text-xs text-muted-foreground">
                                   {sector.originalCode}
                                 </div>
-                                <div className="text-gray-500 text-xs">
+                                <div className="text-muted-foreground text-helper">
                                   {sector.originalPercentage}% original
                                 </div>
                               </div>
@@ -11099,7 +10785,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                       }}
                                     />
                                   ) : (
-                                    <div className="text-sm text-gray-500 italic">
+                                    <div className="text-body text-muted-foreground italic">
                                       No subsectors available
                                     </div>
                                   )}
@@ -11112,9 +10798,9 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleRemoveSubsector(originalIndex)}
-                                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
                                 )}
                               </div>
@@ -11127,7 +10813,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     variant="default"
                                     size="sm"
                                     onClick={() => handleAddSubsector(originalCode, sector.originalPercentage)}
-                                    className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                    className="h-8 px-3 text-helper bg-blue-600 hover:bg-blue-700 text-white"
                                   >
                                     <Plus className="h-3 w-3 mr-1" />
                                     Add Subsector
@@ -11148,7 +10834,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                   step="0.1"
                                   value={sector.percentage || ''}
                                   onChange={(e) => handleSectorChange(originalIndex, 'percentage', parseFloat(e.target.value) || 0)}
-                                  className="w-20 text-sm"
+                                  className="w-20 text-body"
                                   placeholder="0"
                                 />
                               </div>
@@ -11167,9 +10853,9 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                 {/* Non-DAC Sectors (Locked) */}
                 {nonDacSectors.length > 0 && (
                   <>
-                    <tr className="bg-gray-100">
+                    <tr className="bg-muted">
                       <td colSpan={3} className="px-3 py-2">
-                        <div className="flex items-center gap-2 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                        <div className="flex items-center gap-2 text-section-label font-medium text-muted-foreground uppercase">
                           <Lock className="h-3 w-3" />
                           Non-DAC Sectors
                         </div>
@@ -11178,22 +10864,22 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     {nonDacSectors.map((sector, index) => {
                       const originalIndex = refinedSectors.findIndex(s => s === sector);
                       return (
-                        <tr key={originalIndex} className="bg-gray-50">
+                        <tr key={originalIndex} className="bg-muted">
                           <td className="px-3 py-3">
-                            <div className="text-sm">
-                              <div className="font-mono text-xs text-gray-500">
+                            <div className="text-body">
+                              <div className="font-mono text-xs text-muted-foreground">
                                 {sector.originalCode}
                               </div>
-                              <div className="text-gray-400 text-xs">
+                              <div className="text-muted-foreground text-helper">
                                 {sector.originalPercentage}% original
                               </div>
                             </div>
                           </td>
                           <td className="px-3 py-3">
-                            <div className="text-sm">
+                            <div className="text-body">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-mono text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">{sector.code}</span>
-                                <span className="font-medium text-gray-500">{sector.name}</span>
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
+                                <span className="font-medium text-muted-foreground">{sector.name}</span>
                               </div>
                             </div>
                           </td>
@@ -11205,7 +10891,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                               step="0.1"
                               value={sector.percentage}
                               disabled
-                              className="w-full text-xs bg-gray-100 text-gray-500"
+                              className="w-full text-helper bg-muted text-muted-foreground"
                             />
                           </td>
                         </tr>
@@ -11219,7 +10905,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200">
+          <Button variant="outline" onClick={onClose} className="bg-muted text-foreground border-input hover:bg-muted">
             Cancel
           </Button>
           <Button

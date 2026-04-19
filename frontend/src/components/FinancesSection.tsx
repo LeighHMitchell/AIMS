@@ -144,7 +144,7 @@ export default function FinancesSection({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Budgets</CardTitle>
+            <CardTitle className="text-body font-medium">Total Budgets</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -155,7 +155,7 @@ export default function FinancesSection({
                 maximumFractionDigits: 0,
               }).format(financialSummary.totalBudgets)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               {financialSummary.budgetCount} budgets
             </p>
           </CardContent>
@@ -163,7 +163,7 @@ export default function FinancesSection({
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Planned Disbursements</CardTitle>
+            <CardTitle className="text-body font-medium">Total Planned Disbursements</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -174,7 +174,7 @@ export default function FinancesSection({
                 maximumFractionDigits: 0,
               }).format(financialSummary.totalPlannedDisbursements)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               {financialSummary.plannedDisbursementCount} planned disbursements
             </p>
           </CardContent>
@@ -182,7 +182,7 @@ export default function FinancesSection({
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+            <CardTitle className="text-body font-medium">Total Transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -193,7 +193,7 @@ export default function FinancesSection({
                 maximumFractionDigits: 0,
               }).format(Object.values(financialSummary.transactionsByType).reduce((sum, t) => sum + t.totalUSD, 0))}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               {financialSummary.transactionCount} transactions
             </p>
           </CardContent>
@@ -210,7 +210,7 @@ export default function FinancesSection({
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="bg-surface-muted">
                 <tr className="border-b">
                   <th className="text-left py-2 px-4 font-medium">Category</th>
@@ -254,7 +254,7 @@ export default function FinancesSection({
                     <tr key={type} className="border-b hover:bg-muted/50">
                       <td className="py-2 px-4">
                         <span className="font-medium">{getTransactionTypeLabel(type)}</span>
-                        <span className="text-xs text-muted-foreground ml-2">(Type {type})</span>
+                        <span className="text-helper text-muted-foreground ml-2">(Type {type})</span>
                       </td>
                       <td className="text-right py-2 px-4">{data.count}</td>
                       <td className="text-right py-2 px-4 font-medium">
@@ -326,7 +326,7 @@ export default function FinancesSection({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Default Finance Type</label>
+                  <label className="text-body font-medium">Default Finance Type</label>
                                      <input
                      type="text"
                      value={defaults?.default_finance_type || ''}
@@ -336,7 +336,7 @@ export default function FinancesSection({
                    />
                  </div>
                  <div className="space-y-2">
-                   <label className="text-sm font-medium">Default Aid Type</label>
+                   <label className="text-body font-medium">Default Aid Type</label>
                    <input
                      type="text"
                      value={defaults?.default_aid_type || ''}
@@ -346,7 +346,7 @@ export default function FinancesSection({
                    />
                  </div>
                  <div className="space-y-2">
-                   <label className="text-sm font-medium">Default Currency</label>
+                   <label className="text-body font-medium">Default Currency</label>
                    <input
                      type="text"
                      value={defaults?.default_currency || ''}
@@ -356,7 +356,7 @@ export default function FinancesSection({
                    />
                  </div>
                  <div className="space-y-2">
-                   <label className="text-sm font-medium">Default Tied Status</label>
+                   <label className="text-body font-medium">Default Tied Status</label>
                    <input
                      type="text"
                      value={defaults?.default_tied_status || ''}
@@ -366,7 +366,7 @@ export default function FinancesSection({
                    />
                  </div>
                  <div className="space-y-2">
-                   <label className="text-sm font-medium">Default Flow Type</label>
+                   <label className="text-body font-medium">Default Flow Type</label>
                    <input
                      type="text"
                      value={defaults?.default_flow_type || ''}

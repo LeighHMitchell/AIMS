@@ -130,7 +130,7 @@ export default function TransactionDetailPage() {
         <div className="max-w-4xl mx-auto px-6 py-8">
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-red-600 mb-4">
+              <p className="text-destructive mb-4">
                 {error || "Transaction not found"}
               </p>
               <Button onClick={() => router.back()}>
@@ -156,17 +156,17 @@ export default function TransactionDetailPage() {
             <h1 className="text-2xl font-semibold text-foreground">
               Transaction Details
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               ID: {transaction.id}
             </p>
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
-              <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-4 w-4 mr-2 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Button>
-            <Button variant="outline" size="sm" className="text-red-600">
-              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+            <Button variant="outline" size="sm" className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2 text-destructive" />
               Delete
             </Button>
           </div>
@@ -179,7 +179,7 @@ export default function TransactionDetailPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Type</label>
+              <label className="text-body font-medium text-muted-foreground">Type</label>
               <p className="mt-1">
                 <Badge className="bg-blue-100 text-blue-800">
                   {TRANSACTION_TYPE_LABELS[transaction.transaction_type as TransactionType] || transaction.transaction_type}
@@ -188,7 +188,7 @@ export default function TransactionDetailPage() {
             </div>
             
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Status</label>
+              <label className="text-body font-medium text-muted-foreground">Status</label>
               <p className="mt-1">
                 <Badge variant={transaction.status === "published" ? "success" : "secondary"}>
                   {transaction.status || "Draft"}
@@ -197,14 +197,14 @@ export default function TransactionDetailPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Transaction Date</label>
+              <label className="text-body font-medium text-muted-foreground">Transaction Date</label>
               <p className="mt-1 text-foreground">
                 {format(new Date(transaction.transaction_date), "MMMM d, yyyy")}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Value Date</label>
+              <label className="text-body font-medium text-muted-foreground">Value Date</label>
               <p className="mt-1 text-foreground">
                 {transaction.value_date 
                   ? format(new Date(transaction.value_date), "MMMM d, yyyy")
@@ -214,14 +214,14 @@ export default function TransactionDetailPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Amount</label>
+              <label className="text-body font-medium text-muted-foreground">Amount</label>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {formatCurrency(transaction.value, transaction.currency)}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Reference</label>
+              <label className="text-body font-medium text-muted-foreground">Reference</label>
               <p className="mt-1 text-foreground">
                 {transaction.transaction_reference || "—"}
               </p>
@@ -229,7 +229,7 @@ export default function TransactionDetailPage() {
 
             {transaction.description && (
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                <label className="text-body font-medium text-muted-foreground">Description</label>
                 <p className="mt-1 text-foreground">
                   {transaction.description}
                 </p>
@@ -245,24 +245,24 @@ export default function TransactionDetailPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Provider Organization</label>
+              <label className="text-body font-medium text-muted-foreground">Provider Organization</label>
               <p className="mt-1 text-foreground">
                 {transaction.provider_org_name || "—"}
               </p>
               {transaction.provider_org_ref && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Ref: {transaction.provider_org_ref}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Receiver Organization</label>
+              <label className="text-body font-medium text-muted-foreground">Receiver Organization</label>
               <p className="mt-1 text-foreground">
                 {transaction.receiver_org_name || "—"}
               </p>
               {transaction.receiver_org_ref && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Ref: {transaction.receiver_org_ref}
                 </p>
               )}
@@ -285,13 +285,13 @@ export default function TransactionDetailPage() {
               </Link>
               {/* Transaction UUID Display */}
               <div className="mt-2">
-                <span className="text-xs text-muted-foreground">Transaction UUID:</span>
+                <span className="text-helper text-muted-foreground">Transaction UUID:</span>
                 <div className="font-mono text-sm bg-muted px-2 py-1 rounded mt-1 inline-block">
                   {transaction.uuid || transaction.id}
                 </div>
               </div>
               {transaction.activity.iati_id && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   IATI ID: {transaction.activity.iati_id}
                 </p>
               )}
@@ -307,7 +307,7 @@ export default function TransactionDetailPage() {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {transaction.flow_type && (
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Flow Type</label>
+                <label className="text-body font-medium text-muted-foreground">Flow Type</label>
                 <p className="mt-1 text-foreground">
                   {FLOW_TYPE_LABELS[transaction.flow_type as FlowType] || transaction.flow_type}
                 </p>
@@ -316,7 +316,7 @@ export default function TransactionDetailPage() {
 
             {transaction.finance_type && (
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Finance Type</label>
+                <label className="text-body font-medium text-muted-foreground">Finance Type</label>
                 <p className="mt-1 text-foreground">
                   {transaction.finance_type}
                 </p>
@@ -325,7 +325,7 @@ export default function TransactionDetailPage() {
 
             {transaction.aid_type && (
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Aid Type</label>
+                <label className="text-body font-medium text-muted-foreground">Aid Type</label>
                 <p className="mt-1 text-foreground">
                   {transaction.aid_type}
                 </p>
@@ -334,7 +334,7 @@ export default function TransactionDetailPage() {
 
             {transaction.disbursement_channel && (
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Disbursement Channel</label>
+                <label className="text-body font-medium text-muted-foreground">Disbursement Channel</label>
                 <p className="mt-1 text-foreground">
                   {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel as DisbursementChannel] || transaction.disbursement_channel}
                 </p>
@@ -343,7 +343,7 @@ export default function TransactionDetailPage() {
 
             {transaction.tied_status && (
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Tied Status</label>
+                <label className="text-body font-medium text-muted-foreground">Tied Status</label>
                 <p className="mt-1 text-foreground">
                   {TIED_STATUS_LABELS[transaction.tied_status as TiedStatus] || transaction.tied_status}
                 </p>
@@ -352,7 +352,7 @@ export default function TransactionDetailPage() {
 
             {transaction.is_humanitarian !== undefined && (
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Humanitarian</label>
+                <label className="text-body font-medium text-muted-foreground">Humanitarian</label>
                 <p className="mt-1 text-foreground">
                   {transaction.is_humanitarian ? "Yes" : "No"}
                 </p>
@@ -368,21 +368,21 @@ export default function TransactionDetailPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Created By</label>
+              <label className="text-body font-medium text-muted-foreground">Created By</label>
               <p className="mt-1 text-foreground">
                 {transaction.created_by || "System"}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Created At</label>
+              <label className="text-body font-medium text-muted-foreground">Created At</label>
               <p className="mt-1 text-foreground">
                 {format(new Date(transaction.created_at), "PPpp")}
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+              <label className="text-body font-medium text-muted-foreground">Last Updated</label>
               <p className="mt-1 text-foreground">
                 {format(new Date(transaction.updated_at), "PPpp")}
               </p>

@@ -160,7 +160,6 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       // Upload file first if one is selected
       if (selectedFile) {
         setIsUploading(true);
-        console.log('[FeedbackModal] Uploading attachment...');
         
         const uploadFormData = new FormData();
         uploadFormData.append('file', selectedFile);
@@ -173,7 +172,6 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
         if (uploadResponse.ok) {
           attachmentData = await uploadResponse.json();
-          console.log('[FeedbackModal] File uploaded successfully:', attachmentData);
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown upload error' }));
           console.error('[FeedbackModal] Upload failed:', errorData);
@@ -392,20 +390,20 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                     isDragOver 
                       ? 'border-blue-400 bg-blue-50' 
-                      : 'border-gray-300 hover:border-gray-400'
+                      : 'border-input hover:border-gray-400'
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
                   <div className="space-y-2">
-                    <Upload className={`mx-auto h-8 w-8 ${isDragOver ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <Upload className={`mx-auto h-8 w-8 ${isDragOver ? 'text-blue-500' : 'text-muted-foreground'}`} />
                     <div>
                       <label htmlFor="file-upload" className="cursor-pointer">
-                        <span className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                        <span className="text-body font-medium text-blue-600 hover:text-blue-500">
                           Click to upload
                         </span>
-                        <span className="text-sm text-gray-500"> or drag and drop</span>
+                        <span className="text-body text-muted-foreground"> or drag and drop</span>
                       </label>
                       <input
                         id="file-upload"
@@ -416,22 +414,22 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         disabled={isSubmitting || isUploading}
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-helper text-muted-foreground">
                       Images, PDFs, or documents up to 10MB
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="border border-gray-200 rounded-lg p-4">
+                <div className="border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {(() => {
                         const IconComponent = getFileIcon(selectedFile.type);
-                        return <IconComponent className="h-5 w-5 text-gray-500" />;
+                        return <IconComponent className="h-5 w-5 text-muted-foreground" />;
                       })()}
                       <div>
-                        <p className="text-sm font-medium">{selectedFile.name}</p>
-                        <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                        <p className="text-body font-medium">{selectedFile.name}</p>
+                        <p className="text-helper text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
                       </div>
                     </div>
                     <Button

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,7 @@ import {
 } from "@/components/planned-disbursements/PlannedDisbursementsTable";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
-import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
-import { useCustomYears } from "@/hooks/useCustomYears";
 import { PlannedDisbursementsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { apiFetch } from '@/lib/api-fetch';
@@ -78,42 +75,6 @@ export default function PlannedDisbursementsPage() {
       localStorage.setItem(PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
     }
   }, [visibleColumns]);
-
-  // Yearly summary state for chart
-  const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
-  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
-
-  // Custom year selection for chart
-  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
-
-  // Year range filter for chart
-  const [chartStartYear, setChartStartYear] = useState<number | null>(null);
-  const [chartEndYear, setChartEndYear] = useState<number | null>(null);
-
-  // Filter yearly summary data by year range
-  const filteredYearlySummary = useMemo(() => {
-    if (!yearlySummary) return [];
-    return yearlySummary.filter(item => {
-      if (chartStartYear && item.year < chartStartYear) return false;
-      if (chartEndYear && item.year > chartEndYear) return false;
-      return true;
-    });
-  }, [yearlySummary, chartStartYear, chartEndYear]);
-
-  // Calculate actual data year range (from unfiltered data)
-  const dataYearRange = useMemo(() => {
-    if (!yearlySummary || yearlySummary.length === 0) return { min: null, max: null };
-    const years = yearlySummary.map(d => d.year);
-    return { min: Math.min(...years), max: Math.max(...years) };
-  }, [yearlySummary]);
-
-  // Auto-select "Data" range when data first loads
-  useEffect(() => {
-    if (dataYearRange.min !== null && dataYearRange.max !== null && chartStartYear === null && chartEndYear === null) {
-      setChartStartYear(dataYearRange.min);
-      setChartEndYear(dataYearRange.max);
-    }
-  }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
 
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar();
@@ -175,8 +136,6 @@ export default function PlannedDisbursementsPage() {
       const response = await apiFetch(`/api/planned-disbursements/list?${params}`);
       if (response.ok) {
         const data = await response.json();
-        console.log('[Planned Disbursements Page] Sample disbursement from API:', data.disbursements?.[0]);
-        console.log('[Planned Disbursements Page] Sample activity:', data.disbursements?.[0]?.activity);
         setDisbursements(data.disbursements || []);
         setTotalDisbursements(data.total || 0);
       } else {
@@ -189,41 +148,6 @@ export default function PlannedDisbursementsPage() {
       setLoading(false);
     }
   };
-
-  // Fetch yearly summary when filters change
-  useEffect(() => {
-    const fetchYearlySummary = async () => {
-      setYearlySummaryLoading(true);
-      try {
-        const params = new URLSearchParams();
-        // Pass types as comma-separated values if any are selected
-        if (filters.types.length > 0) params.append('types', filters.types.join(','));
-        // Pass organizations as comma-separated values if any are selected
-        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
-        if (searchQuery) params.append('search', searchQuery);
-        
-        // Add custom year params if selected
-        if (selectedYear) {
-          params.append('startMonth', selectedYear.startMonth.toString());
-          params.append('startDay', selectedYear.startDay.toString());
-          params.append('endMonth', selectedYear.endMonth.toString());
-          params.append('endDay', selectedYear.endDay.toString());
-        }
-
-        const response = await apiFetch(`/api/planned-disbursements/yearly-summary?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          setYearlySummary(data.years || []);
-        }
-      } catch (error) {
-        console.error('Error fetching yearly summary:', error);
-      } finally {
-        setYearlySummaryLoading(false);
-      }
-    };
-
-    fetchYearlySummary();
-  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -411,7 +335,7 @@ export default function PlannedDisbursementsPage() {
         <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Search</Label>
+              <Label className="text-helper text-muted-foreground">Search</Label>
               <Input
                 placeholder="Search planned disbursements..."
                 value={searchQuery}
@@ -422,7 +346,7 @@ export default function PlannedDisbursementsPage() {
 
             {/* Filters */}
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Type</Label>
+                <Label className="text-helper text-muted-foreground">Type</Label>
                 <MultiSelectFilter
                   options={[
                     { value: "1", label: "Original", code: "1", color: "#3b82f6" },
@@ -439,7 +363,7 @@ export default function PlannedDisbursementsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Organisation</Label>
+                <Label className="text-helper text-muted-foreground">Organisation</Label>
                 <MultiSelectFilter
                   options={organizations.map((org) => ({
                     value: org.id,
@@ -464,40 +388,13 @@ export default function PlannedDisbursementsPage() {
 
             {/* Column Selector */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Columns</Label>
+              <Label className="text-helper text-muted-foreground">Columns</Label>
               <PlannedDisbursementColumnSelector
                 visibleColumns={visibleColumns}
                 onColumnsChange={setVisibleColumns}
               />
             </div>
         </FilterBar>
-
-        {/* Yearly Summary Chart */}
-        <YearlyTotalsBarChart
-          title="Planned Disbursement Totals by Year"
-          description="Yearly planned disbursement totals in USD (filtered)"
-          loading={yearlySummaryLoading}
-          singleSeriesData={filteredYearlySummary}
-          singleSeriesColor="#7b95a7"
-          singleSeriesLabel="Planned Disbursement"
-          height={280}
-          selectedYear={selectedYear}
-          startYear={chartStartYear}
-          endYear={chartEndYear}
-          onStartYearChange={setChartStartYear}
-          onEndYearChange={setChartEndYear}
-          dataMinYear={dataYearRange.min}
-          dataMaxYear={dataYearRange.max}
-          headerControls={
-            <CustomYearSelector
-              customYears={customYears}
-              selectedId={selectedCustomYearId}
-              onSelect={setSelectedCustomYearId}
-              loading={customYearsLoading}
-              placeholder="Year Type"
-            />
-          }
-        />
 
         {/* Planned Disbursements Table */}
         {loading && disbursements.length === 0 ? (
@@ -536,7 +433,7 @@ export default function PlannedDisbursementsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-body text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalDisbursements)} to {Math.min(endIndex, totalDisbursements)} of {totalDisbursements} planned disbursements
                 </div>
 
@@ -582,7 +479,7 @@ export default function PlannedDisbursementsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>
@@ -614,7 +511,7 @@ export default function PlannedDisbursementsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Items per page:</label>
+                  <label className="text-body text-muted-foreground">Items per page:</label>
                   <Select
                     value={pageLimit.toString()}
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

@@ -141,7 +141,7 @@ export function DocumentPreviewModal({
               {loading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/50">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground mt-2">Loading PDF...</span>
+                  <span className="text-body text-muted-foreground mt-2">Loading PDF...</span>
                 </div>
               )}
             </div>
@@ -153,7 +153,7 @@ export function DocumentPreviewModal({
               {loading && (
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Loading image...</span>
+                  <span className="text-body text-muted-foreground">Loading image...</span>
                 </div>
               )}
               {error && !loading && (
@@ -186,7 +186,7 @@ export function DocumentPreviewModal({
               {loading && (
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Loading video...</span>
+                  <span className="text-body text-muted-foreground">Loading video...</span>
                 </div>
               )}
               {error && !loading && (
@@ -269,7 +269,7 @@ export function DocumentPreviewModal({
 
         {/* Footer with metadata */}
         <div className="px-6 py-3 border-t bg-muted/30 flex-shrink-0">
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-body text-muted-foreground">
             {document.fileName && (
               <span>File: {document.fileName}</span>
             )}

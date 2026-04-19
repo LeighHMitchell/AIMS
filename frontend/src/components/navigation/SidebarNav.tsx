@@ -147,7 +147,7 @@ export function SidebarNav({
       <nav className="px-4 py-6">
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className={`h-10 bg-gray-200 rounded-md animate-pulse ${isCollapsed ? 'w-12' : 'w-full'}`} />
+            <div key={i} className={`h-10 bg-muted rounded-md animate-pulse ${isCollapsed ? 'w-12' : 'w-full'}`} />
           ))}
         </div>
       </nav>
@@ -380,7 +380,7 @@ export function SidebarNav({
             <div className="pb-2">
               <Link
                 href="/home"
-                className="group flex items-center gap-2 py-1.5 px-3 ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                className="group flex items-center gap-2 py-1.5 px-3 ml-2 text-helper font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span className={cn(
@@ -395,7 +395,7 @@ export function SidebarNav({
 
           {/* Module CTA Button */}
           {currentModule === 'aims' && canCreateActivities && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700" data-tour="activities-create">
+            <div className="pb-4 border-b border-border dark:border-gray-700" data-tour="activities-create">
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -429,7 +429,7 @@ export function SidebarNav({
                       <FolderPlus className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
                         <span className="font-medium">Full Activity Editor</span>
-                        <span className="text-xs text-muted-foreground">Complete data entry</span>
+                        <span className="text-helper text-muted-foreground">Complete data entry</span>
                       </div>
                     </Link>
                   </DropdownMenuItem>
@@ -437,7 +437,7 @@ export function SidebarNav({
                     <Zap className="mr-2 h-4 w-4" />
                     <div className="flex flex-col">
                       <span className="font-medium">Quick Add</span>
-                      <span className="text-xs text-muted-foreground">Minimal activity creation</span>
+                      <span className="text-helper text-muted-foreground">Minimal activity creation</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -472,7 +472,7 @@ export function SidebarNav({
                     <Upload className="mr-2 h-4 w-4" />
                     <div className="flex flex-col">
                       <span className="font-medium">Import Single Activity</span>
-                      <span className="text-xs text-muted-foreground">From IATI search, file, URL, or paste</span>
+                      <span className="text-helper text-muted-foreground">From IATI search, file, URL, or paste</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -480,7 +480,7 @@ export function SidebarNav({
                       <Database className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
                         <span className="font-medium">Bulk IATI Import</span>
-                        <span className="text-xs text-muted-foreground">Import multiple activities at once</span>
+                        <span className="text-helper text-muted-foreground">Import multiple activities at once</span>
                       </div>
                     </Link>
                   </DropdownMenuItem>
@@ -496,7 +496,7 @@ export function SidebarNav({
           )}
 
           {currentModule === 'project-bank' && canCreateProjects && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="pb-4 border-b border-border dark:border-gray-700">
               <GlassButton
                 asChild
                 className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
@@ -510,7 +510,7 @@ export function SidebarNav({
           )}
 
           {currentModule === 'land-bank' && canCreateParcels && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="pb-4 border-b border-border dark:border-gray-700">
               <GlassButton
                 asChild
                 className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
@@ -534,12 +534,12 @@ export function SidebarNav({
                   <Link
                     href={item.href}
                     className={cn(
-                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-sm font-bold rounded-md",
+                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-body font-bold rounded-md",
                       "transition-colors duration-200",
                       "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                       isActive
                         ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                        : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+                        : "text-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100"
                     )}
                   >
                     {item.isAnimated ? (
@@ -607,7 +607,7 @@ export function SidebarNav({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => toggleGroup(group.label)}
-                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                          className="flex w-full items-center justify-center px-3 py-2 text-body font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50"
                         >
                           {group.isAnimated ? (
                             <GroupIcon size={20} className="flex-shrink-0" />
@@ -622,7 +622,7 @@ export function SidebarNav({
                     </Tooltip>
                   ) : (
                     <CollapsibleTrigger asChild>
-                      <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <button className="flex w-full items-center justify-between px-3 py-2 text-body font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50">
                         <div className="flex items-center gap-3">
                           {group.isAnimated ? (
                             <GroupIcon size={20} className="flex-shrink-0" />
@@ -647,7 +647,7 @@ export function SidebarNav({
                       {/* Vertical Connector Line */}
                       {!isCollapsed && isOpen && (
                         <div
-                          className="absolute left-[18px] top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700"
+                          className="absolute left-[18px] top-0 bottom-0 w-px bg-muted dark:bg-gray-700"
                           style={{
                             height: '100%',
                           }}
@@ -684,12 +684,12 @@ export function SidebarNav({
                             <Link
                               href={item.href}
                               className={cn(
-                                "group relative flex items-center justify-between py-2 px-3 text-sm font-medium rounded-md",
+                                "group relative flex items-center justify-between py-2 px-3 text-body font-medium rounded-md",
                                 "transition-colors duration-200",
                                 "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                                 isActive
                                   ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                                  : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100",
+                                  : "text-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100",
                                 // Add left padding for connector when not collapsed
                                 !isCollapsed && "ml-6 pl-6"
                               )}
@@ -710,7 +710,7 @@ export function SidebarNav({
                                 {item.name}
                               </span>
                               {!isCollapsed && itemCount != null && itemCount > 0 && (
-                                <span className="text-[11px] tabular-nums text-gray-400 dark:text-gray-500 font-normal ml-auto">
+                                <span className="text-[11px] tabular-nums text-muted-foreground dark:text-muted-foreground font-normal ml-auto">
                                   {itemCount.toLocaleString()}
                                 </span>
                               )}

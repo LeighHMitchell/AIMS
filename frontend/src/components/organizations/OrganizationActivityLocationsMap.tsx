@@ -103,10 +103,10 @@ function Map3DController({
             variant="outline"
             size="sm"
             title="2D View"
-            className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+            className="bg-white shadow-md border-input h-9 px-2.5"
           >
             <Mountain className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">2D</span>
+            <span className="text-helper">2D</span>
           </Button>
         ) : (
           <Button
@@ -114,10 +114,10 @@ function Map3DController({
             variant="outline"
             size="sm"
             title="3D View"
-            className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+            className="bg-white shadow-md border-input h-9 px-2.5"
           >
             <Mountain className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">3D</span>
+            <span className="text-helper">3D</span>
           </Button>
         )}
         <Button
@@ -125,17 +125,17 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="Reset view"
-          className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+          className="bg-white shadow-md border-input h-9 w-9 p-0"
         >
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
-      <div className="absolute top-full left-0 mt-1.5 rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2 whitespace-nowrap z-[1]">
-        <span className="text-gray-600">Zoom: {zoom}</span>
+      <div className="absolute top-full left-0 mt-1.5 rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-input shadow-md flex gap-2 whitespace-nowrap z-[1]">
+        <span className="text-muted-foreground">Zoom: {zoom}</span>
         {is3DMode && (
           <>
-            <span className="text-gray-600">Pitch: {pitch}</span>
-            <span className="text-gray-600">Bearing: {bearing}</span>
+            <span className="text-muted-foreground">Pitch: {pitch}</span>
+            <span className="text-muted-foreground">Bearing: {bearing}</span>
           </>
         )}
       </div>
@@ -245,11 +245,11 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
 
   if (error) {
     return (
-      <div className="h-[600px] w-full flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200">
+      <div className="h-[600px] w-full flex items-center justify-center bg-muted rounded-lg border border-border">
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="font-medium text-slate-600">Failed to load map data</p>
-          <p className="text-sm text-slate-500">{error}</p>
+          <p className="font-medium text-muted-foreground">Failed to load map data</p>
+          <p className="text-body text-muted-foreground">{error}</p>
         </div>
       </div>
     );
@@ -257,11 +257,11 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
 
   if (validLocations.length === 0) {
     return (
-      <div className="h-[600px] w-full flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200">
+      <div className="h-[600px] w-full flex items-center justify-center bg-muted rounded-lg border border-border">
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="font-medium text-slate-600">No activity locations</p>
-          <p className="text-sm text-slate-500">
+          <p className="font-medium text-muted-foreground">No activity locations</p>
+          <p className="text-body text-muted-foreground">
             This organization has no activities with location data
           </p>
         </div>
@@ -270,11 +270,11 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
   }
 
   return (
-    <div className="h-[600px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+    <div className="h-[600px] w-full relative rounded-lg overflow-hidden border border-border">
       {/* Location count badge */}
       <div className="absolute top-3 left-3 z-20">
-        <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-md border border-gray-300 shadow-md">
-          <span className="text-xs font-medium text-gray-700">
+        <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-md border border-input shadow-md">
+          <span className="text-helper font-medium text-foreground">
             {validLocations.length} location{validLocations.length !== 1 ? 's' : ''}
           </span>
         </div>

@@ -58,7 +58,6 @@ class FixedCurrencyConverter {
       // Strategy 1: Check exact date cache
       const cachedRate = await this.getCachedRate(from, to, dateStr);
       if (cachedRate) {
-        console.log(`[FixedConverter] Using cached rate for ${from}→${to} on ${dateStr}: ${cachedRate.exchange_rate}`);
         return { rate: cachedRate.exchange_rate, source: 'cache' };
       }
 
@@ -66,14 +65,12 @@ class FixedCurrencyConverter {
       const apiRate = await this.fetchRateWithRetry(from, to, dateStr);
       if (apiRate !== null) {
         await this.cacheRate(from, to, dateStr, apiRate, 'api');
-        console.log(`[FixedConverter] Fetched rate from API for ${from}→${to} on ${dateStr}: ${apiRate}`);
         return { rate: apiRate, source: 'api' };
       }
 
       // Strategy 3: Look for nearby cached rates (within 30 days)
       const nearbyRate = await this.findNearbyRate(from, to, dateStr);
       if (nearbyRate) {
-        console.log(`[FixedConverter] Using nearby cached rate for ${from}→${to}: ${nearbyRate.exchange_rate} from ${nearbyRate.rate_date}`);
         return { rate: nearbyRate.exchange_rate, source: 'cache-nearby' };
       }
 
@@ -85,7 +82,6 @@ class FixedCurrencyConverter {
       if (targetDate < oneYearAgo) {
         const anyHistoricalRate = await this.findAnyHistoricalRate(from, to, dateStr);
         if (anyHistoricalRate) {
-          console.log(`[FixedConverter] Using historical fallback rate for ${from}→${to}: ${anyHistoricalRate.exchange_rate} from ${anyHistoricalRate.rate_date}`);
           return { rate: anyHistoricalRate.exchange_rate, source: 'historical-fallback' };
         }
       }
@@ -96,7 +92,6 @@ class FixedCurrencyConverter {
         const currentRate = await this.fetchRateWithRetry(from, to, today);
         if (currentRate !== null) {
           await this.cacheRate(from, to, dateStr, currentRate, 'current-fallback');
-          console.log(`[FixedConverter] Using current date fallback for ${from}→${to}: ${currentRate}`);
           return { rate: currentRate, source: 'current-fallback' };
         }
       }
@@ -236,7 +231,6 @@ class FixedCurrencyConverter {
       // Apply the original sign to the converted amount
       const finalAmount = isNegative ? -usdAmount : usdAmount;
 
-      console.log(`[FixedConverter] Converted ${amount} ${currencyCode} → $${finalAmount} USD (rate: ${rateResult.rate}, source: ${rateResult.source})`);
 
       return {
         usd_amount: finalAmount,
@@ -280,14 +274,12 @@ class FixedCurrencyConverter {
 
       // Skip if already converted (but not for USD transactions - they still need USD value populated)
       if (transaction.value_usd !== null && transaction.currency !== 'USD') {
-        console.log(`[FixedConverter] Transaction ${transactionId} already converted`);
         return { success: true };
       }
 
       // Use value_date if available, otherwise transaction_date
       const conversionDate = new Date(transaction.value_date || transaction.transaction_date);
 
-      console.log(`[FixedConverter] Converting transaction ${transactionId}: ${transaction.value} ${transaction.currency} on ${conversionDate.toISOString().split('T')[0]}`);
 
       // Convert to USD (even for USD transactions to handle value_date scenarios)
       const result = await this.convertToUSD(
@@ -297,7 +289,6 @@ class FixedCurrencyConverter {
       );
 
       if (!result.success) {
-        console.log(`[FixedConverter] Conversion failed for transaction ${transactionId}: ${result.error}`);
         
         // Mark as unconvertible (only for non-USD currencies)
         if (transaction.currency !== 'USD') {
@@ -329,7 +320,6 @@ class FixedCurrencyConverter {
         return { success: false, error: updateError.message };
       }
 
-      console.log(`[FixedConverter] Successfully converted transaction ${transactionId}: ${transaction.value} ${transaction.currency} → $${result.usd_amount} USD`);
       return { success: true };
 
     } catch (error) {
@@ -417,7 +407,6 @@ class FixedCurrencyConverter {
       if (apiKey) {
         try {
           const url = `${this.API_BASE_URL}/${date}?base=${from}&symbols=${to}&access_key=${apiKey}`;
-          console.log(`[FixedConverter] Fetching rate from ExchangeRate.host: ${url.replace(apiKey, 'API_KEY')}`);
           
           const response = await fetch(url, {
             headers: {
@@ -447,7 +436,6 @@ class FixedCurrencyConverter {
             throw new Error(`Invalid rate value from ExchangeRate.host: ${rate}`);
           }
 
-          console.log(`[FixedConverter] ExchangeRate.host success: ${from}→${to} = ${rate} on ${date}`);
           return rate;
 
         } catch (primaryError) {
@@ -460,7 +448,6 @@ class FixedCurrencyConverter {
       // Try fallback API (fxratesapi.com) - free but limited historical data
       try {
         const fallbackUrl = `${this.FALLBACK_API_URL}/historical?date=${date}&base=${from}&symbols=${to}`;
-        console.log(`[FixedConverter] Fetching rate from fallback API: ${fallbackUrl}`);
         
         const fallbackResponse = await fetch(fallbackUrl, {
           headers: {
@@ -490,7 +477,6 @@ class FixedCurrencyConverter {
           throw new Error(`Invalid rate value from fallback API: ${fallbackRate}`);
         }
 
-        console.log(`[FixedConverter] Fallback API success: ${from}→${to} = ${fallbackRate} on ${date}`);
         return fallbackRate;
 
       } catch (fallbackError) {
@@ -500,7 +486,6 @@ class FixedCurrencyConverter {
         if (date === today) {
           try {
             const currentUrl = `https://api.exchangerate-api.com/v4/latest/${from}`;
-            console.log(`[FixedConverter] Trying current rate fallback: ${currentUrl}`);
             
             const currentResponse = await fetch(currentUrl);
             if (currentResponse.ok) {
@@ -509,7 +494,6 @@ class FixedCurrencyConverter {
               if (to in currentRates) {
                 const currentRate = currentRates[to];
                 if (typeof currentRate === 'number' && !isNaN(currentRate) && currentRate > 0) {
-                  console.log(`[FixedConverter] Current rate fallback success: ${from}→${to} = ${currentRate}`);
                   return currentRate;
                 }
               }

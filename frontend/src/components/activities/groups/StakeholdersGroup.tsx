@@ -129,14 +129,8 @@ export function StakeholdersGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -239,7 +233,7 @@ export function StakeholdersGroup({
     <div className="stakeholders-group space-y-0">
       {/* Show message if activity not created */}
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access stakeholder sections.</p>
         </div>
       )}
@@ -273,11 +267,11 @@ export function StakeholdersGroup({
           <section
             id="contacts"
             ref={contactsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('contacts') }}
           >
             {isSectionActive('contacts') || activeSections.has('contacts') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="contacts"
                   title={getSectionLabel('contacts')}
@@ -299,11 +293,11 @@ export function StakeholdersGroup({
           <section
             id="focal_points"
             ref={focalPointsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('focal_points') }}
           >
             {isSectionActive('focal_points') || activeSections.has('focal_points') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="focal_points"
                   title={getSectionLabel('focal_points')}

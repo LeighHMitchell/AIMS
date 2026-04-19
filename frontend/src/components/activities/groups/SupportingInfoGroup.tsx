@@ -119,14 +119,8 @@ export function SupportingInfoGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -228,7 +222,7 @@ export function SupportingInfoGroup({
     <div className="supporting-info-group space-y-0">
       {/* Show message if activity not created */}
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access supporting info sections.</p>
         </div>
       )}
@@ -240,11 +234,11 @@ export function SupportingInfoGroup({
           <section
             id="documents"
             ref={documentsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('documents') }}
           >
             {isSectionActive('documents') || activeSections.has('documents') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="documents"
                   title={getSectionLabel('documents')}
@@ -270,11 +264,11 @@ export function SupportingInfoGroup({
           <section
             id="aid_effectiveness"
             ref={aidEffectivenessRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('aid_effectiveness') }}
           >
             {isSectionActive('aid_effectiveness') || activeSections.has('aid_effectiveness') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="aid_effectiveness"
                   title={getSectionLabel('aid_effectiveness')}

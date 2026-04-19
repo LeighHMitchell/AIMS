@@ -46,7 +46,6 @@ export function useContributors(activityId: string | undefined) {
       }
       setError(null);
       
-      console.log('[useContributors] Fetching contributors for activity:', activityId);
       const response = await apiFetch(`/api/activity-contributors?activityId=${activityId}`);
       
       if (!response.ok) {
@@ -54,7 +53,6 @@ export function useContributors(activityId: string | undefined) {
       }
       
       const data = await response.json();
-      console.log('[useContributors] Fetched contributors:', data);
       setContributors(data || []);
       setHasInitiallyLoaded(true);
     } catch (err) {
@@ -85,7 +83,6 @@ export function useContributors(activityId: string | undefined) {
     }
 
     try {
-      console.log('[useContributors] Adding contributor:', contributorData);
       
       const response = await apiFetch(`/api/activity-contributors`, {
         method: 'POST',
@@ -104,7 +101,6 @@ export function useContributors(activityId: string | undefined) {
       }
 
       const newContributor = await response.json();
-      console.log('[useContributors] Added contributor:', newContributor);
       
       // Update local state
       setContributors(prev => [...prev, newContributor]);
@@ -126,7 +122,6 @@ export function useContributors(activityId: string | undefined) {
     }
 
     try {
-      console.log('[useContributors] Updating contributor:', contributorId, updates);
       
       const response = await apiFetch(`/api/activities/${activityId}/contributors`, {
         method: 'PUT',
@@ -142,7 +137,6 @@ export function useContributors(activityId: string | undefined) {
       }
 
       const updatedContributor = await response.json();
-      console.log('[useContributors] Updated contributor:', updatedContributor);
       
       // Update local state
       setContributors(prev => 
@@ -165,7 +159,6 @@ export function useContributors(activityId: string | undefined) {
     }
 
     try {
-      console.log('[useContributors] Removing contributor:', contributorId);
       
       const response = await apiFetch(`/api/activity-contributors?contributorId=${contributorId}`, {
         method: 'DELETE',
@@ -176,7 +169,6 @@ export function useContributors(activityId: string | undefined) {
         throw new Error(errorData.error || `Failed to remove contributor: ${response.status}`);
       }
 
-      console.log('[useContributors] Removed contributor:', contributorId);
       
       // Update local state
       setContributors(prev => prev.filter(c => c.id !== contributorId));

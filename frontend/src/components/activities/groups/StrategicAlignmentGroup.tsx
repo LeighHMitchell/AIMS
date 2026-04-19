@@ -17,9 +17,9 @@ import { NationalPrioritiesSection } from "@/components/activities/NationalPrior
 export const STRATEGIC_ALIGNMENT_SECTIONS = [
   'national_plans',
   'sdg',
+  'policy_markers',
   'tags',
   'working_groups',
-  'policy_markers'
 ] as const
 export type StrategicAlignmentSectionId = typeof STRATEGIC_ALIGNMENT_SECTIONS[number]
 
@@ -119,9 +119,9 @@ export function StrategicAlignmentGroup({
   const sectionRefs: SectionRef[] = useMemo(() => activityCreated ? [
     { id: 'national_plans', ref: nationalPlansRef },
     { id: 'sdg', ref: sdgRef },
+    { id: 'policy_markers', ref: policyMarkersRef },
     { id: 'tags', ref: tagsRef },
     { id: 'working_groups', ref: workingGroupsRef },
-    { id: 'policy_markers', ref: policyMarkersRef },
   ] : [], [activityCreated])
 
   // Use scroll spy to track visible section
@@ -154,14 +154,8 @@ export function StrategicAlignmentGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -234,9 +228,9 @@ export function StrategicAlignmentGroup({
     const sectionElements = [
       nationalPlansRef.current,
       sdgRef.current,
+      policyMarkersRef.current,
       tagsRef.current,
       workingGroupsRef.current,
-      policyMarkersRef.current
     ]
     sectionElements.forEach((el) => {
       if (el) observer.observe(el)
@@ -254,7 +248,7 @@ export function StrategicAlignmentGroup({
     if (!activityCreated || !enablePreloading) return
 
     // Preload all sections in a single batch
-    const sectionsToPreload = ['national_plans', 'sdg', 'tags', 'working_groups', 'policy_markers']
+    const sectionsToPreload = ['national_plans', 'sdg', 'policy_markers', 'tags', 'working_groups']
 
     const unloaded = sectionsToPreload.filter(id => !activeSectionsRef.current.has(id))
     if (unloaded.length > 0) {
@@ -266,7 +260,7 @@ export function StrategicAlignmentGroup({
     <div className="strategic-alignment-group space-y-0">
       {/* Show message if activity not created */}
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access strategic alignment sections.</p>
         </div>
       )}
@@ -282,7 +276,7 @@ export function StrategicAlignmentGroup({
             style={{ minHeight: getSectionMinHeight('national_plans') }}
           >
             {isSectionActive('national_plans') || activeSections.has('national_plans') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="national_plans"
                   title={getSectionLabel('national_plans')}
@@ -303,11 +297,11 @@ export function StrategicAlignmentGroup({
           <section
             id="sdg"
             ref={sdgRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('sdg') }}
           >
             {isSectionActive('sdg') || activeSections.has('sdg') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="sdg"
                   title={getSectionLabel('sdg')}
@@ -325,15 +319,42 @@ export function StrategicAlignmentGroup({
             )}
           </section>
 
+          {/* Policy Markers Section */}
+          <section
+            id="policy_markers"
+            ref={policyMarkersRef as React.RefObject<HTMLElement>}
+            className="scroll-mt-0 mt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('policy_markers') }}
+          >
+            {isSectionActive('policy_markers') || activeSections.has('policy_markers') ? (
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+                <SectionHeader
+                  id="policy_markers"
+                  title={getSectionLabel('policy_markers')}
+                  helpText={getSectionHelpText('policy_markers')}
+                  showDivider={false}
+                />
+                <PolicyMarkersSectionIATIWithCustom
+                  activityId={activityId}
+                  policyMarkers={policyMarkers}
+                  onChange={onPolicyMarkersChange}
+                  setHasUnsavedChanges={setHasUnsavedChanges}
+                />
+              </div>
+            ) : (
+              <SectionSkeleton sectionId="policy_markers" />
+            )}
+          </section>
+
           {/* Tags Section */}
           <section
             id="tags"
             ref={tagsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('tags') }}
           >
             {isSectionActive('tags') || activeSections.has('tags') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="tags"
                   title={getSectionLabel('tags')}
@@ -355,11 +376,11 @@ export function StrategicAlignmentGroup({
           <section
             id="working_groups"
             ref={workingGroupsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('working_groups') }}
           >
             {isSectionActive('working_groups') || activeSections.has('working_groups') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="working_groups"
                   title={getSectionLabel('working_groups')}
@@ -375,33 +396,6 @@ export function StrategicAlignmentGroup({
               </div>
             ) : (
               <SectionSkeleton sectionId="working_groups" />
-            )}
-          </section>
-
-          {/* Policy Markers Section */}
-          <section
-            id="policy_markers"
-            ref={policyMarkersRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-            style={{ minHeight: getSectionMinHeight('policy_markers') }}
-          >
-            {isSectionActive('policy_markers') || activeSections.has('policy_markers') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="policy_markers"
-                  title={getSectionLabel('policy_markers')}
-                  helpText={getSectionHelpText('policy_markers')}
-                  showDivider={false}
-                />
-                <PolicyMarkersSectionIATIWithCustom
-                  activityId={activityId}
-                  policyMarkers={policyMarkers}
-                  onChange={onPolicyMarkersChange}
-                  setHasUnsavedChanges={setHasUnsavedChanges}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="policy_markers" />
             )}
           </section>
         </div>

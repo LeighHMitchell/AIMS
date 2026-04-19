@@ -186,12 +186,12 @@ export function WaitlistSignupBlock() {
                     </Button>
 
                     {error && (
-                      <p className="text-center text-sm" style={{ color: "#dc2625" }}>
+                      <p className="text-center text-body" style={{ color: "#dc2625" }}>
                         {error}
                       </p>
                     )}
 
-                    <p className="text-center text-xs" style={{ color: "#7b95a7" }}>
+                    <p className="text-center text-helper" style={{ color: "#7b95a7" }}>
                       By joining, you agree to our Privacy Policy
                     </p>
                   </motion.form>
@@ -221,7 +221,7 @@ export function WaitlistSignupBlock() {
                       <h3 className="mb-2 text-xl font-semibold" style={{ color: "#4c5568" }}>
                         You're on the list!
                       </h3>
-                      <p className="text-sm" style={{ color: "#7b95a7" }}>
+                      <p className="text-body" style={{ color: "#7b95a7" }}>
                         We'll notify you as soon as we launch
                       </p>
                     </div>

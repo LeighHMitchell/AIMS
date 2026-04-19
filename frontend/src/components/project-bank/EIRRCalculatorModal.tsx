@@ -116,27 +116,27 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
         {/* Parameters */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           <div>
-            <Label className="text-xs">Project Life (years)</Label>
+            <Label className="text-helper">Project Life (years)</Label>
             <Input type="number" value={projectLife} onChange={e => setProjectLife(Number(e.target.value))} />
           </div>
           <div>
-            <Label className="text-xs">Construction (years)</Label>
+            <Label className="text-helper">Construction (years)</Label>
             <Input type="number" value={constructionYears} onChange={e => setConstructionYears(Number(e.target.value))} />
           </div>
           <div>
-            <Label className="text-xs">Social Discount Rate (%)</Label>
+            <Label className="text-helper">Social Discount Rate (%)</Label>
             <Input type="number" step="0.5" value={sdr} onChange={e => setSdr(Number(e.target.value))} />
           </div>
           <div>
-            <Label className="text-xs">Shadow Wage Rate</Label>
+            <Label className="text-helper">Shadow Wage Rate</Label>
             <Input type="number" step="0.01" value={swRate} onChange={e => setSwRate(Number(e.target.value))} />
           </div>
           <div>
-            <Label className="text-xs">Shadow Exchange Rate</Label>
+            <Label className="text-helper">Shadow Exchange Rate</Label>
             <Input type="number" step="0.01" value={seRate} onChange={e => setSeRate(Number(e.target.value))} />
           </div>
           <div>
-            <Label className="text-xs">Standard Conversion Factor</Label>
+            <Label className="text-helper">Standard Conversion Factor</Label>
             <Input type="number" step="0.01" value={scf} onChange={e => setScf(Number(e.target.value))} />
           </div>
         </div>
@@ -147,10 +147,10 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr className="bg-muted/50 sticky top-0 z-10">
-                <th className="px-3 py-1.5 text-xs font-medium text-left w-16">Year</th>
-                <th className="px-3 py-1.5 text-xs font-medium text-right">Costs (M)</th>
-                <th className="px-3 py-1.5 text-xs font-medium text-right">Benefits (M)</th>
-                <th className="px-3 py-1.5 text-xs font-medium text-right">Net</th>
+                <th className="px-3 py-1.5 text-helper font-medium text-left w-16">Year</th>
+                <th className="px-3 py-1.5 text-helper font-medium text-right">Costs (M)</th>
+                <th className="px-3 py-1.5 text-helper font-medium text-right">Benefits (M)</th>
+                <th className="px-3 py-1.5 text-helper font-medium text-right">Net</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -164,7 +164,7 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
                       step="0.1"
                       value={row.cost}
                       onChange={e => updateRow(idx, 'cost', Number(e.target.value))}
-                      className="h-7 text-sm text-right"
+                      className="h-7 text-body text-right"
                     />
                   </td>
                   <td className="px-3 py-1">
@@ -173,14 +173,14 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
                       step="0.1"
                       value={row.benefit}
                       onChange={e => updateRow(idx, 'benefit', Number(e.target.value))}
-                      className="h-7 text-sm text-right"
+                      className="h-7 text-body text-right"
                     />
                   </td>
-                  <td className={`px-3 py-1 text-sm font-mono text-right ${(row.benefit - row.cost * scf) >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}`}>
+                  <td className={`px-3 py-1 text-sm font-mono text-right ${(row.benefit - row.cost * scf) >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}`}>
                     {(row.benefit - row.cost * scf).toFixed(1)}
                   </td>
                   <td className="px-1">
-                    <button onClick={() => removeRow(idx)} className="p-1 text-muted-foreground hover:text-red-500">
+                    <button onClick={() => removeRow(idx)} className="p-1 text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </td>
@@ -190,7 +190,7 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
           </table>
           </div>
           <div className="p-2 border-t">
-            <Button variant="ghost" size="sm" onClick={addRow} className="gap-1 text-xs">
+            <Button variant="ghost" size="sm" onClick={addRow} className="gap-1 text-helper">
               <Plus className="h-3 w-3" /> Add Year
             </Button>
           </div>
@@ -200,8 +200,8 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
         {results && (
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="p-3 bg-muted/50 rounded-lg text-center">
-              <div className="text-xs text-muted-foreground mb-1">EIRR</div>
-              <div className={`text-xl font-bold font-mono ${eirrPercent != null ? (eirrPercent >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : 'text-muted-foreground'}`}>
+              <div className="text-helper text-muted-foreground mb-1">EIRR</div>
+              <div className={`text-xl font-bold font-mono ${eirrPercent != null ? (eirrPercent >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : 'text-muted-foreground'}`}>
                 {eirrPercent != null ? `${eirrPercent.toFixed(1)}%` : 'N/A'}
               </div>
               {eirrPercent != null && (
@@ -211,13 +211,13 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
               )}
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
-              <div className="text-xs text-muted-foreground mb-1">NPV at {sdr}%</div>
-              <div className={`text-xl font-bold font-mono ${results.npv != null ? (results.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : 'text-muted-foreground'}`}>
+              <div className="text-helper text-muted-foreground mb-1">NPV at {sdr}%</div>
+              <div className={`text-xl font-bold font-mono ${results.npv != null ? (results.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : 'text-muted-foreground'}`}>
                 {results.npv != null ? `${results.npv.toFixed(1)}M` : 'N/A'}
               </div>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
-              <div className="text-xs text-muted-foreground mb-1">Benefit-Cost Ratio</div>
+              <div className="text-helper text-muted-foreground mb-1">Benefit-Cost Ratio</div>
               <div className="text-xl font-bold font-mono">
                 {results.bcr != null ? results.bcr.toFixed(2) : 'N/A'}
               </div>

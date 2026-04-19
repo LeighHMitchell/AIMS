@@ -75,18 +75,18 @@ export default function ImportPage() {
                     
                     <div>
                       <h3 className="font-semibold text-lg">{option.title}</h3>
-                      <p className="text-sm mt-2 opacity-90">
+                      <p className="text-body mt-2 opacity-90">
                         {option.description}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-xs font-medium opacity-75">Key fields:</p>
+                      <p className="text-helper font-medium opacity-75">Key fields:</p>
                       <div className="flex flex-wrap gap-1">
                         {option.fields.map((field) => (
                           <span
                             key={field}
-                            className="text-xs px-2 py-1 bg-white/50 rounded"
+                            className="text-helper px-2 py-1 bg-white/50 rounded"
                           >
                             {field}
                           </span>
@@ -105,13 +105,13 @@ export default function ImportPage() {
             <Upload className="h-6 w-6 text-muted-foreground flex-shrink-0 mt-1" />
             <div className="space-y-2">
               <h3 className="font-semibold">How it works</h3>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-1 text-body text-muted-foreground">
                 <li>Choose the type of data you want to import</li>
                 <li>Upload your CSV or Excel file (max 10MB)</li>
                 <li>Map your file columns to system fields using drag-and-drop</li>
                 <li>Review validation results and import your data</li>
               </ol>
-              <p className="text-sm text-muted-foreground pt-2">
+              <p className="text-body text-muted-foreground pt-2">
                 The system will automatically suggest field mappings and validate your data before import.
               </p>
             </div>

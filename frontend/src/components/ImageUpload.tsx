@@ -123,12 +123,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           </div>
         </div>
         {showHints && aspectRatio === "banner" && (
-          <p className="text-xs text-gray-500">
+          <p className="text-helper text-muted-foreground">
             Recommended banner size: 1200x300px for best display.
           </p>
         )}
         {showHints && aspectRatio === "square" && (
-          <p className="text-xs text-gray-500">
+          <p className="text-helper text-muted-foreground">
             Recommended logo size: 512x512px for best display.
           </p>
         )}
@@ -142,31 +142,31 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         {...getRootProps()}
         className={`
           ${previewHeight} border-2 border-dashed rounded-lg cursor-pointer transition-colors
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
+          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400"}
           ${uploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >
         <input {...getInputProps()} id={id} />
-        <div className="h-full flex flex-col items-center justify-center text-gray-500">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
           <ImageIcon className="h-12 w-12 mb-3" />
-          <p className="text-sm font-medium">
+          <p className="text-body font-medium">
             {isDragActive
               ? `Drop the ${label.toLowerCase()} here`
               : `Drag & drop ${label.toLowerCase()} here`}
           </p>
-          <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">
+          <p className="text-helper mt-1">or click to select</p>
+          <p className="text-helper mt-2 text-muted-foreground">
             {acceptedFormats.join(", ").toUpperCase()} up to {maxSize}MB
           </p>
         </div>
       </div>
       {showHints && aspectRatio === "banner" && (
-        <p className="text-xs text-gray-500">
+        <p className="text-helper text-muted-foreground">
           Recommended banner size: 1200x300px for best display.
         </p>
       )}
       {showHints && aspectRatio === "square" && (
-        <p className="text-xs text-gray-500">
+        <p className="text-helper text-muted-foreground">
           Recommended logo size: 512x512px for best display.
         </p>
       )}

@@ -241,7 +241,7 @@ export default function SDGAlignmentSectionSimplified({
       return (
         <div className="flex items-center gap-1 text-orange-600">
           <div className="animate-spin h-3 w-3 border border-orange-600 border-t-transparent rounded-full"></div>
-          <span className="text-xs">Saving...</span>
+          <span className="text-helper">Saving...</span>
         </div>
       );
     }
@@ -250,7 +250,7 @@ export default function SDGAlignmentSectionSimplified({
       return (
         <div className="flex items-center gap-1 text-[hsl(var(--success-icon))]">
           <CheckCircle className="h-3 w-3" />
-          <span className="text-xs">Saved {formatTimeAgo(lastSaved)}</span>
+          <span className="text-helper">Saved {formatTimeAgo(lastSaved)}</span>
         </div>
       );
     }
@@ -284,7 +284,7 @@ export default function SDGAlignmentSectionSimplified({
                         "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden bg-white",
                         selectedGoals.includes(goal.id)
                           ? "border-primary ring-2 ring-primary/20 shadow-lg"
-                          : "border-gray-200 hover:border-gray-300 hover:shadow-md",
+                          : "border-border hover:border-input hover:shadow-md",
                         !canEdit && "opacity-50 cursor-not-allowed"
                       )}
                     >
@@ -311,7 +311,7 @@ export default function SDGAlignmentSectionSimplified({
                   <TooltipContent>
                     <div>
                       <p className="font-semibold">Goal {goal.id}: {goal.name}</p>
-                      <p className="max-w-xs text-sm">{goal.description}</p>
+                      <p className="max-w-xs text-body">{goal.description}</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -331,7 +331,7 @@ export default function SDGAlignmentSectionSimplified({
             const isExpanded = expandedGoals[goalId];
 
             return (
-              <Card key={goalId} className="border-l-4" style={{ borderLeftColor: goal.color }}>
+              <Card key={goalId}>
                 <CardContent className="p-6">
                   {/* Goal Header */}
                   <div className="flex items-center justify-between mb-3">
@@ -352,12 +352,12 @@ export default function SDGAlignmentSectionSimplified({
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           {goalTargetMappings.length > 0 && (
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-body text-muted-foreground">
                               {goalTargetMappings.length} target{goalTargetMappings.length !== 1 ? 's' : ''} selected
                             </span>
                           )}
                           {isGoalSaved(goalId) && (
-                            <Badge variant="secondary" className="text-xs bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
+                            <Badge variant="secondary" className="text-helper bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                               Saved
                             </Badge>
                           )}
@@ -383,7 +383,7 @@ export default function SDGAlignmentSectionSimplified({
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleGoal(goalId)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -398,7 +398,7 @@ export default function SDGAlignmentSectionSimplified({
                         setTargetSearchOpen({ ...targetSearchOpen, [goalId]: open })
                       }>
                         <PopoverTrigger 
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 justify-start w-full max-w-sm"
+                          className="inline-flex items-center justify-center rounded-md text-body font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 justify-start w-full max-w-sm"
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add Target
@@ -474,7 +474,7 @@ export default function SDGAlignmentSectionSimplified({
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-md">
                                     <p><strong>Target {target.id}:</strong> {target.text}</p>
-                                    <p className="mt-1 text-sm text-muted-foreground">{target.description}</p>
+                                    <p className="mt-1 text-body text-muted-foreground">{target.description}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -484,7 +484,7 @@ export default function SDGAlignmentSectionSimplified({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeTargetMapping(goalId, mapping.sdgTarget)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                               >
                                 <X className="h-3 w-3" />
                               </Button>

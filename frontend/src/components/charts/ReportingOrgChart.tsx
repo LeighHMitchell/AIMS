@@ -98,11 +98,11 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
     }
     return sortDirection === 'asc'
-      ? <ChevronUp className="h-4 w-4 text-gray-400" />
-      : <ChevronDown className="h-4 w-4 text-gray-400" />;
+      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+      : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
   };
 
   const sortedData = useMemo(() => {
@@ -156,7 +156,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>
@@ -171,7 +171,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
         <div className="text-center text-muted-foreground">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No data available</p>
-          <p className="text-sm">Try adjusting your filters to see results.</p>
+          <p className="text-body">Try adjusting your filters to see results.</p>
         </div>
       </div>
     );
@@ -240,32 +240,32 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
           </TableHeader>
           <TableBody>
             {sortedData.map((org, index) => (
-              <TableRow key={index} className="hover:bg-gray-50">
+              <TableRow key={index} className="hover:bg-muted">
                 <TableCell className="py-3 px-3">
                   <div className="flex flex-col">
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-foreground">
                       {org.organization} {org.acronym && org.acronym !== org.organization && `(${org.acronym})`}
                     </div>
                     {org.iati_id && (
-                      <div className="text-xs text-gray-500 font-mono mt-1">
+                      <div className="text-xs text-muted-foreground font-mono mt-1">
                         {org.iati_id}
                       </div>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-gray-600">
+                <TableCell className="py-3 px-3 text-body text-muted-foreground">
                   {org.org_type || '—'}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right text-gray-900">
+                <TableCell className="py-3 px-3 text-body text-right text-foreground">
                   {formatCurrency(org.budget)}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right text-gray-900">
+                <TableCell className="py-3 px-3 text-body text-right text-foreground">
                   {formatCurrency(org.disbursements)}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right text-gray-900">
+                <TableCell className="py-3 px-3 text-body text-right text-foreground">
                   {formatCurrency(org.expenditures)}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right font-medium text-gray-900">
+                <TableCell className="py-3 px-3 text-body text-right font-medium text-foreground">
                   {formatCurrency(org.totalSpending)}
                 </TableCell>
               </TableRow>
@@ -275,7 +275,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
       </div>
 
       {/* Table info */}
-      <div className="mt-4 text-sm text-muted-foreground">
+      <div className="mt-4 text-body text-muted-foreground">
         <p>
           <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organizations by total budget |
           <strong> Currency:</strong> {currency} |

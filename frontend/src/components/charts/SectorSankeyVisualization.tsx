@@ -197,7 +197,6 @@ export default function SectorSankeyVisualization({
 
   // Build hierarchy data for Sankey
   const sankeyData = useMemo(() => {
-    console.log('Processing allocations for Sankey:', allocations);
 
     // First, build a lookup map for unique sector names from the data
     const sectorNameMap = new Map<string, string>();
@@ -375,7 +374,6 @@ export default function SectorSankeyVisualization({
       });
     });
 
-    console.log('Generated Sankey data:', { nodes, links });
     return { nodes, links };
   }, [allocations]);
 
@@ -628,7 +626,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format('.1f');
@@ -726,13 +724,13 @@ export default function SectorSankeyVisualization({
             });
           }
           if (details.length > 0) {
-            financialHtml = `<div class="mt-2 pt-2 border-t border-slate-200 text-xs space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
+            financialHtml = `<div class="mt-2 pt-2 border-t border-border text-helper space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
           }
         }
         
         tooltip.html(`
           <div class="font-semibold">${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}</div>
-          <div class="text-lg font-bold mt-1 text-slate-600">${format(d.value)}%</div>
+          <div class="text-lg font-bold mt-1 text-muted-foreground">${format(d.value)}%</div>
           ${financialHtml}
         `)
           .style('left', (event.pageX + 10) + 'px')
@@ -1002,7 +1000,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = metricMode === 'percentage' ? d3.format('.1f') : d3.format(',.0f');
@@ -1114,7 +1112,7 @@ export default function SectorSankeyVisualization({
 
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format(',.0f');
@@ -1140,11 +1138,11 @@ export default function SectorSankeyVisualization({
         const percentage = (d.value / total * 100).toFixed(1);
         const sectors = 'sectors' in d ? (d.sectors as { code: string; name: string; value: number }[] | undefined) : undefined;
         const sectorsInfo = sectors && sectors.length > 0 ? 
-          `<div class="text-xs text-slate-500 mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
+          `<div class="text-helper text-muted-foreground mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
         tooltip.html(`
           <div class="font-semibold">${d.code} - ${d.name}</div>
           <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : '$' + format(d.value)}</div>
-          <div class="text-xs text-slate-500">${percentage}% of total</div>
+          <div class="text-helper text-muted-foreground">${percentage}% of total</div>
           ${sectorsInfo}
         `)
           .style('left', (event.pageX + 10) + 'px')
@@ -1416,7 +1414,7 @@ export default function SectorSankeyVisualization({
 
                 return (
                   <TableRow key={index}>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {row.category && (
                         <>
                           <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{categoryCode}</span>
@@ -1424,7 +1422,7 @@ export default function SectorSankeyVisualization({
                         </>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {row.sector && (
                         <>
                           <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{sectorCode}</span>
@@ -1432,7 +1430,7 @@ export default function SectorSankeyVisualization({
                         </>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{subsectorCode}</span>
                       <span className="font-medium">{subsectorName}</span>
                     </TableCell>
@@ -1451,7 +1449,7 @@ export default function SectorSankeyVisualization({
                   </TableRow>
                 );
               })}
-            <TableRow className="font-semibold bg-slate-50 border-t-2">
+            <TableRow className="font-semibold bg-muted border-t-2">
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="text-right">{formatPercentage(totalPercentage)}</TableCell>
               <TableCell className={`text-right ${metricMode === 'budget' ? 'bg-blue-50' : ''}`}>
@@ -1474,10 +1472,10 @@ export default function SectorSankeyVisualization({
 
   if (allocations.length === 0) {
     return (
-      <div className={`flex items-center justify-center h-96 text-gray-500 ${className}`}>
+      <div className={`flex items-center justify-center h-96 text-muted-foreground ${className}`}>
         <div className="text-center">
           <div className="text-lg font-medium">No sector data available</div>
-          <div className="text-sm mt-1">Add sector allocations to see the Sankey flow visualization</div>
+          <div className="text-body mt-1">Add sector allocations to see the Sankey flow visualization</div>
         </div>
       </div>
     );
@@ -1509,18 +1507,18 @@ export default function SectorSankeyVisualization({
             {/* View Mode Tabs */}
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
               <TabsList className="h-9">
-                <TabsTrigger value="sankey" className="text-xs px-3">
+                <TabsTrigger value="sankey" className="text-helper px-3">
                   <GitBranch className="h-3.5 w-3.5 mr-1.5" />
                   Sankey
                 </TabsTrigger>
-                <TabsTrigger value="pie" className="text-xs px-3">
+                <TabsTrigger value="pie" className="text-helper px-3">
                   <PieChart className="h-3.5 w-3.5 mr-1.5" />
                   Sunburst
                 </TabsTrigger>
-                <TabsTrigger value="bar" className="text-xs px-3">
+                <TabsTrigger value="bar" className="text-helper px-3">
                   <BarChart3 className="h-3.5 w-3.5" />
                 </TabsTrigger>
-                <TabsTrigger value="table" className="text-xs px-3">
+                <TabsTrigger value="table" className="text-helper px-3">
                   <TableIcon className="h-3.5 w-3.5" />
                 </TabsTrigger>
               </TabsList>
@@ -1528,12 +1526,12 @@ export default function SectorSankeyVisualization({
 
             {/* Bar grouping buttons - only show when bar view is active */}
             {viewMode === 'bar' && (
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('group')}
-                  className={cn("h-7 text-xs px-3", barGroupingMode === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-7 text-helper px-3", barGroupingMode === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Sector Category
                 </Button>
@@ -1541,7 +1539,7 @@ export default function SectorSankeyVisualization({
                   variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('category')}
-                  className={cn("h-7 text-xs px-3", barGroupingMode === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-7 text-helper px-3", barGroupingMode === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Sector
                 </Button>
@@ -1549,7 +1547,7 @@ export default function SectorSankeyVisualization({
                   variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('sector')}
-                  className={cn("h-7 text-xs px-3", barGroupingMode === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-7 text-helper px-3", barGroupingMode === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Sub Sector
                 </Button>

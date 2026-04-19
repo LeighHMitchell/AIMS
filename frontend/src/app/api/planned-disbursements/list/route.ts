@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
     const reportedByOrg = searchParams.get('reportedByOrg'); // 'self' | 'other'
     const reportedByUser = searchParams.get('reportedByUser'); // userId
 
-    console.log('[Planned Disbursements List API] Query params:', { page, limit, search, types, organizations, sortField, sortOrder, reportedByOrg, reportedByUser });
 
     // Build query - fetch disbursements first
     let query = supabase
@@ -116,7 +115,6 @@ export async function GET(request: NextRequest) {
       if (d?.receiver_org_id) allOrgIds.add(d.receiver_org_id);
     });
 
-    console.log('[Planned Disbursements List API] Looking up activity IDs:', Array.from(allActivityIds).slice(0, 3));
 
     let activitiesMap: Record<string, any> = {};
     let organizationsMap: Record<string, any> = {};
@@ -139,8 +137,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (activitiesResult.data) {
-      console.log('[Planned Disbursements List API] Found', activitiesResult.data.length, 'activities out of', allActivityIds.size, 'requested');
-      console.log('[Planned Disbursements List API] Sample activity data:', activitiesResult.data[0]);
       activitiesMap = Object.fromEntries(
         activitiesResult.data.map(a => [a.id, a])
       );
@@ -150,10 +146,8 @@ export async function GET(request: NextRequest) {
         if (a?.reporting_org_id) allOrgIds.add(a.reporting_org_id);
       });
     } else {
-      console.log('[Planned Disbursements List API] No activities found!');
     }
 
-    console.log('[Planned Disbursements List API] Looking up org IDs:', Array.from(allOrgIds).slice(0, 3));
 
     // Step 2: Fetch organizations (now includes reporting_org_ids) — use admin client
     const organizationsResult = allOrgIds.size > 0
@@ -168,13 +162,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (organizationsResult.data) {
-      console.log('[Planned Disbursements List API] Found', organizationsResult.data.length, 'organizations out of', allOrgIds.size, 'requested');
-      console.log('[Planned Disbursements List API] Sample organization data:', organizationsResult.data[0]);
       organizationsMap = Object.fromEntries(
         organizationsResult.data.map(o => [o.id, o])
       );
     } else {
-      console.log('[Planned Disbursements List API] No organizations found!');
     }
 
     // Combine disbursements with their activities and organizations
@@ -202,8 +193,6 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log(`[Planned Disbursements List API] Successfully fetched ${data?.length || 0} disbursements, total: ${count}`);
-    console.log('[Planned Disbursements List API] Sample disbursement with activity:', data[0]);
 
     return NextResponse.json({
       disbursements: data || [],

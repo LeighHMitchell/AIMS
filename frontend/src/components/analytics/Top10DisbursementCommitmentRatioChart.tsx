@@ -134,11 +134,11 @@ export function Top10DisbursementCommitmentRatioChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
         <div className="text-center">
-          <TrendingUp className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No disbursement data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No disbursement data available</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )
@@ -206,7 +206,7 @@ export function Top10DisbursementCommitmentRatioChart({
       </ResponsiveContainer>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+      <p className="text-body text-muted-foreground leading-relaxed mt-4">
         This chart ranks the top 10 organisations by their disbursement-to-commitment ratio, showing which partners are most effectively converting committed funds into actual disbursements. A higher ratio indicates stronger delivery performance. Hover over any bar to see the disbursement amount alongside the underlying commitment and ratio figures.
       </p>
     </div>

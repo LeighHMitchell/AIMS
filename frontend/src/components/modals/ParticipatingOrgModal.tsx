@@ -69,17 +69,12 @@ export function ParticipatingOrgModal({
   // Load editing data
   useEffect(() => {
     if (editingOrg) {
-      console.log('[ParticipatingOrgModal] Loading editingOrg:', editingOrg);
       
       // Ensure narratives is always an array
       const narrativesArray = Array.isArray(editingOrg.narratives) 
         ? editingOrg.narratives 
         : (editingOrg.narratives ? [] : []);
       
-      console.log('[ParticipatingOrgModal] Narratives array:', narrativesArray);
-      console.log('[ParticipatingOrgModal] Role code:', editingOrg.iati_role_code);
-      console.log('[ParticipatingOrgModal] Activity ID ref:', editingOrg.activity_id_ref);
-      console.log('[ParticipatingOrgModal] Org Activity ID:', editingOrg.org_activity_id);
       
       setFormData({
         ...editingOrg,
@@ -157,7 +152,6 @@ export function ParticipatingOrgModal({
     
     const roleType = codeToRoleType[code] || 'implementing';
     
-    console.log('[ParticipatingOrgModal] Role changed:', { roleCode, code, roleType });
     
     setFormData(prev => ({
       ...prev,
@@ -275,7 +269,7 @@ export function ParticipatingOrgModal({
           {/* Advanced Fields Toggle */}
           <div
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
+            className="flex items-center gap-2 cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             <span>Advanced Fields</span>
             <HelpTextTooltip content="These optional fields provide additional IATI-compliant metadata for specialized reporting requirements." />
@@ -287,7 +281,7 @@ export function ParticipatingOrgModal({
           </div>
 
           {showAdvanced && (
-            <div className="space-y-6 pt-4 border-t border-gray-200">
+            <div className="space-y-6 pt-4 border-t border-border">
 
               {/* Activity ID */}
               <div className="space-y-2">
@@ -311,6 +305,7 @@ export function ParticipatingOrgModal({
                 </Label>
                 <Input
                   id="activity_id_ref"
+                  className="font-mono"
                   value={formData.activity_id_ref || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, activity_id_ref: e.target.value }))}
                   placeholder="e.g., GB-COH-1234567-PROJ001"
@@ -420,12 +415,12 @@ export function ParticipatingOrgModal({
                   <div key={index} className="space-y-2">
                     <div className="flex gap-2 items-start">
                       <div className="w-32">
-                        <Label htmlFor={`narrative-lang-${index}`} className="text-xs text-gray-500">
+                        <Label htmlFor={`narrative-lang-${index}`} className="text-helper text-muted-foreground">
                           Language Code
                         </Label>
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor={`narrative-text-${index}`} className="text-xs text-gray-500">
+                        <Label htmlFor={`narrative-text-${index}`} className="text-helper text-muted-foreground">
                           Name
                         </Label>
                       </div>
@@ -454,7 +449,7 @@ export function ParticipatingOrgModal({
                           value={narrative.text}
                           onChange={(e) => updateNarrative(index, 'text', e.target.value)}
                           placeholder="Nom de l'agence"
-                          className="text-sm h-10"
+                          className="text-body h-10"
                         />
                       </div>
                       <Button
@@ -464,7 +459,7 @@ export function ParticipatingOrgModal({
                         onClick={() => removeNarrative(index)}
                         className="px-2 py-1 h-10"
                       >
-                        <Trash2 className="h-3 w-3 text-red-500" />
+                        <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
                     </div>
                   </div>

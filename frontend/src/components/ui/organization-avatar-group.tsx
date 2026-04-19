@@ -26,8 +26,8 @@ interface OrganizationAvatarGroupProps {
 
 const sizeClasses = {
   sm: 'h-6 w-6 text-[10px]',
-  md: 'h-8 w-8 text-xs',
-  lg: 'h-10 w-10 text-sm',
+  md: 'h-8 w-8 text-helper',
+  lg: 'h-10 w-10 text-body',
 };
 
 /**
@@ -105,8 +105,8 @@ export function OrganizationAvatarGroup({
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
-            <p className="text-sm font-medium">{org.name}</p>
-            {org.acronym && <p className="text-xs text-muted-foreground">{org.acronym}</p>}
+            <p className="text-body font-medium">{org.name}</p>
+            {org.acronym && <p className="text-helper text-muted-foreground">{org.acronym}</p>}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -141,17 +141,17 @@ export function OrganizationAvatarGroup({
               ))}
               {remainingCount > 0 && (
                 <Avatar
-                  className={`${sizeClass} ring-2 ring-white bg-gray-100`}
+                  className={`${sizeClass} ring-2 ring-white bg-muted`}
                   style={{ zIndex: 0 }}
                 >
-                  <AvatarFallback className="bg-gray-100 text-gray-600 font-medium">
+                  <AvatarFallback className="bg-muted text-muted-foreground font-medium">
                     +{remainingCount}
                   </AvatarFallback>
                 </Avatar>
               )}
             </div>
             {showAcronym && (
-              <span className="text-sm truncate max-w-[200px]">
+              <span className="text-body truncate max-w-[200px]">
                 {organizations
                   .map(org => org.acronym || org.name)
                   .slice(0, maxDisplay)
@@ -164,7 +164,7 @@ export function OrganizationAvatarGroup({
         <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
           <div className="space-y-2">
             {label && (
-              <p className="font-medium text-xs text-muted-foreground mb-2">
+              <p className="font-medium text-helper text-muted-foreground mb-2">
                 {label} ({organizations.length})
               </p>
             )}
@@ -181,9 +181,9 @@ export function OrganizationAvatarGroup({
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">{org.name}</span>
+                    <span className="text-body font-medium">{org.name}</span>
                     {showAcronym && org.acronym && (
-                      <span className="text-xs text-muted-foreground">{org.acronym}</span>
+                      <span className="text-helper text-muted-foreground">{org.acronym}</span>
                     )}
                   </div>
                 </div>

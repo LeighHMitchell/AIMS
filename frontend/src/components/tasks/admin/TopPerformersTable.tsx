@@ -32,7 +32,7 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
       <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
         <Trophy className="mb-2 h-8 w-8" />
         <p className="text-lg font-medium text-foreground">No Performance Data</p>
-        <p className="text-sm">No completed assignments in this period</p>
+        <p className="text-body">No completed assignments in this period</p>
       </div>
     );
   }
@@ -40,13 +40,13 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
   const getRankIcon = (index: number) => {
     switch (index) {
       case 0:
-        return <Trophy className="h-5 w-5 text-slate-700" />;
+        return <Trophy className="h-5 w-5 text-foreground" />;
       case 1:
-        return <Medal className="h-5 w-5 text-slate-500" />;
+        return <Medal className="h-5 w-5 text-muted-foreground" />;
       case 2:
-        return <Award className="h-5 w-5 text-slate-400" />;
+        return <Award className="h-5 w-5 text-muted-foreground" />;
       default:
-        return <span className="flex h-5 w-5 items-center justify-center text-sm text-muted-foreground">{index + 1}</span>;
+        return <span className="flex h-5 w-5 items-center justify-center text-body text-muted-foreground">{index + 1}</span>;
     }
   };
 
@@ -137,42 +137,42 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
                     {performer.user.avatar_url && (
                       <AvatarImage src={performer.user.avatar_url} />
                     )}
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-helper">
                       {getInitials(performer)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm text-foreground">{getTaskUserDisplayName(performer.user)}</p>
-                    <p className="text-xs text-muted-foreground">{performer.user.email}</p>
+                    <p className="text-body text-foreground">{getTaskUserDisplayName(performer.user)}</p>
+                    <p className="text-helper text-muted-foreground">{performer.user.email}</p>
                   </div>
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <span className="text-sm text-foreground">{performer.assigned_count}</span>
+                <span className="text-body text-foreground">{performer.assigned_count}</span>
               </TableCell>
               <TableCell className="text-center">
-                <span className="text-sm text-foreground">{performer.completed_count}</span>
+                <span className="text-body text-foreground">{performer.completed_count}</span>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Progress value={performer.completion_rate} className="h-2 w-20" />
-                  <span className={`text-sm font-medium ${getCompletionRateColor(performer.completion_rate)}`}>
+                  <span className={`text-body font-medium ${getCompletionRateColor(performer.completion_rate)}`}>
                     {performer.completion_rate}%
                   </span>
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <span className="text-sm">
+                <span className="text-body">
                   {formatResponseTime(performer.avg_response_time)}
                 </span>
               </TableCell>
               <TableCell className="text-center">
                 {performer.overdue_count > 0 ? (
-                  <Badge variant="outline" className="bg-slate-100 text-slate-700 font-normal">
+                  <Badge variant="outline" className="bg-muted text-foreground font-normal">
                     {performer.overdue_count}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-slate-50 text-slate-500">
+                  <Badge variant="outline" className="bg-muted text-muted-foreground">
                     0
                   </Badge>
                 )}

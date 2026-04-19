@@ -106,8 +106,8 @@ function PFSField({ label, value }: { label: string; value: string | number | nu
   if (value === null || value === undefined || value === '') return null
   return (
     <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-sm mt-0.5">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+      <div className="text-helper text-muted-foreground">{label}</div>
+      <div className="text-body mt-0.5">{typeof value === 'number' ? value.toLocaleString() : value}</div>
     </div>
   )
 }
@@ -145,7 +145,7 @@ function FS1NarrativeDisplay({ projectId }: { projectId: string }) {
 
   if (!loaded) return null
   if (!narrative) return (
-    <p className="text-sm text-muted-foreground">No narrative submitted yet.</p>
+    <p className="text-body text-muted-foreground">No narrative submitted yet.</p>
   )
 
   return (
@@ -155,10 +155,10 @@ function FS1NarrativeDisplay({ projectId }: { projectId: string }) {
         if (!value) return null
         return (
           <div key={field}>
-            <div className="text-xs text-muted-foreground mb-1">
+            <div className="text-helper text-muted-foreground mb-1">
               {NARRATIVE_SECTION_LABELS[field]}
             </div>
-            <p className="text-sm leading-relaxed">{value}</p>
+            <p className="text-body leading-relaxed">{value}</p>
           </div>
         )
       })}
@@ -312,12 +312,12 @@ export default function ProjectDetailPage() {
               </span>
             )}
             {project.proceeding_independently && (
-              <Badge variant="outline" className="text-gray-600 border-gray-400">
+              <Badge variant="outline" className="text-muted-foreground border-gray-400">
                 Proceeding Independently (MIC)
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             {project.nominating_ministry}
             {project.sector ? ` · ${project.sector}` : ""}
             {project.region ? ` · ${project.region}` : ""}
@@ -326,28 +326,28 @@ export default function ProjectDetailPage() {
           {/* Hero cards: Ministry / Sector / Location */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
             <div className="rounded-lg border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-0.5">Ministry</div>
-              <div className="text-sm font-medium">{project.nominating_ministry}</div>
+              <div className="text-helper text-muted-foreground mb-0.5">Ministry</div>
+              <div className="text-body font-medium">{project.nominating_ministry}</div>
               {(project as any).implementing_agency && (project as any).implementing_agency !== project.nominating_ministry && (
                 <div className="mt-1">
                   <div className="text-[10px] text-muted-foreground">Implementing Agency</div>
-                  <div className="text-xs">{(project as any).implementing_agency}</div>
+                  <div className="text-helper">{(project as any).implementing_agency}</div>
                 </div>
               )}
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-0.5">Sector</div>
-              <div className="text-sm font-medium">{project.sector}</div>
+              <div className="text-helper text-muted-foreground mb-0.5">Sector</div>
+              <div className="text-body font-medium">{project.sector}</div>
               {project.sub_sector && (
                 <div className="mt-1">
                   <div className="text-[10px] text-muted-foreground">Sub-sector</div>
-                  <div className="text-xs">{project.sub_sector}</div>
+                  <div className="text-helper">{project.sub_sector}</div>
                 </div>
               )}
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-0.5">Location</div>
-              <div className="text-sm font-medium">{project.region || "—"}</div>
+              <div className="text-helper text-muted-foreground mb-0.5">Location</div>
+              <div className="text-body font-medium">{project.region || "—"}</div>
               {project.townships && project.townships.length > 0 && (
                 <div className="mt-1">
                   <div className="text-[10px] text-muted-foreground">{project.townships.length} township{project.townships.length !== 1 ? 's' : ''}</div>
@@ -359,7 +359,7 @@ export default function ProjectDetailPage() {
           {/* Combined Financing Hero Card with Stacked Bar */}
           <div className="mt-4">
             <div className="rounded-lg border bg-card p-4">
-              <div className="text-xs text-muted-foreground mb-3">Project Financing</div>
+              <div className="text-helper text-muted-foreground mb-3">Project Financing</div>
               <div className="h-10">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart layout="vertical" data={financingBarData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
@@ -377,20 +377,20 @@ export default function ProjectDetailPage() {
               <div className="grid grid-cols-3 gap-4 mt-3">
                 <div>
                   <div className="text-[10px] text-muted-foreground">Committed</div>
-                  <div className="text-sm font-bold" style={{ color: '#7b95a7' }}>
+                  <div className="text-body font-bold" style={{ color: '#7b95a7' }}>
                     {formatCurrency(totalCommitted, project.currency)}
                   </div>
                   <div className="text-[10px] text-muted-foreground">{donorCount} donor{donorCount !== 1 ? 's' : ''}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-muted-foreground">Funding Gap</div>
-                  <div className="text-sm font-bold" style={{ color: '#dc2625' }}>
+                  <div className="text-body font-bold" style={{ color: '#dc2625' }}>
                     {formatCurrency(fundingGap, project.currency)}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-muted-foreground">Estimated Cost</div>
-                  <div className="text-sm font-bold" style={{ color: '#4c5568' }}>
+                  <div className="text-body font-bold" style={{ color: '#4c5568' }}>
                     {formatCurrency(estimatedCost, project.currency)}
                   </div>
                   <div className="text-[10px] text-muted-foreground">{securedPct}% secured</div>
@@ -410,8 +410,8 @@ export default function ProjectDetailPage() {
               <div className="flex items-start gap-2 p-4 rounded-lg border bg-amber-50 border-amber-200 text-amber-800">
                 <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
                 <div>
-                  <div className="text-sm font-medium">Cabinet Approval Required</div>
-                  <div className="text-sm">This project exceeds $100M and requires a Cabinet Approval document before it can be advanced to approved status.</div>
+                  <div className="text-body font-medium">Cabinet Approval Required</div>
+                  <div className="text-body">This project exceeds $100M and requires a Cabinet Approval document before it can be advanced to approved status.</div>
                 </div>
               </div>
             );
@@ -457,8 +457,8 @@ export default function ProjectDetailPage() {
                   {/* Project Origin */}
                   {project.origin && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-0.5">Project Origin</div>
-                      <div className="text-sm font-medium">
+                      <div className="text-helper text-muted-foreground mb-0.5">Project Origin</div>
+                      <div className="text-body font-medium">
                         {project.origin === 'government' ? 'Government Nominated' : project.origin === 'unsolicited' ? 'Unsolicited Proposal' : project.origin}
                       </div>
                     </div>
@@ -467,8 +467,8 @@ export default function ProjectDetailPage() {
                   {/* Proponent Details (unsolicited only) */}
                   {project.origin === 'unsolicited' && ((project as any).proponent_name || (project as any).proponent_company || (project as any).proponent_contact) && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-0.5">Proponent Details</div>
-                      <div className="text-sm space-y-0.5">
+                      <div className="text-helper text-muted-foreground mb-0.5">Proponent Details</div>
+                      <div className="text-body space-y-0.5">
                         {(project as any).proponent_name && <div className="font-medium">{(project as any).proponent_name}</div>}
                         {(project as any).proponent_company && <div className="text-muted-foreground">{(project as any).proponent_company}</div>}
                         {(project as any).proponent_contact && <div className="text-muted-foreground">{(project as any).proponent_contact}</div>}
@@ -479,51 +479,51 @@ export default function ProjectDetailPage() {
                   {/* Project Type */}
                   {project.project_type && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-0.5">Project Type</div>
-                      <div className="text-sm font-medium">{project.project_type}</div>
+                      <div className="text-helper text-muted-foreground mb-0.5">Project Type</div>
+                      <div className="text-body font-medium">{project.project_type}</div>
                     </div>
                   )}
 
                   {/* PPP Contract Type */}
                   {(project as any).ppp_contract_type && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-0.5">PPP Contract Type</div>
-                      <div className="text-sm font-medium">{PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type}</div>
+                      <div className="text-helper text-muted-foreground mb-0.5">PPP Contract Type</div>
+                      <div className="text-body font-medium">{PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type}</div>
                     </div>
                   )}
 
                   {/* Estimated Start & Duration */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-xs text-muted-foreground mb-0.5">Estimated Start Date</div>
-                      <div className="text-sm font-medium">{formatFullDate(project.estimated_start_date)}</div>
+                      <div className="text-helper text-muted-foreground mb-0.5">Estimated Start Date</div>
+                      <div className="text-body font-medium">{formatFullDate(project.estimated_start_date)}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground mb-0.5">Estimated Duration</div>
-                      <div className="text-sm font-medium">{formatDuration(project.estimated_duration_months)}</div>
+                      <div className="text-helper text-muted-foreground mb-0.5">Estimated Duration</div>
+                      <div className="text-body font-medium">{formatDuration(project.estimated_duration_months)}</div>
                     </div>
                     {project.construction_period_years != null && (
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5">Construction Period</div>
-                        <div className="text-sm font-medium">{project.construction_period_years} year{project.construction_period_years !== 1 ? 's' : ''}</div>
+                        <div className="text-helper text-muted-foreground mb-0.5">Construction Period</div>
+                        <div className="text-body font-medium">{project.construction_period_years} year{project.construction_period_years !== 1 ? 's' : ''}</div>
                       </div>
                     )}
                     {project.operational_period_years != null && (
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5">Operational Period</div>
-                        <div className="text-sm font-medium">{project.operational_period_years} year{project.operational_period_years !== 1 ? 's' : ''}</div>
+                        <div className="text-helper text-muted-foreground mb-0.5">Operational Period</div>
+                        <div className="text-body font-medium">{project.operational_period_years} year{project.operational_period_years !== 1 ? 's' : ''}</div>
                       </div>
                     )}
                     {project.project_life_years != null && (
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5">Project Life</div>
-                        <div className="text-sm font-medium">{project.project_life_years} year{project.project_life_years !== 1 ? 's' : ''}</div>
+                        <div className="text-helper text-muted-foreground mb-0.5">Project Life</div>
+                        <div className="text-body font-medium">{project.project_life_years} year{project.project_life_years !== 1 ? 's' : ''}</div>
                       </div>
                     )}
                     {project.preliminary_fs_date && (
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5">Preliminary FS Date</div>
-                        <div className="text-sm font-medium">{formatFullDate(project.preliminary_fs_date)}</div>
+                        <div className="text-helper text-muted-foreground mb-0.5">Preliminary FS Date</div>
+                        <div className="text-body font-medium">{formatFullDate(project.preliminary_fs_date)}</div>
                       </div>
                     )}
                   </div>
@@ -531,32 +531,32 @@ export default function ProjectDetailPage() {
                   {/* Description */}
                   {project.description && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Description</div>
-                      <p className="text-sm leading-relaxed">{project.description}</p>
+                      <div className="text-helper text-muted-foreground mb-1">Description</div>
+                      <p className="text-body leading-relaxed">{project.description}</p>
                     </div>
                   )}
 
                   {/* Objectives */}
                   {project.objectives && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Objectives</div>
-                      <p className="text-sm leading-relaxed">{project.objectives}</p>
+                      <div className="text-helper text-muted-foreground mb-1">Objectives</div>
+                      <p className="text-body leading-relaxed">{project.objectives}</p>
                     </div>
                   )}
 
                   {/* Target Beneficiaries */}
                   {project.target_beneficiaries && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Target Beneficiaries</div>
-                      <p className="text-sm leading-relaxed">{project.target_beneficiaries}</p>
+                      <div className="text-helper text-muted-foreground mb-1">Target Beneficiaries</div>
+                      <p className="text-body leading-relaxed">{project.target_beneficiaries}</p>
                     </div>
                   )}
 
                   {/* Documents summary — link to Documents tab */}
                   {project.documents && project.documents.length > 0 && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Documents</div>
-                      <p className="text-sm text-muted-foreground">
+                      <div className="text-helper text-muted-foreground mb-1">Documents</div>
+                      <p className="text-body text-muted-foreground">
                         {project.documents.length} document{project.documents.length !== 1 ? 's' : ''} uploaded — see the <button type="button" className="text-foreground underline underline-offset-2 hover:no-underline" onClick={() => { const el = document.querySelector('[data-value="documents"]') as HTMLButtonElement; el?.click(); }}>Documents tab</button> to view and download.
                       </p>
                     </div>
@@ -568,31 +568,31 @@ export default function ProjectDetailPage() {
                   {/* Contact Officer */}
                   {((project as any).contact_officer_first_name || (project as any).contact_officer_last_name || project.contact_officer) && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-2">Contact Officer</div>
+                      <div className="text-helper text-muted-foreground mb-2">Contact Officer</div>
                       <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm font-medium">{[(project as any).contact_officer_first_name, (project as any).contact_officer_last_name].filter(Boolean).join(' ') || project.contact_officer}</span>
+                          <span className="text-body font-medium">{[(project as any).contact_officer_first_name, (project as any).contact_officer_last_name].filter(Boolean).join(' ') || project.contact_officer}</span>
                         </div>
                         {(project as any).contact_position && (
-                          <div className="text-xs text-muted-foreground ml-5.5">{(project as any).contact_position}</div>
+                          <div className="text-helper text-muted-foreground ml-5.5">{(project as any).contact_position}</div>
                         )}
                         {project.contact_email && (
                           <div className="flex items-center gap-2">
                             <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-xs">{project.contact_email}</span>
+                            <span className="text-helper">{project.contact_email}</span>
                           </div>
                         )}
                         {project.contact_phone && (
                           <div className="flex items-center gap-2">
                             <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-xs">{project.contact_phone}</span>
+                            <span className="text-helper">{project.contact_phone}</span>
                           </div>
                         )}
                         {((project as any).contact_ministry || (project as any).contact_department) && (
                           <div className="flex items-center gap-2">
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-xs">
+                            <span className="text-helper">
                               {[(project as any).contact_ministry, (project as any).contact_department].filter(Boolean).join(' — ')}
                             </span>
                           </div>
@@ -612,38 +612,38 @@ export default function ProjectDetailPage() {
                     if (!isConductor) return null
                     return (
                       <div>
-                        <div className="text-xs text-muted-foreground mb-2">Feasibility Study Conductor</div>
+                        <div className="text-helper text-muted-foreground mb-2">Feasibility Study Conductor</div>
                         <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
                           {p.fs_conductor_type === 'individual' ? (
                             <>
                               {(p.fs_conductor_individual_first_name || p.fs_conductor_individual_last_name) && (
                                 <div className="flex items-center gap-2">
                                   <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{[p.fs_conductor_individual_first_name, p.fs_conductor_individual_last_name].filter(Boolean).join(' ')}</span>
+                                  <span className="text-body font-medium">{[p.fs_conductor_individual_first_name, p.fs_conductor_individual_last_name].filter(Boolean).join(' ')}</span>
                                 </div>
                               )}
                               {p.fs_conductor_individual_job_title && (
                                 <div className="flex items-center gap-2">
                                   <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_individual_job_title}</span>
+                                  <span className="text-helper">{p.fs_conductor_individual_job_title}</span>
                                 </div>
                               )}
                               {p.fs_conductor_individual_company && (
                                 <div className="flex items-center gap-2">
                                   <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_individual_company}</span>
+                                  <span className="text-helper">{p.fs_conductor_individual_company}</span>
                                 </div>
                               )}
                               {p.fs_conductor_individual_email && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_individual_email}</span>
+                                  <span className="text-helper">{p.fs_conductor_individual_email}</span>
                                 </div>
                               )}
                               {p.fs_conductor_individual_phone && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_individual_phone}</span>
+                                  <span className="text-helper">{p.fs_conductor_individual_phone}</span>
                                 </div>
                               )}
                             </>
@@ -652,37 +652,37 @@ export default function ProjectDetailPage() {
                               {p.fs_conductor_company_name && (
                                 <div className="flex items-center gap-2">
                                   <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{p.fs_conductor_company_name}</span>
+                                  <span className="text-body font-medium">{p.fs_conductor_company_name}</span>
                                 </div>
                               )}
                               {(p.fs_conductor_contact_person_first_name || p.fs_conductor_contact_person_last_name) && (
                                 <div className="flex items-center gap-2">
                                   <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{[p.fs_conductor_contact_person_first_name, p.fs_conductor_contact_person_last_name].filter(Boolean).join(' ')}</span>
+                                  <span className="text-helper">{[p.fs_conductor_contact_person_first_name, p.fs_conductor_contact_person_last_name].filter(Boolean).join(' ')}</span>
                                 </div>
                               )}
                               {p.fs_conductor_company_address && (
                                 <div className="flex items-center gap-2">
                                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_company_address}</span>
+                                  <span className="text-helper">{p.fs_conductor_company_address}</span>
                                 </div>
                               )}
                               {p.fs_conductor_company_email && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_company_email}</span>
+                                  <span className="text-helper">{p.fs_conductor_company_email}</span>
                                 </div>
                               )}
                               {p.fs_conductor_company_phone && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_company_phone}</span>
+                                  <span className="text-helper">{p.fs_conductor_company_phone}</span>
                                 </div>
                               )}
                               {p.fs_conductor_company_website && (
                                 <div className="flex items-center gap-2">
                                   <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_company_website}</span>
+                                  <span className="text-helper">{p.fs_conductor_company_website}</span>
                                 </div>
                               )}
                             </>
@@ -695,10 +695,10 @@ export default function ProjectDetailPage() {
                   {/* SDG Alignment */}
                   {project.sdg_goals && project.sdg_goals.length > 0 && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-2">SDG Alignment</div>
+                      <div className="text-helper text-muted-foreground mb-2">SDG Alignment</div>
                       <div className="flex flex-wrap gap-1.5">
                         {project.sdg_goals.map((goal) => (
-                          <Badge key={goal} variant="outline" className="text-xs">
+                          <Badge key={goal} variant="outline" className="text-helper">
                             SDG {goal}{SDG_LABELS[goal] ? `: ${SDG_LABELS[goal]}` : ''}
                           </Badge>
                         ))}
@@ -709,36 +709,36 @@ export default function ProjectDetailPage() {
                   {/* MSDP Alignment */}
                   {(project.msdp_strategy_area || project.alignment_justification || ndpGoal || project.sector_strategy_reference || project.in_sector_investment_plan != null || (project.secondary_ndp_goals && project.secondary_ndp_goals.length > 0)) && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-2">MSDP Alignment</div>
+                      <div className="text-helper text-muted-foreground mb-2">MSDP Alignment</div>
                       <div className="space-y-2">
                         {project.msdp_strategy_area && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">Strategy Area</div>
-                            <div className="text-sm">{project.msdp_strategy_area}</div>
+                            <div className="text-body">{project.msdp_strategy_area}</div>
                           </div>
                         )}
                         {project.alignment_justification && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">Justification</div>
-                            <p className="text-sm leading-relaxed">{project.alignment_justification}</p>
+                            <p className="text-body leading-relaxed">{project.alignment_justification}</p>
                           </div>
                         )}
                         {project.sector_strategy_reference && project.sector_strategy_reference.length > 0 && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">Sector Strategy Reference</div>
-                            <div className="text-sm">{project.sector_strategy_reference.join(', ')}</div>
+                            <div className="text-body">{project.sector_strategy_reference.join(', ')}</div>
                           </div>
                         )}
                         {project.in_sector_investment_plan != null && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">Included in Sector Investment Plan</div>
-                            <div className="text-sm">{project.in_sector_investment_plan ? 'Yes' : 'No'}</div>
+                            <div className="text-body">{project.in_sector_investment_plan ? 'Yes' : 'No'}</div>
                           </div>
                         )}
                         {ndpGoal && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">NDP Goal</div>
-                            <div className="text-sm">{ndpGoal.code} — {ndpGoal.name}</div>
+                            <div className="text-body">{ndpGoal.code} — {ndpGoal.name}</div>
                           </div>
                         )}
                         {project.secondary_ndp_goals && project.secondary_ndp_goals.length > 0 && (
@@ -746,7 +746,7 @@ export default function ProjectDetailPage() {
                             <div className="text-[10px] text-muted-foreground">Secondary NDP Goals</div>
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {project.secondary_ndp_goals.map((goal) => (
-                                <Badge key={goal} variant="outline" className="text-xs">{goal}</Badge>
+                                <Badge key={goal} variant="outline" className="text-helper">{goal}</Badge>
                               ))}
                             </div>
                           </div>
@@ -758,19 +758,19 @@ export default function ProjectDetailPage() {
                   {/* Donor Commitments */}
                   {project.donors && project.donors.length > 0 && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-2">Donor Commitments</div>
+                      <div className="text-helper text-muted-foreground mb-2">Donor Commitments</div>
                       <div className="space-y-2">
                         {project.donors.map((d: ProjectBankDonor) => (
                           <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
                             <div>
-                              <div className="text-sm font-medium">{d.donor_name}</div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-body font-medium">{d.donor_name}</div>
+                              <div className="text-helper text-muted-foreground">
                                 {d.donor_type ? DONOR_TYPE_LABELS[d.donor_type] : ''}{' '}
                                 {d.instrument_type ? `· ${INSTRUMENT_TYPE_LABELS[d.instrument_type]}` : ''}
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-sm font-medium">{formatCurrency(d.amount, d.currency)}</div>
+                              <div className="text-body font-medium">{formatCurrency(d.amount, d.currency)}</div>
                               <Badge variant="outline" className="text-[10px]">
                                 {COMMITMENT_STATUS_LABELS[d.commitment_status] || d.commitment_status}
                               </Badge>
@@ -793,7 +793,7 @@ export default function ProjectDetailPage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f1f4f8' }}>
-                    <div className="text-xs text-muted-foreground">FIRR</div>
+                    <div className="text-helper text-muted-foreground">FIRR</div>
                     <div
                       className="text-xl font-bold"
                       style={{ color: project.firr != null ? (project.firr >= 10 ? '#7b95a7' : '#dc2625') : undefined }}
@@ -802,7 +802,7 @@ export default function ProjectDetailPage() {
                     </div>
                   </div>
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f1f4f8' }}>
-                    <div className="text-xs text-muted-foreground">EIRR</div>
+                    <div className="text-helper text-muted-foreground">EIRR</div>
                     <div
                       className="text-xl font-bold"
                       style={{ color: project.eirr != null ? (project.eirr >= 15 ? '#7b95a7' : '#dc2625') : undefined }}
@@ -815,7 +815,7 @@ export default function ProjectDetailPage() {
                 {/* VGF amount — accent box */}
                 {project.vgf_amount != null && project.vgf_amount > 0 && (
                   <div className="p-4 rounded-lg border mb-4" style={{ backgroundColor: '#f1f4f8', borderColor: '#cfd0d5' }}>
-                    <div className="text-xs" style={{ color: '#7b95a7' }}>Viability Gap Funding (VGF)</div>
+                    <div className="text-helper" style={{ color: '#7b95a7' }}>Viability Gap Funding (VGF)</div>
                     <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                       {formatCurrency(project.vgf_amount, project.currency)}
                     </div>
@@ -824,22 +824,22 @@ export default function ProjectDetailPage() {
 
                 {project.appraisals && project.appraisals.length > 0 && (
                   <div className="border-t pt-4">
-                    <div className="text-sm font-medium mb-2">Appraisal History</div>
+                    <div className="text-body font-medium mb-2">Appraisal History</div>
                     <div className="space-y-2">
                       {project.appraisals.map((a: ProjectAppraisal) => (
                         <div key={a.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
                           <div>
-                            <span className="text-sm capitalize">{a.appraisal_type.replace(/_/g, ' ')}</span>
-                            {a.appraisal_date && <span className="text-xs text-muted-foreground ml-2">{a.appraisal_date}</span>}
+                            <span className="text-body capitalize">{a.appraisal_type.replace(/_/g, ' ')}</span>
+                            {a.appraisal_date && <span className="text-helper text-muted-foreground ml-2">{a.appraisal_date}</span>}
                           </div>
                           <div className="flex items-center gap-3">
                             {a.eirr_result != null && (
-                              <span className="text-sm" style={{ color: a.eirr_result >= 15 ? '#7b95a7' : '#dc2625' }}>
+                              <span className="text-body" style={{ color: a.eirr_result >= 15 ? '#7b95a7' : '#dc2625' }}>
                                 EIRR: {a.eirr_result}%
                               </span>
                             )}
                             {a.npv != null && (
-                              <span className="text-xs text-muted-foreground">NPV: {formatCurrency(a.npv)}</span>
+                              <span className="text-helper text-muted-foreground">NPV: {formatCurrency(a.npv)}</span>
                             )}
                           </div>
                         </div>
@@ -862,7 +862,7 @@ export default function ProjectDetailPage() {
                         {/* Technical */}
                         {(['fs1', 'fs2', 'fs3'] as ProjectPhase[]).includes(currentPhase) && (project.technical_approach || project.technology_methodology || project.technical_risks) && (
                           <div>
-                            <div className="text-xs font-semibold mb-2">Technical</div>
+                            <div className="text-helper font-semibold mb-2">Technical</div>
                             <div className="space-y-2">
                               <PFSField label="Technical Approach" value={project.technical_approach} />
                               <PFSField label="Technology / Methodology" value={project.technology_methodology} />
@@ -877,7 +877,7 @@ export default function ProjectDetailPage() {
                         {/* Revenue */}
                         {project.has_revenue_component && (
                           <div>
-                            <div className="text-xs font-semibold mb-2">Revenue</div>
+                            <div className="text-helper font-semibold mb-2">Revenue</div>
                             <div className="space-y-2">
                               <PFSField label="Revenue Sources" value={(project.revenue_sources || []).join(', ')} />
                               <PFSField label="Projected Annual Users" value={project.projected_annual_users} />
@@ -891,7 +891,7 @@ export default function ProjectDetailPage() {
                         {/* Environmental & Social */}
                         {(project.environmental_impact_level || project.social_impact_level) && (
                           <div>
-                            <div className="text-xs font-semibold mb-2">Environmental & Social</div>
+                            <div className="text-helper font-semibold mb-2">Environmental & Social</div>
                             <div className="space-y-2">
                               <PFSField label="Environmental Impact" value={(() => { const f = IMPACT_LEVELS.find(l => l.value === project.environmental_impact_level); return f ? f.label : project.environmental_impact_level || null })()} />
                               <PFSField label="Social Impact" value={(() => { const f = IMPACT_LEVELS.find(l => l.value === project.social_impact_level); return f ? f.label : project.social_impact_level || null })()} />
@@ -914,7 +914,7 @@ export default function ProjectDetailPage() {
                       <div className="space-y-5">
                         {/* Narrative */}
                         <div>
-                          <div className="text-xs font-semibold mb-2">Preliminary Feasibility Narrative</div>
+                          <div className="text-helper font-semibold mb-2">Preliminary Feasibility Narrative</div>
                           <FS1NarrativeDisplay projectId={id} />
                         </div>
 
@@ -923,8 +923,8 @@ export default function ProjectDetailPage() {
                           <div className="flex items-center gap-3 p-3 rounded-lg border bg-blue-50/50">
                             <Clock className="h-5 w-5 text-blue-600 shrink-0" />
                             <div>
-                              <h3 className="text-sm font-semibold">FS-1 Under Review</h3>
-                              <p className="text-xs text-muted-foreground">
+                              <h3 className="text-body font-semibold">FS-1 Under Review</h3>
+                              <p className="text-helper text-muted-foreground">
                                 {project.project_stage === 'fs1_submitted'
                                   ? 'Your narrative is awaiting desk review.'
                                   : 'Your narrative passed desk review and is awaiting senior review.'}
@@ -938,9 +938,9 @@ export default function ProjectDetailPage() {
                           <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive/20 bg-destructive/10">
                             <XCircle className="h-5 w-5 text-destructive shrink-0" />
                             <div>
-                              <h3 className="text-sm font-semibold text-destructive">FS-1 Rejected</h3>
+                              <h3 className="text-body font-semibold text-destructive">FS-1 Rejected</h3>
                               {project.fs1_rejected_at && (
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-helper text-muted-foreground">
                                   Cool-down until {new Date(new Date(project.fs1_rejected_at).getTime() + 6 * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
                                 </p>
                               )}
@@ -977,7 +977,7 @@ export default function ProjectDetailPage() {
                     <CardContent>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <div className="p-3 bg-surface-muted rounded-lg">
-                          <div className="text-xs text-muted-foreground">FIRR</div>
+                          <div className="text-helper text-muted-foreground">FIRR</div>
                           <div className="text-lg font-bold tabular-nums mt-0.5">
                             {project.firr !== null ? `${project.firr.toFixed(1)}%` : '—'}
                           </div>
@@ -985,19 +985,19 @@ export default function ProjectDetailPage() {
                         {project.firr_calculation_data && (
                           <>
                             <div className="p-3 bg-surface-muted rounded-lg">
-                              <div className="text-xs text-muted-foreground">NPV @ 10%</div>
+                              <div className="text-helper text-muted-foreground">NPV @ 10%</div>
                               <div className="text-lg font-bold tabular-nums mt-0.5">
                                 {formatCurrency(project.firr_calculation_data.npv_at_10)}
                               </div>
                             </div>
                             <div className="p-3 bg-surface-muted rounded-lg">
-                              <div className="text-xs text-muted-foreground">Payback Year</div>
+                              <div className="text-helper text-muted-foreground">Payback Year</div>
                               <div className="text-lg font-bold tabular-nums mt-0.5">
                                 {project.firr_calculation_data.payback_year || '—'}
                               </div>
                             </div>
                             <div className="p-3 bg-surface-muted rounded-lg">
-                              <div className="text-xs text-muted-foreground">Total Investment</div>
+                              <div className="text-helper text-muted-foreground">Total Investment</div>
                               <div className="text-lg font-bold tabular-nums mt-0.5">
                                 {formatCurrency(project.firr_calculation_data.total_investment)}
                               </div>
@@ -1008,14 +1008,14 @@ export default function ProjectDetailPage() {
                       {/* Sensitivity Analysis */}
                       {project.firr_calculation_data?.sensitivity && Array.isArray(project.firr_calculation_data.sensitivity) && project.firr_calculation_data.sensitivity.length > 0 && (
                         <div className="mt-4">
-                          <div className="text-xs font-medium text-muted-foreground mb-2">Sensitivity Analysis</div>
+                          <div className="text-helper font-medium text-muted-foreground mb-2">Sensitivity Analysis</div>
                           <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-body">
                               <thead className="bg-surface-muted">
                                 <tr className="bg-surface-muted">
-                                  <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground">Scenario</th>
-                                  <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground">FIRR</th>
-                                  <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground">NPV</th>
+                                  <th className="text-left px-3 py-1.5 text-helper font-medium text-muted-foreground">Scenario</th>
+                                  <th className="text-right px-3 py-1.5 text-helper font-medium text-muted-foreground">FIRR</th>
+                                  <th className="text-right px-3 py-1.5 text-helper font-medium text-muted-foreground">NPV</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1096,7 +1096,7 @@ export default function ProjectDetailPage() {
                           <div className="space-y-6">
                             <div className="flex items-center justify-between">
                               <h3 className="text-lg font-semibold">Project Documents</h3>
-                              <span className="text-sm text-muted-foreground">{docs.length} document{docs.length !== 1 ? 's' : ''}</span>
+                              <span className="text-body text-muted-foreground">{docs.length} document{docs.length !== 1 ? 's' : ''}</span>
                             </div>
                             {sortedStages.map(stage => (
                               <div key={stage}>
@@ -1108,7 +1108,7 @@ export default function ProjectDetailPage() {
                                     <div key={doc.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors group">
                                       <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                                       <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-medium truncate">{doc.file_name}</div>
+                                        <div className="text-body font-medium truncate">{doc.file_name}</div>
                                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                                           <span>{DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}</span>
                                           {doc.file_size && (
@@ -1131,7 +1131,7 @@ export default function ProjectDetailPage() {
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           download={doc.file_name}
-                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                                          className="flex items-center gap-1.5 text-helper text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                                         >
                                           <Download className="h-3.5 w-3.5" />
                                           Download
@@ -1170,7 +1170,7 @@ export default function ProjectDetailPage() {
           <div className="space-y-4">
             {/* 1. Actions */}
             <Card className="border-primary/20">
-              <CardHeader><CardTitle className="text-sm">Actions</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-body">Actions</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 {(project as any).appraisal_stage && (project as any).appraisal_stage !== 'routing_complete' && (
                   <Button
@@ -1202,13 +1202,13 @@ export default function ProjectDetailPage() {
             {project.category_decision && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Categorization</CardTitle>
+                  <CardTitle className="text-body">Categorization</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2.5">
                   <div className="p-2.5 bg-surface-muted rounded-lg">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] shrink-0" />
-                      <span className="text-sm font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
+                      <span className="text-body font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
                     </div>
                     {project.category_recommendation && project.category_recommendation !== project.category_decision && (
                       <div className="text-[10px] text-muted-foreground mt-1 ml-6">
@@ -1230,7 +1230,7 @@ export default function ProjectDetailPage() {
 
             {/* 2. Project Info — audit trail timestamps */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">Project Info</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-body">Project Info</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {[
                   ["Nominated", project.nominated_at],
@@ -1239,20 +1239,20 @@ export default function ProjectDetailPage() {
                   ["Approved", project.approved_at],
                 ].map(([label, value]) => (
                   <div key={label as string} className="flex justify-between">
-                    <span className="text-xs text-muted-foreground">{label}</span>
-                    <span className="text-xs font-medium">
+                    <span className="text-helper text-muted-foreground">{label}</span>
+                    <span className="text-helper font-medium">
                       {formatFullDate(value as string | null)}
                     </span>
                   </div>
                 ))}
                 <Separator />
                 <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Currency</span>
-                  <span className="text-xs font-medium">{project.currency}</span>
+                  <span className="text-helper text-muted-foreground">Currency</span>
+                  <span className="text-helper font-medium">{project.currency}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Created</span>
-                  <span className="text-xs font-medium">{formatFullDate(project.created_at)}</span>
+                  <span className="text-helper text-muted-foreground">Created</span>
+                  <span className="text-helper font-medium">{formatFullDate(project.created_at)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -1260,11 +1260,11 @@ export default function ProjectDetailPage() {
             {/* 3. AIMS Linkage (moved from main column) */}
             {project.aims_activity_id && (
               <Card>
-                <CardHeader><CardTitle className="text-sm">AIMS Linkage</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-body">AIMS Linkage</CardTitle></CardHeader>
                 <CardContent>
                   <div className="p-3 bg-[#f6f5f3] rounded-lg border border-[#5f7f7a]/20">
-                    <div className="text-sm font-medium text-foreground mb-1">Linked to AIMS</div>
-                    <div className="text-xs text-muted-foreground mb-2">Tracked in the AIMS module</div>
+                    <div className="text-body font-medium text-foreground mb-1">Linked to AIMS</div>
+                    <div className="text-helper text-muted-foreground mb-2">Tracked in the AIMS module</div>
                     <Button variant="outline" size="sm" className="w-full gap-1.5" asChild>
                       <Link href={`/activities/${project.aims_activity_id}`}>
                         View in AIMS <ExternalLink className="h-3.5 w-3.5" />
@@ -1278,11 +1278,11 @@ export default function ProjectDetailPage() {
             {/* 4. Rejection */}
             {project.rejection_reason && (
               <Card className="border-destructive/20">
-                <CardHeader><CardTitle className="text-sm text-destructive">Rejection</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-body text-destructive">Rejection</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-sm text-destructive">{project.rejection_reason}</p>
+                  <p className="text-body text-destructive">{project.rejection_reason}</p>
                   {project.rejected_at && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       {new Date(project.rejected_at).toLocaleDateString()}
                     </p>
                   )}

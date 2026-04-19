@@ -16,7 +16,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isMounted && !isLoading && !user) {
-      console.log("[AuthGuard] No user found, redirecting to login...");
       router.push("/login");
     }
   }, [user, isLoading, router, isMounted]);

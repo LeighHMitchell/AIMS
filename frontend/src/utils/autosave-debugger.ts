@@ -35,8 +35,6 @@ export class AutosaveDebugger {
     };
 
     if (this.config.enabled) {
-      console.log('🔧 AutosaveDebugger enabled');
-      console.log('💡 Use localStorage.setItem("DEBUG_AUTOSAVE", "true") to enable in production');
     }
   }
 
@@ -67,7 +65,6 @@ export class AutosaveDebugger {
       state: '🔄'
     }[type] || '📝';
 
-    console.log(`${emoji} [AutosaveDebugger] ${message}`, data || '');
   }
 
   // Validate activity data before save attempt
@@ -400,10 +397,8 @@ export class AutosaveDebugger {
     this.config.enabled = enabled;
     if (enabled) {
       localStorage.setItem('DEBUG_AUTOSAVE', 'true');
-      console.log('🔧 AutosaveDebugger enabled');
     } else {
       localStorage.removeItem('DEBUG_AUTOSAVE');
-      console.log('🔧 AutosaveDebugger disabled');
     }
   }
 

@@ -117,34 +117,34 @@ export default function OrganizationEditorNavigation({
 
   return (
     <TooltipProvider>
-      <nav className="w-64 bg-white border-r border-gray-200 border-b-0 p-4 space-y-6 h-full flex flex-col">
+      <nav className="w-64 bg-white border-r border-border border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Organization Header */}
         {organization && organization.name && (
-          <div className="pb-4 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-slate-900 group leading-tight">
+          <div className="pb-4 border-b border-border">
+            <h2 className="text-lg font-bold text-foreground group leading-tight">
               {organization.id ? (
                 <Link
                   href={`/organizations/${organization.id}`}
                   className="hover:text-blue-700 hover:underline transition-colors"
                 >
                   {organization.name}
-                  {organization.acronym && <span className="text-slate-600"> ({organization.acronym})</span>}
+                  {organization.acronym && <span className="text-muted-foreground"> ({organization.acronym})</span>}
                 </Link>
               ) : (
                 <>
                   {organization.name}
-                  {organization.acronym && <span className="text-slate-600"> ({organization.acronym})</span>}
+                  {organization.acronym && <span className="text-muted-foreground"> ({organization.acronym})</span>}
                 </>
               )}{' '}
               <button
                 onClick={() => copyToClipboard(organization.name || '', 'orgName')}
-                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
                 title="Copy Organization Name"
               >
                 {copiedId === 'orgName' ? (
                   <Check className="w-4 h-4 text-[hsl(var(--success-icon))]" />
                 ) : (
-                  <Copy className="w-4 h-4 text-slate-400" />
+                  <Copy className="w-4 h-4 text-muted-foreground" />
                 )}
               </button>
             </h2>
@@ -156,13 +156,13 @@ export default function OrganizationEditorNavigation({
                   </code>
                   <button
                     onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
                     title="Copy IATI Org ID"
                   >
                     {copiedId === 'iatiOrgId' ? (
                       <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                     ) : (
-                      <Copy className="w-3 h-3 text-slate-400" />
+                      <Copy className="w-3 h-3 text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -185,7 +185,7 @@ export default function OrganizationEditorNavigation({
             {/* Group Header */}
             <div 
               id={`group-${groupIndex}`}
-              className="text-xs font-bold text-black uppercase mb-2 tracking-wide px-1 flex items-center gap-1"
+              className="text-section-label font-bold text-black uppercase mb-2 px-1 flex items-center gap-1"
               role="heading"
               aria-level={3}
             >
@@ -197,7 +197,7 @@ export default function OrganizationEditorNavigation({
               <div className="relative">
                 {/* Vertical Connector Line */}
                 <div
-                  className="absolute left-[12px] top-0 bottom-0 w-px bg-gray-200"
+                  className="absolute left-[12px] top-0 bottom-0 w-px bg-muted"
                   style={{ height: '100%' }}
                 />
                 
@@ -217,15 +217,17 @@ export default function OrganizationEditorNavigation({
                         disabled={isLocked || disabled}
                         data-tab={section.id}
                         className={cn(
-                          "w-full text-left py-2 px-3 ml-2 rounded text-sm font-normal transition-all duration-200 ease-in-out",
+                          // Active state is carried by the background fill + text
+                          // weight/color. Removed the 3px left-stripe accent that
+                          // duplicated those signals and is a common AI-slop tell.
+                          "w-full text-left py-2 px-3 ml-2 rounded text-body font-normal transition-all duration-200 ease-in-out",
                           "focus:outline-none focus:ring-2 focus:ring-[#5f7f7a]/50 focus:ring-opacity-50 focus:ring-offset-1",
-                          "border-l-3 border-transparent",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
-                            ? "text-gray-400 cursor-not-allowed opacity-60"
+                            ? "text-muted-foreground cursor-not-allowed opacity-60"
                             : isActive
-                              ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium border-l-3 border-[#3C6255] shadow-sm"
-                              : "text-gray-600 hover:bg-[#5f7f7a]/8 hover:text-black hover:border-l-3 hover:border-[#5f7f7a]/30"
+                              ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
+                              : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-black"
                         )}
                         aria-current={isActive ? "page" : undefined}
                         aria-describedby={undefined}
@@ -233,7 +235,7 @@ export default function OrganizationEditorNavigation({
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
+                            {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                             <span>{section.label}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -277,7 +279,7 @@ export default function OrganizationEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-body font-medium bg-destructive/100 text-white hover:bg-destructive transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

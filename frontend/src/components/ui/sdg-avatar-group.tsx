@@ -198,7 +198,7 @@ export function SDGAvatarGroup({
                     ? { duration: 0 }
                     : { delay: 0.05 * displaySDGs.length, duration: 0.25, ease: "easeOut" }
                 }
-                className="ml-2 text-xs font-medium text-muted-foreground"
+                className="ml-2 text-helper font-medium text-muted-foreground"
               >
                 +{remainingCount}
               </motion.span>
@@ -207,7 +207,7 @@ export function SDGAvatarGroup({
         </TooltipTrigger>
         <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
           <div className="space-y-2">
-            <p className="font-medium text-xs text-muted-foreground mb-2">
+            <p className="font-medium text-helper text-muted-foreground mb-2">
               SDGs ({sdgGoals.length})
             </p>
             {sdgGoals.map((goalNumber) => {
@@ -217,7 +217,7 @@ export function SDGAvatarGroup({
 
               return (
                 <div key={goalNumber} className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                  <div className="h-6 w-6 rounded-full overflow-hidden border border-border flex-shrink-0">
                     <img
                       src={getSDGImageURL(goalNumber)}
                       alt={`SDG ${goalNumber}`}
@@ -225,16 +225,16 @@ export function SDGAvatarGroup({
                     />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">
+                    <span className="text-body font-medium">
                       Goal {goalNumber}: {goalName}
                     </span>
                     {sdgGoal?.description && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-helper text-muted-foreground">
                         {sdgGoal.description}
                       </span>
                     )}
                     {mappings.length > 0 && (
-                      <span className="text-xs text-muted-foreground mt-1">
+                      <span className="text-helper text-muted-foreground mt-1">
                         {mappings.length} target{mappings.length > 1 ? 's' : ''} mapped
                       </span>
                     )}

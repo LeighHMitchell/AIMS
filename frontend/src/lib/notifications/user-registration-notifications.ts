@@ -118,7 +118,6 @@ export async function notifySuperUsersOfNewRegistration(
   skipNotification: boolean = false
 ): Promise<void> {
   if (skipNotification) {
-    console.log('[User Registration Notifications] Skipping notification (bulk import mode)');
     return;
   }
 
@@ -130,11 +129,9 @@ export async function notifySuperUsersOfNewRegistration(
   const superUsers = await getSuperUserDetails();
 
   if (superUsers.length === 0) {
-    console.log('[User Registration Notifications] No super users to notify');
     return;
   }
 
-  console.log(`[User Registration Notifications] Found ${superUsers.length} super users to notify`);
 
   // Send in-app notifications and emails in parallel for each super user
   const results = await Promise.all(

@@ -155,25 +155,25 @@ export function TopLocationsChart() {
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{label}</p>
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-700">{METRIC_LABELS[metric]}</span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-body text-foreground">{METRIC_LABELS[metric]}</span>
+              <span className="text-body font-medium text-foreground">
                 {formatCurrency(item.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-700">Percentage</span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-body text-foreground">Percentage</span>
+              <span className="text-body font-medium text-foreground">
                 {item.percentage.toFixed(1)}%
               </span>
             </div>
             {item.activityCount > 0 && (
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-slate-700">Activities</span>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-body text-foreground">Activities</span>
+                <span className="text-body font-medium text-foreground">
                   {item.activityCount}
                 </span>
               </div>
@@ -193,7 +193,7 @@ export function TopLocationsChart() {
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-gray-600 truncate max-w-[100px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[100px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -336,7 +336,7 @@ export function TopLocationsChart() {
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -352,7 +352,7 @@ export function TopLocationsChart() {
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
@@ -361,7 +361,7 @@ export function TopLocationsChart() {
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -370,7 +370,7 @@ export function TopLocationsChart() {
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("table")}
             title="Table"
           >
@@ -409,18 +409,18 @@ export function TopLocationsChart() {
 
   return (
     <>
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+          <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
             Subnational Allocations
           </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">Myanmar States & Regions</p>
+          <p className="text-helper text-muted-foreground mt-0.5">Myanmar States & Regions</p>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {renderControls(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows the geographic distribution of funding across subnational locations. Use the metric selector to compare budgets, disbursements, or commitments across states and regions, and switch between chart and table views to explore the data.
           </p>
         </CardContent>

@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     
     const { email, password } = await request.json();
     
-    console.log(`[Auth Login] Attempting login for: ${email}`);
     
     // Authenticate with Supabase Auth using regular client
     const { data: authData, error: authError } = await authClient.auth.signInWithPassword({
@@ -73,8 +72,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
     
-    console.log('[Auth Login] Supabase auth successful, session established');
-    console.log('[Auth Login] Cookies to set:', cookiesToSet.length);
     
     // Update last_login and get user profile data from our users table
     const now = new Date().toISOString();
@@ -90,7 +87,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 401 });
     }
     
-    console.log('[Auth Login] Updated last_login for user:', userData.email);
     
     // Get organization data if user has one
     let organization = null;
@@ -127,7 +123,6 @@ export async function POST(request: NextRequest) {
       updatedAt: userData.updated_at,
     };
     
-    console.log('[Auth Login] Login successful for:', user.email, 'Role:', user.role);
     
     // Log successful login
     try {
@@ -162,7 +157,6 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    console.log('[Auth Login] Set', cookiesToSet.length, 'cookies on response');
     
     return response;
     

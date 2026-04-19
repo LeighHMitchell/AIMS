@@ -33,7 +33,6 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch budgets' }, { status: 500 });
     }
 
-    console.log(`[Budgets API] Found ${budgets?.length || 0} budgets for activity ${activityId}:`, budgets);
     return NextResponse.json(budgets || [], {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -59,7 +58,6 @@ export async function DELETE(
   try {
     const { id: activityId } = await params;
 
-    console.log('[DELETE /api/activities/[id]/budgets] Starting deletion for activity:', activityId);
 
     if (!activityId) {
       console.error('[DELETE /api/activities/[id]/budgets] No activity ID provided');
@@ -77,7 +75,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to fetch existing budgets', details: fetchError.message }, { status: 500 });
     }
 
-    console.log('[DELETE /api/activities/[id]/budgets] Found', existingBudgets?.length || 0, 'budgets to delete');
 
     // Delete all budgets for the activity
     const { data: deletedData, error: deleteError } = await supabase
@@ -91,7 +88,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete budgets', details: deleteError.message }, { status: 500 });
     }
 
-    console.log('[DELETE /api/activities/[id]/budgets] Successfully deleted', deletedData?.length || 0, 'budgets');
 
     return NextResponse.json({ success: true, deleted: deletedData?.length || 0 });
   } catch (error) {
@@ -111,7 +107,6 @@ export async function POST(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log('[POST /api/activities/[id]/budgets] Creating budget for activity:', activityId, body);
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
@@ -163,7 +158,6 @@ export async function POST(
       // Use manually provided exchange rate
       usdValue = body.usd_value;
       exchangeRateUsed = body.exchange_rate_used;
-      console.log(`[POST /api/activities/[id]/budgets] Using manual exchange rate: ${body.value} ${resolvedCurrency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
     } else {
       // Fetch exchange rate from API
       try {
@@ -175,7 +169,6 @@ export async function POST(
         if (result.success && result.usd_amount != null) {
           usdValue = result.usd_amount;
           exchangeRateUsed = result.exchange_rate;
-          console.log(`[POST /api/activities/[id]/budgets] Converted ${body.value} ${resolvedCurrency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
         } else {
           usdConvertible = false;
           console.warn('[POST /api/activities/[id]/budgets] Currency conversion failed:', result.error);
@@ -218,7 +211,6 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create budget', details: error.message }, { status: 500 });
     }
 
-    console.log('[POST /api/activities/[id]/budgets] Successfully created budget:', budget);
     return NextResponse.json(budget);
   } catch (error) {
     console.error('[POST /api/activities/[id]/budgets] Unexpected error:', error);
@@ -237,7 +229,6 @@ export async function PUT(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log('[PUT /api/activities/[id]/budgets] Updating budget:', body);
 
     if (!activityId || !body.id) {
       return NextResponse.json({ error: 'Activity ID and Budget ID are required' }, { status: 400 });
@@ -274,7 +265,6 @@ export async function PUT(
         // Use manually provided exchange rate
         usdValue = body.usd_value;
         exchangeRateUsed = body.exchange_rate_used;
-        console.log(`[PUT /api/activities/[id]/budgets] Using manual exchange rate: ${body.value} ${body.currency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
       } else {
         // Fetch exchange rate from API
         try {
@@ -286,7 +276,6 @@ export async function PUT(
           if (result.success && result.usd_amount != null) {
             usdValue = result.usd_amount;
             exchangeRateUsed = result.exchange_rate;
-            console.log(`[PUT /api/activities/[id]/budgets] Converted ${body.value} ${body.currency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
           } else {
             usdConvertible = false;
             console.warn('[PUT /api/activities/[id]/budgets] Currency conversion failed:', result.error);
@@ -326,7 +315,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update budget', details: error.message }, { status: 500 });
     }
 
-    console.log('[PUT /api/activities/[id]/budgets] Successfully updated budget:', budget);
     return NextResponse.json(budget);
   } catch (error) {
     console.error('[PUT /api/activities/[id]/budgets] Unexpected error:', error);

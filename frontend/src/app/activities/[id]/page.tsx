@@ -6,6 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
 import { SafeHtml } from "@/components/ui/safe-html"
+import { ActivityOverviewTab } from "@/components/activities/ActivityOverviewTab"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -100,6 +101,7 @@ import { useUser } from "@/hooks/useUser"
 import { useBookmarks } from "@/hooks/use-bookmarks"
 import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache'
 import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
+import { ActivityProfileHeader } from "@/components/activities/ActivityProfileHeader"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
@@ -387,7 +389,7 @@ export default function ActivityDetailPage() {
   const [loading, setLoading] = useState(true)
   const [activity, setActivity] = useState<Activity | null>(null)
   const [budgets, setBudgets] = useState<any[] | undefined>(undefined)
-  const [activeTab, setActiveTab] = useState("finances")
+  const [activeTab, setActiveTab] = useState("overview")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isBudgetsOpen, setIsBudgetsOpen] = useState(true)
   const [isPlannedOpen, setIsPlannedOpen] = useState(true)
@@ -802,10 +804,6 @@ export default function ActivityDetailPage() {
       const activityId = Array.isArray(params.id) ? params.id[0] : params.id;
       const found = await fetchActivityWithCache(activityId)
       if (found) {
-          console.log('[ACTIVITY DETAIL DEBUG] Found activity:', found);
-          console.log('[ACTIVITY DETAIL DEBUG] Activity contacts:', found.contacts);
-          console.log('[ACTIVITY DETAIL DEBUG] Contacts count:', found.contacts?.length || 0);
-          console.log('[ACTIVITY DETAIL DEBUG] Banner position from API:', found.bannerPosition);
 
           setActivity(found)
           setBanner(found.banner || null)
@@ -938,7 +936,6 @@ export default function ActivityDetailPage() {
       // '4' = Expenditure
       
       // Debug logging to identify what's being counted
-      console.log('[Total Committed Debug] Total transactions:', allTransactions.length);
       const typeBreakdown = allTransactions.reduce((acc: any, t: any) => {
         const type = normalizeTransactionType(t.transaction_type);
         if (!acc[type]) acc[type] = { count: 0, totalValue: 0, currencies: new Set() };
@@ -962,7 +959,6 @@ export default function ActivityDetailPage() {
         return type === "2";
       });
       
-      console.log('[Total Committed Debug] Commitment transactions found:', commitmentTransactions.length);
       console.log('[Total Committed Debug] Commitment transaction details:', 
         commitmentTransactions.map(t => ({
           id: t.id || t.uuid,
@@ -990,9 +986,7 @@ export default function ActivityDetailPage() {
         return usdValue;
       });
       const commitmentValues = await Promise.all(commitmentPromises);
-      console.log('[Total Committed Debug] All commitment USD values:', commitmentValues);
       const commitment = commitmentValues.reduce((sum, val) => sum + val, 0);
-      console.log('[Total Committed Debug] Final commitment total:', commitment, '($' + (commitment / 1000000).toFixed(2) + 'm)');
 
       // Calculate disbursement - normalize transaction_type to string for comparison
       const disbursementPromises = allTransactions
@@ -1349,7 +1343,7 @@ export default function ActivityDetailPage() {
           <Card className="max-w-md mx-auto border-border bg-card">
             <CardContent className="pt-6">
               <div className="text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">Activity Not Found</h3>
                 <p className="text-muted-foreground mb-4">
                   The activity you are looking for could not be found.
@@ -1380,14 +1374,14 @@ export default function ActivityDetailPage() {
   // Helper function to render label with help tooltip
   const LabelWithHelp = ({ label, helpText }: { label: string; helpText: string }) => (
     <div className="flex items-center gap-1">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-helper font-medium text-muted-foreground">{label}</p>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
             <HelpCircle className="h-3 w-3 text-muted-foreground hover:text-muted-foreground cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <div className="text-sm whitespace-pre-line">{helpText}</div>
+            <div className="text-body whitespace-pre-line">{helpText}</div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -1404,7 +1398,7 @@ export default function ActivityDetailPage() {
     const isClosed = ['completed', 'cancelled', 'suspended', '4', '5', '6'].includes(activityStatus);
 
     return (
-      <div className="space-y-2 text-sm">
+      <div className="space-y-2 text-body">
         {activity.plannedStartDate && (
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 text-muted-foreground" />
@@ -1488,1134 +1482,93 @@ export default function ActivityDetailPage() {
         {/* Page top anchor for reliable scrolling */}
         <div id="page-top" className="absolute top-0" />
         <div className="w-full p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push('/activities')}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Activities
-            </Button>
-            
-            <div className="flex gap-2">
-              {!banner && !showEditBanner && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowEditBanner(true)}
-                  className="border-border text-foreground hover:bg-muted"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Add Banner
-                </Button>
-              )}
-              {!activity?.icon && !localIcon && !showEditIcon && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowEditIcon(true)}
-                  className="border-border text-foreground hover:bg-muted"
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Add Icon/Logo
-                </Button>
-              )}
-              <CommentsDrawer activityId={activity.id}>
-                <Button 
-                  variant="outline"
-                  className="border-border text-foreground hover:bg-muted"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Comments
-                </Button>
-              </CommentsDrawer>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline"
-                className="border-border text-foreground hover:bg-muted"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Profile
-              </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handlePrintPDF}>
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportCSV}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export as CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={async () => {
-                    try {
-                      toast.info("Generating IATI XML...");
-                      const response = await apiFetch(`/api/activities/${activity?.id}/export-iati`);
-                      if (!response.ok) throw new Error('Export failed');
-                      const blob = await response.blob();
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${activity?.iati_id || activity?.id}.xml`;
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                      toast.success("IATI XML exported successfully");
-                    } catch (error) {
-                      toast.error("Failed to export IATI XML");
-                    }
-                  }}>
-                    <FileCode className="h-4 w-4 mr-2" />
-                    Export to IATI XML
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                variant="outline"
-                className="border-border text-foreground hover:bg-muted"
-                onClick={() => activity?.id && toggleBookmark(activity.id)}
-                disabled={isToggling || !activity?.id}
-              >
-                {activity?.id && isBookmarked(activity.id) ? (
-                  <>
-                    <BookmarkCheck className="h-4 w-4 mr-2 text-muted-foreground" />
-                    Bookmarked
-                  </>
-                ) : (
-                  <>
-                    <Bookmark className="h-4 w-4 mr-2" />
-                    Bookmark
-                  </>
+          {/* Activity Profile Header */}
+          <ActivityProfileHeader
+            activity={activity}
+            banner={banner}
+            bannerPosition={bannerPosition}
+            localIcon={localIcon}
+            reportingOrg={reportingOrg}
+            participatingOrgs={participatingOrgs}
+            countryAllocations={countryAllocations}
+            regionAllocations={regionAllocations}
+            sdgMappings={sdgMappings || []}
+            onBannerChange={handleBannerChange}
+            onIconChange={handleIconChange}
+            onNavigateBack={() => router.push('/activities')}
+            user={user}
+            isBookmarked={activity?.id ? isBookmarked(activity.id) : false}
+            onToggleBookmark={() => activity?.id && toggleBookmark(activity.id)}
+            isToggling={isToggling}
+            viewCount={viewCount}
+            copiedId={copiedId}
+            onCopyToClipboard={copyToClipboard}
+            onPrintPDF={handlePrintPDF}
+            onExportCSV={handleExportCSV}
+          />
+
+          {/* ── Financial Summary Strip ─────────────────────────────── */}
+          <div className="mb-6 rounded-lg border border-border bg-card">
+            <div className="flex flex-col lg:flex-row">
+              {/* Delivery gauge — the dominant metric */}
+              <div className="flex-shrink-0 px-5 py-4 lg:border-r border-border lg:w-64">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold tabular-nums text-foreground tracking-tight">
+                    {implementationVsPlanPercent}%
+                  </span>
+                  <span className="text-helper text-muted-foreground">of budget spent</span>
+                </div>
+                <div className="mt-2 w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className="h-1.5 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(implementationVsPlanPercent, 100)}%`,
+                      backgroundColor: implementationVsPlanPercent > 90 ? 'hsl(var(--success-icon))' : 'hsl(var(--foreground))',
+                    }}
+                  />
+                </div>
+                {financials.totalCommitment > 0 && financialDeliveryPercent !== implementationVsPlanPercent && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    {financialDeliveryPercent}% of committed funds spent
+                  </p>
                 )}
-              </Button>
-              <div className="inline-flex items-center justify-center rounded-md border border-border px-4 h-10 hover:bg-muted transition-colors">
-                <ActivityVote
-                  activityId={activity?.id || ''}
-                  userId={user?.id}
-                  size="sm"
-                  variant="horizontal"
-                />
               </div>
-              {viewCount != null && viewCount > 0 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-4 h-10 text-sm text-muted-foreground">
-                        <Eye className="h-4 w-4" />
-                        <span className="font-medium tabular-nums">{viewCount}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{viewCount} unique viewer{viewCount !== 1 ? 's' : ''}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <Link
-                href={`/activities/new?id=${activity?.id}`}
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                <Pencil className="h-4 w-4 mr-2 text-white" />
-                Edit Activity
-              </Link>
+
+              {/* Secondary metrics — quiet inline row */}
+              <div className="flex-1 flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4">
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-0.5">Budgeted</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(totalBudgeted)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-0.5">Committed</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalCommitment)}</p>
+                </div>
+                <div className="h-8 w-px bg-border hidden sm:block" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-0.5">Disbursed</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalDisbursement)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-0.5">Expended</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalExpenditure)}</p>
+                </div>
+                <div className="h-8 w-px bg-border hidden sm:block" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-0.5">Total Spent</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalDisbursement + financials.totalExpenditure)}</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Banner Upload Modal */}
-          <Dialog open={showEditBanner} onOpenChange={setShowEditBanner}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add Banner Image</DialogTitle>
-                <DialogDescription>
-                  Upload a banner image for this activity. Recommended size: 1200x400px
-                </DialogDescription>
-              </DialogHeader>
-              <BannerUpload
-                currentBanner={banner || undefined}
-                currentPosition={bannerPosition}
-                onBannerChange={handleBannerChange}
-                activityId={activity.id}
-              />
-            </DialogContent>
-          </Dialog>
-
-          {/* Icon Upload Modal */}
-          <Dialog open={showEditIcon} onOpenChange={setShowEditIcon}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add Icon/Logo</DialogTitle>
-                <DialogDescription>
-                  Upload an icon or logo for this activity. Recommended size: 512x512px
-                </DialogDescription>
-              </DialogHeader>
-              <IconUpload
-                currentIcon={activity?.icon || localIcon || undefined}
-                onIconChange={handleIconChange}
-                activityId={activity?.id || ""}
-              />
-            </DialogContent>
-          </Dialog>
-
-          {/* Activity Header Card */}
-          <Card className="mb-6 border-0 shadow-none overflow-hidden">
-            {/* Banner Image */}
-            {banner ? (
-              <div className="w-full h-80 overflow-hidden">
-                <img
-                  src={banner}
-                  alt={`${activity.title} banner`}
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: `center ${bannerPosition}%` }}
-                />
-              </div>
-            ) : null}
-            
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-                {/* Main Content - Columns 1-3 */}
-                <div className="lg:col-span-3">
-                  <div className="flex items-start gap-8">
-                    {/* Left Column: Icon/Logo, Locations, Defaults, Tags */}
-                    {((activity.icon || localIcon) || 
-                      (countryAllocations.length > 0 || regionAllocations.length > 0) || 
-                      (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) ||
-                      (activity.tags && activity.tags.length > 0)) && (
-                      <div className="flex-shrink-0">
-                        {/* Icon/Logo */}
-                        {(activity.icon || localIcon) && (
-                          <div className="w-20 h-20 rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
-                            <img
-                              src={activity.icon || localIcon || ""}
-                              alt={`${activity.title} icon`}
-                              className="object-contain"
-                              style={{
-                                width: `${activity.iconScale ?? 100}%`,
-                                height: `${activity.iconScale ?? 100}%`,
-                                maxWidth: 'none',
-                                maxHeight: 'none',
-                              }}
-                            />
-                          </div>
-                        )}
-                        {/* Country/Region Pills */}
-                        {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
-                          <div className={`${(activity.icon || localIcon) ? 'mt-3' : ''} w-full max-w-[12rem]`}>
-                            <div className="text-muted-foreground mb-2 text-xs font-medium">Locations</div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {countryAllocations.map((countryAlloc: any) => (
-                                <div 
-                                  key={countryAlloc.id || countryAlloc.country?.code} 
-                                  className="flex items-center gap-1.5 text-xs"
-                                >
-                                  <img
-                                    src={`https://flagcdn.com/w20/${(countryAlloc.country?.code || '').toLowerCase()}.png`}
-                                    alt={`${countryAlloc.country?.name || 'Country'} flag`}
-                                    className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                  />
-                                  <span className="text-foreground">
-                                    {countryAlloc.country?.name || countryAlloc.country?.code || 'Unknown Country'}
-                                  </span>
-                                </div>
-                              ))}
-                              {regionAllocations.map((regionAlloc: any) => (
-                                <Badge 
-                                  key={regionAlloc.id || regionAlloc.region?.code} 
-                                  variant="secondary" 
-                                  className="text-[10px] px-2 py-0.5"
-                                >
-                                  {regionAlloc.region?.name || regionAlloc.region?.code || 'Unknown Region'}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {/* Divider between Locations and Classification Fields */}
-                        {(countryAllocations.length > 0 || regionAllocations.length > 0) && (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
-                          <div className="mt-3 mb-3 border-b border-border"></div>
-                        )}
-                        {/* Activity Classification Fields */}
-                        {(activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
-                          <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) ? 'mt-3' : ''} w-full max-w-[12rem] ${(activity.tags && activity.tags.length > 0) ? 'pb-3 border-b border-border' : ''}`}>
-                            <div className="flex flex-col gap-y-2 text-xs">
-                              {activity.hierarchy && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Hierarchy</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
-                                  </div>
-                                </div>
-                              )}
-                              {activity.collaborationType && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Collaboration Type:</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {getCollaborationTypeLabel(activity.collaborationType) || activity.collaborationType}
-                                  </div>
-                                </div>
-                              )}
-                              {activity.defaultFlowType && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Default Flow Type</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
-                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
-                                    ) : (
-                                      <CodelistTooltip
-                                        type="flow_type"
-                                        code={activity.defaultFlowType}
-                                        displayLabel={FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType}
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {activity.defaultFinanceType && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Default Finance Type</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
-                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
-                                    ) : (
-                                      <CodelistTooltip
-                                        type="finance_type"
-                                        code={activity.defaultFinanceType}
-                                        displayLabel={FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType}
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {activity.defaultAidType && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Default Aid Type</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
-                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
-                                    ) : (
-                                      <CodelistTooltip
-                                        type="aid_type"
-                                        code={activity.defaultAidType}
-                                        displayLabel={AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType}
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {activity.defaultTiedStatus && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Default Tied Status</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
-                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
-                                    ) : (
-                                      <CodelistTooltip
-                                        type="tied_status"
-                                        code={activity.defaultTiedStatus}
-                                        displayLabel={TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus}
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {activity.activityScope && (
-                                <div className="text-muted-foreground">
-                                  <div className="text-muted-foreground mb-1">Scope</div>
-                                  <div className="font-medium text-foreground break-words">
-                                    {activity.activityScope === '0' || activity.activityScope === 0 ? (
-                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
-                                    ) : (
-                                      getActivityScopeLabel(activity.activityScope) || activity.activityScope
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {/* Tags */}
-                        {activity.tags && activity.tags.length > 0 && (
-                          <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) || (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) ? 'mt-3' : ''} flex flex-wrap gap-1 max-w-[12rem]`}>
-                          {activity.tags.slice(0, 12).map((t: any) => (
-                            <Badge key={t.id || t.name} variant={getTagColorVariant(t.name)} className="text-[10px] px-1.5 py-0.5">
-                              {t.name}
-                            </Badge>
-                          ))}
-                        </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Activity Info */}
-                    <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-foreground mb-3 group">
-                        {activity.title}{activity.acronym && <span> ({activity.acronym})</span>}{' '}
-                        <button
-                          onClick={() => copyToClipboard(activity.title || '', 'activityTitle')}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
-                          title="Copy Activity Title"
-                        >
-                          {copiedId === 'activityTitle' ? (
-                            <Check className="w-5 h-5 text-[hsl(var(--success-icon))]" />
-                          ) : (
-                            <Copy className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </button>
-                      </h1>
-                      
-                      <div className="space-y-3">
-                        {/* First Row: Activity ID, IATI ID and Status Badges */}
-                        <div className="flex flex-wrap items-center gap-3 py-3 border-y border-border">
-                          {(activity as any).auto_ref && (
-                            <div className="flex items-center gap-1 group">
-                              <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                                {(activity as any).auto_ref}
-                              </code>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText((activity as any).auto_ref);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
-                                title="Copy App ID"
-                              >
-                                <Copy className="w-3 h-3" />
-                              </button>
-                            </div>
-                          )}
-                          {activity.partnerId && (
-                            <div className="flex items-center gap-1 group">
-                              <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                                {activity.partnerId}
-                              </code>
-                              <button
-                                onClick={() => copyToClipboard(activity.partnerId || '', 'activityId')}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
-                                title="Copy Activity ID"
-                              >
-                                {copiedId === 'activityId' ? (
-                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </button>
-                            </div>
-                          )}
-                          {activity.iatiIdentifier && (
-                            <div className="flex items-center gap-1 group">
-                              <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                                {activity.iatiIdentifier}
-                              </code>
-                              <button
-                                onClick={() => copyToClipboard(activity.iatiIdentifier || '', 'iatiIdentifier')}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
-                                title="Copy IATI Identifier"
-                              >
-                                {copiedId === 'iatiIdentifier' ? (
-                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </button>
-                            </div>
-                          )}
-                          {(() => {
-                            const { label, className: statusClassName } = getActivityStatusDisplay(activity.activityStatus);
-                            return <Badge className={statusClassName}>{label}</Badge>;
-                          })()}
-                          
-                          {/* Publication Status Badge */}
-                          {activity.publicationStatus && (
-                            <Badge 
-                              className={
-                                activity.publicationStatus === 'published' 
-                                  ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]/80'
-                                  : 'bg-muted text-foreground hover:bg-muted'
-                              }
-                            >
-                              {activity.publicationStatus === 'published' ? 'Published' : 'Unpublished'}
-                            </Badge>
-                          )}
-                          
-                          {/* IATI Sync Status */}
-                          {activity.iatiIdentifier && (
-                            <div className="flex items-center gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge
-                                      variant={activity.autoSync && (activity.syncStatus === 'live' || activity.syncStatus === 'outdated') ? "outline" : undefined}
-                                      className={activity.autoSync && (activity.syncStatus === 'live' || activity.syncStatus === 'outdated')
-                                        ? "border-border text-foreground hover:bg-muted/50"
-                                        : "bg-[#124e5f] text-white hover:bg-[#0d3a47]"}
-                                    >
-                                      {activity.autoSync && activity.syncStatus === 'live' ? (
-                                        <>
-                                          <RefreshCw className="h-3 w-3 mr-1 text-[hsl(var(--success-icon))]" />
-                                          IATI Synced
-                                        </>
-                                      ) : activity.autoSync && activity.syncStatus === 'outdated' ? (
-                                        <>
-                                          <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
-                                          IATI Outdated
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Globe className="h-3 w-3 mr-1 text-white" />
-                                          Imported from IATI
-                                        </>
-                                      )}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <div className="text-xs space-y-1">
-                                      <p className="font-medium">IATI Sync Status</p>
-                                      {activity.lastSyncTime && (
-                                        <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
-                                      )}
-                                      {activity.autoSync && (
-                                        <p className="text-[hsl(var(--success-icon))]">Auto-sync enabled</p>
-                                      )}
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              {/* Humanitarian Badge */}
-                              {activity.humanitarian && (
-                                <Badge className="bg-red-600 text-white hover:bg-red-700">
-                                  Humanitarian
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Third Row: Timeline Dates - Responsive Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 pb-3 border-b border-border">
-                          {/* Column 1: Start Dates */}
-                          <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-muted-foreground flex-shrink-0">Planned Start:</span>
-                              <span className="font-medium text-foreground truncate">
-                                {activity.plannedStartDate ? formatDate(activity.plannedStartDate) : '—'}
-                              </span>
-                              {activity.plannedStartDescription && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent><p className="max-w-xs">{activity.plannedStartDescription}</p></TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-muted-foreground flex-shrink-0">Actual Start:</span>
-                              <span className="font-medium text-foreground truncate">
-                                {activity.actualStartDate ? formatDate(activity.actualStartDate) : '—'}
-                              </span>
-                              {activity.actualStartDescription && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent><p className="max-w-xs">{activity.actualStartDescription}</p></TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Column 2: End Dates */}
-                          <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-muted-foreground flex-shrink-0">Planned End:</span>
-                              <span className="font-medium text-foreground truncate">
-                                {activity.plannedEndDate ? formatDate(activity.plannedEndDate) : '—'}
-                              </span>
-                              {activity.plannedEndDescription && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent><p className="max-w-xs">{activity.plannedEndDescription}</p></TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-muted-foreground flex-shrink-0">Actual End:</span>
-                              <span className="font-medium text-foreground truncate">
-                                {activity.actualEndDate ? formatDate(activity.actualEndDate) : '—'}
-                              </span>
-                              {activity.actualEndDescription && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent><p className="max-w-xs">{activity.actualEndDescription}</p></TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Column 3: Created/Updated + History Button */}
-                          <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                              <span className="text-muted-foreground flex-shrink-0">Created:</span>
-                              <span className="font-medium text-foreground truncate">{formatDate(activity.createdAt)}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                              <span className="text-muted-foreground flex-shrink-0">Updated:</span>
-                              <span className="font-medium text-foreground whitespace-nowrap">{formatDate(activity.updatedAt)}</span>
-                              <AllDatesHistory
-                                activityId={activity.id}
-                                dates={{
-                                  plannedStartDate: activity.plannedStartDate,
-                                  plannedEndDate: activity.plannedEndDate,
-                                  actualStartDate: activity.actualStartDate,
-                                  actualEndDate: activity.actualEndDate
-                                }}
-                                customDates={activity.customDates}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Custom/Additional Dates */}
-                        {activity.customDates && activity.customDates.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-3 pt-2">
-                            {activity.customDates.map((customDate, index) => (
-                              <div key={index} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Calendar className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-muted-foreground">{customDate.label}:</span>
-                                <span className="font-medium text-foreground">{formatDate(customDate.date)}</span>
-                                {customDate.description && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>{customDate.description}</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    
-                    {/* Combined Description Sections with 1000 character limit */}
-                    {(() => {
-                      // Get all field values
-                      const description = activity.description || '';
-                      const objectives = activity.descriptionObjectives || '';
-                      const targetGroups = activity.descriptionTargetGroups || '';
-                      const other = activity.descriptionOther || '';
-                      
-                      // Check if any description content exists
-                      const hasAnyContent = description || objectives || targetGroups || other;
-                      
-                      // Calculate if we need show more based on content length (rough estimate)
-                      const combinedLength = description.length + objectives.length + targetGroups.length + other.length;
-                      const needsShowMore = combinedLength > 500;
-                      
-                      return (
-                        <>
-                          {/* Collapsible description container */}
-                          <div 
-                            ref={descriptionRef}
-                            className={`mt-3 relative ${!isDescriptionExpanded && needsShowMore ? 'max-h-[280px] overflow-hidden' : ''}`}
-                          >
-                            {/* General Description */}
-                            {description && (
-                              <div>
-                                <SafeHtml 
-                                  html={description} 
-                                  level="rich"
-                                  className="text-muted-foreground leading-relaxed"
-                                />
-                              </div>
-                            )}
-
-                            {/* Objectives Section */}
-                            {objectives && (
-                              <div className="mt-4 border-t border-border pt-3">
-                                <h4 className="text-sm font-medium text-foreground mb-2">
-                                  Objectives
-                                </h4>
-                                <SafeHtml 
-                                  html={objectives} 
-                                  level="rich"
-                                  className="text-muted-foreground leading-relaxed"
-                                />
-                              </div>
-                            )}
-
-                            {/* Target Groups Section */}
-                            {targetGroups && (
-                              <div className="mt-4 border-t border-border pt-3">
-                                <h4 className="text-sm font-medium text-foreground mb-2">
-                                  Target Groups
-                                </h4>
-                                <SafeHtml 
-                                  html={targetGroups} 
-                                  level="rich"
-                                  className="text-muted-foreground leading-relaxed"
-                                />
-                              </div>
-                            )}
-
-                            {/* Other Section */}
-                            {other && (
-                              <div className="mt-4 border-t border-border pt-3">
-                                <h4 className="text-sm font-medium text-foreground mb-2">
-                                  Other
-                                </h4>
-                                <SafeHtml 
-                                  html={other} 
-                                  level="rich"
-                                  className="text-muted-foreground leading-relaxed"
-                                />
-                              </div>
-                            )}
-                            
-                            {/* Fade gradient when collapsed */}
-                            {!isDescriptionExpanded && needsShowMore && (
-                              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-                            )}
-                          </div>
-
-                          {/* Single Show More/Less button */}
-                          {needsShowMore && (
-                            <button
-                              onClick={(event) => {
-                                if (!isDescriptionExpanded) {
-                                  setIsDescriptionExpanded(true)
-                                } else {
-                                  setIsDescriptionExpanded(false)
-                                  const pageTop = document.getElementById('page-top')
-                                  if (pageTop) {
-                                    pageTop.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                  } else {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                                  }
-                                }
-                              }}
-                              className="flex items-center gap-1 text-muted-foreground hover:text-foreground mt-2 text-sm font-medium transition-colors"
-                            >
-                              {isDescriptionExpanded ? (
-                                <>
-                                  Show less
-                                  <ChevronUp className="h-4 w-4" />
-                                </>
-                              ) : (
-                                <>
-                                  Show more
-                                  <ChevronDown className="h-4 w-4" />
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </>
-                      );
-                    })()}
-                        </div>
-                      </div>
-                </div>
-
-                {/* Organizations Sidebar - Column 4 */}
-                <div className="lg:col-span-1">
-                  <div className="bg-card">
-                    <div className="space-y-3">
-                      {/* Reporting Organisation */}
-                      {reportingOrg && (
-                        <div className="pb-3 border-b border-border">
-                          <div className="text-muted-foreground mb-2 text-xs font-medium">Reporting Organisation</div>
-                          <div className="flex items-start gap-3">
-                            {/* Logo/Icon */}
-                            {reportingOrg.logo && (
-                              <div className="flex-shrink-0">
-                                <img
-                                  src={reportingOrg.logo}
-                                  alt={`${reportingOrg.name} logo`}
-                                  className="w-10 h-10 rounded object-cover bg-card"
-                                />
-                              </div>
-                            )}
-                            
-                            {/* Organization Name, IATI ID */}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm text-foreground">
-                                {reportingOrg.id ? (
-                                  <Link 
-                                    href={`/organizations/${reportingOrg.id}`}
-                                    className="font-medium hover:text-foreground transition-colors"
-                                  >
-                                    {reportingOrg.name || 'Unknown'}
-                                    {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
-                                      <span> ({reportingOrg.acronym})</span>
-                                    )}
-                                  </Link>
-                                ) : (
-                                  <span className="font-medium">
-                                    {reportingOrg.name || 'Unknown'}
-                                    {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
-                                      <span> ({reportingOrg.acronym})</span>
-                                    )}
-                                  </span>
-                                )}
-                                {/* IATI ID with gray background - inline */}
-                                {reportingOrg.iati_org_id && (
-                                  <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
-                                    {reportingOrg.iati_org_id}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {/* All Participating Organizations */}
-                      {participatingOrgs.length > 0 && (
-                        <>
-                          <div className="text-muted-foreground mb-2 text-xs font-medium">Participating Organisations</div>
-                          <div className="space-y-3">
-                            {(showAllSidebarPartners ? participatingOrgs : participatingOrgs.slice(0, 4)).map((org, idx) => (
-                              <div key={idx} className="pb-3 last:pb-0">
-                                <div className="flex items-start gap-3">
-                                  {/* Logo/Icon */}
-                                  {org.organization?.logo && (
-                                    <div className="flex-shrink-0">
-                                      <img
-                                        src={org.organization.logo}
-                                        alt={`${org.organization.name} logo`}
-                                        className="w-10 h-10 rounded object-cover bg-card"
-                                      />
-                                    </div>
-                                  )}
-                                  
-                                  {/* Organization Name, IATI ID, and Role Badge - Same Line */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-sm text-foreground">
-                                      {org.organization?.id ? (
-                                        <Link 
-                                          href={`/organizations/${org.organization.id}`}
-                                          className="font-medium hover:text-foreground transition-colors"
-                                        >
-                                          {org.organization.name || org.narrative || 'Unknown'}
-                                          {org.organization.acronym && org.organization.acronym !== org.organization.name && (
-                                            <span> ({org.organization.acronym})</span>
-                                          )}
-                                        </Link>
-                                      ) : (
-                                        <span className="font-medium">
-                                          {org.organization?.name || org.narrative || 'Unknown'}
-                                          {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                            <span> ({org.organization.acronym})</span>
-                                          )}
-                                        </span>
-                                      )}
-                                      {/* IATI ID with gray background - inline */}
-                                      {org.organization?.iati_org_id && (
-                                        <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
-                                          {org.organization.iati_org_id}
-                                        </span>
-                                      )}
-                                      {/* Role Badge with colors from new palette - inline */}
-                                      <Badge 
-                                        className={`text-xs px-2 py-0.5 rounded ml-2 inline-block align-middle ${
-                                          org.role_type === 'funding' ? 'bg-[#dc2625]/10 text-[#dc2625]' :
-                                          org.role_type === 'extending' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
-                                          org.role_type === 'government' ? 'bg-[#4c5568]/10 text-[#4c5568]' :
-                                          org.role_type === 'implementing' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
-                                          'bg-muted text-foreground'
-                                        }`}
-                                      >
-                                        {org.role_type === 'government' ? 'Accountable' :
-                                         org.role_type === 'extending' ? 'Extending' :
-                                         org.role_type === 'funding' ? 'Funding' :
-                                         org.role_type === 'implementing' ? 'Implementing' :
-                                         org.role_type}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {participatingOrgs.length > 4 && (
-                            <button
-                              onClick={() => {
-                                setShowAllSidebarPartners(!showAllSidebarPartners);
-                                if (showAllSidebarPartners) {
-                                  // Scroll to top when clicking "Show less"
-                                  const pageTop = document.getElementById('page-top');
-                                  if (pageTop) {
-                                    pageTop.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                  } else {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  }
-                                }
-                              }}
-                              className="w-full mt-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors flex items-center justify-start gap-2"
-                            >
-                              {showAllSidebarPartners ? (
-                                <>
-                                  Show less
-                                  <ChevronUp className="h-4 w-4" />
-                                </>
-                              ) : (
-                                <>
-                                  +{participatingOrgs.length - 4} more
-                                  <ChevronDown className="h-4 w-4" />
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    {/* SDG Icons Below Partners */}
-                    {sdgMappings && sdgMappings.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <div className="text-xs font-medium text-muted-foreground mb-2">SDG Alignment</div>
-                        <SDGImageGrid 
-                          sdgCodes={sdgMappings.map((m: any) => m.sdgGoal || m.sdg_goal)} 
-                          size="sm" 
-                          showTooltips={true}
-                          className=""
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Policy Markers Below SDG */}
-                    {activity.policyMarkers && activity.policyMarkers.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Policy Markers</div>
-                        <div className="flex flex-wrap gap-2">
-                          {activity.policyMarkers.map((marker: any, index: number) => {
-                            // Get specific icon for each policy marker based on IATI code or code name
-                            const getIconForMarker = (iatiCode: string | null | undefined, code: string | null | undefined) => {
-                              // First check IATI code
-                              if (iatiCode) {
-                                switch (iatiCode) {
-                                  case '1': return Sparkles; // Gender Equality
-                                  case '2': return Leaf; // Aid to Environment
-                                  case '3': return Shield; // Good Governance
-                                  case '4': return Handshake; // Trade Development
-                                  case '5': return TreePine; // Biodiversity
-                                  case '6': return Wind; // Climate Mitigation
-                                  case '7': return Waves; // Climate Adaptation
-                                  case '8': return MountainSnow; // Desertification
-                                  case '9': return Baby; // RMNCH
-                                  case '10': return AlertCircle; // Disaster Risk Reduction
-                                  case '11': return Heart; // Disability
-                                  case '12': return Droplets; // Nutrition
-                                }
-                              }
-
-                              // Fallback to code-based matching for custom markers
-                              if (code) {
-                                const lowerCode = code.toLowerCase();
-                                if (lowerCode.includes('gender')) return Sparkles;
-                                if (lowerCode.includes('environment') || lowerCode.includes('environ')) return Leaf;
-                                if (lowerCode.includes('governance') || lowerCode.includes('pdgg')) return Shield;
-                                if (lowerCode.includes('trade')) return Handshake;
-                                if (lowerCode.includes('biodiversity')) return TreePine;
-                                if (lowerCode.includes('mitigation')) return Wind;
-                                if (lowerCode.includes('adaptation') || lowerCode.includes('climate')) return Waves;
-                                if (lowerCode.includes('desertification')) return MountainSnow;
-                                if (lowerCode.includes('rmnch') || lowerCode.includes('maternal') || lowerCode.includes('child')) return Baby;
-                                if (lowerCode.includes('disaster') || lowerCode.includes('drr')) return AlertCircle;
-                                if (lowerCode.includes('disability')) return Heart;
-                                if (lowerCode.includes('nutrition')) return Droplets;
-                                if (lowerCode.includes('human_rights') || lowerCode.includes('rights')) return Scale;
-                                if (lowerCode.includes('peace') || lowerCode.includes('conflict')) return Shield;
-                                if (lowerCode.includes('rural')) return Building2;
-                                if (lowerCode.includes('participatory')) return Users;
-                              }
-
-                              return Leaf; // Default icon (more neutral than Wrench)
-                            };
-
-                            const IconComponent = getIconForMarker(
-                              marker.policy_marker_details?.iati_code,
-                              marker.policy_marker_details?.code
-                            );
-                            
-                            const markerUuid = marker.policy_marker_id || marker.policy_marker_details?.uuid || '';
-                            
-                            return (
-                              <TooltipProvider key={marker.policy_marker_id || index}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Link
-                                      href={`/policy-markers/${markerUuid}`}
-                                      className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border border-border hover:bg-muted transition-colors cursor-pointer"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <IconComponent className="w-4 h-4 text-muted-foreground" />
-                                    </Link>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs font-medium">{marker.policy_marker_details?.name || 'Policy Marker'}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {marker.significance === 0 ? 'Not targeted' : 
-                                       marker.significance === 1 ? 'Significant' : 
-                                       marker.significance === 2 ? 'Principal' : 
-                                       marker.significance === 3 ? 'Most funding' : 
-                                       marker.significance === 4 ? 'Primary objective' : 
-                                       'Unknown'}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">Click to view profile</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    </div>
-                  </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            <Card className="border-border bg-card">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                  <div>
-                      <LabelWithHelp 
-                        label="Total Budgeted" 
-                        helpText="The total amount of funds allocated for this activity across all budget periods. This represents the planned spending for the entire activity lifecycle."
-                      />
-                                               <p className="text-lg font-bold text-foreground">
-                          ${formatCompactNumber(budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => {
-                            // Use usd_value if available (primary source)
-                            if (b.usd_value != null && b.usd_value > 0) {
-                              return sum + parseFloat(b.usd_value);
-                            }
-                            // If currency is USD, use the value directly
-                            if (b.currency === 'USD' && b.value && b.value > 0) {
-                              return sum + parseFloat(b.value);
-                            }
-                            // For non-USD budgets without usd_value, they should have been converted
-                            // when saved, but if missing, return sum as-is (0 contribution)
-                            return sum;
-                          }, 0) : 0)}
-                         </p>
-                  </div>
-                    <div className="border-t border-border pt-2">
-                    <LabelWithHelp 
-                      label="Total Committed" 
-                      helpText="The total amount of funds promised or obligated for this activity from commitments (IATI transaction type 2). This represents what has been pledged but may not yet be disbursed."
-                    />
-                    <p className="text-lg font-bold text-foreground">
-                      ${formatCompactNumber(financials.totalCommitment)}
-                    </p>
-                  </div>
-                  </div>
-                  <DollarSign className="h-6 w-6 text-muted-foreground flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-card">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                    <div>
-                      <LabelWithHelp
-                        label="Total Spent"
-                        helpText="The total amount of funds disbursed and expended (IATI transaction types 3 + 4). This represents the combined total of money paid out to implementers and money spent on project activities."
-                      />
-                      <p className="text-lg font-bold text-foreground">
-                      ${formatCompactNumber(financials.totalDisbursement + financials.totalExpenditure)}
-                    </p>
-                  </div>
-                    <div className="border-t border-border pt-2">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <p className="text-muted-foreground">Disbursed</p>
-                          <p className="font-semibold text-foreground">${formatCompactNumber(financials.totalDisbursement)}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Expended</p>
-                          <p className="font-semibold text-foreground">${formatCompactNumber(financials.totalExpenditure)}</p>
-                        </div>
-                      </div>
-                  </div>
-                  </div>
-                  <Wallet className="h-6 w-6 text-muted-foreground flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-card">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                  <div>
-                      <LabelWithHelp
-                        label="Percentage of Committed Funds Spent"
-                        helpText="This metric shows how much of the formal, committed funding for the activity has been utilized. The calculation compares actual spending against the committed funds: (Disbursed Funds + Expended Funds) / Committed Funds × 100"
-                      />
-                      <p className="text-lg font-bold text-foreground">{financialDeliveryPercent}%</p>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full">
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(financialDeliveryPercent, 100)}%`, backgroundColor: '#4c5568' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="border-t border-border pt-2">
-                    <LabelWithHelp
-                      label="Percentage of Budgeted Funds Spent"
-                      helpText="This figure shows what portion of the total planned budget has been converted into actual spending. The calculation compares actual spending against the planned budget: (Disbursed Funds + Expended Funds) / Budgeted Funds × 100"
-                    />
-                    <p className="text-lg font-bold text-foreground">
-                      {implementationVsPlanPercent}%
-                    </p>
-                  </div>
-                  
-                    {/* Progress Bar */}
-                    <div className="w-full">
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${Math.min(implementationVsPlanPercent, 100)}%`, backgroundColor: '#4c5568' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+          {/* ── Charts Row ──────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Budget by Year Chart */}
             <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-xs font-semibold text-foreground">Budget by Year</CardTitle>
+                  <CardTitle className="text-helper font-semibold text-foreground">Budget by Year</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
                   />
@@ -2690,7 +1643,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetData.length === 0) {
                     return (
-                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-helper">
                         <p>No budget data</p>
                 </div>
                     )
@@ -2699,7 +1652,7 @@ export default function ActivityDetailPage() {
                   if (budgetYearView === 'table') {
                     return (
                       <div className="flex-1 min-h-24 overflow-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -2758,7 +1711,7 @@ export default function ActivityDetailPage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                    <table className="text-xs w-full border-collapse">
+                                    <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -2800,7 +1753,7 @@ export default function ActivityDetailPage() {
             <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-xs font-semibold text-foreground">Planned vs Actual</CardTitle>
+                  <CardTitle className="text-helper font-semibold text-foreground">Planned vs Actual</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
                     side="top"
@@ -2934,7 +1887,7 @@ export default function ActivityDetailPage() {
 
                   if (chartData.length === 0) {
                     return (
-                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-helper">
                         <p>No financial data</p>
                 </div>
                     )
@@ -2943,7 +1896,7 @@ export default function ActivityDetailPage() {
                   if (disbursementProgressView === 'table') {
                     return (
                       <div className="flex-1 min-h-24 overflow-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -3012,7 +1965,7 @@ export default function ActivityDetailPage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                    <table className="text-xs w-full border-collapse">
+                                    <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -3079,7 +2032,7 @@ export default function ActivityDetailPage() {
             {/* Finance Type Breakdown */}
             <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="text-xs font-semibold text-foreground">Finance Types</CardTitle>
+                <CardTitle className="text-helper font-semibold text-foreground">Finance Types</CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <FinanceTypeDonut 
@@ -3094,44 +2047,96 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
-                <TabsTrigger value="finances" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Finances
-                </TabsTrigger>
-                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Financial Analytics
-                </TabsTrigger>
-                <TabsTrigger value="sectors" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Sectors
-                </TabsTrigger>
-                <TabsTrigger value="partnerships" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Partnerships
-                </TabsTrigger>
-                <TabsTrigger value="geography" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Locations
-                </TabsTrigger>
-                <TabsTrigger value="results" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Results
-                </TabsTrigger>
-                <TabsTrigger value="sdg" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  SDG Alignment
-                </TabsTrigger>
-                <TabsTrigger value="policy-markers" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Policy Markers
-                </TabsTrigger>
-                <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Activity Library
-                </TabsTrigger>
-                <TabsTrigger value="related-activities" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Related Activities
-                </TabsTrigger>
-                <TabsTrigger value="contacts" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Contacts
-                </TabsTrigger>
-                <TabsTrigger value="discussion" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  Discussion
-                </TabsTrigger>
-              </TabsList>
+              {(() => {
+                // Two-tier tab structure: groups (top) + sub-tabs (below).
+                // Sub-tabs not in the current group are hidden but still rendered
+                // so Radix Tabs keeps working and TabsContent lookups remain stable.
+                const TAB_GROUPS: Array<{ id: string; label: string; tabs: Array<{ value: string; label: string }> }> = [
+                  { id: "overview", label: "Overview", tabs: [{ value: "overview", label: "Overview" }] },
+                  { id: "money", label: "Money", tabs: [
+                    { value: "finances", label: "Finances" },
+                    { value: "financial-analytics", label: "Analytics" },
+                  ]},
+                  { id: "scope", label: "Scope", tabs: [
+                    { value: "sectors", label: "Sectors" },
+                    { value: "geography", label: "Locations" },
+                    { value: "sdg", label: "SDGs" },
+                    { value: "policy-markers", label: "Policy Markers" },
+                  ]},
+                  { id: "people", label: "People", tabs: [
+                    { value: "partnerships", label: "Partners" },
+                    { value: "contacts", label: "Contacts" },
+                  ]},
+                  { id: "delivery", label: "Delivery", tabs: [
+                    { value: "results", label: "Results" },
+                    { value: "related-activities", label: "Related" },
+                    { value: "library", label: "Library" },
+                    { value: "discussion", label: "Discussion" },
+                  ]},
+                ];
+                const activeGroup = TAB_GROUPS.find(g => g.tabs.some(t => t.value === activeTab)) ?? TAB_GROUPS[0];
+                return (
+                  <>
+                    {/* Tier 1: group tabs */}
+                    <div className="flex items-center gap-1 border-b mb-3">
+                      {TAB_GROUPS.map((g) => {
+                        const isActive = g.id === activeGroup.id;
+                        return (
+                          <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => handleTabChange(g.tabs[0].value)}
+                            className={cn(
+                              "px-4 py-2.5 text-body font-medium transition-colors border-b-2 -mb-px",
+                              isActive
+                                ? "border-foreground text-foreground"
+                                : "border-transparent text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {g.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Tier 2: sub-tabs (only shown if more than one) */}
+                    <TabsList className={cn(
+                      "p-1 h-auto bg-background gap-1 mb-6 flex items-center overflow-x-auto scrollbar-none",
+                      activeGroup.tabs.length <= 1 && "hidden"
+                    )}>
+                      {TAB_GROUPS.flatMap(g => g.tabs).map((t) => {
+                        const inGroup = activeGroup.tabs.some(sub => sub.value === t.value);
+                        return (
+                          <TabsTrigger
+                            key={t.value}
+                            value={t.value}
+                            className={cn(
+                              "data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm whitespace-nowrap",
+                              !inGroup && "hidden"
+                            )}
+                          >
+                            {t.label}
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </>
+                );
+              })()}
+
+              {/* Overview Tab - new summary landing */}
+              <TabsContent value="overview" className="p-6 border-0">
+                <ActivityOverviewTab
+                  activity={activity}
+                  financials={financials}
+                  totalBudgeted={totalBudgeted}
+                  totalPlannedDisbursements={totalPlannedDisbursements}
+                  participatingOrgs={participatingOrgs}
+                  countryAllocations={countryAllocations}
+                  regionAllocations={regionAllocations}
+                  sdgMappings={sdgMappings}
+                  onNavigate={handleTabChange}
+                />
+              </TabsContent>
 
               {/* Finances Tab - Consolidated (kept mounted to preserve data) */}
               <TabsContent value="finances" className="p-6 border-0" forceMount style={{ display: activeTab === "finances" ? undefined : "none" }}>
@@ -3152,7 +2157,7 @@ export default function ActivityDetailPage() {
                           {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-foreground">Budgets</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {budgets !== undefined && budgets.length === 0 ? 'No budgets recorded' : 'Activity budget allocations by period'}
                             </p>
                           </div>
@@ -3204,7 +2209,7 @@ export default function ActivityDetailPage() {
                           {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-foreground">Planned Disbursements</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'No planned disbursements recorded' : 'Scheduled future disbursements'}
                             </p>
                           </div>
@@ -3256,7 +2261,7 @@ export default function ActivityDetailPage() {
                           {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-foreground">Transactions</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {activity.transactions !== undefined && activity.transactions.length === 0 ? 'No transactions recorded' : 'Commitments, disbursements, and expenditures'}
                             </p>
                           </div>
@@ -3371,7 +2376,7 @@ export default function ActivityDetailPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('group')}
-                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'group' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                                    className={cn("h-7 text-helper px-3", sectorBarGroupingMode === 'group' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sector Category
                                   </Button>
@@ -3379,7 +2384,7 @@ export default function ActivityDetailPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('category')}
-                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'category' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                                    className={cn("h-7 text-helper px-3", sectorBarGroupingMode === 'category' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sector
                                   </Button>
@@ -3387,7 +2392,7 @@ export default function ActivityDetailPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('sector')}
-                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'sector' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                                    className={cn("h-7 text-helper px-3", sectorBarGroupingMode === 'sector' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sub Sector
                                   </Button>
@@ -3491,7 +2496,6 @@ export default function ActivityDetailPage() {
                               }))}
                               financialData={sectorFinancialData}
                               onSegmentClick={(code) => {
-                                console.log('Sector clicked:', code);
                               }}
                               showControls={false}
                               defaultView={sectorViewMode}
@@ -3762,12 +2766,12 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-body text-muted-foreground">
                                     Reporting
                                   </span>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-body text-muted-foreground">
                                     {reportingOrg.organisation_type
                                       ? getOrganizationTypeName(reportingOrg.organisation_type)
                                       : <span className="text-muted-foreground">Not set</span>
@@ -3776,9 +2780,9 @@ export default function ActivityDetailPage() {
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
                                   {reportingOrg.country ? (
-                                    <span className="text-sm text-muted-foreground">{reportingOrg.country}</span>
+                                    <span className="text-body text-muted-foreground">{reportingOrg.country}</span>
                                   ) : (
-                                    <span className="text-muted-foreground text-sm">—</span>
+                                    <span className="text-muted-foreground text-body">—</span>
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -3894,12 +2898,12 @@ export default function ActivityDetailPage() {
                                     </div>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <span className="text-sm text-muted-foreground">
+                                    <span className="text-body text-muted-foreground">
                                       {getOrganizationRoleName(org.iati_role_code || getRoleCodeFromType(org.role_type))}
                                     </span>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <span className="text-sm text-muted-foreground">
+                                    <span className="text-body text-muted-foreground">
                                       {org.org_type || org.organization?.Organisation_Type_Code
                                         ? getOrganizationTypeName(org.org_type || org.organization?.Organisation_Type_Code || '')
                                         : <span className="text-muted-foreground">Not set</span>
@@ -3908,9 +2912,9 @@ export default function ActivityDetailPage() {
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
                                     {org.organization?.country ? (
-                                      <span className="text-sm text-muted-foreground">{org.organization.country}</span>
+                                      <span className="text-body text-muted-foreground">{org.organization.country}</span>
                                     ) : (
-                                      <span className="text-muted-foreground text-sm">—</span>
+                                      <span className="text-muted-foreground text-body">—</span>
                                     )}
                                   </TableCell>
                                 </TableRow>
@@ -4051,7 +3055,7 @@ export default function ActivityDetailPage() {
                                 }}
                               >
                                 <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
-                                <span className={`text-sm font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
+                                <span className={`text-body font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
                                   {label}
                                 </span>
                               </div>
@@ -4569,15 +3573,15 @@ export default function ActivityDetailPage() {
                                         <TableCell className="font-medium">
                                           {location.location_name || 'Unnamed Location'}
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm">
+                                        <TableCell className="text-muted-foreground text-body">
                                           {location.latitude && location.longitude 
                                             ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
                                             : 'N/A'}
                                         </TableCell>
-                                        <TableCell className="text-sm">
+                                        <TableCell className="text-body">
                                           {formatAddress()}
                                         </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                        <TableCell className="text-body text-muted-foreground max-w-[200px] truncate">
                                           {location.location_description || location.description || '-'}
                                         </TableCell>
                                       </TableRow>
@@ -4590,7 +3594,7 @@ export default function ActivityDetailPage() {
                         ) : (
                           <div className="text-center py-12">
                             <img src="/images/empty-pushpin.webp" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
-                            <h3 className="text-lg font-medium mb-2">No locations</h3>
+                            <h3 className="text-base font-medium mb-2">No locations</h3>
                             <p className="text-muted-foreground">Add locations to show where this activity takes place.</p>
                           </div>
                         )}
@@ -4666,7 +3670,7 @@ export default function ActivityDetailPage() {
                         {/* Detailed SDG Explanations and Targets */}
                         {sdgMappings.some(m => m.notes || (m.sdgTarget || m.sdg_target)) && (
                           <div className="mt-8 pt-6 border-t border-border">
-                            <h4 className="text-sm font-semibold text-foreground mb-4">SDG Alignment Details</h4>
+                            <h4 className="text-body font-semibold text-foreground mb-4">SDG Alignment Details</h4>
                             <div className="grid gap-4">
                               {(() => {
                                 // Group mappings by goal
@@ -4706,13 +3710,13 @@ export default function ActivityDetailPage() {
                                             Goal {goal.id}: {goal.name}
                                           </h5>
                                           {data.notes && (
-                                            <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+                                            <p className="mt-1 text-body text-muted-foreground whitespace-pre-wrap">
                                               {data.notes}
                                             </p>
                                           )}
                                           {data.targets.length > 0 && (
                                             <div className="mt-2">
-                                              <p className="text-xs font-medium text-muted-foreground mb-1">Specific Targets:</p>
+                                              <p className="text-helper font-medium text-muted-foreground mb-1">Specific Targets:</p>
                                               <div className="flex flex-wrap gap-1.5">
                                                 {data.targets.map((targetId: string) => {
                                                   const target = SDG_TARGETS.find(t => t.id === targetId);
@@ -4720,12 +3724,12 @@ export default function ActivityDetailPage() {
                                                     <TooltipProvider key={targetId}>
                                                       <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                          <Badge variant="secondary" className="text-xs cursor-help">
+                                                          <Badge variant="secondary" className="text-helper cursor-help">
                                                             {targetId}
                                                           </Badge>
                                                         </TooltipTrigger>
                                                         <TooltipContent className="max-w-sm">
-                                                          <p className="text-sm">{target?.description || targetId}</p>
+                                                          <p className="text-body">{target?.description || targetId}</p>
                                                         </TooltipContent>
                                                       </Tooltip>
                                                     </TooltipProvider>

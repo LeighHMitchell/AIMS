@@ -59,7 +59,7 @@ export function ReferencesManager({
   };
 
   const handleDelete = async (referenceId: string) => {
-    if (await confirm({ title: 'Delete this reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this reference?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteReference(entityType, entityId, referenceId);
       if (success) {
         onUpdate();
@@ -75,7 +75,7 @@ export function ReferencesManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+        <Label className="text-body font-medium text-foreground flex items-center gap-2">
           <Link2 className="h-4 w-4" />
           External References
         </Label>
@@ -84,7 +84,7 @@ export function ReferencesManager({
             size="sm"
             variant="outline"
             onClick={() => setShowAddForm(true)}
-            className="text-xs"
+            className="text-helper"
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Reference
@@ -94,9 +94,9 @@ export function ReferencesManager({
 
       {/* Add Reference Form */}
       {showAddForm && !readOnly && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded border space-y-3">
+        <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-900">Add External Reference</h4>
+            <h4 className="text-body font-medium text-foreground">Add External Reference</h4>
             <Button
               type="button"
               variant="ghost"
@@ -108,17 +108,17 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Result Vocabulary <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Result Vocabulary <RequiredDot /></Label>
             <Select
               value={formData.vocabulary}
               onValueChange={(value) => setFormData(prev => ({ ...prev, vocabulary: value }))}
             >
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-body">
                 <SelectValue placeholder="Select result vocabulary" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(REFERENCE_VOCABULARIES).map(([code, label]) => (
-                  <SelectItem key={code} value={code} className="text-sm">
+                  <SelectItem key={code} value={code} className="text-body">
                     {code} - {label}
                   </SelectItem>
                 ))}
@@ -127,36 +127,36 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Code <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Code <RequiredDot /></Label>
             <Input
               value={formData.code}
               onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
               placeholder="Enter code"
               required
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Vocabulary URI</Label>
+            <Label className="text-helper text-foreground">Vocabulary URI</Label>
             <Input
               type="url"
               value={formData.vocabulary_uri}
               onChange={(e) => setFormData(prev => ({ ...prev, vocabulary_uri: e.target.value }))}
               placeholder="https://example.com/vocabulary"
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           {entityType === 'indicator' && (
             <div className="space-y-2">
-              <Label className="text-xs text-gray-700">Indicator URI</Label>
+              <Label className="text-helper text-foreground">Indicator URI</Label>
               <Input
                 type="url"
                 value={formData.indicator_uri}
                 onChange={(e) => setFormData(prev => ({ ...prev, indicator_uri: e.target.value }))}
                 placeholder="https://example.com/indicator"
-                className="text-sm"
+                className="text-body"
               />
             </div>
           )}
@@ -166,7 +166,7 @@ export function ReferencesManager({
               type="submit"
               size="sm"
               disabled={loading || !formData.vocabulary || !formData.code}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+              className="bg-muted hover:bg-gray-300 text-foreground border border-gray-400"
             >
               Add Reference
             </Button>
@@ -186,15 +186,15 @@ export function ReferencesManager({
       {references.length > 0 && (
         <div className="space-y-2">
           {references.map((ref) => (
-            <div key={ref.id} className="flex items-center justify-between bg-white p-3 rounded border text-sm">
+            <div key={ref.id} className="flex items-center justify-between bg-white p-3 rounded border text-body">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <Link2 className="h-4 w-4 text-gray-500" />
+                  <Link2 className="h-4 w-4 text-muted-foreground" />
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                       {ref.vocabulary}
                     </span>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-foreground">
                       - {getVocabularyLabel(ref.vocabulary)}
                     </span>
                   </div>
@@ -203,7 +203,7 @@ export function ReferencesManager({
                   </span>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-2 ml-6 text-xs text-gray-600">
+                <div className="flex flex-wrap items-center gap-2 ml-6 text-helper text-muted-foreground">
                   {ref.vocabulary_uri && (
                     <a
                       href={ref.vocabulary_uri}
@@ -233,9 +233,9 @@ export function ReferencesManager({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(ref.id)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-3 w-3 text-red-500" />
+                  <Trash2 className="h-3 w-3 text-destructive" />
                 </Button>
               )}
             </div>
@@ -244,7 +244,7 @@ export function ReferencesManager({
       )}
 
       {references.length === 0 && !showAddForm && (
-        <p className="text-xs text-gray-500 italic">No external references</p>
+        <p className="text-helper text-muted-foreground italic">No external references</p>
       )}
       <ConfirmDialog />
     </div>

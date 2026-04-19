@@ -155,12 +155,12 @@ export function AddressSearch({
     <div className={cn("space-y-4", className)}>
       {/* Address Search */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700">
+        <Label className="text-body font-medium text-foreground">
           Search Address
         </Label>
         <div className="address-search-container relative">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               value={searchQuery}
@@ -170,24 +170,24 @@ export function AddressSearch({
               className="pl-9 pr-10"
             />
             {(isSearching || (searchQuery.length >= 3 && !showDropdown)) && (
-              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
 
           {/* Search Results Dropdown */}
           {showDropdown && searchResults.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-60 overflow-auto">
               {searchResults.map((result) => (
                 <button
                   key={result.place_id}
                   type="button"
                   onClick={() => handleAddressSelect(result)}
-                  className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-start gap-2 border-b border-gray-100 last:border-b-0"
+                  className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-start gap-2 border-b border-border last:border-b-0"
                   disabled={disabled}
                 >
-                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 truncate">
+                    <p className="text-body text-foreground truncate">
                       {result.display_name}
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export function AddressSearch({
         
         {/* Address Line 1 */}
         <div>
-          <Label htmlFor="addressLine1" className="text-sm text-gray-600">
+          <Label htmlFor="addressLine1" className="text-body text-muted-foreground">
             Address Line 1
           </Label>
           <Input
@@ -221,7 +221,7 @@ export function AddressSearch({
 
         {/* Address Line 2 */}
         <div>
-          <Label htmlFor="addressLine2" className="text-sm text-gray-600">
+          <Label htmlFor="addressLine2" className="text-body text-muted-foreground">
             Address Line 2
           </Label>
           <Input
@@ -238,7 +238,7 @@ export function AddressSearch({
         {/* City and State */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="city" className="text-sm text-gray-600">
+            <Label htmlFor="city" className="text-body text-muted-foreground">
               City
             </Label>
             <Input
@@ -252,7 +252,7 @@ export function AddressSearch({
             />
           </div>
           <div>
-            <Label htmlFor="state" className="text-sm text-gray-600">
+            <Label htmlFor="state" className="text-body text-muted-foreground">
               State/Province
             </Label>
             <Input
@@ -270,7 +270,7 @@ export function AddressSearch({
         {/* Country and Postal Code */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="country" className="text-sm text-gray-600">
+            <Label htmlFor="country" className="text-body text-muted-foreground">
               Country
             </Label>
             <Input
@@ -284,7 +284,7 @@ export function AddressSearch({
             />
           </div>
           <div>
-            <Label htmlFor="postalCode" className="text-sm text-gray-600">
+            <Label htmlFor="postalCode" className="text-body text-muted-foreground">
               Postal Code
             </Label>
             <Input

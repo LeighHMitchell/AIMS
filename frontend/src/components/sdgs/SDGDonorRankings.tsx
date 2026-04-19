@@ -59,7 +59,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
 
   if (donors.length === 0) {
     return (
-      <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
+      <div className="h-24 flex items-center justify-center text-muted-foreground text-helper">
         No donor data available
       </div>
     )
@@ -75,7 +75,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
               <button
                 key={m}
                 onClick={() => setMetric(m)}
-                className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
+                className={`text-helper px-2.5 py-1 rounded-md transition-colors ${
                   metric === m
                     ? 'bg-foreground text-white'
                     : 'bg-muted text-muted-foreground hover:bg-muted'
@@ -85,7 +85,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
               </button>
             ))}
           </div>
-          <Button variant="ghost" size="sm" onClick={handleExport} className="text-xs h-7">
+          <Button variant="ghost" size="sm" onClick={handleExport} className="text-helper h-7">
             <Download className="h-3 w-3 mr-1" />
             CSV
           </Button>
@@ -117,8 +117,8 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
                   const data = payload[0].payload
                   return (
                     <div className={TOOLTIP_CLASSES}>
-                      <p className="font-medium text-xs text-foreground mb-1">{data.fullName}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-medium text-helper text-foreground mb-1">{data.fullName}</p>
+                      <p className="text-helper text-muted-foreground">
                         {metric === 'activities' ? `${data.value} activities` : formatCurrencyShort(data.value)}
                       </p>
                     </div>
@@ -135,7 +135,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
       {/* Ranked Table */}
       {!compact && (
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-helper">
             <thead className="bg-surface-muted">
               <tr className="border-b border-border">
                 <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>

@@ -4,7 +4,6 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  console.log('[TEST] Testing Supabase Auth configuration');
   
   try {
     const supabase = getSupabaseAdmin();
@@ -16,7 +15,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Test 1: Check if we can list users
-    console.log('[TEST] Test 1: Listing users...');
     const { data: users, error: listError } = await supabase.auth.admin.listUsers({
       page: 1,
       perPage: 1
@@ -31,12 +29,10 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[TEST] Successfully listed users');
 
     // Test 2: Check if email changes are enabled
     const testUserId = request.nextUrl.searchParams.get('userId');
     if (testUserId) {
-      console.log('[TEST] Test 2: Checking user by ID:', testUserId);
       
       const { data: userCheck, error: userError } = await supabase.auth.admin.getUserById(testUserId);
       

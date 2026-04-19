@@ -75,42 +75,35 @@ export function DefaultFieldsAutosave({
   // Handle field changes with autosave
   const handleAidTypeChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Aid type changed to:', stringValue);
     onDefaultsChange?.('defaultAidType', stringValue);
     aidTypeAutosave.triggerFieldSave(stringValue);
   };
 
   const handleFinanceTypeChange = (value: string) => {
-    console.log('[DefaultFields] Finance type changed to:', value);
     onDefaultsChange?.('defaultFinanceType', value);
     financeTypeAutosave.triggerFieldSave(value);
   };
 
   const handleCurrencyChange = (value: string | null) => {
     const stringValue = value || 'USD';
-    console.log('[DefaultFields] Currency changed to:', stringValue);
     onDefaultsChange?.('defaultCurrency', stringValue);
     currencyAutosave.triggerFieldSave(stringValue);
   };
 
   const handleTiedStatusChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Tied status changed to:', stringValue);
     onDefaultsChange?.('defaultTiedStatus', stringValue);
     tiedStatusAutosave.triggerFieldSave(stringValue);
   };
 
   const handleFlowTypeChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Flow type changed to:', stringValue);
     onDefaultsChange?.('defaultFlowType', stringValue);
     flowTypeAutosave.triggerFieldSave(stringValue);
   };
 
   const handleDisbursementChannelChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Disbursement channel changed to:', stringValue);
-    console.log('[DefaultFields] Disbursement channel autosave state:', disbursementChannelAutosave.state);
     onDefaultsChange?.('defaultDisbursementChannel', stringValue);
     disbursementChannelAutosave.triggerFieldSave(stringValue);
   };
@@ -185,9 +178,9 @@ export function DefaultFieldsAutosave({
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="border-b border-gray-200 pb-4">
+      <div className="border-b border-border pb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-medium text-gray-900">Default Values</h3>
+          <h3 className="text-lg font-medium text-foreground">Default Values</h3>
           <HelpTextTooltip content="These defaults will be automatically applied to new transactions in this activity." />
         </div>
       </div>
@@ -200,7 +193,7 @@ export function DefaultFieldsAutosave({
             {/* Default Aid Type */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Default Aid Type
                 </label>
                 <HelpTextTooltip content="Specifies the type of assistance being provided, such as project-type interventions, budget support, or debt relief. This value applies to all financial transactions under an activity unless specified otherwise." />
@@ -217,14 +210,14 @@ export function DefaultFieldsAutosave({
                 placeholder="Select default aid type"
               />
               {aidTypeAutosave.state.error && (
-                <p className="text-xs text-red-600">Failed to save: {aidTypeAutosave.state.error.message}</p>
+                <p className="text-helper text-destructive">Failed to save: {aidTypeAutosave.state.error.message}</p>
               )}
             </div>
 
             {/* Default Currency */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Default Currency
                 </label>
                 <HelpTextTooltip content="Indicates the ISO 4217 three-letter currency code used for all financial values in a report. If no default is set, each monetary value must have its own currency." />
@@ -242,7 +235,7 @@ export function DefaultFieldsAutosave({
                 className="w-full"
               />
               {currencyAutosave.state.error && (
-                <p className="text-xs text-red-600">Failed to save: {currencyAutosave.state.error.message}</p>
+                <p className="text-helper text-destructive">Failed to save: {currencyAutosave.state.error.message}</p>
               )}
             </div>
           </div>
@@ -252,7 +245,7 @@ export function DefaultFieldsAutosave({
             {/* Default Flow Type */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Default Flow Type
                 </label>
                 <HelpTextTooltip content="Classifies the resource flow, for example, as concessional aid, other official flows, or private development finance. This setting applies by default across transactions unless a different flow type is recorded." />
@@ -269,14 +262,14 @@ export function DefaultFieldsAutosave({
                 placeholder="Select default flow type"
               />
               {flowTypeAutosave.state.error && (
-                <p className="text-xs text-red-600">Failed to save: {flowTypeAutosave.state.error.message}</p>
+                <p className="text-helper text-destructive">Failed to save: {flowTypeAutosave.state.error.message}</p>
               )}
             </div>
 
             {/* Default Tied Status */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Default Tied Status
                 </label>
                 <HelpTextTooltip content="Shows whether the aid is untied, tied, or partially tied. This default can be overridden at the transaction level, but ensures clarity on restrictions that may apply to funding." />
@@ -295,7 +288,7 @@ export function DefaultFieldsAutosave({
                 className="w-full"
               />
               {tiedStatusAutosave.state.error && (
-                <p className="text-xs text-red-600">Failed to save: {tiedStatusAutosave.state.error.message}</p>
+                <p className="text-helper text-destructive">Failed to save: {tiedStatusAutosave.state.error.message}</p>
               )}
             </div>
           </div>
@@ -305,7 +298,7 @@ export function DefaultFieldsAutosave({
             {/* Default Finance Type */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Default Finance Type
                 </label>
                 <HelpTextTooltip content="Defines the financial mechanism being used, such as grants, loans, equity, or debt relief. This value is set as the default for all financial transactions in an activity." />
@@ -323,14 +316,14 @@ export function DefaultFieldsAutosave({
                 disabled={financeTypeAutosave.state.isSaving}
               />
               {financeTypeAutosave.state.error && (
-                <p className="text-xs text-red-600">Failed to save: {financeTypeAutosave.state.error.message}</p>
+                <p className="text-helper text-destructive">Failed to save: {financeTypeAutosave.state.error.message}</p>
               )}
             </div>
 
             {/* Default Disbursement Channel */}
             <div className="space-y-2 pb-12">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Default Disbursement Channel
                 </label>
                 <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies. This provides clarity on how resources reach the implementing body." />
@@ -349,7 +342,7 @@ export function DefaultFieldsAutosave({
                 className="w-full"
               />
               {disbursementChannelAutosave.state.error && (
-                <p className="text-xs text-red-600">Failed to save: {disbursementChannelAutosave.state.error.message}</p>
+                <p className="text-helper text-destructive">Failed to save: {disbursementChannelAutosave.state.error.message}</p>
               )}
             </div>
           </div>
@@ -427,7 +420,7 @@ export function DefaultFieldsAutosave({
 
               {/* Override Default Modality */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-body font-medium text-foreground">
                   Override Default Modality
                 </label>
                 <div className="flex items-center gap-2">

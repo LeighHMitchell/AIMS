@@ -100,7 +100,6 @@ export default function ForwardSpendingSurveyTab({
   const fetchFssData = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[FSS Tab] Fetching FSS for activity:', activityId);
 
       const response = await apiFetch(`/api/activities/${activityId}/fss`);
       if (!response.ok) {
@@ -112,7 +111,6 @@ export default function ForwardSpendingSurveyTab({
       if (data) {
         setFss(data);
         setForecasts(data.forecasts || []);
-        console.log('[FSS Tab] Loaded FSS with', data.forecasts?.length || 0, 'forecasts');
       } else {
         setFss(null);
         setForecasts([]);
@@ -140,7 +138,6 @@ export default function ForwardSpendingSurveyTab({
   useEffect(() => {
     if (onFssChangeRef.current && !loading) {
       const count = forecasts.length > 0 ? 1 : 0;
-      console.log('[FSS Tab] Notifying parent with forecast count:', count);
       onFssChangeRef.current(count);
     }
   }, [forecasts, loading]);
@@ -165,7 +162,6 @@ export default function ForwardSpendingSurveyTab({
   const saveFss = async (updatedFss: Partial<ForwardSpendingSurvey>) => {
     try {
       setSavingFss(true);
-      console.log('[FSS Tab] Saving FSS:', updatedFss);
 
       const response = await apiFetch(`/api/activities/${activityId}/fss`, {
         method: 'PUT',
@@ -196,7 +192,7 @@ export default function ForwardSpendingSurveyTab({
 
   // Delete FSS
   const deleteFss = async () => {
-    if (!(await confirm({ title: 'Delete Forward Spending Survey?', description: 'This will remove all forecasts. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete Forward Spending Survey?', description: 'This will remove all forecasts. This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' }))) {
       return;
     }
 
@@ -454,13 +450,15 @@ export default function ForwardSpendingSurveyTab({
 
   // Delete forecast
   const deleteForecast = async (forecastId: string) => {
-    if (!(await confirm({ title: 'Delete this forecast?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete this forecast?', description: "The forecast will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' }))) {
       return;
     }
 
+    const snapshot = forecasts.find(f => f.id === forecastId);
+
     try {
       setDeleteLoading(forecastId);
-      
+
       const response = await apiFetch(`/api/fss/forecasts?id=${forecastId}`, {
         method: 'DELETE'
       });
@@ -470,10 +468,35 @@ export default function ForwardSpendingSurveyTab({
       }
 
       setForecasts(prev => prev.filter(f => f.id !== forecastId));
-      toast.success('Forecast deleted');
+      toast.success(`Removed ${snapshot?.forecast_year || ''} forecast`.trim(), snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              const res = await apiFetch(`/api/fss/forecasts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  activity_id: activityId,
+                  forecast_year: snapshot.forecast_year,
+                  amount: snapshot.amount,
+                  currency: snapshot.currency,
+                  value_date: (snapshot as any).value_date,
+                }),
+              });
+              if (!res.ok) throw new Error('restore failed');
+              const { forecast: restored } = await res.json();
+              setForecasts(prev => [...prev, restored || snapshot].sort((a: any, b: any) => a.forecast_year - b.forecast_year));
+              toast.success('Forecast restored');
+            } catch {
+              toast.error("Couldn't restore the forecast. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
     } catch (err) {
       console.error('[FSS Tab] Error deleting forecast:', err);
-      toast.error('Failed to delete forecast');
+      toast.error("Couldn't remove the forecast. Please try again in a moment.");
     } finally {
       setDeleteLoading(null);
     }
@@ -537,7 +560,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="space-y-2">
               <Label htmlFor="extraction_date" className="flex items-center gap-2">
                 Extraction Date <RequiredDot />
-                <HelpTextTooltip content="Date when forecast data was extracted">
+                <HelpTextTooltip content="The date when you pulled these forward-spending figures from your planning system. This helps reviewers judge how current the forecasts are.">
                   <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </Label>
@@ -558,7 +581,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="space-y-2">
               <Label htmlFor="priority" className="flex items-center gap-2">
                 Priority Level
-                <HelpTextTooltip content="Moderate confidence in funding">
+                <HelpTextTooltip content="How confident you are that this forecast will actually happen. High means funding is already committed; Low means it's only tentatively planned.">
                   <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </Label>
@@ -583,7 +606,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="space-y-2">
               <Label htmlFor="phaseout_year" className="flex items-center gap-2">
                 Phaseout Year
-                <HelpTextTooltip content="Expected end year of funding">
+                <HelpTextTooltip content="The year funding for this activity is expected to stop. Leave blank if the activity is open-ended or funding continues indefinitely.">
                   <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </Label>
@@ -632,7 +655,7 @@ export default function ForwardSpendingSurveyTab({
           </div>
 
           {savingFss && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-body text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
             </div>
@@ -732,7 +755,7 @@ export default function ForwardSpendingSurveyTab({
                                 size="sm"
                                 onClick={() => openForecastModal(forecast)}
                               >
-                                <Pencil className="h-4 w-4 text-slate-500" />
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -743,7 +766,7 @@ export default function ForwardSpendingSurveyTab({
                                 {deleteLoading === forecast.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 )}
                               </Button>
                             </div>
@@ -764,7 +787,7 @@ export default function ForwardSpendingSurveyTab({
         <Card>
           <CardContent className="py-12 text-center">
             <img src="/images/empty-seed-packet.webp" alt="No Forward Spending Survey" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No Forward Spending Survey</h3>
+            <h3 className="text-base font-semibold mb-2">No Forward Spending Survey</h3>
             <p className="text-muted-foreground mb-6">
               Create a Forward Spending Survey to track multi-year forecast spending commitments.
             </p>
@@ -829,7 +852,7 @@ export default function ForwardSpendingSurveyTab({
                   </SelectContent>
                 </Select>
                 {fieldErrors.forecast_year && (
-                  <p className="text-sm text-red-500">{fieldErrors.forecast_year}</p>
+                  <p className="text-body text-destructive">{fieldErrors.forecast_year}</p>
                 )}
               </div>
 
@@ -847,7 +870,7 @@ export default function ForwardSpendingSurveyTab({
                   placeholder="0.00"
                 />
                 {fieldErrors.amount && (
-                  <p className="text-sm text-red-500">{fieldErrors.amount}</p>
+                  <p className="text-body text-destructive">{fieldErrors.amount}</p>
                 )}
               </div>
             </div>
@@ -873,7 +896,7 @@ export default function ForwardSpendingSurveyTab({
                   </SelectContent>
                 </Select>
                 {fieldErrors.currency && (
-                  <p className="text-sm text-red-500">{fieldErrors.currency}</p>
+                  <p className="text-body text-destructive">{fieldErrors.currency}</p>
                 )}
               </div>
 
@@ -888,7 +911,7 @@ export default function ForwardSpendingSurveyTab({
                   onChange={(e) => updateForecastField('value_date', e.target.value)}
                 />
                 {fieldErrors.value_date && (
-                  <p className="text-sm text-red-500">{fieldErrors.value_date}</p>
+                  <p className="text-body text-destructive">{fieldErrors.value_date}</p>
                 )}
               </div>
             </div>
@@ -898,7 +921,7 @@ export default function ForwardSpendingSurveyTab({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between min-h-[24px]">
-                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    <Label className="flex items-center gap-1.5 text-body font-medium">
                       Exchange Rate
                       <TooltipProvider>
                         <UITooltip>
@@ -906,14 +929,14 @@ export default function ForwardSpendingSurveyTab({
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p className="text-sm">The exchange rate used to convert the forecast value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                            <p className="text-body">The exchange rate used to convert the forecast value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
                           </TooltipContent>
                         </UITooltip>
                       </TooltipProvider>
                     </Label>
                     {modalForecast.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="fss_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                        <Label htmlFor="fss_exchange_rate_mode" className="text-helper text-muted-foreground cursor-pointer">
                           {modalExchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
@@ -959,18 +982,18 @@ export default function ForwardSpendingSurveyTab({
                       </Button>
                     )}
                     {modalExchangeRate != null && modalForecast.currency !== 'USD' && !isLoadingModalRate && (
-                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                      <span className="absolute right-10 top-2.5 text-helper text-muted-foreground select-all cursor-text">
                         1 {modalForecast.currency} = {modalExchangeRate.toFixed(6)} USD
                       </span>
                     )}
                   </div>
                   {modalRateError && (
-                    <p className="text-xs text-red-500">{modalRateError}</p>
+                    <p className="text-helper text-destructive">{modalRateError}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
-                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    <Label className="flex items-center gap-1.5 text-body font-medium">
                       USD Value
                       <TooltipProvider>
                         <UITooltip>
@@ -978,13 +1001,13 @@ export default function ForwardSpendingSurveyTab({
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p className="text-sm">The forecast value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                            <p className="text-body">The forecast value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
                           </TooltipContent>
                         </UITooltip>
                       </TooltipProvider>
                     </Label>
                   </div>
-                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-body">
                     {modalCalculatedUsdValue !== null ? (
                       <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                     ) : (

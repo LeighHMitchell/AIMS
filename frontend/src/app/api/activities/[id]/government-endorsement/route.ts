@@ -28,8 +28,6 @@ export async function GET(
       }
       if (error.code === '42P01') {
         // Table does not exist - return null instead of error
-        console.log('[AIMS API ERROR LOG] ===== ROUTE CALLED =====');
-        console.log('Error fetching government endorsement:', error);
         return NextResponse.json({ endorsement: null });
       }
       // Other errors
@@ -53,14 +51,12 @@ export async function POST(
 
   try {
     const { id } = await params;
-    console.log('[Government Endorsement API] POST called for activity:', id);
     if (!supabase) {
       console.error('[Government Endorsement API] Database connection failed');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
     const body = await request.json();
-    console.log('[Government Endorsement API] Request body:', JSON.stringify(body, null, 2));
 
     // Validate required fields
     const endorsementData = {
@@ -79,7 +75,6 @@ export async function POST(
     };
 
     // Use upsert to handle both insert and update
-    console.log('[Government Endorsement API] Upserting endorsement data:', JSON.stringify(endorsementData, null, 2));
 
     const result = await supabase
       .from('government_endorsements')
@@ -90,7 +85,6 @@ export async function POST(
       .select()
       .single();
 
-    console.log('[Government Endorsement API] Supabase result:', JSON.stringify(result, null, 2));
 
     const { data: endorsement, error } = result;
 
@@ -104,7 +98,6 @@ export async function POST(
       return NextResponse.json({ error: 'No data returned from database' }, { status: 500 });
     }
 
-    console.log('[Government Endorsement API] Endorsement saved successfully:', endorsement?.id);
 
     // Sync validation_status to the activity's submission_status
     // This ensures the Activity List "Validated" column and Pending Validations panel

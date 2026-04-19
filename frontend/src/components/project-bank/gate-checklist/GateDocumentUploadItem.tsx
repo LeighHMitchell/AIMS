@@ -70,7 +70,7 @@ export function GateDocumentUploadItem({
 
   if (uploadedName) {
     return (
-      <div className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-green-50 text-sm">
+      <div className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-green-50 text-body">
         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="truncate flex-1">{uploadedName}</span>
         <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] shrink-0" />
@@ -80,7 +80,7 @@ export function GateDocumentUploadItem({
 
   if (uploading) {
     return (
-      <div className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-muted/30 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-muted/30 text-body text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin shrink-0" />
         <span>Uploading...</span>
       </div>
@@ -92,7 +92,7 @@ export function GateDocumentUploadItem({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex items-center gap-2 py-1.5 px-2 rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 hover:bg-muted/30 transition-colors text-sm text-muted-foreground w-full text-left"
+        className="flex items-center gap-2 py-1.5 px-2 rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 hover:bg-muted/30 transition-colors text-body text-muted-foreground w-full text-left"
       >
         <Upload className="h-4 w-4 shrink-0" />
         <span>Upload {label}</span>
@@ -104,7 +104,7 @@ export function GateDocumentUploadItem({
         onChange={handleFileChange}
         className="hidden"
       />
-      {error && <p className="text-xs text-red-600 mt-1 px-2">{error}</p>}
+      {error && <p className="text-helper text-destructive mt-1 px-2">{error}</p>}
     </div>
   )
 }

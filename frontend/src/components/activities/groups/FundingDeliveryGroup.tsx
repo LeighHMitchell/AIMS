@@ -145,14 +145,8 @@ export function FundingDeliveryGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -257,7 +251,7 @@ export function FundingDeliveryGroup({
     <div className="funding-delivery-group space-y-0">
       {/* Show message if activity not created */}
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access funding and delivery sections.</p>
         </div>
       )}
@@ -273,7 +267,7 @@ export function FundingDeliveryGroup({
             style={{ minHeight: getSectionMinHeight('finances') }}
           >
             {isSectionActive('finances') || activeSections.has('finances') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="finances"
                   title={getSectionLabel('finances')}
@@ -302,11 +296,11 @@ export function FundingDeliveryGroup({
           <section
             id="planned-disbursements"
             ref={plannedDisbursementsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('planned-disbursements') }}
           >
             {isSectionActive('planned-disbursements') || activeSections.has('planned-disbursements') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="planned-disbursements"
                   title={getSectionLabel('planned-disbursements')}
@@ -331,11 +325,11 @@ export function FundingDeliveryGroup({
           <section
             id="budgets"
             ref={budgetsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('budgets') }}
           >
             {isSectionActive('budgets') || activeSections.has('budgets') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="budgets"
                   title={getSectionLabel('budgets')}

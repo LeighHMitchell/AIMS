@@ -67,7 +67,6 @@ export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTot
         Math.round((systemTotalsCache.staleAt - now) / 1000), 'seconds');
     } else {
       // Stale but within hard TTL: serve cached, refresh in background.
-      console.log('[System Totals] Returning stale cached totals; triggering background refresh');
       if (!backgroundRefreshInFlight) {
         backgroundRefreshInFlight = refreshSystemTotals().finally(() => {
           backgroundRefreshInFlight = null;
@@ -86,7 +85,6 @@ export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTot
 }
 
 async function refreshSystemTotals(): Promise<SystemTotals> {
-  console.log('[System Totals] Fetching fresh system totals...');
   const startTime = Date.now();
 
   const supabase = getSupabaseAdmin();
@@ -207,7 +205,6 @@ function getEmptyTotals(): SystemTotals {
  */
 export function invalidateSystemTotalsCache(): void {
   systemTotalsCache = null;
-  console.log('[System Totals] Cache invalidated');
 }
 
 /**

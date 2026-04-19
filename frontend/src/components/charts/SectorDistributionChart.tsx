@@ -54,7 +54,7 @@ export function SectorDistributionChart({ data }: SectorDistributionChartProps) 
     <div className="space-y-3">
       {sectors.map(([code, count]) => (
         <div key={code} className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-body">
             <span className="font-medium">{getSectorName(code)}</span>
             <span className="text-muted-foreground">{count} activities</span>
           </div>

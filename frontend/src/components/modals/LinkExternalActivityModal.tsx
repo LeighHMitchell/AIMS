@@ -97,11 +97,11 @@ export function LinkExternalActivityModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-gray-900">
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <ExternalLink className="h-5 w-5" />
             Link External Activity
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-muted-foreground">
             Link this activity to an external IATI activity that doesn't exist in your database yet.
           </DialogDescription>
         </DialogHeader>
@@ -117,9 +117,9 @@ export function LinkExternalActivityModal({
               placeholder="e.g., GB-GOV-1-12345"
               value={externalIatiId}
               onChange={(e) => setExternalIatiId(e.target.value)}
-              className="border-gray-300 focus:border-gray-500"
+              className="border-input focus:border-gray-500"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-helper text-muted-foreground">
               The unique IATI identifier of the related activity
             </p>
           </div>
@@ -132,9 +132,9 @@ export function LinkExternalActivityModal({
               placeholder="Enter activity title for reference"
               value={externalTitle}
               onChange={(e) => setExternalTitle(e.target.value)}
-              className="border-gray-300 focus:border-gray-500"
+              className="border-input focus:border-gray-500"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-helper text-muted-foreground">
               Optional title to help identify this activity
             </p>
           </div>
@@ -170,7 +170,7 @@ export function LinkExternalActivityModal({
               placeholder="Add additional context about this relationship..."
               value={narrative}
               onChange={(e) => setNarrative(e.target.value)}
-              className="resize-none border-gray-300 focus:border-gray-500"
+              className="resize-none border-input focus:border-gray-500"
               rows={3}
             />
           </div>
@@ -181,7 +181,7 @@ export function LinkExternalActivityModal({
             variant="outline"
             onClick={handleClose}
             disabled={saving}
-            className="border-gray-300 text-gray-700 hover:bg-muted"
+            className="border-input text-foreground hover:bg-muted"
           >
             Cancel
           </Button>

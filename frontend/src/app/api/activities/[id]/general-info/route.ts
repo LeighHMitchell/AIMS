@@ -22,8 +22,6 @@ export async function PATCH(
       );
     }
     
-    console.log('[AIMS API] PATCH /api/activities/[id]/general-info - Updating activity:', id);
-    console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection not configured' },
@@ -84,7 +82,6 @@ export async function PATCH(
       );
     }
 
-    console.log('[AIMS API] General info updated successfully for activity:', id);
     
     return NextResponse.json({
       success: true,

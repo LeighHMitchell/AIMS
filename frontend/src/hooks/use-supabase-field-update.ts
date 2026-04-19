@@ -61,7 +61,6 @@ export function useSupabaseFieldUpdate(
 
       // For activities table, use the API route to handle field mapping
       if (tableName === 'activities') {
-        console.log(`[SupabaseFieldUpdate] Using API route for activities table field update`);
         
         const response = await apiFetch('/api/activities/field', {
           method: 'POST',
@@ -81,10 +80,8 @@ export function useSupabaseFieldUpdate(
         }
 
         const result = await response.json();
-        console.log(`[SupabaseFieldUpdate] API update successful:`, result);
       } else {
         // For other tables, use direct Supabase update
-        console.log(`[SupabaseFieldUpdate] Using direct Supabase update for ${tableName}`);
         
         if (!supabase) {
           const error = new Error('Supabase client not available');
@@ -111,7 +108,6 @@ export function useSupabaseFieldUpdate(
           throw new Error(`Database update failed: ${error.message}`);
         }
 
-        console.log(`[SupabaseFieldUpdate] Successfully updated ${field}:`, data);
       }
 
       setState(prev => ({
@@ -196,7 +192,6 @@ export function useSupabaseFieldUpdate(
         throw new Error(`Database batch update failed: ${error.message}`);
       }
 
-      console.log(`[SupabaseFieldUpdate] Successfully updated multiple fields:`, data);
 
       setState(prev => ({
         ...prev,

@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
     const nowISO = now.toISOString();
-    console.log('[Cron Reminders] Running at', nowISO);
 
     // Find assignments that:
     // 1. Are pending or in_progress
@@ -68,7 +67,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (!assignmentsNeedingReminder || assignmentsNeedingReminder.length === 0) {
-      console.log('[Cron Reminders] No assignments need reminders');
       return NextResponse.json({
         success: true,
         message: 'No reminders to send',
@@ -76,7 +74,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Cron Reminders] Checking', assignmentsNeedingReminder.length, 'assignments');
 
     // Filter to assignments where deadline is within reminder_days
     const assignmentsToRemind = assignmentsNeedingReminder.filter((a: any) => {
@@ -91,7 +88,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (assignmentsToRemind.length === 0) {
-      console.log('[Cron Reminders] No assignments within reminder window');
       return NextResponse.json({
         success: true,
         message: 'No assignments within reminder window',
@@ -99,7 +95,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Cron Reminders] Sending reminders for', assignmentsToRemind.length, 'assignments');
 
     let remindersSent = 0;
     let failed = 0;
@@ -183,7 +178,6 @@ export async function GET(request: NextRequest) {
         });
 
         remindersSent++;
-        console.log('[Cron Reminders] Sent reminder for assignment:', assignment.id);
       } catch (err) {
         failed++;
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -192,7 +186,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[Cron Reminders] Complete. Sent:', remindersSent, 'Failed:', failed);
 
     return NextResponse.json({
       success: true,

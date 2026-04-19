@@ -1050,7 +1050,7 @@ export function ExternalPublisherModal({
             <Card className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">
+                  <h3 className="text-body font-medium text-muted-foreground">
                     {iatiImportStrings['summary.yourOrg']}
                   </h3>
                   <Tooltip>
@@ -1058,7 +1058,7 @@ export function ExternalPublisherModal({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                        className="h-4 w-4 p-0 rounded-full hover:bg-muted focus:bg-muted"
                         type="button"
                         aria-label="Help"
                         tabIndex={-1}
@@ -1067,12 +1067,12 @@ export function ExternalPublisherModal({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" align="center">
-                      <p className="text-xs">{iatiImportStrings['summary.yourOrg.help']}</p>
+                      <p className="text-helper">{iatiImportStrings['summary.yourOrg.help']}</p>
                     </TooltipContent>
                   </Tooltip>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-semibold">{userOrgName || 'Unknown Organisation'}</p>
+                <p className="text-body font-semibold">{userOrgName || 'Unknown Organisation'}</p>
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                   {userPublisherRefs.length > 0 ? userPublisherRefs[0] : 'No Ref'}
                 </span>
@@ -1084,7 +1084,7 @@ export function ExternalPublisherModal({
             <Card className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">
+                  <h3 className="text-body font-medium text-muted-foreground">
                     {iatiImportStrings['summary.reportingOrg']}
                   </h3>
                   <Tooltip>
@@ -1092,7 +1092,7 @@ export function ExternalPublisherModal({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                        className="h-4 w-4 p-0 rounded-full hover:bg-muted focus:bg-muted"
                         type="button"
                         aria-label="Help"
                         tabIndex={-1}
@@ -1101,12 +1101,12 @@ export function ExternalPublisherModal({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" align="center">
-                      <p className="text-xs">{iatiImportStrings['summary.reportingOrg.help']}</p>
+                      <p className="text-helper">{iatiImportStrings['summary.reportingOrg.help']}</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
+                  <p className="text-body font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{meta.reportingOrgRef}</span>
                 </div>
               </div>
@@ -1137,7 +1137,7 @@ export function ExternalPublisherModal({
           <RadioGroup value={selectedOption || ''} onValueChange={handleOptionChange}>
             
             {/* Option 1: Merge */}
-            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">
+            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-input transition-colors relative">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem value="merge" id="merge" className="mt-1" />
                 <div className="flex-1 space-y-2">
@@ -1149,7 +1149,7 @@ export function ExternalPublisherModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-5 w-5 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                          className="h-5 w-5 p-0 rounded-full hover:bg-muted focus:bg-muted"
                           type="button"
                           aria-label="Show examples"
                         >
@@ -1157,13 +1157,13 @@ export function ExternalPublisherModal({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="top" align="center" className="max-w-sm">
-                        <p className="text-xs">
+                        <p className="text-helper">
                           {iatiImportStrings['option.merge.tooltip']}
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </Label>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-body text-muted-foreground">
                     {iatiImportStrings['option.merge.help']}
                   </p>
                 </div>
@@ -1173,7 +1173,7 @@ export function ExternalPublisherModal({
             {/* Option 2: Import as Reporting Org (Super/Government only) */}
             {(userRole === USER_ROLES.SUPER_USER || userRole === 'admin' || 
               userRole === USER_ROLES.GOV_PARTNER_TIER_1 || userRole === USER_ROLES.GOV_PARTNER_TIER_2) && (
-              <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">
+              <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-input transition-colors relative">
                 <div className="flex items-start space-x-3">
                   <RadioGroupItem value="import_as_reporting_org" id="import_as_reporting_org" className="mt-1" />
                   <div className="flex-1 space-y-2">
@@ -1185,7 +1185,7 @@ export function ExternalPublisherModal({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-5 w-5 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                            className="h-5 w-5 p-0 rounded-full hover:bg-muted focus:bg-muted"
                             type="button"
                             aria-label="Show examples"
                           >
@@ -1193,13 +1193,13 @@ export function ExternalPublisherModal({
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top" align="center" className="max-w-sm">
-                          <p className="text-xs">
+                          <p className="text-helper">
                             {iatiImportStrings['option.reportingOrg.tooltip']}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-body text-muted-foreground">
                       {iatiImportStrings['option.reportingOrg.help']}
                     </p>
                   </div>
@@ -1211,7 +1211,7 @@ export function ExternalPublisherModal({
         </div>
 
         {/* Footnote */}
-        <div className="text-xs text-gray-500 p-3">
+        <div className="text-helper text-muted-foreground p-3">
           <Info className="h-3 w-3 inline mr-1" />
           {iatiImportStrings.footnote}
         </div>
@@ -1256,7 +1256,7 @@ export function ExternalPublisherModal({
           {duplicatesToReplace.map((duplicate, index) => (
             <Card key={index} className="p-4">
               <div className="space-y-1">
-                <p className="font-medium text-sm">{duplicate.existingTitle}</p>
+                <p className="font-medium text-body">{duplicate.existingTitle}</p>
                 <p className="text-xs font-mono text-muted-foreground">{duplicate.iatiIdentifier}</p>
               </div>
             </Card>

@@ -187,7 +187,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
         <Button variant="outline" className="gap-2">
           <Columns3 className="h-4 w-4" />
           <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-helper">
             {visibleCount}
           </Badge>
           <ChevronDown className="h-3 w-3 opacity-50" />
@@ -196,13 +196,13 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
       <PopoverContent className="w-72 p-0 z-[200]" align="end" sideOffset={5}>
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <h4 className="font-medium text-body">Visible Columns</h4>
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={selectAll}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Select all
               </Button>
@@ -210,13 +210,13 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
                 variant="ghost" 
                 size="sm" 
                 onClick={resetToDefaults}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Reset
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-helper text-muted-foreground mt-1">
             {visibleCount} of {totalColumns} columns visible
           </p>
         </div>
@@ -240,7 +240,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
                     indeterminate={someVisible && !allVisible}
                     onCheckedChange={() => toggleGroup(groupKey)}
                   />
-                  <span className="text-sm font-medium">{ACTIVITY_EDITOR_COLUMN_GROUPS[groupKey]}</span>
+                  <span className="text-body font-medium">{ACTIVITY_EDITOR_COLUMN_GROUPS[groupKey]}</span>
                 </div>
                 <div className="py-1">
                   {groupColumns.map(column => (
@@ -253,7 +253,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
                         checked={visibleColumns.includes(column.id)}
                         onCheckedChange={() => toggleColumn(column.id)}
                       />
-                      <span className="text-sm">{column.label}</span>
+                      <span className="text-body">{column.label}</span>
                     </div>
                   ))}
                 </div>
@@ -279,9 +279,9 @@ function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
     <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-body text-muted-foreground">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
@@ -427,14 +427,12 @@ export default function TransactionsManager({
     // This prevents empty props from clearing fetched data
     if (initialTransactions.length > 0 || !hasFetchedTransactions) {
       const converted = initialTransactions.map(convertLegacyTransaction);
-      console.log('[TransactionsManager] Updating local state from props, converted length:', converted.length);
       setTransactions(converted);
       // If we receive transactions from props, mark as fetched
       if (initialTransactions.length > 0) {
         setHasFetchedTransactions(true);
       }
     } else {
-      console.log('[TransactionsManager] Skipping props update - already have fetched transactions');
     }
   }, [initialTransactions]);
 
@@ -448,7 +446,6 @@ export default function TransactionsManager({
       if (activityId && activityId !== 'new' && !hasFetchedTransactions && initialTransactions.length === 0) {
         try {
           setIsLoading(true);
-          console.log('[TransactionsManager] No transactions provided, fetching for activity:', activityId);
           const response = await apiFetch(`/api/activities/${activityId}/transactions`);
           if (response.ok) {
             const responseData = await response.json();
@@ -456,7 +453,6 @@ export default function TransactionsManager({
             // Handle both response formats: { data: [...] } or direct array [...]
             const transactionsData = Array.isArray(responseData) ? responseData : (responseData.data || []);
             
-            console.log('[TransactionsManager] Successfully loaded', transactionsData.length, 'transactions from API');
             const convertedTransactions = transactionsData.map(convertLegacyTransaction);
             setTransactions(convertedTransactions);
             setHasFetchedTransactions(true);
@@ -494,11 +490,9 @@ export default function TransactionsManager({
     // 2. We're not loading
     // 3. The transaction count has actually changed since last notification
     if (onTransactionsChange && !isLoading && lastNotifiedCountRef.current !== transactions.length) {
-      console.log('[TransactionsManager] Notifying parent with transactions:', transactions.length);
       lastNotifiedCountRef.current = transactions.length;
       onTransactionsChange(transactions);
     } else {
-      console.log('[TransactionsManager] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, isLoading]); // Intentionally exclude onTransactionsChange to prevent infinite loops
@@ -524,7 +518,6 @@ export default function TransactionsManager({
   // Auto-open transaction modal when initialTransactionId is provided
   useEffect(() => {
     if (initialTransactionId && transactions.length > 0) {
-      console.log('[TransactionsManager] Auto-opening modal for transaction:', initialTransactionId);
       
       // Find the transaction by ID (check both uuid and id fields)
       const transaction = transactions.find(
@@ -532,7 +525,6 @@ export default function TransactionsManager({
       );
       
       if (transaction) {
-        console.log('[TransactionsManager] Found transaction to edit:', transaction);
         setEditingTransaction(transaction);
         setShowAddDialog(true);
         
@@ -552,7 +544,6 @@ export default function TransactionsManager({
       // If transaction already has a uuid/id, it was already saved by TransactionModal
       // Just refresh the list and close the dialog - don't make another POST request
       if (formData.uuid || (formData.id && typeof formData.id === 'string' && formData.id.includes('-'))) {
-        console.log('[TransactionsManager] Transaction already saved by modal, skipping duplicate save:', formData.uuid || formData.id);
 
         // Refresh from server to get complete data
         if (onRefreshNeeded) {
@@ -636,13 +627,21 @@ export default function TransactionsManager({
   };
 
   const handleEdit = (transaction: Transaction) => {
-    console.log("Editing transaction:", transaction);
     setEditingTransaction(transaction);
     setShowAddDialog(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!(await confirm({ title: 'Delete this transaction?', description: 'This action cannot be undone. The transaction will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    const txn = transactions.find(t => (t.uuid || t.id) === id);
+    const amount = txn?.value != null ? `${txn.currency || ''} ${Number(txn.value).toLocaleString()}`.trim() : null;
+    const txnDate = txn?.transaction_date || (txn as any)?.value_date;
+    const txnRef = (txn as any)?.transaction_reference || (txn as any)?.reference;
+    const details = [amount, txnDate, txnRef].filter(Boolean).join(' • ');
+    const description = details
+      ? `This transaction (${details}) will be permanently deleted from this activity. This can't be undone.`
+      : "This transaction will be permanently deleted from this activity. This can't be undone.";
+
+    if (!(await confirm({ title: 'Delete this transaction?', description, confirmLabel: 'Delete transaction', cancelLabel: 'Keep' }))) {
       return;
     }
 
@@ -1040,7 +1039,7 @@ export default function TransactionsManager({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Transactions</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 Manage IATI-compliant financial transactions
               </p>
             </div>
@@ -1052,7 +1051,7 @@ export default function TransactionsManager({
                     checked={groupedView}
                     onCheckedChange={setGroupedView}
                   />
-                  <Label htmlFor="grouped-view" className="text-sm cursor-pointer whitespace-nowrap">
+                  <Label htmlFor="grouped-view" className="text-body cursor-pointer whitespace-nowrap">
                     Grouped View
                   </Label>
                 </div>
@@ -1072,7 +1071,7 @@ export default function TransactionsManager({
               </Button>
               {transactions.length > 0 && (
                 <>
-                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>
@@ -1124,7 +1123,7 @@ export default function TransactionsManager({
               {transactions.length === 0 ? (
                 <>
                   <img src="/images/empty-dormouse.webp" alt="No transactions" className="h-32 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No transactions</h3>
+                  <h3 className="text-base font-medium mb-2">No transactions</h3>
                   <p className="text-muted-foreground mb-4">
                     Use the button above to add your first transaction.
                   </p>
@@ -1166,13 +1165,13 @@ export default function TransactionsManager({
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2 py-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-body text-muted-foreground">
                       <span>
                         Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} transactions
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Show:</span>
+                      <span className="text-body text-muted-foreground">Show:</span>
                       <Select value={pageSize.toString()} onValueChange={(value) => {
                         setPageSize(parseInt(value));
                         setCurrentPage(1); // Reset to first page when changing page size
@@ -1227,7 +1226,7 @@ export default function TransactionsManager({
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                           >
                             {pageNum}
                           </Button>

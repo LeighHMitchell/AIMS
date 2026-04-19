@@ -56,7 +56,6 @@ export async function POST(
         .single();
 
       if (searchError) {
-        console.log(`No match found for ${link.external_iati_identifier}`);
         continue;
       }
 

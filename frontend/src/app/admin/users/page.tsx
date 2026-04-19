@@ -194,12 +194,10 @@ export default function UserManagement() {
     
     if (currentUser?.id === user.id) {
       // Redirect to profile page for self-editing
-      console.log('[Admin] Redirecting to profile for self-edit');
       toast.info("Use 'My Profile' to edit your own details");
       router.push("/profile");
     } else {
       // Allow editing other users
-      console.log('[Admin] Opening edit modal for other user');
       setEditingUser(user);
     }
   };
@@ -342,7 +340,6 @@ export default function UserManagement() {
 
   const handleUserUpdate = async (updatedUser: User) => {
     try {
-      console.log('[AIMS Frontend] Updating user with organizationId:', updatedUser.organizationId);
       
       // Split name into first_name and last_name for database
       const nameParts = updatedUser.name?.split(' ') || [];
@@ -376,8 +373,6 @@ export default function UserManagement() {
         organization_id: updatedUser.organizationId || null,
       };
       
-      console.log('[AIMS Frontend] Request body organization_id:', requestBody.organization_id);
-      console.log('[AIMS Frontend] Full request body:', requestBody);
 
       const response = await apiFetch('/api/users', {
         method: 'PUT',
@@ -385,12 +380,9 @@ export default function UserManagement() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('[AIMS Frontend] Response status:', response.status);
-      console.log('[AIMS Frontend] Response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('[AIMS Frontend] Response data:', data);
         // Transform and update the user in state
         const transformedUser = {
           ...updatedUser,
@@ -490,7 +482,6 @@ export default function UserManagement() {
 
   const handleUserCreate = async (newUser: User) => {
     try {
-      console.log('[AIMS Frontend] Creating user with organizationId:', newUser.organizationId);
       
       // Split name into first_name and last_name for database
       const nameParts = newUser.name?.split(' ') || [];
@@ -639,7 +630,7 @@ export default function UserManagement() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-                <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+                <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Users className="h-4 w-4" />
                   Users
                 </TabsTrigger>
@@ -784,7 +775,7 @@ export default function UserManagement() {
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-12 w-12 flex-shrink-0">
                                     <AvatarImage src={user.profilePicture} alt={user.name} />
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-body">
                                       {user.firstName && user.lastName 
                                         ? `${user.firstName[0]}${user.middleName ? user.middleName[0] : ''}${user.lastName[0]}`.toUpperCase().slice(0, 2)
                                         : user.name 
@@ -799,12 +790,12 @@ export default function UserManagement() {
                                         ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
                                         : user.name}
                                     </div>
-                                    <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                                    <div className="text-body text-muted-foreground truncate">{user.email}</div>
                                     {user.jobTitle && (
-                                      <div className="text-sm text-muted-foreground truncate">{user.jobTitle}</div>
+                                      <div className="text-body text-muted-foreground truncate">{user.jobTitle}</div>
                                     )}
                                     {user.department && (
-                                      <div className="text-xs text-muted-foreground truncate">{user.department}</div>
+                                      <div className="text-helper text-muted-foreground truncate">{user.department}</div>
                                     )}
                                   </div>
                                 </div>
@@ -819,7 +810,7 @@ export default function UserManagement() {
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span className="truncate flex-1">{user.organization.name}</span>
                                     {(user as any).isOrganizationOrphaned && (
-                                      <Badge variant="destructive" className="text-xs flex-shrink-0">
+                                      <Badge variant="destructive" className="text-helper flex-shrink-0">
                                         <AlertCircle className="h-3 w-3 mr-1" />
                                         Deleted
                                       </Badge>
@@ -832,11 +823,11 @@ export default function UserManagement() {
                                   </Badge>
                                 )}
                               </td>
-                              <td className="p-4 text-sm text-muted-foreground w-48">
+                              <td className="p-4 text-body text-muted-foreground w-48">
                                 {user.lastLogin ? (
                                   <div>
                                     <div className="truncate">{format(new Date(user.lastLogin), "MMM d, yyyy")}</div>
-                                    <div className="truncate text-xs">{format(new Date(user.lastLogin), "h:mm a")}</div>
+                                    <div className="truncate text-helper">{format(new Date(user.lastLogin), "h:mm a")}</div>
                                   </div>
                                 ) : (
                                   <div className="truncate">Never</div>
@@ -859,7 +850,7 @@ export default function UserManagement() {
                                               <ExternalLink className="h-2 w-2 ml-0.5" />
                                             </div>
                                           ) : (
-                                            <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                            <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                                           )}
                                         </Button>
                                       </TooltipTrigger>
@@ -1099,9 +1090,9 @@ function UserEditor({
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-          <TabsTrigger value="personal" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Personal Info</TabsTrigger>
-          <TabsTrigger value="contact" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Contact & Address</TabsTrigger>
-          <TabsTrigger value="system" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">System & Role</TabsTrigger>
+          <TabsTrigger value="personal" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Personal Info</TabsTrigger>
+          <TabsTrigger value="contact" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Contact & Address</TabsTrigger>
+          <TabsTrigger value="system" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">System & Role</TabsTrigger>
         </TabsList>
 
         {/* Personal Information Tab */}
@@ -1177,7 +1168,7 @@ function UserEditor({
                   variant="outline"
                   size="sm"
                   onClick={handleEmailChangeClick}
-                  className="text-orange-600 hover:text-orange-700 text-xs px-2 py-1 ml-auto"
+                  className="text-orange-600 hover:text-orange-700 text-helper px-2 py-1 ml-auto"
                 >
                   Change Email
                 </Button>
@@ -1192,7 +1183,7 @@ function UserEditor({
               disabled={!!user.id}
             />
             {user.id && currentUser?.role !== 'super_user' && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Email cannot be changed for existing users
               </p>
             )}
@@ -1293,7 +1284,7 @@ function UserEditor({
               className="w-full"
             />
             {!formData.organizationId && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 No organization selected (Orphan user)
               </p>
             )}

@@ -35,7 +35,7 @@ export function AutoRefField({ value, label = "ID", className }: AutoRefFieldPro
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <label className="text-xs font-medium text-muted-foreground w-fit cursor-help">
+            <label className="text-helper font-medium text-muted-foreground w-fit cursor-help">
               {label}
             </label>
           </TooltipTrigger>
@@ -53,7 +53,7 @@ export function AutoRefField({ value, label = "ID", className }: AutoRefFieldPro
           value={value ?? ""}
           placeholder="Will be assigned on save"
           className={cn(
-            "w-full rounded-md border border-input bg-muted px-3 py-2 pr-16 text-sm",
+            "w-full rounded-md border border-input bg-muted px-3 py-2 pr-16 text-body",
             "text-muted-foreground font-mono tracking-wide",
             "focus:outline-none focus:ring-0 cursor-default",
             !value && "italic",

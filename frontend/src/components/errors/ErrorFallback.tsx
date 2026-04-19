@@ -66,8 +66,8 @@ export function ErrorFallback({
     <div className="min-h-[400px] flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertTriangle className="h-6 w-6 text-red-600" />
+          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
           <CardTitle className="text-xl text-red-900">
             Something went wrong
@@ -108,7 +108,7 @@ export function ErrorFallback({
               onClick={() => setShowDetails(!showDetails)}
               variant="ghost"
               size="sm"
-              className="w-full text-gray-600"
+              className="w-full text-muted-foreground"
             >
               {showDetails ? (
                 <>
@@ -125,17 +125,17 @@ export function ErrorFallback({
 
             {showDetails && (
               <div className="mt-3 space-y-3">
-                <div className="bg-gray-50 p-3 rounded text-sm">
-                  <p className="font-medium text-gray-900 mb-1">Error Message:</p>
-                  <p className="text-gray-700 font-mono break-all">{error.message}</p>
+                <div className="bg-muted p-3 rounded text-body">
+                  <p className="font-medium text-foreground mb-1">Error Message:</p>
+                  <p className="text-foreground font-mono break-all">{error.message}</p>
                 </div>
 
                 {error.stack && (
-                  <details className="bg-gray-50 p-3 rounded">
-                    <summary className="font-medium text-gray-900 cursor-pointer">
+                  <details className="bg-muted p-3 rounded">
+                    <summary className="font-medium text-foreground cursor-pointer">
                       Stack Trace
                     </summary>
-                    <pre className="mt-2 text-xs text-gray-600 overflow-auto max-h-32">
+                    <pre className="mt-2 text-helper text-muted-foreground overflow-auto max-h-32">
                       {error.stack}
                     </pre>
                   </details>
@@ -191,10 +191,10 @@ export function AsyncErrorFallback({
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
       <AlertTriangle className="h-8 w-8 text-amber-500 mb-3" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         Failed to Load
       </h3>
-      <p className="text-gray-600 mb-4 max-w-md">
+      <p className="text-muted-foreground mb-4 max-w-md">
         {error.message || 'An error occurred while loading this content.'}
       </p>
       <Button onClick={resetErrorBoundary} size="sm">

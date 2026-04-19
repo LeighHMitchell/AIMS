@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
     const cachedResult = searchCache.get(cacheKey)
 
     if (cachedResult) {
-      console.log(`[AIMS API] Cache hit for suggestions: "${query}" (${Date.now() - startTime}ms)`)
       
       // Extract search terms and highlight cached results
       const searchTerms = extractSearchTerms(query)
@@ -117,7 +116,6 @@ export async function GET(request: NextRequest) {
       }))
 
       const responseTime = Date.now() - startTime
-      console.log(`[AIMS API] Supercharged suggestions: ${suggestions.length} results for "${query}" in ${responseTime}ms`)
 
       // Extract search terms for highlighting
       const searchTerms = extractSearchTerms(query)
@@ -151,7 +149,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Fallback to legacy search if RPC fails
-    console.log('[AIMS API] Falling back to legacy suggestions search')
     return fallbackLegacySuggestions(request, query, limit, popularSearches, startTime)
 
   } catch (error) {
@@ -262,7 +259,6 @@ async function fallbackLegacySuggestions(
     const limitedSuggestions = suggestions.slice(0, limit)
     const responseTime = Date.now() - startTime
 
-    console.log(`[AIMS API] Legacy suggestions: ${limitedSuggestions.length} results for "${query}" in ${responseTime}ms`)
 
     // Extract search terms for highlighting
     const searchTerms = extractSearchTerms(query)

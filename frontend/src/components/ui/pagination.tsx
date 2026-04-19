@@ -18,7 +18,7 @@ export function PaginationPrevious({ onClick, "aria-disabled": ariaDisabled, cla
       type="button"
       onClick={onClick}
       disabled={ariaDisabled}
-      className={`px-2 py-1 rounded text-sm text-gray-600 hover:bg-muted disabled:text-gray-300 disabled:cursor-not-allowed ${className}`}
+      className={`px-2 py-1 rounded text-body text-muted-foreground hover:bg-muted disabled:text-gray-300 disabled:cursor-not-allowed ${className}`}
       aria-label="Previous page"
     >
       &lt;
@@ -32,7 +32,7 @@ export function PaginationNext({ onClick, "aria-disabled": ariaDisabled, classNa
       type="button"
       onClick={onClick}
       disabled={ariaDisabled}
-      className={`px-2 py-1 rounded text-sm text-gray-600 hover:bg-muted disabled:text-gray-300 disabled:cursor-not-allowed ${className}`}
+      className={`px-2 py-1 rounded text-body text-muted-foreground hover:bg-muted disabled:text-gray-300 disabled:cursor-not-allowed ${className}`}
       aria-label="Next page"
     >
       &gt;
@@ -45,7 +45,7 @@ export function PaginationLink({ isActive, onClick, children, className = "" }: 
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-1 rounded text-sm ${isActive ? "bg-slate-200 text-slate-900 font-semibold" : "text-gray-600 hover:bg-muted"} ${className}`}
+      className={`px-2 py-1 rounded text-body ${isActive ? "bg-muted text-foreground font-semibold" : "text-muted-foreground hover:bg-muted"} ${className}`}
       aria-current={isActive ? "page" : undefined}
     >
       {children}

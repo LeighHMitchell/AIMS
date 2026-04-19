@@ -242,7 +242,7 @@ export function EnhancedDatePicker({
     <div ref={containerRef} className={cn("relative", className)}>
       <div className="relative">
         <CalendarIcon 
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 cursor-pointer z-20 pointer-events-auto" 
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer z-20 pointer-events-auto" 
           onClick={handleCalendarClick}
         />
         <input
@@ -259,10 +259,10 @@ export function EnhancedDatePicker({
           disabled={disabled}
           placeholder={placeholder}
           className={cn(
-            "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md",
+            "w-full pl-10 pr-4 py-2 border border-input rounded-md",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-            "disabled:bg-gray-100 disabled:cursor-not-allowed",
-            "text-sm font-normal",
+            "disabled:bg-muted disabled:cursor-not-allowed",
+            "text-body font-normal",
             "bg-white cursor-pointer"
           )}
         />
@@ -271,7 +271,7 @@ export function EnhancedDatePicker({
       {isOpen && !disabled && portalContainer && createPortal(
         <div 
           ref={dropdownRef}
-          className="fixed z-[10001] p-4 bg-white border border-gray-300 rounded-lg shadow-lg"
+          className="fixed z-[10001] p-4 bg-white border border-input rounded-lg shadow-lg"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -297,7 +297,7 @@ export function EnhancedDatePicker({
               </button>
             </div>
             
-            <div className="text-sm font-medium">
+            <div className="text-body font-medium">
               {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
             </div>
             
@@ -322,7 +322,7 @@ export function EnhancedDatePicker({
           
           <div className="grid grid-cols-7 gap-1 mb-2">
             {dayNames.map(day => (
-              <div key={day} className="text-xs text-gray-500 text-center p-1">
+              <div key={day} className="text-helper text-muted-foreground text-center p-1">
                 {day}
               </div>
             ))}
@@ -335,7 +335,7 @@ export function EnhancedDatePicker({
                 onClick={() => day && handleDateSelect(day)}
                 disabled={!day}
                 className={cn(
-                  "p-2 text-sm rounded hover:bg-blue-100",
+                  "p-2 text-body rounded hover:bg-blue-100",
                   !day && "invisible",
                   day && value && day.toDateString() === value.toDateString() && "bg-blue-500 text-white hover:bg-blue-600",
                   day && (!value || day.toDateString() !== value.toDateString()) && "hover:bg-muted"
@@ -347,13 +347,13 @@ export function EnhancedDatePicker({
             ))}
           </div>
           
-          <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="mt-3 pt-3 border-t border-border">
             <button
               onClick={() => {
                 const today = new Date()
                 handleDateSelect(today)
               }}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-body text-blue-600 hover:text-blue-800"
               type="button"
             >
               Today

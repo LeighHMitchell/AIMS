@@ -245,25 +245,21 @@ export async function smartLocationSearch(
     }
     
     // Step 1: Search Myanmar first (up to 10 results)
-    console.log('[Smart Search] Step 1: Searching Myanmar...');
     const myanmarResults = await searchLocations(query, { 
       ...options, 
       countryCodes: ['mm'],
       limit: 10
     });
-    console.log('[Smart Search] Myanmar results:', myanmarResults.length);
     results.push(...myanmarResults);
     
     // Step 2: Search ASEAN region (if we haven't hit limit)
     if (results.length < maxResults) {
-      console.log('[Smart Search] Step 2: Searching ASEAN region...');
       const aseanCountries = ['th', 'la', 'kh', 'vn', 'id', 'my', 'sg', 'ph', 'bn'];
       const regionalResults = await searchLocations(query, {
         ...options,
         countryCodes: aseanCountries,
         limit: Math.min(10, maxResults - results.length)
       });
-      console.log('[Smart Search] Regional results:', regionalResults.length);
       
       // Filter out any Myanmar results we already have
       const newRegionalResults = regionalResults.filter(r => 
@@ -274,12 +270,10 @@ export async function smartLocationSearch(
     
     // Step 3: Search globally (if we still haven't hit limit)
     if (results.length < maxResults) {
-      console.log('[Smart Search] Step 3: Searching globally...');
       const globalResults = await searchLocations(query, {
         ...options,
         limit: Math.min(15, maxResults - results.length)
       });
-      console.log('[Smart Search] Global results:', globalResults.length);
       
       // Filter out results we already have (by comparing lat/lon)
       const existingCoords = new Set(
@@ -291,7 +285,6 @@ export async function smartLocationSearch(
       results.push(...newGlobalResults);
     }
     
-    console.log('[Smart Search] Total results:', results.length);
     return results.slice(0, maxResults);
   } catch (error) {
     console.error('[Smart Search] Error:', error);

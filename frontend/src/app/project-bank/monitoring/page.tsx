@@ -79,7 +79,7 @@ export default function MonitoringDashboardPage() {
         {/* Search — styled like Project List filter bar */}
         <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
@@ -93,11 +93,11 @@ export default function MonitoringDashboardPage() {
             <table className="w-full border-collapse">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Project</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Sector</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Next Due</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Interval</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Project</th>
+                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Sector</th>
+                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Next Due</th>
+                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Interval</th>
+                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -123,18 +123,18 @@ export default function MonitoringDashboardPage() {
                         onClick={() => router.push(`/project-bank/${s.project_id}`)}
                       >
                         <td className="px-4 py-2">
-                          <div className="text-sm font-medium text-foreground leading-tight">{proj?.name || '—'}</div>
+                          <div className="text-body font-medium text-foreground leading-tight">{proj?.name || '—'}</div>
                           <div className="mt-1">
                             <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{proj?.project_code}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground">{proj?.sector || '—'}</td>
-                        <td className="px-4 py-2 text-sm">
-                          <span className={isOverdue ? 'text-red-600 font-medium' : 'text-foreground'}>
+                        <td className="px-4 py-2 text-body text-foreground">{proj?.sector || '—'}</td>
+                        <td className="px-4 py-2 text-body">
+                          <span className={isOverdue ? 'text-destructive font-medium' : 'text-foreground'}>
                             {s.next_due_date || '—'}
                           </span>
                         </td>
-                        <td className="px-4 py-2 text-sm text-foreground">Every {s.interval_months}mo</td>
+                        <td className="px-4 py-2 text-body text-foreground">Every {s.interval_months}mo</td>
                         <td className="px-4 py-2">
                           <Badge variant={s.is_active ? 'success' : 'gray'}>
                             {s.is_active ? 'Active' : 'Paused'}

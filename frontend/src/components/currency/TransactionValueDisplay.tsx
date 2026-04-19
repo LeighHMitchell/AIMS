@@ -92,14 +92,14 @@ export function TransactionValueDisplay({
       }).format(value);
       
       // Return as JSX with gray currency code
-      return <><span className="text-muted-foreground text-xs">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-helper">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[TransactionValueDisplay] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
+      return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -160,7 +160,7 @@ export function TransactionValueDisplay({
       return {
         status: 'unconvertible',
         badge: 'No USD rate',
-        color: 'bg-red-100 text-red-800',
+        color: 'bg-destructive/10 text-red-800',
         icon: <AlertCircle className="h-3 w-3" />,
         tooltip: 'Currency not supported for automatic USD conversion'
       };
@@ -231,7 +231,7 @@ export function TransactionValueDisplay({
         <span className={monotone ? "font-medium text-foreground" : "font-medium"}>{formatOriginalValue()}</span>
         
         {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
-          <span className={monotone ? "text-sm text-foreground" : "text-sm text-[hsl(var(--success-icon))]"}>
+          <span className={monotone ? "text-body text-foreground" : "text-body text-[hsl(var(--success-icon))]"}>
             ({formatCurrency(conversionData.usd_amount, 'USD')})
           </span>
         )}
@@ -286,12 +286,12 @@ export function TransactionValueDisplay({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-gray-400 cursor-help"} />
+                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-muted-foreground cursor-help"} />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>USD value calculated using value date: {transaction.value_date}</p>
                   {conversionData.conversion_date && (
-                    <p className="text-xs mt-1">
+                    <p className="text-helper mt-1">
                       Calculated: {new Date(conversionData.conversion_date).toLocaleDateString()}
                     </p>
                   )}
@@ -302,12 +302,12 @@ export function TransactionValueDisplay({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-gray-400 cursor-help"} />
+                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-muted-foreground cursor-help"} />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>1 {transaction.currency} = {conversionData.exchange_rate.toFixed(4)} USD</p>
                   {conversionData.conversion_date && (
-                    <p className="text-xs mt-1">
+                    <p className="text-helper mt-1">
                       Converted: {new Date(conversionData.conversion_date).toLocaleDateString()}
                     </p>
                   )}
@@ -338,7 +338,7 @@ export function TransactionValueDisplay({
 
       {/* Warning for unsupported currency */}
       {statusInfo.status === 'unconvertible' && (
-        <div className="text-xs text-amber-600 flex items-center space-x-1">
+        <div className="text-helper text-amber-600 flex items-center space-x-1">
           <AlertCircle className="h-3 w-3" />
           <span>
             {transaction.currency} is not supported for automatic conversion. 

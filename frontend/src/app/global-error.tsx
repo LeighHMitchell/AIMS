@@ -12,7 +12,7 @@ export default function GlobalError({
       <body>
         <div className="flex min-h-screen flex-col items-center justify-center p-8">
           <h2 className="text-2xl font-semibold mb-4">Something went wrong!</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             A critical error occurred. Please try refreshing the page.
           </p>
           <button

@@ -86,7 +86,7 @@ function ResultAvatar({
 }) {
   const sizeClasses = size === 'xs' ? 'w-5 h-5' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
   const iconSize = size === 'xs' ? 'h-3 w-3' : size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
-  const textSize = size === 'xs' ? 'text-[10px]' : 'text-sm'
+  const textSize = size === 'xs' ? 'text-[10px]' : 'text-body'
 
   // Sectors and Tags: NO icons per specification
   if (result.type === 'sector' || result.type === 'tag') {
@@ -96,7 +96,7 @@ function ResultAvatar({
   // Activity with custom icon
   if (result.type === 'activity' && result.metadata.activity_icon_url) {
     return (
-      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-gray-200 flex-shrink-0')}>
+      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-border flex-shrink-0')}>
         <img
           src={result.metadata.activity_icon_url}
           alt=""
@@ -113,7 +113,7 @@ function ResultAvatar({
   // User with profile picture
   if (result.type === 'user' && result.metadata.profile_picture_url) {
     return (
-      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-gray-200 flex-shrink-0')}>
+      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-border flex-shrink-0')}>
         <img
           src={result.metadata.profile_picture_url}
           alt=""
@@ -130,7 +130,7 @@ function ResultAvatar({
   // Organisation with logo
   if (result.type === 'organisation' && result.metadata.logo_url) {
     return (
-      <div className={cn(sizeClasses, 'rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0')}>
+      <div className={cn(sizeClasses, 'rounded-lg overflow-hidden border border-border bg-white flex-shrink-0')}>
         <img
           src={result.metadata.logo_url}
           alt=""
@@ -286,16 +286,16 @@ export function SearchResultRow({
         
         {/* Tag hash for tags */}
         {isTag && (
-          <span className="text-purple-600 font-semibold text-sm">#</span>
+          <span className="text-purple-600 font-semibold text-body">#</span>
         )}
 
         {/* Code pill + Title */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {code && <CodePill code={code} />}
-          <span className="font-medium text-sm text-gray-900 truncate">
+          <span className="font-medium text-body text-foreground truncate">
             {highlightText(result.title, searchQuery)}
             {result.type === 'activity' && result.metadata.acronym && (
-              <span className="text-gray-500"> ({result.metadata.acronym})</span>
+              <span className="text-muted-foreground"> ({result.metadata.acronym})</span>
             )}
           </span>
         </div>
@@ -336,24 +336,24 @@ export function SearchResultRow({
           <h3 className="text-base text-blue-800 group-hover:underline font-medium">
             {highlightText(result.title, searchQuery)}
             {result.type === 'activity' && result.metadata.acronym && (
-              <span className="text-gray-600 font-normal"> ({result.metadata.acronym})</span>
+              <span className="text-muted-foreground font-normal"> ({result.metadata.acronym})</span>
             )}
             {result.type === 'organisation' && result.metadata.acronym && (
-              <span className="text-gray-600 font-normal"> ({result.metadata.acronym})</span>
+              <span className="text-muted-foreground font-normal"> ({result.metadata.acronym})</span>
             )}
           </h3>
         </div>
 
         {/* Subtitle/description */}
         {subtitle && (
-          <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+          <p className="text-body text-muted-foreground mt-0.5 line-clamp-2">
             {highlightText(subtitle, searchQuery)}
           </p>
         )}
 
         {/* Type indicator + Updated date (subtle) */}
         {showTypeIndicator && (
-          <div className="text-xs text-gray-400 mt-1.5">
+          <div className="text-helper text-muted-foreground mt-1.5">
             {resultTypeLabels[result.type]}
             {updatedAt && (
               <span> • Updated {format(new Date(updatedAt), 'MMM d, yyyy')}</span>

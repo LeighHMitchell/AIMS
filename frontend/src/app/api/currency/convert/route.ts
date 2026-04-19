@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Perform conversion
-    console.log(`[Currency Convert API] Converting ${amount} ${currency} on ${date}`);
     const result = await fixedCurrencyConverter.convertToUSD(
       amount,
       currency,
@@ -137,7 +136,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Perform conversion
-    console.log(`[Currency Convert API GET] Converting ${amount} ${currency} on ${date}`);
     const result = await fixedCurrencyConverter.convertToUSD(
       amount,
       currency,

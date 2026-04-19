@@ -57,9 +57,9 @@ const TASK_TYPES: { value: TaskType; label: string; description: string; icon: R
 ];
 
 const PRIORITIES: { value: TaskPriority; label: string; color: string }[] = [
-  { value: 'high', label: 'High', color: 'text-red-600 bg-red-50 border-red-200' },
+  { value: 'high', label: 'High', color: 'text-destructive bg-destructive/10 border-destructive/30' },
   { value: 'medium', label: 'Medium', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  { value: 'low', label: 'Low', color: 'text-slate-600 bg-slate-50 border-slate-200' },
+  { value: 'low', label: 'Low', color: 'text-muted-foreground bg-muted border-border' },
 ];
 
 export function TaskDetailsStep({
@@ -73,7 +73,7 @@ export function TaskDetailsStep({
     <div className="space-y-6">
       {/* Title */}
       <div className="space-y-2">
-        <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1">
+        <Label htmlFor="title" className="text-body font-medium flex items-center gap-1">
           Task Title <RequiredDot />
           <TooltipProvider>
             <Tooltip>
@@ -94,7 +94,7 @@ export function TaskDetailsStep({
           className={cn(hasError('title') && 'border-destructive')}
           maxLength={200}
         />
-        <div className="flex justify-between text-xs text-muted-foreground">
+        <div className="flex justify-between text-helper text-muted-foreground">
           <span>{hasError('title') ? errors.find(e => e.toLowerCase().includes('title')) : ''}</span>
           <span>{formData.title.length}/200</span>
         </div>
@@ -102,7 +102,7 @@ export function TaskDetailsStep({
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-sm font-medium flex items-center gap-1">
+        <Label htmlFor="description" className="text-body font-medium flex items-center gap-1">
           Description
           <TooltipProvider>
             <Tooltip>
@@ -127,7 +127,7 @@ export function TaskDetailsStep({
 
       {/* Task Type */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Task Type</Label>
+        <Label className="text-body font-medium">Task Type</Label>
         <div className="grid grid-cols-2 gap-3">
           {TASK_TYPES.map((type) => {
             const Icon = type.icon;
@@ -146,10 +146,10 @@ export function TaskDetailsStep({
               >
                 <Icon className={cn('h-5 w-5 mt-0.5', isSelected ? 'text-primary' : 'text-muted-foreground')} />
                 <div>
-                  <div className={cn('font-medium text-sm', isSelected && 'text-primary')}>
+                  <div className={cn('font-medium text-body', isSelected && 'text-primary')}>
                     {type.label}
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-helper text-muted-foreground">
                     {type.description}
                   </div>
                 </div>
@@ -161,7 +161,7 @@ export function TaskDetailsStep({
 
       {/* Priority */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-1">
+        <Label className="text-body font-medium flex items-center gap-1">
           Priority
           <TooltipProvider>
             <Tooltip>
@@ -183,7 +183,7 @@ export function TaskDetailsStep({
                 type="button"
                 onClick={() => updateFormData({ priority: priority.value })}
                 className={cn(
-                  'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all',
+                  'flex-1 py-2 px-4 rounded-lg border-2 text-body font-medium transition-all',
                   isSelected ? priority.color : 'border-muted text-muted-foreground hover:border-muted-foreground/30'
                 )}
               >

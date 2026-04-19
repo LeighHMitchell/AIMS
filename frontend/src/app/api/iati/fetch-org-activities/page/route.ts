@@ -116,7 +116,6 @@ export async function GET(request: NextRequest) {
     const { docs, numFound } = await fetchDatastorePage(orgScope.allRefs, filters, page, IATI_API_KEY)
     const totalPages = Math.ceil(numFound / DATASTORE_PAGE_SIZE)
 
-    console.log(`[Fetch Page] Page ${page}/${totalPages - 1}: ${docs.length} docs (total: ${numFound})`)
 
     // Validate page is within range
     if (page > 0 && page >= totalPages) {

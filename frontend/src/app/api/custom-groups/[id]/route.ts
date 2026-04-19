@@ -16,7 +16,6 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
-  console.log('[API] GET /api/custom-groups/[id] - Starting request');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -52,7 +51,6 @@ export async function GET(
       );
     }
     
-    console.log('[API] Successfully fetched custom group:', data);
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);
@@ -67,7 +65,6 @@ export async function PUT(
   request: Request,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
-  console.log('[API] PUT /api/custom-groups/[id] - Starting request');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -158,7 +155,6 @@ export async function PUT(
       }
     }
     
-    console.log('[API] Successfully updated custom group:', data);
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);
@@ -173,7 +169,6 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
-  console.log('[API] DELETE /api/custom-groups/[id] - Starting request');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -208,7 +203,6 @@ export async function DELETE(
       );
     }
     
-    console.log('[API] Successfully deleted custom group');
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);

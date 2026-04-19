@@ -5,7 +5,6 @@ import { requireAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/users/reset-password - Starting request');
   
   const { supabase, response } = await requireAuth();
   if (response) return response;
@@ -56,7 +55,6 @@ export async function POST(request: NextRequest) {
     if (authGetError || !authUser) {
       console.error('[AIMS] Auth user not found:', authGetError);
       // If auth user doesn't exist, we need to create one
-      console.log('[AIMS] Creating auth user for existing profile:', userProfile.email);
       
       const { data: newAuthUser, error: createError } = await supabase.auth.admin.createUser({
         email: userProfile.email,
@@ -84,7 +82,6 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      console.log('[AIMS] Auth user created and password set for:', userProfile.email);
       return NextResponse.json({ 
         success: true, 
         message: 'Auth user created and password set successfully',
@@ -93,7 +90,6 @@ export async function POST(request: NextRequest) {
     }
     
     // Reset the user's password using Supabase Admin API
-    console.log('[AIMS] Attempting to reset password for userId:', userId);
     const { data, error } = await supabase.auth.admin.updateUserById(userId, {
       password: newPassword
     });
@@ -107,7 +103,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('[AIMS] Password reset successfully for user:', userId);
     return NextResponse.json({ 
       success: true, 
       message: 'Password reset successfully',

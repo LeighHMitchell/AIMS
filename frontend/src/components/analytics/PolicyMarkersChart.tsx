@@ -251,7 +251,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           const significance = entry.dataKey === 'notTargeted' ? 0 : entry.dataKey === 'significant' ? 1 : 2
           const sigInfo = SIGNIFICANCE_LABELS[significance]
           return (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
+            <p key={index} className="text-body" style={{ color: entry.color }}>
               {sigInfo.label}: {entry.value} {entry.value === 1 ? 'activity' : 'activities'}
             </p>
           )
@@ -273,7 +273,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           const significance = entry.dataKey === 'significantValue' ? 1 : 2
           const sigInfo = SIGNIFICANCE_LABELS[significance]
           return (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
+            <p key={index} className="text-body" style={{ color: entry.color }}>
               {sigInfo.label}: {formatCurrencyFull(entry.value)}
             </p>
           )
@@ -482,7 +482,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           <div className="space-y-4">
             {/* Policy Marker Filter */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Policy Markers</Label>
+              <Label className="text-body font-medium mb-2 block">Policy Markers</Label>
               <MultiSelect
                 options={markers.map(m => ({
                   label: `${m.code} - ${m.name}`,
@@ -498,7 +498,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
 
             {/* Significance Filter */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Significance Level</Label>
+              <Label className="text-body font-medium mb-2 block">Significance Level</Label>
               <div className="flex items-center gap-4">
                 {[1, 2].map(sig => (
                   <div key={sig} className="flex items-center space-x-2">
@@ -515,7 +515,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                     />
                     <Label
                       htmlFor={`sig-${sig}`}
-                      className="text-sm font-normal cursor-pointer"
+                      className="text-body font-normal cursor-pointer"
                     >
                       {SIGNIFICANCE_LABELS[sig].label}
                     </Label>
@@ -532,11 +532,11 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                   checked={showValueChart}
                   onCheckedChange={setShowValueChart}
                 />
-                <Label htmlFor="show-value-chart" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="show-value-chart" className="text-body font-medium cursor-pointer">
                   Show Value of Activities Chart
                 </Label>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-helper text-muted-foreground">
                 <Info className="h-3 w-3" />
                 <span>Values based on Total Activity Budget only</span>
               </div>
@@ -548,8 +548,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-800 mb-1">Note</p>
-                    <ul className="text-xs text-amber-700 list-disc list-inside space-y-1">
+                    <p className="text-body font-medium text-amber-800 mb-1">Note</p>
+                    <ul className="text-helper text-amber-700 list-disc list-inside space-y-1">
                       {warnings.map((warning, idx) => (
                         <li key={idx}>{warning}</li>
                       ))}
@@ -563,7 +563,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                <div className="flex-1 text-xs text-blue-800">
+                <div className="flex-1 text-helper text-blue-800">
                   <p className="font-medium mb-1">About Policy Markers</p>
                   <ul className="list-disc list-inside space-y-1">
                     <li>Policy markers reflect policy intent, not financial allocation</li>
@@ -733,7 +733,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="bg-surface-muted">
                     <tr className="border-b border-border">
                       <th 
@@ -846,7 +846,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                <div className="flex-1 text-xs text-blue-800">
+                <div className="flex-1 text-helper text-blue-800">
                   <p className="font-medium mb-1">About Time Series Data</p>
                   <ul className="list-disc list-inside space-y-1">
                     <li>Shows actual spend (disbursements + expenditures) by calendar year</li>
@@ -862,7 +862,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="bg-surface-muted">
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-medium text-foreground sticky left-0 bg-card z-10">
@@ -921,7 +921,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
       )}
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart analyses OECD/DAC policy markers such as gender equality, environment, and climate adaptation across your activity portfolio. Activities are grouped by marker and significance level (significant or principal objective). Use the filters to focus on specific markers, toggle the value chart to see associated budgets, and switch to the time series view to track trends over time.
       </p>
     </div>

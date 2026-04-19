@@ -116,13 +116,13 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
   }
 
   if (error) {
-    return <div className="text-center py-8 text-gray-500"><p>{error}</p></div>
+    return <div className="text-center py-8 text-muted-foreground"><p>{error}</p></div>
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+        <p className="text-body text-muted-foreground">
           {visibleSuggestions.length > 0
             ? `${visibleSuggestions.length} potential child activit${visibleSuggestions.length !== 1 ? 'ies' : 'y'} found`
             : 'No suggestions found'}
@@ -134,20 +134,20 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
       </div>
 
       {visibleSuggestions.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-muted-foreground">
           <Sparkles className="h-8 w-8 mx-auto mb-2" />
           <p className="text-lg">No suggestions available</p>
-          <p className="text-sm mt-1">The system looks for activities with transaction references to this fund, activities where this fund's organisation is a funding partner, and activities with similar titles.</p>
+          <p className="text-body mt-1">The system looks for activities with transaction references to this fund, activities where this fund's organisation is a funding partner, and activities with similar titles.</p>
         </div>
       )}
 
       {visibleSuggestions.map(suggestion => {
-        const confidenceColor = suggestion.confidence >= 60 ? 'bg-gray-200 text-gray-800'
-          : suggestion.confidence >= 30 ? 'bg-gray-100 text-gray-600'
-          : 'bg-gray-50 text-gray-500'
+        const confidenceColor = suggestion.confidence >= 60 ? 'bg-muted text-foreground'
+          : suggestion.confidence >= 30 ? 'bg-muted text-muted-foreground'
+          : 'bg-muted text-muted-foreground'
 
         return (
-          <Card key={suggestion.activityId} className="border border-gray-200">
+          <Card key={suggestion.activityId} className="border border-border">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -159,7 +159,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
                       {suggestion.title}
                     </Link>
                     {suggestion.status && (
-                      <Badge variant="outline" className="text-xs shrink-0">{suggestion.status}</Badge>
+                      <Badge variant="outline" className="text-helper shrink-0">{suggestion.status}</Badge>
                     )}
                     <Badge className={`text-xs shrink-0 ${confidenceColor}`}>
                       {suggestion.confidence}% match
@@ -168,14 +168,14 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
 
                   <div className="flex flex-wrap gap-1 mt-2">
                     {suggestion.reasons.map((reason, i) => (
-                      <Badge key={i} variant="outline" className="text-xs text-gray-500">
+                      <Badge key={i} variant="outline" className="text-helper text-muted-foreground">
                         {reason}
                       </Badge>
                     ))}
                   </div>
 
                   {suggestion.financialAmount > 0 && (
-                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-1 mt-2 text-helper text-muted-foreground">
                       <DollarSign className="h-3 w-3" />
                       {formatUSD(suggestion.financialAmount)} in linked transactions
                     </div>
@@ -197,7 +197,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDismiss(suggestion.activityId)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-muted-foreground hover:text-muted-foreground"
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>

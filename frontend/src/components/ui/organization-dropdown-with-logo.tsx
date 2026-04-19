@@ -103,18 +103,18 @@ export function OrganizationDropdownWithLogo({
           />
         ) : (
           <div className="w-6 h-6 bg-muted rounded-sm flex items-center justify-center">
-            <Building2 className="h-4 w-4 text-gray-400" />
+            <Building2 className="h-4 w-4 text-muted-foreground" />
           </div>
         )}
       </div>
       
       {/* Organization Details */}
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-gray-900 truncate">
+        <div className="font-medium text-foreground truncate">
           {getOrganizationDisplay(org)}
         </div>
         {getIatiCountryLine(org) && (
-          <div className="text-xs text-gray-500 truncate mt-0.5">
+          <div className="text-helper text-muted-foreground truncate mt-0.5">
             {getIatiCountryLine(org)}
           </div>
         )}
@@ -132,7 +132,7 @@ export function OrganizationDropdownWithLogo({
         aria-expanded={open}
         disabled={disabled}
         className={cn(
-          "w-full justify-between font-normal min-w-[320px] px-4 py-2 h-auto border border-gray-300 rounded-md bg-white hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 flex items-center",
+          "w-full justify-between font-normal min-w-[320px] px-4 py-2 h-auto border border-input rounded-md bg-white hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 flex items-center",
           disabled && "opacity-50 cursor-not-allowed",
           className
         )}
@@ -154,7 +154,7 @@ export function OrganizationDropdownWithLogo({
                   />
                 ) : (
                   <div className="w-5 h-5 bg-muted rounded-sm flex items-center justify-center">
-                    <Building2 className="h-3 w-3 text-gray-400" />
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -164,7 +164,7 @@ export function OrganizationDropdownWithLogo({
                   {getOrganizationDisplay(selectedOrg)}
                 </span>
                 {getIatiCountryLine(selectedOrg) && (
-                  <span className="text-sm text-gray-500 truncate">
+                  <span className="text-body text-muted-foreground truncate">
                     {getIatiCountryLine(selectedOrg)}
                   </span>
                 )}
@@ -175,12 +175,12 @@ export function OrganizationDropdownWithLogo({
               <span className="truncate font-medium text-base text-yellow-600">
                 {fallbackRef}
               </span>
-              <span className="text-sm text-yellow-500 truncate">
+              <span className="text-body text-yellow-500 truncate">
                 Organization not found in list
               </span>
             </span>
           ) : (
-            <span className="text-gray-400 text-base">{placeholder}</span>
+            <span className="text-muted-foreground text-base">{placeholder}</span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>
@@ -201,7 +201,7 @@ export function OrganizationDropdownWithLogo({
                 placeholder="Search organizations..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full h-9 px-3 text-body rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 autoFocus
               />
             </div>
@@ -214,7 +214,7 @@ export function OrganizationDropdownWithLogo({
             onTouchMove={(e) => e.stopPropagation()}
           >
             {filteredOrgs.length === 0 ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
+              <div className="p-4 text-center text-body text-muted-foreground">
                 No organization found.
               </div>
             ) : (

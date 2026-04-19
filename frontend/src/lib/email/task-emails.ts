@@ -41,7 +41,6 @@ export async function sendTaskAssignedEmail({
   creatorName,
 }: SendTaskAssignedEmailOptions): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.log('[Task Emails] Email not configured, skipping task assigned notification');
     return false;
   }
 
@@ -77,7 +76,6 @@ export async function sendTaskAssignedEmail({
   });
 
   if (success) {
-    console.log(`[Task Emails] Task assigned email sent to ${recipientEmail}`);
   } else {
     console.error(`[Task Emails] Failed to send task assigned email to ${recipientEmail}`);
   }
@@ -109,7 +107,6 @@ export async function sendTaskReminderEmail({
   deadline,
 }: SendTaskReminderEmailOptions): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.log('[Task Emails] Email not configured, skipping reminder notification');
     return false;
   }
 
@@ -149,7 +146,6 @@ export async function sendTaskReminderEmail({
   });
 
   if (success) {
-    console.log(`[Task Emails] Reminder email sent to ${recipientEmail}`);
   } else {
     console.error(`[Task Emails] Failed to send reminder email to ${recipientEmail}`);
   }
@@ -185,7 +181,6 @@ export async function sendTaskCompletedEmail({
   completedCount,
 }: SendTaskCompletedEmailOptions): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.log('[Task Emails] Email not configured, skipping completion notification');
     return false;
   }
 
@@ -226,7 +221,6 @@ export async function sendTaskCompletedEmail({
   });
 
   if (success) {
-    console.log(`[Task Emails] Completion email sent to ${creatorEmail}`);
   } else {
     console.error(`[Task Emails] Failed to send completion email to ${creatorEmail}`);
   }
@@ -258,7 +252,6 @@ export async function sendTaskOverdueEmail({
   creatorName,
 }: SendTaskOverdueEmailOptions): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.log('[Task Emails] Email not configured, skipping overdue notification');
     return false;
   }
 
@@ -290,7 +283,6 @@ export async function sendTaskOverdueEmail({
   });
 
   if (success) {
-    console.log(`[Task Emails] Overdue email sent to ${recipientEmail}`);
   } else {
     console.error(`[Task Emails] Failed to send overdue email to ${recipientEmail}`);
   }

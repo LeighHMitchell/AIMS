@@ -34,13 +34,6 @@ export async function PATCH(
       );
     }
     
-    console.log('[AIMS API] ===== PATCH /api/activities/[id] START =====');
-    console.log('[AIMS API] Activity ID:', id);
-    console.log('[AIMS API] Request body keys:', Object.keys(body));
-    console.log('[AIMS API] publicationStatus:', body.publicationStatus);
-    console.log('[AIMS API] geography_level from body:', body.geography_level);
-    console.log('[AIMS API] geographyLevel from body:', body.geographyLevel);
-    console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
 
     // Handle reporting organization fields from IATI import
     let reportingOrgId: string | null = null;
@@ -53,7 +46,6 @@ export async function PATCH(
       const reportingOrgRef = body.reporting_org_ref || body.reportingOrgRef;
       const reportingOrgType = body.reporting_org_type || body.reportingOrgType || '10'; // Default to 10 (Government) if not provided
 
-      console.log(`[AIMS API] Processing reporting organization: ${reportingOrgName || reportingOrgRef}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'}, Type: ${reportingOrgType}`);
 
       // Build query - if we have a ref, search by ref/name, otherwise just by name
       let query = supabase
@@ -84,10 +76,8 @@ export async function PATCH(
         reportingOrgId = matchingOrg.id;
         reportingOrgAcronym = matchingOrg.acronym;
         reportingOrgNameFromDB = matchingOrg.name; // Store the DB name
-        console.log(`[AIMS API] Found existing organization: ${matchingOrg.name} (ID: ${reportingOrgId})`);
       } else {
         // Don't create organization for reporting-org - it should be created via transactions/participating orgs
-        console.log(`[AIMS API] Reporting organization not found: ${reportingOrgName || reportingOrgRef}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'} - will be created via transactions or participating orgs`);
         // Store the ref and name for later use, but don't create the org here
       }
     }
@@ -185,8 +175,6 @@ export async function PATCH(
         activityFields.last_edited_by = editorId;
       }
 
-      console.log('[AIMS API] Updating basic activity fields:', JSON.stringify(activityFields, null, 2));
-      console.log('[AIMS API] geography_level in activityFields:', activityFields.geography_level);
       
       const { error: activityUpdateError } = await supabase
         .from('activities')
@@ -198,7 +186,6 @@ export async function PATCH(
         throw activityUpdateError;
       }
       
-      console.log('[AIMS API] Basic activity fields updated successfully');
     }
     
     // Handle SDG mappings update
@@ -227,7 +214,6 @@ export async function PATCH(
           alignment_strength: mapping.alignmentStrength || 'primary'
         }));
         
-        console.log('[AIMS API] Inserting SDG mappings:', JSON.stringify(sdgMappingsData, null, 2));
         
         const { error: insertError } = await supabase
           .from('activity_sdg_mappings')
@@ -239,12 +225,10 @@ export async function PATCH(
         }
       }
       
-      console.log('[AIMS API] SDG mappings updated successfully');
     }
 
     // Handle working groups update
     if (body.workingGroups !== undefined) {
-      console.log('[AIMS API] Updating working groups for activity:', id);
       
       // First, delete existing working groups
       const { error: deleteError } = await supabase
@@ -278,7 +262,6 @@ export async function PATCH(
             vocabulary: '99' // IATI custom vocabulary
           }));
 
-          console.log('[AIMS API] Inserting working groups:', JSON.stringify(workingGroupsData, null, 2));
 
           const { error: wgError } = await supabase
             .from('activity_working_groups')
@@ -291,13 +274,10 @@ export async function PATCH(
         }
       }
       
-      console.log('[AIMS API] Working groups updated successfully');
     }
 
     // Handle imported participating organizations
     if (body.importedParticipatingOrgs !== undefined) {
-      console.log('[AIMS API] Processing imported participating organizations for activity:', id);
-      console.log('[AIMS API] Imported participating orgs:', body.importedParticipatingOrgs);
       
       // First, delete existing participating organizations
       const { error: deleteError } = await supabase
@@ -364,7 +344,6 @@ export async function PATCH(
           .filter(Boolean);
         
         if (participatingOrgsData.length > 0) {
-          console.log('[AIMS API] Inserting participating organizations:', JSON.stringify(participatingOrgsData, null, 2));
           
           const { error: insertError } = await supabase
             .from('activity_participating_organizations')
@@ -377,14 +356,11 @@ export async function PATCH(
         }
       }
       
-      console.log('[AIMS API] Participating organizations updated successfully');
     }
 
     // Handle imported budgets
     const budgetImportResult: any = {};
     if (body.importedBudgets !== undefined && Array.isArray(body.importedBudgets)) {
-      console.log('[AIMS API] Processing imported budgets for activity:', id);
-      console.log('[AIMS API] Imported budgets:', body.importedBudgets);
       
       // Validation: Check for required fields and IATI compliance
       const validBudgets = [];
@@ -485,7 +461,6 @@ export async function PATCH(
           };
         });
         
-        console.log('[AIMS API] Inserting budgets:', JSON.stringify(budgetsToInsert, null, 2));
         
         const { error: insertError } = await supabase
           .from('activity_budgets')
@@ -496,17 +471,13 @@ export async function PATCH(
           throw insertError;
         }
         
-        console.log('[AIMS API] Successfully imported', validBudgets.length, 'budgets');
       }
       
-      console.log('[AIMS API] Budgets import complete:', budgetImportResult);
     }
 
     // Handle imported planned disbursements
     const disbursementImportResult: any = {};
     if (body.importedPlannedDisbursements !== undefined && Array.isArray(body.importedPlannedDisbursements)) {
-      console.log('[AIMS API] Processing imported planned disbursements for activity:', id);
-      console.log('[AIMS API] Imported planned disbursements:', body.importedPlannedDisbursements);
       
       // Validation: Check for required fields and IATI compliance
       const validDisbursements = [];
@@ -583,7 +554,6 @@ export async function PATCH(
           
           // Step 1: Try to match by IATI ref (if provided)
           if (orgData.ref) {
-            console.log(`[Planned Disbursement] Searching for org by IATI ref: "${orgData.ref}"`);
             
             const { data: orgsByRef } = await supabase
               .from('organizations')
@@ -598,15 +568,12 @@ export async function PATCH(
             
             if (exactRefMatch) {
               organizationId = exactRefMatch.id;
-              console.log(`[Planned Disbursement] ✓ Matched org by IATI ref "${orgData.ref}":`, exactRefMatch.name);
             } else {
-              console.log(`[Planned Disbursement] No IATI ref match found for "${orgData.ref}"`);
             }
           }
           
           // Step 2: If not found by ref, try exact name match
           if (!organizationId && orgData.name) {
-            console.log(`[Planned Disbursement] Searching for org by name: "${orgData.name}"`);
             
             const { data: orgsByName } = await supabase
               .from('organizations')
@@ -619,15 +586,12 @@ export async function PATCH(
             
             if (exactNameMatch) {
               organizationId = exactNameMatch.id;
-              console.log(`[Planned Disbursement] ✓ Matched org by name "${orgData.name}":`, exactNameMatch.name);
             } else {
-              console.log(`[Planned Disbursement] No exact name match found for "${orgData.name}"`);
             }
           }
           
           // Step 3: If still not found, create new organization
           if (!organizationId) {
-            console.log(`[Planned Disbursement] Creating new org: "${orgData.name}"`);
             
             const { data: newOrg, error: createError } = await supabase
               .from('organizations')
@@ -643,7 +607,6 @@ export async function PATCH(
             
             if (createError) {
               // Organization might have been created by another concurrent request
-              console.log(`[Planned Disbursement] Org creation failed (possibly duplicate), retrying search:`, createError.message);
               
               // Retry search by name
               const { data: retryOrgs } = await supabase
@@ -654,14 +617,12 @@ export async function PATCH(
               
               if (retryOrgs && retryOrgs.length > 0) {
                 organizationId = retryOrgs[0].id;
-                console.log(`[Planned Disbursement] ✓ Found org on retry:`, retryOrgs[0].name);
               } else {
                 console.error(`[Planned Disbursement] ✗ Failed to create or find org:`, orgData.name);
                 return null;
               }
             } else {
               organizationId = newOrg.id;
-              console.log(`[Planned Disbursement] ✓ Created new org successfully:`, newOrg.name);
             }
           }
           
@@ -672,7 +633,6 @@ export async function PATCH(
         const findActivityByIatiId = async (iatiId: string | null) => {
           if (!iatiId) return null;
           
-          console.log(`[Planned Disbursement] Searching for activity by IATI ID: "${iatiId}"`);
           
           const { data: activities } = await supabase
             .from('activities')
@@ -681,11 +641,9 @@ export async function PATCH(
             .limit(1);
           
           if (activities && activities.length > 0) {
-            console.log(`[Planned Disbursement] ✓ Found activity: ${activities[0].title_narrative || 'Untitled'}`);
             return activities[0].id;
           }
           
-          console.log(`[Planned Disbursement] No activity found with IATI ID "${iatiId}"`);
           return null;
         };
         
@@ -753,7 +711,6 @@ export async function PATCH(
           })
         );
         
-        console.log('[AIMS API] Inserting planned disbursements with linked organizations:', JSON.stringify(disbursementsToInsert, null, 2));
         
         const { error: insertError } = await supabase
           .from('planned_disbursements')
@@ -764,18 +721,13 @@ export async function PATCH(
           throw insertError;
         }
         
-        console.log('[AIMS API] Successfully imported', validDisbursements.length, 'planned disbursements');
       }
       
-      console.log('[AIMS API] Planned disbursements import complete:', disbursementImportResult);
     }
 
     // Handle imported budget mappings
     const countryBudgetImportResult: any = {};
     if (body.importedCountryBudgetItems !== undefined && Array.isArray(body.importedCountryBudgetItems)) {
-      console.log('[AIMS API] 🎯 Processing imported budget mappings for activity:', id);
-      console.log('[AIMS API] 🎯 Imported budget mappings count:', body.importedCountryBudgetItems.length);
-      console.log('[AIMS API] 🎯 Imported budget mappings data:', JSON.stringify(body.importedCountryBudgetItems, null, 2));
       
       const validCountryBudgetItems = [];
       const invalidCountryBudgetItems: Array<{ index: number; cbi: any; errors: string[] }> = [];
@@ -856,7 +808,6 @@ export async function PATCH(
           continue; // Skip to next
         }
         
-        console.log('[AIMS API] ✅ Successfully inserted country_budget_items:', newCbi.id);
         
         // Insert child budget_items records
         if (cbi.budgetItems && cbi.budgetItems.length > 0) {
@@ -867,7 +818,6 @@ export async function PATCH(
             description: item.description || null
           }));
           
-          console.log('[AIMS API] 📝 Inserting budget items:', budgetItemsToInsert);
           
           const { error: itemsError } = await supabase
             .from('budget_items')
@@ -876,18 +826,14 @@ export async function PATCH(
           if (itemsError) {
             console.error('[AIMS API] ❌ Error inserting budget_items:', itemsError);
           } else {
-            console.log('[AIMS API] ✅ Successfully inserted', budgetItemsToInsert.length, 'budget items');
           }
         }
       }
       
-      console.log('[AIMS API] 🎉 Budget mappings import complete:', countryBudgetImportResult);
     }
 
     // Handle imported contacts
     if (body.importedContacts !== undefined && Array.isArray(body.importedContacts)) {
-      console.log('[AIMS API] Processing imported contacts for activity:', id);
-      console.log('[AIMS API] Imported contacts count:', body.importedContacts.length);
       
       // Delete existing contacts for this activity (import replaces)
       const { error: deleteError } = await supabase
@@ -962,7 +908,6 @@ export async function PATCH(
           };
         });
         
-        console.log('[AIMS API] Inserting contacts:', JSON.stringify(contactsToInsert, null, 2));
         
         const { error: insertError } = await supabase
           .from('activity_contacts')
@@ -973,7 +918,6 @@ export async function PATCH(
           throw insertError;
         }
         
-        console.log('[AIMS API] Successfully imported', body.importedContacts.length, 'contacts');
       }
     }
     
@@ -1035,8 +979,6 @@ export async function GET(
 
   // Log immediately - should appear in terminal
   console.error('[AIMS API ERROR LOG] ===== ROUTE CALLED =====');
-  console.log('[AIMS API] ===== GET /api/activities/[id] START =====');
-  console.log('[AIMS API] Request URL:', request.url);
   
   try {
     const { supabase, response: authResponse } = await requireAuth();
@@ -1044,13 +986,9 @@ export async function GET(
 
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
-    console.log('[AIMS API] Full params object:', JSON.stringify(resolvedParams, null, 2));
     
     const { id } = resolvedParams;
     
-    console.log('[AIMS API] Extracted ID:', id);
-    console.log('[AIMS API] ID type:', typeof id);
-    console.log('[AIMS API] ID length:', id?.length);
     
     if (!id) {
       console.error('[AIMS API] ERROR: Activity ID is missing!');
@@ -1063,7 +1001,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS API] GET /api/activities/[id] - Fetching activity:', id);
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(
@@ -1073,7 +1010,6 @@ export async function GET(
     }
     
     // First, check if the activity exists at all (simple query without joins)
-    console.log('[AIMS API] Step 1: Checking if activity exists...');
     const { data: basicActivity, error: basicError } = await supabase
       .from('activities')
       .select('id, title_narrative')
@@ -1098,10 +1034,8 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS API] Activity found:', basicActivity.title_narrative);
     
     // OPTIMIZED: Fetch activity with all related data in a single query
-    console.log('[AIMS API] Step 2: Fetching full activity data with relations...');
     
     const { data: activityWithRelations, error } = await supabase
       .from('activities')
@@ -1147,7 +1081,6 @@ export async function GET(
       );
     }
 
-    console.log('[AIMS API] Single query completed successfully');
     
     // Extract related data from the consolidated result
     const activity = activityWithRelations;
@@ -1281,7 +1214,6 @@ export async function GET(
       budgetStatusUpdatedBy: activity.budget_status_updated_by,
       // Geography level (activity vs transaction level)
       geography_level: (() => {
-        console.log('[AIMS API] GET - activity.geography_level from DB:', activity.geography_level);
         return activity.geography_level || 'activity';
       })(),
       geographyLevel: activity.geography_level || 'activity',
@@ -1339,7 +1271,6 @@ export async function GET(
         policy_marker_details: marker.policy_markers
       })) || [],
       locations: (() => {
-        console.log('[AIMS API] Raw locations from DB:', locations);
         const specificLocations: any[] = [];
         const coverageAreas: any[] = [];
         
@@ -1388,15 +1319,10 @@ export async function GET(
           specificLocations,
           coverageAreas
         };
-        console.log('[AIMS API] Transformed locations result:', result);
         return result;
       })()
     };
     
-    console.log('[AIMS API] Activity found:', transformedActivity.title);
-    console.log('[AIMS API] Activity ID (UUID):', transformedActivity.id);
-    console.log('[AIMS API] Transformed sectors being sent to frontend:', JSON.stringify(transformedActivity.sectors, null, 2));
-    console.log('[AIMS API] Policy markers being sent to frontend:', JSON.stringify(transformedActivity.policyMarkers, null, 2));
     
     return NextResponse.json(transformedActivity, {
       headers: {

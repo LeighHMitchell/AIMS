@@ -254,16 +254,15 @@ export function useScrollSpy(
     // Update active section immediately for responsive UI
     setActiveSection(sectionId)
 
-    // Use requestAnimationFrame to ensure DOM has settled before scrolling
+    // Use requestAnimationFrame to ensure DOM has settled before scrolling.
+    // Single smooth scroll, no follow-up retry — late lazy-load layout
+    // shifts can leave the target slightly misaligned, but the competing
+    // retry attempts we tried caused worse flicker, so we accept the
+    // occasional drift.
     requestAnimationFrame(() => {
-      // Re-query the element in case the DOM shifted during the frame
       const targetElement = document.getElementById(sectionId)
-      if (targetElement) {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        })
-      }
+      if (!targetElement) return
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   }, [sections, lockScrollSpy])
 

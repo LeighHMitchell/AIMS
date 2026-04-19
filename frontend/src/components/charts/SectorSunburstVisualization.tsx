@@ -105,7 +105,6 @@ export default function SectorSunburstVisualization({
 
   // Build hierarchy: Categories -> Sectors -> Subsectors
   const hierarchyData = useMemo(() => {
-    console.log('Processing allocations:', allocations);
     
     const categoryMap = new Map<string, {
       code: string;
@@ -133,7 +132,6 @@ export default function SectorSunburstVisualization({
       const sectorCode = sectorData['codeforiati:category-code']; // e.g., "111"
       const sectorName = sectorData['codeforiati:category-name']; // e.g., "Education, Level Unspecified"
 
-      console.log(`Processing ${allocation.code}: ${categoryCode}/${sectorCode}`);
 
       // Initialize category if not exists
       if (!categoryMap.has(categoryCode)) {
@@ -165,7 +163,6 @@ export default function SectorSunburstVisualization({
       category.percentage += allocation.percentage;
     });
 
-    console.log('Built hierarchy:', categoryMap);
     return categoryMap;
   }, [allocations]);
 
@@ -197,13 +194,11 @@ export default function SectorSunburstVisualization({
   useEffect(() => {
     if (!svgRef.current || allocations.length === 0) return;
 
-    console.log('Rendering sunburst with data:', hierarchyData);
 
     // Clear previous chart
     d3.select(svgRef.current).selectAll('*').remove();
 
     if (hierarchyData.size === 0) {
-      console.log('No data to render');
       return;
     }
 
@@ -231,7 +226,7 @@ export default function SectorSunburstVisualization({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white p-3 rounded-lg shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute invisible bg-gray-900 text-white p-3 rounded-lg shadow-lg text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     // Helper function to create arc path
@@ -448,7 +443,7 @@ export default function SectorSunburstVisualization({
             </TableRow>
             {/* Unallocated row */}
             {unallocatedPercentage > 0 && (
-              <TableRow className="text-gray-500">
+              <TableRow className="text-muted-foreground">
                 <TableCell colSpan={4}>Unallocated</TableCell>
                 <TableCell className="text-right font-mono">
                   {unallocatedPercentage.toFixed(1)}%
@@ -465,8 +460,8 @@ export default function SectorSunburstVisualization({
     return (
       <Card className={`p-8 ${className}`}>
         <div className="text-center">
-          <div className="text-lg font-medium text-gray-500 mb-2">No Sector Allocations</div>
-          <div className="text-sm text-gray-400">Add sector allocations to see the visualization</div>
+          <div className="text-lg font-medium text-muted-foreground mb-2">No Sector Allocations</div>
+          <div className="text-body text-muted-foreground">Add sector allocations to see the visualization</div>
         </div>
       </Card>
     );

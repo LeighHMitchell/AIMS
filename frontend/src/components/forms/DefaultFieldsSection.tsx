@@ -51,7 +51,6 @@ export function DefaultFieldsSection({
     activityId,
     initialValues,
     onFieldUpdate: (field, value) => {
-      console.log(`[DefaultFieldsSection] Field updated: ${field} = ${value}`);
       onFieldUpdate?.(field, value);
     },
     onError: (field, error) => {
@@ -72,27 +71,22 @@ export function DefaultFieldsSection({
   );
 
   const handleAidTypeChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Aid Type changing to:', value);
     await updateDefaultAidType(value);
   };
 
   const handleFinanceTypeChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Finance Type changing to:', value);
     await updateDefaultFinanceType(value);
   };
 
   const handleFlowTypeChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Flow Type changing to:', value);
     await updateDefaultFlowType(value);
   };
 
   const handleCurrencyChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Currency changing to:', value);
     await updateDefaultCurrency(value);
   };
 
   const handleTiedStatusChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Tied Status changing to:', value);
     await updateDefaultTiedStatus(value);
   };
 
@@ -101,7 +95,7 @@ export function DefaultFieldsSection({
       return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
     }
     if (error) {
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className="h-4 w-4 text-destructive" />;
     }
     if (lastUpdated) {
       return <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
@@ -134,7 +128,7 @@ export function DefaultFieldsSection({
               </Badge>
             )}
             {getUpdateStatusIcon()}
-            <span className="text-sm text-gray-500">{getUpdateStatusText()}</span>
+            <span className="text-body text-muted-foreground">{getUpdateStatusText()}</span>
           </div>
         </div>
       </CardHeader>
@@ -142,7 +136,7 @@ export function DefaultFieldsSection({
       <CardContent className="space-y-6">
         {/* Debug Information */}
         {showDebugInfo && (
-          <div className="bg-gray-50 p-3 rounded-md text-xs">
+          <div className="bg-muted p-3 rounded-md text-helper">
             <div><strong>Activity ID:</strong> {activityId || 'None'}</div>
             <div><strong>Current Values:</strong> {JSON.stringify(values, null, 2)}</div>
             <div><strong>Is Updating:</strong> {isUpdating ? 'Yes' : 'No'}</div>
@@ -155,7 +149,7 @@ export function DefaultFieldsSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Aid Type
               </label>
               <HelpTextTooltip content="Specifies the type of assistance being provided, such as project-type interventions, budget support, or debt relief. This value applies to all financial transactions under an activity unless specified otherwise." />
@@ -168,7 +162,7 @@ export function DefaultFieldsSection({
               disabled={disabled || isUpdating}
             />
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {values.default_aid_type || 'null'}
               </div>
             )}
@@ -176,7 +170,7 @@ export function DefaultFieldsSection({
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Finance Type
               </label>
               <HelpTextTooltip content="Defines the financial mechanism being used, such as grants, loans, equity, or debt relief. This value is set as the default for all financial transactions in an activity." />
@@ -189,7 +183,7 @@ export function DefaultFieldsSection({
               disabled={disabled || isUpdating}
             />
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {values.default_finance_type || 'null'}
               </div>
             )}
@@ -200,7 +194,7 @@ export function DefaultFieldsSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Flow Type
               </label>
               <HelpTextTooltip content="Classifies the resource flow, for example, as concessional aid, other official flows, or private development finance. This setting applies by default across transactions unless a different flow type is recorded." />
@@ -213,7 +207,7 @@ export function DefaultFieldsSection({
               disabled={disabled || isUpdating}
             />
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {values.default_flow_type || 'null'}
               </div>
             )}
@@ -221,7 +215,7 @@ export function DefaultFieldsSection({
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Currency
               </label>
               <HelpTextTooltip content="Indicates the ISO 4217 three-letter currency code used for all financial values in a report. If no default is set, each monetary value must have its own currency." />
@@ -235,7 +229,7 @@ export function DefaultFieldsSection({
               disabled={disabled || isUpdating}
             />
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {values.default_currency || 'null'}
               </div>
             )}
@@ -246,7 +240,7 @@ export function DefaultFieldsSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Tied Status
               </label>
               <HelpTextTooltip content="Shows whether the aid is untied, tied, or partially tied. This default can be overridden at the transaction level, but ensures clarity on restrictions that may apply to funding." />
@@ -259,14 +253,14 @@ export function DefaultFieldsSection({
               disabled={disabled || isUpdating}
             />
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {values.default_tied_status || 'null'}
               </div>
             )}
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Disbursement Channel
               </label>
               <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies. This provides clarity on how resources reach the implementing body." />
@@ -279,7 +273,7 @@ export function DefaultFieldsSection({
               disabled={disabled || isUpdating}
             />
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {initialValues?.default_disbursement_channel || 'null'}
               </div>
             )}
@@ -290,7 +284,7 @@ export function DefaultFieldsSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-body font-medium text-foreground">
                 Default Modality
               </label>
               <HelpTextTooltip content="Provides an overarching classification that combines aid type, flow type, finance type, and tied status. It offers a simplified summary view of how resources are structured and delivered by default across an activity." />
@@ -312,7 +306,7 @@ export function DefaultFieldsSection({
               </SelectContent>
             </Select>
             {showDebugInfo && (
-              <div className="text-xs text-gray-500">
+              <div className="text-helper text-muted-foreground">
                 Current: {initialValues?.default_aid_modality || 'null'}
               </div>
             )}
@@ -322,10 +316,10 @@ export function DefaultFieldsSection({
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <span className="text-body text-destructive">
                 Failed to save changes: {error}
               </span>
             </div>
@@ -337,7 +331,7 @@ export function DefaultFieldsSection({
           <div className="bg-green-50 border border-green-200 rounded-md p-3">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-              <span className="text-sm text-green-700">
+              <span className="text-body text-green-700">
                 Default values saved successfully at {lastUpdated.toLocaleTimeString()}
               </span>
             </div>

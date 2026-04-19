@@ -15,7 +15,7 @@ export function NewsletterSection() {
       <motion.div
         animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        className="absolute right-0 top-0 h-64 w-64 rounded-full bg-gray-200/30 blur-3xl"
+        className="absolute right-0 top-0 h-64 w-64 rounded-full bg-muted/30 blur-3xl"
       />
       <motion.div
         animate={{ scale: [1.2, 1, 1.2], rotate: [0, -90, 0] }}
@@ -24,7 +24,7 @@ export function NewsletterSection() {
       />
 
       <div className="relative mx-auto max-w-4xl">
-        <Card className="overflow-hidden border-gray-200 bg-white/80 shadow-lg backdrop-blur-sm">
+        <Card className="overflow-hidden border-border bg-white/80 shadow-lg backdrop-blur-sm">
           <div className="grid gap-8 p-8 md:grid-cols-2 md:p-12">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -33,10 +33,10 @@ export function NewsletterSection() {
               transition={{ duration: 0.6 }}
               className="flex flex-col justify-center"
             >
-              <h2 className="mb-4 text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+              <h2 className="mb-4 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                 Stay informed on platform developments
               </h2>
-              <p className="mb-6 text-gray-600">
+              <p className="mb-6 text-muted-foreground">
                 Receive periodic updates on new features, transparency initiatives,
                 data releases, and guidance on development finance management.
               </p>
@@ -50,9 +50,9 @@ export function NewsletterSection() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: 0.2 + index * 0.1 }}
-                      className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-700"
+                      className="inline-flex items-center gap-1 rounded-md border border-input bg-muted px-2.5 py-0.5 text-helper font-medium text-foreground"
                     >
-                      <Check className="h-3 w-3 text-gray-700" />
+                      <Check className="h-3 w-3 text-foreground" />
                       {feature}
                     </motion.div>
                   )
@@ -256,7 +256,7 @@ export function NewsletterSection() {
                       </form>
                     </div>
 
-                    <p className="text-center text-xs text-gray-500">
+                    <p className="text-center text-helper text-muted-foreground">
                       We respect your privacy. Unsubscribe at any time.
                     </p>
                   </motion.div>
@@ -276,16 +276,16 @@ export function NewsletterSection() {
                         stiffness: 200,
                         damping: 15,
                       }}
-                      className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100"
+                      className="flex h-16 w-16 items-center justify-center rounded-full bg-muted"
                     >
-                      <Check className="h-8 w-8 text-gray-900" />
+                      <Check className="h-8 w-8 text-foreground" />
                     </motion.div>
 
                     <div className="text-center">
-                      <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                      <h3 className="mb-2 text-xl font-semibold text-foreground">
                         Subscription confirmed
                       </h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-body text-muted-foreground">
                         Check your inbox to confirm your subscription
                       </p>
                     </div>

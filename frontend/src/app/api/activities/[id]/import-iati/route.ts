@@ -108,7 +108,6 @@ export async function POST(
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[IATI Import] 🚀 POST handler called');
   try {
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
@@ -143,11 +142,6 @@ export async function POST(
       );
     }
     
-    console.log('[IATI Import] 🚀 POST handler called for activity:', activityId);
-    console.log('[IATI Import] Starting import for activity:', activityId);
-    console.log('[IATI Import] Fields to import:', Object.keys(fields).filter(k => fields[k]));
-    console.log('[IATI Import] Related activities flag:', fields.related_activities);
-    console.log('[IATI Import] Related activities data present:', !!iati_data.relatedActivities);
     // Fetch current activity data
     const { data: currentActivity, error: fetchError } = await supabase
       .from('activities')
@@ -173,7 +167,6 @@ export async function POST(
           .eq('id', currentActivity.organization_id)
           .single();
         organizationDefaultCurrency = orgData?.default_currency || null;
-        console.log('[IATI Import] Organization default currency:', organizationDefaultCurrency);
       } catch (err) {
         console.warn('[IATI Import] Could not fetch organization default_currency:', err);
       }
@@ -194,7 +187,6 @@ export async function POST(
     const userProvidedAcronym = activityIatiId && acronyms[activityIatiId];
     
     if (userProvidedAcronym) {
-      console.log('[IATI Import] User provided acronym for activity:', userProvidedAcronym);
     }
     
     // Simple field mappings
@@ -256,15 +248,12 @@ export async function POST(
     if (userProvidedAcronym) {
       updateData.acronym = userProvidedAcronym;
       updatedFields.push('acronym');
-      console.log(`[IATI Import] Setting acronym from user input: "${userProvidedAcronym}"`);
     }
     
     // IMPORTANT: This route is for merge/fork/reference modes only
     // We should NOT update reporting org fields - preserve the existing reporting org
     // Reporting org updates are handled by the import-as-reporting-org route
     if (reportingOrgName || reportingOrgRef) {
-      console.log(`[IATI Import] ⚠️  Reporting org fields provided but IGNORED - this route preserves existing reporting org`);
-      console.log(`[IATI Import] ⚠️  To update reporting org, use import-as-reporting-org mode instead`);
     }
 
     // If activity has no reporting org but IATI data does, set it
@@ -283,19 +272,16 @@ export async function POST(
         updateData.reporting_org_id = matchedOrg.id;
         updateData.reporting_org_ref = reportingOrgFromIati.ref;
         updateData.reporting_org_name = matchedOrg.name;
-        console.log(`[IATI Import] ✅ Set reporting org from IATI data: ${matchedOrg.name}`);
       } else {
         // No match found, set ref and name from IATI data without org_id
         updateData.reporting_org_ref = reportingOrgFromIati.ref;
         updateData.reporting_org_name = reportingOrgFromIati.narrative || reportingOrgFromIati.name;
-        console.log(`[IATI Import] ⚠️ Set reporting org ref from IATI data (no org match): ${reportingOrgFromIati.ref}`);
       }
       updatedFields.push('reporting_org');
     }
 
     // Handle JSONB geography fields (stored directly on activities table)
     if (fields.recipient_countries && iati_data.recipient_countries && Array.isArray(iati_data.recipient_countries)) {
-      console.log('[IATI Import] Processing recipient_countries:', iati_data.recipient_countries.length, 'items');
       previousValues.recipient_countries = currentActivity.recipient_countries;
       updateData.recipient_countries = iati_data.recipient_countries.map((country: any) => ({
         id: country.id || `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -311,11 +297,9 @@ export async function POST(
         narrative: country.narrative || null
       }));
       updatedFields.push('recipient_countries');
-      console.log(`[IATI Import] ✓ Processed ${updateData.recipient_countries.length} recipient countries`);
     }
 
     if (fields.recipient_regions && iati_data.recipient_regions && Array.isArray(iati_data.recipient_regions)) {
-      console.log('[IATI Import] Processing recipient_regions:', iati_data.recipient_regions.length, 'items');
       previousValues.recipient_regions = currentActivity.recipient_regions;
       updateData.recipient_regions = iati_data.recipient_regions.map((region: any) => ({
         id: region.id || `region-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -330,11 +314,9 @@ export async function POST(
         narrative: region.narrative || null
       }));
       updatedFields.push('recipient_regions');
-      console.log(`[IATI Import] ✓ Processed ${updateData.recipient_regions.length} recipient regions`);
     }
 
     if (fields.custom_geographies && iati_data.custom_geographies && Array.isArray(iati_data.custom_geographies)) {
-      console.log('[IATI Import] Processing custom_geographies:', iati_data.custom_geographies.length, 'items');
       previousValues.custom_geographies = currentActivity.custom_geographies;
       updateData.custom_geographies = iati_data.custom_geographies.map((geo: any) => ({
         id: geo.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -346,7 +328,6 @@ export async function POST(
         narrative: geo.narrative || null
       }));
       updatedFields.push('custom_geographies');
-      console.log(`[IATI Import] ✓ Processed ${updateData.custom_geographies.length} custom geographies`);
     }
     
     // Update activity with simple fields
@@ -366,7 +347,6 @@ export async function POST(
         throw updateError;
       }
       
-      console.log('[IATI Import] ✅ Activity updated successfully');
       
       // Verify what was actually saved to the database
       const { data: verifyActivity } = await supabase
@@ -375,7 +355,6 @@ export async function POST(
         .eq('id', activityId)
         .single();
       
-      console.log(`[IATI Import] ✅ Verified saved org fields:`, verifyActivity);
       
       if (!verifyActivity?.reporting_org_id && !verifyActivity?.created_by_org_name) {
         console.error(`[IATI Import] ⚠️  WARNING: Organization fields are NULL after update!`);
@@ -384,7 +363,6 @@ export async function POST(
     
     // Handle sectors if selected
     if (fields.sectors && iati_data.sectors) {
-      console.log('[IATI Import] Updating sectors');
       
       // Store previous sectors
       const { data: previousSectors } = await supabase
@@ -461,7 +439,6 @@ export async function POST(
     // Handle policy markers if selected
     let policyMarkersCount = 0;
     if (fields.policy_markers && iati_data.policyMarkers) {
-      console.log('[IATI Import] Updating policy markers');
       
       // Store previous policy markers
       const { data: previousPolicyMarkers } = await supabase
@@ -524,7 +501,6 @@ export async function POST(
           new Map(availableMarkers.map((m: any) => [m.uuid, m])).values()
         );
         
-        console.log(`[IATI Import] Found ${uniqueMarkers.length} available policy markers`);
         
         const importedPolicyMarkers: any[] = [];
         const unmatchedMarkers: any[] = [];
@@ -584,11 +560,9 @@ export async function POST(
               rationale: xmlMarker.narrative || null
             });
             
-            console.log(`[IATI Import] Mapped policy marker: ${xmlMarker.code} -> ${matchingMarker.name} (significance: ${significance})`);
           } else {
             // Marker not found - try to create custom marker if vocabulary is 99
             if (markerVocabulary === '99') {
-              console.log(`[IATI Import] Creating custom policy marker for code: ${xmlMarker.code}, vocabulary: 99`);
               
               try {
                 // Create custom policy marker
@@ -621,7 +595,6 @@ export async function POST(
                     details: createError?.message || 'Unknown error'
                   });
                 } else {
-                  console.log(`[IATI Import] Successfully created custom policy marker:`, newMarker);
                   
                   // Convert significance from string to number
                   const rawSignificance = parseInt(xmlMarker.significance || '0', 10);
@@ -644,7 +617,6 @@ export async function POST(
                     rationale: xmlMarker.narrative || null
                   });
                   
-                  console.log(`[IATI Import] Created and assigned custom policy marker: ${xmlMarker.code} -> ${newMarker.name} (significance: ${significance})`);
                 }
               } catch (createErr: any) {
                 console.error(`[IATI Import] Exception creating custom policy marker:`, createErr);
@@ -690,7 +662,6 @@ export async function POST(
             });
           } else {
             policyMarkersCount = importedPolicyMarkers.length;
-            console.log(`[IATI Import] ✓ Imported ${policyMarkersCount} policy markers`);
             updatedFields.push('policy_markers');
           }
         }
@@ -707,8 +678,6 @@ export async function POST(
     
     // Handle participating organizations if selected
     if (fields.participating_orgs && iati_data.participating_orgs) {
-      console.log('[IATI Import] Updating participating organizations');
-      console.log(`[IATI Import] Attempting to import ${iati_data.participating_orgs.length} participating organizations`);
       
       // Store previous participating organizations
       const { data: previousParticipatingOrgs } = await supabase
@@ -747,7 +716,6 @@ export async function POST(
             orgId = directMatch.id;
             method = 'matched by IATI ID';
             wasExisting = true;
-            console.log(`[IATI Import] ✓ Found existing organization: "${directMatch.name || orgName}" (${method})`);
             return { id: orgId, method, wasExisting };
           }
           
@@ -765,7 +733,6 @@ export async function POST(
               orgId = aliasMatch.id;
               method = 'matched by alias reference';
               wasExisting = true;
-              console.log(`[IATI Import] ✓ Found existing organization: "${aliasMatch.name || orgName}" (${method})`);
               return { id: orgId, method, wasExisting };
             }
           }
@@ -790,7 +757,6 @@ export async function POST(
               orgId = exactMatch.id;
               method = 'matched by name (exact)';
               wasExisting = true;
-              console.log(`[IATI Import] ✓ Found existing organization: "${exactMatch.name || orgName}" (${method})`);
               return { id: orgId, method, wasExisting };
             }
 
@@ -805,7 +771,6 @@ export async function POST(
               orgId = partialMatches[0].id;
               method = 'matched by name (partial)';
               wasExisting = true;
-              console.log(`[IATI Import] ✓ Found existing organization: "${partialMatches[0].name || orgName}" (${method})`);
               return { id: orgId, method, wasExisting };
             }
           }
@@ -832,7 +797,6 @@ export async function POST(
             orgId = createdOrg.id;
             method = 'created new organization';
             wasExisting = false;
-            console.log(`[IATI Import] ✓ Created new organization: "${createdOrg.name || orgName}"`);
             return { id: orgId, method, wasExisting };
           } else if (createError) {
             // Check if error is due to duplicate (unique constraint violation)
@@ -849,7 +813,6 @@ export async function POST(
                   orgId = existing.id;
                   method = 'already exists in database (duplicate prevented)';
                   wasExisting = true;
-                  console.log(`[IATI Import] ✓ Organization already exists: "${existing.name || orgName}" (${method})`);
                   return { id: orgId, method, wasExisting };
                 }
               }
@@ -869,7 +832,6 @@ export async function POST(
                   orgId = existing.id;
                   method = 'already exists in database (duplicate prevented)';
                   wasExisting = true;
-                  console.log(`[IATI Import] ✓ Organization already exists: "${existing.name || orgName}" (${method})`);
                   return { id: orgId, method, wasExisting };
                 }
               }
@@ -1085,7 +1047,6 @@ export async function POST(
             }
           } else {
             insertedCount = insertedData?.length || 0;
-            console.log(`[IATI Import] ✅ Successfully inserted ${insertedCount} new participating organizations`);
           }
         }
         
@@ -1106,7 +1067,6 @@ export async function POST(
           }
           
           if (updatedCount > 0) {
-            console.log(`[IATI Import] ✅ Successfully updated ${updatedCount} existing participating organizations with IATI fields`);
           }
         }
         
@@ -1115,10 +1075,8 @@ export async function POST(
         const createdCount = matchedOrgs.filter(m => !m.wasExisting).length;
         
         if (existingCount > 0) {
-          console.log(`[IATI Import] ℹ️  ${existingCount} organization(s) were already in the database and were linked to the activity`);
         }
         if (createdCount > 0) {
-          console.log(`[IATI Import] ℹ️  ${createdCount} organization(s) were created during import`);
         }
         
         // Add warnings for duplicate orgs
@@ -1139,7 +1097,6 @@ export async function POST(
         // Log final summary
         const totalProcessed = insertedCount + updatedCount;
         if (totalProcessed > 0) {
-          console.log(`[IATI Import] ✅ Successfully processed ${totalProcessed} participating organizations (${insertedCount} inserted, ${updatedCount} updated)`);
         }
         if (failedCount > 0) {
           console.error(`[IATI Import] ❌ Failed to process ${failedCount} participating organizations`);
@@ -1196,7 +1153,6 @@ export async function POST(
         // All organizations were matched - log summary
         const existingCount = matchedOrgs.filter(m => m.wasExisting).length;
         if (existingCount > 0) {
-          console.log(`[IATI Import] ℹ️  All ${matchedOrgs.length} organizations were successfully linked (${existingCount} were already in the database)`);
         }
       }
       
@@ -1205,7 +1161,6 @@ export async function POST(
     
     // Handle locations if selected
     if (fields.locations && iati_data.locations) {
-      console.log('[IATI Import] Updating locations');
       
       // Store previous locations
       const { data: previousLocations } = await supabase
@@ -1223,7 +1178,6 @@ export async function POST(
       
       // Insert new locations
       if (Array.isArray(iati_data.locations) && iati_data.locations.length > 0) {
-        console.log('[IATI Import] About to process', iati_data.locations.length, 'locations');
         try {
           const locationData = await Promise.all(
             iati_data.locations.map(async (loc: any) => {
@@ -1245,7 +1199,6 @@ export async function POST(
                 longitude = parseFloat(coords[1]);
               }
             }
-            console.log('[IATI Import] Parsed coordinates:', { latitude, longitude });
             
             // Determine location type - site if has coordinates, coverage otherwise
             const locationType = (latitude && longitude) ? 'site' : 'coverage';
@@ -1291,13 +1244,11 @@ export async function POST(
 
               // Perform reverse geocoding to populate address fields
               try {
-                console.log(`[IATI Import] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
                 const geocodeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`;
                 const geocodeResponse = await fetch(geocodeUrl);
                 
                 if (geocodeResponse.ok) {
                   const geocodeData = await geocodeResponse.json();
-                  console.log('[IATI Import] Geocoding result:', geocodeData);
                   
                   // Populate address fields from geocoding
                   if (geocodeData.address) {
@@ -1317,7 +1268,6 @@ export async function POST(
                     locationEntry.village_name = geocodeData.address.village || 
                                                 geocodeData.address.hamlet;
                     
-                    console.log('[IATI Import] Address fields populated from reverse geocoding');
                   }
                 } else {
                   console.warn('[IATI Import] Reverse geocoding failed, continuing without address data');
@@ -1341,7 +1291,6 @@ export async function POST(
             return locationEntry;
           })
         );
-        console.log('[IATI Import] Promise.all completed, locationData length:', locationData.length);
         
         console.log('[IATI Import] Location data to insert:', locationData.map(loc => ({
           location_name: loc.location_name,
@@ -1357,7 +1306,6 @@ export async function POST(
           console.error('[IATI Import] Error inserting locations:', locationsError);
           // Don't throw - continue with other updates
         } else {
-          console.log('[IATI Import] Locations inserted successfully');
           updatedFields.push('locations');
         }
         } catch (locationProcessingError) {
@@ -1375,7 +1323,6 @@ export async function POST(
     let plannedDisbursementsCount = 0;
 
     if (fields.transactions && iati_data.transactions) {
-      console.log('[IATI Import] Processing transactions');
 
       // Get existing transactions to check for duplicates
       const { data: existingTransactions } = await supabase
@@ -1408,7 +1355,6 @@ export async function POST(
       });
 
       newTransactionsCount = newTransactions.length;
-      console.log(`[IATI Import] Found ${newTransactionsCount} new transactions out of ${iati_data.transactions.length} total`);
       
       if (newTransactions.length > 0) {
         // Fetch participating organizations for transaction party inference
@@ -1432,7 +1378,6 @@ export async function POST(
           name: currentActivity.reporting_org_name,
         };
         
-        console.log(`[IATI Import] Transaction inference setup: ${inferenceParticipatingOrgs.length} participating orgs, reporting org: ${inferenceReportingOrg.ref}`);
         
         // Map organization names to IDs if needed
         const allOrgNames = new Set<string>();
@@ -1456,7 +1401,6 @@ export async function POST(
         const findActivityByIatiId = async (iatiId: string | null | undefined): Promise<string | null> => {
           if (!iatiId) return null;
           
-          console.log(`[Transaction] Searching for activity by IATI ID: "${iatiId}"`);
           
           const { data: activities } = await supabase
             .from('activities')
@@ -1465,11 +1409,9 @@ export async function POST(
             .limit(1);
           
           if (activities && activities.length > 0) {
-            console.log(`[Transaction] ✓ Found activity: ${activities[0].title_narrative || 'Untitled'}`);
             return activities[0].id;
           }
           
-          console.log(`[Transaction] No activity found with IATI ID "${iatiId}"`);
           return null;
         };
         
@@ -1478,7 +1420,6 @@ export async function POST(
           let createdCount = 0;
           let linkedCount = 0;
           
-          console.log('[IATI Import] Processing organizations for', transactions.length, 'transactions...');
           
           for (const t of transactions) {
             // Process provider organization
@@ -1531,7 +1472,6 @@ export async function POST(
         
         // Auto-create missing organizations and get creation stats
         orgStats = await createMissingOrganizations(newTransactions);
-        console.log('[IATI Import] Organization stats:', orgStats);
         
         // Prepare transaction data with IATI-compliant currency resolution
         const validTransactions: any[] = [];
@@ -1596,16 +1536,12 @@ export async function POST(
           
           // Log inference results for debugging
           if (partyInference.provider.status === 'inferred') {
-            console.log(`[IATI Import] Inferred provider org: ${partyInference.provider.name || partyInference.provider.iatiRef}`);
           }
           if (partyInference.receiver.status === 'inferred') {
-            console.log(`[IATI Import] Inferred receiver org: ${partyInference.receiver.name || partyInference.receiver.iatiRef}`);
           }
           if (partyInference.provider.status === 'ambiguous') {
-            console.log(`[IATI Import] Provider inference ambiguous for transaction type ${t.type}`);
           }
           if (partyInference.receiver.status === 'ambiguous') {
-            console.log(`[IATI Import] Receiver inference ambiguous for transaction type ${t.type}`);
           }
           
           const transactionData = {
@@ -1650,7 +1586,6 @@ export async function POST(
           );
           
           if (usdResult.success) {
-            console.log(`[IATI Import] USD conversion: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
           } else {
             console.warn(`[IATI Import] USD conversion failed: ${usdResult.error}`);
           }
@@ -1671,7 +1606,6 @@ export async function POST(
             // Don't throw - continue with other updates
           } else {
             updatedFields.push('transactions');
-            console.log(`[IATI Import] ✓ Imported ${validTransactions.length} transactions`);
           }
         }
         
@@ -1689,7 +1623,6 @@ export async function POST(
     
     // Handle contacts if selected
     if (fields.contacts && iati_data.contactInfo) {
-      console.log('[IATI Import] Updating contacts');
       
       // Clear existing contacts
       await supabase
@@ -1718,7 +1651,6 @@ export async function POST(
         
         if (!contactsError) {
           updatedFields.push('contacts');
-          console.log(`[IATI Import] ✓ Imported ${contactData.length} contacts`);
         } else {
           console.error('[IATI Import] Error inserting contacts:', contactsError);
         }
@@ -1727,7 +1659,6 @@ export async function POST(
     
     // Handle conditions if selected
     if (fields.conditions && iati_data.conditions) {
-      console.log('[IATI Import] Updating conditions');
       
       // Update conditions_attached flag on activity
       await supabase
@@ -1769,7 +1700,6 @@ export async function POST(
         
         if (!conditionsError) {
           updatedFields.push('conditions');
-          console.log(`[IATI Import] ✓ Imported ${conditionData.length} conditions`);
         } else {
           console.error('[IATI Import] Error inserting conditions:', conditionsError);
         }
@@ -1778,7 +1708,6 @@ export async function POST(
     
     // Handle budgets if selected
     if (fields.budgets && iati_data.budgets) {
-      console.log('[IATI Import] Updating budgets');
       
       // Clear existing budgets
       await supabase
@@ -1827,7 +1756,6 @@ export async function POST(
                 new Date(valueDate)
               );
               usdValue = result.usd_amount;
-              console.log(`[IATI Import] Converted budget ${budget.value} ${resolvedCurrency} → $${usdValue} USD`);
             } catch (error) {
               console.error('[IATI Import] Error converting budget to USD:', error);
               // Continue without USD value rather than failing
@@ -1857,7 +1785,6 @@ export async function POST(
           
           if (!budgetsError) {
             updatedFields.push('budgets');
-            console.log(`[IATI Import] ✓ Imported ${validBudgets.length} budgets`);
           } else {
             console.error('[IATI Import] Error inserting budgets:', budgetsError);
           }
@@ -1885,7 +1812,6 @@ export async function POST(
     });
 
     if (fields.planned_disbursements && iati_data.plannedDisbursements) {
-      console.log('[IATI Import] Updating planned disbursements');
 
       // Clear existing planned disbursements
       await supabase
@@ -1898,7 +1824,6 @@ export async function POST(
         // Process organizations for planned disbursements using shared helper
         const pdOrgNameMap = new Map<string, string>();
         
-        console.log(`[IATI Import] Processing organizations for ${iati_data.plannedDisbursements.length} planned disbursements...`);
         
         for (const pd of iati_data.plannedDisbursements) {
           // Process provider organization
@@ -2022,7 +1947,6 @@ export async function POST(
                 new Date(valueDate)
               );
               usdAmount = result.usd_amount;
-              console.log(`[IATI Import] Converted planned disbursement ${pd.value} ${resolvedCurrency} → $${usdAmount} USD`);
             } catch (error) {
               console.error('[IATI Import] Error converting planned disbursement to USD:', error);
               // Continue without USD amount rather than failing
@@ -2074,10 +1998,8 @@ export async function POST(
         }
 
         // Insert only valid planned disbursements
-        console.log(`[IATI Import] Prepared ${validPDs.length} valid planned disbursements out of ${iati_data.plannedDisbursements.length} total`);
 
         if (validPDs.length > 0) {
-          console.log('[IATI Import] Sample planned disbursement to insert:', validPDs[0]);
 
           const { error: pdError } = await supabase
             .from('planned_disbursements')
@@ -2086,7 +2008,6 @@ export async function POST(
           if (!pdError) {
             updatedFields.push('planned_disbursements');
             plannedDisbursementsCount = validPDs.length;
-            console.log(`[IATI Import] ✓ Imported ${validPDs.length} planned disbursements`);
           } else {
             console.error('[IATI Import] Error inserting planned disbursements:', pdError);
             console.error('[IATI Import] Error details:', JSON.stringify(pdError, null, 2));
@@ -2109,7 +2030,6 @@ export async function POST(
     
     // Handle humanitarian scopes if selected
     if (fields.humanitarian_scopes && iati_data.humanitarianScopes) {
-      console.log('[IATI Import] Updating humanitarian scopes');
       
       // Update humanitarian flag on activity - handle boolean, string '1', 'true', or true values
       const humanitarianValue = iati_data.humanitarian === true || 
@@ -2143,7 +2063,6 @@ export async function POST(
         
         if (!hsError) {
           updatedFields.push('humanitarian_scopes');
-          console.log(`[IATI Import] ✓ Imported ${hsData.length} humanitarian scopes`);
         } else {
           console.error('[IATI Import] Error inserting humanitarian scopes:', hsError);
         }
@@ -2152,7 +2071,6 @@ export async function POST(
     
     // Handle document links if selected
     if (fields.document_links && iati_data.document_links) {
-      console.log('[IATI Import] Updating document links');
       
       // Clear existing document links (cascade will delete categories)
       const { data: existingDocs } = await supabase
@@ -2236,13 +2154,11 @@ export async function POST(
         }
         
         updatedFields.push('document_links');
-        console.log(`[IATI Import] ✓ Imported ${iati_data.document_links.length} document links`);
       }
     }
     
     // Handle financing terms if selected
     if (fields.financing_terms && iati_data.financingTerms) {
-      console.log('[IATI Import] Updating financing terms');
 
       try {
         // Upsert loan terms if present
@@ -2302,16 +2218,13 @@ export async function POST(
         }
 
         updatedFields.push('financing_terms');
-        console.log('[IATI Import] ✓ Imported financing terms');
       } catch (error) {
         console.error('[IATI Import] Error importing financing terms:', error);
       }
     }
 
     // Handle tags if selected
-    console.log('[IATI Import] Tags check - fields.tags:', fields.tags, 'iati_data.tags:', iati_data.tags ? `${iati_data.tags.length} tags` : 'undefined');
     if (fields.tags && iati_data.tags) {
-      console.log('[IATI Import] Updating tags');
 
       try {
         // Clear existing activity_tags relationships
@@ -2364,7 +2277,6 @@ export async function POST(
           }
 
           updatedFields.push('tags');
-          console.log(`[IATI Import] ✓ Imported ${iati_data.tags.length} tags`);
         }
       } catch (error) {
         console.error('[IATI Import] Error importing tags:', error);
@@ -2373,7 +2285,6 @@ export async function POST(
 
     // Handle country budget items if selected
     if (fields.country_budget && iati_data.countryBudgetItems) {
-      console.log('[IATI Import] Updating country budget items');
 
       try {
         // Clear existing country budget items
@@ -2420,7 +2331,6 @@ export async function POST(
           }
 
           updatedFields.push('country_budget_items');
-          console.log(`[IATI Import] ✓ Imported ${iati_data.countryBudgetItems.length} country budget items`);
         }
       } catch (error) {
         console.error('[IATI Import] Error importing country budget items:', error);
@@ -2429,8 +2339,6 @@ export async function POST(
 
     // Handle related activities if selected
     if (fields.related_activities && iati_data.relatedActivities) {
-      console.log('[IATI Import] Updating related activities');
-      console.log('[IATI Import] Related activities data:', JSON.stringify(iati_data.relatedActivities, null, 2));
 
       try {
         // Clear existing activity relationships
@@ -2445,7 +2353,6 @@ export async function POST(
           let skippedCount = 0;
 
           for (const relatedActivity of iati_data.relatedActivities) {
-            console.log(`[IATI Import] Processing related activity: ${relatedActivity.ref} (type: ${relatedActivity.type})`);
 
             // Look up the related activity by IATI identifier
             const { data: matchingActivities, error: searchError } = await supabase
@@ -2462,7 +2369,6 @@ export async function POST(
 
             if (matchingActivities && matchingActivities.length > 0) {
               const relatedActivityId = matchingActivities[0].id;
-              console.log(`[IATI Import] Found matching activity: ${matchingActivities[0].title_narrative} (${relatedActivityId})`);
 
               // Create the relationship (internal link)
               const { error: linkError } = await supabase
@@ -2476,14 +2382,12 @@ export async function POST(
 
               if (!linkError) {
                 linkedCount++;
-                console.log(`[IATI Import] ✓ Successfully linked to activity: ${relatedActivity.ref}`);
               } else {
                 console.error(`[IATI Import] ❌ Error linking activity ${relatedActivity.ref}:`, linkError);
                 skippedCount++;
               }
             } else {
               // Activity not found in database - create an external link
-              console.log(`[IATI Import] Activity not found in database: ${relatedActivity.ref} - creating external link`);
               
               const { error: externalLinkError } = await supabase
                 .from('activity_relationships')
@@ -2498,7 +2402,6 @@ export async function POST(
 
               if (!externalLinkError) {
                 linkedCount++;
-                console.log(`[IATI Import] ✓ Created external link for activity: ${relatedActivity.ref}`);
               } else {
                 console.error(`[IATI Import] ❌ Error creating external link for ${relatedActivity.ref}:`, externalLinkError);
                 skippedCount++;
@@ -2508,7 +2411,6 @@ export async function POST(
 
           if (linkedCount > 0) {
             updatedFields.push('related_activities');
-            console.log(`[IATI Import] ✓ Imported ${linkedCount} related activities (${skippedCount} errors)`);
           }
 
           if (skippedCount > 0) {
@@ -2530,7 +2432,6 @@ export async function POST(
 
     // Handle other identifiers if selected
     if (fields.importedOtherIdentifiers && Array.isArray(fields.importedOtherIdentifiers) && fields.importedOtherIdentifiers.length > 0) {
-      console.log('[IATI Import] Updating other identifiers');
 
       try {
         // Save to JSONB column
@@ -2544,7 +2445,6 @@ export async function POST(
         }));
 
         updatedFields.push('other_identifiers');
-        console.log(`[IATI Import] ✓ Imported ${fields.importedOtherIdentifiers.length} other identifiers`);
       } catch (error) {
         console.error('[IATI Import] Error importing other identifiers:', error);
       }
@@ -2593,7 +2493,6 @@ export async function POST(
       console.error('[IATI Import] Error creating import log:', logError);
       // Don't throw - import was successful
     } else {
-      console.log('[IATI Import] Import log created successfully');
     }
     
     // Return success response

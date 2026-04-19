@@ -111,7 +111,7 @@ function FreshnessBadge({ bucket }: { bucket: FreshnessBucket }) {
     '1_to_3_months': 'bg-lime-100 text-lime-800 border-lime-200 hover:bg-lime-100',
     '3_to_6_months': 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100',
     '6_to_12_months': 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100',
-    over_12_months: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100',
+    over_12_months: 'bg-destructive/10 text-red-800 border-destructive/30 hover:bg-destructive/10',
   };
 
   return (
@@ -285,24 +285,24 @@ export function ActivityFreshnessChart() {
       : '0';
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-          <p className="font-semibold text-slate-900 text-sm">
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground text-body">
             Last updated: {data.label}
           </p>
         </div>
         <div className="p-2">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
-              <tr className="border-b border-slate-100">
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">Activities</td>
-                <td className="py-1.5 text-right font-semibold text-slate-900">
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-4 text-foreground font-medium">Activities</td>
+                <td className="py-1.5 text-right font-semibold text-foreground">
                   {data.count}
                 </td>
               </tr>
               <tr>
-                <td className="py-1.5 pr-4 text-slate-700 font-medium">Percentage</td>
-                <td className="py-1.5 text-right font-semibold text-slate-900">
+                <td className="py-1.5 pr-4 text-foreground font-medium">Percentage</td>
+                <td className="py-1.5 text-right font-semibold text-foreground">
                   {percentage}%
                 </td>
               </tr>
@@ -316,9 +316,9 @@ export function ActivityFreshnessChart() {
   // Loading state
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5" />
             Activity Data Freshness
           </CardTitle>
@@ -336,19 +336,19 @@ export function ActivityFreshnessChart() {
   // Error state
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5" />
             Activity Data Freshness
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-2" />
-              <p className="text-slate-600 font-medium">Failed to load data</p>
-              <p className="text-sm text-slate-500 mt-2">{error}</p>
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-2" />
+              <p className="text-muted-foreground font-medium">Failed to load data</p>
+              <p className="text-body text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
         </CardContent>
@@ -357,11 +357,11 @@ export function ActivityFreshnessChart() {
   }
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <Clock className="h-5 w-5" />
               Activity Data Freshness
             </CardTitle>
@@ -396,7 +396,7 @@ export function ActivityFreshnessChart() {
         <div className="flex flex-wrap items-center gap-4 mt-4">
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Status:</span>
+            <span className="text-body text-muted-foreground">Status:</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select status" />
@@ -413,7 +413,7 @@ export function ActivityFreshnessChart() {
 
           {/* Publication Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Publication:</span>
+            <span className="text-body text-muted-foreground">Publication:</span>
             <Select value={publicationFilter} onValueChange={setPublicationFilter}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Select" />
@@ -430,7 +430,7 @@ export function ActivityFreshnessChart() {
 
           {/* Organization Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Organization:</span>
+            <span className="text-body text-muted-foreground">Organization:</span>
             <Select value={orgFilter} onValueChange={setOrgFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Select organization" />
@@ -449,14 +449,14 @@ export function ActivityFreshnessChart() {
 
         {/* Freshness Legend */}
         <div className="flex flex-wrap items-center gap-3 mt-3">
-          <span className="text-xs text-slate-500">Freshness:</span>
+          <span className="text-helper text-muted-foreground">Freshness:</span>
           {Object.entries(BUCKET_CONFIG).map(([bucket, config]) => (
             <div key={bucket} className="flex items-center gap-1">
               <div 
                 className="w-3 h-3 rounded-sm" 
                 style={{ backgroundColor: config.color }} 
               />
-              <span className="text-xs text-slate-600">{config.label}</span>
+              <span className="text-helper text-muted-foreground">{config.label}</span>
             </div>
           ))}
         </div>
@@ -465,11 +465,11 @@ export function ActivityFreshnessChart() {
       <CardContent>
         {/* Empty state - show when no activities match filters */}
         {filteredActivities.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
             <div className="text-center">
-              <Clock className="h-12 w-12 text-slate-400 mx-auto mb-2 opacity-50" />
-              <p className="text-slate-600 font-medium">No activities found</p>
-              <p className="text-sm text-slate-500 mt-2">
+              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-muted-foreground font-medium">No activities found</p>
+              <p className="text-body text-muted-foreground mt-2">
                 {statusFilter !== 'all' || publicationFilter !== 'all' || orgFilter !== 'all' 
                   ? 'Try adjusting your filters' 
                   : 'No activity data available'}
@@ -478,7 +478,7 @@ export function ActivityFreshnessChart() {
           </div>
         ) : viewMode === 'chart' ? (
           /* Chart View */
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={350}>
               <BarChart
                 data={chartData}
@@ -517,9 +517,9 @@ export function ActivityFreshnessChart() {
           <div className="rounded-md border overflow-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted">
                   <TableHead 
-                    className="min-w-[250px] cursor-pointer hover:bg-slate-100"
+                    className="min-w-[250px] cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('title')}
                   >
                     <div className="flex items-center">
@@ -528,7 +528,7 @@ export function ActivityFreshnessChart() {
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('status')}
                   >
                     <div className="flex items-center">
@@ -537,7 +537,7 @@ export function ActivityFreshnessChart() {
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('updated_at')}
                   >
                     <div className="flex items-center">
@@ -547,7 +547,7 @@ export function ActivityFreshnessChart() {
                   </TableHead>
                   <TableHead>Days Since Update</TableHead>
                   <TableHead 
-                    className="text-center cursor-pointer hover:bg-slate-100"
+                    className="text-center cursor-pointer hover:bg-muted"
                     onClick={() => handleSort('freshness')}
                   >
                     <div className="flex items-center justify-center">
@@ -573,27 +573,27 @@ export function ActivityFreshnessChart() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-muted-foreground">
                       {getStatusLabel(activity.activity_status)}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-muted-foreground">
                       {format(parseISO(activity.updated_at), 'MMM d, yyyy')}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-muted-foreground">
                       {activity.days_since_update} days
                     </TableCell>
                     <TableCell className="text-center">
                       <FreshnessBadge bucket={activity.freshness_bucket} />
                     </TableCell>
                     <TableCell>
-                      <ExternalLink className="h-4 w-4 text-slate-400" />
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
             {sortedActivities.length > 100 && (
-              <div className="p-3 text-center text-sm text-slate-500 border-t">
+              <div className="p-3 text-center text-body text-muted-foreground border-t">
                 Showing 100 of {sortedActivities.length} activities. Use filters to narrow results.
               </div>
             )}

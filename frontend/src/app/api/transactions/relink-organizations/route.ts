@@ -16,7 +16,6 @@ export async function POST() {
   try {
 
 
-    console.log('[Relink Orgs] Starting transaction organization relinking...');
 
     // Get all transactions with org names/refs but no org IDs
     const { data: transactions, error: fetchError } = await supabase
@@ -30,7 +29,6 @@ export async function POST() {
     }
 
     const txCount = transactions?.length || 0;
-    console.log(`[Relink Orgs] Found ${txCount} transactions to check`);
 
     let updatedCount = 0;
     let skippedCount = 0;
@@ -41,7 +39,6 @@ export async function POST() {
 
       // Check provider org - now also matches when only provider_org_ref exists (no name)
       if (!tx.provider_org_id && (tx.provider_org_name || tx.provider_org_ref)) {
-        console.log(`[Relink Orgs] Looking for provider org: ${tx.provider_org_name || tx.provider_org_ref}`);
 
         let query = supabase
           .from('organizations')
@@ -64,13 +61,11 @@ export async function POST() {
         if (matchingOrg) {
           updates.provider_org_id = matchingOrg.id;
           needsUpdate = true;
-          console.log(`[Relink Orgs] Found provider org for "${tx.provider_org_name || tx.provider_org_ref}": ${matchingOrg.id}`);
         }
       }
 
       // Check receiver org - now also matches when only receiver_org_ref exists (no name)
       if (!tx.receiver_org_id && (tx.receiver_org_name || tx.receiver_org_ref)) {
-        console.log(`[Relink Orgs] Looking for receiver org: ${tx.receiver_org_name || tx.receiver_org_ref}`);
 
         let query = supabase
           .from('organizations')
@@ -93,7 +88,6 @@ export async function POST() {
         if (matchingOrg) {
           updates.receiver_org_id = matchingOrg.id;
           needsUpdate = true;
-          console.log(`[Relink Orgs] Found receiver org for "${tx.receiver_org_name || tx.receiver_org_ref}": ${matchingOrg.id}`);
         }
       }
 
@@ -108,14 +102,12 @@ export async function POST() {
           console.error(`[Relink Orgs] Error updating transaction ${tx.uuid}:`, updateError);
         } else {
           updatedCount++;
-          console.log(`[Relink Orgs] Updated transaction ${tx.uuid}`);
         }
       } else {
         skippedCount++;
       }
     }
 
-    console.log(`[Relink Orgs] Complete: ${updatedCount} updated, ${skippedCount} skipped`);
 
     return NextResponse.json({
       success: true,

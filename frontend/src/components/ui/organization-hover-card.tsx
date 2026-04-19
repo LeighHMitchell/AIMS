@@ -53,14 +53,14 @@ export function OrganizationHoverCard({
               size="lg" 
             />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-foreground">
+              <p className="font-semibold text-body text-foreground">
                 {organization.name}
               </p>
             </div>
           </div>
 
           {/* Organization details */}
-          <div className="space-y-2 text-xs">
+          <div className="space-y-2 text-helper">
             {organization.type && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Building2 className="h-3 w-3 flex-shrink-0" />
@@ -96,7 +96,7 @@ export function OrganizationHoverCard({
             {organization.id && (
               <Link
                 href={`/organizations/${organization.id}`}
-                className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                className="text-helper text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 View profile
@@ -108,7 +108,7 @@ export function OrganizationHoverCard({
                 href={organization.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                className="text-helper text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 Website

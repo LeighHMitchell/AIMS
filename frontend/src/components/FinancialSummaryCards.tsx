@@ -59,7 +59,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
   const prevTotalBudgetedRef = useRef<number>(0);
 
   const fetchFinancials = useCallback(async () => {
-    console.log('[FinancialSummaryCards] Starting fetchFinancials for activityId:', activityId);
     
     let unconverted = 0;
     
@@ -71,7 +70,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
       .select("*")
       .eq("activity_id", activityId);
     
-    console.log('[FinancialSummaryCards] Budgets fetched:', budgetsData?.length || 0);
     
     let totalBudgetedUSD = 0;
     const budgetsByYearMap = new Map<number, number>();
@@ -79,7 +77,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
     if (budgetsData && !budgetsError) {
       for (const budget of budgetsData) {
         if (!budget.value || !budget.currency) {
-          console.log('[FinancialSummaryCards] Skipping budget - missing value or currency');
           continue;
         }
         
@@ -95,17 +92,14 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
         // First, try stored usd_value
         if (budget.usd_value != null && !isNaN(budget.usd_value)) {
           usdAmount = budget.usd_value;
-          console.log(`[FinancialSummaryCards] ✅ Budget using stored USD value: $${usdAmount}`);
         } 
         // If currency is USD, use original value
         else if (budget.currency === 'USD') {
           usdAmount = budget.value;
-          console.log(`[FinancialSummaryCards] ✅ Budget already in USD: $${usdAmount}`);
         }
         // Otherwise, it's unconverted (will be handled by retry job)
         else {
           unconverted++;
-          console.log(`[FinancialSummaryCards] ⚠️ Budget ${budget.id} needs conversion (${budget.currency})`);
         }
         
         totalBudgetedUSD += usdAmount;
@@ -122,8 +116,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
       .map(([year, amount]) => ({ year, amount }))
       .sort((a, b) => a.year - b.year);
     
-    console.log('[FinancialSummaryCards] Total Budgeted (stored values):', totalBudgetedUSD);
-    console.log('[FinancialSummaryCards] Budgets by year:', budgetsByYearArray);
     
     setTotalBudgeted(totalBudgetedUSD);
     prevTotalBudgetedRef.current = totalBudgetedUSD;
@@ -137,13 +129,11 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
       .select("*")
       .eq("activity_id", activityId);
     
-    console.log('[FinancialSummaryCards] Planned disbursements fetched:', disb?.length || 0);
     
     let plannedDisbursementsUSD = 0;
     if (disb && !disbError) {
       for (const disbursement of disb) {
         if (!disbursement.amount || !disbursement.currency) {
-          console.log('[FinancialSummaryCards] Skipping disbursement - missing amount or currency');
           continue;
         }
         
@@ -153,24 +143,20 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
         // First, try stored usd_amount
         if (disbursement.usd_amount != null && !isNaN(disbursement.usd_amount)) {
           usdAmount = disbursement.usd_amount;
-          console.log(`[FinancialSummaryCards] ✅ Disbursement using stored USD value: $${usdAmount}`);
         }
         // If currency is USD, use original amount
         else if (disbursement.currency === 'USD') {
           usdAmount = disbursement.amount;
-          console.log(`[FinancialSummaryCards] ✅ Disbursement already in USD: $${usdAmount}`);
         }
         // Otherwise, it's unconverted (will be handled by retry job)
         else {
           unconverted++;
-          console.log(`[FinancialSummaryCards] ⚠️ Disbursement ${disbursement.id} needs conversion (${disbursement.currency})`);
         }
         
         plannedDisbursementsUSD += usdAmount;
       }
     }
     
-    console.log('[FinancialSummaryCards] Total Planned Disbursements (stored values):', plannedDisbursementsUSD);
     setPlannedDisbursements(plannedDisbursementsUSD);
 
     // ================================================================
@@ -181,7 +167,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
       .select("*")
       .eq("activity_id", activityId);
     
-    console.log('[FinancialSummaryCards] Transactions fetched:', txs?.length || 0);
     
     let committed = 0, disbursed = 0, disbursedOnly = 0, expended = 0, missingUsd = false;
     if (!txsError && txs) {
@@ -193,7 +178,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
         // (This is safe because it's already USD)
         if (!usdValue && t.currency === 'USD' && t.value && t.value > 0) {
           usdValue = t.value;
-          console.log(`[FinancialSummaryCards] Using original USD value for transaction ${t.id}: $${t.value}`);
         }
         
         // Track unconverted transactions
@@ -209,7 +193,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             committed += usdValue;
           } else if (t.currency !== 'USD') {
             missingUsd = true;
-            console.log(`[FinancialSummaryCards] Commitment transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
         if (transactionType === '3') {
@@ -218,7 +201,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             disbursed += usdValue;
           } else if (t.currency !== 'USD') {
             missingUsd = true;
-            console.log(`[FinancialSummaryCards] Disbursement transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
         if (transactionType === '4') {
@@ -227,13 +209,11 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             disbursed += usdValue;
           } else if (t.currency !== 'USD') {
             missingUsd = true;
-            console.log(`[FinancialSummaryCards] Expenditure transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
       });
     }
     
-    console.log('[FinancialSummaryCards] Setting committed to:', committed, 'disbursedOnly to:', disbursedOnly, 'expended to:', expended, 'disbursed to:', disbursed);
     setTotalCommitted(committed);
     setTotalDisbursed(disbursedOnly);
     setTotalExpended(expended);
@@ -262,7 +242,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
     const budgetsChanged = JSON.stringify(budgets) !== JSON.stringify(prevBudgetsRef.current);
     
     if (budgetsChanged) {
-      console.log('[FinancialSummaryCards] Budgets prop changed - refreshing');
       setIsUpdating(true);
       fetchFinancials().then(() => {
         setIsUpdating(false);
@@ -302,7 +281,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
     };
   }, [activityId, isInitialized, fetchFinancials]);
 
-  console.log('[FinancialSummaryCards] Rendering with state:', { totalBudgeted, plannedDisbursements, totalCommitted, totalDisbursed, totalExpended, totalDisbursedAndExpended });
 
   return (
     <StaggerContainer className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-4", className)}>

@@ -54,7 +54,6 @@ export default function TransactionTab({
       const response = await apiFetch(`/api/activities/${activityId}/transactions`);
       if (!response.ok) throw new Error('Failed to fetch transactions');
       const data = await response.json();
-      console.log('[TransactionTab] Fetched transactions:', data);
       // Filter out transactions without a valid uuid
       const validTransactions = data.filter((t: any) => {
         const hasValidUuid = t.uuid;
@@ -64,7 +63,6 @@ export default function TransactionTab({
         return hasValidUuid;
       });
       
-      console.log('[TransactionTab] Valid transactions:', validTransactions);
       setTransactions(validTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -102,11 +100,9 @@ export default function TransactionTab({
     // 2. We're not loading
     // 3. The transaction count has actually changed since last notification
     if (onTransactionsChange && !isLoading && lastNotifiedCountRef.current !== transactions.length) {
-      console.log('[TransactionTab] Notifying parent with transactions:', transactions.length);
       lastNotifiedCountRef.current = transactions.length;
       onTransactionsChange(transactions);
     } else {
-      console.log('[TransactionTab] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, isLoading]); // Intentionally exclude onTransactionsChange to prevent infinite loops
@@ -207,7 +203,6 @@ export default function TransactionTab({
   };
 
   const handleDeleteTransaction = async (uuid: string) => {
-    console.log('[TransactionTab] Deleting transaction with UUID:', uuid, 'Type:', typeof uuid);
     if (!uuid || uuid === 'undefined') {
       toast.error("Invalid transaction UUID for deletion.");
       console.error('[TransactionTab] Attempted to delete transaction with invalid UUID:', uuid);
@@ -261,7 +256,7 @@ export default function TransactionTab({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading transactions...</p>
         </div>
       </div>

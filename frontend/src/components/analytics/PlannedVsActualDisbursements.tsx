@@ -276,12 +276,12 @@ export function PlannedVsActualDisbursements({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{label}</p>
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: entry.color }}
             >
               {`${entry.name}: ${formatTooltipValue(entry.value)}`}
@@ -314,7 +314,7 @@ export function PlannedVsActualDisbursements({
             className={`h-7 px-3 text-xs ${
               timePeriod === period.value
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                : 'bg-white text-muted-foreground border-input hover:bg-muted'
             }`}
           >
             {period.label}
@@ -331,10 +331,10 @@ export function PlannedVsActualDisbursements({
           variant={groupBy === 'year' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setGroupBy('year')}
-          className={`h-7 px-3 text-xs ${
+          className={`h-7 px-3 text-helper ${
             groupBy === 'year'
               ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
           Year
@@ -343,10 +343,10 @@ export function PlannedVsActualDisbursements({
           variant={groupBy === 'month' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setGroupBy('month')}
-          className={`h-7 px-3 text-xs ${
+          className={`h-7 px-3 text-helper ${
             groupBy === 'month'
               ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
           Month
@@ -363,9 +363,9 @@ export function PlannedVsActualDisbursements({
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Planned vs Actual Disbursements
           </CardTitle>
           <CardDescription>
@@ -373,7 +373,7 @@ export function PlannedVsActualDisbursements({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -385,11 +385,11 @@ export function PlannedVsActualDisbursements({
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Planned vs Actual Disbursements by {groupBy === 'year' ? 'Year' : 'Month'}
             </CardTitle>
             <CardDescription>
@@ -401,7 +401,7 @@ export function PlannedVsActualDisbursements({
               variant="outline"
               size="sm"
               onClick={() => setChartType(chartType === 'line' ? 'bar' : 'line')}
-              className="h-7 px-3 text-xs"
+              className="h-7 px-3 text-helper"
             >
               {chartType === 'line' ? <BarChart3 className="h-3 w-3" /> : <TrendingUpIcon className="h-3 w-3" />}
             </Button>
@@ -484,17 +484,17 @@ export function PlannedVsActualDisbursements({
             )}
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-80 text-slate-400">
+          <div className="flex items-center justify-center h-80 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No disbursement data available</p>
-              <p className="text-xs mt-2">Add planned disbursements or transactions to see this chart</p>
+              <p className="text-helper mt-2">Add planned disbursements or transactions to see this chart</p>
             </div>
           </div>
         )}
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart compares planned disbursement schedules against actual disbursement transactions across all activities. Use the time period buttons to zoom into recent months or view the full history, and toggle between monthly and yearly grouping. Significant gaps between planned and actual lines may indicate forecasting issues or implementation delays.
         </p>
       </CardContent>

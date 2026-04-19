@@ -223,7 +223,6 @@ export async function POST(request: NextRequest) {
         
         // If error contains schema cache message, try without created_by
         if (createError.message.includes('created_by') || createError.message.includes('schema cache')) {
-          console.log('created_by column not found, trying without it...');
         } else {
           // If it's a race condition (duplicate), try fetching again
           if (createError.code === '23505') {
@@ -241,7 +240,6 @@ export async function POST(request: NextRequest) {
           throw createError;
         }
       } catch (error) {
-        console.log('First attempt failed, trying without created_by field...');
       }
     }
     

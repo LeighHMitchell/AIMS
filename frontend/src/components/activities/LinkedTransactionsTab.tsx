@@ -192,7 +192,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
         return <ArrowDownRight className="w-4 h-4 text-[hsl(var(--success-icon))]" />;
       case '3':
       case '4':
-        return <ArrowUpRight className="w-4 h-4 text-red-600" />;
+        return <ArrowUpRight className="w-4 h-4 text-destructive" />;
       default:
         return <DollarSign className="w-4 h-4 text-muted-foreground" />;
     }
@@ -259,7 +259,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-xl font-semibold">Linked Transactions</h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               Showing {filteredTransactions.length} transactions from {linkedActivityCount} linked activities
             </p>
           </div>
@@ -276,7 +276,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {Object.entries(totalsByCurrency).map(([currency, total]) => (
             <div key={currency} className="bg-muted rounded-lg p-4">
-              <div className="text-sm text-muted-foreground">Total in {currency}</div>
+              <div className="text-body text-muted-foreground">Total in {currency}</div>
               <div className="text-2xl font-semibold">{formatCurrency(total, currency)}</div>
             </div>
           ))}
@@ -342,38 +342,38 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       {getTransactionIcon(transaction.transactionType)}
-                      <span className="text-sm">{transaction.transactionTypeLabel}</span>
+                      <span className="text-body">{transaction.transactionTypeLabel}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium">
+                    <div className="text-body font-medium">
                       {formatCurrency(transaction.value, transaction.currency)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm">
+                    <div className="text-body">
                       <div className="flex items-center gap-1">
                         <Building2 className="w-3 h-3 text-muted-foreground" />
                         {transaction.providerOrg.name || 'N/A'}
                       </div>
                       {transaction.providerOrg.ref && (
-                        <div className="text-xs text-muted-foreground">{transaction.providerOrg.ref}</div>
+                        <div className="text-helper text-muted-foreground">{transaction.providerOrg.ref}</div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm">
+                    <div className="text-body">
                       <div className="flex items-center gap-1">
                         <Building2 className="w-3 h-3 text-muted-foreground" />
                         {transaction.receiverOrg.name || 'N/A'}
                       </div>
                       {transaction.receiverOrg.ref && (
-                        <div className="text-xs text-muted-foreground">{transaction.receiverOrg.ref}</div>
+                        <div className="text-helper text-muted-foreground">{transaction.receiverOrg.ref}</div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 text-body text-muted-foreground">
                       <Calendar className="w-3 h-3" />
                       {new Date(transaction.transactionDate).toLocaleDateString()}
                     </div>
@@ -383,12 +383,12 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
                       href={`/activities/${transaction.activityId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                      className="text-body text-blue-600 hover:underline flex items-center gap-1"
                     >
                       {transaction.activityTitle}
                       <ExternalLink className="w-3 h-3" />
                     </a>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-helper text-muted-foreground">
                       {transaction.activityIatiId}
                     </div>
                   </td>
@@ -401,7 +401,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
 
       {/* Note about read-only nature */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-800">
+        <p className="text-body text-yellow-800">
           <strong>Note:</strong> These transactions are read-only and come from linked activities. 
           They are displayed here for reference only and cannot be edited from this view.
         </p>

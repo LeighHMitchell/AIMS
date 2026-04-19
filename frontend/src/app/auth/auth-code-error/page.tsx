@@ -7,13 +7,13 @@ import Link from 'next/link';
 
 export default function AuthCodeErrorPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <AlertCircle className="h-12 w-12 text-red-500" />
+            <AlertCircle className="h-12 w-12 text-destructive" />
           </div>
-          <CardTitle className="text-xl font-bold text-gray-900">
+          <CardTitle className="text-xl font-bold text-foreground">
             Authentication Error
           </CardTitle>
           <CardDescription>
@@ -21,7 +21,7 @@ export default function AuthCodeErrorPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-body text-muted-foreground">
             The authentication process was interrupted or failed. Please try signing in again.
           </p>
           

@@ -59,20 +59,20 @@ interface ActivityRow {
 
 // Activity status labels
 const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  '1': { label: 'Pipeline', color: 'bg-gray-100 text-gray-700' },
+  '1': { label: 'Pipeline', color: 'bg-muted text-foreground' },
   '2': { label: 'Implementation', color: 'bg-blue-100 text-blue-700' },
   '3': { label: 'Finalisation', color: 'bg-purple-100 text-purple-700' },
-  '4': { label: 'Closed', color: 'bg-slate-100 text-slate-700' },
-  '5': { label: 'Cancelled', color: 'bg-red-100 text-red-700' },
+  '4': { label: 'Closed', color: 'bg-muted text-foreground' },
+  '5': { label: 'Cancelled', color: 'bg-destructive/10 text-destructive' },
   '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
 };
 
 // Validation status labels
 const VALIDATION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'bg-gray-100 text-gray-700' },
+  draft: { label: 'Draft', color: 'bg-muted text-foreground' },
   submitted: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
   validated: { label: 'Validated', color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' },
-  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
+  rejected: { label: 'Rejected', color: 'bg-destructive/10 text-destructive' },
   more_info_requested: { label: 'Info Requested', color: 'bg-orange-100 text-orange-700' },
 };
 
@@ -306,7 +306,7 @@ export function OrgActivitiesTable({
   }
 
   if (error) {
-    const errorContent = <p className="text-sm text-red-600">Failed to load activities: {error}</p>;
+    const errorContent = <p className="text-body text-destructive">Failed to load activities: {error}</p>;
     if (embedded) return errorContent;
     return (
       <Card className="bg-white">
@@ -342,7 +342,7 @@ export function OrgActivitiesTable({
       {activities.length === 0 ? (
         <div className="text-center py-8">
           <Icon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">{config.emptyMessage}</p>
+          <p className="text-body text-muted-foreground">{config.emptyMessage}</p>
         </div>
       ) : (
           <Table>
@@ -414,19 +414,19 @@ export function OrgActivitiesTable({
                     <>
                       <TableCell>
                         {activity.activityStatus && (
-                          <span className="text-sm text-slate-700">
+                          <span className="text-body text-foreground">
                             {ACTIVITY_STATUS_LABELS[activity.activityStatus]?.label || activity.activityStatus}
                           </span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm capitalize text-slate-700">
+                        <span className="text-body capitalize text-foreground">
                           {activity.status}
                         </span>
                       </TableCell>
                       <TableCell>
                         {activity.validationStatus && (
-                          <span className="text-sm text-slate-700">
+                          <span className="text-body text-foreground">
                             {VALIDATION_STATUS_LABELS[activity.validationStatus]?.label || activity.validationStatus}
                           </span>
                         )}
@@ -435,13 +435,13 @@ export function OrgActivitiesTable({
                         {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
                           <div className="flex flex-col items-end">
                             <span className="font-medium">
-                              <span className="text-xs text-muted-foreground mr-1 font-normal">
+                              <span className="text-helper text-muted-foreground mr-1 font-normal">
                                 {activity.currency}
                               </span>
                               {formatCurrency(activity.totalBudgetOriginal, activity.currency)}
                             </span>
                             {activity.totalBudget && activity.totalBudget > 0 && (
-                              <span className="text-xs text-muted-foreground mt-0.5">
+                              <span className="text-helper text-muted-foreground mt-0.5">
                                 <span className="mr-1 font-normal">USD</span>
                                 {formatCurrency(activity.totalBudget, 'USD')}
                               </span>
@@ -449,7 +449,7 @@ export function OrgActivitiesTable({
                           </div>
                         ) : activity.totalBudget && activity.totalBudget > 0 ? (
                           <span className="font-medium">
-                            <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
+                            <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
                             {formatCurrency(activity.totalBudget, 'USD')}
                           </span>
                         ) : (
@@ -460,13 +460,13 @@ export function OrgActivitiesTable({
                         {activity.totalPlannedDisbursementsOriginal && activity.totalPlannedDisbursementsOriginal > 0 ? (
                           <div className="flex flex-col items-end">
                             <span className="font-medium">
-                              <span className="text-xs text-muted-foreground mr-1 font-normal">
+                              <span className="text-helper text-muted-foreground mr-1 font-normal">
                                 {activity.currency}
                               </span>
                               {formatCurrency(activity.totalPlannedDisbursementsOriginal, activity.currency)}
                             </span>
                             {activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 && (
-                              <span className="text-xs text-muted-foreground mt-0.5">
+                              <span className="text-helper text-muted-foreground mt-0.5">
                                 <span className="mr-1 font-normal">USD</span>
                                 {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
                               </span>
@@ -474,7 +474,7 @@ export function OrgActivitiesTable({
                           </div>
                         ) : activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 ? (
                           <span className="font-medium">
-                            <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
+                            <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
                             {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
                           </span>
                         ) : (
@@ -482,7 +482,7 @@ export function OrgActivitiesTable({
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-xs text-slate-500" title={format(new Date(activity.lastUpdated), 'PPpp')}>
+                        <span className="text-helper text-muted-foreground" title={format(new Date(activity.lastUpdated), 'PPpp')}>
                           {formatDistanceToNow(new Date(activity.lastUpdated), { addSuffix: true })}
                         </span>
                       </TableCell>
@@ -495,7 +495,7 @@ export function OrgActivitiesTable({
                   {variant === 'recently_edited' && (
                     <>
                       <TableCell>
-                        <span className="text-sm text-slate-600" title={format(new Date(activity.lastUpdated), 'PPpp')}>
+                        <span className="text-body text-muted-foreground" title={format(new Date(activity.lastUpdated), 'PPpp')}>
                           {formatDistanceToNow(new Date(activity.lastUpdated), { addSuffix: true })}
                         </span>
                       </TableCell>
@@ -509,7 +509,7 @@ export function OrgActivitiesTable({
                             router.push(`/activities/${activity.id}/edit`);
                           }}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500" />
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       </TableCell>
                     </>
@@ -552,7 +552,7 @@ export function OrgActivitiesTable({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-slate-600" />
+              <Icon className="h-5 w-5 text-muted-foreground" />
               {config.title}
             </CardTitle>
             <CardDescription>{config.description}</CardDescription>

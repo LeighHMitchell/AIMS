@@ -155,7 +155,7 @@ ${documents
           <CardTitle>Activity Editor - Inline Documents & Images</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600">
+          <p className="text-body text-muted-foreground">
             This example demonstrates the new inline editing Documents & Images tab. 
             You can edit document metadata directly on each card without opening a modal. 
             Click "Edit" on any document card to see the inline editing interface, 
@@ -189,12 +189,12 @@ ${documents
                   <h3 className="text-lg font-semibold">Generated IATI XML</h3>
                   <button
                     onClick={() => navigator.clipboard.writeText(generateFullXml())}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className="px-3 py-1 text-body bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
                     Copy XML
                   </button>
                 </div>
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-sm">
+                <pre className="bg-muted p-4 rounded-lg overflow-auto text-body">
                   <code>{generateFullXml()}</code>
                 </pre>
               </div>
@@ -206,12 +206,12 @@ ${documents
                   <h3 className="text-lg font-semibold">Generated JSON</h3>
                   <button
                     onClick={() => navigator.clipboard.writeText(generateFullJson())}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className="px-3 py-1 text-body bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
                     Copy JSON
                   </button>
                 </div>
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-sm">
+                <pre className="bg-muted p-4 rounded-lg overflow-auto text-body">
                   <code>{generateFullJson()}</code>
                 </pre>
               </div>
@@ -225,10 +225,10 @@ ${documents
           <CardTitle>Key Features of Inline Editing</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-body">
             <div>
               <h4 className="font-medium mb-2">✨ User Experience</h4>
-              <ul className="space-y-1 text-gray-600">
+              <ul className="space-y-1 text-muted-foreground">
                 <li>• Edit directly on each card</li>
                 <li>• No modal interruptions</li>
                 <li>• Expandable details view</li>
@@ -238,7 +238,7 @@ ${documents
             </div>
             <div>
               <h4 className="font-medium mb-2">🚀 Functionality</h4>
-              <ul className="space-y-1 text-gray-600">
+              <ul className="space-y-1 text-muted-foreground">
                 <li>• All IATI document fields supported</li>
                 <li>• Multi-language titles & descriptions</li>
                 <li>• File upload with progress</li>

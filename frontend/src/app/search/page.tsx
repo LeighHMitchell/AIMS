@@ -197,12 +197,11 @@ function SearchPageContent() {
     <MainLayout>
       <div>
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Search className="h-8 w-8 text-muted-foreground" />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Search</h1>
-            <p className="text-muted-foreground mt-1">Find activities, organisations, sectors, and more</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Search</h1>
+          <p className="text-muted-foreground mt-2 max-w-2xl">
+            Find activities, organisations, sectors, tags, users, and contacts.
+          </p>
         </div>
 
         {/* Search Bar - Always visible at top, centered */}
@@ -223,7 +222,7 @@ function SearchPageContent() {
           {/* Searchable content badges - shown when no query */}
           {!query && (
             <div className="mt-6 text-center">
-              <p className="text-muted-foreground text-sm mb-3">Search across</p>
+              <p className="text-muted-foreground text-body mb-3">Search across</p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <Badge variant="outline">Activities</Badge>
                 <Badge variant="outline">Organisations</Badge>
@@ -237,7 +236,7 @@ function SearchPageContent() {
           
           {/* Results Summary - shown when there's a query */}
           {query && (
-            <div className="mt-4 text-sm text-gray-600">
+            <div className="mt-4 text-body text-muted-foreground">
               {loading ? (
                 <span>Searching...</span>
               ) : (
@@ -254,33 +253,35 @@ function SearchPageContent() {
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 p-6 text-center border border-red-200 rounded-lg bg-red-50">
-            <div className="text-red-600 mb-2">Search Error</div>
-            <div className="text-gray-600">{error}</div>
+          <div className="mb-6 p-6 text-center border border-destructive/30 rounded-lg bg-destructive/10">
+            <div className="text-destructive mb-2">Search Error</div>
+            <div className="text-muted-foreground">{error}</div>
           </div>
         )}
 
         {/* Results */}
         {query && !error && (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | SearchResultType)} className="w-full">
-            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+            <TabsList className="h-auto bg-transparent p-0 gap-6 border-b mb-6 flex flex-wrap rounded-none justify-start">
               <TabsTrigger
                 value="all"
-                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+                className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors"
               >
-                <Search className="h-4 w-4" />
-                All ({resultCounts.all})
+                All <span className="ml-1 text-xs text-muted-foreground/70">{resultCounts.all}</span>
               </TabsTrigger>
               {searchResultOrder.map((type) => {
-                const Icon = resultTypeIcons[type]
+                const isEmpty = resultCounts[type] === 0
                 return (
                   <TabsTrigger
                     key={type}
                     value={type}
-                    className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+                    disabled={isEmpty}
+                    className={cn(
+                      "rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors",
+                      isEmpty && "opacity-40 cursor-not-allowed hover:text-muted-foreground"
+                    )}
                   >
-                    <Icon className="h-4 w-4" />
-                    {resultTypeLabels[type]} ({resultCounts[type]})
+                    {resultTypeLabels[type]} <span className="ml-1 text-xs text-muted-foreground/70">{resultCounts[type]}</span>
                   </TabsTrigger>
                 )
               })}

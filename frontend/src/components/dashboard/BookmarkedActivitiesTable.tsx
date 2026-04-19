@@ -64,11 +64,11 @@ interface BookmarkedActivity {
 
 // Activity status labels
 const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  '1': { label: 'Pipeline', color: 'bg-gray-100 text-gray-700' },
+  '1': { label: 'Pipeline', color: 'bg-muted text-foreground' },
   '2': { label: 'Implementation', color: 'bg-blue-100 text-blue-700' },
   '3': { label: 'Finalisation', color: 'bg-purple-100 text-purple-700' },
-  '4': { label: 'Closed', color: 'bg-slate-100 text-slate-700' },
-  '5': { label: 'Cancelled', color: 'bg-red-100 text-red-700' },
+  '4': { label: 'Closed', color: 'bg-muted text-foreground' },
+  '5': { label: 'Cancelled', color: 'bg-destructive/10 text-destructive' },
   '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
 };
 
@@ -196,7 +196,7 @@ export function BookmarkedActivitiesTable() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load bookmarked activities: {error}</p>
+          <p className="text-body text-destructive">Failed to load bookmarked activities: {error}</p>
         </CardContent>
       </Card>
     );
@@ -208,7 +208,7 @@ export function BookmarkedActivitiesTable() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Bookmark className="h-5 w-5 text-slate-600" />
+              <Bookmark className="h-5 w-5 text-muted-foreground" />
               Bookmarked Activities
             </CardTitle>
             <CardDescription>
@@ -216,15 +216,15 @@ export function BookmarkedActivitiesTable() {
             </CardDescription>
           </div>
           {activities.length > 0 && (
-            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
                   'h-8 w-8 p-0',
                   viewMode === 'card'
-                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
                 onClick={() => setViewMode('card')}
                 title="Card view"
@@ -237,8 +237,8 @@ export function BookmarkedActivitiesTable() {
                 className={cn(
                   'h-8 w-8 p-0',
                   viewMode === 'table'
-                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
                 onClick={() => setViewMode('table')}
                 title="Table view"
@@ -253,8 +253,8 @@ export function BookmarkedActivitiesTable() {
         {activities.length === 0 ? (
           <div className="text-center py-12">
             <Bookmark className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500 mb-2">No bookmarked activities</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-body text-muted-foreground mb-2">No bookmarked activities</p>
+            <p className="text-helper text-muted-foreground">
               Bookmark activities from the activity profile or activity cards to see them here.
             </p>
           </div>
@@ -314,7 +314,7 @@ export function BookmarkedActivitiesTable() {
                 >
                   <TableCell>
                     <div>
-                      <p className="text-sm text-foreground" title={activity.title_narrative}>
+                      <p className="text-body text-foreground" title={activity.title_narrative}>
                         {activity.title_narrative}
                         {activity.acronym && (
                           <span> ({activity.acronym})</span>
@@ -339,7 +339,7 @@ export function BookmarkedActivitiesTable() {
                           }}
                         />
                       )}
-                      <span className="text-sm text-foreground">
+                      <span className="text-body text-foreground">
                         {activity.reporting_org_name || activity.created_by_org_name || '-'}
                         {(activity.reporting_org_acronym || activity.created_by_org_acronym) && (
                           <> ({activity.reporting_org_acronym || activity.created_by_org_acronym})</>
@@ -348,7 +348,7 @@ export function BookmarkedActivitiesTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs text-muted-foreground" title={format(new Date(activity.updated_at), 'PPpp')}>
+                    <span className="text-helper text-muted-foreground" title={format(new Date(activity.updated_at), 'PPpp')}>
                       {formatDistanceToNow(new Date(activity.updated_at), { addSuffix: true })}
                     </span>
                   </TableCell>
@@ -356,12 +356,12 @@ export function BookmarkedActivitiesTable() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 hover:bg-red-50"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10"
                       onClick={(e) => handleRemoveBookmark(e, activity.id)}
                       disabled={removingId === activity.id}
                       title="Remove bookmark"
                     >
-                      <BookmarkX className="h-4 w-4 text-slate-500 hover:text-red-500" />
+                      <BookmarkX className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                     </Button>
                   </TableCell>
                 </TableRow>

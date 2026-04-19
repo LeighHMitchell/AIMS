@@ -115,7 +115,6 @@ export function useActivityAutosave(
 
       onSuccess?.(responseData);
       
-      console.log('[ActivityAutosave] Save successful');
 
       // Process any queued saves
       if (saveQueueRef.current.length > 0) {
@@ -125,7 +124,6 @@ export function useActivityAutosave(
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[ActivityAutosave] Request aborted');
         return;
       }
 
@@ -160,7 +158,6 @@ export function useActivityAutosave(
     // If currently saving, queue this update
     if (isSavingRef.current) {
       saveQueueRef.current = [dataToSave];
-      console.log('[ActivityAutosave] Queued save while another save is in progress');
       return;
     }
 
@@ -185,7 +182,6 @@ export function useActivityAutosave(
       [field]: value
     };
     
-    console.log(`[ActivityAutosave] Field updated: ${field} =`, value);
     
     // Update the ref immediately
     activityDataRef.current = updatedData;
@@ -207,7 +203,6 @@ export function useActivityAutosave(
     }
     current[keys[keys.length - 1]] = value;
     
-    console.log(`[ActivityAutosave] Nested field updated: ${path} =`, value);
     
     // Update the ref immediately
     activityDataRef.current = updatedData;

@@ -46,7 +46,6 @@ export async function DELETE(
         const urlParts = attachment.file_url.split('/uploads/');
         if (urlParts.length > 1) {
           const storagePath = urlParts[1];
-          console.log('[FAQ Attachment Delete] Deleting file:', storagePath);
 
           const { error: deleteError } = await storageClient.storage
             .from('uploads')

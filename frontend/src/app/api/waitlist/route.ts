@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Waitlist] New signup:', email);
 
     return NextResponse.json({
       success: true,

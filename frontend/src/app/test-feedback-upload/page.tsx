@@ -36,7 +36,6 @@ export default function TestFeedbackUploadPage() {
     setUploadResult(null);
 
     try {
-      console.log('[Test Upload] Starting upload test for:', selectedFile.name);
       
       const uploadFormData = new FormData();
       uploadFormData.append('file', selectedFile);
@@ -47,11 +46,9 @@ export default function TestFeedbackUploadPage() {
         body: uploadFormData,
       });
 
-      console.log('[Test Upload] Upload response status:', uploadResponse.status);
 
       if (uploadResponse.ok) {
         const result = await uploadResponse.json();
-        console.log('[Test Upload] Upload successful:', result);
         setUploadResult(result);
         toast.success("File uploaded successfully!");
       } else {
@@ -81,27 +78,27 @@ export default function TestFeedbackUploadPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {!user ? (
-            <div className="text-center text-red-600">
+            <div className="text-center text-destructive">
               Please log in to test file upload
             </div>
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-body font-medium mb-2">
                   Select a file to test upload:
                 </label>
                 <input
                   type="file"
                   onChange={handleFileSelect}
                   accept="image/*,.pdf,.txt,.doc,.docx"
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="block w-full text-body text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-body file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
 
               {selectedFile && (
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-muted p-4 rounded-lg">
                   <h3 className="font-medium mb-2">Selected File:</h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-body text-muted-foreground">
                     <p><strong>Name:</strong> {selectedFile.name}</p>
                     <p><strong>Size:</strong> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                     <p><strong>Type:</strong> {selectedFile.type}</p>
@@ -133,7 +130,7 @@ export default function TestFeedbackUploadPage() {
                     <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                     <h3 className="font-medium text-green-800">Upload Successful!</h3>
                   </div>
-                  <div className="text-sm text-green-700">
+                  <div className="text-body text-green-700">
                     <p><strong>URL:</strong> <a href={uploadResult.url} target="_blank" rel="noopener noreferrer" className="underline">{uploadResult.url}</a></p>
                     <p><strong>Filename:</strong> {uploadResult.filename}</p>
                     <p><strong>Type:</strong> {uploadResult.type}</p>
@@ -143,16 +140,16 @@ export default function TestFeedbackUploadPage() {
               )}
 
               {uploadError && (
-                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                    <XCircle className="h-5 w-5 text-destructive" />
                     <h3 className="font-medium text-red-800">Upload Failed</h3>
                   </div>
-                  <p className="text-sm text-red-700">{uploadError}</p>
+                  <p className="text-body text-destructive">{uploadError}</p>
                 </div>
               )}
 
-              <div className="text-sm text-gray-500">
+              <div className="text-body text-muted-foreground">
                 <p><strong>User ID:</strong> {user.id}</p>
                 <p><strong>User Email:</strong> {user.email}</p>
               </div>

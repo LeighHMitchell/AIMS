@@ -79,7 +79,7 @@ export function ParcelProgressRail({
                     onClick={() => clickable && onStepClick(step)}
                     disabled={!clickable}
                     className={cn(
-                      "text-sm pt-1 text-left transition-colors",
+                      "text-body pt-1 text-left transition-colors",
                       isCurrent && "font-semibold text-foreground",
                       completed && !isCurrent && "text-muted-foreground",
                       !completed && !isCurrent && "text-muted-foreground/60",

@@ -147,7 +147,7 @@ export function ColumnSelector<T extends string>({
         <Button variant="outline" size="sm" className="gap-2">
           <Columns3 className="h-4 w-4" />
           <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-helper">
             {visibleCount}
           </Badge>
           <ChevronDown className="h-3 w-3 opacity-50" />
@@ -156,13 +156,13 @@ export function ColumnSelector<T extends string>({
       <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <h4 className="font-medium text-body">Visible Columns</h4>
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={selectAll}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Select all
               </Button>
@@ -170,13 +170,13 @@ export function ColumnSelector<T extends string>({
                 variant="ghost"
                 size="sm"
                 onClick={resetToDefaults}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Reset
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-helper text-muted-foreground mt-1">
             {visibleCount} of {totalColumns} columns visible
           </p>
           <div className="relative mt-2">
@@ -185,7 +185,7 @@ export function ColumnSelector<T extends string>({
               placeholder="Search columns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
+              className="pl-8 h-8 text-body"
             />
           </div>
         </div>
@@ -193,7 +193,7 @@ export function ColumnSelector<T extends string>({
           {filteredColumns ? (
             // Show flat filtered list when searching
             filteredColumns.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
+              <div className="p-3 text-body text-muted-foreground text-center">
                 No columns match "{searchQuery}"
               </div>
             ) : (
@@ -211,8 +211,8 @@ export function ColumnSelector<T extends string>({
                       onCheckedChange={() => toggleColumn(column.id)}
                       disabled={column.alwaysVisible}
                     />
-                    <span className="text-sm">{column.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
+                    <span className="text-body">{column.label}</span>
+                    <span className="text-helper text-muted-foreground ml-auto">
                       {getGroupLabel(column.group)}
                     </span>
                   </div>
@@ -245,7 +245,7 @@ export function ColumnSelector<T extends string>({
                       onCheckedChange={() => toggleGroup(groupKey)}
                       disabled={!hasToggleable}
                     />
-                    <span className="text-sm font-medium">{getGroupLabel(groupKey)}</span>
+                    <span className="text-body font-medium">{getGroupLabel(groupKey)}</span>
                   </div>
                   <div className="py-1">
                     {groupColumns.map((column) => (
@@ -261,9 +261,9 @@ export function ColumnSelector<T extends string>({
                           onCheckedChange={() => toggleColumn(column.id)}
                           disabled={column.alwaysVisible}
                         />
-                        <span className="text-sm">{column.label}</span>
+                        <span className="text-body">{column.label}</span>
                         {column.alwaysVisible && (
-                          <span className="text-xs text-muted-foreground ml-auto">Required</span>
+                          <span className="text-helper text-muted-foreground ml-auto">Required</span>
                         )}
                       </div>
                     ))}

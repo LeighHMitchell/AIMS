@@ -62,7 +62,7 @@ export function TransactionDocumentIndicator({
 
   const getFileIcon = (fileType: string) => {
     if (fileType === 'external') return <ExternalLink className="h-3 w-3" />;
-    if (fileType.includes('pdf')) return <FileText className="h-3 w-3 text-red-500" />;
+    if (fileType.includes('pdf')) return <FileText className="h-3 w-3 text-destructive" />;
     if (fileType.includes('image')) return <Eye className="h-3 w-3 text-blue-500" />;
     if (fileType.includes('spreadsheet') || fileType.includes('excel')) return <FileText className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
     return <FileText className="h-3 w-3" />;
@@ -148,7 +148,7 @@ function DocumentsList({
 
   const getFileIcon = (fileType: string) => {
     if (fileType === 'external') return <ExternalLink className="h-4 w-4" />;
-    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
+    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-destructive" />;
     if (fileType.includes('image')) return <Eye className="h-4 w-4 text-blue-500" />;
     if (fileType.includes('spreadsheet') || fileType.includes('excel')) return <FileText className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
     return <FileText className="h-4 w-4" />;
@@ -169,11 +169,11 @@ function DocumentsList({
           <div className="flex items-center space-x-2 min-w-0 flex-1">
             {getFileIcon(doc.fileType)}
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{doc.fileName}</p>
-              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <p className="text-body font-medium truncate">{doc.fileName}</p>
+              <div className="flex items-center space-x-2 text-helper text-muted-foreground">
                 {doc.fileSize > 0 && <span>{formatFileSize(doc.fileSize)}</span>}
                 <span>{doc.uploadedAt.toLocaleDateString()}</span>
-                {doc.externalUrl && <Badge variant="outline" className="text-xs">External</Badge>}
+                {doc.externalUrl && <Badge variant="outline" className="text-helper">External</Badge>}
               </div>
             </div>
           </div>

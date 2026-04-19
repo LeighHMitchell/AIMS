@@ -151,7 +151,7 @@ export function SectorTimeSeriesPanel() {
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col gap-4">
           {/* Title */}
@@ -168,12 +168,12 @@ export function SectorTimeSeriesPanel() {
           {/* Top-Level Toggles */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Data Type Toggle - Planned vs Actual */}
-            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleDataTypeChange('planned')}
-                className={cn("h-8", dataType === 'planned' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", dataType === 'planned' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               >
                 Planned Disbursements
               </Button>
@@ -181,7 +181,7 @@ export function SectorTimeSeriesPanel() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleDataTypeChange('actual')}
-                className={cn("h-8", dataType === 'actual' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", dataType === 'actual' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               >
                 Actual Disbursements
               </Button>
@@ -189,12 +189,12 @@ export function SectorTimeSeriesPanel() {
 
             {/* Chart Type Toggle */}
             <div className="flex items-center gap-2">
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100 flex-wrap">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('area')}
-                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Area"
                 >
                   <TrendingUp className="h-4 w-4" />
@@ -203,7 +203,7 @@ export function SectorTimeSeriesPanel() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('line')}
-                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Line"
                 >
                   <LineChartIcon className="h-4 w-4" />
@@ -212,7 +212,7 @@ export function SectorTimeSeriesPanel() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('bar')}
-                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -221,7 +221,7 @@ export function SectorTimeSeriesPanel() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('stacked-bar')}
-                  className={cn("h-8", chartType === 'stacked-bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'stacked-bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Stacked Bar"
                 >
                   <Layers className="h-4 w-4" />
@@ -230,7 +230,7 @@ export function SectorTimeSeriesPanel() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('table')}
-                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
@@ -281,11 +281,11 @@ export function SectorTimeSeriesPanel() {
 
         {/* Error State */}
         {error && !loading && (
-          <div className="flex items-center justify-center h-[400px] bg-red-50 rounded-lg">
+          <div className="flex items-center justify-center h-[400px] bg-destructive/10 rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 mx-auto mb-2 text-red-400" />
-              <p className="text-red-700 font-medium">Failed to load data</p>
-              <p className="text-sm text-red-600 mt-1">{error}</p>
+              <AlertCircle className="h-12 w-12 mx-auto mb-2 text-destructive" />
+              <p className="text-destructive font-medium">Failed to load data</p>
+              <p className="text-body text-destructive mt-1">{error}</p>
               <Button 
                 variant="outline" 
                 size="sm" 

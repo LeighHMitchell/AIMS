@@ -93,9 +93,9 @@ export default function SDGListingPage() {
           <div className="w-full p-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading SDGs</h2>
-                <p className="text-slate-600">{error}</p>
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading SDGs</h2>
+                <p className="text-muted-foreground">{error}</p>
               </CardContent>
             </Card>
           </div>
@@ -147,7 +147,7 @@ export default function SDGListingPage() {
           {viewMode === 'list' && (
             <Card>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="bg-surface-muted">
                     <tr className="border-b bg-muted/50">
                       <th className="text-left font-medium text-muted-foreground px-4 py-3 w-16"></th>
@@ -172,7 +172,7 @@ export default function SDGListingPage() {
                           </Link>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: sdg.color }}>
+                          <span className="text-section-label font-bold uppercase" style={{ color: sdg.color }}>
                             {sdg.id}
                           </span>
                         </td>
@@ -188,7 +188,7 @@ export default function SDGListingPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           {sdg.activityCount > 0 ? (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-helper">
                               {sdg.activityCount}
                             </Badge>
                           ) : (

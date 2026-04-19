@@ -92,12 +92,10 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
       return;
     }
 
-    console.log('[Download] Fetching signed URL for:', { taskId, attachmentId, fileName });
 
     const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`);
     const data = await response.json();
 
-    console.log('[Download] API response:', data);
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);
@@ -145,7 +143,7 @@ function getTaskOverallStatus(task: Task): { label: string; color: string } {
     return { label: 'All Completed', color: 'text-[#5f7f7a] bg-[#5f7f7a]/10 border-[#5f7f7a]/30' };
   }
   if (declined === assignments.length) {
-    return { label: 'All Declined', color: 'text-gray-600 bg-gray-50 border-gray-200' };
+    return { label: 'All Declined', color: 'text-muted-foreground bg-muted border-border' };
   }
   if (inProgress > 0) {
     return { label: 'In Progress', color: 'text-blue-600 bg-blue-50 border-blue-200' };
@@ -153,7 +151,7 @@ function getTaskOverallStatus(task: Task): { label: string; color: string } {
   if (completed > 0) {
     return { label: 'Partial', color: 'text-amber-600 bg-amber-50 border-amber-200' };
   }
-  return { label: 'Pending', color: 'text-slate-600 bg-slate-50 border-slate-200' };
+  return { label: 'Pending', color: 'text-muted-foreground bg-muted border-border' };
 }
 
 // Get progress percentage for a task
@@ -317,16 +315,16 @@ export function CreatedTasksTable({
                 key={task.id}
                 className={cn(
                   'cursor-pointer hover:bg-muted/50',
-                  isOverdue && 'bg-red-50/50',
+                  isOverdue && 'bg-destructive/10/50',
                   isDueSoon && !isOverdue && 'bg-amber-50/50'
                 )}
                 onClick={() => onViewDetails?.(task)}
               >
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="text-sm text-foreground line-clamp-1">{task.title}</div>
+                    <div className="text-body text-foreground line-clamp-1">{task.title}</div>
                     {task.description && (
-                      <div className="text-xs text-muted-foreground line-clamp-1">
+                      <div className="text-helper text-muted-foreground line-clamp-1">
                         {task.description}
                       </div>
                     )}
@@ -334,14 +332,14 @@ export function CreatedTasksTable({
                 </TableCell>
 
                 <TableCell>
-                  <Badge variant="outline" className={cn('text-xs', getPriorityColor(task.priority))}>
+                  <Badge variant="outline" className={cn('text-helper', getPriorityColor(task.priority))}>
                     {getPriorityLabel(task.priority)}
                   </Badge>
                 </TableCell>
 
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Badge variant="outline" className={cn('text-xs', overallStatus.color)}>
+                    <Badge variant="outline" className={cn('text-helper', overallStatus.color)}>
                       {overallStatus.label}
                     </Badge>
                     {isOverdue && (
@@ -353,13 +351,13 @@ export function CreatedTasksTable({
                 <TableCell>
                   {deadline ? (
                     <div className={cn(
-                      'text-sm',
+                      'text-body',
                       isOverdue && 'text-[#DC2625] font-medium',
                       isDueSoon && !isOverdue && 'text-[#DC2625]'
                     )}>
                       {format(deadline, 'MMM d, yyyy')}
                       {daysUntil !== null && (
-                        <div className="text-xs">
+                        <div className="text-helper">
                           {isOverdue
                             ? `${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''} overdue`
                             : daysUntil === 0
@@ -371,7 +369,7 @@ export function CreatedTasksTable({
                       )}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">No deadline</span>
+                    <span className="text-muted-foreground text-body">No deadline</span>
                   )}
                 </TableCell>
 
@@ -397,7 +395,7 @@ export function CreatedTasksTable({
                                   </Avatar>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">
-                                  <div className="text-xs">
+                                  <div className="text-helper">
                                     <p className="font-medium">{name}</p>
                                     <p className="text-muted-foreground capitalize">{assignment.status.replace('_', ' ')}</p>
                                   </div>
@@ -417,18 +415,18 @@ export function CreatedTasksTable({
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
-                                <p className="text-xs">{assignments.length - 3} more assignee{assignments.length - 3 !== 1 ? 's' : ''}</p>
+                                <p className="text-helper">{assignments.length - 3} more assignee{assignments.length - 3 !== 1 ? 's' : ''}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         )}
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-helper text-muted-foreground">
                         ({assignments.length})
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                    <div className="flex items-center gap-1 text-muted-foreground text-body">
                       <Users className="h-4 w-4" />
                       <span>None</span>
                     </div>
@@ -438,7 +436,7 @@ export function CreatedTasksTable({
                 {/* Attachments Column */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   {attachments.length === 0 ? (
-                    <span className="text-muted-foreground text-xs">-</span>
+                    <span className="text-muted-foreground text-helper">-</span>
                   ) : (
                     <div className="flex items-center gap-1 flex-wrap">
                       {attachments.slice(0, 4).map((attachment: any) => {
@@ -461,7 +459,7 @@ export function CreatedTasksTable({
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
-                                <div className="text-xs">
+                                <div className="text-helper">
                                   <p className="font-medium">{attachment.file_name}</p>
                                   <p className="text-muted-foreground flex items-center gap-1">
                                     <Download className="h-3 w-3" /> Click to download
@@ -476,12 +474,12 @@ export function CreatedTasksTable({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="h-7 w-7 rounded bg-muted border border-muted-foreground/20 flex items-center justify-center text-xs font-medium text-muted-foreground">
+                              <div className="h-7 w-7 rounded bg-muted border border-muted-foreground/20 flex items-center justify-center text-helper font-medium text-muted-foreground">
                                 +{attachments.length - 4}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
-                              <div className="text-xs">
+                              <div className="text-helper">
                                 <p className="font-medium mb-1">{attachments.length - 4} more attachment{attachments.length - 4 !== 1 ? 's' : ''}</p>
                                 <ul className="space-y-0.5">
                                   {attachments.slice(4).map((a: any) => (
@@ -510,14 +508,14 @@ export function CreatedTasksTable({
                         />
                       </div>
                       <span className={cn(
-                        'text-xs font-medium tabular-nums',
+                        'text-helper font-medium tabular-nums',
                         progress === 100 && 'text-[#5f7f7a]'
                       )}>
                         {progress}%
                       </span>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-xs">-</span>
+                    <span className="text-muted-foreground text-helper">-</span>
                   )}
                 </TableCell>
 
@@ -533,7 +531,7 @@ export function CreatedTasksTable({
                           onEdit(task);
                         }}
                       >
-                        <Pencil className="h-4 w-4 text-slate-500" />
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     )}
                     {onDelete && (
@@ -542,10 +540,10 @@ export function CreatedTasksTable({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             disabled={deletingTaskId === task.id}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

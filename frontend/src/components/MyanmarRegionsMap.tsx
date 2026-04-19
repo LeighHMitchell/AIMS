@@ -366,8 +366,8 @@ export default function MyanmarRegionsMap({
                     maxWidth: 280,
                   }}
                 >
-                  <h4 className="font-semibold text-foreground text-sm mb-2">{hoveredRegion}</h4>
-                  <table className="w-full text-xs">
+                  <h4 className="font-semibold text-foreground text-body mb-2">{hoveredRegion}</h4>
+                  <table className="w-full text-helper">
                     <tbody>
                       <tr className="border-b border-border">
                         <td className="py-1 text-muted-foreground">Allocation</td>
@@ -520,7 +520,7 @@ export default function MyanmarRegionsMap({
             </svg>
           </div>
 
-          <p className="text-sm text-muted-foreground mt-4">
+          <p className="text-body text-muted-foreground mt-4">
             This interactive map provides a geographic visualization of aid distribution across Myanmar.
             Darker shading indicates higher allocation percentages, making it easy to identify regional
             concentrations and gaps at a glance. Hover over regions to see exact percentages, helping

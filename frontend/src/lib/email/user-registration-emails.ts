@@ -29,7 +29,6 @@ export async function sendNewUserRegistrationEmail({
   registeredAt,
 }: SendNewUserRegistrationEmailOptions): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.log('[User Registration Email] Email not configured, skipping notification');
     return false;
   }
 
@@ -63,7 +62,6 @@ export async function sendNewUserRegistrationEmail({
   });
 
   if (success) {
-    console.log(`[User Registration Email] Email sent to ${recipientEmail}`);
   } else {
     console.error(`[User Registration Email] Failed to send email to ${recipientEmail}`);
   }

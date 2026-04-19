@@ -88,7 +88,7 @@ const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
 
   return (
     <>
-      <span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}
+      <span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}
     </>
   );
 };
@@ -187,8 +187,8 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
 
   if (organizations.length === 0) {
     return (
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-        <div className="text-slate-500">No organizations found</div>
+      <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
+        <div className="text-muted-foreground">No organizations found</div>
       </div>
     );
   }
@@ -302,13 +302,13 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-md shadow-sm border border-gray-200">
+    <div className="bg-white rounded-md shadow-sm border border-border">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
                 {orderedColumns.map((colId) => headerMap[colId])}
-              <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[13%]">
+              <th className="h-12 px-4 text-right align-middle text-body font-medium text-muted-foreground w-[13%]">
                 Actions
               </th>
             </TableRow>
@@ -320,7 +320,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
               // Build cell map
               const cellMap: Record<OrganizationColumnId, React.ReactNode> = {
                 name: (
-                  <TableCell key="name" className="px-4 py-3 text-sm text-foreground">
+                  <TableCell key="name" className="px-4 py-3 text-body text-foreground">
                     <div className="flex items-start gap-3">
                       {/* Logo */}
                       <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
@@ -335,7 +335,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                             }}
                           />
                         ) : (
-                          <Building2 className="h-8 w-8 text-gray-400" />
+                          <Building2 className="h-8 w-8 text-muted-foreground" />
                         )}
                       </div>
 
@@ -362,7 +362,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                     <>
                                       {' '}
                                       <span className="inline-flex items-center gap-0.5 whitespace-nowrap align-middle">
-                                        <span className="text-xs font-mono font-normal bg-muted text-gray-600 px-1.5 py-0.5 rounded">
+                                        <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                                           {org.iati_org_id}
                                         </span>
                                         <button
@@ -373,7 +373,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                           className="p-0.5 hover:bg-muted rounded transition-colors"
                                           title="Copy IATI ID"
                                         >
-                                          <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                                          <Copy className="h-3 w-3 text-muted-foreground hover:text-muted-foreground" />
                                         </button>
                                       </span>
                                     </>
@@ -387,13 +387,13 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                   className="flex-shrink-0 p-1 hover:bg-muted rounded transition-colors"
                                   title="Copy organization name"
                                 >
-                                  <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                                  <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-muted-foreground" />
                                 </button>
                               </div>
                             </TooltipTrigger>
                             {org.description && (
                               <TooltipContent className="max-w-xs">
-                                <p className="text-sm">{org.description}</p>
+                                <p className="text-body">{org.description}</p>
                               </TooltipContent>
                             )}
                           </Tooltip>
@@ -403,14 +403,14 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   </TableCell>
                 ),
                 type: (
-                  <TableCell key="type" className="px-4 py-3 text-sm text-foreground">
+                  <TableCell key="type" className="px-4 py-3 text-body text-foreground">
                     <span>
                       {typeLabel}
                     </span>
                   </TableCell>
                 ),
                 location: (
-                  <TableCell key="location" className="px-4 py-3 text-sm text-foreground">
+                  <TableCell key="location" className="px-4 py-3 text-body text-foreground">
                     {org.country_represented ? (
                       <div className="flex items-start gap-2">
                         {org.country_represented === 'United Nations' ? (
@@ -441,7 +441,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   </TableCell>
                 ),
                 residency: (
-                  <TableCell key="residency" className="px-4 py-3 text-sm text-foreground">
+                  <TableCell key="residency" className="px-4 py-3 text-body text-foreground">
                     {org.residency_status ? (
                       <span>{org.residency_status === 'resident' ? 'Resident' : 'Non-Resident'}</span>
                     ) : (
@@ -450,14 +450,14 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   </TableCell>
                 ),
                 reported: (
-                  <TableCell key="reported" className="px-4 py-3 text-sm text-foreground text-center">
+                  <TableCell key="reported" className="px-4 py-3 text-body text-foreground text-center">
                     <span>
                       {org.reportedActivities ?? org.activeProjects ?? 0}
                     </span>
                   </TableCell>
                 ),
                 associated: (
-                  <TableCell key="associated" className="px-4 py-3 text-sm text-foreground text-center">
+                  <TableCell key="associated" className="px-4 py-3 text-body text-foreground text-center">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -466,7 +466,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <div className="text-sm">
+                          <div className="text-body">
                             <div className="flex justify-between gap-4">
                               <span>Provider:</span>
                               <span className="font-medium">{org.providerTransactionCount ?? 0}</span>
@@ -482,7 +482,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   </TableCell>
                 ),
                 funding: (
-                  <TableCell key="funding" className="px-4 py-3 text-sm text-foreground text-right font-medium">
+                  <TableCell key="funding" className="px-4 py-3 text-body text-foreground text-right font-medium">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -493,14 +493,14 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-sm">Total budgeted funding</p>
+                          <p className="text-body">Total budgeted funding</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </TableCell>
                 ),
                 created_at: (
-                  <TableCell key="created_at" className="px-4 py-3 text-sm text-foreground">
+                  <TableCell key="created_at" className="px-4 py-3 text-body text-foreground">
                     <span>
                       {formatDate(org.created_at)}
                     </span>
@@ -515,7 +515,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   onClick={(e) => handleRowClick(org.id, e)}
                 >
                   {orderedColumns.map((colId) => cellMap[colId])}
-                  <TableCell className="px-4 py-3 text-sm text-foreground text-right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="px-4 py-3 text-body text-foreground text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end">
                       <OrganizationActionMenu
                         organizationId={org.id}

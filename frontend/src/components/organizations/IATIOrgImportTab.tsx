@@ -520,20 +520,20 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                 <div
                   {...getRootProps()}
                   className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                    isDragActive ? 'border-blue-500 bg-blue-50' : 'border-input hover:border-gray-400'
                   }`}
                 >
                   <input {...getInputProps()} />
-                  <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   {selectedFile ? (
                     <div>
-                      <p className="font-medium text-gray-900">{selectedFile.name}</p>
-                      <p className="text-sm text-gray-500">{(selectedFile.size / 1024).toFixed(2)} KB</p>
+                      <p className="font-medium text-foreground">{selectedFile.name}</p>
+                      <p className="text-body text-muted-foreground">{(selectedFile.size / 1024).toFixed(2)} KB</p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-gray-600 mb-2">Drag and drop an XML file here, or click to select</p>
-                      <p className="text-sm text-gray-500">IATI Organization XML files only</p>
+                      <p className="text-muted-foreground mb-2">Drag and drop an XML file here, or click to select</p>
+                      <p className="text-body text-muted-foreground">IATI Organization XML files only</p>
                     </div>
                   )}
                 </div>
@@ -614,11 +614,11 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                           <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))] mt-0.5" />
                           <div className="flex-1">
                             <p className="font-medium text-green-900">Country-Specific Budget Available</p>
-                            <p className="text-sm text-green-700 mt-1">
+                            <p className="text-body text-green-700 mt-1">
                               This organization has published a budget specifically for {homeCountryName}.
                             </p>
                             {budgetCoverage.countryBudgets.homeCountryBudget && (
-                              <p className="text-sm text-gray-600 mt-2">
+                              <p className="text-body text-muted-foreground mt-2">
                                 Period: {budgetCoverage.countryBudgets.homeCountryBudget.periodStart} to {budgetCoverage.countryBudgets.homeCountryBudget.periodEnd}
                               </p>
                             )}
@@ -626,14 +626,14 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                         </>
                       ) : (
                         <>
-                          <X className="h-5 w-5 text-red-600 mt-0.5" />
+                          <X className="h-5 w-5 text-destructive mt-0.5" />
                           <div className="flex-1">
                             <p className="font-medium text-red-900">Country-Specific Budget Not Available</p>
-                            <p className="text-sm text-red-700 mt-1">
+                            <p className="text-body text-destructive mt-1">
                               This organization has not published a budget specifically for {homeCountryName}.
                             </p>
                             {budgetCoverage.countryBudgets.otherCountries.length > 0 && (
-                              <p className="text-sm text-gray-600 mt-2">
+                              <p className="text-body text-muted-foreground mt-2">
                                 Other countries with budgets: {budgetCoverage.countryBudgets.otherCountries.join(', ')}
                               </p>
                             )}
@@ -643,21 +643,21 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-body">
                     <div>
-                      <p className="text-gray-600">Total Budgets</p>
+                      <p className="text-muted-foreground">Total Budgets</p>
                       <p className="font-medium">{budgetCoverage.totalBudgets.count}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600">Region Budgets</p>
+                      <p className="text-muted-foreground">Region Budgets</p>
                       <p className="font-medium">{budgetCoverage.recipientRegionBudgetCount}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600">Org Budgets</p>
+                      <p className="text-muted-foreground">Org Budgets</p>
                       <p className="font-medium">{budgetCoverage.recipientOrgBudgetCount}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600">Documents</p>
+                      <p className="text-muted-foreground">Documents</p>
                       <p className="font-medium">{budgetCoverage.documentCount}</p>
                     </div>
                   </div>

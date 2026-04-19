@@ -33,9 +33,9 @@ const CAPITAL_SPEND_PALETTE = {
 function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: number | null }) {
   if (capitalPercentage === null || capitalPercentage === undefined) {
     return (
-      <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+      <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
         <img src="/images/empty-anvil.webp" alt="No capital spend entered" className="h-32 mx-auto mb-4 opacity-50" />
-        <h3 className="text-lg font-semibold mb-2">No capital spend entered</h3>
+        <h3 className="text-base font-semibold mb-2">No capital spend entered</h3>
         <p className="text-muted-foreground">Enter a capital spend percentage to view the breakdown.</p>
       </div>
     );
@@ -62,9 +62,9 @@ function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: numb
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-gray-600">{data.value.toFixed(1)}%</p>
+          <p className="text-body text-muted-foreground">{data.value.toFixed(1)}%</p>
         </div>
       );
     }
@@ -169,7 +169,6 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
         if (error) throw error;
 
         setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
         onCapitalSpendChange?.(null); // Notify parent
       } catch (err) {
         console.error('Error saving capital spend:', err);
@@ -208,7 +207,6 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
       if (error) throw error;
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
       onCapitalSpendChange?.(roundedValue); // Notify parent
     } catch (err) {
       console.error('Error saving capital spend:', err);
@@ -222,6 +220,9 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCapitalSpend(e.target.value);
     setError(null);
+    // Once the user edits, the current value is no longer what's in the database
+    // so drop the green tick until the next successful save.
+    setSaved(false);
   };
 
   const handleBlur = () => {
@@ -236,7 +237,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-foreground"></div>
       </div>
     );
   }
@@ -255,7 +256,15 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   isSaved={saved}
                   hasValue={!!capitalSpend}
                 >
-                  Capital Spend Percentage
+                  <span className="inline-flex items-center gap-2">
+                    Capital Spend Percentage
+                    <HelpTextTooltip>
+                      The share of the activity's total budget that pays for long-lived
+                      assets — buildings, roads, vehicles, equipment. The rest (the
+                      "recurrent" share) covers ongoing running costs like staff,
+                      training, and supplies.
+                    </HelpTextTooltip>
+                  </span>
                 </LabelSaveIndicator>
                 <div className="relative max-w-xs">
                   <Input
@@ -271,14 +280,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     disabled={readOnly || saving}
                     className={cn(
                       "pr-10",
-                      error && "border-red-500 focus-visible:ring-red-500"
+                      error && "border-destructive focus-visible:ring-red-500"
                     )}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     %
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-body text-muted-foreground">
                   Fixed assets, infrastructure
                 </p>
               </div>
@@ -290,7 +299,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   isSaved={saved}
                   hasValue={!!capitalSpend}
                 >
-                  Recurrent Spend Percentage
+                  <span className="inline-flex items-center gap-2">
+                    Recurrent Spend Percentage
+                    <HelpTextTooltip>
+                      The share that covers ongoing operating costs — salaries,
+                      training, consumables, running expenses. Calculated automatically
+                      as 100% minus the capital spend percentage.
+                    </HelpTextTooltip>
+                  </span>
                 </LabelSaveIndicator>
                 <div className="relative max-w-xs">
                   <Input
@@ -298,14 +314,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     type="text"
                     value={recurrentSpend}
                     disabled
-                    className="pr-10 bg-gray-50"
+                    className="pr-10 bg-muted"
                     placeholder="Auto-calculated"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     %
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-body text-muted-foreground">
                   Operational, running costs
                 </p>
               </div>
@@ -319,7 +335,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
             )}
 
             <Collapsible open={showExamples} onOpenChange={setShowExamples} className="pt-4">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+              <CollapsibleTrigger className="flex items-center gap-2 text-body font-medium">
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
                   showExamples && "rotate-180"
@@ -327,7 +343,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                 Examples by Project Type
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2">
-                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside ml-4">
+                <ul className="text-body text-muted-foreground space-y-1 list-disc list-inside ml-4">
                   <li>Infrastructure projects (roads, buildings): typically 80-100% capital</li>
                   <li>Equipment procurement: typically 60-90% capital</li>
                   <li>Training programs: typically 0-10% capital</li>
@@ -341,7 +357,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
         {/* Right column - Donut chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-slate-900">
+            <CardTitle className="text-base font-semibold text-foreground">
               Capital Spend Breakdown
             </CardTitle>
           </CardHeader>

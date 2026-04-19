@@ -16,7 +16,6 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/organizations - Starting request');
   
   const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -86,7 +85,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/organizations - Starting request');
   
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -103,7 +101,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, acronym, type, country, ...otherFields } = body;
     
-    console.log('[AIMS] Creating organization with data:', { name, acronym, type, country });
     
     // Ensure we have at least name
     if (!name) {
@@ -153,7 +150,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (exactMatch) {
-          console.log('[AIMS] Organization already exists, returning existing:', exactMatch);
           // Return the existing organization instead of error
           return NextResponse.json(exactMatch, { status: 200 });
         }
@@ -171,7 +167,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[AIMS] Created organization:', data);
     
     const response = NextResponse.json(data, { status: 201 });
     
@@ -191,7 +186,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  console.log('[AIMS] PUT /api/organizations - Starting request');
   
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -281,8 +275,6 @@ export async function PUT(request: NextRequest) {
       // delete updates.logo;
     }
     
-    console.log('[AIMS] Updating organization with mapped data:', updates);
-    console.log('[AIMS] default_currency being saved:', updates.default_currency);
     
     const { data, error } = await supabase
       .from('organizations')
@@ -296,8 +288,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[AIMS] Updated organization:', data);
-    console.log('[AIMS] Saved default_currency:', data.default_currency);
     return NextResponse.json(data);
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
@@ -309,7 +299,6 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  console.log('[AIMS] DELETE /api/organizations - Starting request');
   
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -403,7 +392,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[AIMS] Deleted organization:', id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);

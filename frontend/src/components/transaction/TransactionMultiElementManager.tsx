@@ -162,12 +162,12 @@ export function TransactionSectorManager({
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Label className="text-sm font-medium">Transaction Sectors</Label>
+          <Label className="text-body font-medium">Transaction Sectors</Label>
           <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple sectors per transaction with percentage allocations" />
         </div>
         <div className="flex items-center gap-2">
           {hasPercentages && hasPercentageError && (
-            <Badge variant="destructive" className="text-xs">
+            <Badge variant="destructive" className="text-helper">
               <AlertCircle className="h-3 w-3 mr-1" />
               {totalPercentage.toFixed(1)}% (must be 100%)
             </Badge>
@@ -177,7 +177,7 @@ export function TransactionSectorManager({
 
       {/* Sector Selection Dropdown */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Select sectors to add</Label>
+        <Label className="text-helper text-muted-foreground">Select sectors to add</Label>
         <SectorSelect
           value={selectedSectorCodes}
           onValueChange={handleSectorSelectChange}
@@ -199,7 +199,7 @@ export function TransactionSectorManager({
                   variant="default" 
                   size="sm"
                   onClick={distributeEqually}
-                  className="text-xs h-7"
+                  className="text-helper h-7"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
                   Distribute Equally
@@ -210,9 +210,9 @@ export function TransactionSectorManager({
                 variant="outline" 
                 size="sm"
                 onClick={clearAll}
-                className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600"
+                className="text-helper h-7 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
               >
-                <Trash2 className="h-3 w-3 mr-1 text-red-500" />
+                <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                 Clear All
               </Button>
             </div>
@@ -220,7 +220,7 @@ export function TransactionSectorManager({
 
           {/* Sector table */}
           <div className="border rounded-md overflow-hidden">
-            <table className="w-full text-xs">
+            <table className="w-full text-helper">
               <thead className="bg-surface-muted">
                 <tr className="bg-muted/50 text-muted-foreground border-b">
                   <th className="text-left py-2 px-3 font-medium">Sector</th>
@@ -259,7 +259,7 @@ export function TransactionSectorManager({
                             step="0.1"
                             value={sector.percentage ?? ''}
                             onChange={(e) => updatePercentage(index, parseFloat(e.target.value) || 0)}
-                            className="w-16 h-7 text-xs text-right"
+                            className="w-16 h-7 text-helper text-right"
                             placeholder="0"
                           />
                         </td>
@@ -276,7 +276,7 @@ export function TransactionSectorManager({
                           variant="ghost"
                           size="sm"
                           onClick={() => removeSector(index)}
-                          className="h-7 w-7 p-0 text-destructive hover:text-red-700"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -309,8 +309,8 @@ export function TransactionSectorManager({
       {sectors.length === 0 && (
         <div className="text-center py-6 text-muted-foreground border rounded-lg border-dashed">
           <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No sectors selected</p>
-          <p className="text-xs mt-1">Use the dropdown above to add sectors</p>
+          <p className="text-body">No sectors selected</p>
+          <p className="text-helper mt-1">Use the dropdown above to add sectors</p>
         </div>
       )}
       
@@ -465,7 +465,7 @@ export function TransactionAidTypeManager({
           "cursor-pointer px-4 py-2 space-y-1 hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:text-blue-700",
           "flex items-start gap-2",
           indentClass,
-          item.level === 0 && "font-semibold text-sm opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit",
+          item.level === 0 && "font-semibold text-body opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit",
           isAlreadyAdded && item.level > 0 && "opacity-50 cursor-not-allowed"
         )}
         disabled={isAlreadyAdded || item.level === 0}
@@ -482,19 +482,19 @@ export function TransactionAidTypeManager({
           <div className="flex items-center gap-2">
             <span className={cn(
               "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded",
-              item.level === 0 ? "text-gray-700" : "text-gray-800"
+              item.level === 0 ? "text-foreground" : "text-foreground"
             )}>
               {item.code}
             </span>
             <span className={cn(
-              "text-sm",
-              item.level === 0 ? "text-gray-600" : "text-gray-700"
+              "text-body",
+              item.level === 0 ? "text-muted-foreground" : "text-foreground"
             )}>
               – {item.name}
             </span>
           </div>
           {item.description && item.level > 0 && (
-            <div className="text-sm text-gray-500 leading-snug">
+            <div className="text-body text-muted-foreground leading-snug">
               {item.description}
             </div>
           )}
@@ -506,14 +506,14 @@ export function TransactionAidTypeManager({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center gap-2">
-        <Label className="text-sm font-medium">Aid Types</Label>
+        <Label className="text-body font-medium">Aid Types</Label>
         <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple aid types with different vocabularies" />
       </div>
       
       {/* Existing aid types */}
       {aidTypes.length > 0 && (
         <div className="rounded-md border">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <thead className="bg-surface-muted">
               <tr className="border-b bg-muted/50">
                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Code</th>
@@ -530,7 +530,7 @@ export function TransactionAidTypeManager({
                       {aidType.code}
                     </span>
                   </td>
-                  <td className="py-2 px-3 text-gray-700">
+                  <td className="py-2 px-3 text-foreground">
                     {getAidTypeName(aidType.code)}
                   </td>
                   <td className="py-2 px-3">
@@ -557,7 +557,7 @@ export function TransactionAidTypeManager({
                       onClick={() => removeAidType(index)}
                       className="h-8 w-8 p-0"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </td>
                 </tr>
@@ -596,13 +596,13 @@ export function TransactionAidTypeManager({
                     placeholder="Search aid types..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="w-full rounded-md border border-input bg-background px-10 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
               <CommandList className="max-h-[400px] overflow-auto">
                 {searchQuery && filteredItems.length > 0 && (
-                  <div className="px-3 py-2 text-xs text-muted-foreground border-b">
+                  <div className="px-3 py-2 text-helper text-muted-foreground border-b">
                     {filteredItems.length} match{filteredItems.length !== 1 ? 'es' : ''} found
                   </div>
                 )}
@@ -621,7 +621,7 @@ export function TransactionAidTypeManager({
                   );
                 })}
                 {filteredItems.length === 0 && (
-                  <div className="py-6 text-center text-sm">
+                  <div className="py-6 text-center text-body">
                     {searchQuery ? `No aid types found for "${searchQuery}"` : "No aid type found."}
                   </div>
                 )}
@@ -899,11 +899,11 @@ export function TransactionRecipientCountryManager({
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Label className="text-sm font-medium">Recipient Countries</Label>
+          <Label className="text-body font-medium">Recipient Countries</Label>
           <Info className="h-4 w-4 text-muted-foreground cursor-help" title="ISO 3166-1 alpha-2 codes (e.g., TZ, KE)" />
         </div>
         {hasPercentages && (
-          <Badge variant={hasPercentageError ? "destructive" : isComplete ? "default" : "secondary"} className="text-xs">
+          <Badge variant={hasPercentageError ? "destructive" : isComplete ? "default" : "secondary"} className="text-helper">
             {hasPercentageError && <AlertCircle className="h-3 w-3 mr-1" />}
             {isComplete && <CheckCircle className="h-3 w-3 mr-1" />}
             {totalPercentage.toFixed(1)}%
@@ -920,7 +920,7 @@ export function TransactionRecipientCountryManager({
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                   {country.code}
                 </span>
-                <span className="text-sm text-gray-700">
+                <span className="text-body text-foreground">
                   {getCountryName(country.code)}
                 </span>
               </div>
@@ -936,7 +936,7 @@ export function TransactionRecipientCountryManager({
                     onChange={(e) => updatePercentage(index, e.target.value ? parseFloat(e.target.value) : undefined)}
                     className="h-8"
                   />
-                  <span className="text-xs">%</span>
+                  <span className="text-helper">%</span>
                 </div>
             )}
             <Button
@@ -946,7 +946,7 @@ export function TransactionRecipientCountryManager({
               onClick={() => removeCountry(index)}
                 className="h-8 w-8 p-0"
             >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
             </div>
           </Card>
@@ -993,13 +993,13 @@ export function TransactionRecipientCountryManager({
                     placeholder="Search countries..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="w-full rounded-md border border-input bg-background px-10 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
               <CommandList className="max-h-[300px] overflow-auto">
                 {filteredCountries.length === 0 ? (
-                  <div className="py-6 text-center text-sm">
+                  <div className="py-6 text-center text-body">
                     {searchQuery ? `No countries found for "${searchQuery}"` : "No countries found."}
                   </div>
                 ) : (
@@ -1033,7 +1033,7 @@ export function TransactionRecipientCountryManager({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                               {country.code}
                             </span>
-                            <span className="text-sm">{country.name}</span>
+                            <span className="text-body">{country.name}</span>
                           </div>
                         </CommandItem>
                       );
@@ -1059,7 +1059,7 @@ export function TransactionRecipientCountryManager({
                   onChange={(e) => setPercentage(e.target.value)}
                   className="h-9"
               />
-              <span className="text-xs">%</span>
+              <span className="text-helper">%</span>
             </div>
           )}
           <Button 
@@ -1133,7 +1133,7 @@ export function TransactionRecipientRegionManager({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Recipient Regions</Label>
+        <Label className="text-body font-medium">Recipient Regions</Label>
         {hasPercentages && (
           <Badge variant={hasPercentageError ? "destructive" : "secondary"}>
             {totalPercentage.toFixed(1)}%
@@ -1146,9 +1146,9 @@ export function TransactionRecipientRegionManager({
           <Card key={index} className="p-2">
             <div className="flex items-center gap-2">
               <Badge>{region.code}</Badge>
-              <span className="text-xs text-muted-foreground">Vocab: {region.vocabulary}</span>
+              <span className="text-helper text-muted-foreground">Vocab: {region.vocabulary}</span>
               {region.percentage !== undefined && (
-                <span className="text-xs">{region.percentage}%</span>
+                <span className="text-helper">{region.percentage}%</span>
               )}
               <Button
                 type="button"
@@ -1157,11 +1157,11 @@ export function TransactionRecipientRegionManager({
                 onClick={() => removeRegion(index)}
                 className="ml-auto h-6 w-6 p-0"
               >
-                <Trash2 className="h-3 w-3 text-red-500" />
+                <Trash2 className="h-3 w-3 text-destructive" />
               </Button>
             </div>
             {region.narrative && (
-              <div className="mt-1 text-xs text-muted-foreground">{region.narrative}</div>
+              <div className="mt-1 text-helper text-muted-foreground">{region.narrative}</div>
             )}
           </Card>
         ))}
@@ -1203,7 +1203,7 @@ export function TransactionRecipientRegionManager({
                   })}
                   className="h-8"
                 />
-                <span className="text-xs">%</span>
+                <span className="text-helper">%</span>
               </div>
             )}
           </div>

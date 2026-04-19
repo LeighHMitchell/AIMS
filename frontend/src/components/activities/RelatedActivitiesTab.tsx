@@ -54,7 +54,7 @@ const getStatusColor = (status?: string) => {
   if (statusNum === 2) return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'; // Active
   if (statusNum === 3) return 'bg-blue-100 text-blue-800'; // Completed
   if (statusNum === 1) return 'bg-yellow-100 text-yellow-800'; // Pipeline
-  if (statusNum === 5) return 'bg-red-100 text-red-800'; // Cancelled
+  if (statusNum === 5) return 'bg-destructive/10 text-red-800'; // Cancelled
   return 'bg-muted text-foreground';
 };
 
@@ -171,7 +171,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   };
 
   const handleDelete = async (relationshipId: string) => {
-    if (!(await confirm({ title: 'Remove linked activity?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Remove linked activity?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Keep' }))) {
       return;
     }
 
@@ -393,19 +393,19 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                               {activity.title}
                             </span>
                             {activity.acronym && (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-helper text-muted-foreground">
                                 {activity.acronym}
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                          <code className="text-helper bg-muted px-2 py-1 rounded">
                             {activity.iatiIdentifier || 'N/A'}
                           </code>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm text-foreground">
+                          <div className="text-body text-foreground">
                             {activity.organizationAcronym || activity.organizationName || 'N/A'}
                           </div>
                         </TableCell>
@@ -419,11 +419,11 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-foreground">
+                            <span className="text-body font-medium text-foreground">
                               {activity.relationshipType}
                             </span>
                             {activity.relationshipNarrative && (
-                              <span className="text-xs text-muted-foreground mt-1">
+                              <span className="text-helper text-muted-foreground mt-1">
                                 {activity.relationshipNarrative}
                               </span>
                             )}
@@ -431,11 +431,11 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-helper text-muted-foreground">
                               {activity.source}
                             </span>
                             {activity.isExternal && (
-                              <Badge variant="outline" className="text-xs w-fit bg-yellow-50 text-yellow-700 border-yellow-200">
+                              <Badge variant="outline" className="text-helper w-fit bg-yellow-50 text-yellow-700 border-yellow-200">
                                 External
                               </Badge>
                             )}
@@ -448,7 +448,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                                 <Link
                                   href={`/activities/${activity.id}`}
                                   target="_blank"
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-body"
                                 >
                                   <ExternalLink className="h-3 w-3" />
                                   <span className="sr-only">View activity</span>
@@ -459,9 +459,9 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDelete(activity.id)}
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
                               ) : null}
                             </div>
@@ -474,7 +474,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
               </div>
 
               <div className="px-6 py-4 border-t border-border bg-muted">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Showing {relatedActivities.length} related {relatedActivities.length === 1 ? 'activity' : 'activities'}
                 </p>
               </div>

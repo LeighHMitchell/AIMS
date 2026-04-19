@@ -44,7 +44,7 @@ export function OECDCRSFlagsMultiSelect({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             value.length === 0 && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -82,7 +82,7 @@ export function OECDCRSFlagsMultiSelect({
           <Command>
             <CommandList>
               <CommandGroup>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                   OECD CRS Flags
                 </div>
                 {OECD_CRS_FLAGS.map((flag) => {
@@ -110,7 +110,7 @@ export function OECDCRSFlagsMultiSelect({
                           </span>
                           <span className="font-medium text-foreground">{flag.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                        <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                           {flag.description}
                         </div>
                       </div>

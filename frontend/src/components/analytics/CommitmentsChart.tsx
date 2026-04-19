@@ -193,7 +193,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
       {/* Aggregation Mode Selector */}
       <div className="flex items-center justify-between">
         <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+          <SelectTrigger className="w-48 h-9 bg-white border-border">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -219,7 +219,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
         </Select>
         
         {groupBy === 'fiscal' && (
-          <div className="text-xs text-slate-500">
+          <div className="text-helper text-muted-foreground">
             Financial Year: July–June
           </div>
         )}
@@ -284,7 +284,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
       </ResponsiveContainer>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart plots commitments and disbursements over time, making it easy to compare funding promises against actual spending. Use the period selector to group by calendar year, financial year, or quarter. A growing gap between the two lines may indicate delivery bottlenecks or pipeline delays worth investigating.
       </p>
     </div>

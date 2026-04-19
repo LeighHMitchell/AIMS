@@ -268,7 +268,7 @@ function HistoryTab() {
       case 'completed':
         return <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>
       case 'failed':
-        return <Badge variant="outline" className="bg-red-50 text-red-700"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
       case 'importing':
         return <Badge variant="outline" className="bg-blue-50 text-blue-700"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Importing</Badge>
       case 'cancelled':
@@ -283,7 +283,7 @@ function HistoryTab() {
       case 'create': return <Plus className="h-3.5 w-3.5 text-foreground" />
       case 'update': return <RefreshCw className="h-3.5 w-3.5 text-foreground" />
       case 'skip': return <SkipForward className="h-3.5 w-3.5 text-muted-foreground" />
-      case 'fail': return <XCircle className="h-3.5 w-3.5 text-red-500" />
+      case 'fail': return <XCircle className="h-3.5 w-3.5 text-destructive" />
       default: return <Clock className="h-3.5 w-3.5 text-muted-foreground" />
     }
   }
@@ -335,7 +335,7 @@ function HistoryTab() {
             </div>
           ) : historyError ? (
             <div className="text-center py-8">
-              <p className="text-red-600 text-sm">{historyError}</p>
+              <p className="text-destructive text-body">{historyError}</p>
               <Button variant="outline" size="sm" className="mt-2" onClick={fetchHistory}>Retry</Button>
             </div>
           ) : historyData.length === 0 ? (
@@ -360,27 +360,27 @@ function HistoryTab() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium truncate">{record.reportingOrgName || record.fileName}</p>
                           {record.sourceMode === 'datastore' && (
-                            <Badge variant="outline" className="text-xs shrink-0">
+                            <Badge variant="outline" className="text-helper shrink-0">
                               <Globe className="h-3 w-3 mr-1" />
                               Registry
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           By {record.userName} · {formatDistanceToNow(new Date(record.timestamp), { addSuffix: true })}
                           <span className="hidden sm:inline text-muted-foreground ml-1" title={new Date(record.timestamp).toLocaleString()}>
                             ({new Date(record.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
                           </span>
                         </p>
-                        <div className="flex gap-3 mt-1.5 text-xs">
+                        <div className="flex gap-3 mt-1.5 text-helper">
                           <span className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded">{record.totalActivities} total</span>
                           {record.createdCount > 0 && <span className="text-foreground">{record.createdCount} created</span>}
                           {record.updatedCount > 0 && <span className="text-foreground">{record.updatedCount} updated</span>}
                           {record.skippedCount > 0 && <span className="text-muted-foreground">{record.skippedCount} skipped</span>}
-                          {record.failedCount > 0 && <span className="text-red-600">{record.failedCount} failed</span>}
+                          {record.failedCount > 0 && <span className="text-destructive">{record.failedCount} failed</span>}
                         </div>
                         {record.errorMessage && (
-                          <p className="text-xs text-red-600 mt-1">{record.errorMessage}</p>
+                          <p className="text-helper text-destructive mt-1">{record.errorMessage}</p>
                         )}
                       </div>
                     </div>
@@ -406,7 +406,7 @@ function HistoryTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           title="Delete import history"
                           disabled={deletingBatchId === record.id}
                           onClick={(e) => deleteBatch(record.id, record.reportingOrgName || record.fileName, e)}
@@ -414,7 +414,7 @@ function HistoryTab() {
                           {deletingBatchId === record.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           )}
                         </Button>
                       )}
@@ -422,7 +422,7 @@ function HistoryTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={async (e) => {
                             e.stopPropagation()
                             if (!(await confirm({ title: 'Cancel this import?', description: 'Items already imported will remain.', confirmLabel: 'Cancel Import', cancelLabel: 'Keep Importing' }))) return
@@ -457,13 +457,13 @@ function HistoryTab() {
                       {loadingItems ? (
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          <span className="text-sm text-muted-foreground">Loading activities...</span>
+                          <span className="text-body text-muted-foreground">Loading activities...</span>
                         </div>
                       ) : batchItems.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No activity details available</p>
+                        <p className="text-body text-muted-foreground text-center py-4">No activity details available</p>
                       ) : (
                         <div className="space-y-1">
-                          <div className="grid grid-cols-[1fr_200px_100px] gap-2 text-xs font-medium text-muted-foreground uppercase px-2 py-1">
+                          <div className="grid grid-cols-[1fr_200px_100px] gap-2 text-helper font-medium text-muted-foreground uppercase px-2 py-1">
                             <div>Activity</div>
                             <div>Import Details</div>
                             <div className="text-right">Action</div>
@@ -475,13 +475,13 @@ function HistoryTab() {
                                 className="grid grid-cols-[1fr_200px_100px] gap-2 px-2 py-2 border-b border-border last:border-b-0 items-center"
                               >
                                 <div className="min-w-0">
-                                  <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
+                                  <p className="text-body truncate">{item.activityTitle || item.iatiIdentifier}</p>
                                   <span className="text-xs font-mono bg-card px-1.5 py-0.5 rounded text-muted-foreground border">{item.iatiIdentifier}</span>
                                   {item.errorMessage && (
-                                    <p className="text-xs text-red-500 mt-0.5">{item.errorMessage}</p>
+                                    <p className="text-helper text-destructive mt-0.5">{item.errorMessage}</p>
                                   )}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-helper text-muted-foreground">
                                   {(() => {
                                     const pl = (n: number, s: string) => `${n} ${n === 1 ? s : s + 's'}`;
                                     const parts: string[] = [];
@@ -502,7 +502,7 @@ function HistoryTab() {
                                 </div>
                                 <div className="text-right flex items-center justify-end gap-1.5">
                                   {getItemActionIcon(item.action)}
-                                  <span className="text-xs text-muted-foreground capitalize">{item.action === 'fail' ? 'Failed' : item.action}</span>
+                                  <span className="text-helper text-muted-foreground capitalize">{item.action === 'fail' ? 'Failed' : item.action}</span>
                                 </div>
                               </div>
                             ))}
@@ -521,7 +521,7 @@ function HistoryTab() {
         {!loading && totalCount > 0 && (
           <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Showing {Math.min(startIndex + 1, totalCount)} to {Math.min(endIndex, totalCount)} of {totalCount} imports
               </div>
 
@@ -563,7 +563,7 @@ function HistoryTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-slate-200 text-slate-900' : ''}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-muted text-foreground' : ''}`}
                       >
                         {pageNum}
                       </Button>
@@ -592,7 +592,7 @@ function HistoryTab() {
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Per page:</label>
+                <label className="text-body text-muted-foreground">Per page:</label>
                 <Select
                   value={pageLimit.toString()}
                   onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -1053,17 +1053,14 @@ export default function IATIImportPage() {
 
   // Enhanced Select/deselect all items - includes sub-item selections
   const toggleAllItems = (type: 'organizations' | 'activities' | 'transactions', items: string[]) => {
-    console.log(`[IATI Import] Enhanced Toggle All: ${type} with ${items.length} items`);
     
     setImportState(prev => {
       const allSelected = items.every(id => prev[type].selected.has(id))
       const newSelected = allSelected ? new Set<string>() : new Set(items)
       
-      console.log(`[IATI Import] Enhanced Toggle All: ${type} - ${allSelected ? 'Deselecting' : 'Selecting'} all items`);
       
       // Enhanced: For transactions, also ensure all sub-items are selected
       if (type === 'transactions' && !allSelected && parsedData?.transactions) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${(parsedData.transactions || []).length} individual transactions`);
         
         // Create enhanced selection that includes all transaction indices
         const allTransactionIndices = (parsedData.transactions || []).map((_, i) => `${i}`);
@@ -1077,7 +1074,6 @@ export default function IATIImportPage() {
       
       // Enhanced: For activities, ensure all sub-components are selected
       if (type === 'activities' && !allSelected && parsedData?.activities) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.activities.length} activities with full sub-component selection`);
         
         // For activities, we select the main activities - sub-components will be handled
         // during the actual import process based on the activity data
@@ -1089,7 +1085,6 @@ export default function IATIImportPage() {
       
       // Enhanced: For organizations, select all organization data
       if (type === 'organizations' && !allSelected && parsedData?.organizations) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.organizations.length} organizations`);
         
         return {
           ...prev,
@@ -1160,7 +1155,7 @@ export default function IATIImportPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="font-medium">Parsing XML file...</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-body text-muted-foreground">
                     {parsingProgress}%
                   </span>
                 </div>
@@ -1168,7 +1163,7 @@ export default function IATIImportPage() {
                   value={parsingProgress} 
                   className="h-2"
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Please wait while we process your IATI XML file. This may take a few moments for large files.
                 </p>
               </div>
@@ -1299,8 +1294,8 @@ export default function IATIImportPage() {
                             <p className="text-lg font-medium text-foreground">
                               Drop your IATI XML file here
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2">or click to select file</p>
-                            <p className="text-xs text-muted-foreground mt-4">Supports IATI 2.03 format</p>
+                            <p className="text-body text-muted-foreground mt-2">or click to select file</p>
+                            <p className="text-helper text-muted-foreground mt-4">Supports IATI 2.03 format</p>
                           </>
                         )}
                       </div>
@@ -1323,7 +1318,7 @@ export default function IATIImportPage() {
                   {importMethod === 'url' && (
                     <>
                       <div className="space-y-3">
-                        <label className="text-sm font-medium">IATI XML URL</label>
+                        <label className="text-body font-medium">IATI XML URL</label>
                         <Input
                           type="url"
                           placeholder="https://example.com/iati-data.xml"
@@ -1339,7 +1334,6 @@ export default function IATIImportPage() {
                               setParsingProgress(10)
                               
                               // Fetch XML from URL using the existing API
-                              console.log('[IATI Import] Fetching XML from URL:', urlContent.trim())
                               const fetchResponse = await apiFetch('/api/xml/fetch', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1353,7 +1347,6 @@ export default function IATIImportPage() {
                               
                               setParsingProgress(30)
                               const { content } = await fetchResponse.json()
-                              console.log('[IATI Import] Successfully fetched XML, length:', content?.length)
                               
                               // Now parse the XML content (reuse existing parse logic)
                               setParsingProgress(50)
@@ -1425,12 +1418,12 @@ export default function IATIImportPage() {
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
                           <p className="font-medium mb-2">URL Import allows you to:</p>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
+                          <ul className="list-disc list-inside space-y-1 text-body">
                             <li>Import directly from IATI Registry URLs</li>
                             <li>Fetch data from public IATI XML endpoints</li>
                             <li>Automatically update from scheduled URLs</li>
                           </ul>
-                          <p className="mt-2 text-sm text-[hsl(var(--success-icon))]">
+                          <p className="mt-2 text-body text-[hsl(var(--success-icon))]">
                             Enter a URL above and click &quot;Fetch and Parse&quot; to begin.
                           </p>
                         </AlertDescription>
@@ -1442,14 +1435,14 @@ export default function IATIImportPage() {
                   {importMethod === 'snippet' && (
                     <>
                       <div className="space-y-3">
-                        <label className="text-sm font-medium">Paste IATI XML Snippet</label>
+                        <label className="text-body font-medium">Paste IATI XML Snippet</label>
                         <Textarea
                           placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
                           value={snippetContent}
                           onChange={(e) => setSnippetContent(e.target.value)}
                           className="font-mono text-sm min-h-[300px]"
                         />
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between text-helper text-muted-foreground">
                           <span>{snippetContent.length} characters</span>
                           <Button
                             variant="ghost"
@@ -1474,17 +1467,17 @@ export default function IATIImportPage() {
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
                           <p className="font-medium mb-2">Snippet Import supports:</p>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;transaction&gt;</code> - Individual or multiple transactions</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
-                            <li><code className="text-xs bg-muted px-1 rounded">&lt;iati-activity&gt;</code> - Full activities</li>
+                          <ul className="list-disc list-inside space-y-1 text-body">
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;transaction&gt;</code> - Individual or multiple transactions</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;iati-activity&gt;</code> - Full activities</li>
                           </ul>
-                          <p className="mt-2 text-sm">
+                          <p className="mt-2 text-body">
                             The system will automatically detect the type of snippet and parse it accordingly.
                           </p>
                         </AlertDescription>
@@ -1525,8 +1518,8 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <Building2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                           <p className="text-3xl font-bold">{parsedData.organizations.length}</p>
-                          <p className="text-sm text-muted-foreground">Organizations</p>
-                          <div className="mt-2 text-xs text-muted-foreground">
+                          <p className="text-body text-muted-foreground">Organizations</p>
+                          <div className="mt-2 text-helper text-muted-foreground">
                             <p>{parsedData.organizations.filter(o => o.matched).length} existing</p>
                             <p>{parsedData.organizations.filter(o => !o.matched).length} new</p>
                           </div>
@@ -1539,8 +1532,8 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <Activity className="h-8 w-8 mx-auto mb-2 text-[hsl(var(--success-icon))]" />
                           <p className="text-3xl font-bold">{parsedData.activities.length}</p>
-                          <p className="text-sm text-muted-foreground">Activities</p>
-                          <div className="mt-2 text-xs text-muted-foreground">
+                          <p className="text-body text-muted-foreground">Activities</p>
+                          <div className="mt-2 text-helper text-muted-foreground">
                             <p>{parsedData.activities.filter(a => a.matched).length} existing</p>
                             <p>{parsedData.activities.filter(a => !a.matched).length} new</p>
                           </div>
@@ -1553,8 +1546,8 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                           <p className="text-3xl font-bold">{(parsedData.transactions || []).length}</p>
-                          <p className="text-sm text-muted-foreground">Transactions</p>
-                          <div className="mt-2 text-xs text-muted-foreground">
+                          <p className="text-body text-muted-foreground">Transactions</p>
+                          <div className="mt-2 text-helper text-muted-foreground">
                             <p>Total value:</p>
                             <p className="font-medium">
                               {(parsedData.transactions || []).reduce((sum, t) => sum + t.value, 0).toLocaleString()} USD
@@ -1571,7 +1564,7 @@ export default function IATIImportPage() {
                       <AlertDescription className="text-yellow-800">
                         <p className="font-medium mb-2">Limited data found</p>
                         <p>We found activities but no organizations or transactions. This might happen if:</p>
-                        <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                        <ul className="list-disc list-inside mt-2 space-y-1 text-body">
                           <li>The XML file doesn't contain complete IATI data</li>
                           <li>Organizations are not properly tagged with ref attributes</li>
                           <li>Transactions are missing or in a different format</li>
@@ -1629,25 +1622,25 @@ export default function IATIImportPage() {
                 <CardContent>
                   {/* Summary Stats */}
                   <div className="mb-6 p-4 bg-muted/50 rounded-lg">
-                    <h4 className="font-medium text-sm text-foreground mb-3">Data Found in XML File:</h4>
+                    <h4 className="font-medium text-body text-foreground mb-3">Data Found in XML File:</h4>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-blue-600">{parsedData.organizations.length}</p>
-                        <p className="text-sm text-muted-foreground">Organizations</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-body text-muted-foreground">Organizations</p>
+                        <p className="text-helper text-muted-foreground mt-1">
                           {parsedData.organizations.filter(o => !o.matched).length} new
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-[hsl(var(--success-icon))]">{parsedData.activities.length}</p>
-                        <p className="text-sm text-muted-foreground">Activities</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-body text-muted-foreground">Activities</p>
+                        <p className="text-helper text-muted-foreground mt-1">
                           {parsedData.activities.filter(a => !a.matched).length} new
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-purple-600">{(parsedData.transactions || []).length}</p>
-                        <p className="text-sm text-muted-foreground">Transactions</p>
+                        <p className="text-body text-muted-foreground">Transactions</p>
                       </div>
                     </div>
                   </div>
@@ -1658,11 +1651,11 @@ export default function IATIImportPage() {
                         <div className="flex gap-4">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded-full" />
-                            <span className="text-sm">Existing in AIMS</span>
+                            <span className="text-body">Existing in AIMS</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                            <span className="text-sm">New to import</span>
+                            <span className="text-body">New to import</span>
                           </div>
                         </div>
                         <Button
@@ -1694,7 +1687,7 @@ export default function IATIImportPage() {
                               />
                               <div className="flex-1">
                                 <p className="font-medium">{org.name}</p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Ref: {org.ref} • Type: {org.type}
                                   {org.acronym && ` • ${org.acronym}`}
                                 </p>
@@ -1773,11 +1766,11 @@ export default function IATIImportPage() {
                         <div className="flex gap-4">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded-full" />
-                            <span className="text-sm">Existing in AIMS</span>
+                            <span className="text-body">Existing in AIMS</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                            <span className="text-sm">New to import</span>
+                            <span className="text-body">New to import</span>
                           </div>
                         </div>
                         <Button
@@ -1809,17 +1802,17 @@ export default function IATIImportPage() {
                               />
                               <div className="flex-1">
                                 <p className="font-medium">{activity.title}</p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   ID: <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs">{activity.iatiIdentifier}</span> • Status: {activity.status}
                                 </p>
                                 {activity.description && (
-                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  <p className="text-body text-muted-foreground mt-1 line-clamp-2">
                                     {activity.description}
                                   </p>
                                 )}
                                 <div className="flex gap-2 mt-2">
                                   {activity.participatingOrgs?.map((org: any, i: number) => (
-                                    <Badge key={i} variant="outline" className="text-xs">
+                                    <Badge key={i} variant="outline" className="text-helper">
                                       {org.name}
                                     </Badge>
                                   ))}
@@ -1896,7 +1889,7 @@ export default function IATIImportPage() {
                   {importState.transactions.phase === 'review' && (
                     <>
                       <div className="mb-4 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-body text-muted-foreground">
                           {(parsedData.transactions || []).length} transactions found
                         </span>
                         <Button
@@ -1924,12 +1917,12 @@ export default function IATIImportPage() {
                                 <p className="font-medium">
                                   {transaction.type} - {transaction.currency} {transaction.value.toLocaleString()}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Date: {new Date(transaction.date).toLocaleDateString()} • 
                                   Activity: {transaction.activityRef}
                                 </p>
                                 {transaction.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">
+                                  <p className="text-body text-muted-foreground mt-1">
                                     {transaction.description}
                                   </p>
                                 )}
@@ -2009,7 +2002,7 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-muted-foreground">Organizations</p>
+                              <p className="text-body text-muted-foreground">Organizations</p>
                               <p className="text-2xl font-bold">{importState.organizations.imported.length}</p>
                             </div>
                             <Building2 className="h-8 w-8 text-muted-foreground" />
@@ -2021,7 +2014,7 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-muted-foreground">Activities</p>
+                              <p className="text-body text-muted-foreground">Activities</p>
                               <p className="text-2xl font-bold">{importState.activities.imported.length}</p>
                             </div>
                             <Activity className="h-8 w-8 text-muted-foreground" />
@@ -2033,7 +2026,7 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-muted-foreground">Transactions</p>
+                              <p className="text-body text-muted-foreground">Transactions</p>
                               <p className="text-2xl font-bold">{importState.transactions.imported.length}</p>
                             </div>
                             <CreditCard className="h-8 w-8 text-muted-foreground" />
@@ -2050,7 +2043,7 @@ export default function IATIImportPage() {
                         <AlertTriangle className="h-4 w-4 text-yellow-600" />
                         <AlertDescription>
                           <p className="font-medium text-yellow-800 mb-2">Some items had errors:</p>
-                          <ul className="text-sm text-yellow-700 space-y-1">
+                          <ul className="text-body text-yellow-700 space-y-1">
                             {importState.organizations.errors.map((err, i) => (
                               <li key={`org-err-${i}`}>• Organization: {err}</li>
                             ))}

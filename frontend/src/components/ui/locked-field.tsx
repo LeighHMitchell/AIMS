@@ -47,8 +47,8 @@ export function LockedField({
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between">
         <Label className={cn(
-          "text-sm font-medium",
-          isFieldDisabled && "text-gray-400"
+          "text-body font-medium",
+          isFieldDisabled && "text-muted-foreground"
         )}>
           {label}
         </Label>
@@ -66,7 +66,7 @@ export function LockedField({
                   {isUnlocked ? (
                     <Unlock className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                   ) : (
-                    <Lock className="h-3 w-3 text-gray-500" />
+                    <Lock className="h-3 w-3 text-muted-foreground" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -81,7 +81,7 @@ export function LockedField({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="h-6 w-6 flex items-center justify-center">
-                  <Lock className="h-3 w-3 text-gray-400" />
+                  <Lock className="h-3 w-3 text-muted-foreground" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -97,7 +97,7 @@ export function LockedField({
           disabled: isFieldDisabled,
           className: cn(
             (children as React.ReactElement).props?.className,
-            isFieldDisabled && "bg-muted/50 text-gray-400 cursor-not-allowed"
+            isFieldDisabled && "bg-muted/50 text-muted-foreground cursor-not-allowed"
           )
         })
       ) : (
@@ -107,13 +107,13 @@ export function LockedField({
           disabled={isFieldDisabled}
           placeholder={placeholder}
           className={cn(
-            isFieldDisabled && "bg-muted/50 text-gray-400 cursor-not-allowed"
+            isFieldDisabled && "bg-muted/50 text-muted-foreground cursor-not-allowed"
           )}
         />
       )}
       
       {isFieldDisabled && (
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-helper text-muted-foreground mt-1">
           {isSuperUser ? "Unlock to edit this field" : "This field can only be edited by super users"}
         </p>
       )}

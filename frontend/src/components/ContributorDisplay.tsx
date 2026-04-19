@@ -42,7 +42,7 @@ export function ContributorDisplay({
 
   if (acceptedContributors.length === 0) {
     return (
-      <span className={`text-xs text-muted-foreground/70 ${className}`}>
+      <span className={`text-helper text-muted-foreground/70 ${className}`}>
         No contributors listed
       </span>
     );
@@ -57,7 +57,7 @@ export function ContributorDisplay({
       case 'implementer': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]/80';
       case 'coordinator': return 'bg-purple-100 text-purple-700 hover:bg-purple-200';
       case 'partner': return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
-      default: return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+      default: return 'bg-muted text-foreground hover:bg-muted';
     }
   };
 
@@ -76,14 +76,14 @@ export function ContributorDisplay({
     return (
       <TooltipContent className="max-w-sm">
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">All Contributing Organizations:</h4>
+          <h4 className="font-medium text-body">All Contributing Organizations:</h4>
           <div className="space-y-1">
             {acceptedContributors.map((contributor, index) => (
-              <div key={contributor.id} className="flex items-center justify-between text-xs">
+              <div key={contributor.id} className="flex items-center justify-between text-helper">
                 {contributor.organizationId ? (
                   <Link 
                     href={`/organizations/${contributor.organizationId}`}
-                    className="font-medium hover:text-gray-700 transition-colors"
+                    className="font-medium hover:text-foreground transition-colors"
                   >
                     {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
                       ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
@@ -100,7 +100,7 @@ export function ContributorDisplay({
                 )}
                 <Badge 
                   variant="outline" 
-                  className={`ml-2 text-xs ${getRoleBadgeColor(contributor.role)}`}
+                  className={`ml-2 text-helper ${getRoleBadgeColor(contributor.role)}`}
                 >
                   {contributor.role}
                 </Badge>
@@ -121,19 +121,19 @@ export function ContributorDisplay({
             {contributor.organizationId ? (
               <Link 
                 href={`/organizations/${contributor.organizationId}`}
-                className="text-gray-900 hover:text-gray-700 transition-colors"
+                className="text-foreground hover:text-foreground transition-colors"
               >
                 {formatOrganizationName(contributor)}
               </Link>
             ) : (
-              <span className="text-gray-900">
+              <span className="text-foreground">
                 {formatOrganizationName(contributor)}
               </span>
             )}
             {showRoles && (
               <Badge 
                 variant="outline" 
-                className={`ml-1 text-xs ${getRoleBadgeColor(contributor.role)}`}
+                className={`ml-1 text-helper ${getRoleBadgeColor(contributor.role)}`}
               >
                 {contributor.role}
               </Badge>
@@ -178,7 +178,7 @@ export function ContributorDisplayCompact({
         {contributor.organizationId ? (
           <Link 
             href={`/organizations/${contributor.organizationId}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {contributor.organizationAcronym || contributor.organizationName}
           </Link>
@@ -192,20 +192,20 @@ export function ContributorDisplayCompact({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className={`text-xs text-blue-600 hover:text-blue-800 cursor-help ${className}`}>
+        <span className={`text-helper text-blue-600 hover:text-blue-800 cursor-help ${className}`}>
           {acceptedContributors.length} organizations
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-sm">
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">Contributing Organizations:</h4>
+          <h4 className="font-medium text-body">Contributing Organizations:</h4>
           <div className="space-y-1">
             {acceptedContributors.map((contributor) => (
-              <div key={contributor.id} className="flex items-center justify-between text-xs">
+              <div key={contributor.id} className="flex items-center justify-between text-helper">
                 {contributor.organizationId ? (
                   <Link 
                     href={`/organizations/${contributor.organizationId}`}
-                    className="font-medium hover:text-gray-700 transition-colors"
+                    className="font-medium hover:text-foreground transition-colors"
                   >
                     {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
                       ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
@@ -220,7 +220,7 @@ export function ContributorDisplayCompact({
                     }
                   </span>
                 )}
-                <Badge variant="outline" className="ml-2 text-xs">
+                <Badge variant="outline" className="ml-2 text-helper">
                   {contributor.role}
                 </Badge>
               </div>

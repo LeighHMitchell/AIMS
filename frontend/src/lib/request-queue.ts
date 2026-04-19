@@ -40,7 +40,6 @@ class RequestQueue {
 
   private log(...args: any[]) {
     if (this.debug) {
-      console.log('[RequestQueue]', ...args);
     }
   }
 

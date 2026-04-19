@@ -344,14 +344,14 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Economic Analysis (EIRR)</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Apply shadow prices to estimate economic costs and benefits. EIRR &ge; 15% qualifies for PPP mechanism.
         </p>
       </div>
 
       {/* Explanatory card */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg">
-        <p className="text-sm text-foreground">
+        <p className="text-body text-foreground">
           <strong>What is EIRR?</strong> The Economic Internal Rate of Return measures the project&apos;s value to
           society, not just financial returns. It uses shadow prices to adjust for market distortions such as subsidized
           labour, import duties, and exchange rate premiums.
@@ -360,46 +360,46 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
 
       {/* Shadow Price Parameters — always shown */}
       <div className="p-4 bg-muted/30 rounded-lg space-y-3">
-        <Label className="text-sm font-medium">Shadow Price Parameters <HelpTooltip text="These conversion factors adjust market prices to reflect true economic values." /></Label>
+        <Label className="text-body font-medium">Shadow Price Parameters <HelpTooltip text="These conversion factors adjust market prices to reflect true economic values." /></Label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Standard Conversion Factor <HelpTooltip text="Adjusts domestic costs for trade taxes and subsidies. Typically 0.8–1.0 for developing economies." /></label>
+            <label className="text-helper text-muted-foreground">Standard Conversion Factor <HelpTooltip text="Adjusts domestic costs for trade taxes and subsidies. Typically 0.8–1.0 for developing economies." /></label>
             <Input
               type="number"
               step="0.01"
               value={shadowPrices.standard_conversion_factor}
               onChange={e => setShadowPrices(p => ({ ...p, standard_conversion_factor: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Shadow Exchange Rate <HelpTooltip text="Adjusts imported goods costs for exchange rate distortions. Typically 1.1–1.3 for controlled exchange rate economies." /></label>
+            <label className="text-helper text-muted-foreground">Shadow Exchange Rate <HelpTooltip text="Adjusts imported goods costs for exchange rate distortions. Typically 1.1–1.3 for controlled exchange rate economies." /></label>
             <Input
               type="number"
               step="0.01"
               value={shadowPrices.shadow_exchange_rate}
               onChange={e => setShadowPrices(p => ({ ...p, shadow_exchange_rate: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Shadow Wage Rate <HelpTooltip text="Adjusts labour costs for unemployment and underemployment. Typically 0.5–0.8 where there is surplus labour." /></label>
+            <label className="text-helper text-muted-foreground">Shadow Wage Rate <HelpTooltip text="Adjusts labour costs for unemployment and underemployment. Typically 0.5–0.8 where there is surplus labour." /></label>
             <Input
               type="number"
               step="0.01"
               value={shadowPrices.shadow_wage_rate}
               onChange={e => setShadowPrices(p => ({ ...p, shadow_wage_rate: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Social Discount Rate (%) <HelpTooltip text="The rate at which future economic benefits are discounted to present value. Typically 6–12% for developing countries." /></label>
+            <label className="text-helper text-muted-foreground">Social Discount Rate (%) <HelpTooltip text="The rate at which future economic benefits are discounted to present value. Typically 6–12% for developing countries." /></label>
             <Input
               type="number"
               step="0.1"
               value={shadowPrices.social_discount_rate}
               onChange={e => setShadowPrices(p => ({ ...p, social_discount_rate: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
+              className="h-8 text-body"
             />
           </div>
         </div>
@@ -409,28 +409,28 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
       {eirrResult && (
         <div className="grid grid-cols-3 gap-4">
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">Economic Internal Rate of Return <HelpTooltip text="The social discount rate at which ENPV equals zero." /></div>
+            <div className="text-helper text-muted-foreground">Economic Internal Rate of Return <HelpTooltip text="The social discount rate at which ENPV equals zero." /></div>
             <div className={cn(
               'text-3xl font-bold mt-1',
-              eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
+              eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
             )}>
               {eirrResult.eirr !== null ? `${eirrResult.eirr.toFixed(1)}%` : 'N/A'}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-helper text-muted-foreground mt-1">
               {eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'Economically viable' : 'Below 15% threshold'}
             </div>
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">Economic Net Present Value <HelpTooltip text="The total net economic benefit in present-value terms." /></div>
+            <div className="text-helper text-muted-foreground">Economic Net Present Value <HelpTooltip text="The total net economic benefit in present-value terms." /></div>
             <div className={cn(
               'text-3xl font-bold mt-1',
-              eirrResult.enpv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
+              eirrResult.enpv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
             )}>
               {formatCurrency(eirrResult.enpv)}
             </div>
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">Benefit-Cost Ratio <HelpTooltip text="Values above 1.0 mean benefits exceed costs." /></div>
+            <div className="text-helper text-muted-foreground">Benefit-Cost Ratio <HelpTooltip text="Values above 1.0 mean benefits exceed costs." /></div>
             <div className="text-3xl font-bold mt-1 text-foreground">
               {eirrResult.bcr !== null ? eirrResult.bcr.toFixed(2) : '—'}
             </div>
@@ -463,7 +463,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
         {/* Quick Entry Panel */}
         {quickCostEntry && (
           <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-2 mb-3">
-            <p className="text-xs text-foreground font-medium">
+            <p className="text-helper text-foreground font-medium">
               {econCosts.length > 0
                 ? `Enter totals — they will be distributed evenly across all ${econCosts.length} year rows.`
                 : costTableSource
@@ -472,22 +472,22 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
             </p>
             {econCosts.length === 0 && !costTableSource && (
               <div className="max-w-[160px]">
-                <label className="text-xs text-muted-foreground mb-0.5 block">Number of Years</label>
-                <Input type="number" min={1} max={50} value={quickYears} onChange={e => setQuickYears(parseInt(e.target.value) || 10)} className="h-8 text-sm" />
+                <label className="text-helper text-muted-foreground mb-0.5 block">Number of Years</label>
+                <Input type="number" min={1} max={50} value={quickYears} onChange={e => setQuickYears(parseInt(e.target.value) || 10)} className="h-8 text-body" />
               </div>
             )}
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground mb-0.5 block">Total Local Cost</label>
-                <Input type="number" value={quickLocal || ''} onChange={e => setQuickLocal(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-sm" />
+                <label className="text-helper text-muted-foreground mb-0.5 block">Total Local Cost</label>
+                <Input type="number" value={quickLocal || ''} onChange={e => setQuickLocal(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-body" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-0.5 block">Total Imported Cost</label>
-                <Input type="number" value={quickImported || ''} onChange={e => setQuickImported(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-sm" />
+                <label className="text-helper text-muted-foreground mb-0.5 block">Total Imported Cost</label>
+                <Input type="number" value={quickImported || ''} onChange={e => setQuickImported(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-body" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-0.5 block">Total Labour Cost</label>
-                <Input type="number" value={quickLabour || ''} onChange={e => setQuickLabour(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-sm" />
+                <label className="text-helper text-muted-foreground mb-0.5 block">Total Labour Cost</label>
+                <Input type="number" value={quickLabour || ''} onChange={e => setQuickLabour(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-body" />
               </div>
             </div>
             <Button type="button" size="sm" onClick={applyQuickCostEntry}>
@@ -497,14 +497,14 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
         )}
 
         <div className="overflow-x-auto border rounded-lg">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <thead className="bg-surface-muted">
               <tr className="bg-surface-muted">
-                <th className="text-left p-2 font-medium text-xs w-20">Year</th>
-                <th className="text-right p-2 font-medium text-xs">Local ({shadowPrices.standard_conversion_factor}x)</th>
-                <th className="text-right p-2 font-medium text-xs">Imported ({shadowPrices.shadow_exchange_rate}x)</th>
-                <th className="text-right p-2 font-medium text-xs">Labour ({shadowPrices.shadow_wage_rate}x)</th>
-                <th className="text-right p-2 font-medium text-xs">Economic Cost</th>
+                <th className="text-left p-2 font-medium text-helper w-20">Year</th>
+                <th className="text-right p-2 font-medium text-helper">Local ({shadowPrices.standard_conversion_factor}x)</th>
+                <th className="text-right p-2 font-medium text-helper">Imported ({shadowPrices.shadow_exchange_rate}x)</th>
+                <th className="text-right p-2 font-medium text-helper">Labour ({shadowPrices.shadow_wage_rate}x)</th>
+                <th className="text-right p-2 font-medium text-helper">Economic Cost</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -516,22 +516,22 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                 return (
                   <tr key={idx}>
                     <td className="p-1.5">
-                      <Input type="number" value={row.year} onChange={e => updateCostRow(idx, 'year', parseInt(e.target.value) || 0)} className="h-7 w-20 text-sm" />
+                      <Input type="number" value={row.year} onChange={e => updateCostRow(idx, 'year', parseInt(e.target.value) || 0)} className="h-7 w-20 text-body" />
                     </td>
                     <td className="p-1.5">
-                      <Input type="number" value={row.local_cost || ''} onChange={e => updateCostRow(idx, 'local_cost', parseFloat(e.target.value) || 0)} className="h-7 text-sm text-right" />
+                      <Input type="number" value={row.local_cost || ''} onChange={e => updateCostRow(idx, 'local_cost', parseFloat(e.target.value) || 0)} className="h-7 text-body text-right" />
                     </td>
                     <td className="p-1.5">
-                      <Input type="number" value={row.imported_cost || ''} onChange={e => updateCostRow(idx, 'imported_cost', parseFloat(e.target.value) || 0)} className="h-7 text-sm text-right" />
+                      <Input type="number" value={row.imported_cost || ''} onChange={e => updateCostRow(idx, 'imported_cost', parseFloat(e.target.value) || 0)} className="h-7 text-body text-right" />
                     </td>
                     <td className="p-1.5">
-                      <Input type="number" value={row.labour_cost || ''} onChange={e => updateCostRow(idx, 'labour_cost', parseFloat(e.target.value) || 0)} className="h-7 text-sm text-right" />
+                      <Input type="number" value={row.labour_cost || ''} onChange={e => updateCostRow(idx, 'labour_cost', parseFloat(e.target.value) || 0)} className="h-7 text-body text-right" />
                     </td>
-                    <td className="p-1.5 text-right text-sm text-muted-foreground">
+                    <td className="p-1.5 text-right text-body text-muted-foreground">
                       {ecCost.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                     </td>
                     <td className="p-1.5">
-                      <button onClick={() => removeCostRow(idx)} className="text-muted-foreground hover:text-red-500">
+                      <button onClick={() => removeCostRow(idx)} className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -548,7 +548,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
         {/* Stacked bar chart of economic costs */}
         {econCosts.length > 0 && econCosts.some(r => r.local_cost || r.imported_cost || r.labour_cost) && (
           <div className="border rounded-lg p-4 bg-background mt-3">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Economic Costs by Component</p>
+            <p className="text-helper font-medium text-muted-foreground mb-2">Economic Costs by Component</p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
                 data={econCosts.map(row => ({
@@ -577,7 +577,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                     const total = payload.reduce((sum, p) => sum + ((p.value as number) || 0), 0);
                     const COLORS: Record<string, string> = { Local: '#4c5568', Imported: '#7b95a7', Labour: '#cfd0d5' };
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-2 text-xs">
+                      <div className="bg-background border rounded-lg shadow-lg p-2 text-helper">
                         <p className="font-medium mb-1">Year {label}</p>
                         <table className="w-full">
                           <tbody>
@@ -606,9 +606,9 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center justify-center gap-4 mt-2">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="w-3 h-3 rounded-sm bg-[#4c5568]" /> Local</div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="w-3 h-3 rounded-sm bg-[#7b95a7]" /> Imported</div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="w-3 h-3 rounded-sm bg-[#cfd0d5]" /> Labour</div>
+              <div className="flex items-center gap-1.5 text-helper text-muted-foreground"><span className="w-3 h-3 rounded-sm bg-[#4c5568]" /> Local</div>
+              <div className="flex items-center gap-1.5 text-helper text-muted-foreground"><span className="w-3 h-3 rounded-sm bg-[#7b95a7]" /> Imported</div>
+              <div className="flex items-center gap-1.5 text-helper text-muted-foreground"><span className="w-3 h-3 rounded-sm bg-[#cfd0d5]" /> Labour</div>
             </div>
           </div>
         )}
@@ -626,7 +626,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
           <button
             type="button"
             onClick={() => setBenefitPickerOpen(!benefitPickerOpen)}
-            className="flex items-center justify-between gap-2 h-9 px-3 border rounded-md bg-background text-sm w-full max-w-sm hover:bg-muted/30 transition-colors"
+            className="flex items-center justify-between gap-2 h-9 px-3 border rounded-md bg-background text-body w-full max-w-sm hover:bg-muted/30 transition-colors"
           >
             <span className={selectedCategories.length > 0 ? 'text-foreground' : 'text-muted-foreground'}>
               {selectedCategories.length > 0 ? `${selectedCategories.length} categories selected` : 'Select benefit categories...'}
@@ -645,7 +645,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                       key={col.key}
                       type="button"
                       onClick={() => toggleCategory(col.key)}
-                      className="flex items-center gap-2.5 w-full px-3 py-1.5 text-xs text-left hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-3 py-1.5 text-helper text-left hover:bg-muted/50 transition-colors"
                     >
                       <span className="flex-shrink-0 w-4 text-muted-foreground text-right">{col.code}.</span>
                       <span className={cn(
@@ -665,7 +665,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
           {selectedCategories.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {activeCols.map(col => (
-                <span key={col.key} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs text-foreground">
+                <span key={col.key} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-helper text-foreground">
                   {col.label}
                   <button type="button" onClick={() => toggleCategory(col.key)} className="text-muted-foreground hover:text-foreground ml-0.5">&times;</button>
                 </span>
@@ -691,7 +691,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
             {/* Quick Entry Panel for Benefits */}
             {quickBenefitEntry && (
               <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-2 mb-3">
-                <p className="text-xs text-foreground font-medium">
+                <p className="text-helper text-foreground font-medium">
                   {econBenefits.length > 0
                     ? `Enter a total for one category — it will be distributed evenly across all ${econBenefits.length} year rows.`
                     : econCosts.length > 0
@@ -702,24 +702,24 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                 </p>
                 {econBenefits.length === 0 && econCosts.length === 0 && !costTableSource && (
                   <div className="max-w-[160px]">
-                    <label className="text-xs text-muted-foreground mb-0.5 block">Number of Years</label>
-                    <Input type="number" min={1} max={50} value={quickBenefitYears} onChange={e => setQuickBenefitYears(parseInt(e.target.value) || 10)} className="h-8 text-sm" />
+                    <label className="text-helper text-muted-foreground mb-0.5 block">Number of Years</label>
+                    <Input type="number" min={1} max={50} value={quickBenefitYears} onChange={e => setQuickBenefitYears(parseInt(e.target.value) || 10)} className="h-8 text-body" />
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground mb-0.5 block">Category</label>
+                    <label className="text-helper text-muted-foreground mb-0.5 block">Category</label>
                     <select
                       value={quickBenefitColumn}
                       onChange={e => setQuickBenefitColumn(e.target.value as BenefitKey)}
-                      className="h-8 text-sm border rounded px-2 bg-background w-full"
+                      className="h-8 text-body border rounded px-2 bg-background w-full"
                     >
                       {activeCols.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-0.5 block">Total Amount</label>
-                    <Input type="number" value={quickBenefitAmount || ''} onChange={e => setQuickBenefitAmount(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-sm" />
+                    <label className="text-helper text-muted-foreground mb-0.5 block">Total Amount</label>
+                    <Input type="number" value={quickBenefitAmount || ''} onChange={e => setQuickBenefitAmount(parseFloat(e.target.value) || 0)} placeholder="0" className="h-8 text-body" />
                   </div>
                 </div>
                 <Button type="button" size="sm" onClick={applyQuickBenefitEntry}>
@@ -729,14 +729,14 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
             )}
 
             <div className="overflow-x-auto border rounded-lg">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted">
                   <tr className="bg-surface-muted">
-                    <th className="text-left p-2 font-medium text-xs w-20">Year</th>
+                    <th className="text-left p-2 font-medium text-helper w-20">Year</th>
                     {activeCols.map(col => (
-                      <th key={col.key} className="text-right p-2 font-medium text-xs">{col.label}</th>
+                      <th key={col.key} className="text-right p-2 font-medium text-helper">{col.label}</th>
                     ))}
-                    <th className="text-right p-2 font-medium text-xs">Total</th>
+                    <th className="text-right p-2 font-medium text-helper">Total</th>
                     <th className="w-10" />
                   </tr>
                 </thead>
@@ -746,7 +746,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                     return (
                       <tr key={idx}>
                         <td className="p-1.5">
-                          <Input type="number" value={row.year} onChange={e => updateBenefitRow(idx, 'year', parseInt(e.target.value) || 0)} className="h-7 w-20 text-sm" />
+                          <Input type="number" value={row.year} onChange={e => updateBenefitRow(idx, 'year', parseInt(e.target.value) || 0)} className="h-7 w-20 text-body" />
                         </td>
                         {activeCols.map(col => (
                           <td key={col.key} className="p-1.5">
@@ -754,15 +754,15 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                               type="number"
                               value={row[col.key] || ''}
                               onChange={e => updateBenefitRow(idx, col.key, parseFloat(e.target.value) || 0)}
-                              className="h-7 text-sm text-right"
+                              className="h-7 text-body text-right"
                             />
                           </td>
                         ))}
-                        <td className="p-1.5 text-right text-sm text-muted-foreground">
+                        <td className="p-1.5 text-right text-body text-muted-foreground">
                           {rowTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                         </td>
                         <td className="p-1.5">
-                          <button onClick={() => removeBenefitRow(idx)} className="text-muted-foreground hover:text-red-500">
+                          <button onClick={() => removeBenefitRow(idx)} className="text-muted-foreground hover:text-destructive">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </td>
@@ -779,7 +779,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
             {/* Stacked bar chart of economic benefits */}
             {econBenefits.length > 0 && econBenefits.some(r => activeCols.some(col => r[col.key])) && (
               <div className="border rounded-lg p-4 bg-background mt-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Economic Benefits by Category</p>
+                <p className="text-helper font-medium text-muted-foreground mb-2">Economic Benefits by Category</p>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart
                     data={econBenefits.map(row => {
@@ -806,7 +806,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                         if (!active || !payload?.length) return null;
                         const total = payload.reduce((sum, p) => sum + ((p.value as number) || 0), 0);
                         return (
-                          <div className="bg-background border rounded-lg shadow-lg p-2 text-xs">
+                          <div className="bg-background border rounded-lg shadow-lg p-2 text-helper">
                             <p className="font-medium mb-1">Year {label}</p>
                             <table className="w-full">
                               <tbody>
@@ -836,7 +836,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                 </ResponsiveContainer>
                 <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
                   {activeCols.map((col, i) => (
-                    <div key={col.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div key={col.key} className="flex items-center gap-1.5 text-helper text-muted-foreground">
                       <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length] }} />
                       {col.label}
                     </div>
@@ -876,29 +876,29 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              <p className="text-xs text-muted-foreground text-center mt-1">
+              <p className="text-helper text-muted-foreground text-center mt-1">
                 Deviation from base case EIRR ({baseEirr.toFixed(1)}%) in percentage points
               </p>
             </div>
           )}
 
           <div className="overflow-x-auto border rounded-lg">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="bg-surface-muted">
                 <tr className="bg-surface-muted">
-                  <th className="text-left p-2 font-medium text-xs">Scenario</th>
-                  <th className="text-right p-2 font-medium text-xs">EIRR</th>
-                  <th className="text-right p-2 font-medium text-xs">ENPV</th>
+                  <th className="text-left p-2 font-medium text-helper">Scenario</th>
+                  <th className="text-right p-2 font-medium text-helper">EIRR</th>
+                  <th className="text-right p-2 font-medium text-helper">ENPV</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {sensitivityResults.map((s, i) => (
                   <tr key={i} className={i === 0 ? 'font-medium' : ''}>
-                    <td className="p-2 text-sm">{s.scenario}</td>
-                    <td className={cn('p-2 text-right text-sm', s.firr_or_eirr !== null && s.firr_or_eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600')}>
+                    <td className="p-2 text-body">{s.scenario}</td>
+                    <td className={cn('p-2 text-right text-body', s.firr_or_eirr !== null && s.firr_or_eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
                       {s.firr_or_eirr !== null ? `${s.firr_or_eirr.toFixed(1)}%` : 'N/A'}
                     </td>
-                    <td className={cn('p-2 text-right text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600')}>
+                    <td className={cn('p-2 text-right text-body', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
                       {formatCurrency(s.npv)}
                     </td>
                   </tr>
@@ -912,11 +912,11 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
       {/* Routing Banner */}
       {eirrResult && (
         <div className="p-4 rounded-lg border bg-[#f6f5f3] border-[#5f7f7a]/20">
-          <div className="text-sm font-bold mb-1 text-foreground">
+          <div className="text-body font-bold mb-1 text-foreground">
             {routing.label}
           </div>
-          <div className="text-sm text-muted-foreground">{routing.description}</div>
-          <div className="text-xs text-muted-foreground mt-2 italic">{routing.nextSteps}</div>
+          <div className="text-body text-muted-foreground">{routing.description}</div>
+          <div className="text-helper text-muted-foreground mt-2 italic">{routing.nextSteps}</div>
         </div>
       )}
 

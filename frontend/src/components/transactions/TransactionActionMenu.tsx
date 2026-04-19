@@ -68,7 +68,7 @@ export function TransactionActionMenu({
               </DropdownMenuItem>
             )}
             {onReject && (
-              <DropdownMenuItem onClick={onReject} className="text-red-600 focus:text-red-600">
+              <DropdownMenuItem onClick={onReject} className="text-destructive focus:text-destructive">
                 <UserX className="h-4 w-4 mr-2" />
                 Reject Transaction
               </DropdownMenuItem>
@@ -81,7 +81,7 @@ export function TransactionActionMenu({
           <>
             {showAcceptReject && <DropdownMenuSeparator />}
             <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+              <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
               Edit
             </DropdownMenuItem>
           </>
@@ -99,8 +99,8 @@ export function TransactionActionMenu({
         {showDelete && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+            <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2 text-destructive" />
               Delete
             </DropdownMenuItem>
           </>

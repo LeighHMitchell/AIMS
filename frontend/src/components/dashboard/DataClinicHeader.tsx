@@ -164,7 +164,7 @@ export function DataClinicHeader({ organizationId }: DataClinicHeaderProps) {
         <Stethoscope className="h-6 w-6 text-[#7b95a7]" />
         <div>
           <h2 className="text-xl font-semibold">Data Clinic</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Review and fix data quality issues in your activities
           </p>
         </div>

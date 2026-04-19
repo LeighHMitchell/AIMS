@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
 
   const fetchWithParams = async (p: URLSearchParams) => {
     const url = `${NOMINATIM_BASE_URL}?${p.toString()}`;
-    console.log('[Geocoding API] Fetching from Nominatim:', url);
     
     const response = await fetch(url, {
       headers: {
@@ -63,14 +62,12 @@ export async function GET(request: NextRequest) {
       ? data.map((item) => validateLocationSearchResult(item))
       : [];
     
-    console.log('[Geocoding API] Results count:', validated.length);
     return validated;
   };
 
   try {
     // Search globally by default, or filter by country if specified
     const results = await fetchWithParams(params);
-    console.log('[Geocoding API] Returning results:', results.length);
     return NextResponse.json({ results });
   } catch (error) {
     console.error('[Geocoding Search] Unexpected error:', error);

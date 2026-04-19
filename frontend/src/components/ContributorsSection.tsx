@@ -101,13 +101,6 @@ export default function ContributorsSection({
     }
 
     try {
-      console.log('[Contributors] User object:', user);
-      console.log('[Contributors] User name:', user.name);
-      console.log('[Contributors] User firstName:', user.firstName);
-      console.log('[Contributors] User lastName:', user.lastName);
-      console.log('[Contributors] User email:', user.email);
-      console.log('[Contributors] Full user object keys:', Object.keys(user));
-      console.log('[Contributors] User object JSON:', JSON.stringify(user, null, 2));
       
       // Build the user's display name with comprehensive fallbacks
       let nominatedByName = 'Unknown User';
@@ -144,7 +137,6 @@ export default function ContributorsSection({
         }
       }
       
-      console.log('[Contributors] Final nominatedByName:', nominatedByName);
       
       await addContributor({
         organizationId: selectedOrganizationId,
@@ -239,10 +231,8 @@ export default function ContributorsSection({
     if (!user?.id) return;
     
     try {
-      console.log('[Debug] Checking user data for ID:', user.id);
       const response = await apiFetch(`/api/debug-current-user?userId=${user.id}`);
       const data = await response.json();
-      console.log('[Debug] User data from API:', data);
       toast.info(`User data check complete. Check console for details.\n\nComputed Name: ${data.computedName}`);
     } catch (error) {
       console.error('[Debug] Error checking user data:', error);
@@ -294,8 +284,8 @@ export default function ContributorsSection({
         {/* Nominate New Contributor */}
         {permissions.canNominateContributors && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nominate a Contributor</label>
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50" style={{ minHeight: '68px' }}>
+            <label className="text-body font-medium">Nominate a Contributor</label>
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-muted" style={{ minHeight: '68px' }}>
               <div className="flex items-center gap-3 flex-1">
                 <div className="flex-1">
                   <OrganizationSearchableSelect
@@ -325,14 +315,14 @@ export default function ContributorsSection({
 
         {/* Contributors List */}
         <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
+          <label className="text-body font-medium flex items-center gap-2">
             Current Contributors
             {contributors.length > 0 && (
               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             )}
           </label>
           {contributors.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
+            <div className="text-body text-muted-foreground py-4 text-center border rounded-lg">
               No contributors have been nominated yet
             </div>
           ) : (
@@ -345,7 +335,6 @@ export default function ContributorsSection({
                   <div className="flex items-center gap-3">
                     {(() => {
                       const organization = organizations.find(o => o.id === contributor.organization_id);
-                      console.log('[ContributorsSection] Organization:', organization?.name, 'Logo:', organization?.logo);
                       return organization?.logo ? (
                         <div className="h-8 w-8 rounded image-outline flex-shrink-0">
                         <img
@@ -383,7 +372,7 @@ export default function ContributorsSection({
                         </p>
                         <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         {(() => {
                           const organization = organizations.find(o => o.id === getContributorOrganizationId(contributor));
                           const iatiId = organization?.iati_org_id;

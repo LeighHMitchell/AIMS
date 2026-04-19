@@ -139,7 +139,7 @@ function FlexibleDateInput({
       <Label>{label}</Label>
       <div className="flex items-center gap-2 mb-1">
         <Select value={precision} onValueChange={(v) => { onPrecisionChange(v as DatePrecision); onDateChange(""); }}>
-          <SelectTrigger className="w-[140px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -420,7 +420,7 @@ export function AidEffectivenessOptionsManagement() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8 text-red-600">
+      <div className="flex items-center justify-center py-8 text-destructive">
         <AlertCircle className="h-5 w-5 mr-2" />
         <span>{error}</span>
       </div>
@@ -430,7 +430,7 @@ export function AidEffectivenessOptionsManagement() {
   return (
     <div className="space-y-4">
       {/* Category tabs */}
-      <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+      <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
         {CATEGORIES.map(cat => (
           <Button
             key={cat.value}
@@ -438,8 +438,8 @@ export function AidEffectivenessOptionsManagement() {
             size="sm"
             className={cn(
               activeCategory === cat.value
-                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white shadow-sm text-foreground hover:bg-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => setActiveCategory(cat.value)}
           >
@@ -450,7 +450,7 @@ export function AidEffectivenessOptionsManagement() {
 
       {/* Header with Add button */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {filteredOptions.length} option{filteredOptions.length !== 1 ? 's' : ''} in this category
         </p>
         <Button onClick={handleAdd} size="sm" className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export function AidEffectivenessOptionsManagement() {
           <div className="text-center py-8 text-muted-foreground">
             <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No options defined for this category yet.</p>
-            <p className="text-sm">Click &quot;Add Option&quot; to create one.</p>
+            <p className="text-body">Click &quot;Add Option&quot; to create one.</p>
           </div>
         ) : (
           filteredOptions.map((option) => (
@@ -491,7 +491,7 @@ export function AidEffectivenessOptionsManagement() {
                   )}
                 </div>
                 {option.description && (
-                  <p className="text-sm text-muted-foreground mt-0.5 truncate">
+                  <p className="text-body text-muted-foreground mt-0.5 truncate">
                     {option.description}
                   </p>
                 )}
@@ -514,14 +514,14 @@ export function AidEffectivenessOptionsManagement() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleEdit(option)}>
-                    <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDelete(option)}
-                    className="text-red-600 focus:text-red-600"
+                    className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                    <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -591,11 +591,11 @@ export function AidEffectivenessOptionsManagement() {
                 {formMinistries.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {formMinistries.map((m) => (
-                      <Badge key={m.id} variant="secondary" className="text-xs gap-1 pr-1">
+                      <Badge key={m.id} variant="secondary" className="text-helper gap-1 pr-1">
                         {m.name} ({m.code})
                         <button
                           type="button"
-                          className="ml-0.5 hover:text-red-500"
+                          className="ml-0.5 hover:text-destructive"
                           onClick={() => setFormMinistries(prev => prev.filter(x => x.id !== m.id))}
                         >
                           <X className="h-3 w-3" />
@@ -666,7 +666,7 @@ export function AidEffectivenessOptionsManagement() {
                 checked={formIsActive}
                 onCheckedChange={(checked) => setFormIsActive(checked === true)}
               />
-              <Label htmlFor="opt-active" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="opt-active" className="text-body font-normal cursor-pointer">
                 Active (visible in activity forms)
               </Label>
             </div>

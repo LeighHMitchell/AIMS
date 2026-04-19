@@ -98,7 +98,7 @@ export function TownshipSelect({
         aria-haspopup="listbox"
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50",
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-white px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-muted",
           !value && "text-muted-foreground"
         )}
       >
@@ -116,7 +116,7 @@ export function TownshipSelect({
               className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
               aria-label="Clear selection"
             >
-              <span className="text-xs">×</span>
+              <span className="text-helper">×</span>
             </button>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -144,7 +144,7 @@ export function TownshipSelect({
                     />
                     <div className="flex-1">
                       <div className="font-medium">{township.name}</div>
-                      <div className="text-xs text-muted-foreground">{township.code}</div>
+                      <div className="text-helper text-muted-foreground">{township.code}</div>
                     </div>
                   </CommandItem>
                 ))}
@@ -154,7 +154,7 @@ export function TownshipSelect({
               <>
                 {myanmarData.states.map((state) => (
                   <CommandGroup key={state.id}>
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  <div className="px-2 py-1.5 text-helper font-medium text-muted-foreground">
                     {state.name}
                   </div>
                     {state.townships.map((township) => (
@@ -171,7 +171,7 @@ export function TownshipSelect({
                         />
                         <div className="flex-1">
                           <div className="font-medium">{township.name}</div>
-                          <div className="text-xs text-muted-foreground">{township.code}</div>
+                          <div className="text-helper text-muted-foreground">{township.code}</div>
                         </div>
                       </CommandItem>
                     ))}

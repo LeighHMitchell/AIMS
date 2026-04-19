@@ -8,27 +8,27 @@ export function ActivityEditorSkeleton() {
       {/* Activity Editor Navigation Panel Skeleton */}
       <aside className="w-80 flex-shrink-0 bg-white overflow-y-auto animate-pulse">
         {/* Activity Metadata Summary Skeleton */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="bg-white border-b border-border p-4">
           <div className="space-y-2">
-            <Skeleton className="h-6 w-3/4 bg-gray-200" />
-            <Skeleton className="h-5 w-24 bg-gray-100" />
+            <Skeleton className="h-6 w-3/4 bg-muted" />
+            <Skeleton className="h-5 w-24 bg-muted" />
             
             <div className="space-y-2 mt-4">
               <div>
-                <Skeleton className="h-3 w-20 bg-gray-100 mb-1" />
-                <Skeleton className="h-4 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-20 bg-muted mb-1" />
+                <Skeleton className="h-4 w-full bg-muted" />
               </div>
               <div>
-                <Skeleton className="h-3 w-20 bg-gray-100 mb-1" />
-                <Skeleton className="h-4 w-32 bg-gray-200" />
+                <Skeleton className="h-3 w-20 bg-muted mb-1" />
+                <Skeleton className="h-4 w-32 bg-muted" />
               </div>
               <div>
-                <Skeleton className="h-3 w-20 bg-gray-100 mb-1" />
-                <Skeleton className="h-4 w-24 bg-gray-200" />
+                <Skeleton className="h-3 w-20 bg-muted mb-1" />
+                <Skeleton className="h-4 w-24 bg-muted" />
               </div>
               <div>
-                <Skeleton className="h-3 w-20 bg-gray-100 mb-1" />
-                <Skeleton className="h-4 w-24 bg-gray-200" />
+                <Skeleton className="h-3 w-20 bg-muted mb-1" />
+                <Skeleton className="h-4 w-24 bg-muted" />
               </div>
             </div>
           </div>
@@ -36,46 +36,46 @@ export function ActivityEditorSkeleton() {
         
         {/* Navigation Items Skeleton */}
         <div className="p-4">
-          <Skeleton className="h-4 w-32 bg-gray-200 mb-4" />
+          <Skeleton className="h-4 w-32 bg-muted mb-4" />
           
           {/* Navigation sections */}
           <div className="space-y-6">
             {/* General Section */}
             <div>
-              <Skeleton className="h-3 w-24 bg-gray-100 mb-2" />
+              <Skeleton className="h-3 w-24 bg-muted mb-2" />
               <div className="space-y-1">
                 {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full bg-gray-50 rounded" />
+                  <Skeleton key={i} className="h-8 w-full bg-muted rounded" />
                 ))}
               </div>
             </div>
             
             {/* Stakeholders Section */}
             <div>
-              <Skeleton className="h-3 w-24 bg-gray-100 mb-2" />
+              <Skeleton className="h-3 w-24 bg-muted mb-2" />
               <div className="space-y-1">
                 {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full bg-gray-50 rounded" />
+                  <Skeleton key={i} className="h-8 w-full bg-muted rounded" />
                 ))}
               </div>
             </div>
             
             {/* Finances Section */}
             <div>
-              <Skeleton className="h-3 w-24 bg-gray-100 mb-2" />
+              <Skeleton className="h-3 w-24 bg-muted mb-2" />
               <div className="space-y-1">
                 {[...Array(2)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full bg-gray-50 rounded" />
+                  <Skeleton key={i} className="h-8 w-full bg-muted rounded" />
                 ))}
               </div>
             </div>
           </div>
           
           {/* Activity Completion Rating Widget Skeleton */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <Skeleton className="h-4 w-32 bg-gray-200 mb-2" />
-            <Skeleton className="h-2 w-full bg-gray-200 rounded-full mb-2" />
-            <Skeleton className="h-3 w-16 bg-gray-100" />
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <Skeleton className="h-4 w-32 bg-muted mb-2" />
+            <Skeleton className="h-2 w-full bg-muted rounded-full mb-2" />
+            <Skeleton className="h-3 w-16 bg-muted" />
           </div>
         </div>
       </aside>
@@ -84,25 +84,25 @@ export function ActivityEditorSkeleton() {
       <main className="flex-1 min-w-0 overflow-y-auto bg-white">
         <div className="activity-editor pl-0 pr-6 md:pr-8 py-6">
           {/* Page Title */}
-          <Skeleton className="h-9 w-48 bg-gray-200 mb-8" />
+          <Skeleton className="h-9 w-48 bg-muted mb-8" />
           
           {/* Comments Button */}
-          <Skeleton className="h-9 w-32 bg-gray-100 mb-6 rounded" />
+          <Skeleton className="h-9 w-32 bg-muted mb-6 rounded" />
           
           {/* Section Title */}
-          <Skeleton className="h-7 w-64 bg-gray-200 mb-6" />
+          <Skeleton className="h-7 w-64 bg-muted mb-6" />
           
           {/* Content Area - General Information Tab Example */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
             {/* Banner and Icon Upload */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               <div className="lg:col-span-3">
-                <Skeleton className="h-4 w-24 bg-gray-100 mb-2" />
-                <Skeleton className="h-48 w-full bg-gray-100 rounded-lg" />
+                <Skeleton className="h-4 w-24 bg-muted mb-2" />
+                <Skeleton className="h-48 w-full bg-muted rounded-lg" />
               </div>
               <div>
-                <Skeleton className="h-4 w-24 bg-gray-100 mb-2" />
-                <Skeleton className="h-32 w-32 bg-gray-100 rounded-lg" />
+                <Skeleton className="h-4 w-24 bg-muted mb-2" />
+                <Skeleton className="h-32 w-32 bg-muted rounded-lg" />
               </div>
             </div>
 
@@ -110,23 +110,23 @@ export function ActivityEditorSkeleton() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-32 bg-gray-100" />
-                  <Skeleton className="h-10 w-full bg-gray-50 rounded" />
+                  <Skeleton className="h-4 w-32 bg-muted" />
+                  <Skeleton className="h-10 w-full bg-muted rounded" />
                 </div>
               ))}
             </div>
 
             {/* Title Field */}
             <div className="space-y-2">
-              <Skeleton className="h-4 w-24 bg-gray-100" />
-              <Skeleton className="h-10 w-full bg-gray-50 rounded" />
+              <Skeleton className="h-4 w-24 bg-muted" />
+              <Skeleton className="h-10 w-full bg-muted rounded" />
             </div>
 
             {/* Text Areas */}
             {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-32 bg-gray-100" />
-                <Skeleton className="h-24 w-full bg-gray-50 rounded" />
+                <Skeleton className="h-4 w-32 bg-muted" />
+                <Skeleton className="h-24 w-full bg-muted rounded" />
               </div>
             ))}
 
@@ -134,20 +134,20 @@ export function ActivityEditorSkeleton() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-32 bg-gray-100" />
-                  <Skeleton className="h-10 w-full bg-gray-50 rounded" />
+                  <Skeleton className="h-4 w-32 bg-muted" />
+                  <Skeleton className="h-10 w-full bg-muted rounded" />
                 </div>
               ))}
             </div>
 
             {/* Date Fields */}
             <div>
-              <Skeleton className="h-4 w-24 bg-gray-200 mb-4" />
+              <Skeleton className="h-4 w-24 bg-muted mb-4" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[...Array(4)].map((_, i) => (
                   <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-32 bg-gray-100" />
-                    <Skeleton className="h-10 w-full bg-gray-50 rounded" />
+                    <Skeleton className="h-4 w-32 bg-muted" />
+                    <Skeleton className="h-10 w-full bg-muted rounded" />
                   </div>
                 ))}
               </div>
@@ -155,19 +155,19 @@ export function ActivityEditorSkeleton() {
 
             {/* Status Line */}
             <div className="pt-4 border-t">
-              <Skeleton className="h-4 w-64 bg-gray-100" />
+              <Skeleton className="h-4 w-64 bg-muted" />
             </div>
           </div>
         </div>
         
         {/* Sticky Footer Skeleton */}
-        <footer className="sticky bottom-0 bg-white border-t border-gray-200 py-4 mt-12 flex justify-between gap-4 z-10 px-6 md:px-8">
+        <footer className="sticky bottom-0 bg-white border-t border-border py-4 mt-12 flex justify-between gap-4 z-10 px-6 md:px-8">
           <div className="flex gap-2">
             {/* Validation buttons placeholder */}
           </div>
           
           <div className="flex gap-4">
-            <Skeleton className="h-10 w-24 bg-gray-200 rounded" />
+            <Skeleton className="h-10 w-24 bg-muted rounded" />
             <Skeleton className="h-10 w-32 bg-blue-200 rounded" />
             <Skeleton className="h-10 w-24 bg-green-200 rounded" />
           </div>
@@ -181,19 +181,19 @@ export function ActivityEditorSkeleton() {
 export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 'table' | 'cards' }) {
   if (variant === 'table') {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="p-4 border-b">
-          <Skeleton className="h-8 w-48 bg-gray-100" />
+          <Skeleton className="h-8 w-48 bg-muted" />
         </div>
         <div className="divide-y">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="p-4 flex items-center gap-4">
-              <Skeleton className="h-10 w-10 bg-gray-100 rounded" />
+              <Skeleton className="h-10 w-10 bg-muted rounded" />
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/3 bg-gray-200" />
-                <Skeleton className="h-3 w-1/2 bg-gray-100" />
+                <Skeleton className="h-4 w-1/3 bg-muted" />
+                <Skeleton className="h-3 w-1/2 bg-muted" />
               </div>
-              <Skeleton className="h-8 w-20 bg-gray-100 rounded" />
+              <Skeleton className="h-8 w-20 bg-muted rounded" />
             </div>
           ))}
         </div>
@@ -205,18 +205,18 @@ export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 't
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+          <div key={i} className="bg-card rounded-lg shadow-sm border border-border p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2 flex-1">
-                <Skeleton className="h-5 w-3/4 bg-gray-200" />
-                <Skeleton className="h-4 w-full bg-gray-100" />
-                <Skeleton className="h-4 w-2/3 bg-gray-100" />
+                <Skeleton className="h-5 w-3/4 bg-muted" />
+                <Skeleton className="h-4 w-full bg-muted" />
+                <Skeleton className="h-4 w-2/3 bg-muted" />
               </div>
-              <Skeleton className="h-6 w-16 bg-gray-100 rounded-full" />
+              <Skeleton className="h-6 w-16 bg-muted rounded-full" />
             </div>
             <div className="flex gap-2">
-              <Skeleton className="h-8 w-20 bg-gray-100 rounded" />
-              <Skeleton className="h-8 w-20 bg-gray-100 rounded" />
+              <Skeleton className="h-8 w-20 bg-muted rounded" />
+              <Skeleton className="h-8 w-20 bg-muted rounded" />
             </div>
           </div>
         ))}
@@ -226,11 +226,11 @@ export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 't
 
   // Default form variant
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       {[...Array(4)].map((_, i) => (
         <div key={i} className="space-y-2">
-          <Skeleton className="h-4 w-32 bg-gray-100" />
-          <Skeleton className="h-10 w-full bg-gray-50 rounded" />
+          <Skeleton className="h-4 w-32 bg-muted" />
+          <Skeleton className="h-10 w-full bg-muted rounded" />
         </div>
       ))}
     </div>
@@ -241,11 +241,11 @@ export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 't
 export function TabTransitionSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
-      <Skeleton className="h-8 w-48 bg-gray-200" />
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-4">
-        <Skeleton className="h-4 w-full bg-gray-100" />
-        <Skeleton className="h-4 w-3/4 bg-gray-100" />
-        <Skeleton className="h-4 w-1/2 bg-gray-100" />
+      <Skeleton className="h-8 w-48 bg-muted" />
+      <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-4">
+        <Skeleton className="h-4 w-full bg-muted" />
+        <Skeleton className="h-4 w-3/4 bg-muted" />
+        <Skeleton className="h-4 w-1/2 bg-muted" />
       </div>
     </div>
   );

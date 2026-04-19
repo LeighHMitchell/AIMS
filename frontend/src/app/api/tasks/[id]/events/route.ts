@@ -162,7 +162,6 @@ export async function POST(
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
-    console.log('[Events API] Event logged:', event_type, 'for task:', taskId);
 
     return NextResponse.json({
       success: true,

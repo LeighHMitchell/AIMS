@@ -65,26 +65,26 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
       <TooltipProvider>
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-body">
               <thead className="bg-surface-muted">
-                <tr className="bg-slate-50">
-                  <th className="text-left p-2 border-b border-slate-200 font-medium">
+                <tr className="bg-muted">
+                  <th className="text-left p-2 border-b border-border font-medium">
                     {swapAxes ? 'Category' : 'Donor'}
                   </th>
                   {columns.map((col: any) => (
-                    <th key={col.id} className="text-right p-2 border-b border-slate-200 font-medium whitespace-nowrap">
+                    <th key={col.id} className="text-right p-2 border-b border-border font-medium whitespace-nowrap">
                       {col.code ? `${col.code}` : (col.acronym || col.name.slice(0, 15))}
                     </th>
                   ))}
-                  <th className="text-right p-2 border-b border-slate-200 font-medium">Total</th>
+                  <th className="text-right p-2 border-b border-border font-medium">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row: any) => {
                   const isOthers = row.id === 'others';
                   return (
-                    <tr key={row.id} className="hover:bg-slate-50/50">
-                      <td className={`p-2 border-b border-slate-100 font-medium ${isOthers ? 'text-red-600' : ''}`}>
+                    <tr key={row.id} className="hover:bg-muted/50">
+                      <td className={`p-2 border-b border-border font-medium ${isOthers ? 'text-destructive' : ''}`}>
                         {isOthers ? 'OTHERS' : (row.acronym || row.code || row.name)}
                       </td>
                       {columns.map((col: any) => {
@@ -92,25 +92,25 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                           ? cellMap.get(`${col.id}-${row.id}`)
                           : cellMap.get(`${row.id}-${col.id}`);
                         return (
-                          <td key={col.id} className="text-right p-2 border-b border-slate-100 tabular-nums">
+                          <td key={col.id} className="text-right p-2 border-b border-border tabular-nums">
                             {cell && cell.value > 0 ? formatCurrency(cell.value) : '-'}
                           </td>
                         );
                       })}
-                      <td className="text-right p-2 border-b border-slate-100 font-medium tabular-nums">
+                      <td className="text-right p-2 border-b border-border font-medium tabular-nums">
                         {formatCurrency(row.total)}
                       </td>
                     </tr>
                   );
                 })}
-                <tr className="bg-slate-50 font-bold">
-                  <td className="p-2 border-t border-slate-200">Total</td>
+                <tr className="bg-muted font-bold">
+                  <td className="p-2 border-t border-border">Total</td>
                   {columns.map((col: any) => (
-                    <td key={col.id} className="text-right p-2 border-t border-slate-200 tabular-nums">
+                    <td key={col.id} className="text-right p-2 border-t border-border tabular-nums">
                       {formatCurrency(col.total)}
                     </td>
                   ))}
-                  <td className="text-right p-2 border-t border-slate-200 tabular-nums">
+                  <td className="text-right p-2 border-t border-border tabular-nums">
                     {formatCurrency(data.grandTotal)}
                   </td>
                 </tr>
@@ -154,30 +154,30 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
               <tr>
                 {/* Empty corner cell - fixed width for row labels */}
                 <th 
-                  className="sticky left-0 bg-white z-20 border-b border-slate-200 align-bottom"
+                  className="sticky left-0 bg-white z-20 border-b border-border align-bottom"
                   style={{ width: 100 }}
                 />
                 {/* Column headers - horizontal with text wrap, equal widths */}
                 {columns.map((col: any) => (
                   <th
                     key={col.id}
-                    className="border-b border-slate-200 px-1 py-3 align-bottom text-center"
+                    className="border-b border-border px-1 py-3 align-bottom text-center"
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="text-xs font-medium text-slate-600 cursor-help block leading-tight whitespace-normal">
+                        <span className="text-helper font-medium text-muted-foreground cursor-help block leading-tight whitespace-normal">
                           {getColumnLabel(col)}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="top">
                         <p className="font-medium">{col.name}</p>
                         {col.code && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Code: {col.code}
                           </p>
                         )}
                         {col.total !== undefined && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Total: {formatCurrency(col.total)}
                           </p>
                         )}
@@ -187,9 +187,9 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 ))}
                 {/* Totals header - same width as data columns */}
                 <th 
-                  className="border-b border-slate-200 p-1 align-bottom text-center"
+                  className="border-b border-border p-1 align-bottom text-center"
                 >
-                  <span className="text-xs font-bold text-slate-700">
+                  <span className="text-helper font-bold text-foreground">
                     Totals
                   </span>
                 </th>
@@ -204,11 +204,11 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   : 0;
                 
                 return (
-                  <tr key={row.id} className="hover:bg-slate-50/50">
+                  <tr key={row.id} className="hover:bg-muted/50">
                     {/* Row name cell */}
                     <td 
-                      className={`sticky left-0 bg-white z-10 px-2 py-1 text-xs font-medium border-b border-slate-100 ${
-                        isOthers ? 'text-red-600' : 'text-slate-700'
+                      className={`sticky left-0 bg-white z-10 px-2 py-1 text-xs font-medium border-b border-border ${
+                        isOthers ? 'text-destructive' : 'text-foreground'
                       }`}
                       style={{ width: 100 }}
                     >
@@ -222,14 +222,14 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                         <TooltipContent>
                           <p className="font-medium">{row.name}</p>
                           {row.country && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-helper text-muted-foreground">
                               {row.country}
                             </p>
                           )}
-                          <p className="text-xs mt-1">
+                          <p className="text-helper mt-1">
                             Total: {formatCurrency(row.total)}
                           </p>
-                          <p className="text-xs">
+                          <p className="text-helper">
                             Share: {formatPercent(rowShareOfTotal)} of total
                           </p>
                         </TooltipContent>
@@ -250,7 +250,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                       return (
                         <td
                           key={col.id}
-                          className="p-0.5 text-center border-b border-slate-100"
+                          className="p-0.5 text-center border-b border-border"
                         >
                           {cell && percentage > 0 ? (
                             <Tooltip>
@@ -267,8 +267,8 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="font-medium">{swapAxes ? col.name : row.name}</p>
-                                <p className="text-xs">{swapAxes ? row.name : col.name}</p>
-                                <div className="mt-1 text-xs space-y-0.5">
+                                <p className="text-helper">{swapAxes ? row.name : col.name}</p>
+                                <div className="mt-1 text-helper space-y-0.5">
                                   <p>Value: {formatCurrency(cell.value)}</p>
                                   <p>
                                     Column share: {formatPercent(percentage)}
@@ -288,7 +288,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                     })}
                     {/* Totals column - row's share of grand total */}
                     <td
-                      className="p-0.5 text-center border-b border-slate-100"
+                      className="p-0.5 text-center border-b border-border"
                     >
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -304,10 +304,10 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-medium">{row.name}</p>
-                          <p className="text-xs mt-1">
+                          <p className="text-helper mt-1">
                             Total: {formatCurrency(row.total)}
                           </p>
-                          <p className="text-xs">
+                          <p className="text-helper">
                             {formatPercent(rowShareOfTotal)} of all funding
                           </p>
                         </TooltipContent>
@@ -317,9 +317,9 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 );
               })}
               {/* Totals row */}
-              <tr className="bg-slate-50 font-medium">
+              <tr className="bg-muted font-medium">
                 <td 
-                  className="sticky left-0 bg-slate-50 z-10 px-2 py-1 text-xs font-bold text-slate-700 border-t border-slate-200"
+                  className="sticky left-0 bg-muted z-10 px-2 py-1 text-helper font-bold text-foreground border-t border-border"
                   style={{ width: 100 }}
                 >
                   Totals
@@ -327,17 +327,17 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 {columns.map((col: any) => (
                   <td
                     key={col.id}
-                    className="p-0.5 text-center border-t border-slate-200"
+                    className="p-0.5 text-center border-t border-border"
                   >
-                    <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
+                    <div className="px-1 py-1 text-[11px] font-bold text-foreground">
                       100%
                     </div>
                   </td>
                 ))}
                 <td
-                  className="p-0.5 text-center border-t border-slate-200"
+                  className="p-0.5 text-center border-t border-border"
                 >
-                  <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
+                  <div className="px-1 py-1 text-[11px] font-bold text-foreground">
                     100%
                   </div>
                 </td>
@@ -348,12 +348,12 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
 
         {/* Legend - horizontal bar at bottom */}
         <div className="flex items-center gap-2 pt-2">
-          <span className="text-xs font-medium text-slate-600 mr-2">LEGENDS</span>
+          <span className="text-helper font-medium text-muted-foreground mr-2">LEGENDS</span>
           <div className="flex items-center">
             {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
               <div
                 key={i}
-                className="flex items-center justify-center px-3 py-1.5 text-xs font-medium first:rounded-l last:rounded-r"
+                className="flex items-center justify-center px-3 py-1.5 text-helper font-medium first:rounded-l last:rounded-r"
                 style={{
                   backgroundColor: scale.color,
                   color: getTextColorForBackground(scale.color),
@@ -367,7 +367,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           This heatmap visualizes how funding is distributed between donors and categories. Each cell shows the percentage share, with colour intensity indicating concentration. The totals column shows each row's share of overall funding, helping identify dominant donors or categories.
         </p>
       </div>

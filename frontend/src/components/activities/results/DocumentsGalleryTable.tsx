@@ -93,7 +93,7 @@ const getFormatIcon = (format?: string) => {
   if (!format) return <File className="h-4 w-4" />;
   
   const f = format.toLowerCase();
-  if (f.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
+  if (f.includes('pdf')) return <FileText className="h-4 w-4 text-destructive" />;
   if (f.includes('xls') || f.includes('spreadsheet') || f.includes('csv')) {
     return <FileSpreadsheet className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
   }
@@ -355,7 +355,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
       <div className={cn("flex flex-col items-center justify-center py-12 text-muted-foreground", className)}>
         <FolderOpen className="h-12 w-12 mb-4" />
         <p className="text-lg font-medium">No documents attached</p>
-        <p className="text-sm">Results have no linked documents</p>
+        <p className="text-body">Results have no linked documents</p>
       </div>
     );
   }
@@ -435,7 +435,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                     <div>
                       <div className="font-medium">{doc.title}</div>
                       {doc.description && (
-                        <div className="text-xs text-muted-foreground line-clamp-1">
+                        <div className="text-helper text-muted-foreground line-clamp-1">
                           {doc.description}
                         </div>
                       )}
@@ -444,7 +444,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                 </TableCell>
                 <TableCell>
                   {doc.format ? (
-                    <Badge variant="outline" className="text-xs font-normal">
+                    <Badge variant="outline" className="text-helper font-normal">
                       {doc.format.split('/').pop()?.toUpperCase() || doc.format}
                     </Badge>
                   ) : (
@@ -453,7 +453,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                 </TableCell>
                 <TableCell>
                   {doc.categoryCode ? (
-                    <span className="text-sm" title={DOCUMENT_CATEGORIES[doc.categoryCode]}>
+                    <span className="text-body" title={DOCUMENT_CATEGORIES[doc.categoryCode]}>
                       {doc.categoryCode}
                     </span>
                   ) : (
@@ -461,7 +461,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm">
+                  <div className="text-body">
                     <Badge 
                       variant="outline" 
                       className="text-xs font-normal mr-2 bg-muted text-muted-foreground border-border font-mono"
@@ -471,7 +471,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                     <span className="text-muted-foreground">{doc.attachedTo}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-body text-muted-foreground">
                   {formatDate(doc.documentDate)}
                 </TableCell>
                 <TableCell>

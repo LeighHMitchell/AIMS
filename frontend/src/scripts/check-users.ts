@@ -17,7 +17,6 @@ const supabase = createClient(
 );
 
 async function checkUsers() {
-  console.log('Checking users in the database...\n');
   
   const { data: users, error } = await supabase
     .from('users')
@@ -30,16 +29,10 @@ async function checkUsers() {
     return;
   }
   
-  console.log(`Found ${users?.length || 0} users:`);
   users?.forEach(u => {
-    console.log(`- ID: ${u.id}`);
-    console.log(`  Email: ${u.email}`);
-    console.log(`  Name: ${u.first_name} ${u.last_name}`);
-    console.log(`  Role: ${u.role}\n`);
   });
   
   // Check for the specific user that failed
-  console.log('Checking for problematic user ID: 85a65398-5d71-4633-a50b-2f167a0b6f7a');
   const { data: problemUser, error: problemError } = await supabase
     .from('users')
     .select('*')
@@ -49,13 +42,10 @@ async function checkUsers() {
   if (problemError && problemError.code !== 'PGRST116') {
     console.error('Error checking problem user:', problemError);
   } else if (problemUser) {
-    console.log('Problem user exists:', problemUser);
   } else {
-    console.log('Problem user does NOT exist in the database');
   }
   
   // Check for our test user
-  console.log('\nChecking for test user (test@aims.local):');
   const { data: testUser } = await supabase
     .from('users')
     .select('*')
@@ -63,9 +53,7 @@ async function checkUsers() {
     .single();
     
   if (testUser) {
-    console.log('Test user found:', testUser);
   } else {
-    console.log('Test user NOT found');
   }
 }
 

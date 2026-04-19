@@ -608,9 +608,9 @@ export function FinanceTypeFlowChart({
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
         <div className="bg-surface-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground text-sm">{year}</p>
+          <p className="font-semibold text-foreground text-body">{year}</p>
           {customYears.find(cy => cy.id === calendarType)?.name && (
-            <p className="text-xs text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+            <p className="text-helper text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
           )}
         </div>
         <div className="p-2 max-h-96 overflow-y-auto">
@@ -619,9 +619,9 @@ export function FinanceTypeFlowChart({
               <div className="mb-2">
                 <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{flowTypeCode}</code>
                 {' '}
-                <span className="text-xs text-muted-foreground">{getFlowTypeName(flowTypeCode)}</span>
+                <span className="text-helper text-muted-foreground">{getFlowTypeName(flowTypeCode)}</span>
               </div>
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <tbody>
                   {entries.map((entry: any, idx: number) => (
                     <tr key={idx} className="border-b border-border last:border-b-0">
@@ -676,7 +676,7 @@ export function FinanceTypeFlowChart({
           const financeTypeName = financeTypeMatch ? financeTypeMatch[2] : financeTypePart
 
           return (
-            <div key={`legend-${index}`} className="flex items-center gap-2 text-sm">
+            <div key={`legend-${index}`} className="flex items-center gap-2 text-body">
               <div
                 className="w-3 h-3 rounded-sm flex-shrink-0"
                 style={{ backgroundColor: entry.color }}
@@ -776,7 +776,7 @@ export function FinanceTypeFlowChart({
     if (error || chartData.length === 0) {
       return (
         <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">{error || 'No data available'}</p>
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -888,7 +888,7 @@ export function FinanceTypeFlowChart({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No data available</p>
-              <p className="text-xs mt-2">Add transactions with finance type and flow type to see this chart</p>
+              <p className="text-helper mt-2">Add transactions with finance type and flow type to see this chart</p>
             </div>
           </div>
         </CardContent>
@@ -956,7 +956,7 @@ export function FinanceTypeFlowChart({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="p-3 w-auto">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                            <span className="text-helper font-medium text-foreground">Select Year Range</span>
                             <div className="flex gap-1">
                               <button
                                 onClick={selectAllYears}
@@ -985,7 +985,7 @@ export function FinanceTypeFlowChart({
                                   className={`
                                     px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                     ${isStartOrEnd
-                                      ? 'bg-slate-200 text-slate-900'
+                                      ? 'bg-muted text-foreground'
                                       : inRange
                                         ? 'bg-primary/20 text-primary'
                                         : 'text-muted-foreground hover:bg-muted'
@@ -1036,7 +1036,7 @@ export function FinanceTypeFlowChart({
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.code}
                       </code>
-                      <span className="text-sm">{option.name}</span>
+                      <span className="text-body">{option.name}</span>
                     </span>
                   )}
                 />
@@ -1061,7 +1061,7 @@ export function FinanceTypeFlowChart({
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.code}
                       </code>
-                      <span className="text-sm">{option.name}</span>
+                      <span className="text-body">{option.name}</span>
                     </span>
                   )}
                 />
@@ -1089,7 +1089,7 @@ export function FinanceTypeFlowChart({
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.code}
                       </code>
-                      <span className="text-sm">{option.name}</span>
+                      <span className="text-body">{option.name}</span>
                     </span>
                   )}
                 />
@@ -1422,7 +1422,7 @@ export function FinanceTypeFlowChart({
                                           {financeType.code}
                                         </code>
                                       </div>
-                                      <span className="text-xs text-muted-foreground">{txTypeName} - {financeType.name}</span>
+                                      <span className="text-helper text-muted-foreground">{txTypeName} - {financeType.name}</span>
                                     </div>
                                   </TableHead>
                                 ))}
@@ -1467,7 +1467,7 @@ export function FinanceTypeFlowChart({
               <p className="font-medium">
                 {selectedFlowTypes.length === 0 ? 'No flow types selected' : 'No data available'}
               </p>
-              <p className="text-xs mt-2">
+              <p className="text-helper mt-2">
                 {selectedFlowTypes.length === 0
                   ? 'Select one or more flow types to view the chart'
                   : 'Try adjusting your filter selections'
@@ -1480,7 +1480,7 @@ export function FinanceTypeFlowChart({
 
       {/* Chart Description */}
       <div className="border-t border-border px-6 py-4 bg-card">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           This chart visualizes financial flows by breaking down transactions according to their flow type (e.g., ODA, OOF, private flows)
           and finance type (e.g., grants, loans, equity investments). Understanding these classifications is essential for analyzing
           the nature and terms of development assistance—whether funds are concessional or non-concessional, repayable or not,
@@ -1498,7 +1498,7 @@ export function FinanceTypeFlowChart({
             {/* Flow Types */}
             {selectedFlowTypes.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-foreground min-w-[140px]">
+                <span className="text-body font-semibold text-foreground min-w-[140px]">
                   {selectedFlowTypes.length} Flow Type{selectedFlowTypes.length !== 1 ? 's' : ''}:
                 </span>
                 <div className="flex gap-2 flex-wrap flex-1">
@@ -1511,7 +1511,7 @@ export function FinanceTypeFlowChart({
                       <code className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {code}
                       </code>
-                      <span className="text-sm text-foreground">{getFlowTypeName(code)}</span>
+                      <span className="text-body text-foreground">{getFlowTypeName(code)}</span>
                       <button
                         onClick={() => {
                           setSelectedFlowTypes(selectedFlowTypes.filter(f => f !== code))
@@ -1530,7 +1530,7 @@ export function FinanceTypeFlowChart({
             {/* Finance Types */}
             {selectedFinanceTypes.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-foreground min-w-[140px]">
+                <span className="text-body font-semibold text-foreground min-w-[140px]">
                   {selectedFinanceTypes.length} Finance Type{selectedFinanceTypes.length !== 1 ? 's' : ''}:
                 </span>
                 <div className="flex gap-2 flex-wrap flex-1">
@@ -1543,7 +1543,7 @@ export function FinanceTypeFlowChart({
                       <code className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {code}
                       </code>
-                      <span className="text-sm text-foreground">{getFinanceTypeName(code)}</span>
+                      <span className="text-body text-foreground">{getFinanceTypeName(code)}</span>
                       <button
                         onClick={() => {
                           setSelectedFinanceTypes(selectedFinanceTypes.filter(f => f !== code))
@@ -1562,7 +1562,7 @@ export function FinanceTypeFlowChart({
             {/* Transaction Types */}
             {selectedTransactionTypes.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-foreground min-w-[140px]">
+                <span className="text-body font-semibold text-foreground min-w-[140px]">
                   {selectedTransactionTypes.length} Transaction Type{selectedTransactionTypes.length !== 1 ? 's' : ''}:
                 </span>
                 <div className="flex gap-2 flex-wrap flex-1">
@@ -1578,7 +1578,7 @@ export function FinanceTypeFlowChart({
                         <code className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {code}
                         </code>
-                        <span className="text-sm text-foreground">{txType.name}</span>
+                        <span className="text-body text-foreground">{txType.name}</span>
                         <button
                           onClick={() => {
                             const newTypes = selectedTransactionTypes.filter(t => t !== code)
@@ -1602,7 +1602,7 @@ export function FinanceTypeFlowChart({
       )}
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed px-6 pb-6">
+      <p className="text-body text-muted-foreground leading-relaxed px-6 pb-6">
         This chart visualises financial flows by finance type (such as ODA grants, loans, and equity), showing how different instruments are used across your portfolio over time. Use the transaction type filter to focus on specific flow types, and switch between chart styles to compare trends or cumulative totals.
       </p>
     </Card>

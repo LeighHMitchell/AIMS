@@ -219,12 +219,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[Fetch Org Activities] Fetching from IATI Datastore for refs:', orgScope.allRefs, 'filters:', filterOptions)
 
     // 4. Fetch data from IATI Datastore with filters (primary source)
     const activities = await fetchFromDatastore(orgScope.allRefs, filterOptions)
 
-    console.log(`[Fetch Org Activities] Fetched ${activities.length} activities from IATI Datastore`)
 
     // 5. Enrich with sector percentages from d-portal if Datastore didn't provide them
     // Note: hierarchy is already fetched from Datastore (DATASTORE_FIELDS includes 'hierarchy')
@@ -239,7 +237,6 @@ export async function GET(request: NextRequest) {
         if (needsSectorEnrichment) {
           await enrichWithSectorPercentages(activities, orgScope.allRefs, filterOptions)
         } else {
-          console.log('[Fetch Org Activities] Skipping d-portal sector enrichment — Datastore provided all percentages')
         }
       }
     }
@@ -404,7 +401,6 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
     const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(DATASTORE_FIELDS)}`
 
     if (start === 0) {
-      console.log('[Fetch Org Activities] Datastore query:', url.substring(0, 300) + '...')
     }
 
     const abortController = new AbortController()
@@ -433,7 +429,6 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
             throw new Error('IATI Datastore rate limit exceeded after multiple retries')
           }
           const waitTime = Math.min(2000 * retryCount, 15000) // Exponential backoff, max 15s
-          console.log(`[Fetch Org Activities] Rate limited, retry ${retryCount}/${MAX_RETRIES}, waiting ${waitTime/1000}s...`)
           await new Promise(resolve => setTimeout(resolve, waitTime))
           continue // Retry same page
         }
@@ -449,7 +444,6 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
       const docs = data.response?.docs || []
       total = data.response?.numFound || 0
 
-      console.log(`[Fetch Org Activities] Datastore page ${start / PAGE_SIZE + 1}: ${docs.length} docs (total: ${total})`)
 
       // Map each doc to ParsedActivity
       for (const doc of docs) {
@@ -462,7 +456,6 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
       // Delay between pages to respect rate limits (5 calls/min = 12s between calls)
       // With PAGE_SIZE=1000 (Datastore hard limit), we need proper pacing
       if (start < total) {
-        console.log(`[Fetch Org Activities] Fetched ${Math.min(start, total)}/${total}, waiting 13s for rate limit...`)
         await new Promise(resolve => setTimeout(resolve, 13000))
       }
     } catch (error) {
@@ -484,7 +477,6 @@ async function enrichWithSectorPercentages(
   orgRefs: string[],
   filters: DatastoreFilters = {}
 ): Promise<void> {
-  console.log('[Fetch Org Activities] Enriching with sector percentages from d-portal')
 
   const PAGE_SIZE = 1000
   const MAX_PAGES = 20 // Safety cap: 20 pages = 20k rows max
@@ -505,7 +497,6 @@ async function enrichWithSectorPercentages(
 
     while (hasMore) {
       if (pageCount >= MAX_PAGES) {
-        console.log(`[Fetch Org Activities] d-portal sector: hit ${MAX_PAGES}-page cap for ${ref}, stopping`)
         break
       }
 
@@ -532,7 +523,6 @@ async function enrichWithSectorPercentages(
         pageCount++
 
         if (offset === 0) {
-          console.log(`[Fetch Org Activities] d-portal sectors for ${ref}: ${data.count || rows.length} total rows${countryParam ? ' (country-filtered)' : ''}`)
         }
 
         // Build map of sector percentages
@@ -552,7 +542,6 @@ async function enrichWithSectorPercentages(
 
         // Early termination: all target activities matched
         if (unmatchedIds.size === 0) {
-          console.log(`[Fetch Org Activities] d-portal sector: all ${targetIds.size} target activities matched after ${pageCount} pages, stopping early`)
           hasMore = false
           break
         }
@@ -573,7 +562,6 @@ async function enrichWithSectorPercentages(
     if (unmatchedIds.size === 0) break
   }
 
-  console.log(`[Fetch Org Activities] Got sector percentages for ${sectorPercentageMap.size} activities from d-portal`)
 
   // Apply sector percentages to activities
   let enrichedCount = 0
@@ -590,7 +578,6 @@ async function enrichWithSectorPercentages(
     }
   }
 
-  console.log(`[Fetch Org Activities] Enriched ${enrichedCount} sector entries with percentages`)
 }
 
 // markExistingActivities is now imported from @/lib/iati/datastore-helpers

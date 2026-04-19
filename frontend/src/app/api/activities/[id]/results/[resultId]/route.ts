@@ -18,8 +18,6 @@ export async function PATCH(
     const { resultId } = await params;
     const body = await request.json();
 
-    console.log(`[Results API] Updating result: ${resultId}`);
-    console.log('[Results API] Update data:', JSON.stringify(body, null, 2));
 
     // Validate result type if provided
     if (body.type) {
@@ -63,7 +61,6 @@ export async function PATCH(
     // Add updated timestamp
     updateData.updated_at = new Date().toISOString();
 
-    console.log('[Results API] Final update data:', JSON.stringify(updateData, null, 2));
 
     const { data: result, error } = await supabase
       .from('activity_results')
@@ -111,7 +108,6 @@ export async function PATCH(
       }, { status: 404 });
     }
 
-    console.log('[Results API] Result updated successfully:', result.id);
     return NextResponse.json({ result });
 
   } catch (error) {
@@ -139,7 +135,6 @@ export async function DELETE(
 
     const { resultId } = await params;
 
-    console.log(`[Results API] Deleting result: ${resultId}`);
 
     // Delete the result (this should cascade to indicators, baselines, and periods)
     const { error } = await supabase
@@ -163,7 +158,6 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    console.log('[Results API] Result deleted successfully:', resultId);
     return NextResponse.json({ success: true });
 
   } catch (error) {

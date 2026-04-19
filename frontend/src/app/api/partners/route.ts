@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('[AIMS] GET /api/partners (using organizations table)');
 
     // Create Supabase client
     const supabaseAdmin = supabase;
@@ -61,7 +60,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Found organizations:', data?.length || 0);
 
     // Transform to match partner interface if needed
     const partners = data?.map((org: any) => ({
@@ -100,8 +98,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('[AIMS] POST /api/partners (using organizations table) - Starting request');
-    console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
 
     // Create Supabase client
     const supabaseAdmin = supabase;
@@ -127,7 +123,6 @@ export async function POST(request: NextRequest) {
       country_represented: body.countryRepresented || null,
     };
 
-    console.log('[AIMS] Creating organization with data:', JSON.stringify(organizationData, null, 2));
 
     const { data, error } = await supabaseAdmin
       .from('organizations')
@@ -143,7 +138,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Created new organization:', data);
     
     // Log the activity if user information is provided
     if (body.user) {
@@ -180,7 +174,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, ...updates } = body;
 
-    console.log('[AIMS] PUT /api/partners (using organizations table) - Updating:', id);
 
     if (!id) {
       return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
@@ -215,7 +208,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Updated organization:', data);
     
     // Log the activity if user information is provided
     if (body.user) {
@@ -252,7 +244,6 @@ export async function DELETE(request: NextRequest) {
     const url = new URL(request.url);
     const id = url.pathname.split('/').pop();
 
-    console.log('[AIMS] DELETE /api/partners (using organizations table) - Deleting:', id);
 
     if (!id) {
       return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
@@ -290,7 +281,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Deleted organization:', id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);

@@ -151,14 +151,8 @@ export function AdvancedGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
         })
       }
       prevInitialSection.current = initialSection
@@ -263,7 +257,7 @@ export function AdvancedGroup({
   return (
     <div className="advanced-group space-y-0">
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access advanced sections.</p>
         </div>
       )}
@@ -278,7 +272,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('linked_activities') }}
           >
             {isSectionActive('linked_activities') || activeSections.has('linked_activities') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="linked_activities"
                   title={getSectionLabel('linked_activities')}
@@ -301,11 +295,11 @@ export function AdvancedGroup({
           <section
             id="results"
             ref={resultsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('results') }}
           >
             {isSectionActive('results') || activeSections.has('results') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="results"
                   title={getSectionLabel('results')}
@@ -328,11 +322,11 @@ export function AdvancedGroup({
           <section
             id="forward-spending-survey"
             ref={forwardSpendRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('forward-spending-survey') }}
           >
             {isSectionActive('forward-spending-survey') || activeSections.has('forward-spending-survey') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="forward-spending-survey"
                   title={getSectionLabel('forward-spending-survey')}
@@ -354,11 +348,11 @@ export function AdvancedGroup({
           <section
             id="capital-spend"
             ref={capitalSpendRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('capital-spend') }}
           >
             {isSectionActive('capital-spend') || activeSections.has('capital-spend') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="capital-spend"
                   title={getSectionLabel('capital-spend')}
@@ -380,11 +374,11 @@ export function AdvancedGroup({
           <section
             id="financing-terms"
             ref={financingTermsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('financing-terms') }}
           >
             {isSectionActive('financing-terms') || activeSections.has('financing-terms') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="financing-terms"
                   title={getSectionLabel('financing-terms')}
@@ -408,16 +402,24 @@ export function AdvancedGroup({
           <section
             id="conditions"
             ref={conditionsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('conditions') }}
           >
             {isSectionActive('conditions') || activeSections.has('conditions') ? (
-              <ConditionsTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                defaultLanguage="en"
-                onConditionsChange={onConditionsChange}
-              />
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+                <SectionHeader
+                  id="conditions"
+                  title={getSectionLabel('conditions')}
+                  helpText={getSectionHelpText('conditions')}
+                  showDivider={false}
+                />
+                <ConditionsTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  defaultLanguage="en"
+                  onConditionsChange={onConditionsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="conditions" />
             )}
@@ -427,11 +429,11 @@ export function AdvancedGroup({
           <section
             id="country-budget"
             ref={countryBudgetRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('country-budget') }}
           >
             {isSectionActive('country-budget') || activeSections.has('country-budget') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="country-budget"
                   title={getSectionLabel('country-budget')}

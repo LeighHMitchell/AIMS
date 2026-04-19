@@ -41,7 +41,6 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 function getCachedData(country: string): GeoJSON.FeatureCollection | null {
   const memCache = floodRiskCache[country];
   if (memCache && Date.now() - memCache.timestamp < CACHE_DURATION) {
-    console.log(`[FloodRiskLayer] Using in-memory cache for ${country}`);
     return memCache.data;
   }
 
@@ -50,7 +49,6 @@ function getCachedData(country: string): GeoJSON.FeatureCollection | null {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Date.now() - parsed.timestamp < CACHE_DURATION) {
-        console.log(`[FloodRiskLayer] Using sessionStorage cache for ${country}`);
         floodRiskCache[country] = parsed;
         return parsed.data;
       }
@@ -131,7 +129,6 @@ export default function FloodRiskLayer({
       setError(null);
 
       try {
-        console.log(`[FloodRiskLayer] Fetching from API for ${country}...`);
         const response = await fetch(`/api/layers/flood-risk?country=${country}`);
 
         if (!response.ok) {
@@ -145,7 +142,6 @@ export default function FloodRiskLayer({
           cacheData(country, geoJson);
           setData(geoJson);
           loadedCountryRef.current = country;
-          console.log(`[FloodRiskLayer] Loaded ${geoJson.features.length} zones for ${country}`);
         }
       } catch (err) {
         console.error('[FloodRiskLayer] Error:', err);

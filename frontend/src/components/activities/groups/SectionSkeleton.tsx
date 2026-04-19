@@ -111,7 +111,7 @@ function TableSkeleton() {
         <Skeleton className="h-10 w-28" />
       </div>
       {/* Table header */}
-      <div className="flex gap-4 py-3 border-b border-gray-200">
+      <div className="flex gap-4 py-3 border-b border-border">
         <Skeleton className="h-4 w-1/4" />
         <Skeleton className="h-4 w-1/4" />
         <Skeleton className="h-4 w-1/6" />
@@ -119,7 +119,7 @@ function TableSkeleton() {
       </div>
       {/* Table rows */}
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="flex gap-4 py-3 border-b border-gray-100">
+        <div key={i} className="flex gap-4 py-3 border-b border-border">
           <Skeleton className="h-4 w-1/4" />
           <Skeleton className="h-4 w-1/4" />
           <Skeleton className="h-4 w-1/6" />
@@ -139,7 +139,7 @@ function CardsSkeleton() {
       </div>
       {/* Cards */}
       {[1, 2, 3].map((i) => (
-        <div key={i} className="border border-gray-200 rounded-lg p-4 space-y-3">
+        <div key={i} className="border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <Skeleton className="h-5 w-48" />
             <Skeleton className="h-8 w-8 rounded" />
@@ -164,7 +164,7 @@ function MixedSkeleton() {
       </div>
       {/* List items */}
       {[1, 2].map((i) => (
-        <div key={i} className="border border-gray-200 rounded-lg p-4 space-y-2">
+        <div key={i} className="border border-border rounded-lg p-4 space-y-2">
           <Skeleton className="h-5 w-48" />
           <Skeleton className="h-4 w-3/4" />
         </div>
@@ -184,7 +184,7 @@ export function SectionSkeleton({ sectionId }: { sectionId: string }) {
 
   return (
     <div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 animate-pulse"
+      className="bg-card rounded-lg shadow-sm border border-border p-8 animate-pulse"
       style={{ minHeight }}
     >
       {/* Section header */}

@@ -98,7 +98,7 @@ export default function LocationsTab({
   const [activityData, setActivityData] = useState<ActivityData | undefined>();
 
   // Pending delete confirmation — null when dialog closed.
-  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string; snapshot?: LocationSchema } | null>(null);
 
   // Get user for autosave
   const { user } = useUser();
@@ -209,7 +209,6 @@ export default function LocationsTab({
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
-      console.log('[LocationsTab] 🚀 Starting save process for location:', locationData);
       
       const url = editingLocation 
         ? `/api/locations/${editingLocation.id}`
@@ -217,7 +216,6 @@ export default function LocationsTab({
       
       const method = editingLocation ? 'PATCH' : 'POST';
       
-      console.log('[LocationsTab] 📡 Making API request:', { url, method, isUpdate: !!editingLocation });
       
       const response = await apiFetch(url, {
         method,
@@ -227,7 +225,6 @@ export default function LocationsTab({
         body: JSON.stringify(locationData),
       });
 
-      console.log('[LocationsTab] 📡 API response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -236,13 +233,10 @@ export default function LocationsTab({
       }
 
       const result = await response.json();
-      console.log('[LocationsTab] ✅ API success response:', result);
       
       if (result.success) {
-        console.log('[LocationsTab] ✅ Location saved successfully, reloading...');
         toast.success(editingLocation ? 'Location updated successfully' : 'Location added successfully');
         await loadLocations();
-        console.log('[LocationsTab] ✅ Locations reloaded, closing modal');
         setIsModalOpen(false);
         setEditingLocation(undefined);
       } else {
@@ -255,8 +249,25 @@ export default function LocationsTab({
     }
   }, [activityId, editingLocation, loadLocations]);
 
+  // Restore a previously deleted location (used by Undo)
+  const restoreLocation = useCallback(async (snapshot: LocationSchema) => {
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}/locations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(snapshot),
+      });
+      if (!response.ok) throw new Error('Failed to restore location');
+      toast.success('Location restored');
+      await loadLocations();
+    } catch (err) {
+      console.error('Error restoring location:', err);
+      toast.error("Couldn't restore the location. Please add it again manually.");
+    }
+  }, [activityId, loadLocations]);
+
   // Handle delete location
-  const handleDeleteLocation = useCallback(async (locationId: string) => {
+  const handleDeleteLocation = useCallback(async (locationId: string, snapshot?: LocationSchema) => {
     try {
       const response = await apiFetch(`/api/locations/${locationId}`, {
         method: 'DELETE',
@@ -267,18 +278,20 @@ export default function LocationsTab({
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
-        toast.success('Location deleted successfully');
+        toast.success('Location removed', snapshot ? {
+          action: { label: 'Undo', onClick: () => restoreLocation(snapshot) },
+        } : undefined);
         await loadLocations();
       } else {
         throw new Error(result.error || 'Failed to delete location');
       }
     } catch (err) {
       console.error('Error deleting location:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to delete location');
+      toast.error("Couldn't remove the location. Please try again in a moment.");
     }
-  }, [activityId, loadLocations]);
+  }, [activityId, loadLocations, restoreLocation]);
 
 
   // Handle edit location
@@ -394,11 +407,11 @@ export default function LocationsTab({
       {locations.length === 0 ? (
         <div className="text-center py-12">
           <img src="/images/empty-pushpin.webp" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No locations added</h3>
+          <h3 className="text-base font-medium mb-2">No locations added</h3>
           <p className="text-muted-foreground mb-2 max-w-xl mx-auto">
             Add locations to specify where your activity takes place or where beneficiaries are located.
           </p>
-          <p className="text-xs text-muted-foreground mb-6 max-w-xl mx-auto">
+          <p className="text-helper text-muted-foreground mb-6 max-w-xl mx-auto">
             For broader coverage (an entire country or region), use the Countries &amp; Regions tab instead.
           </p>
           {canEdit && (
@@ -424,6 +437,7 @@ export default function LocationsTab({
                 setPendingDelete({
                   id,
                   name: location.location_name || 'this location',
+                  snapshot: location,
                 });
               }}
               canEdit={canEdit}
@@ -463,13 +477,13 @@ export default function LocationsTab({
                   <TableRow key={location.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm">{location.location_name || 'Unnamed Location'}</span>
+                        <span className="text-body">{location.location_name || 'Unnamed Location'}</span>
                         {location.id && (
                           <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                         )}
                       </div>
                       {location.latitude && location.longitude && (
-                        <div className="group/coords flex items-center gap-1 text-xs text-muted-foreground mt-0.5 w-fit">
+                        <div className="group/coords flex items-center gap-1 text-helper text-muted-foreground mt-0.5 w-fit">
                           <span>
                             {Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}
                           </span>
@@ -490,15 +504,15 @@ export default function LocationsTab({
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       <div>{formatAddress()}</div>
                       {location.location_description && (
-                        <div className="text-sm mt-0.5 whitespace-normal break-words">
+                        <div className="text-body mt-0.5 whitespace-normal break-words">
                           {location.location_description}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm max-w-[300px]">
+                    <TableCell className="text-body max-w-[300px]">
                       <div className="flex items-start gap-1.5">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -532,6 +546,7 @@ export default function LocationsTab({
                               setPendingDelete({
                                 id: location.id,
                                 name: location.location_name || 'this location',
+                                snapshot: location,
                               });
                             }}
                             className="p-1.5 rounded hover:bg-muted text-destructive"
@@ -570,13 +585,13 @@ export default function LocationsTab({
         }}
         onConfirm={() => {
           if (!pendingDelete) return;
-          handleDeleteLocation(pendingDelete.id);
+          handleDeleteLocation(pendingDelete.id, pendingDelete.snapshot);
           setPendingDelete(null);
         }}
         title="Remove location?"
         description={pendingDelete && (
           <>
-            This will remove <span className="font-medium text-foreground">{pendingDelete.name}</span> from this activity. This can't be undone.
+            This will remove <span className="font-medium text-foreground">{pendingDelete.name}</span> from this activity. You'll have a moment to undo.
           </>
         )}
         confirmText="Remove"

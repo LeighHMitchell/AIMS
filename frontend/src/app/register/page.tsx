@@ -61,7 +61,6 @@ export default function RegisterPage() {
     }
 
     try {
-      console.log("[Register] Attempting registration for:", email);
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -82,7 +81,6 @@ export default function RegisterPage() {
         throw new Error(data.error || "Registration failed");
       }
 
-      console.log("[Register] Registration successful");
 
       // Show success state with email verification instructions
       setRegistrationState('success');
@@ -155,7 +153,7 @@ export default function RegisterPage() {
               </Button>
             </div>
 
-            <p className="text-center text-sm text-muted-foreground pt-4">
+            <p className="text-center text-body text-muted-foreground pt-4">
               Didn't receive the email?{" "}
               <button
                 onClick={() => toast.info("Please wait a few minutes and check your spam folder. If you still don't receive it, try registering again.")}
@@ -208,7 +206,7 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <label htmlFor="firstName" className="text-sm font-medium text-foreground">
+                <label htmlFor="firstName" className="text-body font-medium text-foreground">
                   First Name
                 </label>
                 <Input
@@ -221,7 +219,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                <label htmlFor="lastName" className="text-body font-medium text-foreground">
                   Last Name
                 </label>
                 <Input
@@ -236,7 +234,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
+              <label htmlFor="email" className="text-body font-medium text-foreground">
                 Email <RequiredDot />
               </label>
               <Input
@@ -251,7 +249,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
+              <label htmlFor="password" className="text-body font-medium text-foreground">
                 Password <RequiredDot />
               </label>
               <Input
@@ -267,7 +265,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+              <label htmlFor="confirmPassword" className="text-body font-medium text-foreground">
                 Confirm Password <RequiredDot />
               </label>
               <Input
@@ -305,7 +303,7 @@ export default function RegisterPage() {
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
+            <div className="relative flex justify-center text-helper uppercase">
               <span className="bg-[#F6F5F4] px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
@@ -314,7 +312,7 @@ export default function RegisterPage() {
           <GmailLogin redirectTo="/auth/callback?next=/activities" />
 
           {/* Sign In Link */}
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6 text-center text-body text-muted-foreground">
             Already have an account?{" "}
             <Link
               href="/login"
@@ -326,10 +324,10 @@ export default function RegisterPage() {
 
           {/* Terms and Privacy Links */}
           <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-center text-xs text-muted-foreground mb-2">
+            <p className="text-center text-helper text-muted-foreground mb-2">
               By creating an account, you agree to our
             </p>
-            <div className="flex justify-center gap-4 text-sm text-muted-foreground">
+            <div className="flex justify-center gap-4 text-body text-muted-foreground">
               <Link
                 href="/terms-of-service"
                 className="hover:text-foreground underline"

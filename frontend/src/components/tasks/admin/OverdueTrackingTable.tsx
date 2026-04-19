@@ -69,9 +69,9 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
-        <AlertTriangle className="mb-2 h-8 w-8 text-slate-400" />
+        <AlertTriangle className="mb-2 h-8 w-8 text-muted-foreground" />
         <p className="text-lg font-medium text-foreground">No Overdue Tasks</p>
-        <p className="text-sm">All tasks are on track</p>
+        <p className="text-body">All tasks are on track</p>
       </div>
     );
   }
@@ -107,8 +107,8 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
             <TableRow key={task.task_id}>
               <TableCell>
                 <div className="max-w-[200px]">
-                  <p className="truncate text-sm text-foreground">{task.task_title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-body text-foreground">{task.task_title}</p>
+                  <p className="text-helper text-muted-foreground">
                     Due: {new Date(task.deadline).toLocaleDateString()}
                   </p>
                 </div>
@@ -125,10 +125,10 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
                 <div className="flex items-center gap-1">
                   <AlertTriangle
                     className={`h-4 w-4 ${
-                      task.days_overdue > 7 ? 'text-slate-700' : 'text-slate-500'
+                      task.days_overdue > 7 ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   />
-                  <span className="text-sm text-foreground">
+                  <span className="text-body text-foreground">
                     {task.days_overdue} {task.days_overdue === 1 ? 'day' : 'days'}
                   </span>
                 </div>
@@ -136,13 +136,13 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">
+                  <span className="text-body text-foreground">
                     {task.completed_count} / {task.assignee_count}
                   </span>
                 </div>
               </TableCell>
               <TableCell>
-                <span className="text-sm text-foreground">
+                <span className="text-body text-foreground">
                   {task.creator ? getTaskUserDisplayName(task.creator) : 'Unknown'}
                 </span>
               </TableCell>
@@ -160,7 +160,7 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
 
       {tasks.length > 10 && (
         <div className="border-t p-2 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Showing {Math.min(tasks.length, 20)} of {tasks.length} overdue tasks
           </p>
         </div>

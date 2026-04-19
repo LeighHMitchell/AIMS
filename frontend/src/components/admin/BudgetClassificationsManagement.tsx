@@ -119,7 +119,7 @@ function TreeNode({
         </button>
 
         {/* Code + Name + Acronym */}
-        <span className="text-sm flex-[3] min-w-0 break-words">
+        <span className="text-body flex-[3] min-w-0 break-words">
           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded inline-block mr-2 align-middle">
             {node.code}
           </span>
@@ -128,22 +128,22 @@ function TreeNode({
         </span>
 
         {/* Local Name */}
-        <span className="hidden md:block text-xs text-muted-foreground italic flex-1 min-w-0 truncate">
+        <span className="hidden md:block text-helper text-muted-foreground italic flex-1 min-w-0 truncate">
           {node.nameLocal || "—"}
         </span>
 
         {/* Description */}
-        <span className="hidden lg:block text-xs text-muted-foreground flex-[2] min-w-0 break-words">
+        <span className="hidden lg:block text-helper text-muted-foreground flex-[2] min-w-0 break-words">
           {node.description || "—"}
         </span>
 
         {/* Status */}
-        <span className="w-[100px] flex items-center flex-shrink-0 pl-2 text-sm">
+        <span className="w-[100px] flex items-center flex-shrink-0 pl-2 text-body">
           {node.isActive ? "Active" : "Inactive"}
         </span>
 
         {/* Type */}
-        <span className="w-[160px] flex-shrink-0 pl-2 text-sm">
+        <span className="w-[160px] flex-shrink-0 pl-2 text-body">
           {CLASSIFICATION_TYPE_LABELS[node.classificationType]}
         </span>
 
@@ -161,7 +161,7 @@ function TreeNode({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(node)}>
-                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAddChild(node)}>
@@ -170,9 +170,9 @@ function TreeNode({
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(node)}
-                className="text-red-600"
+                className="text-destructive"
               >
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -536,7 +536,7 @@ export function BudgetClassificationsManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>
@@ -612,7 +612,7 @@ export function BudgetClassificationsManagement() {
                   checked={showInactive}
                   onCheckedChange={setShowInactive}
                 />
-                <Label htmlFor="show-inactive" className="text-sm cursor-pointer">
+                <Label htmlFor="show-inactive" className="text-body cursor-pointer">
                   Show Inactive
                 </Label>
               </div>
@@ -649,7 +649,7 @@ export function BudgetClassificationsManagement() {
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <FolderTree className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">No classifications found</p>
-              <p className="text-sm mb-4">
+              <p className="text-body mb-4">
                 {searchQuery
                   ? "Try adjusting your search"
                   : "Add your first budget classification to get started"}
@@ -665,7 +665,7 @@ export function BudgetClassificationsManagement() {
             <div className="border rounded-lg">
               {/* Sticky Header */}
               <div className="sticky top-0 z-10 bg-surface-muted border-b">
-                <div className="flex items-center gap-4 py-3 px-3 text-sm font-medium text-muted-foreground">
+                <div className="flex items-center gap-4 py-3 px-3 text-body font-medium text-muted-foreground">
                   <div className="w-5 flex-shrink-0" /> {/* Spacer for expand icon */}
                   <button
                     className="flex items-center gap-1 hover:text-foreground transition-colors flex-[3] min-w-0"
@@ -737,7 +737,7 @@ export function BudgetClassificationsManagement() {
           )}
 
           {/* Summary */}
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-body text-muted-foreground">
             Showing {filteredClassifications.length} classification
             {filteredClassifications.length !== 1 ? "s" : ""}
             {` (${CLASSIFICATION_TYPE_LABELS[filterType]})`}
@@ -767,6 +767,7 @@ export function BudgetClassificationsManagement() {
                 <Label htmlFor="code">Code <RequiredDot /></Label>
                 <Input
                   id="code"
+                  className="font-mono"
                   value={formData.code}
                   onChange={(e) =>
                     setFormData({ ...formData, code: e.target.value })
@@ -796,7 +797,7 @@ export function BudgetClassificationsManagement() {
                       <SelectItem key={type} value={type} triggerLabel={CLASSIFICATION_TYPE_LABELS[type]}>
                         <div>
                           <div>{CLASSIFICATION_TYPE_LABELS[type]}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             {CLASSIFICATION_TYPE_DESCRIPTIONS[type]}
                           </div>
                         </div>

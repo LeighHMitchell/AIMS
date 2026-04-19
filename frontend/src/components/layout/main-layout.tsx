@@ -16,6 +16,8 @@ import { TourOverlay } from "@/components/tour/TourOverlay"
 import { isVisitorUser, exitVisitorMode } from "@/lib/visitor"
 import { UserPlus, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PageHelpBubble } from "@/components/help/PageHelpBubble"
+import { resolvePageHelp } from "@/lib/help-page-slugs"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -86,7 +88,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
                 <span className="text-xl font-bold whitespace-nowrap">
                   æther
                 </span>
-                <span className="text-sm font-medium text-muted-foreground ml-2">
+                <span className="text-body font-medium text-muted-foreground ml-2">
                   MYANMAR
                 </span>
               </div>
@@ -125,7 +127,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         {/* Visitor Banner */}
         {isVisitor && (
           <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between">
-            <p className="text-sm text-amber-800">
+            <p className="text-body text-amber-800">
               You are browsing as a visitor. Sign up for full access to create and manage activities.
             </p>
             <div className="flex items-center gap-2">
@@ -161,6 +163,13 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Contextual Page Help bubble — renders only on pages registered in help-page-slugs */}
+      {!isVisitor && (() => {
+        const pageHelp = resolvePageHelp(pathname);
+        if (!pageHelp) return null;
+        return <PageHelpBubble pageSlug={pageHelp.slug} pageTitle={pageHelp.title} />;
+      })()}
     </div>
   );
 

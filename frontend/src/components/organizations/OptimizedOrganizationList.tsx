@@ -176,17 +176,17 @@ export function OptimizedOrganizationList({
     <Link
       key={organization.id}
       href={`/organizations/${organization.id}`}
-      className="block border rounded-lg p-4 hover:border-gray-300 hover:shadow-md transition-all duration-200 bg-white"
+      className="block border rounded-lg p-4 hover:border-input hover:shadow-md transition-all duration-200 bg-white"
     >
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
+            <h3 className="text-lg font-semibold text-foreground truncate">
               {organization.name}
             </h3>
             {organization.acronym && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 {organization.acronym}
               </p>
             )}
@@ -194,7 +194,7 @@ export function OptimizedOrganizationList({
           
           <div className="flex items-center gap-2 ml-4">
             {organization.organization_type && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-helper">
                 {organization.organization_type}
               </Badge>
             )}
@@ -202,7 +202,7 @@ export function OptimizedOrganizationList({
         </div>
 
         {/* IATI Identifier and Country */}
-        <div className="flex items-center gap-4 text-sm text-gray-600">
+        <div className="flex items-center gap-4 text-body text-muted-foreground">
           {organization.iati_identifier && (
             <div className="flex items-center gap-1">
               <Globe className="w-4 h-4" />
@@ -222,13 +222,13 @@ export function OptimizedOrganizationList({
 
         {/* Description */}
         {organization.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
+          <p className="text-body text-muted-foreground line-clamp-2">
             {organization.description}
           </p>
         )}
 
         {/* Additional Info */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-helper text-muted-foreground">
           <div className="flex items-center gap-4">
             {organization.registration_agency && (
               <span>Reg: {organization.registration_agency}</span>
@@ -254,7 +254,7 @@ export function OptimizedOrganizationList({
       <div className="flex flex-col sm:flex-row gap-4">
         {showSearch && (
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search organizations..."
               value={query}
@@ -307,7 +307,7 @@ export function OptimizedOrganizationList({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-gray-600">
+      <div className="text-body text-muted-foreground">
         {searchResults ? (
           `Found ${searchResults.total} organizations`
         ) : (
@@ -318,7 +318,7 @@ export function OptimizedOrganizationList({
 
       {/* Error Display */}
       {searchError && (
-        <div className="text-red-600 text-sm p-2 bg-red-50 rounded">
+        <div className="text-destructive text-body p-2 bg-destructive/10 rounded">
           {searchError}
         </div>
       )}

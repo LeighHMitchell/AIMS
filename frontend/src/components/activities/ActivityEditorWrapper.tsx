@@ -27,8 +27,8 @@ export function ActivityEditorWrapper({ activityId, children }: ActivityEditorWr
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
-            <p className="text-red-600 font-medium">{error}</p>
-            <p className="text-muted-foreground text-sm">Redirecting to activities list...</p>
+            <p className="text-destructive font-medium">{error}</p>
+            <p className="text-muted-foreground text-body">Redirecting to activities list...</p>
           </div>
         </div>
       </MainLayout>

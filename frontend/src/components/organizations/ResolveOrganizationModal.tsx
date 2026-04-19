@@ -174,17 +174,17 @@ export function ResolveOrganizationModal({
         <div className="flex-shrink-0 bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">
+            <p className="text-body font-medium text-amber-800">
               Unresolved organizations will prevent data from being imported correctly
             </p>
-            <p className="text-xs text-amber-700 mt-1">
+            <p className="text-helper text-amber-700 mt-1">
               Transactions and activities referencing these organizations will not be linked until they are resolved.
             </p>
           </div>
         </div>
 
         {/* Progress indicator */}
-        <div className="flex-shrink-0 text-sm text-gray-600">
+        <div className="flex-shrink-0 text-body text-muted-foreground">
           Resolved: {resolvedCount} / {totalCount}
         </div>
 
@@ -211,21 +211,21 @@ export function ResolveOrganizationModal({
                             <ChevronRight className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                           </div>
                         ) : (
-                          <div className="h-5 w-5 rounded-full bg-gray-200" />
+                          <div className="h-5 w-5 rounded-full bg-muted" />
                         )}
                       </div>
                       
                       <div className="flex-1 text-left">
-                        <div className="font-medium text-sm">
+                        <div className="font-medium text-body">
                           {org.ref && (
                             <span className="text-blue-600">{org.ref}</span>
                           )}
                           {org.ref && org.narrative && <span className="mx-2">·</span>}
                           {org.narrative && (
-                            <span className="text-gray-900">{org.narrative}</span>
+                            <span className="text-foreground">{org.narrative}</span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="text-helper text-muted-foreground mt-0.5">
                           Used as: {org.roles.join(', ')} · 
                           {org.activityCount} {org.activityCount === 1 ? 'activity' : 'activities'}
                           {org.transactionCount && ` · ${org.transactionCount} transactions`}
@@ -280,7 +280,7 @@ export function ResolveOrganizationModal({
                                   />
                                   <label
                                     htmlFor={`${key}-remember`}
-                                    className="text-sm text-gray-700 cursor-pointer"
+                                    className="text-body text-foreground cursor-pointer"
                                   >
                                     Remember this mapping (add {org.ref || org.narrative} as alias)
                                   </label>
@@ -301,7 +301,7 @@ export function ResolveOrganizationModal({
                           {resolution?.action === 'create' && (
                             <div className="mt-2 space-y-2 bg-muted/50 p-3 rounded border">
                               <div>
-                                <Label htmlFor={`${key}-name`} className="text-xs">Name <RequiredDot /></Label>
+                                <Label htmlFor={`${key}-name`} className="text-helper">Name <RequiredDot /></Label>
                                 <Input
                                   id={`${key}-name`}
                                   value={resolution.newOrgData?.name || ''}
@@ -319,7 +319,7 @@ export function ResolveOrganizationModal({
                                 />
                               </div>
                               <div>
-                                <Label htmlFor={`${key}-iati`} className="text-xs">IATI ID</Label>
+                                <Label htmlFor={`${key}-iati`} className="text-helper">IATI ID</Label>
                                 <Input
                                   id={`${key}-iati`}
                                   value={resolution.newOrgData?.iati_org_id || ''}
@@ -336,7 +336,7 @@ export function ResolveOrganizationModal({
                                   className="mt-1"
                                 />
                               </div>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-helper text-muted-foreground">
                                 You can add more details after import
                               </p>
                             </div>
@@ -351,7 +351,7 @@ export function ResolveOrganizationModal({
                           <Label htmlFor={`${key}-skip`} className="font-medium">
                             Skip (resolve later)
                           </Label>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-helper text-muted-foreground mt-1">
                             Activities and transactions referencing this organization will not be imported
                           </p>
                         </div>

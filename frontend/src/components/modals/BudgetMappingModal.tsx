@@ -243,7 +243,7 @@ export function BudgetMappingModal({
         <div className="space-y-6">
           {/* Vocabulary Selector */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">
+            <label className="block text-body font-medium text-foreground">
               Budget Identifier Vocabulary *
             </label>
             <BudgetIdentifierVocabularySelect
@@ -257,7 +257,7 @@ export function BudgetMappingModal({
           {/* Budget Items Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-foreground">Budget Items</h4>
+              <h4 className="text-body font-medium text-foreground">Budget Items</h4>
               {!editingItem && (
                 <Button type="button" variant="outline" size="sm" onClick={addBudgetItem}>
                   <Plus className="h-4 w-4 mr-1" />
@@ -268,10 +268,10 @@ export function BudgetMappingModal({
 
             {/* Validation Messages */}
             {!validation.isValid && budgetItems.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
-                  <div className="text-sm text-red-800">{validation.error}</div>
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                  <div className="text-body text-red-800">{validation.error}</div>
                 </div>
               </div>
             )}
@@ -296,8 +296,8 @@ export function BudgetMappingModal({
                             {item.code}
                           </span>
                         </TableCell>
-                        <TableCell className="text-sm">{item.percentage}%</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-body">{item.percentage}%</TableCell>
+                        <TableCell className="text-body text-muted-foreground">
                           {getPrimaryDescription(item.description)}
                         </TableCell>
                         <TableCell className="text-right">
@@ -316,7 +316,7 @@ export function BudgetMappingModal({
                               size="sm"
                               onClick={() => deleteBudgetItem(index)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>
@@ -325,7 +325,7 @@ export function BudgetMappingModal({
                     <TableRow className="bg-muted font-medium">
                       <TableCell>Total</TableCell>
                       <TableCell>
-                        <span className={!validation.isValid ? 'text-red-600' : ''}>
+                        <span className={!validation.isValid ? 'text-destructive' : ''}>
                           {percentageSum.toFixed(2)}%
                         </span>
                       </TableCell>
@@ -339,13 +339,13 @@ export function BudgetMappingModal({
             {/* Edit/Add Budget Item Form */}
             {editingItem && (
               <div className="bg-card border border-border rounded-md p-4 space-y-4">
-                <h5 className="text-sm font-medium text-foreground">
+                <h5 className="text-body font-medium text-foreground">
                   {editingItemIndex !== null ? 'Edit Budget Item' : 'Add Budget Item'}
                 </h5>
 
                 {/* Classification Type Selector */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label className="block text-body font-medium text-foreground">
                     Classification Type *
                   </label>
                   <Select
@@ -372,7 +372,7 @@ export function BudgetMappingModal({
 
                 {/* Budget Classification Selector */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label className="block text-body font-medium text-foreground">
                     Budget Classification *
                   </label>
                   {loadingClassifications ? (
@@ -384,7 +384,7 @@ export function BudgetMappingModal({
                     <Popover open={classificationDropdownOpen} onOpenChange={setClassificationDropdownOpen}>
                       <PopoverTrigger
                         className={cn(
-                          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
                           !selectedClassification && "text-muted-foreground"
                         )}
                         disabled={!selectedClassificationType}
@@ -421,7 +421,7 @@ export function BudgetMappingModal({
                                   setClassificationSearchQuery("");
                                 }
                               }}
-                              className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                              className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                               autoFocus
                             />
                             {classificationSearchQuery && (
@@ -430,7 +430,7 @@ export function BudgetMappingModal({
                                 onClick={() => setClassificationSearchQuery("")}
                                 className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                               >
-                                <span className="text-xs">×</span>
+                                <span className="text-helper">×</span>
                               </button>
                             )}
                           </div>
@@ -458,12 +458,12 @@ export function BudgetMappingModal({
                                       <span className="font-medium text-foreground">{c.name}</span>
                                     </div>
                                     {c.description && (
-                                      <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                                      <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                                         {c.description}
                                       </div>
                                     )}
                                     {c.nameLocal && (
-                                      <div className="text-xs text-muted-foreground mt-1 italic">
+                                      <div className="text-helper text-muted-foreground mt-1 italic">
                                         {c.nameLocal}
                                       </div>
                                     )}
@@ -472,12 +472,12 @@ export function BudgetMappingModal({
                               ))}
                               {filteredClassifications.length === 0 && (
                                 <div className="py-8 text-center">
-                                  <div className="text-sm text-muted-foreground">
+                                  <div className="text-body text-muted-foreground">
                                     {budgetClassifications.length === 0
                                       ? "No budget classifications defined yet."
                                       : "No classifications found."}
                                   </div>
-                                  <div className="text-xs text-muted-foreground mt-1">
+                                  <div className="text-helper text-muted-foreground mt-1">
                                     {budgetClassifications.length === 0
                                       ? "Ask an administrator to set up the Chart of Accounts."
                                       : "Try adjusting your search terms"}
@@ -494,7 +494,7 @@ export function BudgetMappingModal({
 
                 {/* Percentage */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label className="block text-body font-medium text-foreground">
                     Percentage *
                   </label>
                   <input
@@ -508,7 +508,7 @@ export function BudgetMappingModal({
                       const numValue = value === '' ? null : parseFloat(value);
                       setEditingItem({ ...editingItem, percentage: numValue });
                     }}
-                    className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   />
                 </div>
 

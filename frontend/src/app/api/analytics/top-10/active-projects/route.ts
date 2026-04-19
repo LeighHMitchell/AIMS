@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
     }
 
-    console.log('[Top10ActiveProjects] Found activities:', activities?.length || 0);
 
     // Count projects per organization
     const orgProjectCounts = new Map<string, Set<string>>(); // orgId -> Set of activity IDs
@@ -62,11 +61,9 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    console.log('[Top10ActiveProjects] Organizations with valid IDs:', orgProjectCounts.size);
 
     // If no organizations found with valid IDs, try fetching participating orgs separately
     if (orgProjectCounts.size === 0 && activities && activities.length > 0) {
-      console.log('[Top10ActiveProjects] Trying separate query for participating organizations');
 
       const activityIds = activities.map((a: any) => a.id);
       const { data: participatingOrgs, error: poError } = await supabase
@@ -84,13 +81,11 @@ export async function GET(request: NextRequest) {
           }
           orgProjectCounts.get(po.organization_id)!.add(po.activity_id);
         });
-        console.log('[Top10ActiveProjects] Organizations found from separate query:', orgProjectCounts.size);
       }
     }
 
     // If still no data, try with all published activities (broader fallback)
     if (orgProjectCounts.size === 0) {
-      console.log('[Top10ActiveProjects] Trying broader query with all published activities');
 
       // Query all published activities
       const { data: allActivities } = await supabase
@@ -116,14 +111,12 @@ export async function GET(request: NextRequest) {
             }
             orgProjectCounts.get(po.organization_id)!.add(po.activity_id);
           });
-          console.log('[Top10ActiveProjects] Organizations from all published activities:', orgProjectCounts.size);
         }
       }
     }
 
     // Get organization names
     const orgIds = Array.from(orgProjectCounts.keys());
-    console.log('[Top10ActiveProjects] Total organizations found:', orgIds.length);
     
     const { data: orgs } = await supabase
       .from('organizations')

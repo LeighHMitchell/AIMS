@@ -153,7 +153,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
     <div ref={containerRef}>
       <div className="flex gap-3">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search existing contacts by name, email, or organization..."
@@ -163,7 +163,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
             className="pl-10"
           />
           {isSearching && (
-            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
           )}
         </div>
         <Button type="button" onClick={onCreateNew}>
@@ -174,9 +174,9 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
       {/* Search Results Dropdown */}
       {showResults && filteredResults.length > 0 && (
         <div className="relative">
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto">
           <div className="p-2">
-            <p className="text-xs text-gray-500 px-2 py-1">
+            <p className="text-helper text-muted-foreground px-2 py-1">
               {query
                 ? `Found ${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''}`
                 : `${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
@@ -201,8 +201,8 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
                       {result.profilePhoto ? (
                         <AvatarImage src={result.profilePhoto} alt={fullName} />
                       ) : (
-                        <AvatarFallback className="bg-slate-100">
-                          <span className="text-sm font-medium text-slate-600">
+                        <AvatarFallback className="bg-muted">
+                          <span className="text-body font-medium text-muted-foreground">
                             {getInitials(result.firstName, result.lastName)}
                           </span>
                         </AvatarFallback>
@@ -212,20 +212,20 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
                     {/* Contact Details */}
                     <div className="flex-1 min-w-0">
                       {/* Name */}
-                      <p className="font-semibold text-gray-900 truncate">
+                      <p className="font-semibold text-foreground truncate">
                         {fullName}
                       </p>
 
                       {/* Job Title & Department */}
                       {jobLine && (
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-body text-muted-foreground truncate">
                           {jobLine}
                         </p>
                       )}
 
                       {/* Organization */}
                       {orgDisplay && (
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-body text-muted-foreground truncate">
                           {orgDisplay}
                         </p>
                       )}
@@ -241,13 +241,13 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
 
       {/* No Results */}
       {showResults && filteredResults.length === 0 && !isSearching && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-          <p className="text-sm text-gray-600 text-center">
+        <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
+          <p className="text-body text-muted-foreground text-center">
             {query
               ? <>No contacts found matching &quot;{query}&quot;</>
               : 'No contacts in the system yet'}
           </p>
-          <p className="text-xs text-gray-500 text-center mt-2">
+          <p className="text-helper text-muted-foreground text-center mt-2">
             Try a different search or create a new contact
           </p>
         </div>

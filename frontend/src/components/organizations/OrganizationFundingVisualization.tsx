@@ -215,7 +215,7 @@ export default function OrganizationFundingVisualization({
         <div className="bg-white border rounded-lg shadow-lg p-3" style={{ borderColor: COLORS.paleSlate }}>
           <p className="font-semibold mb-2" style={{ color: COLORS.blueSlate }}>{label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex justify-between gap-4 text-sm">
+            <div key={index} className="flex justify-between gap-4 text-body">
               <span style={{ color: entry.color || COLORS.primaryScarlet }}>{entry.name}:</span>
               <span className="font-medium" style={{ color: COLORS.blueSlate }}>{formatCurrency(entry.value)}</span>
             </div>
@@ -233,7 +233,7 @@ export default function OrganizationFundingVisualization({
           <div className="text-center" style={{ color: COLORS.blueSlate }}>
             <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
             <p>No funding envelope data available</p>
-            <p className="text-sm mt-2">Add funding declarations to see visualizations</p>
+            <p className="text-body mt-2">Add funding declarations to see visualizations</p>
           </div>
         </CardContent>
       </Card>
@@ -246,7 +246,7 @@ export default function OrganizationFundingVisualization({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card style={{ backgroundColor: COLORS.platinum }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium" style={{ color: COLORS.blueSlate }}>Past Aid</CardTitle>
+            <CardTitle className="text-body font-medium" style={{ color: COLORS.blueSlate }}>Past Aid</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.primaryScarlet }}>
@@ -254,7 +254,7 @@ export default function OrganizationFundingVisualization({
                 categorized.past.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
-            <p className="text-xs mt-1" style={{ color: COLORS.blueSlate }}>
+            <p className="text-helper mt-1" style={{ color: COLORS.blueSlate }}>
               {categorized.past.length} {categorized.past.length === 1 ? 'entry' : 'entries'}
             </p>
           </CardContent>
@@ -262,7 +262,7 @@ export default function OrganizationFundingVisualization({
 
         <Card style={{ backgroundColor: COLORS.platinum }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium" style={{ color: COLORS.blueSlate }}>Current Aid</CardTitle>
+            <CardTitle className="text-body font-medium" style={{ color: COLORS.blueSlate }}>Current Aid</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.coolSteel }}>
@@ -270,7 +270,7 @@ export default function OrganizationFundingVisualization({
                 categorized.current.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
-            <p className="text-xs mt-1" style={{ color: COLORS.blueSlate }}>
+            <p className="text-helper mt-1" style={{ color: COLORS.blueSlate }}>
               {categorized.current.length} {categorized.current.length === 1 ? 'entry' : 'entries'}
             </p>
           </CardContent>
@@ -278,7 +278,7 @@ export default function OrganizationFundingVisualization({
 
         <Card style={{ backgroundColor: COLORS.platinum }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium" style={{ color: COLORS.blueSlate }}>Future Aid</CardTitle>
+            <CardTitle className="text-body font-medium" style={{ color: COLORS.blueSlate }}>Future Aid</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.blueSlate }}>
@@ -286,7 +286,7 @@ export default function OrganizationFundingVisualization({
                 categorized.future.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
-            <p className="text-xs mt-1" style={{ color: COLORS.blueSlate }}>
+            <p className="text-helper mt-1" style={{ color: COLORS.blueSlate }}>
               {categorized.future.length} {categorized.future.length === 1 ? 'entry' : 'entries'}
             </p>
           </CardContent>
@@ -599,7 +599,7 @@ export default function OrganizationFundingVisualization({
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 mt-0.5" style={{ color: COLORS.primaryScarlet }} />
-            <div className="text-sm" style={{ color: COLORS.blueSlate }}>
+            <div className="text-body" style={{ color: COLORS.blueSlate }}>
               <p className="font-medium mb-1">Important: Non-Aggregatable Data</p>
               <p>
                 These figures represent indicative organisation-level funding from the perspective of this organisation only. 

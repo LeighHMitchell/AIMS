@@ -106,7 +106,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
             <span className="font-semibold text-[#4c5568]">{data.typeName}</span>
             <span className="ml-2 px-1.5 py-0.5 bg-[#f1f4f8] text-[#7b95a7] text-xs font-mono rounded">{data.transactionType}</span>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
               <tr className="border-b border-[#f1f4f8]">
                 <td className="py-1.5 text-[#7b95a7] font-medium">Count</td>
@@ -139,8 +139,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     }
     if (error || !data || data.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
-          <p className="text-sm">{error || 'No data available'}</p>
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       );
     }
@@ -178,7 +178,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>

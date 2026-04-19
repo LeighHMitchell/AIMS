@@ -304,7 +304,7 @@ export default function CalendarPage() {
                 size="sm"
                 onClick={() => setView(v)}
                 className={cn(
-                  'h-7 px-3 text-xs capitalize rounded-md',
+                  'h-7 px-3 text-helper capitalize rounded-md',
                   view === v
                     ? 'bg-[#4c5568] text-white hover:bg-[#4c5568]/90'
                     : 'text-[#4c5568] hover:bg-[#f1f4f8]'
@@ -375,7 +375,7 @@ export default function CalendarPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowPastMeetings(!showPastMeetings)}
-                  className="text-xs text-[#7b95a7] hover:text-[#4c5568] h-8 px-2"
+                  className="text-helper text-[#7b95a7] hover:text-[#4c5568] h-8 px-2"
                 >
                   <History className="h-3.5 w-3.5 mr-1" />
                   {showPastMeetings ? 'Show Upcoming' : 'Show Past'}
@@ -402,10 +402,7 @@ export default function CalendarPage() {
                 .map(event => (
                   <div
                     key={event.id}
-                    className={`p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
-                      event.status === 'pending' ? 'border-l-4 border-dashed' : 'border-l-4'
-                    }`}
-                    style={{ borderLeftColor: event.color || '#4c5568' }}
+                    className="p-3 bg-white rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => {
                       setSelectedEvent(event)
                       setShowDetailModal(true)
@@ -413,8 +410,22 @@ export default function CalendarPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm text-[#4c5568] truncate">{event.title}</h4>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-[#7b95a7]">
+                        <h4 className="font-medium text-body text-[#4c5568] truncate flex items-center gap-2">
+                          {/*
+                            Leading colored dot replaces the former border-l-4
+                            accent stripe. Dashed dot for pending events carries
+                            the same signal the dashed border did.
+                          */}
+                          <span
+                            className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${
+                              event.status === 'pending' ? 'ring-1 ring-dashed' : ''
+                            }`}
+                            style={{ backgroundColor: event.color || '#4c5568' }}
+                            aria-hidden="true"
+                          />
+                          <span className="truncate">{event.title}</span>
+                        </h4>
+                        <div className="flex items-center gap-1 mt-1 text-helper text-[#7b95a7]">
                           <Calendar className="h-3 w-3" />
                           {new Date(event.start).toLocaleDateString('en-US', {
                             weekday: 'short',
@@ -422,20 +433,20 @@ export default function CalendarPage() {
                             day: 'numeric'
                           })}
                         </div>
-                        <div className="flex items-center gap-1 mt-0.5 text-xs text-[#7b95a7]">
+                        <div className="flex items-center gap-1 mt-0.5 text-helper text-[#7b95a7]">
                           <Clock className="h-3 w-3" />
                           {formatTime(event.start)}
                           {event.end && ` - ${formatTime(event.end)}`}
                         </div>
                         {event.location && (
-                          <div className="flex items-center gap-1 mt-0.5 text-xs text-[#7b95a7]">
+                          <div className="flex items-center gap-1 mt-0.5 text-helper text-[#7b95a7]">
                             <MapPin className="h-3 w-3" />
                             <span className="truncate">{event.location}</span>
                           </div>
                         )}
                       </div>
                       {event.status === 'pending' && (
-                        <Badge variant="outline" className="text-xs border-[#cfd0d5] text-[#4c5568]">
+                        <Badge variant="outline" className="text-helper border-[#cfd0d5] text-[#4c5568]">
                           Pending
                         </Badge>
                       )}
@@ -446,7 +457,7 @@ export default function CalendarPage() {
                 ? new Date(e.start) <= new Date()
                 : new Date(e.start) > new Date()
               ).length === 0 && (
-                <p className="text-sm text-[#7b95a7] text-center py-4">
+                <p className="text-body text-[#7b95a7] text-center py-4">
                   {showPastMeetings ? 'No past meetings' : 'No upcoming meetings'}
                 </p>
               )}
@@ -490,7 +501,7 @@ export default function CalendarPage() {
           </CardHeader>
           <CardContent>
             {eventsForSelectedDate.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-body text-muted-foreground text-center py-8">
                 No events scheduled for this day
               </p>
             ) : (
@@ -512,14 +523,14 @@ export default function CalendarPage() {
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{event.title}</h4>
-                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                          <h4 className="font-medium text-body truncate">{event.title}</h4>
+                          <div className="flex items-center gap-1 mt-1 text-helper text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             {formatTime(event.start)}
                             {event.end && ` - ${formatTime(event.end)}`}
                           </div>
                           {event.location && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1 mt-1 text-helper text-muted-foreground">
                               <MapPin className="h-3 w-3" />
                               <span className="truncate">{event.location}</span>
                             </div>
@@ -528,20 +539,20 @@ export default function CalendarPage() {
                         <div className="flex flex-col items-end gap-1">
                           <Badge
                             variant="secondary"
-                            className="text-xs"
+                            className="text-helper"
                             style={{ backgroundColor: eventColor, color: 'white' }}
                           >
                             {event.type}
                           </Badge>
                           {event.status === 'pending' && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-helper">
                               Pending
                             </Badge>
                           )}
                         </div>
                       </div>
                       {event.description && (
-                        <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                        <p className="mt-2 text-helper text-muted-foreground line-clamp-2">
                           {event.description}
                         </p>
                       )}
@@ -572,27 +583,27 @@ export default function CalendarPage() {
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: hoveredEvent.event.color || '#4c5568' }}
               />
-              <div className="font-medium text-sm">{hoveredEvent.event.title}</div>
+              <div className="font-medium text-body">{hoveredEvent.event.title}</div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 text-helper text-muted-foreground">
               <Clock className="h-3 w-3" />
               {formatTime(hoveredEvent.event.start)}
               {hoveredEvent.event.end && ` - ${formatTime(hoveredEvent.event.end)}`}
             </div>
             {hoveredEvent.event.location && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-helper text-muted-foreground">
                 <MapPin className="h-3 w-3" />
                 {hoveredEvent.event.location}
               </div>
             )}
             {hoveredEvent.event.organizerName && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-helper text-muted-foreground">
                 <Users className="h-3 w-3" />
                 {hoveredEvent.event.organizerName}
               </div>
             )}
             {hoveredEvent.event.status === 'pending' && (
-              <Badge variant="outline" className="text-xs mt-1">
+              <Badge variant="outline" className="text-helper mt-1">
                 Pending Approval
               </Badge>
             )}

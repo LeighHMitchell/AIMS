@@ -199,19 +199,19 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
       {error && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-body text-destructive">{error}</p>
         </div>
       )}
 
       {/* Assignment form */}
       {canAssign && (
         <div className="border border-border rounded-lg p-4 space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Assign an external consultant or firm to conduct the detailed feasibility study.
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Consultant / Firm Name</Label>
+              <Label className="text-helper">Consultant / Firm Name</Label>
               <Input
                 value={assignedTo}
                 onChange={e => setAssignedTo(e.target.value)}
@@ -219,7 +219,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Deadline</Label>
+              <Label className="text-helper">Deadline</Label>
               <Input
                 type="date"
                 value={deadline}
@@ -228,7 +228,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
             </div>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Notes</Label>
+            <Label className="text-helper">Notes</Label>
             <Textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -247,13 +247,13 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
       {assignment && !editing && (
         <div className="border border-border rounded-lg p-4 space-y-4">
           <div className="flex items-start justify-between">
-            <div className="grid grid-cols-2 gap-4 text-sm flex-1">
+            <div className="grid grid-cols-2 gap-4 text-body flex-1">
               <div>
-                <span className="text-muted-foreground text-xs">Assigned To</span>
+                <span className="text-muted-foreground text-helper">Assigned To</span>
                 <p className="font-medium">{assignment.assigned_to}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-xs">Status</span>
+                <span className="text-muted-foreground text-helper">Status</span>
                 <p className="font-medium capitalize flex items-center gap-1.5">
                   {assignment.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />}
                   {assignment.status === "in_progress" && <Clock className="h-3.5 w-3.5 text-blue-600" />}
@@ -263,7 +263,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               </div>
               {assignment.deadline && (
                 <div>
-                  <span className="text-muted-foreground text-xs">Deadline</span>
+                  <span className="text-muted-foreground text-helper">Deadline</span>
                   <p className="font-medium flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                     {new Date(assignment.deadline).toLocaleDateString()}
@@ -272,8 +272,8 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               )}
               {assignment.notes && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground text-xs">Notes</span>
-                  <p className="text-sm">{assignment.notes}</p>
+                  <span className="text-muted-foreground text-helper">Notes</span>
+                  <p className="text-body">{assignment.notes}</p>
                 </div>
               )}
             </div>
@@ -299,10 +299,10 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
 
           {assignment.status === "in_progress" && (
             <div className="border-t border-border pt-4 space-y-3">
-              <h4 className="text-sm font-medium">Complete Study — Enter Results</h4>
+              <h4 className="text-body font-medium">Complete Study — Enter Results</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">FIRR (%) <RequiredDot /></Label>
+                  <Label className="text-helper">FIRR (%) <RequiredDot /></Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -312,7 +312,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">EIRR (%) <RequiredDot /></Label>
+                  <Label className="text-helper">EIRR (%) <RequiredDot /></Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -339,7 +339,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
       {assignment && editing && (
         <div className="border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Edit Assignment</h4>
+            <h4 className="text-body font-medium">Edit Assignment</h4>
             <Button variant="ghost" size="sm" onClick={() => setEditing(false)} className="gap-1.5">
               <X className="h-3.5 w-3.5" />
               Cancel
@@ -347,7 +347,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Consultant / Firm Name</Label>
+              <Label className="text-helper">Consultant / Firm Name</Label>
               <Input
                 value={editAssignedTo}
                 onChange={e => setEditAssignedTo(e.target.value)}
@@ -355,7 +355,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Deadline</Label>
+              <Label className="text-helper">Deadline</Label>
               <Input
                 type="date"
                 value={editDeadline}
@@ -364,7 +364,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
             </div>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Notes</Label>
+            <Label className="text-helper">Notes</Label>
             <Textarea
               value={editNotes}
               onChange={e => setEditNotes(e.target.value)}

@@ -195,10 +195,10 @@ export function PolicyMarkerAvatarGroup({
                       className="block"
                     >
                       <div
-                        className={`${sizeClass} rounded-full border border-slate-300 bg-slate-100 flex items-center justify-center shadow-sm hover:bg-slate-200 transition-colors`}
+                        className={`${sizeClass} rounded-full border border-input bg-muted flex items-center justify-center shadow-sm hover:bg-muted transition-colors`}
                         title={marker.name || marker.code}
                       >
-                        <IconComponent className={`${iconSize} text-slate-600`} />
+                        <IconComponent className={`${iconSize} text-muted-foreground`} />
                       </div>
                     </Link>
                   </motion.li>
@@ -217,7 +217,7 @@ export function PolicyMarkerAvatarGroup({
                     ? { duration: 0 }
                     : { delay: 0.05 * displayMarkers.length, duration: 0.25, ease: "easeOut" }
                 }
-                className="ml-2 text-xs font-medium text-muted-foreground"
+                className="ml-2 text-helper font-medium text-muted-foreground"
               >
                 +{remainingCount}
               </motion.span>
@@ -226,7 +226,7 @@ export function PolicyMarkerAvatarGroup({
         </TooltipTrigger>
         <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
           <div className="space-y-2">
-            <p className="font-medium text-xs text-muted-foreground mb-2">
+            <p className="font-medium text-helper text-muted-foreground mb-2">
               Policy Markers ({activeMarkers.length})
             </p>
             {activeMarkers.map((marker, index) => {
@@ -234,21 +234,21 @@ export function PolicyMarkerAvatarGroup({
 
               return (
                 <div key={marker.policy_marker_id || marker.code || index} className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="h-3 w-3 text-slate-600" />
+                  <div className="h-6 w-6 rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                    <IconComponent className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">
+                    <span className="text-body font-medium">
                       {marker.name || marker.code || 'Unknown Marker'}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       {getSignificanceLabel(marker.significance)}
                     </span>
                   </div>
                 </div>
               );
             })}
-            <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">Click to view marker profile</p>
+            <p className="text-helper text-muted-foreground mt-2 pt-2 border-t">Click to view marker profile</p>
           </div>
         </TooltipContent>
       </Tooltip>

@@ -251,7 +251,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
       <div className={cn("flex flex-col items-center justify-center py-12 text-muted-foreground", className)}>
         <BookOpen className="h-12 w-12 mb-4" />
         <p className="text-lg font-medium">No external references</p>
-        <p className="text-sm">Results and indicators have no linked frameworks</p>
+        <p className="text-body">Results and indicators have no linked frameworks</p>
       </div>
     );
   }
@@ -261,7 +261,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
       {/* Summary badges */}
       <div className="flex flex-wrap gap-2">
         {Array.from(vocabularySummary.entries()).map(([label, data]) => (
-          <Badge key={label} variant="outline" className="text-sm py-1 px-3">
+          <Badge key={label} variant="outline" className="text-body py-1 px-3">
             {label}: {data.count} reference{data.count !== 1 ? 's' : ''}
             {data.avgAchievement !== null && (
               <span className={cn(
@@ -313,7 +313,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{ref.vocabularyLabel}</span>
+                    <span className="text-body text-foreground">{ref.vocabularyLabel}</span>
                     {ref.vocabularyUri && (
                       <a 
                         href={ref.vocabularyUri} 
@@ -344,14 +344,14 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
                 <TableCell>
                   <div className="space-y-1">
                     {ref.linkedIndicators.slice(0, 3).map(li => (
-                      <div key={li.indicatorId} className="text-sm">
+                      <div key={li.indicatorId} className="text-body">
                         <span className="text-muted-foreground">{li.resultTitle}</span>
                         <span className="text-muted-foreground mx-1">›</span>
                         <span>{li.indicatorTitle}</span>
                       </div>
                     ))}
                     {ref.linkedIndicators.length > 3 && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-helper text-muted-foreground">
                         +{ref.linkedIndicators.length - 3} more
                       </div>
                     )}

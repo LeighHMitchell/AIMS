@@ -188,7 +188,7 @@ export function SimpleSectorSelect({
       >
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
             selectedSectors.length === 0 && "text-muted-foreground",
             "min-w-0"
           )}
@@ -213,14 +213,14 @@ export function SimpleSectorSelect({
                   placeholder="Search sectors by code, name, or description..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-md border border-input bg-background px-10 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
 
             {/* Selection Summary */}
             {allowMultiple && selectedSectors.length > 0 && (
-              <div className="px-3 py-2 border-b bg-blue-50 text-sm">
+              <div className="px-3 py-2 border-b bg-blue-50 text-body">
                 <div className="flex items-center justify-between">
                   <span className="text-blue-700 font-medium">
                     {selectedSectors.length} sector{selectedSectors.length !== 1 ? 's' : ''} selected
@@ -228,7 +228,7 @@ export function SimpleSectorSelect({
                   </span>
                   <button
                     onClick={clearAllSelections}
-                    className="text-blue-600 hover:text-blue-800 text-xs underline"
+                    className="text-blue-600 hover:text-blue-800 text-helper underline"
                   >
                     Clear all
                   </button>
@@ -238,7 +238,7 @@ export function SimpleSectorSelect({
 
             <CommandList className="max-h-[400px] overflow-auto">
               {Object.keys(filteredData).length === 0 ? (
-                <div className="py-6 text-center text-sm">
+                <div className="py-6 text-center text-body">
                   {searchQuery ? `No sectors found for "${searchQuery}"` : "No sectors available."}
                 </div>
               ) : (
@@ -253,15 +253,15 @@ export function SimpleSectorSelect({
                         onClick={() => toggleCategory(categoryName)}
                       >
                         {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-gray-600 mr-2 shrink-0" />
+                          <ChevronDown className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-600 mr-2 shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-800 text-sm">
+                          <div className="font-semibold text-foreground text-body">
                             {categoryName}
                           </div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-helper text-muted-foreground">
                             {sectors.length} sector{sectors.length !== 1 ? 's' : ''}
                           </div>
                         </div>
@@ -279,7 +279,7 @@ export function SimpleSectorSelect({
                             key={sector.code}
                             onSelect={() => canSelect && handleSectorToggle(sector.code)}
                             className={cn(
-                              "cursor-pointer px-4 py-3 border-b border-gray-100 hover:bg-blue-50 focus:bg-blue-50",
+                              "cursor-pointer px-4 py-3 border-b border-border hover:bg-blue-50 focus:bg-blue-50",
                               "flex items-start gap-3",
                               !canSelect && "opacity-50 cursor-not-allowed",
                               isSelected && "bg-blue-50 border-blue-200"
@@ -292,11 +292,11 @@ export function SimpleSectorSelect({
                               )}
                             />
                             <div className="flex-1 min-w-0 space-y-1">
-                              <div className="font-medium text-sm text-gray-900">
+                              <div className="font-medium text-body text-foreground">
                                 {sector.name}
                               </div>
                               {sector.description && (
-                                <div className="text-xs text-gray-600 leading-relaxed">
+                                <div className="text-helper text-muted-foreground leading-relaxed">
                                   {sector.description}
                                 </div>
                               )}

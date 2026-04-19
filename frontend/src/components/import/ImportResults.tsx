@@ -67,7 +67,7 @@ export function ImportResults({
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Processed</p>
+              <p className="text-body text-muted-foreground">Total Processed</p>
               <p className="text-2xl font-bold">{total}</p>
             </div>
             <FileText className="h-8 w-8 text-muted-foreground" />
@@ -77,7 +77,7 @@ export function ImportResults({
         <Card className="p-6 border-green-200 bg-green-50">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-700">Successfully Imported</p>
+              <p className="text-body text-green-700">Successfully Imported</p>
               <p className="text-2xl font-bold text-green-700">{successful}</p>
             </div>
             <CheckCircle2 className="h-8 w-8 text-[hsl(var(--success-icon))]" />
@@ -87,7 +87,7 @@ export function ImportResults({
         <Card className="p-6 border-destructive/20 bg-destructive/10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-destructive">Failed</p>
+              <p className="text-body text-destructive">Failed</p>
               <p className="text-2xl font-bold text-destructive">{failed}</p>
             </div>
             <XCircle className="h-8 w-8 text-destructive" />
@@ -99,17 +99,17 @@ export function ImportResults({
       <Card className="p-6">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Import Success Rate</span>
+            <span className="text-body font-medium">Import Success Rate</span>
             <Badge variant={successRate >= 80 ? "success" : successRate >= 50 ? "secondary" : "destructive"}>
               {successRate}%
             </Badge>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-all ${
                 successRate >= 80 ? 'bg-green-500' : 
                 successRate >= 50 ? 'bg-yellow-500' : 
-                'bg-red-500'
+                'bg-destructive/100'
               }`}
               style={{ width: `${successRate}%` }}
             />
@@ -143,7 +143,7 @@ export function ImportResults({
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     <strong>{field}:</strong> {fieldErrors.length} error{fieldErrors.length > 1 ? 's' : ''}
-                    <ul className="mt-2 ml-4 list-disc text-sm">
+                    <ul className="mt-2 ml-4 list-disc text-body">
                       {fieldErrors.slice(0, 3).map((error, idx) => (
                         <li key={idx}>
                           Row {error.row}: {error.message}
@@ -158,7 +158,7 @@ export function ImportResults({
                 </Alert>
               ))}
               {Object.keys(errorsByField).length > 5 && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   And {Object.keys(errorsByField).length - 5} more fields with errors...
                 </p>
               )}

@@ -87,7 +87,7 @@ const calculateAchievement = (actual?: number, target?: number): number | null =
 
 // Get status color
 const getStatusColor = (achievement: number | null): string => {
-  if (achievement === null) return 'bg-slate-100 text-slate-600';
+  if (achievement === null) return 'bg-muted text-muted-foreground';
   if (achievement >= 80) return 'bg-[#e8f0ec] text-[#4a6a5a] border-[#c5d9ce]';
   if (achievement >= 40) return 'bg-[#f5f0e0] text-[#806830] border-[#ddd0a0]';
   return 'bg-[#f5e8e8] text-[#904848] border-[#ddc0c0]';
@@ -120,11 +120,11 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
   const hasDetails = hasTargetDetails || hasActualDetails;
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-slate-700">
-            <Calendar className="h-4 w-4 inline mr-2 text-slate-400" />
+          <CardTitle className="text-body font-medium text-foreground">
+            <Calendar className="h-4 w-4 inline mr-2 text-muted-foreground" />
             {formatDate(period.period_start)} — {formatDate(period.period_end)}
           </CardTitle>
           {achievement !== null && (
@@ -138,20 +138,20 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
         {/* Target and Actual values */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-1 text-xs text-slate-500 uppercase tracking-wide">
+            <div className="flex items-center gap-1 text-section-label text-muted-foreground uppercase">
               <Target className="h-3 w-3" />
               Target
             </div>
-            <div className="text-lg font-semibold text-slate-700">
+            <div className="text-lg font-semibold text-foreground">
               {formatValue(period.target_value, measure)}
             </div>
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-1 text-xs text-slate-500 uppercase tracking-wide">
+            <div className="flex items-center gap-1 text-section-label text-muted-foreground uppercase">
               <CheckCircle className="h-3 w-3" />
               Actual
             </div>
-            <div className="text-lg font-semibold text-slate-900">
+            <div className="text-lg font-semibold text-foreground">
               {formatValue(period.actual_value, measure)}
             </div>
           </div>
@@ -163,7 +163,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-slate-500 hover:text-slate-700"
+              className="w-full text-muted-foreground hover:text-foreground"
               onClick={() => setExpanded(!expanded)}
             >
               {expanded ? (
@@ -181,25 +181,25 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
 
             {/* Expanded details */}
             {expanded && (
-              <div className="space-y-4 pt-2 border-t border-slate-100">
+              <div className="space-y-4 pt-2 border-t border-border">
                 {/* Target details */}
                 {hasTargetDetails && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    <div className="text-section-label font-medium text-muted-foreground uppercase">
                       Target Details
                     </div>
                     
                     {targetComment && (
-                      <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded">
+                      <p className="text-body text-muted-foreground bg-muted p-2 rounded">
                         {targetComment}
                       </p>
                     )}
 
                     {period.target_locations && period.target_locations.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        <MapPin className="h-4 w-4 text-slate-400" />
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
                         {period.target_locations.map((loc: LocationReference) => (
-                          <Badge key={loc.id} variant="outline" className="text-xs">
+                          <Badge key={loc.id} variant="outline" className="text-helper">
                             {loc.location_ref}
                           </Badge>
                         ))}
@@ -208,9 +208,9 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
 
                     {period.target_dimensions && period.target_dimensions.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        <Layers className="h-4 w-4 text-slate-400" />
+                        <Layers className="h-4 w-4 text-muted-foreground" />
                         {period.target_dimensions.map((dim: Dimension) => (
-                          <Badge key={dim.id} variant="outline" className="text-xs bg-purple-50">
+                          <Badge key={dim.id} variant="outline" className="text-helper bg-purple-50">
                             {dim.name}: {dim.value}
                           </Badge>
                         ))}
@@ -225,7 +225,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                            className="flex items-center gap-2 text-body text-blue-600 hover:text-blue-700"
                           >
                             <FileText className="h-4 w-4" />
                             {getLocalizedString(doc.title) || 'Document'}
@@ -240,21 +240,21 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                 {/* Actual details */}
                 {hasActualDetails && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    <div className="text-section-label font-medium text-muted-foreground uppercase">
                       Actual Details
                     </div>
                     
                     {actualComment && (
-                      <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded">
+                      <p className="text-body text-muted-foreground bg-muted p-2 rounded">
                         {actualComment}
                       </p>
                     )}
 
                     {period.actual_locations && period.actual_locations.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        <MapPin className="h-4 w-4 text-slate-400" />
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
                         {period.actual_locations.map((loc: LocationReference) => (
-                          <Badge key={loc.id} variant="outline" className="text-xs">
+                          <Badge key={loc.id} variant="outline" className="text-helper">
                             {loc.location_ref}
                           </Badge>
                         ))}
@@ -263,9 +263,9 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
 
                     {period.actual_dimensions && period.actual_dimensions.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        <Layers className="h-4 w-4 text-slate-400" />
+                        <Layers className="h-4 w-4 text-muted-foreground" />
                         {period.actual_dimensions.map((dim: Dimension) => (
-                          <Badge key={dim.id} variant="outline" className="text-xs bg-green-50">
+                          <Badge key={dim.id} variant="outline" className="text-helper bg-green-50">
                             {dim.name}: {dim.value}
                           </Badge>
                         ))}
@@ -280,7 +280,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                            className="flex items-center gap-2 text-body text-blue-600 hover:text-blue-700"
                           >
                             <FileText className="h-4 w-4" />
                             {getLocalizedString(doc.title) || 'Document'}
@@ -303,7 +303,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
 export function PeriodsDetailPanel({ periods = [], measure, className }: PeriodsDetailPanelProps) {
   if (!periods || periods.length === 0) {
     return (
-      <div className={cn("flex items-center justify-center text-slate-400 py-8", className)}>
+      <div className={cn("flex items-center justify-center text-muted-foreground py-8", className)}>
         <Info className="h-5 w-5 mr-2" />
         No tracking periods defined
       </div>
@@ -318,9 +318,9 @@ export function PeriodsDetailPanel({ periods = [], measure, className }: Periods
   return (
     <div className={cn("space-y-6", className)}>
       {/* Timeline visualization */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-slate-700">
+          <CardTitle className="text-body font-medium text-foreground">
             Progress Timeline
           </CardTitle>
         </CardHeader>
@@ -331,7 +331,7 @@ export function PeriodsDetailPanel({ periods = [], measure, className }: Periods
 
       {/* Period cards */}
       <div>
-        <h4 className="text-sm font-medium text-slate-700 mb-3">
+        <h4 className="text-body font-medium text-foreground mb-3">
           Period Details ({periods.length})
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

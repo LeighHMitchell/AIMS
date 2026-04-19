@@ -190,7 +190,7 @@ export function CalendarEventHeatmap({ events, year, onDayClick, onYearChange }:
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none')
+        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none')
         .style('opacity', 0)
         .style('min-width', '280px')
         .style('max-width', '350px')
@@ -435,12 +435,12 @@ export function CalendarEventHeatmap({ events, year, onDayClick, onYearChange }:
             variant="outline"
             size="sm"
             onClick={goToToday}
-            className="h-8 px-3 text-xs rounded-lg border-[#cfd0d5] ml-1"
+            className="h-8 px-3 text-helper rounded-lg border-[#cfd0d5] ml-1"
           >
             Today
           </Button>
         </div>
-        <div className="flex items-center gap-4 text-sm text-[#7b95a7]">
+        <div className="flex items-center gap-4 text-body text-[#7b95a7]">
           <span>{totalEvents} event{totalEvents !== 1 ? 's' : ''}</span>
           <span>{activeDays} day{activeDays !== 1 ? 's' : ''} with events</span>
         </div>
@@ -452,7 +452,7 @@ export function CalendarEventHeatmap({ events, year, onDayClick, onYearChange }:
       </div>
 
       {/* Intensity Legend */}
-      <div className="flex items-center gap-2 text-xs text-[#7b95a7]">
+      <div className="flex items-center gap-2 text-helper text-[#7b95a7]">
         <span>Less</span>
         {[0, 0.25, 0.5, 0.75, 1.0].map((intensity) => (
           <div

@@ -26,8 +26,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Tasks Assigned API] GET for user:', userId);
-    console.log('[Tasks Assigned API] About to query task_assignments table...');
 
     // First, let's check if any assignments exist for this user (simple query)
     const { data: simpleCheck, error: simpleError } = await supabase
@@ -35,12 +33,10 @@ export async function GET(request: NextRequest) {
       .select('id, task_id, assignee_id, status')
       .eq('assignee_id', userId);
 
-    console.log('[Tasks Assigned API] Simple check - assignments found:', simpleCheck?.length || 0);
     if (simpleError) {
       console.error('[Tasks Assigned API] Simple check error:', simpleError);
     }
     if (simpleCheck && simpleCheck.length > 0) {
-      console.log('[Tasks Assigned API] Sample assignment:', simpleCheck[0]);
 
       // Debug: Check which tasks exist for these assignments
       const taskIds = simpleCheck.map((a: any) => a.task_id);
@@ -49,8 +45,6 @@ export async function GET(request: NextRequest) {
         .select('id, title')
         .in('id', taskIds);
 
-      console.log('[Tasks Assigned API] Task IDs from assignments:', taskIds);
-      console.log('[Tasks Assigned API] Existing tasks found:', existingTasks?.length || 0);
 
       if (existingTasks) {
         const existingTaskIds = new Set(existingTasks.map((t: any) => t.id));
@@ -130,7 +124,6 @@ export async function GET(request: NextRequest) {
 
     const { data: assignments, error, count } = await query;
 
-    console.log('[Tasks Assigned API] Full query result - count:', count, 'assignments:', assignments?.length || 0);
     if (error) {
       console.error('[Tasks Assigned API] Error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -148,7 +141,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (validAssignments.length > 0) {
-      console.log('[Tasks Assigned API] First valid assignment task:', validAssignments[0]?.task);
       // Log the FULL assignment to see the status field
       console.log('[Tasks Assigned API] First FULL assignment (with status):', {
         id: validAssignments[0]?.id,

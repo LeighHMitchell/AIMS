@@ -116,7 +116,7 @@ export default function VisitorHomePage() {
                   <Activity className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Activities</p>
+                  <p className="text-body text-muted-foreground">Total Activities</p>
                   {loading ? (
                     <Skeleton className="h-7 w-20 mt-1" />
                   ) : (
@@ -134,7 +134,7 @@ export default function VisitorHomePage() {
                   <Building2 className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Organizations</p>
+                  <p className="text-body text-muted-foreground">Organizations</p>
                   {loading ? (
                     <Skeleton className="h-7 w-20 mt-1" />
                   ) : (
@@ -152,7 +152,7 @@ export default function VisitorHomePage() {
                   <TrendingUp className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Transaction Volume</p>
+                  <p className="text-body text-muted-foreground">Transaction Volume</p>
                   {loading ? (
                     <Skeleton className="h-7 w-24 mt-1" />
                   ) : (
@@ -181,7 +181,7 @@ export default function VisitorHomePage() {
                           <h3 className="font-medium">{link.label}</h3>
                           <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
+                        <p className="text-body text-muted-foreground mt-1">{link.description}</p>
                       </div>
                     </div>
                   </CardContent>

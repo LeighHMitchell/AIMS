@@ -234,7 +234,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
           <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
             <div>
               <p className="font-medium">Need a template?</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 Download our CSV template with all required fields
               </p>
             </div>
@@ -259,7 +259,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
               <p className="font-medium mb-1">
                 {isDragActive ? "Drop the CSV file here" : "Drag & drop your CSV file here"}
               </p>
-              <p className="text-sm text-muted-foreground">or click to browse</p>
+              <p className="text-body text-muted-foreground">or click to browse</p>
             </div>
           )}
 
@@ -271,7 +271,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
                   <FileText className="h-8 w-8 text-muted-foreground" />
                   <div>
                     <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body text-muted-foreground">
                       {(file.size / 1024).toFixed(2)} KB
                     </p>
                   </div>
@@ -291,7 +291,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
           {/* Progress */}
           {importing && (
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body">
                 <span>Importing...</span>
                 <span>{progress}%</span>
               </div>
@@ -306,7 +306,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
               <AlertDescription>
                 <div className="space-y-1">
                   <p className="font-medium">Import errors:</p>
-                  <ul className="list-disc list-inside text-sm">
+                  <ul className="list-disc list-inside text-body">
                     {errors.slice(0, 5).map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -326,11 +326,11 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
               <AlertDescription>
                 <div className="space-y-1">
                   <p className="font-medium">Import completed</p>
-                  <div className="text-sm space-y-1">
+                  <div className="text-body space-y-1">
                     <p>Total records: {importSummary.total}</p>
                     <p className="text-[hsl(var(--success-icon))]">Successful: {importSummary.success}</p>
                     {importSummary.failed > 0 && (
-                      <p className="text-red-600">Failed: {importSummary.failed}</p>
+                      <p className="text-destructive">Failed: {importSummary.failed}</p>
                     )}
                   </div>
                 </div>

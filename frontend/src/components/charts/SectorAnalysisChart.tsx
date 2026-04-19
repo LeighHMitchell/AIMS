@@ -97,14 +97,14 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{data.sectorName}</p>
-          <p className="text-xs text-gray-600 mb-2">Code: {data.sectorCode}</p>
-          <p className="text-sm text-slate-600">Activities: {data.activityCount}</p>
+        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground mb-2">{data.sectorName}</p>
+          <p className="text-helper text-muted-foreground mb-2">Code: {data.sectorCode}</p>
+          <p className="text-body text-muted-foreground">Activities: {data.activityCount}</p>
           <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm text-blue-600">Budget: {formatCurrency(data.totalBudget)} ({data.budgetPercentage.toFixed(1)}%)</p>
-            <p className="text-sm text-green-600">Disbursements: {formatCurrency(data.totalDisbursements)} ({data.disbursementPercentage.toFixed(1)}%)</p>
-            <p className="text-sm text-orange-600">Expenditures: {formatCurrency(data.totalExpenditures)} ({data.expenditurePercentage.toFixed(1)}%)</p>
+            <p className="text-body text-blue-600">Budget: {formatCurrency(data.totalBudget)} ({data.budgetPercentage.toFixed(1)}%)</p>
+            <p className="text-body text-green-600">Disbursements: {formatCurrency(data.totalDisbursements)} ({data.disbursementPercentage.toFixed(1)}%)</p>
+            <p className="text-body text-orange-600">Expenditures: {formatCurrency(data.totalExpenditures)} ({data.expenditurePercentage.toFixed(1)}%)</p>
           </div>
         </div>
       );
@@ -119,7 +119,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>
@@ -169,9 +169,9 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
   return (
     <div className="w-full">
       {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-muted rounded-lg">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Show:</span>
+          <span className="text-body font-medium">Show:</span>
           <div className="flex gap-1">
             {[5, 10, 15, 20].map((n) => (
               <Button
@@ -288,7 +288,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
       </ResponsiveContainer>
 
       {/* Summary */}
-      <div className="mt-4 text-sm text-muted-foreground">
+      <div className="mt-4 text-body text-muted-foreground">
         <p>
           <strong>Showing:</strong> Top {topN} sectors | 
           <strong> Total Activities:</strong> {data.reduce((sum, item) => sum + item.activityCount, 0)} | 

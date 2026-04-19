@@ -147,7 +147,7 @@ export function AcronymReviewModal({
             >
               Clear All
             </Button>
-            <div className="ml-auto text-sm text-gray-500">
+            <div className="ml-auto text-body text-muted-foreground">
               {acceptedCount} of {activities.length} activities have acronyms
             </div>
           </div>
@@ -167,8 +167,8 @@ export function AcronymReviewModal({
                 >
                   {/* Activity title */}
                   <div>
-                    <Label className="text-xs text-gray-500 font-normal">Activity Title</Label>
-                    <p className="text-sm font-medium mt-1">{activity.title}</p>
+                    <Label className="text-helper text-muted-foreground font-normal">Activity Title</Label>
+                    <p className="text-body font-medium mt-1">{activity.title}</p>
                   </div>
 
                   {/* Acronym input */}
@@ -177,7 +177,7 @@ export function AcronymReviewModal({
                       <Label htmlFor={`acronym-${activity.iatiIdentifier}`}>
                         Acronym
                         {activity.detectedAcronym && (
-                          <span className="ml-2 text-xs text-gray-500 font-normal">
+                          <span className="ml-2 text-helper text-muted-foreground font-normal">
                             (auto-detected: {activity.detectedAcronym})
                           </span>
                         )}
@@ -188,10 +188,10 @@ export function AcronymReviewModal({
                         onChange={(e) => handleAcronymChange(activity.iatiIdentifier, e.target.value)}
                         placeholder="Enter acronym or leave blank..."
                         maxLength={25}
-                        className={hasError ? 'border-red-500' : hasWarning ? 'border-yellow-500' : ''}
+                        className={hasError ? 'border-destructive' : hasWarning ? 'border-yellow-500' : ''}
                       />
                       {error && (
-                        <div className={`flex items-center gap-1 text-xs ${hasError ? 'text-red-600' : 'text-yellow-600'}`}>
+                        <div className={`flex items-center gap-1 text-helper ${hasError ? 'text-destructive' : 'text-yellow-600'}`}>
                           <AlertCircle className="h-3 w-3" />
                           {error}
                         </div>

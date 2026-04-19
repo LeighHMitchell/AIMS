@@ -10,7 +10,7 @@ interface ParcelHistoryTimelineProps {
 export function ParcelHistoryTimeline({ history }: ParcelHistoryTimelineProps) {
   if (history.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4 text-center">No history recorded yet.</p>
+      <p className="text-body text-muted-foreground py-4 text-center">No history recorded yet.</p>
     )
   }
 
@@ -31,16 +31,16 @@ export function ParcelHistoryTimeline({ history }: ParcelHistoryTimelineProps) {
               <div className="absolute -left-[18px] top-1.5 w-2.5 h-2.5 rounded-full bg-border border-2 border-background" />
 
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-body font-medium">
                   {HISTORY_ACTION_LABELS[entry.action] || entry.action}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-helper text-muted-foreground mt-0.5">
                   by {userName} &middot; {new Date(entry.created_at).toLocaleDateString('en-US', {
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                   })}
                 </p>
                 {entry.details && Object.keys(entry.details).length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-helper text-muted-foreground mt-1">
                     {formatDetails(entry.details)}
                   </p>
                 )}

@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Taskable Users API] GET for user:', userId);
 
     // Get requesting user's info
     const { data: requestingUser, error: userError } = await supabase
@@ -43,7 +42,6 @@ export async function GET(request: NextRequest) {
     }
 
     const isSuperUser = requestingUser.role === 'super_user';
-    console.log('[Taskable Users API] User role:', requestingUser.role, 'isSuperUser:', isSuperUser);
 
     // Get user's organization IDs - query user_organizations separately
     const userOrgIds = new Set<string>();
@@ -57,12 +55,10 @@ export async function GET(request: NextRequest) {
 
       userOrgs?.forEach((uo: any) => userOrgIds.add(uo.organization_id));
     } catch (e) {
-      console.log('[Taskable Users API] user_organizations table may not exist:', e);
     }
 
     // Also add the user's primary organization
     if (requestingUser.organization_id) userOrgIds.add(requestingUser.organization_id);
-    console.log('[Taskable Users API] User org IDs:', Array.from(userOrgIds));
 
     // Build query for users (include self so users can assign tasks to themselves)
     let usersQuery = supabase
@@ -106,7 +102,6 @@ export async function GET(request: NextRequest) {
 
         orgMembers?.forEach((m: any) => reachableUserIds.add(m.user_id));
       } catch (e) {
-        console.log('[Taskable Users API] user_organizations query failed:', e);
       }
 
       // Get users with these org_ids directly
@@ -119,7 +114,6 @@ export async function GET(request: NextRequest) {
       // Include self so users can assign tasks to themselves
       reachableUserIds.add(userId);
 
-      console.log('[Taskable Users API] Reachable users:', reachableUserIds.size);
 
       if (reachableUserIds.size > 0) {
         usersQuery = usersQuery.in('id', Array.from(reachableUserIds));
@@ -143,7 +137,6 @@ export async function GET(request: NextRequest) {
 
         orgUsers?.forEach((u: any) => orgUserIds.add(u.user_id));
       } catch (e) {
-        console.log('[Taskable Users API] user_organizations query failed:', e);
       }
 
       // Get users with this org_id directly
@@ -223,7 +216,6 @@ export async function GET(request: NextRequest) {
         }
       });
     } catch (e) {
-      console.log('[Taskable Users API] user_organizations not available');
     }
 
     // Set final counts from Sets
@@ -238,7 +230,6 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('[Taskable Users API] Org member counts:', orgMemberCounts);
 
     console.log('[Taskable Users API] Returning:', {
       usersCount: users?.length || 0,

@@ -315,14 +315,14 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       <div className="grid grid-cols-5 gap-4 h-full">
         {/* Donors Column */}
         <div className="col-span-2">
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">Top Donors</h4>
+          <h4 className="text-body font-medium text-muted-foreground mb-3">Top Donors</h4>
           <div className="space-y-3">
             {donors.map(donor => (
               <div key={donor.name}>
-                <div className="text-sm font-medium text-foreground truncate">
+                <div className="text-body font-medium text-foreground truncate">
                   {donor.name}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-helper text-muted-foreground">
                   {formatCurrency(donor.total)}
                 </div>
               </div>
@@ -362,20 +362,20 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                 </div>
               )
             })}
-            <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-slate-400 h-6 w-6" />
+            <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground h-6 w-6" />
           </div>
         </div>
 
         {/* Sectors Column */}
         <div className="col-span-2">
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">Top Sectors</h4>
+          <h4 className="text-body font-medium text-muted-foreground mb-3">Top Sectors</h4>
           <div className="space-y-3">
             {sectors.map(sector => (
               <div key={sector.name}>
-                <div className="text-sm font-medium text-foreground truncate">
+                <div className="text-body font-medium text-foreground truncate">
                   {sector.name}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-helper text-muted-foreground">
                   {formatCurrency(sector.total)}
                 </div>
               </div>
@@ -385,7 +385,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       </div>
 
       <div className="mt-4 border-t pt-4">
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-helper text-muted-foreground text-center">
           Flow width represents disbursement amount from donor to sector
         </p>
       </div>
@@ -523,7 +523,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">Display:</span>
+            <span className="text-body font-medium text-foreground">Display:</span>
             <div className="flex gap-1">
               <Button
                 variant={chartType === 'sankey' ? 'default' : 'outline'}
@@ -578,7 +578,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
 
         {/* Total Display */}
         <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-          <span className="text-sm font-medium text-muted-foreground">Total Disbursements:</span>
+          <span className="text-body font-medium text-muted-foreground">Total Disbursements:</span>
           <span className="text-lg font-bold text-foreground">{formatCurrencyFull(totalAmount)}</span>
         </div>
 

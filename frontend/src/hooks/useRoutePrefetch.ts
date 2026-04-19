@@ -68,7 +68,6 @@ export function useRoutePrefetch(options: UseRoutePrefetchOptions = {}) {
     try {
       router.prefetch(route)
       prefetchedRoutes.current.add(route)
-      console.log(`[RoutePrefetch] Prefetched: ${route}`)
     } catch (error) {
       console.warn(`[RoutePrefetch] Failed to prefetch ${route}:`, error)
     }

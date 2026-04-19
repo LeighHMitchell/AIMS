@@ -96,7 +96,7 @@ export default function InvestPage() {
         <div className="flex gap-1 border-b mb-6">
           <button
             onClick={() => setActiveTab("parcels")}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-body font-medium border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === "parcels"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -107,7 +107,7 @@ export default function InvestPage() {
           </button>
           <button
             onClick={() => setActiveTab("projects")}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-body font-medium border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === "projects"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -161,13 +161,13 @@ export default function InvestPage() {
             {/* Search only for projects */}
             <FilterBar>
               <div className="flex flex-col gap-1 flex-1 max-w-sm">
-                <label className="text-xs text-muted-foreground">Search</label>
+                <label className="text-helper text-muted-foreground">Search</label>
                 <input
                   type="text"
                   placeholder="Search projects..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+                  className="h-9 px-3 rounded-md border border-input bg-background text-body"
                 />
               </div>
             </FilterBar>

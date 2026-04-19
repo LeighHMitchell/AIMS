@@ -48,7 +48,7 @@ export function PolicyMarkerScoreSelect({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedOption && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -56,7 +56,7 @@ export function PolicyMarkerScoreSelect({
           <span className="truncate">
             {selectedOption ? (
               <span className="flex items-center gap-2">
-                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-foreground">
                   {selectedOption.value}
                 </span>
                 <span className="font-medium">{selectedOption.label}</span>
@@ -76,7 +76,7 @@ export function PolicyMarkerScoreSelect({
                 className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                 aria-label="Clear selection"
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -107,12 +107,12 @@ export function PolicyMarkerScoreSelect({
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">
+                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-foreground">
                           {option.value}
                         </span>
                         <span className="font-medium text-foreground">{option.label}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                      <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                         {option.description}
                       </div>
                     </div>

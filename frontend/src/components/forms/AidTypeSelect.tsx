@@ -174,26 +174,26 @@ export function AidTypeSelect({
           "cursor-pointer px-3 py-2 space-y-1 hover:bg-accent/50",
           "flex items-start gap-2",
           indentClass,
-          item.level === 0 && "font-semibold text-sm opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit",
+          item.level === 0 && "font-semibold text-body opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit",
           isSelected && item.level > 0 && "bg-accent"
         )}
       >
         <div className="flex-1 min-w-0">
-          <div className="text-sm">
+          <div className="text-body">
             <span className={cn(
               "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5",
-              item.level === 0 ? "text-gray-700" : ""
+              item.level === 0 ? "text-foreground" : ""
             )}>
               {item.code}
             </span>
             <span className={cn(
-              item.level === 0 ? "text-gray-600" : "text-gray-700"
+              item.level === 0 ? "text-muted-foreground" : "text-foreground"
             )}>
               – {item.name}
             </span>
           </div>
           {item.description && item.level > 0 && (
-            <div className="text-sm text-gray-500 leading-snug">
+            <div className="text-body text-muted-foreground leading-snug">
               {item.description}
             </div>
           )}
@@ -202,10 +202,10 @@ export function AidTypeSelect({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3 w-3 text-gray-400 shrink-0 mt-0.5" />
+                <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                <p className="text-xs">{item.description}</p>
+                <p className="text-helper">{item.description}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -232,7 +232,7 @@ export function AidTypeSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal px-3 py-2 text-sm h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
+            "w-full justify-between font-normal px-3 py-2 text-body h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
             !value && "text-muted-foreground"
           )}
         >
@@ -240,10 +240,10 @@ export function AidTypeSelect({
             {selectedItem ? (
               <span className="flex items-center gap-2">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{selectedItem.code}</span>
-                <span className="font-medium text-sm text-foreground truncate">{selectedItem.name}</span>
+                <span className="font-medium text-body text-foreground truncate">{selectedItem.name}</span>
               </span>
             ) : (
-              <span className="text-muted-foreground text-sm">{placeholder}</span>
+              <span className="text-muted-foreground text-body">{placeholder}</span>
             )}
           </span>
           <div className="flex items-center gap-1 ml-2">
@@ -261,7 +261,7 @@ export function AidTypeSelect({
                     onValueChange?.(null);
                   }
                 }}
-                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                className="h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Clear selection"
               >
                 <X className="h-3 w-3 text-muted-foreground" />
@@ -290,13 +290,13 @@ export function AidTypeSelect({
                   setSearchQuery("");
                 }
               }}
-              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               autoFocus
             />
           </div>
           <CommandList className="max-h-[300px] overflow-auto">
             {searchQuery && filteredItems.length > 0 && (
-              <div className="px-3 py-2 text-xs text-muted-foreground border-b">
+              <div className="px-3 py-2 text-helper text-muted-foreground border-b">
                 {filteredItems.length} match{filteredItems.length !== 1 ? 'es' : ''} found
               </div>
             )}
@@ -318,7 +318,7 @@ export function AidTypeSelect({
               )
             })}
             {filteredItems.length === 0 && (
-              <div className="py-6 text-center text-sm">
+              <div className="py-6 text-center text-body">
                 {searchQuery ? `No aid types found for "${searchQuery}"` : "No aid type found."}
               </div>
             )}

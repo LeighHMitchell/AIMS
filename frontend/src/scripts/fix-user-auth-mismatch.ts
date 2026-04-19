@@ -56,7 +56,6 @@ function getSupabaseAdmin() {
 }
 
 async function fixUserAuthMismatch(email: string) {
-  console.log(`🔧 Fixing auth account mismatch for: ${email}\n`);
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -66,7 +65,6 @@ async function fixUserAuthMismatch(email: string) {
 
   try {
     // 1. Find the user profile
-    console.log('📋 Looking for user profile...');
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('*')
@@ -78,11 +76,8 @@ async function fixUserAuthMismatch(email: string) {
       return;
     }
 
-    console.log(`✅ Found profile: ${userProfile.first_name} ${userProfile.last_name}`);
-    console.log(`   Current profile ID: ${userProfile.id}`);
 
     // 2. Look for auth users with this email
-    console.log('\n🔍 Searching for auth accounts with this email...');
     
     // List all auth users (we'll filter by email)
     const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
@@ -95,8 +90,6 @@ async function fixUserAuthMismatch(email: string) {
     const matchingAuthUsers = authUsers.users.filter(user => user.email === email);
     
     if (matchingAuthUsers.length === 0) {
-      console.log('❌ No auth account found with this email');
-      console.log('   Creating new auth account...');
       
       // Create new auth account
       const tempPassword = generateTempPassword();
@@ -115,8 +108,6 @@ async function fixUserAuthMismatch(email: string) {
         return;
       }
 
-      console.log('✅ Created new auth account');
-      console.log(`🔑 Temporary password: ${tempPassword}`);
       
       // Update profile with correct auth ID
       const { error: updateError } = await supabase
@@ -132,23 +123,12 @@ async function fixUserAuthMismatch(email: string) {
         return;
       }
 
-      console.log('✅ Profile ID synced with auth account');
-      console.log('\n🎉 Account fixed! User can now log in with:');
-      console.log(`   Email: ${email}`);
-      console.log(`   Password: ${tempPassword}`);
       
     } else if (matchingAuthUsers.length === 1) {
       const authUser = matchingAuthUsers[0];
-      console.log(`✅ Found auth account: ${authUser.id}`);
       
       if (authUser.id === userProfile.id) {
-        console.log('✅ Profile and auth IDs already match - account should work!');
-        console.log('   Try logging in or use password reset if needed.');
       } else {
-        console.log(`⚠️  ID mismatch detected:`);
-        console.log(`   Profile ID: ${userProfile.id}`);
-        console.log(`   Auth ID: ${authUser.id}`);
-        console.log('\n🔄 Syncing profile ID with auth ID...');
         
         // Update profile to match auth ID
         const { error: updateError } = await supabase
@@ -161,7 +141,6 @@ async function fixUserAuthMismatch(email: string) {
 
         if (updateError) {
           console.error('❌ Failed to sync profile ID:', updateError.message);
-          console.log('\n🔄 Trying alternative approach: Reset password...');
           
           // Alternative: Reset password to create new link
           const newPassword = generateTempPassword();
@@ -174,20 +153,13 @@ async function fixUserAuthMismatch(email: string) {
             return;
           }
 
-          console.log('✅ Password reset successful');
-          console.log(`🔑 New password: ${newPassword}`);
         } else {
-          console.log('✅ Profile ID synced successfully');
         }
 
-        console.log('\n🎉 Account fixed! User can now log in.');
       }
       
     } else {
-      console.log(`⚠️  Multiple auth accounts found (${matchingAuthUsers.length})`);
-      console.log('   This requires manual cleanup. Auth account IDs:');
       matchingAuthUsers.forEach((user, index) => {
-        console.log(`   ${index + 1}. ${user.id} (created: ${user.created_at})`);
       });
     }
 

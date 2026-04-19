@@ -93,7 +93,6 @@ export function EnhancedImageUpload({
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);
-        console.log(`${label} compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
 
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -260,13 +259,13 @@ export function EnhancedImageUpload({
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-body font-medium">{label}</Label>
 
       {preview ? (
         <div className="space-y-3">
           <div
             ref={containerRef}
-            className={`relative ${getContainerClass()} rounded-lg overflow-hidden group border-2 border-dashed border-gray-300 ${
+            className={`relative ${getContainerClass()} rounded-lg overflow-hidden group border-2 border-dashed border-input ${
               isRepositioning || isZooming ? "cursor-grab" : ""
             } ${isDragging ? "cursor-grabbing" : ""}`}
             onMouseDown={handleMouseDown}
@@ -275,7 +274,7 @@ export function EnhancedImageUpload({
             {/* Image display */}
             {canZoom ? (
               <div
-                className="w-full h-full flex items-center justify-center bg-slate-100"
+                className="w-full h-full flex items-center justify-center bg-muted"
                 style={{ overflow: 'hidden' }}
               >
                 <img
@@ -309,7 +308,7 @@ export function EnhancedImageUpload({
             {isRepositioning && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                 <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                  <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                  <p className="text-body font-medium text-foreground flex items-center gap-2">
                     <Move className="h-4 w-4" />
                     Drag up or down to reposition
                   </p>
@@ -321,7 +320,7 @@ export function EnhancedImageUpload({
             {isZooming && (
               <div className="absolute inset-x-0 bottom-0 flex justify-center pb-2 pointer-events-none">
                 <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
-                  <p className="text-xs font-medium text-white flex items-center gap-2">
+                  <p className="text-helper font-medium text-white flex items-center gap-2">
                     <ZoomIn className="h-3 w-3" />
                     Drag up/down to zoom
                   </p>
@@ -393,7 +392,7 @@ export function EnhancedImageUpload({
 
           {/* Reposition controls */}
           {isRepositioning && (
-            <div className="flex items-center justify-end bg-slate-50 rounded-lg p-3 gap-2">
+            <div className="flex items-center justify-end bg-muted rounded-lg p-3 gap-2">
               <Button size="sm" variant="ghost" onClick={cancelReposition} type="button">
                 Cancel
               </Button>
@@ -406,7 +405,7 @@ export function EnhancedImageUpload({
 
           {/* Zoom controls */}
           {isZooming && (
-            <div className="flex items-center justify-end bg-slate-50 rounded-lg p-3 gap-2">
+            <div className="flex items-center justify-end bg-muted rounded-lg p-3 gap-2">
               <Button size="sm" variant="ghost" onClick={cancelZoom} type="button">
                 Cancel
               </Button>
@@ -424,7 +423,7 @@ export function EnhancedImageUpload({
           className={`
             ${getContainerClass()}
             border-2 border-dashed rounded-lg
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
+            ${isDragActive ? 'border-primary bg-primary/5' : 'border-input hover:border-gray-400'}
             ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             flex flex-col items-center justify-center
             transition-colors
@@ -433,19 +432,19 @@ export function EnhancedImageUpload({
           <input {...getInputProps()} />
           {isProcessing ? (
             <>
-              <Upload className="h-8 w-8 text-gray-400 animate-pulse" />
-              <p className="text-sm text-gray-600 mt-2"><LoadingText>Uploading...</LoadingText></p>
+              <Upload className="h-8 w-8 text-muted-foreground animate-pulse" />
+              <p className="text-body text-muted-foreground mt-2"><LoadingText>Uploading...</LoadingText></p>
             </>
           ) : isDragActive ? (
             <>
               <Upload className="h-8 w-8 text-primary" />
-              <p className="text-sm text-primary mt-2">Drop image here</p>
+              <p className="text-body text-primary mt-2">Drop image here</p>
             </>
           ) : (
             <>
-              <ImageIcon className="h-8 w-8 text-gray-400" />
-              <p className="text-sm text-gray-600 mt-2 text-center">Drag & drop or click to upload</p>
-              <p className="text-xs text-gray-400 mt-1 text-center">{recommendedSize} (auto-compressed)</p>
+              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+              <p className="text-body text-muted-foreground mt-2 text-center">Drag & drop or click to upload</p>
+              <p className="text-helper text-muted-foreground mt-1 text-center">{recommendedSize} (auto-compressed)</p>
             </>
           )}
         </div>

@@ -245,9 +245,9 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       return {
         icon: XCircle,
         text: lockMessage || 'This project has been rejected.',
-        bgClass: 'bg-red-50 border-red-200',
+        bgClass: 'bg-destructive/10 border-destructive/30',
         textClass: 'text-red-800',
-        iconClass: 'text-red-600',
+        iconClass: 'text-destructive',
       };
     }
     if (projectStage === 'intake_approved') {
@@ -353,7 +353,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             viewingIntakeUnlocked ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50',
           )}>
             <Eye className={cn('h-4 w-4 shrink-0', viewingIntakeUnlocked ? 'text-orange-600' : 'text-amber-600')} />
-            <span className={cn('text-sm font-medium flex-1', viewingIntakeUnlocked ? 'text-orange-800' : 'text-amber-800')}>
+            <span className={cn('text-body font-medium flex-1', viewingIntakeUnlocked ? 'text-orange-800' : 'text-amber-800')}>
               {viewingIntakeUnlocked ? 'Editing intake data — remember to save changes' : 'Viewing intake data (read-only)'}
             </span>
             <Button
@@ -380,7 +380,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             viewingFS1Unlocked ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50',
           )}>
             <Eye className={cn('h-4 w-4 shrink-0', viewingFS1Unlocked ? 'text-orange-600' : 'text-amber-600')} />
-            <span className={cn('text-sm font-medium flex-1', viewingFS1Unlocked ? 'text-orange-800' : 'text-amber-800')}>
+            <span className={cn('text-body font-medium flex-1', viewingFS1Unlocked ? 'text-orange-800' : 'text-amber-800')}>
               {viewingFS1Unlocked ? 'Editing Preliminary Feasibility Study data — remember to save changes' : 'Viewing Preliminary Feasibility Study data (read-only)'}
             </span>
             <Button
@@ -407,7 +407,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             viewingPhaseUnlocked ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50',
           )}>
             <Eye className={cn('h-4 w-4 shrink-0', viewingPhaseUnlocked ? 'text-orange-600' : 'text-amber-600')} />
-            <span className={cn('text-sm font-medium flex-1', viewingPhaseUnlocked ? 'text-orange-800' : 'text-amber-800')}>
+            <span className={cn('text-body font-medium flex-1', viewingPhaseUnlocked ? 'text-orange-800' : 'text-amber-800')}>
               {viewingPhaseUnlocked
                 ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data — remember to save changes`
                 : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data (read-only)`
@@ -437,11 +437,11 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
           <div className={cn('flex items-start gap-3 p-4 rounded-lg border mb-4', banner.bgClass)}>
             <banner.icon className={cn('h-5 w-5 mt-0.5 shrink-0', banner.iconClass)} />
             <div className="flex-1">
-              <p className={cn('text-sm font-medium', banner.textClass)}>{banner.text}</p>
+              <p className={cn('text-body font-medium', banner.textClass)}>{banner.text}</p>
               {reviewComments && (projectStage === 'intake_returned' || projectStage === 'fs1_returned' || projectStage === 'fs2_returned') && (
                 <div className="mt-2 p-3 bg-white/60 rounded border border-amber-200">
-                  <p className="text-xs font-semibold text-amber-700 mb-1">Reviewer Comments</p>
-                  <p className="text-sm text-amber-800 whitespace-pre-wrap">{reviewComments}</p>
+                  <p className="text-helper font-semibold text-amber-700 mb-1">Reviewer Comments</p>
+                  <p className="text-body text-amber-800 whitespace-pre-wrap">{reviewComments}</p>
                 </div>
               )}
             </div>
@@ -603,7 +603,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
           <ul className="space-y-2 pt-2">
             {Object.entries(validationErrors).map(([key, message]) => (
-              <li key={key} className="flex items-start gap-2 text-sm">
+              <li key={key} className="flex items-start gap-2 text-body">
                 <XCircle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
                 <span>
                   <strong>{VALIDATION_FIELD_LABELS[key] ?? key}</strong>
@@ -640,15 +640,15 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
           <div className="space-y-4 pt-2">
             <div className="space-y-3">
-              <div className="flex items-start gap-3 text-sm">
+              <div className="flex items-start gap-3 text-body">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>All project details will be <strong>locked</strong> and you will not be able to make further edits until the review board makes a decision.</span>
               </div>
-              <div className="flex items-start gap-3 text-sm">
+              <div className="flex items-start gap-3 text-body">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>Please ensure all information is accurate and complete before submitting.</span>
               </div>
-              <div className="flex items-start gap-3 text-sm">
+              <div className="flex items-start gap-3 text-body">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>The review board will evaluate the submission and may <strong>approve</strong> (proceed to next phase), <strong>return for revision</strong> (unlock the form for corrections), or <strong>reject</strong> the project (with a 6-month cool-down).</span>
               </div>

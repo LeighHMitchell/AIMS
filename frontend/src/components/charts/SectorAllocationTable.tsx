@@ -81,7 +81,7 @@ export default function SectorAllocationTable({ allocations }: SectorAllocationT
   // Render sortable header
   const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <TableHead 
-      className="cursor-pointer hover:bg-gray-50 select-none"
+      className="cursor-pointer hover:bg-muted select-none"
       onClick={() => handleSort(field)}
     >
       <div className="flex items-center gap-1">
@@ -110,7 +110,7 @@ export default function SectorAllocationTable({ allocations }: SectorAllocationT
             <SortableHeader field="groupCode">Sector Category Code</SortableHeader>
             <SortableHeader field="groupName">Sector Category</SortableHeader>
             <TableHead 
-              className="text-right cursor-pointer hover:bg-gray-50 select-none"
+              className="text-right cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('percentage')}
             >
               <div className="flex items-center justify-end gap-1">
@@ -163,7 +163,7 @@ export default function SectorAllocationTable({ allocations }: SectorAllocationT
           </TableRow>
           {/* Unallocated row */}
           {unallocatedPercentage > 0 && (
-            <TableRow className="text-gray-500">
+            <TableRow className="text-muted-foreground">
               <TableCell colSpan={6} className="py-2">Unallocated</TableCell>
               <TableCell className="text-right font-mono py-2">
                 {unallocatedPercentage.toFixed(1)}%

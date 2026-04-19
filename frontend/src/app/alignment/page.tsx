@@ -2,7 +2,6 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { AlignmentCoverageDashboard } from "@/components/analytics/alignment-coverage/AlignmentCoverageDashboard";
-import { BookOpen } from "lucide-react";
 
 export default function AlignmentPage() {
   return (
@@ -10,14 +9,11 @@ export default function AlignmentPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="h-6 w-6" />
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Plan Alignment
           </h1>
-          <p className="text-muted-foreground mt-1">
-            See how development activities align to national plans and sectoral
-            strategies. Identify priority areas that are well-covered and those
-            that lack support.
+          <p className="text-muted-foreground mt-2 max-w-2xl">
+            Which priority areas of Myanmar's national plans are covered by aid activities — and which aren't.
           </p>
         </div>
 
