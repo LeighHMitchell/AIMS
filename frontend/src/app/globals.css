@@ -44,6 +44,11 @@
   --button-angle: -125deg;
 }
 
+@keyframes sidebar-module-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== CSS Reset/Normalize for Cross-Browser Consistency ===== */
 
 /* Universal box-sizing */
@@ -223,6 +228,15 @@ select:focus {
     --radius: 0.75rem;
     --surface-muted: #f6f5f3;
 
+    /* Sidebar navigation tokens — AA contrast on --surface-muted */
+    --nav-active-bg: 221 16% 28%;       /* near #3b4452 — dark slate, 9:1 on cream */
+    --nav-active-fg: 0 0% 100%;         /* white */
+    --nav-hover-bg: 40 8% 90%;          /* slightly darker than surface-muted */
+    --nav-hover-fg: 0 0% 9%;
+    --nav-accent-aims: 221 16% 35%;     /* brand-blue-slate */
+    --nav-accent-project-bank: 0 72% 50%;  /* brand-scarlet */
+    --nav-accent-land-bank: 205 20% 57%;   /* brand-cool-steel */
+
     /* Semantic feedback colors */
     --success-bg: 142 76% 93%;
     --success-text: 143 64% 24%;
@@ -292,6 +306,15 @@ select:focus {
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
     --surface-muted: #2a2a28;
+
+    /* Sidebar navigation tokens (dark) */
+    --nav-active-bg: 0 0% 95%;          /* light pill on dark sidebar */
+    --nav-active-fg: 0 0% 9%;           /* near-black text */
+    --nav-hover-bg: 0 0% 14%;           /* subtle panel lift */
+    --nav-hover-fg: 0 0% 95%;
+    --nav-accent-aims: 221 16% 65%;     /* lighter for dark mode */
+    --nav-accent-project-bank: 0 72% 60%;
+    --nav-accent-land-bank: 205 30% 70%;
 
     /* Calendar Color Scheme (dark mode) */
     --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */
