@@ -165,6 +165,17 @@ export function BudgetTable({
     }
   };
 
+  const formatPeriodMonth = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return format(date, "MMM yyyy");
+    } catch (error) {
+      return '-';
+    }
+  };
+
   const getBudgetTypeLabel = (type: BudgetType | number | string) => {
     const typeStr = String(type);
     return BUDGET_TYPE_LABELS[typeStr as keyof typeof BUDGET_TYPE_LABELS] || typeStr;
@@ -224,29 +235,16 @@ export function BudgetTable({
         <span>Reporting Org</span>
       </SortableTableHeader>
     ),
-    periodStart: (
+    period: (
       <SortableTableHeader
-        key="periodStart"
-        id="periodStart"
-        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        key="period"
+        id="period"
+        className="cursor-pointer hover:bg-muted/80 transition-colors whitespace-nowrap"
         onClick={() => onSort("period_start")}
       >
         <div className="flex items-center gap-1">
-          <span>Start Date</span>
+          <span>Period</span>
           {getSortIcon("period_start", sortField, sortOrder)}
-        </div>
-      </SortableTableHeader>
-    ),
-    periodEnd: (
-      <SortableTableHeader
-        key="periodEnd"
-        id="periodEnd"
-        className="cursor-pointer hover:bg-muted/80 transition-colors"
-        onClick={() => onSort("period_end")}
-      >
-        <div className="flex items-center gap-1">
-          <span>End Date</span>
-          {getSortIcon("period_end", sortField, sortOrder)}
         </div>
       </SortableTableHeader>
     ),
@@ -391,9 +389,21 @@ export function BudgetTable({
                 systemId: (
                   <TableCell key="systemId" className="py-3 px-4 whitespace-nowrap">
                     {budget.auto_ref ? (
-                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block align-middle">
-                        {budget.auto_ref}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          copyToClipboard(budget.auto_ref!, `${budgetId}-systemId`);
+                        }}
+                        title={copiedId === `${budgetId}-systemId` ? "Copied!" : "Click to copy"}
+                        className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
+                      >
+                        {copiedId === `${budgetId}-systemId` && (
+                          <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                        )}
+                        <span>{budget.auto_ref}</span>
+                      </button>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -417,14 +427,13 @@ export function BudgetTable({
                     )}
                   </TableCell>
                 ),
-                periodStart: (
-                  <TableCell key="periodStart" className="py-3 px-4 whitespace-nowrap">
-                    {formatDate(budget.period_start)}
-                  </TableCell>
-                ),
-                periodEnd: (
-                  <TableCell key="periodEnd" className="py-3 px-4 whitespace-nowrap">
-                    {formatDate(budget.period_end)}
+                period: (
+                  <TableCell key="period" className="py-3 px-4 whitespace-nowrap">
+                    <span className="text-body text-muted-foreground">
+                      {formatPeriodMonth(budget.period_start)}
+                      {' — '}
+                      {formatPeriodMonth(budget.period_end)}
+                    </span>
                   </TableCell>
                 ),
                 type: (

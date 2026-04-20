@@ -269,6 +269,23 @@ export function PlannedDisbursementsTable({
     }
   };
 
+  const formatPeriodMonth = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return format(date, "MMM yyyy");
+    } catch (error) {
+      return '-';
+    }
+  };
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(key);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const getDisbursementTypeLabel = (type: string | number) => {
     const typeStr = String(type);
     return DISBURSEMENT_TYPE_LABELS[typeStr] || typeStr;
@@ -319,29 +336,16 @@ export function PlannedDisbursementsTable({
         <span>Planned Disbursement ID</span>
       </SortableTableHeader>
     ),
-    periodStart: (
+    period: (
       <SortableTableHeader
-        key="periodStart"
-        id="periodStart"
-        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        key="period"
+        id="period"
+        className="cursor-pointer hover:bg-muted/80 transition-colors whitespace-nowrap"
         onClick={() => onSort("period_start")}
       >
         <div className="flex items-center gap-1">
-          <span>Start Date</span>
+          <span>Period</span>
           {getSortIcon("period_start", sortField, sortOrder)}
-        </div>
-      </SortableTableHeader>
-    ),
-    periodEnd: (
-      <SortableTableHeader
-        key="periodEnd"
-        id="periodEnd"
-        className="cursor-pointer hover:bg-muted/80 transition-colors"
-        onClick={() => onSort("period_end")}
-      >
-        <div className="flex items-center gap-1">
-          <span>End Date</span>
-          {getSortIcon("period_end", sortField, sortOrder)}
         </div>
       </SortableTableHeader>
     ),
@@ -496,22 +500,33 @@ export function PlannedDisbursementsTable({
                 systemId: (
                   <td key="systemId" className="py-3 px-4 whitespace-nowrap">
                     {(disbursement as any).auto_ref ? (
-                      <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block">
-                        {(disbursement as any).auto_ref}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          copyToClipboard((disbursement as any).auto_ref, `${disbursement.id}-systemId`);
+                        }}
+                        title={copiedId === `${disbursement.id}-systemId` ? "Copied!" : "Click to copy"}
+                        className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
+                      >
+                        {copiedId === `${disbursement.id}-systemId` && (
+                          <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                        )}
+                        <span>{(disbursement as any).auto_ref}</span>
+                      </button>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
                 ),
-                periodStart: (
-                  <td key="periodStart" className="py-3 px-4 whitespace-nowrap">
-                    {formatDate(disbursement.period_start)}
-                  </td>
-                ),
-                periodEnd: (
-                  <td key="periodEnd" className="py-3 px-4 whitespace-nowrap">
-                    {formatDate(disbursement.period_end)}
+                period: (
+                  <td key="period" className="py-3 px-4 whitespace-nowrap">
+                    <span className="text-body text-muted-foreground">
+                      {formatPeriodMonth(disbursement.period_start)}
+                      {' — '}
+                      {formatPeriodMonth(disbursement.period_end)}
+                    </span>
                   </td>
                 ),
                 type: (

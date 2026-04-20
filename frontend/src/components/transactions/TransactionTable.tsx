@@ -911,7 +911,21 @@ export function TransactionTable({
                     systemId: (
                       <td key="systemId" className="py-3 px-4 whitespace-nowrap">
                         {(transaction as any).auto_ref ? (
-                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{(transaction as any).auto_ref}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              copyToClipboard((transaction as any).auto_ref, 'systemId', transactionId);
+                            }}
+                            title={copiedId === `${transactionId}-systemId` ? "Copied!" : "Click to copy"}
+                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
+                          >
+                            {copiedId === `${transactionId}-systemId` && (
+                              <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                            )}
+                            <span>{(transaction as any).auto_ref}</span>
+                          </button>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
