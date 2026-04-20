@@ -10,7 +10,9 @@ import {
   NotepadText,
   Copy,
   Check,
+  Info,
 } from "lucide-react";
+import { isEstimatedSource, isFutureFxDate } from "@/lib/planned-disbursement-usd";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -163,7 +165,11 @@ export function PlannedDisbursementsTable({
     rate: number | null,
     date: string,
     loading: boolean,
-    error?: string
+    error?: string,
+    source?: string | null,
+    isEstimate?: boolean,
+    isFuture?: boolean,
+    valueDate?: string | null
   }>>({});
 
   const { getOrderedVisibleColumns, handleReorder } = useColumnOrder<PlannedDisbursementColumnId>({
@@ -178,13 +184,16 @@ export function PlannedDisbursementsTable({
 
   // Read stored USD values from database (no real-time conversion)
   useEffect(() => {
-    const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+    const newUsdValues: typeof usdValues = {};
 
     for (const disbursement of disbursements) {
       const disbursementId = disbursement.id;
 
       // Use amount (database field) or value (legacy/API field) - prefer amount
       const amountValue = disbursement.amount ?? disbursement.value;
+      const effectiveFxDate = disbursement.value_date || disbursement.period_start || null;
+      const isFuture = isFutureFxDate(effectiveFxDate);
+      const source = (disbursement as any).usd_rate_source ?? null;
 
       // Check if disbursement already has USD value stored
       const existingUsdValue = disbursement.usd_amount ?? disbursement.value_usd;
@@ -192,8 +201,12 @@ export function PlannedDisbursementsTable({
         newUsdValues[disbursementId] = {
           usd: existingUsdValue,
           rate: (disbursement as any).exchange_rate_used || null,
-          date: disbursement.value_date || disbursement.period_start || '',
-          loading: false
+          date: effectiveFxDate || '',
+          loading: false,
+          source,
+          isEstimate: isEstimatedSource(source),
+          isFuture: false,
+          valueDate: effectiveFxDate,
         };
         continue;
       }
@@ -203,20 +216,28 @@ export function PlannedDisbursementsTable({
         newUsdValues[disbursementId] = {
           usd: amountValue,
           rate: 1,
-          date: disbursement.value_date || disbursement.period_start || '',
-          loading: false
+          date: effectiveFxDate || '',
+          loading: false,
+          source: 'direct',
+          isEstimate: false,
+          isFuture: false,
+          valueDate: effectiveFxDate,
         };
         continue;
       }
 
-      // Missing data or unconverted - show as not converted (no real-time API call)
+      // usd_amount is NULL: either future-dated (cron will backfill) or unconvertible.
       const isUnconvertible = (disbursement as any).usd_convertible === false;
       newUsdValues[disbursementId] = {
         usd: null,
         rate: null,
-        date: disbursement.value_date || disbursement.period_start || '',
+        date: effectiveFxDate || '',
         loading: false,
-        error: isUnconvertible ? 'Not converted' : undefined
+        error: isUnconvertible ? 'Not converted' : undefined,
+        source: null,
+        isEstimate: false,
+        isFuture,
+        valueDate: effectiveFxDate,
       };
     }
 
@@ -629,32 +650,55 @@ export function PlannedDisbursementsTable({
                 valueUsd: (
                   <td key="valueUsd" className="py-3 px-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
-                      {usdValues[disbursement.id]?.loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                      ) : usdValues[disbursement.id]?.usd != null ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-body cursor-help">
-                                {formatCurrency(usdValues[disbursement.id].usd!, 'USD')}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div>
-                                <div>Original: {disbursement.amount ?? disbursement.value} {disbursement.currency}</div>
-                                {usdValues[disbursement.id].rate && (
-                                  <div>Rate: {usdValues[disbursement.id].rate}</div>
-                                )}
-                                {usdValues[disbursement.id].date && (
-                                  <div>Date: {usdValues[disbursement.id].date}</div>
-                                )}
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                      {(() => {
+                        const row = usdValues[disbursement.id];
+                        if (row?.loading) return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+                        if (row?.usd != null) {
+                          return (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-body cursor-help inline-flex items-center gap-1">
+                                    {formatCurrency(row.usd, 'USD')}
+                                    {row.isEstimate && (
+                                      <Badge variant="outline" className="h-4 px-1 text-[10px] font-normal text-muted-foreground border-muted-foreground/40">
+                                        <Info className="h-2.5 w-2.5 mr-0.5" />est.
+                                      </Badge>
+                                    )}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div>
+                                    <div>Original: {disbursement.amount ?? disbursement.value} {disbursement.currency}</div>
+                                    {row.rate && <div>Rate: {row.rate}</div>}
+                                    {row.date && <div>Date: {row.date}</div>}
+                                    {row.isEstimate && (
+                                      <div className="mt-1 pt-1 border-t text-xs text-muted-foreground">
+                                        Estimated — no exact rate was available for this date, so a {row.source} rate was used.
+                                      </div>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        }
+                        if (row?.isFuture) {
+                          return (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-muted-foreground cursor-help">—</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div>USD will be calculated after {row.valueDate || 'the value date'}.</div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        }
+                        return <span className="text-muted-foreground">—</span>;
+                      })()}
                     </div>
                   </td>
                 ),

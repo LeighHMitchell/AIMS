@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { computePlannedDisbursementUsd } from '@/lib/planned-disbursement-usd';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -180,21 +180,15 @@ export async function POST(
       body.period_start
     );
 
-    // Perform USD conversion server-side (like Transactions)
-    let usdAmount: number | null = null;
+    // Perform USD conversion server-side (like Transactions). Future-dated PDs are
+    // left with usd_amount = NULL and picked up by the nightly cron once the date passes.
     const amount = Number(body.amount);
-
-    if (resolvedCurrency === 'USD') {
-      usdAmount = amount;
-    } else {
-      const conversionDate = new Date(resolvedValueDate);
-      const result = await fixedCurrencyConverter.convertToUSD(amount, resolvedCurrency, conversionDate);
-      if (result.success && result.usd_amount !== null) {
-        usdAmount = result.usd_amount;
-      } else {
-        console.warn(`[PlannedDisbursementsAPI] Currency conversion failed: ${result.error}`);
-      }
-    }
+    const usdFields = await computePlannedDisbursementUsd({
+      amount,
+      currency: resolvedCurrency,
+      valueDate: resolvedValueDate,
+      periodStart: body.period_start,
+    });
 
     const disbursementData = {
       activity_id: activityId,
@@ -211,7 +205,11 @@ export async function POST(
       status: body.status || 'original',
       value_date: resolvedValueDate,
       notes: body.notes || null,
-      usd_amount: usdAmount
+      usd_amount: usdFields.usd_amount,
+      usd_rate_source: usdFields.usd_rate_source,
+      exchange_rate_used: usdFields.exchange_rate_used,
+      usd_convertible: usdFields.usd_convertible,
+      usd_conversion_date: usdFields.usd_conversion_date,
     };
 
 

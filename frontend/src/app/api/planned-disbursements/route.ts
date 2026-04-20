@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { computePlannedDisbursementUsd } from '@/lib/planned-disbursement-usd';
 import { generateNextReference } from '@/lib/reference-helpers';
 
 export async function POST(request: NextRequest) {
@@ -59,45 +59,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Convert to USD - support manual exchange rate override
-    let usdAmount = null;
-    let exchangeRateUsed = null;
-    let usdConvertible = true;
+    // Convert to USD - support manual exchange rate override. Future-dated PDs are
+    // stored with usd_amount = NULL and backfilled by the nightly cron.
     const isManualRate = disbursementData.exchange_rate_manual === true;
-
-    if (disbursementData.currency === 'USD') {
-      // USD currency - no conversion needed
-      usdAmount = disbursementData.amount;
-      exchangeRateUsed = 1.0;
-    } else if (isManualRate && disbursementData.exchange_rate_used && disbursementData.usd_amount != null) {
-      // Use manually provided exchange rate
-      usdAmount = disbursementData.usd_amount;
-      exchangeRateUsed = disbursementData.exchange_rate_used;
-    } else if (disbursementData.amount) {
-      // Fetch exchange rate from API
-      const valueDate = disbursementData.value_date || disbursementData.period_start || new Date().toISOString().split('T')[0];
-      try {
-        const result = await fixedCurrencyConverter.convertToUSD(
-          disbursementData.amount,
-          disbursementData.currency,
-          new Date(valueDate)
-        );
-        if (result.success && result.usd_amount != null) {
-          usdAmount = result.usd_amount;
-          exchangeRateUsed = result.exchange_rate;
-        } else {
-          usdConvertible = false;
-          console.warn('[Planned Disbursements API] Currency conversion failed:', result.error);
-        }
-      } catch (error) {
-        usdConvertible = false;
-        console.error('[Planned Disbursements API] Error converting to USD:', error);
-      }
-    }
-    disbursementData.usd_amount = usdAmount;
-    disbursementData.exchange_rate_used = exchangeRateUsed;
-    disbursementData.usd_conversion_date = new Date().toISOString();
-    disbursementData.usd_convertible = usdConvertible;
+    const manualRate = isManualRate && disbursementData.exchange_rate_used && disbursementData.usd_amount != null
+      ? { usd_amount: disbursementData.usd_amount, exchange_rate_used: disbursementData.exchange_rate_used }
+      : null;
+    const usdFields = await computePlannedDisbursementUsd({
+      amount: disbursementData.amount,
+      currency: disbursementData.currency || 'USD',
+      valueDate: disbursementData.value_date,
+      periodStart: disbursementData.period_start,
+      manualRate,
+    });
+    disbursementData.usd_amount = usdFields.usd_amount;
+    disbursementData.exchange_rate_used = usdFields.exchange_rate_used;
+    disbursementData.usd_conversion_date = usdFields.usd_conversion_date;
+    disbursementData.usd_convertible = usdFields.usd_convertible;
+    disbursementData.usd_rate_source = usdFields.usd_rate_source;
     disbursementData.exchange_rate_manual = isManualRate;
 
     // Auto-generate reference
@@ -207,43 +186,21 @@ export async function PUT(request: NextRequest) {
       }
 
       if (amount !== undefined && currency) {
-        let usdAmount = null;
-        let exchangeRateUsed = null;
-        let usdConvertible = true;
-
-        if (currency === 'USD') {
-          // USD currency - no conversion needed
-          usdAmount = amount;
-          exchangeRateUsed = 1.0;
-        } else if (isManualRate && updateData.exchange_rate_used && updateData.usd_amount != null) {
-          // Use manually provided exchange rate
-          usdAmount = updateData.usd_amount;
-          exchangeRateUsed = updateData.exchange_rate_used;
-        } else {
-          // Fetch exchange rate from API
-          const conversionDate = valueDate || periodStart || new Date().toISOString().split('T')[0];
-          try {
-            const result = await fixedCurrencyConverter.convertToUSD(
-              amount,
-              currency,
-              new Date(conversionDate)
-            );
-            if (result.success && result.usd_amount != null) {
-              usdAmount = result.usd_amount;
-              exchangeRateUsed = result.exchange_rate;
-            } else {
-              usdConvertible = false;
-              console.warn('[Planned Disbursements API] Currency conversion failed:', result.error);
-            }
-          } catch (error) {
-            usdConvertible = false;
-            console.error('[Planned Disbursements API] Error converting to USD:', error);
-          }
-        }
-        updateData.usd_amount = usdAmount;
-        updateData.exchange_rate_used = exchangeRateUsed;
-        updateData.usd_conversion_date = new Date().toISOString();
-        updateData.usd_convertible = usdConvertible;
+        const manualRate = isManualRate && updateData.exchange_rate_used && updateData.usd_amount != null
+          ? { usd_amount: updateData.usd_amount, exchange_rate_used: updateData.exchange_rate_used }
+          : null;
+        const usdFields = await computePlannedDisbursementUsd({
+          amount,
+          currency,
+          valueDate,
+          periodStart,
+          manualRate,
+        });
+        updateData.usd_amount = usdFields.usd_amount;
+        updateData.exchange_rate_used = usdFields.exchange_rate_used;
+        updateData.usd_conversion_date = usdFields.usd_conversion_date;
+        updateData.usd_convertible = usdFields.usd_convertible;
+        updateData.usd_rate_source = usdFields.usd_rate_source;
         updateData.exchange_rate_manual = isManualRate;
       }
     }

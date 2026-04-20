@@ -7,7 +7,11 @@ export interface PlannedDisbursement {
   amount: number;
   currency: string;
   value_date?: string;
-  usd_amount?: number;  // USD-converted amount stored in database
+  usd_amount?: number | null;  // USD-converted amount stored in database (NULL when future-dated or unconvertible)
+  usd_rate_source?: string | null;  // Which FX strategy produced usd_amount — UI flags non-exact sources as estimates
+  exchange_rate_used?: number | null;
+  usd_conversion_date?: string | null;
+  usd_convertible?: boolean;
   
   // Period fields
   period_start: string;

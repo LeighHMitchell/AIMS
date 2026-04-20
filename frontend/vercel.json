@@ -57,6 +57,9 @@
     },
     "src/app/api/cron/backfill-exchange-rates/route.ts": {
       "maxDuration": 120
+    },
+    "src/app/api/cron/backfill-planned-disbursements-usd/route.ts": {
+      "maxDuration": 120
     }
   },
   "crons": [
@@ -67,6 +70,10 @@
     {
       "path": "/api/cron/backfill-exchange-rates",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/backfill-planned-disbursements-usd",
+      "schedule": "0 7 * * *"
     }
   ],
   "headers": [

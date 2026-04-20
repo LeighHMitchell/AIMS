@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { computePlannedDisbursementUsd } from '@/lib/planned-disbursement-usd';
 
 /**
  * Backfill USD values for planned disbursements that don't have them
@@ -49,43 +49,41 @@ export async function POST(request: NextRequest) {
       results.processed++;
 
       try {
-        let usdAmount = null;
+        const usdFields = await computePlannedDisbursementUsd({
+          amount: disbursement.amount,
+          currency: disbursement.currency || 'USD',
+          valueDate: disbursement.value_date,
+          periodStart: disbursement.period_start,
+        });
 
-        // If already in USD, just copy the amount
-        if (disbursement.currency === 'USD') {
-          usdAmount = disbursement.amount;
-          results.alreadyUSD++;
-        } else {
-          // Convert to USD using the value_date or period_start
-          const conversionDate = new Date(disbursement.value_date || disbursement.period_start);
-
-          const result = await fixedCurrencyConverter.convertToUSD(
-            disbursement.amount,
-            disbursement.currency,
-            conversionDate
-          );
-
-          if (result.success && result.usd_amount !== null) {
-            usdAmount = result.usd_amount;
-            results.converted++;
-          } else {
-            results.failed++;
-            results.errors.push({
-              id: disbursement.id,
-              error: result.error || 'Conversion failed',
-              currency: disbursement.currency,
-              amount: disbursement.amount,
-              date: disbursement.value_date || disbursement.period_start
-            });
-            console.warn(`[Backfill Planned Disbursements USD] Failed to convert disbursement ${disbursement.id}:`, result.error);
-            continue;
-          }
+        if (usdFields.usd_amount == null) {
+          // Either future-dated (skip for now, cron will pick up) or genuinely unconvertible.
+          results.failed++;
+          results.errors.push({
+            id: disbursement.id,
+            error: usdFields.usd_convertible ? 'Future-dated — skipped' : 'Conversion failed',
+            currency: disbursement.currency,
+            amount: disbursement.amount,
+            date: disbursement.value_date || disbursement.period_start,
+          });
+          continue;
         }
 
-        // Update the disbursement with USD amount
+        if (disbursement.currency === 'USD') {
+          results.alreadyUSD++;
+        } else {
+          results.converted++;
+        }
+
         const { error: updateError } = await supabase
           .from('planned_disbursements')
-          .update({ usd_amount: usdAmount })
+          .update({
+            usd_amount: usdFields.usd_amount,
+            exchange_rate_used: usdFields.exchange_rate_used,
+            usd_rate_source: usdFields.usd_rate_source,
+            usd_conversion_date: usdFields.usd_conversion_date,
+            usd_convertible: usdFields.usd_convertible,
+          })
           .eq('id', disbursement.id);
 
         if (updateError) {
