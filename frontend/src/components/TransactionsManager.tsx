@@ -384,6 +384,8 @@ export default function TransactionsManager({
   
   // Track last notified transaction count to prevent infinite loops
   const lastNotifiedCountRef = React.useRef<number>(-1);
+  // Pending delete timeouts for undo support
+  const pendingDeletesRef = React.useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Fetch organizations for alias resolution
   useEffect(() => {
@@ -632,59 +634,59 @@ export default function TransactionsManager({
   };
 
   const handleDelete = async (id: string) => {
-    const txn = transactions.find(t => (t.uuid || t.id) === id);
-    const amount = txn?.value != null ? `${txn.currency || ''} ${Number(txn.value).toLocaleString()}`.trim() : null;
-    const txnDate = txn?.transaction_date || (txn as any)?.value_date;
-    const txnRef = (txn as any)?.transaction_reference || (txn as any)?.reference;
-    const details = [amount, txnDate, txnRef].filter(Boolean).join(' • ');
-    const description = details
-      ? `This transaction (${details}) will be permanently deleted from this activity. This can't be undone.`
-      : "This transaction will be permanently deleted from this activity. This can't be undone.";
-
-    if (!(await confirm({ title: 'Delete this transaction?', description, confirmLabel: 'Delete transaction', cancelLabel: 'Keep' }))) {
-      return;
-    }
-
-    // Optimistically remove transaction from UI immediately
     const deletedTransaction = transactions.find(t => (t.uuid || t.id) === id);
+    if (!deletedTransaction) return;
+
+    const amount = deletedTransaction.value != null ? `${deletedTransaction.currency || ''} ${Number(deletedTransaction.value).toLocaleString()}`.trim() : null;
+    const txnType = TRANSACTION_TYPES[deletedTransaction.transaction_type as keyof typeof TRANSACTION_TYPES] || '';
+    const label = [txnType, amount].filter(Boolean).join(' · ');
+
+    // Optimistically remove from UI
     const updatedTransactions = transactions.filter(t => (t.uuid || t.id) !== id);
     setTransactions(updatedTransactions);
-    
-    // Also notify parent immediately for consistency
-    if (onTransactionsChange) {
-      onTransactionsChange(updatedTransactions);
-    }
+    if (onTransactionsChange) onTransactionsChange(updatedTransactions);
 
-    setDeleteLoading(id);
-    try {
-      const response = await apiFetch(`/api/transactions?id=${id}`, {
-        method: 'DELETE'
-      });
+    // Cancel any existing pending delete for this id
+    const existing = pendingDeletesRef.current.get(id);
+    if (existing) clearTimeout(existing);
 
-      if (!response.ok) {
-        // Restore the transaction on error
-        if (deletedTransaction) {
+    const commitDelete = async () => {
+      pendingDeletesRef.current.delete(id);
+      setDeleteLoading(id);
+      try {
+        const response = await apiFetch(`/api/transactions?id=${id}`, { method: 'DELETE' });
+        if (!response.ok) {
           setTransactions(prev => [...prev, deletedTransaction]);
-          if (onTransactionsChange) {
-            onTransactionsChange([...updatedTransactions, deletedTransaction]);
-          }
+          if (onTransactionsChange) onTransactionsChange([...updatedTransactions, deletedTransaction]);
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete transaction');
         }
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete transaction');
+        if (onRefreshNeeded) await onRefreshNeeded();
+      } catch (error: any) {
+        console.error('[TransactionsManager] Error deleting transaction:', error);
+        toast.error(error.message || "Failed to delete transaction");
+      } finally {
+        setDeleteLoading(null);
       }
+    };
 
-      // Optionally still refresh from server to ensure full consistency
-      if (onRefreshNeeded) {
-        await onRefreshNeeded();
+    const timeoutId = setTimeout(commitDelete, 5000);
+    pendingDeletesRef.current.set(id, timeoutId);
+
+    toast.success(label ? `Removed ${label}` : 'Transaction removed', {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const pending = pendingDeletesRef.current.get(id);
+          if (pending) {
+            clearTimeout(pending);
+            pendingDeletesRef.current.delete(id);
+          }
+          setTransactions(prev => [...prev, deletedTransaction]);
+          if (onTransactionsChange) onTransactionsChange([...updatedTransactions, deletedTransaction]);
+        }
       }
-      
-      toast.success("Transaction deleted");
-    } catch (error: any) {
-      console.error('[TransactionsManager] Error deleting transaction:', error);
-      toast.error(error.message || "Failed to delete transaction");
-    } finally {
-      setDeleteLoading(null);
-    }
+    });
   };
 
   const handleSelectTransaction = (id: string, checked: boolean) => {
@@ -877,7 +879,7 @@ export default function TransactionsManager({
       const type = transaction.transaction_type || '';
       const baseTypeName = TRANSACTION_TYPES[type as keyof typeof TRANSACTION_TYPES] || 'Unknown';
       const typeName = `Total ${baseTypeName}${baseTypeName.endsWith('s') ? '' : 's'}`;
-      const usdValue = transaction.value_usd || 0;
+      const usdValue = transaction.value_usd || (transaction.currency === 'USD' ? (Number(transaction.value) || 0) : 0);
 
       if (!summaryMap.has(type)) {
         summaryMap.set(type, {

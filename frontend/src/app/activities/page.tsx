@@ -14,7 +14,7 @@
  * Rollback: Set NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION=false
  */
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "react";
 import { usePreCache } from "@/hooks/use-pre-cached-data";
 import { useOptimizedActivities, SystemTotals } from "@/hooks/use-optimized-activities";
 import { calculatePortfolioShare, formatPercentage } from "@/lib/system-totals";
@@ -61,7 +61,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   Plus, Download, Pencil, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Users, LayoutGrid, TableIcon, Search, MoreVertical, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, Heart,
-  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck, Briefcase, Wallet, Activity as ActivityIcon
+  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck, Briefcase, Wallet, Activity as ActivityIcon, AlignLeft
 } from "lucide-react";
 // Lazy-load export utils — pulls in jspdf, jspdf-autotable, xlsx (~1MB) only when a user exports
 const loadActivityExport = () => import("@/lib/activity-export");
@@ -539,6 +539,24 @@ function ActivitiesPageContent() {
     setOpenFilterId(isOpen ? filterId : null);
   };
   
+  // Show descriptions toggle with localStorage persistence
+  const [showDescriptions, setShowDescriptions] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('activities_showDescriptions') === 'true';
+    }
+    return false;
+  });
+
+  // Expanded activity rows for per-row detail view
+  const [expandedActivityRows, setExpandedActivityRows] = useState<Set<string>>(new Set());
+  const toggleActivityExpansion = (id: string) => {
+    setExpandedActivityRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  };
+
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
 
@@ -1702,12 +1720,12 @@ const router = useRouter();
           <Label className="text-helper text-muted-foreground">Status</Label>
           <MultiSelectFilter
             options={[
-              { value: "1", label: "Pipeline/identification", code: "1", color: "#94a3b8" },
-              { value: "2", label: "Implementation", code: "2", color: "#3b82f6" },
-              { value: "3", label: "Completion", code: "3", color: "#22c55e" },
-              { value: "4", label: "Post-completion", code: "4", color: "#10b981" },
-              { value: "5", label: "Cancelled", code: "5", color: "#ef4444" },
-              { value: "6", label: "Suspended", code: "6", color: "#f59e0b" },
+              { value: "1", label: "Pipeline/identification", code: "1" },
+              { value: "2", label: "Implementation", code: "2" },
+              { value: "3", label: "Completion", code: "3" },
+              { value: "4", label: "Post-completion", code: "4" },
+              { value: "5", label: "Cancelled", code: "5" },
+              { value: "6", label: "Suspended", code: "6" },
             ]}
             value={filterStatuses}
             onChange={setFilterStatuses}
@@ -1727,9 +1745,9 @@ const router = useRouter();
           <Label className="text-helper text-muted-foreground">Validation</Label>
           <MultiSelectFilter
             options={[
-              { value: "validated", label: "Validated", color: "#22c55e" },
-              { value: "rejected", label: "Rejected", color: "#ef4444" },
-              { value: "pending", label: "Not Validated", color: "#94a3b8" },
+              { value: "validated", label: "Validated" },
+              { value: "rejected", label: "Rejected" },
+              { value: "pending", label: "Not Validated" },
             ]}
             value={filterValidations}
             onChange={setFilterValidations}
@@ -1778,50 +1796,6 @@ const router = useRouter();
           />
         </div>
 
-        {/* Aid Type Filter */}
-        <div className="flex flex-col gap-1">
-          <Label className="text-helper text-muted-foreground">Aid Type</Label>
-          <MultiSelectFilter
-            options={Object.entries(AID_TYPE_LABELS).map(([code, label]) => ({
-              value: code,
-              label: label,
-              code: code,
-            }))}
-            value={filterAidTypes}
-            onChange={setFilterAidTypes}
-            placeholder="All"
-            searchPlaceholder="Search aid types..."
-            emptyText="No aid types found."
-            icon={<Handshake className="h-4 w-4 text-muted-foreground shrink-0" />}
-            className="w-[180px] h-9"
-            dropdownClassName="w-[360px]"
-            open={openFilterId === 'aidType'}
-            onOpenChange={handleFilterOpenChange('aidType')}
-          />
-        </div>
-
-        {/* Flow Type Filter */}
-        <div className="flex flex-col gap-1">
-          <Label className="text-helper text-muted-foreground">Flow Type</Label>
-          <MultiSelectFilter
-            options={Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => ({
-              value: code,
-              label: label,
-              code: code,
-            }))}
-            value={filterFlowTypes}
-            onChange={setFilterFlowTypes}
-            placeholder="All"
-            searchPlaceholder="Search flow types..."
-            emptyText="No flow types found."
-            icon={<ArrowRightLeft className="h-4 w-4 text-muted-foreground shrink-0" />}
-            className="w-[180px] h-9"
-            dropdownClassName="w-[340px]"
-            open={openFilterId === 'flowType'}
-            onOpenChange={handleFilterOpenChange('flowType')}
-          />
-        </div>
-
         {/* Column Selector - Only visible in table view */}
         {viewMode === 'table' && (
           <div className="flex flex-col gap-1">
@@ -1838,23 +1812,24 @@ const router = useRouter();
           </div>
         )}
 
-        {/* Activity Type Filter */}
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Type</Label>
-          <Select value={activityTypeFilter} onValueChange={(v) => setActivityTypeFilter(v as 'all' | 'regular' | 'pooled')}>
-            <SelectTrigger className="w-[150px] h-9">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="regular">Activities</SelectItem>
-              <SelectItem value="pooled">Pooled Funds</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Spacer to push view toggle to the right */}
         <div className="flex-1 min-w-[8px]" />
+
+        {/* Descriptions Toggle - only shown in table mode */}
+        {viewMode === 'table' && (
+          <Button
+            variant={showDescriptions ? "default" : "outline"}
+            size="sm"
+            className="h-9 w-9 flex-shrink-0 p-0"
+            onClick={() => {
+              const next = !showDescriptions;
+              setShowDescriptions(next);
+              localStorage.setItem('activities_showDescriptions', String(next));
+            }}
+          >
+            <AlignLeft className="h-4 w-4" />
+          </Button>
+        )}
 
         {/* View Mode Toggle */}
         <div className="flex items-center border rounded-md flex-shrink-0" data-tour="activities-view-toggle">
@@ -2548,20 +2523,28 @@ const router = useRouter();
                   
                   const isSelected = selectedActivityIds.has(activity.id);
                   
+                  const isExpanded = expandedActivityRows.has(activity.id);
                   return (
+                    <Fragment key={activity.id}>
                     <tr
-                      key={activity.id}
                       className={`group hover:bg-muted/50 transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
                     >
                       {/* Checkbox cell - always visible */}
                       <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-0.5">
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={(checked) => handleSelectActivity(activity.id, !!checked)}
                             disabled={isBulkDeleting}
                             aria-label={`Select activity: ${activity.title}`}
                           />
+                          <button
+                            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => { e.stopPropagation(); toggleActivityExpansion(activity.id); }}
+                            aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+                          >
+                            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </button>
                         </div>
                       </td>
                       
@@ -2711,6 +2694,9 @@ const router = useRouter();
                                 )}
                               </div>
                             )}
+                          {showDescriptions && activity.description_general && (
+                            <p className="text-helper text-muted-foreground mt-1 line-clamp-5">{activity.description_general}</p>
+                          )}
                           </div>
                           </div>
                         </a>
@@ -3909,6 +3895,44 @@ const router = useRouter();
                         />
                       </td>
                     </tr>
+
+                    {/* Expanded detail row */}
+                    {isExpanded && (
+                      <tr className="bg-muted/30">
+                        <td colSpan={orderedDraggableColumns.length + 2} className="px-6 py-4">
+                          <div className="space-y-3 max-w-4xl">
+                            {activity.description_general && (
+                              <div>
+                                <p className="text-helper font-medium text-muted-foreground uppercase mb-1">Description</p>
+                                <p className="text-body">{activity.description_general}</p>
+                              </div>
+                            )}
+                            {activity.description_objectives && (
+                              <div>
+                                <p className="text-helper font-medium text-muted-foreground uppercase mb-1">Objectives</p>
+                                <p className="text-body">{activity.description_objectives}</p>
+                              </div>
+                            )}
+                            {activity.description_target_groups && (
+                              <div>
+                                <p className="text-helper font-medium text-muted-foreground uppercase mb-1">Target Groups</p>
+                                <p className="text-body">{activity.description_target_groups}</p>
+                              </div>
+                            )}
+                            {activity.description_other && (
+                              <div>
+                                <p className="text-helper font-medium text-muted-foreground uppercase mb-1">Other</p>
+                                <p className="text-body">{activity.description_other}</p>
+                              </div>
+                            )}
+                            {!activity.description_general && !activity.description_objectives && !activity.description_target_groups && !activity.description_other && (
+                              <p className="text-body text-muted-foreground italic">No descriptions provided.</p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>

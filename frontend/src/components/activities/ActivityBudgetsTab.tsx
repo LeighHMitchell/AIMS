@@ -488,11 +488,11 @@ export default function ActivityBudgetsTab({
     for (const budget of paginatedBudgets) {
       const key = budget.id || `${budget.period_start}-${budget.period_end}`;
       newUsdValues[key] = {
-        usd: budget.usd_value ?? null,
+        usd: budget.usd_value ?? (budget.currency === 'USD' ? Number(budget.value) : null),
         rate: null,
         date: budget.value_date,
         loading: false,
-        error: budget.usd_value === null && budget.currency !== 'USD' ? 'Not converted' : undefined
+        error: (budget.usd_value === null && budget.currency !== 'USD') ? 'Not converted' : undefined
       };
     }
     setUsdValues(newUsdValues);
@@ -1644,7 +1644,7 @@ export default function ActivityBudgetsTab({
               {/* Total Budget Value Card */}
               <HeroCard
                 title="Total Budgets"
-                value={formatCurrencyAbbreviated(budgets.reduce((sum, budget) => sum + (budget.usd_value || 0), 0))}
+                value={formatCurrencyAbbreviated(budgets.reduce((sum, budget) => sum + (budget.usd_value || (budget.currency === 'USD' ? (Number(budget.value) || 0) : 0)), 0))}
                 subtitle={`${budgets.length} budget${budgets.length !== 1 ? 's' : ''}`}
                 icon={<DollarSign className="h-5 w-5" />}
               />

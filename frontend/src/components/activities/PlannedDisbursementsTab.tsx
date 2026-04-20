@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
 import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, PenLine, Save, X, Check, MoreVertical, Calendar, ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle, ChevronLeft, ChevronRight, Lock, Unlock, RefreshCw, Info, AlertCircle } from 'lucide-react';
 import { RequiredDot } from '@/components/ui/required-dot';
@@ -65,14 +65,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { OrganizationSearchableSelect } from '@/components/ui/organization-searchable-select';
 import { ActivityCombobox } from '@/components/ui/activity-combobox';
@@ -966,7 +958,10 @@ export default function PlannedDisbursementsTab({
 
   // Calculate totals for hero cards
   const totalPlannedDisbursementsUSD = useMemo(() => {
-    return filteredDisbursements.reduce((sum, d) => sum + (d.usdAmount || 0), 0);
+    return filteredDisbursements.reduce((sum, d) => {
+      const v = d.usdAmount ?? (d as any).usd_amount ?? (d.currency === 'USD' ? (Number(d.amount) || 0) : 0);
+      return sum + (v || 0);
+    }, 0);
   }, [filteredDisbursements]);
 
   const totalPlannedDisbursementsCount = useMemo(() => {
@@ -1112,36 +1107,58 @@ export default function PlannedDisbursementsTab({
     }
   };
 
-  // Delete confirmation state (only for individual delete via dropdown menu)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  // Pending delete timeouts for undo support (individual deletes only)
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  // Delete disbursement
-  const confirmDelete = async () => {
-    if (!deleteConfirmId || isReadOnly) return;
+  // Delete disbursement with undo toast
+  const handleDeleteDisbursement = useCallback((disbursement: PlannedDisbursement) => {
+    if (!disbursement.id || isReadOnly) return;
+    const id = disbursement.id;
 
-    const id = deleteConfirmId;
-    setDeleteConfirmId(null);
-    setDeleteLoading(id);
+    // Optimistically remove from UI
+    setDisbursements(prev => prev.filter(d => d.id !== id));
 
-    try {
-      const response = await apiFetch(`/api/planned-disbursements?id=${id}`, {
-        method: 'DELETE',
-        cache: 'no-store',
-      });
+    const amount = disbursement.amount != null ? `${disbursement.currency || ''} ${Number(disbursement.amount).toLocaleString()}`.trim() : null;
+    const label = amount || 'Planned disbursement';
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete planned disbursement');
+    const commitDelete = async () => {
+      pendingDeletesRef.current.delete(id);
+      setDeleteLoading(id);
+      try {
+        const response = await apiFetch(`/api/planned-disbursements?id=${id}`, {
+          method: 'DELETE',
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete planned disbursement');
+        }
+      } catch (err: any) {
+        console.error('Error deleting planned disbursement:', err);
+        setDisbursements(prev => [...prev, disbursement]);
+        toast.error(err.message || 'Failed to delete planned disbursement');
+      } finally {
+        setDeleteLoading(null);
       }
+    };
 
-      setDisbursements(prev => prev.filter(d => d.id !== id));
-    } catch (err: any) {
-      console.error('Error deleting planned disbursement:', err);
-      setError(err.message || 'Failed to delete planned disbursement');
-    } finally {
-      setDeleteLoading(null);
-    }
-  };
+    const timeoutId = setTimeout(commitDelete, 5000);
+    pendingDeletesRef.current.set(id, timeoutId);
+
+    toast.success(`Removed ${label}`, {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const pending = pendingDeletesRef.current.get(id);
+          if (pending) {
+            clearTimeout(pending);
+            pendingDeletesRef.current.delete(id);
+          }
+          setDisbursements(prev => [...prev, disbursement]);
+        }
+      }
+    });
+  }, [isReadOnly]);
 
   // Duplicate disbursement
   const handleDuplicate = async (disbursement: PlannedDisbursement) => {
@@ -2014,7 +2031,7 @@ export default function PlannedDisbursementsTab({
                                     Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => setDeleteConfirmId(disbursement.id || '')}
+                                    onClick={() => handleDeleteDisbursement(disbursement)}
                                     disabled={isReadOnly || deleteLoading === disbursement.id}
                                     className="text-destructive"
                                   >
@@ -2682,39 +2699,6 @@ export default function PlannedDisbursementsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Sheet */}
-      <Sheet open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <SheetContent side="bottom" className="max-w-md mx-auto">
-          <SheetHeader>
-            <SheetTitle>Delete this planned disbursement?</SheetTitle>
-            <SheetDescription>
-              {(() => {
-                const d = disbursements.find(x => x.id === deleteConfirmId);
-                if (!d) return "This planned disbursement will be permanently deleted. This can't be undone.";
-                const amount = d.amount != null ? `${d.currency || ''} ${Number(d.amount).toLocaleString()}`.trim() : null;
-                const period = d.period_start && d.period_end ? `${d.period_start} → ${d.period_end}` : null;
-                const details = [amount, period].filter(Boolean).join(' • ');
-                return details
-                  ? `This disbursement (${details}) will be permanently deleted. This can't be undone.`
-                  : "This planned disbursement will be permanently deleted. This can't be undone.";
-              })()}
-            </SheetDescription>
-          </SheetHeader>
-          <SheetFooter className="flex-row gap-2 mt-4">
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="flex-1">
-              Keep
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              className="flex-1"
-            >
-              Delete disbursement
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
 
       {/* Bulk Action Toolbar - appears from bottom when items selected */}
       <BulkActionToolbar

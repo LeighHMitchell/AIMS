@@ -125,6 +125,7 @@ interface PlannedDisbursementsTableProps {
   onSelectDisbursement?: (id: string, checked: boolean) => void;
   visibleColumns?: PlannedDisbursementColumnId[];
   onColumnsChange?: (columns: PlannedDisbursementColumnId[]) => void;
+  showDescriptions?: boolean;
 }
 
 const DISBURSEMENT_TYPE_LABELS: Record<string, string> = {
@@ -147,6 +148,7 @@ export function PlannedDisbursementsTable({
   onSelectDisbursement,
   visibleColumns = DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS,
   onColumnsChange,
+  showDescriptions = false,
 }: PlannedDisbursementsTableProps) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -483,6 +485,11 @@ export function PlannedDisbursementsTable({
                           </>
                         )}
                       </div>
+                      {showDescriptions && (disbursement.description || disbursement.notes) && (
+                        <p className="text-helper text-muted-foreground mt-1 line-clamp-5">
+                          {disbursement.description || disbursement.notes}
+                        </p>
+                      )}
                     </div>
                   </td>
                 ),

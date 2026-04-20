@@ -319,6 +319,7 @@ interface TransactionTableProps {
   groupedView?: boolean;
   onGroupedViewChange?: (value: boolean) => void;
   visibleColumns?: TransactionColumnId[];
+  showDescriptions?: boolean;
 }
 
 export function TransactionTable({
@@ -343,6 +344,7 @@ export function TransactionTable({
   groupedView = false,
   onGroupedViewChange,
   visibleColumns,
+  showDescriptions = false,
 }: TransactionTableProps) {
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -900,6 +902,9 @@ export function TransactionTable({
                               ) : null;
                             })()}
                           </div>
+                          {showDescriptions && transaction.description && (
+                            <p className="text-helper text-muted-foreground mt-1 line-clamp-5">{transaction.description}</p>
+                          )}
                         </div>
                       </td>
                     ) : null,

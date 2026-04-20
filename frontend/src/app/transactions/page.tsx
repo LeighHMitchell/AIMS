@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Receipt, ShieldCheck, Building2, Banknote, Search, ArrowLeftRight } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Receipt, ShieldCheck, Building2, Banknote, Search, ArrowLeftRight, AlignLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
@@ -69,6 +69,14 @@ export default function TransactionsPage() {
   const [isBulkAccepting, setIsBulkAccepting] = useState(false);
   const [isBulkRejecting, setIsBulkRejecting] = useState(false);
   
+  // Show descriptions toggle with localStorage persistence
+  const [showDescriptions, setShowDescriptions] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('transactions_showDescriptions') === 'true';
+    }
+    return false;
+  });
+
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<TransactionColumnId[]>(defaultVisibleTransactionColumns);
   
@@ -743,6 +751,24 @@ export default function TransactionsPage() {
           {/* Spacer */}
           <div className="flex-1" />
 
+          {/* Descriptions Toggle */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-helper text-muted-foreground">Descriptions</Label>
+            <Button
+              variant={showDescriptions ? "default" : "outline"}
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={() => {
+                const next = !showDescriptions;
+                setShowDescriptions(next);
+                localStorage.setItem('transactions_showDescriptions', String(next));
+              }}
+            >
+              <AlignLeft className="h-4 w-4" />
+              <span>Descriptions</span>
+            </Button>
+          </div>
+
           {/* Column Selector */}
           <div className="flex flex-col gap-1">
             <Label className="text-helper text-muted-foreground">Columns</Label>
@@ -810,6 +836,7 @@ export default function TransactionsPage() {
                 onSelectAll={handleSelectAll}
                 onSelectTransaction={handleSelectTransaction}
                 visibleColumns={visibleColumns}
+                showDescriptions={showDescriptions}
               />
             </div>
           </div>

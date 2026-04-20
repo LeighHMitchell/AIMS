@@ -336,7 +336,7 @@ export async function GET(request: NextRequest) {
         // 4. Transactions
         supabase
           .from('transactions')
-          .select('activity_id, transaction_type, status, value, value_usd')
+          .select('activity_id, transaction_type, status, value, currency, value_usd')
           .in('activity_id', activityIds),
 
         // 5. Subnational breakdowns
@@ -361,7 +361,7 @@ export async function GET(request: NextRequest) {
         budgets.forEach((b: any) => {
           const current = budgetMap.get(b.activity_id) || 0;
           const currentOriginal = budgetOriginalMap.get(b.activity_id) || 0;
-          budgetMap.set(b.activity_id, current + (b.usd_value || 0));
+          budgetMap.set(b.activity_id, current + (b.usd_value || (b.currency === 'USD' ? parseFloat(b.value) || 0 : 0)));
           budgetOriginalMap.set(b.activity_id, currentOriginal + (b.value || 0));
         });
       }
@@ -374,7 +374,7 @@ export async function GET(request: NextRequest) {
         plannedDisbursements.forEach((pd: any) => {
           const current = plannedDisbursementMap.get(pd.activity_id) || 0;
           const currentOriginal = plannedDisbursementOriginalMap.get(pd.activity_id) || 0;
-          plannedDisbursementMap.set(pd.activity_id, current + (pd.usd_amount || 0));
+          plannedDisbursementMap.set(pd.activity_id, current + (pd.usd_amount || (pd.currency === 'USD' ? parseFloat(pd.amount) || 0 : 0)));
           plannedDisbursementOriginalMap.set(pd.activity_id, currentOriginal + (pd.amount || 0));
         });
       }
@@ -398,7 +398,7 @@ export async function GET(request: NextRequest) {
           };
 
           current.totalTransactions++;
-          const transactionValue = t.value_usd || 0;
+          const transactionValue = t.value_usd || (t.currency === 'USD' ? parseFloat(t.value) || 0 : 0);
 
           switch(t.transaction_type) {
             case '2': current.commitments += transactionValue; break;
