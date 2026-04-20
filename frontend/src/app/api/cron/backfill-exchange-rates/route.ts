@@ -9,11 +9,13 @@ export const maxDuration = 120;
 /**
  * GET /api/cron/backfill-exchange-rates
  *
- * Nightly cron to backfill USD conversions for transactions that are missing
- * exchange rates — typically because the rate wasn't available when the
- * transaction was created (e.g. same-day transactions).
+ * Nightly cron that backfills USD conversions for transactions and activity_budgets
+ * that are missing them (typically because the FX rate wasn't available when the
+ * row was created — e.g. same-day transactions).
  *
- * Also covers planned disbursements and budgets with missing USD values.
+ * Planned disbursements are handled by the dedicated cron at
+ * /api/cron/backfill-planned-disbursements-usd, which understands future-dated
+ * entries.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -27,8 +29,7 @@ export async function GET(request: NextRequest) {
 
     const results = {
       transactions: { checked: 0, updated: 0, errors: 0 },
-      planned_disbursements: { checked: 0, updated: 0, errors: 0 },
-      budgets: { checked: 0, updated: 0, errors: 0 },
+      activity_budgets: { checked: 0, updated: 0, errors: 0 },
     };
 
     // --- Transactions ---
@@ -79,97 +80,57 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // --- Planned Disbursements ---
-    const { data: disbursements, error: pdError } = await supabase
-      .from('planned_disbursements')
-      .select('id, value, currency, period_start')
-      .neq('currency', 'USD')
-      .or('value_usd.is.null,value_usd.eq.0')
-      .not('value', 'is', null)
-      .not('currency', 'is', null)
-      .limit(200);
-
-    if (pdError) {
-      console.error('[BackfillXR] Error fetching planned disbursements:', pdError);
-    } else if (disbursements && disbursements.length > 0) {
-      results.planned_disbursements.checked = disbursements.length;
-
-      for (const pd of disbursements) {
-        try {
-          const valueDate = pd.period_start;
-          if (!valueDate || !pd.value || !pd.currency) continue;
-
-          const usdResult = await convertTransactionToUSD(pd.value, pd.currency, valueDate);
-
-          if (usdResult.success && usdResult.value_usd > 0) {
-            const { error: updateError } = await supabase
-              .from('planned_disbursements')
-              .update({
-                value_usd: usdResult.value_usd,
-                exchange_rate_used: usdResult.exchange_rate_used,
-              })
-              .eq('id', pd.id);
-
-            if (updateError) {
-              console.error(`[BackfillXR] Error updating planned disbursement ${pd.id}:`, updateError);
-              results.planned_disbursements.errors++;
-            } else {
-              results.planned_disbursements.updated++;
-            }
-          }
-        } catch (err) {
-          console.error(`[BackfillXR] Error processing planned disbursement ${pd.id}:`, err);
-          results.planned_disbursements.errors++;
-        }
-      }
-    }
-
-    // --- Budgets ---
+    // --- Activity Budgets ---
+    // Table is `activity_budgets` (not `budgets`) and its USD column is `usd_value`
+    // (not `value_usd`). Per migration 20250530000000 it also has exchange_rate_used,
+    // usd_conversion_date, and usd_convertible. Mirrors the transactions filter.
     const { data: budgets, error: budgetError } = await supabase
-      .from('budgets')
-      .select('id, value, currency, period_start')
+      .from('activity_budgets')
+      .select('id, value, currency, value_date, period_start')
       .neq('currency', 'USD')
-      .or('value_usd.is.null,value_usd.eq.0')
+      .or('usd_convertible.is.false,usd_convertible.is.null,exchange_rate_used.is.null,exchange_rate_used.eq.0')
       .not('value', 'is', null)
       .not('currency', 'is', null)
       .limit(200);
 
     if (budgetError) {
-      console.error('[BackfillXR] Error fetching budgets:', budgetError);
+      console.error('[BackfillXR] Error fetching activity_budgets:', budgetError);
     } else if (budgets && budgets.length > 0) {
-      results.budgets.checked = budgets.length;
+      results.activity_budgets.checked = budgets.length;
 
       for (const budget of budgets) {
         try {
-          const valueDate = budget.period_start;
+          const valueDate = budget.value_date || budget.period_start;
           if (!valueDate || !budget.value || !budget.currency) continue;
 
           const usdResult = await convertTransactionToUSD(budget.value, budget.currency, valueDate);
 
           if (usdResult.success && usdResult.value_usd > 0) {
             const { error: updateError } = await supabase
-              .from('budgets')
+              .from('activity_budgets')
               .update({
-                value_usd: usdResult.value_usd,
+                usd_value: usdResult.value_usd,
                 exchange_rate_used: usdResult.exchange_rate_used,
+                usd_conversion_date: usdResult.usd_conversion_date,
+                usd_convertible: true,
               })
               .eq('id', budget.id);
 
             if (updateError) {
-              console.error(`[BackfillXR] Error updating budget ${budget.id}:`, updateError);
-              results.budgets.errors++;
+              console.error(`[BackfillXR] Error updating activity_budget ${budget.id}:`, updateError);
+              results.activity_budgets.errors++;
             } else {
-              results.budgets.updated++;
+              results.activity_budgets.updated++;
             }
           }
         } catch (err) {
-          console.error(`[BackfillXR] Error processing budget ${budget.id}:`, err);
-          results.budgets.errors++;
+          console.error(`[BackfillXR] Error processing activity_budget ${budget.id}:`, err);
+          results.activity_budgets.errors++;
         }
       }
     }
 
-    const totalUpdated = results.transactions.updated + results.planned_disbursements.updated + results.budgets.updated;
+    const totalUpdated = results.transactions.updated + results.activity_budgets.updated;
 
     return NextResponse.json({
       success: true,
