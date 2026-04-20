@@ -917,22 +917,6 @@ function ImprovedSectorAllocationFormInner({
     if (value < 1) return parseFloat(value.toFixed(2)); // Show 2 decimal places for values < 1%
     return Math.round(value * 10) / 10; // Show 1 decimal place for values >= 1%
   };
-  
-  // Count different levels properly - count unique values
-  const uniqueCategories = new Set();
-  const unique3DigitSectors = new Set();
-  
-  allocations.forEach(allocation => {
-    const sectorInfo = getSectorInfo(allocation.code);
-    // Add category (DAC Group)
-    uniqueCategories.add(sectorInfo.category);
-    // Add 3-digit sector code
-    unique3DigitSectors.add(allocation.code.substring(0, 3));
-  });
-  
-  const categoryCount = uniqueCategories.size;
-  const sectorCount = unique3DigitSectors.size; // Number of unique 3-digit sectors
-  const subSectorCount = allocations.filter(a => a.level === 'subsector' || a.code.length === 5).length;
 
   return (
     <div className="space-y-6">
@@ -1054,11 +1038,6 @@ function ImprovedSectorAllocationFormInner({
                   · <span className="text-destructive">{formatUnallocatedValue(totalUnallocated)}% unallocated</span>
                 </span>
               )}
-              <span className="text-muted-foreground">
-                ·{' '}
-                {subSectorCount} sub-sector{subSectorCount === 1 ? '' : 's'}
-                {categoryCount > 0 && ` across ${categoryCount} DAC ${categoryCount === 1 ? 'group' : 'groups'}`}
-              </span>
             </div>
           </div>
           {/* Thin progress bar — visual reinforcement of the number above. */}
