@@ -16,10 +16,13 @@ import {
   Activity,
   ClipboardCheck,
   FileText,
-  ArrowRightLeft,
-  Wallet,
   HelpCircle,
 } from 'lucide-react';
+import {
+  FinancialTransactionsIcon,
+  PlannedDisbursementsIcon,
+  BudgetsIcon,
+} from '@/lib/dashboard-icons';
 
 interface DashboardHeroCardsProps {
   organizationId: string;
@@ -187,7 +190,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       <StaggerItem>
         <DualMetricCard
           title="Financial Transactions"
-          icon={ArrowRightLeft}
+          icon={FinancialTransactionsIcon}
           helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
           leftMetric={{
             value: stats?.orgTransactionCount ?? 0,
@@ -209,7 +212,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <BudgetsIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="text-body font-medium text-muted-foreground">Budgets</span>
                 </div>
                 <Tooltip>
@@ -234,7 +237,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       <StaggerItem>
         <DualMetricCard
           title="Planned Disbursements"
-          icon={Wallet}
+          icon={PlannedDisbursementsIcon}
           helpText="Planned disbursement records across all your organisation's activities. These define expected fund transfers."
           leftMetric={{
             value: stats?.orgPlannedDisbursementCount ?? 0,
@@ -292,8 +295,8 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                 </div>
 
                 {/* Section 2: Validation Status */}
-                <div className="px-4 border-l border-border">
-                  <div className="flex gap-4">
+                <div className="px-4 border-l border-border min-w-0">
+                  <div className="flex flex-wrap gap-x-3 gap-y-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
@@ -325,8 +328,8 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                 </div>
 
                 {/* Section 3: Activity Status */}
-                <div className="pl-4 border-l border-border">
-                  <div className="flex gap-4">
+                <div className="pl-4 border-l border-border min-w-0">
+                  <div className="flex flex-wrap gap-x-3 gap-y-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">

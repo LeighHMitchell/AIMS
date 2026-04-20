@@ -20,7 +20,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Badge } from '@/components/ui/badge';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { apiFetch } from '@/lib/api-fetch';
-import { estimateMonthlyAmount } from '@/utils/year-allocation';
 // USD conversion now happens server-side - no client-side API needed
 // Removed shared HeroCard import - using local simple version
 import {
@@ -1918,19 +1917,6 @@ export default function PlannedDisbursementsTab({
                                   : '-'
                                 }
                               </div>
-                              {(() => {
-                                const monthly = estimateMonthlyAmount({
-                                  period_start: disbursement.period_start,
-                                  period_end: disbursement.period_end,
-                                  amount: Number(disbursement.amount),
-                                });
-                                if (!monthly || monthly.months < 2) return null;
-                                return (
-                                  <span className="text-helper text-muted-foreground">
-                                    ~{monthly.monthly.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo
-                                  </span>
-                                );
-                              })()}
                             </div>
                           </TableCell>
 

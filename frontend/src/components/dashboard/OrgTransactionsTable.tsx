@@ -25,6 +25,7 @@ import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronLeft, ChevronRight, Che
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { TableRowActionMenu } from './TableRowActionMenu';
 import { apiFetch } from '@/lib/api-fetch';
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 
 interface OrgTransactionsTableProps {
@@ -111,6 +112,23 @@ export function OrgTransactionsTable({
   const [sortField, setSortField] = useState('transaction_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const reportedBy = filterConfig?.defaultFilter ?? 'all';
+  const runDelete = useDeleteWithUndo();
+
+  const deleteTransaction = (txn: TransactionRow) => {
+    const typeLabel = TRANSACTION_TYPE_LABELS[txn.transactionType] || `Type ${txn.transactionType}`;
+    const amount = txn.value != null ? `${txn.currency || ''} ${Number(txn.value).toLocaleString()}`.trim() : '';
+    const label = [typeLabel, amount].filter(Boolean).join(' · ');
+    runDelete({
+      id: txn.id,
+      request: { endpoint: `/api/transactions?id=${txn.id}`, method: 'DELETE' },
+      label,
+      optimisticRemove: () => setTransactions((prev) => prev.filter((t) => t.id !== txn.id)),
+      restore: () => setTransactions((prev) => (prev.some((t) => t.id === txn.id) ? prev : [txn, ...prev])),
+      onCommit: async () => {
+        await fetchTransactions();
+      },
+    });
+  };
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -289,7 +307,12 @@ export function OrgTransactionsTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-body">{transaction.transactionTypeName}</span>
+                      <span className="text-body inline-flex items-center gap-1.5">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
+                          {transaction.transactionType}
+                        </code>
+                        {transaction.transactionTypeName}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <span className="text-body text-foreground">
@@ -360,7 +383,7 @@ export function OrgTransactionsTable({
                     </TableCell>
                     {!transaction.isExternallyReported && (
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <TableRowActionMenu activityId={transaction.activityId} entityType="transaction" entityId={transaction.id} onDelete={() => {/* TODO: implement delete */}} />
+                        <TableRowActionMenu activityId={transaction.activityId} entityType="transaction" entityId={transaction.id} onDelete={() => deleteTransaction(transaction)} />
                       </TableCell>
                     )}
                     {transaction.isExternallyReported && <TableCell />}

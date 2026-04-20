@@ -27,6 +27,8 @@ import {
 import type { ActivityTableVariant, TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
+import { useUser } from '@/hooks/useUser';
 
 interface OrgActivitiesTableProps {
   organizationId: string;
@@ -129,6 +131,23 @@ export function OrgActivitiesTable({
   type SortField = 'title' | 'activityStatus' | 'status' | 'validationStatus' | 'budget' | 'plannedDisb' | 'updated' | 'endDate' | 'daysRemaining';
   const [sortField, setSortField] = useState<SortField>('updated');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const runDelete = useDeleteWithUndo();
+  const { user } = useUser();
+
+  const deleteActivity = (row: ActivityRow) => {
+    runDelete({
+      id: row.id,
+      request: {
+        endpoint: '/api/activities',
+        method: 'DELETE',
+        body: { id: row.id, user: user ? { id: user.id } : undefined },
+      },
+      label: row.title,
+      optimisticRemove: () => setActivities((prev) => prev.filter((a) => a.id !== row.id)),
+      restore: () => setActivities((prev) => (prev.some((a) => a.id === row.id) ? prev : [row, ...prev])),
+    });
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -487,7 +506,7 @@ export function OrgActivitiesTable({
                         </span>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <TableRowActionMenu activityId={activity.id} entityType="activity" onDelete={() => {/* TODO: implement delete */}} />
+                        <TableRowActionMenu activityId={activity.id} entityType="activity" onDelete={() => deleteActivity(activity)} />
                       </TableCell>
                     </>
                   )}

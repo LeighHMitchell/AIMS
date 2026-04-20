@@ -24,7 +24,7 @@ import {
 import { format } from 'date-fns';
 import { Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
-import { estimateMonthlyAmount } from '@/utils/year-allocation';
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 
@@ -82,6 +82,25 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
   const [sortField, setSortField] = useState('period_start');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [reportedBy, setReportedBy] = useState<ReportedByFilter>(filterConfig?.defaultFilter ?? 'my_org');
+  const runDelete = useDeleteWithUndo();
+
+  const deleteBudget = (row: BudgetRow) => {
+    const label = `${row.currency || ''} ${Number(row.value || 0).toLocaleString()} budget`.trim();
+    runDelete({
+      id: row.id,
+      request: {
+        endpoint: '/api/budgets/bulk-delete',
+        method: 'DELETE',
+        body: { ids: [row.id] },
+      },
+      label,
+      optimisticRemove: () => setBudgets((prev) => prev.filter((b) => b.id !== row.id)),
+      restore: () => setBudgets((prev) => (prev.some((b) => b.id === row.id) ? prev : [row, ...prev])),
+      onCommit: async () => {
+        await fetchBudgets();
+      },
+    });
+  };
 
   const fetchBudgets = useCallback(async () => {
     try {
@@ -232,26 +251,11 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                       <span className="text-body">{BUDGET_TYPE_LABELS[budget.type] || `Type ${budget.type}`}</span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium text-foreground">
-                            <span className="text-helper text-muted-foreground mr-1 font-normal">{budget.currency}</span>
-                            {formatCurrency(budget.value)}
-                          </span>
-                        </div>
-                        {(() => {
-                          const monthly = estimateMonthlyAmount({
-                            period_start: budget.period_start,
-                            period_end: budget.period_end,
-                            amount: budget.value,
-                          });
-                          if (!monthly || monthly.months < 2) return null;
-                          return (
-                            <span className="text-helper text-muted-foreground">
-                              ~{formatCurrency(monthly.monthly)}/mo
-                            </span>
-                          );
-                        })()}
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-foreground">
+                          <span className="text-helper text-muted-foreground mr-1 font-normal">{budget.currency}</span>
+                          {formatCurrency(budget.value)}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -272,7 +276,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                       )}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <TableRowActionMenu activityId={budget.activity_id} entityType="budget" entityId={budget.id} onDelete={() => {/* TODO: implement delete */}} />
+                      <TableRowActionMenu activityId={budget.activity_id} entityType="budget" entityId={budget.id} onDelete={() => deleteBudget(budget)} />
                     </TableCell>
                   </TableRow>
                 );

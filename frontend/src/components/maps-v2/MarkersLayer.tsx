@@ -37,6 +37,7 @@ interface LocationData {
   activity?: {
     id: string;
     title: string;
+    acronym?: string;
     status: string;
     organization_id: string;
     organization_name?: string;
@@ -420,11 +421,14 @@ function LocationMarker({
         )}
         
         {/* Title - Clickable to view activity */}
-        <a 
+        <a
           href={`/activities/${location.activity_id}`}
           className="block text-base font-semibold text-foreground mb-3 leading-tight hover:text-muted-foreground cursor-pointer transition-colors pr-6"
         >
           {location.activity?.title || 'Untitled Activity'}
+          {location.activity?.acronym && (
+            <span> {location.activity.acronym}</span>
+          )}
         </a>
         
         <hr className="border-border mb-3" />
@@ -447,7 +451,7 @@ function LocationMarker({
             <span className="text-helper text-foreground">
               {location.activity?.organization_name || '-'}
               {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
-                <span className="text-foreground"> ({location.activity.organization_acronym})</span>
+                <span> {location.activity.organization_acronym}</span>
               )}
             </span>
           </div>

@@ -95,21 +95,26 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
             </TabsList>
 
             {showFilter && (
-              <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => setReportedBy(val)}>
-                <SelectTrigger className="w-[320px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {financialFilter.allowedFilters.map((filter, index) => (
-                    <SelectItem key={filter} value={filter} className="pl-2 [&>span:first-child]:hidden">
-                      <span className="flex items-center gap-2">
-                        <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{index + 1}</span>
-                        {financialFilter.filterLabels[filter] || filter}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <span className="text-helper text-muted-foreground whitespace-nowrap">Reported by:</span>
+                <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => setReportedBy(val)}>
+                  <SelectTrigger className="w-[320px] h-8">
+                    <SelectValue>
+                      {financialFilter.filterLabels[reportedBy] || reportedBy}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {financialFilter.allowedFilters.map((filter, index) => (
+                      <SelectItem key={filter} value={filter} className="pl-2 [&>span:first-child]:hidden">
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{index + 1}</span>
+                          {financialFilter.filterLabels[filter] || filter}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
 

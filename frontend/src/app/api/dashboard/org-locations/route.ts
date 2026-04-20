@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         title_narrative,
+        acronym,
         activity_status,
         reporting_org_id,
         planned_start_date,
@@ -201,6 +202,7 @@ export async function GET(request: NextRequest) {
         activity: activity ? {
           id: activity.id,
           title: activity.title_narrative,
+          acronym: activity.acronym,
           status: activity.activity_status,
           organization_id: activity.reporting_org_id,
           organization_name: activity.organizations?.name,

@@ -1,11 +1,12 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrgDashboardStats } from '@/hooks/useOrgDashboardStats';
 import { useUser } from '@/hooks/useUser';
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Plus, Pencil, CheckCircle, XCircle, HelpCircle, FileText, ExternalLink, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,43 @@ function formatTimestamp(timestamp: string): { relative: string; absolute: strin
 
 export function RecencyCards({ organizationId }: RecencyCardsProps) {
   const { user } = useUser();
-  const { stats, loading, error } = useOrgDashboardStats(organizationId, user?.id);
+  const { stats, loading, error, refetch } = useOrgDashboardStats(organizationId, user?.id);
+  const runDelete = useDeleteWithUndo();
+  const [hiddenActivityIds, setHiddenActivityIds] = useState<Set<string>>(new Set());
+
+  const deleteActivity = (activityId: string, title: string) => {
+    runDelete({
+      id: activityId,
+      request: {
+        endpoint: '/api/activities',
+        method: 'DELETE',
+        body: { id: activityId, user: user ? { id: user.id } : undefined },
+      },
+      label: title,
+      optimisticRemove: () => {
+        setHiddenActivityIds((prev) => {
+          const next = new Set(prev);
+          next.add(activityId);
+          return next;
+        });
+      },
+      restore: () => {
+        setHiddenActivityIds((prev) => {
+          const next = new Set(prev);
+          next.delete(activityId);
+          return next;
+        });
+      },
+      onCommit: async () => {
+        await refetch();
+        setHiddenActivityIds((prev) => {
+          const next = new Set(prev);
+          next.delete(activityId);
+          return next;
+        });
+      },
+    });
+  };
 
   if (loading) {
     return (
@@ -92,9 +129,12 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
     );
   }
 
-  const lastCreated = stats?.lastActivityCreated;
-  const lastEdited = stats?.lastActivityEdited;
-  const lastValidation = stats?.lastValidationEvent;
+  const rawLastCreated = stats?.lastActivityCreated;
+  const rawLastEdited = stats?.lastActivityEdited;
+  const rawLastValidation = stats?.lastValidationEvent;
+  const lastCreated = rawLastCreated && !hiddenActivityIds.has(rawLastCreated.id) ? rawLastCreated : null;
+  const lastEdited = rawLastEdited && !hiddenActivityIds.has(rawLastEdited.id) ? rawLastEdited : null;
+  const lastValidation = rawLastValidation && !hiddenActivityIds.has(rawLastValidation.activityId) ? rawLastValidation : null;
 
   return (
     <StaggerContainer className="grid gap-4 md:grid-cols-3">
@@ -132,7 +172,10 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                         <Pencil className="h-3.5 w-3.5 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { window.location.href = `/activities/${lastCreated.id}`; }}>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => deleteActivity(lastCreated.id, lastCreated.title)}
+                      >
                         <Trash2 className="h-3.5 w-3.5 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -198,7 +241,10 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                         <Pencil className="h-3.5 w-3.5 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { window.location.href = `/activities/${lastEdited.id}`; }}>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => deleteActivity(lastEdited.id, lastEdited.title)}
+                      >
                         <Trash2 className="h-3.5 w-3.5 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -277,7 +323,10 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                           <Pencil className="h-3.5 w-3.5 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { window.location.href = `/activities/${lastValidation.activityId}`; }}>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => deleteActivity(lastValidation.activityId, lastValidation.activityTitle)}
+                        >
                           <Trash2 className="h-3.5 w-3.5 mr-2" />
                           Delete
                         </DropdownMenuItem>

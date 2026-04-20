@@ -174,7 +174,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     Read
                   </Badge>
                 ) : (
-                  <Badge variant="default" className="text-helper h-5">
+                  <Badge className="text-helper h-5 bg-primary text-primary-foreground hover:bg-primary/90">
                     New
                   </Badge>
                 )}

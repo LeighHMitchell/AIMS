@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { Banknote, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { apiFetch } from '@/lib/api-fetch';
-import { estimateMonthlyAmount } from '@/utils/year-allocation';
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 
@@ -81,6 +81,21 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
   const [sortField, setSortField] = useState('period_start');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const reportedBy = filterConfig?.defaultFilter ?? 'all';
+  const runDelete = useDeleteWithUndo();
+
+  const deleteDisbursement = (row: DisbursementRow) => {
+    const label = `${row.currency || ''} ${Number(row.amount || 0).toLocaleString()} planned disbursement`.trim();
+    runDelete({
+      id: row.id,
+      request: { endpoint: `/api/planned-disbursements?id=${row.id}`, method: 'DELETE' },
+      label,
+      optimisticRemove: () => setDisbursements((prev) => prev.filter((d) => d.id !== row.id)),
+      restore: () => setDisbursements((prev) => (prev.some((d) => d.id === row.id) ? prev : [row, ...prev])),
+      onCommit: async () => {
+        await fetchDisbursements();
+      },
+    });
+  };
 
   const fetchDisbursements = useCallback(async () => {
     try {
@@ -227,26 +242,11 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium text-foreground">
-                          <span className="text-helper text-muted-foreground mr-1 font-normal">{d.currency}</span>
-                          {formatCurrency(d.amount)}
-                        </span>
-                      </div>
-                      {(() => {
-                        const monthly = estimateMonthlyAmount({
-                          period_start: d.period_start,
-                          period_end: d.period_end,
-                          amount: d.amount,
-                        });
-                        if (!monthly || monthly.months < 2) return null;
-                        return (
-                          <span className="text-helper text-muted-foreground">
-                            ~{formatCurrency(monthly.monthly)}/mo
-                          </span>
-                        );
-                      })()}
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium text-foreground">
+                        <span className="text-helper text-muted-foreground mr-1 font-normal">{d.currency}</span>
+                        {formatCurrency(d.amount)}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -276,7 +276,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                   </TableCell>
                   {(!d.activity?.reporting_org_id || d.activity.reporting_org_id === organizationId) ? (
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <TableRowActionMenu activityId={d.activity_id} entityType="planned-disbursement" entityId={d.id} onDelete={() => {/* TODO: implement delete */}} />
+                      <TableRowActionMenu activityId={d.activity_id} entityType="planned-disbursement" entityId={d.id} onDelete={() => deleteDisbursement(d)} />
                     </TableCell>
                   ) : (
                     <TableCell />
