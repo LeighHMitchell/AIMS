@@ -150,14 +150,30 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       }
       bannerOverlay={
         <>
-          <Link href={`/activities/${activity.id}`} className="block">
-            <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
-              {activity.title}
-              {activity.acronym && (
-                <span className="text-lg font-bold ml-1 text-white">({activity.acronym})</span>
-              )}
-            </h2>
-          </Link>
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
+            <Link href={`/activities/${activity.id}`} className="min-w-0">
+              <h2 className="text-lg font-bold text-white line-clamp-2 transition-colors">
+                {activity.title}
+                {activity.acronym && (
+                  <span className="text-lg font-bold ml-1 text-white">({activity.acronym})</span>
+                )}
+              </h2>
+            </Link>
+            {(activity.partner_id || activity.iati_id) && (
+              <div className="flex flex-wrap items-center gap-1">
+                {activity.partner_id && (
+                  <span className="text-xs font-mono bg-white/20 text-white px-1.5 py-0.5 rounded truncate max-w-[200px]">
+                    {activity.partner_id}
+                  </span>
+                )}
+                {activity.iati_id && (
+                  <span className="text-xs font-mono bg-white/20 text-white px-1.5 py-0.5 rounded truncate max-w-[220px]">
+                    {activity.iati_id}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             {activity.created_by_org_acronym || activity.created_by_org_name ? (
               <>

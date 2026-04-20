@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build optimized query
-    // Always get count for proper pagination
-    let countQuery = supabase.from('activities').select('*', { count: 'exact', head: true });
+    // Always get count for proper pagination (exclude soft-deleted)
+    let countQuery = supabase.from('activities').select('*', { count: 'exact', head: true }).is('deleted_at', null);
 
     let dataQuery = supabase
       .from('activities')
@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
           level
         )
       `)
+      .is('deleted_at', null)
       .range(offset, offset + limit - 1);
 
     // Apply filters

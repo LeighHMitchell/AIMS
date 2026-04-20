@@ -1038,7 +1038,7 @@ const router = useRouter();
         if (res.status === 404) {
           // If the error message indicates the activity wasn't found, treat as success
           if (errorData.error === "Activity not found" || errorData.error === "No activities found") {
-            toast.success(`"${activityTitle}" was deleted successfully`);
+            toast.success(`"${activityTitle}" was deleted`);
 
             // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
             // Increased delay to ensure database transaction has committed
@@ -1078,8 +1078,34 @@ const router = useRouter();
         throw new Error(errorData.error || "Failed to delete activity");
       }
       
-      toast.success(`"${activityTitle}" was deleted successfully`);
-      
+      toast.success(`"${activityTitle}" was deleted`, {
+        duration: 10000,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              const restoreRes = await apiFetch('/api/activities/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [id] }),
+              });
+              if (!restoreRes.ok) {
+                throw new Error('Restore failed');
+              }
+              toast.success(`"${activityTitle}" was restored`);
+              if (usingOptimization) {
+                safeOptimizedData.refetch();
+              } else {
+                fetchActivities(currentPage, false);
+              }
+            } catch (restoreError) {
+              console.error('[AIMS] Failed to restore activity:', restoreError);
+              toast.error('Failed to restore activity');
+            }
+          },
+        },
+      });
+
       // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
       // Use a longer delay to ensure backend has processed the deletion and database has committed
       setTimeout(() => {
@@ -1089,7 +1115,7 @@ const router = useRouter();
           fetchActivities(currentPage, false);
         }
       }, 500);
-      
+
     } catch (error) {
       console.error(`[AIMS] Error deleting activity (attempt ${retryCount + 1}):`, error);
       
@@ -1234,11 +1260,43 @@ const router = useRouter();
       }
       
       const result = await response.json();
-      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'activity' : 'activities'} deleted successfully`);
-      
+      const deletedIds = [...selectedArray];
+      toast.success(
+        `${result.deletedCount} ${result.deletedCount === 1 ? 'activity' : 'activities'} deleted`,
+        {
+          duration: 10000,
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                const restoreRes = await apiFetch('/api/activities/restore', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ids: deletedIds }),
+                });
+                if (!restoreRes.ok) {
+                  throw new Error('Restore failed');
+                }
+                const restoreData = await restoreRes.json().catch(() => ({}));
+                const restoredCount = restoreData.restoredCount ?? deletedIds.length;
+                toast.success(`${restoredCount} ${restoredCount === 1 ? 'activity' : 'activities'} restored`);
+                if (usingOptimization) {
+                  safeOptimizedData.refetch();
+                } else {
+                  fetchActivities(currentPage, false);
+                }
+              } catch (restoreError) {
+                console.error('[AIMS] Failed to restore activities:', restoreError);
+                toast.error('Failed to restore activities');
+              }
+            },
+          },
+        }
+      );
+
       // Clear selection
       setSelectedActivityIds(new Set());
-      
+
       // Force refresh to ensure list is up to date and remove any stale entries
       // Use delay to ensure database has committed the deletion
       setTimeout(() => {
@@ -2592,8 +2650,9 @@ const router = useRouter();
                           <div className="flex items-start gap-2">
                             {/* Activity Title and Details */}
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
+                              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                               <h3
-                                className="group/title font-medium text-foreground leading-tight line-clamp-2"
+                                className="group/title font-medium text-foreground leading-tight line-clamp-2 min-w-0"
                                 title={activity.title}
                               >
                                 {activity.title}
@@ -2650,7 +2709,7 @@ const router = useRouter();
                                 </button>
                               </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
-                              <div className="text-helper text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
+                              <div className="text-helper text-muted-foreground flex items-center gap-1 text-left">
                                 {activity.partnerId && (
                                   <div className="group/pid flex items-center gap-1 flex-shrink-0">
                                     <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate max-w-[200px]">{activity.partnerId}</span>
@@ -2694,6 +2753,7 @@ const router = useRouter();
                                 )}
                               </div>
                             )}
+                              </div>
                           {showDescriptions && activity.description_general && (
                             <p className="text-helper text-muted-foreground mt-1 line-clamp-5">{activity.description_general}</p>
                           )}
@@ -4103,7 +4163,7 @@ const router = useRouter();
               variant="destructive"
               onClick={() => deleteActivityId && handleDelete(deleteActivityId)}
             >
-              <Trash2 className="h-4 w-4 mr-1" />
+              <Trash2 className="h-4 w-4 mr-1 text-white" />
               Delete Activity
             </Button>
           </DialogFooter>

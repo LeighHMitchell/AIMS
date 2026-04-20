@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
     try {
       const { count: totalCount, error: countError } = await supabase
         .from('activities')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .is('deleted_at', null);
       
       if (!countError && totalCount !== null) {
         count = totalCount;
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from('activities')
       .select(selectFields)
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false })
       .range(offset, offset + limit - 1);
 

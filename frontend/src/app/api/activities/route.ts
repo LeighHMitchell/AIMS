@@ -1846,8 +1846,9 @@ export async function GET(request: NextRequest) {
         capital_spend_percentage,
         recipient_countries,
         recipient_regions
-      `);
-    
+      `)
+      .is('deleted_at', null);
+
     // Apply organization filter if provided
     if (organizationIdFilter) {
       query = query.eq('reporting_org_id', organizationIdFilter);
@@ -2453,12 +2454,12 @@ export async function DELETE(request: NextRequest) {
         });
       });
       
-      // Delete all activities (cascading will handle related records)
+      // Soft-delete all activities (undoable via POST /api/activities/restore)
       const { error: deleteError } = await supabase
         .from('activities')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .in('id', ids);
-      
+
       if (deleteError) {
         console.error("[AIMS] Error bulk deleting activities:", deleteError);
         return NextResponse.json({ error: "Failed to delete activities" }, { status: 500 });
@@ -2486,22 +2487,22 @@ export async function DELETE(request: NextRequest) {
         console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
       }
       
-      // Post-deletion verification after 2 second delay
+      // Post-deletion verification after 2 second delay (soft delete: check deleted_at is set)
       setTimeout(async () => {
         try {
           const { data: verifyActivities, error: verifyError } = await supabase
             .from('activities')
-            .select('id, iati_identifier, title_narrative')
+            .select('id, iati_identifier, title_narrative, deleted_at')
             .in('id', ids);
-          
+
           if (verifyError) {
             console.error(`[AIMS] [${deletionTimestamp}] Error verifying deletion:`, verifyError);
             return;
           }
-          
-          if (verifyActivities && verifyActivities.length > 0) {
-            console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: ${verifyActivities.length} activities still exist after deletion!`, verifyActivities);
-          } else {
+
+          const notSoftDeleted = (verifyActivities || []).filter(a => !a.deleted_at);
+          if (notSoftDeleted.length > 0) {
+            console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: ${notSoftDeleted.length} activities missing deleted_at after soft delete!`, notSoftDeleted);
           }
         } catch (verifyException) {
           console.error(`[AIMS] [${deletionTimestamp}] Exception during verification:`, verifyException);
@@ -2545,12 +2546,12 @@ export async function DELETE(request: NextRequest) {
       updated_at: activity.updated_at
     });
     
-    // Delete the activity (cascading will handle related records)
+    // Soft-delete the activity (undoable via POST /api/activities/[id]/restore)
     const { error: deleteError } = await supabase
       .from('activities')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
-    
+
     if (deleteError) {
       console.error(`[AIMS] [${deletionTimestamp}] Error deleting activity:`, deleteError);
       return NextResponse.json({ error: "Failed to delete activity" }, { status: 500 });
@@ -2576,21 +2577,19 @@ export async function DELETE(request: NextRequest) {
       console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
     }
     
-    // Post-deletion verification after 2 second delay
+    // Post-deletion verification after 2 second delay (soft delete: check deleted_at is set)
     setTimeout(async () => {
       try {
         const { data: verifyActivity, error: verifyError } = await supabase
           .from('activities')
-          .select('id, iati_identifier, title_narrative')
+          .select('id, iati_identifier, title_narrative, deleted_at')
           .eq('id', id)
           .single();
-        
-        if (verifyError && verifyError.code === 'PGRST116') {
-          // PGRST116 means no rows returned, which is expected
-        } else if (verifyError) {
+
+        if (verifyError) {
           console.error(`[AIMS] [${deletionTimestamp}] Error verifying deletion:`, verifyError);
-        } else if (verifyActivity) {
-          console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: Activity still exists after deletion!`, verifyActivity);
+        } else if (verifyActivity && !verifyActivity.deleted_at) {
+          console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: Activity missing deleted_at after soft delete!`, verifyActivity);
         }
       } catch (verifyException) {
         console.error(`[AIMS] [${deletionTimestamp}] Exception during verification:`, verifyException);
