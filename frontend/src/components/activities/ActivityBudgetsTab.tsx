@@ -624,6 +624,7 @@ export default function ActivityBudgetsTab({
     setShowDeleteConfirm(null);
     const budget = budgets[index];
     if (!budget?.id) return;
+    const deletedBudget = { ...budget };
 
     try {
       const { error } = await supabase
@@ -634,12 +635,29 @@ export default function ActivityBudgetsTab({
       if (error) throw error;
 
       setBudgets(prev => prev.filter((_, i) => i !== index));
-      
-      // Refresh summary cards after deletion
+
       if (typeof window !== 'undefined') {
-        const event = new CustomEvent('refreshFinancialSummaryCards');
-        window.dispatchEvent(event);
+        window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
       }
+
+      toast.success('Budget deleted', {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            const { data, error: insertError } = await supabase
+              .from('activity_budgets')
+              .insert({ ...deletedBudget, id: undefined })
+              .select()
+              .single();
+            if (!insertError && data) {
+              setBudgets(prev => [...prev, data]);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
+              }
+            }
+          }
+        }
+      });
     } catch (err) {
       console.error('Error deleting budget:', err);
       setError('Failed to delete budget');

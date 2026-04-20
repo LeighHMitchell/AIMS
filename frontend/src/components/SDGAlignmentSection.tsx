@@ -263,10 +263,28 @@ export default function SDGAlignmentSection({
     setTargetPopoverOpen({ ...targetPopoverOpen, [goalId]: false });
   };
 
-  const removeTarget = (goalId: number, targetId: string) => {
+  const removeTarget = async (goalId: number, targetId: string) => {
     if (!canEdit) return;
+    const ok = await confirm({
+      title: 'Remove this target?',
+      description: 'This target will be removed from the activity.',
+      confirmLabel: 'Remove target',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
+    const removed = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
     setHasUserEdited(true);
     setMappings(prev => prev.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
+    toast.success('SDG target removed', {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          setHasUserEdited(true);
+          if (removed) setMappings(prev => [...prev, removed]);
+        }
+      }
+    });
   };
 
   const updateAlignmentStrength = (goalId: number, strength: AlignmentStrength) => {

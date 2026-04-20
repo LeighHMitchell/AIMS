@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, ExternalLink, FileText, X } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useDocumentLinks } from '@/hooks/use-results';
+import { toast } from 'sonner';
 import { DocumentLink } from '@/types/results';
 
 interface DocumentLinksManagerProps {
@@ -79,10 +80,22 @@ export function DocumentLinksManager({
   };
 
   const handleDelete = async (documentId: string) => {
-    if (await confirm({ title: 'Delete document link?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+    const deleted = documents.find(d => d.id === documentId);
+    if (await confirm({ title: 'Delete document link?', description: "This can't be undone.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteDocumentLink(entityType, entityId, documentId);
       if (success) {
         onUpdate();
+        toast.success('Document link deleted', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              if (deleted) {
+                await createDocumentLink(entityType, entityId, { url: deleted.url, title: deleted.title, format: deleted.format, category_code: deleted.category_code, language_code: deleted.language_code });
+                onUpdate();
+              }
+            }
+          }
+        });
       }
     }
   };

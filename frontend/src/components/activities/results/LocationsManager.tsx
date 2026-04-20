@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, MapPin, X } from 'lucide-react';
 import { useLocations } from '@/hooks/use-results';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { toast } from 'sonner';
 import { LocationReference } from '@/types/results';
 
 interface LocationsManagerProps {
@@ -59,10 +60,22 @@ export function LocationsManager({
   };
 
   const handleDelete = async (locationId: string) => {
-    if (await confirm({ title: 'Delete location reference?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+    const deleted = locations.find(l => l.id === locationId);
+    if (await confirm({ title: 'Delete location reference?', description: "This can't be undone.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteLocation(entityType, entityId, locationId);
       if (success) {
         onUpdate();
+        toast.success('Location reference deleted', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              if (deleted) {
+                await createLocation(entityType, entityId, { location_ref: deleted.location_ref, location_type: deleted.location_type });
+                onUpdate();
+              }
+            }
+          }
+        });
       }
     }
   };

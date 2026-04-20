@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Tag, X } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useDimensions } from '@/hooks/use-results';
+import { toast } from 'sonner';
 import { Dimension, DIMENSION_TEMPLATES } from '@/types/results';
 
 interface DimensionsManagerProps {
@@ -70,10 +71,22 @@ export function DimensionsManager({
   };
 
   const handleDelete = async (dimensionId: string) => {
-    if (await confirm({ title: 'Delete this dimension?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+    const deleted = dimensions.find(d => d.id === dimensionId);
+    if (await confirm({ title: 'Delete this dimension?', description: "This can't be undone.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteDimension(entityType, entityId, dimensionId);
       if (success) {
         onUpdate();
+        toast.success('Dimension deleted', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              if (deleted) {
+                await createDimension(entityType, entityId, { name: deleted.name, value: deleted.value });
+                onUpdate();
+              }
+            }
+          }
+        });
       }
     }
   };

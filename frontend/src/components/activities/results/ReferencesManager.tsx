@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Link2, X } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useReferences } from '@/hooks/use-results';
+import { toast } from 'sonner';
 import { ResultReference, REFERENCE_VOCABULARIES } from '@/types/results';
 
 interface ReferencesManagerProps {
@@ -59,10 +60,22 @@ export function ReferencesManager({
   };
 
   const handleDelete = async (referenceId: string) => {
-    if (await confirm({ title: 'Delete this reference?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+    const deleted = references.find(r => r.id === referenceId);
+    if (await confirm({ title: 'Delete this reference?', description: "This can't be undone.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteReference(entityType, entityId, referenceId);
       if (success) {
         onUpdate();
+        toast.success('Reference deleted', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              if (deleted) {
+                await createReference(entityType, entityId, { vocabulary: deleted.vocabulary, code: deleted.code, indicator_uri: deleted.indicator_uri });
+                onUpdate();
+              }
+            }
+          }
+        });
       }
     }
   };

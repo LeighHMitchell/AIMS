@@ -458,9 +458,9 @@ export function ResultsTab({
 
   // Handle deleting an indicator
   const handleDeleteIndicator = async (indicatorId: string) => {
+    const deletedIndicator = results.flatMap(r => r.indicators || []).find(i => i.id === indicatorId);
     if (await confirm({ title: 'Delete this indicator?', description: 'All periods, baseline values, and achievement data for this indicator will be permanently lost.', confirmLabel: 'Delete indicator', cancelLabel: 'Keep indicator' })) {
       try {
-        // Use direct Supabase call for now since we need a more flexible approach
         const { error } = await supabase
           .from('result_indicators')
           .delete()
@@ -472,8 +472,19 @@ export function ResultsTab({
           return;
         }
 
-        toast.success('Indicator deleted successfully');
-        fetchResults(); // Refresh to update the UI
+        fetchResults();
+        toast.success('Indicator deleted', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              if (deletedIndicator) {
+                const { result_id, title, description, measure, ascending } = deletedIndicator;
+                await supabase.from('result_indicators').insert({ result_id, title, description, measure, ascending });
+                fetchResults();
+              }
+            }
+          }
+        });
       } catch (err) {
         console.error('Unexpected error deleting indicator:', err);
         toast.error('Failed to delete indicator');
