@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Lock, Unlock, CalendarRange, SplitSquareHorizontal, Trash2, Info, Package } from "lucide-react";
+import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Lock, Unlock, CalendarRange, SplitSquareHorizontal, Trash2, Info, Package, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentDropzone, UploadedDocument } from "@/components/ui/document-dropzone";
 import { apiFetch } from "@/lib/api-fetch";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -17,6 +19,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { CurrencySelector } from "@/components/forms/CurrencySelector";
 import { convertToUSD } from "@/lib/currency-conversion-api";
+import { ContributionModal } from "@/components/government/ContributionModal";
+import {
+  Contribution,
+  getContributions,
+  contributionAmountLocal,
+  contributionAmountUSD,
+  IN_KIND_CATEGORY_LABELS,
+  OTHER_CATEGORY_LABELS,
+} from "@/components/government/contribution-types";
 
 // ─── Risk Assessment Types ──────────────────────────────────────────────────
 
@@ -148,6 +159,8 @@ interface GovernmentInputs {
     inKindContributions?: string;
     sourceOfFunding?: string;
     otherContributions?: OtherContribution[];
+    /** New unified contributions list (supersedes annual / inKindItems / otherContributions). */
+    contributions?: Contribution[];
   };
 
   riskAssessment?: RiskAssessment;
@@ -248,6 +261,36 @@ export function GovernmentInputsSectionEnhanced({
 
     current[keys[keys.length - 1]] = value;
     onChange(newInputs);
+  };
+
+  // ─── Contributions List + Modal State ──────────────────────────────────────
+  const [contribModalOpen, setContribModalOpen] = useState(false);
+  const [editingContribution, setEditingContribution] = useState<Contribution | null>(null);
+
+  const contributions = getContributions(governmentInputs.rgcContribution);
+
+  const saveContribution = (c: Contribution) => {
+    const current = getContributions(governmentInputs.rgcContribution);
+    const idx = current.findIndex(x => x.id === c.id);
+    const next = idx >= 0
+      ? [...current.slice(0, idx), c, ...current.slice(idx + 1)]
+      : [...current, c];
+    updateField('rgcContribution.contributions', next);
+  };
+
+  const deleteContribution = (id: string) => {
+    const current = getContributions(governmentInputs.rgcContribution);
+    updateField('rgcContribution.contributions', current.filter(c => c.id !== id));
+  };
+
+  const openNewContribution = () => {
+    setEditingContribution(null);
+    setContribModalOpen(true);
+  };
+
+  const openEditContribution = (c: Contribution) => {
+    setEditingContribution(c);
+    setContribModalOpen(true);
   };
 
   // ─── Exchange Rate State & Logic ───────────────────────────────────────────
@@ -537,549 +580,227 @@ export function GovernmentInputsSectionEnhanced({
             {/* Government Financial Contribution */}
             <Card>
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <Wallet className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Government Financial Contribution</CardTitle>
-                    <CardDescription>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">Government Financial Contribution</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="About government financial contribution"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
                       Track government co-financing and resource commitments
-                    </CardDescription>
-                  </div>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Is Government Contributing */}
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium text-foreground mb-3">
-                    Does the government provide financial contribution?
-                  </h4>
-                  <RadioGroup
-                    value={governmentInputs.rgcContribution?.isProvided ? "yes" : "no"}
-                    onValueChange={(value) =>
-                      !readOnly && updateField("rgcContribution.isProvided", value === "yes")
+                <h4 className="font-medium text-foreground mb-3">
+                  Does the government provide financial contribution?
+                </h4>
+                <div className="flex items-center gap-4">
+                  {/* Yes Card */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      !readOnly && updateField("rgcContribution.isProvided", true)
                     }
                     disabled={readOnly}
-                    className="flex gap-6"
+                    aria-pressed={governmentInputs.rgcContribution?.isProvided === true}
+                    className={cn(
+                      "relative flex flex-col justify-end w-[220px] h-[220px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
+                      governmentInputs.rgcContribution?.isProvided === true
+                        ? "ring-border bg-primary/5"
+                        : "ring-border bg-background hover:bg-muted",
+                      readOnly && "opacity-50 cursor-not-allowed"
+                    )}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="contrib-yes" />
-                      <label htmlFor="contrib-yes" className="text-body font-medium cursor-pointer">
-                        Yes, government contributes
-                      </label>
+                    <Image
+                      src="/images/government-contribution-yes.png"
+                      alt="Yes, government contributes"
+                      fill
+                      className="object-contain object-top p-3 opacity-70 mix-blend-multiply"
+                    />
+                    {governmentInputs.rgcContribution?.isProvided === true && (
+                      <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+                    <div className="relative z-10 p-3">
+                      <h4 className="text-body font-semibold">Yes, government contributes</h4>
+                      <p className="mt-1 text-helper text-muted-foreground">
+                        Record co-financing amounts and details
+                      </p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="contrib-no" />
-                      <label htmlFor="contrib-no" className="text-body font-medium cursor-pointer">
-                        No contribution
-                      </label>
+                  </button>
+
+                  {/* No Card */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      !readOnly && updateField("rgcContribution.isProvided", false)
+                    }
+                    disabled={readOnly}
+                    aria-pressed={governmentInputs.rgcContribution?.isProvided === false}
+                    className={cn(
+                      "relative flex flex-col justify-end w-[220px] h-[220px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
+                      governmentInputs.rgcContribution?.isProvided === false
+                        ? "ring-border bg-primary/5"
+                        : "ring-border bg-background hover:bg-muted",
+                      readOnly && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <Image
+                      src="/images/government-contribution-no.png"
+                      alt="No contribution"
+                      fill
+                      className="object-contain object-top p-3 opacity-70 mix-blend-multiply"
+                    />
+                    {governmentInputs.rgcContribution?.isProvided === false && (
+                      <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+                    <div className="relative z-10 p-3">
+                      <h4 className="text-body font-semibold">No contribution</h4>
+                      <p className="mt-1 text-helper text-muted-foreground">
+                        Government is not co-financing this activity
+                      </p>
                     </div>
-                  </RadioGroup>
+                  </button>
                 </div>
 
-                {/* Contribution Details */}
+                {/* Contributions list (shown when government is contributing) */}
                 {governmentInputs.rgcContribution?.isProvided && (
-                  <>
-                    {/* Currency + Value Date */}
-                    <div className="p-4 bg-muted border border-border rounded-lg space-y-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="h-5 w-5 text-muted-foreground" />
-                        <h4 className="font-semibold text-foreground">Contribution Details</h4>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-body font-medium">Currency</Label>
-                          <CurrencySelector
-                            value={rgc?.currency || undefined}
-                            onValueChange={(value) => !readOnly && updateField("rgcContribution.currency", value)}
-                            placeholder="Select currency"
-                            disabled={readOnly}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-body font-medium">Value Date</Label>
-                          <Input
-                            type="date"
-                            value={rgc?.valueDate || ""}
-                            onChange={(e) => !readOnly && updateField("rgcContribution.valueDate", e.target.value)}
-                            readOnly={readOnly}
-                            className={cn("h-10", readOnly && "bg-muted")}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Exchange Rate Display */}
-                      {rgc?.currency && rgc.currency !== 'USD' && (
-                        <div className="p-3 border rounded-lg bg-white">
-                          <div className="flex items-center justify-between mb-2">
-                            <Label className="text-body font-medium flex items-center gap-2">
-                              Exchange Rate
-                              {!rgc.exchangeRateManual && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={fetchExchangeRate}
-                                  disabled={isLoadingRate}
-                                >
-                                  <RefreshCw className={`h-3 w-3 ${isLoadingRate ? 'animate-spin' : ''}`} />
-                                </Button>
-                              )}
-                            </Label>
-                            <div className="flex items-center gap-2">
-                              <span className="text-helper text-muted-foreground">
-                                {rgc.exchangeRateManual ? 'Manual' : 'API Rate'}
-                              </span>
-                              <Switch
-                                checked={!rgc.exchangeRateManual}
-                                onCheckedChange={(checked) => {
-                                  updateField("rgcContribution.exchangeRateManual", !checked);
-                                  if (checked) {
-                                    fetchExchangeRate();
-                                  }
-                                }}
-                              />
-                              {rgc.exchangeRateManual ? (
-                                <Unlock className="h-4 w-4 text-orange-500" />
-                              ) : (
-                                <Lock className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              step="0.000001"
-                              value={exchangeRate || ''}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                updateField("rgcContribution.exchangeRate", isNaN(val) ? null : val);
-                              }}
-                              disabled={!rgc.exchangeRateManual || isLoadingRate}
-                              className={cn("h-9", !rgc.exchangeRateManual && 'bg-muted')}
-                              placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
-                            />
-                            {isLoadingRate && (
-                              <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                            )}
-                          </div>
-                          {exchangeRate && (
-                            <p className="text-helper text-muted-foreground mt-1">
-                              1 {rgc.currency} = {exchangeRate.toFixed(6)} USD
-                            </p>
-                          )}
-                          {rateError && (
-                            <p className="text-helper text-destructive mt-1">{rateError}</p>
-                          )}
-                        </div>
+                  <div className="border rounded-lg p-4 space-y-3 mt-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-foreground">Contributions</h4>
+                      {!readOnly && (
+                        <Button size="sm" onClick={openNewContribution} className="gap-1.5">
+                          <Plus className="h-3.5 w-3.5" />
+                          Add Contribution
+                        </Button>
                       )}
+                    </div>
 
-                      {/* Total Amount */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-body font-medium">
-                            Total Amount {rgc?.currency ? `(${rgc.currency})` : '(Local Currency)'}
-                          </Label>
-                          <Input
-                            type="number"
-                            placeholder="e.g., 1,000,000"
-                            value={rgc?.totalAmountLocal || ""}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value) || 0;
-                              updateField("rgcContribution.totalAmountLocal", val);
-                              // Auto-compute USD
-                              if (exchangeRate) {
-                                updateField("rgcContribution.totalAmountUSD", Math.round(val * exchangeRate * 100) / 100);
-                              }
-                            }}
-                            className="h-10"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-body font-medium">USD Equivalent</Label>
-                          <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
-                            {computedTotalUSD !== null ? (
-                              <>$ {computedTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-                            ) : (
-                              <span className="text-muted-foreground font-normal text-body">
-                                {!rgc?.currency ? 'Select a currency' : !exchangeRate ? 'Set value date for rate' : 'Enter amount'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                    {contributions.length === 0 ? (
+                      <div className="p-6 border border-dashed rounded-lg text-center">
+                        <p className="text-body text-muted-foreground">
+                          {readOnly
+                            ? 'No contributions recorded.'
+                            : 'No contributions added yet. Click “Add Contribution” to record a cash, in-kind, or other contribution.'}
+                        </p>
                       </div>
-                    </div>
-
-                    {/* Distribution Mode */}
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium text-foreground mb-3">Distribution Mode</h4>
-                      <RadioGroup
-                        value={rgc?.distributionMode || 'lump_sum'}
-                        onValueChange={(value) =>
-                          updateField("rgcContribution.distributionMode", value as 'lump_sum' | 'annual')
-                        }
-                        className="flex gap-6"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="lump_sum" id="dist-lump" />
-                          <label htmlFor="dist-lump" className="text-body font-medium cursor-pointer">
-                            Lump Sum
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="annual" id="dist-annual" />
-                          <label htmlFor="dist-annual" className="text-body font-medium cursor-pointer flex items-center gap-1.5">
-                            <SplitSquareHorizontal className="h-3.5 w-3.5" />
-                            Annual Breakdown
-                          </label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* Annual Breakdown Table */}
-                    {rgc?.distributionMode === 'annual' && (
-                      <div className="p-4 border rounded-lg space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-foreground">Annual Breakdown</h4>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={generateYearRows}
-                              disabled={!plannedStartDate || !plannedEndDate}
-                              className="gap-1.5"
-                              title={!plannedStartDate || !plannedEndDate ? 'Set planned start/end dates first' : 'Generate year rows from activity dates'}
-                            >
-                              <CalendarRange className="h-3.5 w-3.5" />
-                              Generate Years
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={distributeEvenly}
-                              disabled={!totalLocal || !(rgc?.annual?.length)}
-                              className="gap-1.5"
-                            >
-                              <SplitSquareHorizontal className="h-3.5 w-3.5" />
-                              Distribute Evenly
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Warning if no planned dates */}
-                        {(!plannedStartDate || !plannedEndDate) && (
-                          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                            <Info className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                            <p className="text-body text-amber-800">
-                              Set planned start and end dates in the Activity Overview section to auto-generate annual breakdown rows. You can still add years manually below.
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Year table */}
-                        {(rgc?.annual?.length ?? 0) > 0 && (
-                          <div className="overflow-x-auto border rounded-lg">
-                            <table className="w-full text-body">
-                              <thead className="bg-surface-muted">
-                                <tr className="bg-surface-muted">
-                                  <th className="text-left p-2 font-medium text-helper w-24">Year</th>
-                                  <th className="text-right p-2 font-medium text-helper">
-                                    Amount {rgc?.currency ? `(${rgc.currency})` : '(Local)'}
-                                  </th>
-                                  <th className="text-right p-2 font-medium text-helper">USD Equivalent</th>
-                                  <th className="w-10" />
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y">
-                                {(rgc?.annual || []).map((item, index) => {
-                                  const rowUSD = item.amountLocal && exchangeRate
-                                    ? Math.round(item.amountLocal * exchangeRate * 100) / 100
-                                    : item.amountUSD || 0;
-                                  return (
-                                    <tr key={index} className="hover:bg-muted/50">
-                                      <td className="p-1.5">
-                                        <span className="text-body tabular-nums font-medium">{item.year}</span>
-                                      </td>
-                                      <td className="p-1.5 text-right">
-                                        <Input
-                                          type="number"
-                                          placeholder="0"
-                                          value={item.amountLocal || ''}
-                                          onChange={(e) => {
-                                            const newAnnual = [...(rgc?.annual || [])];
-                                            const amtLocal = parseFloat(e.target.value) || 0;
-                                            const amtUSD = exchangeRate ? Math.round(amtLocal * exchangeRate * 100) / 100 : 0;
-                                            newAnnual[index] = { ...item, amountLocal: amtLocal, amountUSD: amtUSD };
-                                            updateField("rgcContribution.annual", newAnnual);
-                                          }}
-                                          className="h-7 text-body text-right tabular-nums w-full"
-                                        />
-                                      </td>
-                                      <td className="p-1.5 text-right">
-                                        <span className="text-body tabular-nums text-green-700 font-medium">
-                                          {rowUSD ? `$ ${rowUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
-                                        </span>
-                                      </td>
-                                      <td className="p-1.5">
+                    ) : (
+                      <div className="overflow-x-auto border rounded-lg">
+                        <table className="w-full text-body">
+                          <thead className="bg-surface-muted">
+                            <tr>
+                              <th className="text-left p-2 font-medium text-helper w-32">Type</th>
+                              <th className="text-left p-2 font-medium text-helper">Description</th>
+                              <th className="text-right p-2 font-medium text-helper w-40">Original Value</th>
+                              <th className="text-right p-2 font-medium text-helper w-32">USD Value</th>
+                              <th className="w-24" />
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {contributions.map((c) => {
+                              const local = contributionAmountLocal(c);
+                              const usd = contributionAmountUSD(c);
+                              const subLabel =
+                                c.type === 'financial' ? 'Financial' :
+                                c.type === 'in_kind' ? IN_KIND_CATEGORY_LABELS[c.category] :
+                                OTHER_CATEGORY_LABELS[c.category];
+                              return (
+                                <tr key={c.id} className="hover:bg-muted/50">
+                                  <td className="p-2">
+                                    <Badge variant="outline" className="text-helper">
+                                      {c.type === 'financial' ? 'Financial' : c.type === 'in_kind' ? 'In-Kind' : 'Other'}
+                                    </Badge>
+                                    <div className="text-helper text-muted-foreground mt-0.5">{subLabel}</div>
+                                  </td>
+                                  <td className="p-2">
+                                    <div className="text-body">{c.description || <span className="text-muted-foreground">—</span>}</div>
+                                    {c.type === 'financial' && c.sourceOfFunding && (
+                                      <div className="text-helper text-muted-foreground mt-0.5">{c.sourceOfFunding}</div>
+                                    )}
+                                    {c.type === 'other' && c.legalReference && (
+                                      <div className="text-helper text-muted-foreground mt-0.5">{c.legalReference}</div>
+                                    )}
+                                  </td>
+                                  <td className="p-2 text-right tabular-nums">
+                                    {local != null ? (
+                                      <>
+                                        {c.currency && (
+                                          <span className="text-muted-foreground text-helper">{c.currency}</span>
+                                        )}
+                                        {c.currency ? ' ' : ''}
+                                        {local.toLocaleString()}
+                                      </>
+                                    ) : '—'}
+                                  </td>
+                                  <td className="p-2 text-right tabular-nums text-foreground font-medium">
+                                    {usd != null
+                                      ? `$ ${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                      : '—'}
+                                  </td>
+                                  <td className="p-2 text-right">
+                                    {!readOnly && (
+                                      <div className="flex items-center justify-end gap-1">
                                         <button
-                                          onClick={() => {
-                                            const newAnnual = (rgc?.annual || []).filter((_, i) => i !== index);
-                                            updateField("rgcContribution.annual", newAnnual);
-                                          }}
-                                          className="text-muted-foreground hover:text-destructive transition-colors"
+                                          type="button"
+                                          onClick={() => openEditContribution(c)}
+                                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                                          aria-label="Edit contribution"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => deleteContribution(c.id)}
+                                          className="text-destructive hover:text-destructive/80 transition-colors p-1"
+                                          aria-label="Delete contribution"
                                         >
                                           <Trash2 className="h-3.5 w-3.5" />
                                         </button>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                              <tfoot>
-                                <tr className="border-t-2 font-medium bg-muted/30">
-                                  <td className="p-2 text-helper">Total</td>
-                                  <td className="p-2 text-right tabular-nums text-body">
-                                    {(rgc?.annual || []).reduce((sum, r) => sum + (r.amountLocal || 0), 0).toLocaleString()}
+                                      </div>
+                                    )}
                                   </td>
-                                  <td className="p-2 text-right tabular-nums text-body text-green-700">
-                                    $ {(rgc?.annual || []).reduce((sum, r) => {
-                                      const usd = r.amountLocal && exchangeRate ? Math.round(r.amountLocal * exchangeRate * 100) / 100 : (r.amountUSD || 0);
-                                      return sum + usd;
-                                    }, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </td>
-                                  <td />
                                 </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        )}
-
-                        {/* Manual Add Year */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const currentAnnual = rgc?.annual || [];
-                            const lastYear = currentAnnual.length > 0
-                              ? Math.max(...currentAnnual.map(r => r.year))
-                              : new Date().getFullYear() - 1;
-                            updateField("rgcContribution.annual", [
-                              ...currentAnnual,
-                              { year: lastYear + 1, amountLocal: 0, amountUSD: 0 },
-                            ]);
-                          }}
-                          className="gap-1.5"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Year
-                        </Button>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t-2 font-medium bg-muted/30">
+                              <td className="p-2 text-helper" colSpan={3}>Total (USD)</td>
+                              <td className="p-2 text-right tabular-nums text-foreground">
+                                $ {contributions
+                                  .reduce((s, c) => s + (contributionAmountUSD(c) ?? 0), 0)
+                                  .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td />
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
                     )}
-
-                    {/* Source of Funding */}
-                    <div>
-                      <label className="block text-body font-medium text-foreground mb-2">
-                        Source of Funding
-                      </label>
-                      {readOnly ? (
-                        <p className="text-body text-foreground">
-                          {rgc?.sourceOfFunding || <span className="text-muted-foreground">—</span>}
-                        </p>
-                      ) : (
-                        <Textarea
-                          placeholder="Specify the government budget line or funding source"
-                          value={rgc?.sourceOfFunding || ""}
-                          onChange={(e) => updateField("rgcContribution.sourceOfFunding", e.target.value)}
-                          rows={3}
-                        />
-                      )}
-                    </div>
-
-                    {/* In-Kind Contributions */}
-                    <div className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="font-medium text-foreground">In-Kind Contributions</h4>
-                        </div>
-                        {!readOnly && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const items = rgc?.inKindItems || [];
-                              updateField("rgcContribution.inKindItems", [
-                                ...items,
-                                { id: crypto.randomUUID(), type: 'staff' as InKindItemType, description: '', estimatedValueLocal: undefined, estimatedValueUSD: undefined },
-                              ]);
-                            }}
-                            className="gap-1.5"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            Add Item
-                          </Button>
-                        )}
-                      </div>
-
-                      {(!rgc?.inKindItems || rgc.inKindItems.length === 0) && (
-                        <p className="text-body text-muted-foreground">
-                          {readOnly ? 'No in-kind contributions recorded.' : 'No in-kind contributions added yet. Click "Add Item" to begin.'}
-                        </p>
-                      )}
-
-                      {(rgc?.inKindItems || []).map((item, idx) => (
-                        <div key={item.id} className="flex gap-2 items-start p-3 bg-muted/30 rounded-lg border">
-                          {readOnly ? (
-                            <div className="flex-1 space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-helper">{IN_KIND_TYPE_LABELS[item.type]}</Badge>
-                                {item.estimatedValueLocal != null && item.estimatedValueLocal > 0 && (
-                                  <span className="text-helper text-muted-foreground">
-                                    {rgc?.currency ? `${item.estimatedValueLocal.toLocaleString()} ${rgc.currency}` : item.estimatedValueLocal.toLocaleString()}
-                                    {item.estimatedValueUSD ? ` ($ ${item.estimatedValueUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : ''}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-body">{item.description}</p>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="w-36 shrink-0">
-                                <Select
-                                  value={item.type}
-                                  onValueChange={(val) => {
-                                    const updated = [...(rgc?.inKindItems || [])];
-                                    updated[idx] = { ...item, type: val as InKindItemType };
-                                    updateField("rgcContribution.inKindItems", updated);
-                                  }}
-                                >
-                                  <SelectTrigger className="h-9 text-body">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(Object.entries(IN_KIND_TYPE_LABELS) as [InKindItemType, string][]).map(([v, l]) => (
-                                      <SelectItem key={v} value={v}>{l}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <Input
-                                placeholder="Description"
-                                value={item.description}
-                                onChange={(e) => {
-                                  const updated = [...(rgc?.inKindItems || [])];
-                                  updated[idx] = { ...item, description: e.target.value };
-                                  updateField("rgcContribution.inKindItems", updated);
-                                }}
-                                className="h-9 flex-1"
-                              />
-                              <div className="w-32 shrink-0">
-                                <Input
-                                  type="number"
-                                  placeholder={`Value${rgc?.currency ? ` (${rgc.currency})` : ''}`}
-                                  value={item.estimatedValueLocal ?? ''}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || undefined;
-                                    const usd = val && exchangeRate ? Math.round(val * exchangeRate * 100) / 100 : undefined;
-                                    const updated = [...(rgc?.inKindItems || [])];
-                                    updated[idx] = { ...item, estimatedValueLocal: val, estimatedValueUSD: usd };
-                                    updateField("rgcContribution.inKindItems", updated);
-                                  }}
-                                  className="h-9 text-right tabular-nums"
-                                />
-                              </div>
-                              <button
-                                onClick={() => {
-                                  updateField("rgcContribution.inKindItems", (rgc?.inKindItems || []).filter((_, i) => i !== idx));
-                                }}
-                                className="text-muted-foreground hover:text-destructive transition-colors mt-2"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      ))}
-
-                      {/* In-kind totals */}
-                      {(rgc?.inKindItems || []).some(i => i.estimatedValueLocal) && (
-                        <div className="flex justify-between text-body font-medium pt-1 border-t">
-                          <span>Total In-Kind (estimated)</span>
-                          <span className="tabular-nums">
-                            {(rgc?.inKindItems || []).reduce((s, i) => s + (i.estimatedValueLocal || 0), 0).toLocaleString()}
-                            {rgc?.currency ? ` ${rgc.currency}` : ''}
-                            {exchangeRate ? ` ($ ${(rgc?.inKindItems || []).reduce((s, i) => s + (i.estimatedValueUSD || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : ''}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Other Contributions */}
-                    <div className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-foreground">Other Contributions</h4>
-                        {!readOnly && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const items = rgc?.otherContributions || [];
-                              updateField("rgcContribution.otherContributions", [
-                                ...items,
-                                { id: crypto.randomUUID(), description: '' },
-                              ]);
-                            }}
-                            className="gap-1.5"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            Add
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-body text-muted-foreground -mt-1">
-                        e.g. policy support, coordination, technical advice
-                      </p>
-
-                      {(!rgc?.otherContributions || rgc.otherContributions.length === 0) && (
-                        <p className="text-body text-muted-foreground">
-                          {readOnly ? 'No other contributions recorded.' : 'None added yet.'}
-                        </p>
-                      )}
-
-                      {(rgc?.otherContributions || []).map((item, idx) => (
-                        <div key={item.id} className="flex gap-2 items-center">
-                          {readOnly ? (
-                            <p className="text-body flex-1">{item.description}</p>
-                          ) : (
-                            <>
-                              <Input
-                                placeholder="Describe this contribution"
-                                value={item.description}
-                                onChange={(e) => {
-                                  const updated = [...(rgc?.otherContributions || [])];
-                                  updated[idx] = { ...item, description: e.target.value };
-                                  updateField("rgcContribution.otherContributions", updated);
-                                }}
-                                className="h-9 flex-1"
-                              />
-                              <button
-                                onClick={() => {
-                                  updateField("rgcContribution.otherContributions", (rgc?.otherContributions || []).filter((_, i) => i !== idx));
-                                }}
-                                className="text-muted-foreground hover:text-destructive transition-colors"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  </div>
                 )}
+
+                <ContributionModal
+                  open={contribModalOpen}
+                  onOpenChange={setContribModalOpen}
+                  initial={editingContribution}
+                  defaultCurrency={governmentInputs.rgcContribution?.currency}
+                  plannedStartDate={plannedStartDate}
+                  plannedEndDate={plannedEndDate}
+                  onSave={saveContribution}
+                />
+
               </CardContent>
             </Card>
           </div>

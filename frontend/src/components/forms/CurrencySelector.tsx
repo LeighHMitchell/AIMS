@@ -186,17 +186,25 @@ export function CurrencySelector({
           </span>
           <div className="flex items-center gap-2">
             {selectedOption && (
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={e => {
                   e.stopPropagation();
                   onValueChange?.(null);
                 }}
-                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onValueChange?.(null);
+                  }
+                }}
+                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Clear selection"
               >
                 <span className="text-helper">×</span>
-              </button>
+              </span>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>

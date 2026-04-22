@@ -786,7 +786,7 @@ export default function ForwardSpendingSurveyTab({
       {!fss && !isReadOnly && (
         <Card>
           <CardContent className="py-12 text-center">
-            <img src="/images/empty-seed-packet.webp" alt="No Forward Spending Survey" className="h-32 mx-auto mb-4 opacity-50" />
+            <img src="/images/empty-seed-packet.png" alt="No Forward Spending Survey" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-base font-semibold mb-2">No Forward Spending Survey</h3>
             <p className="text-muted-foreground mb-6">
               Create a Forward Spending Survey to track multi-year forecast spending commitments.

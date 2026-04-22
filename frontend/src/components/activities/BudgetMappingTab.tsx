@@ -672,21 +672,6 @@ export default function BudgetMappingTab({
               />
               <h3 className="text-lg font-medium mb-2">No budget mappings</h3>
               <p className="text-muted-foreground mb-4">Map activity sectors to government budget classifications.</p>
-              {hasSuggestions ? (
-                <p className="text-body text-amber-600 mb-4">
-                  Use the suggestions above to auto-create mappings from sectors.
-                </p>
-              ) : null}
-              {availableVocabularies.length > 0 ? (
-                <Button onClick={handleAddNew}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Budget Mapping Manually
-                </Button>
-              ) : (
-                <p className="text-body text-muted-foreground">
-                  All available vocabularies have been used
-                </p>
-              )}
             </div>
           ) : (
             <div className="border rounded-lg overflow-hidden">
