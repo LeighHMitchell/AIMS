@@ -24,7 +24,7 @@ const activityStatusFilterOptions: ActivityStatusFilterOption[] = [
   },
   {
     value: "1",
-    label: "Pipeline / Identification",
+    label: "Pipeline/Identification",
     description: "The activity is being scoped or planned",
   },
   {

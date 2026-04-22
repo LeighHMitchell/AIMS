@@ -116,7 +116,7 @@ function PFSField({ label, value }: { label: string; value: string | number | nu
 const NARRATIVE_SECTION_LABELS: Record<string, string> = {
   problem_statement: 'Problem Statement',
   target_beneficiaries: 'Target Beneficiaries',
-  ndp_alignment_justification: 'NDP / MSDP Alignment',
+  ndp_alignment_justification: 'NDP/MSDP Alignment',
   expected_outcomes: 'Expected Outcomes & Impact',
   preliminary_cost_justification: 'Preliminary Cost Justification',
 }
@@ -865,7 +865,7 @@ export default function ProjectDetailPage() {
                             <div className="text-helper font-semibold mb-2">Technical</div>
                             <div className="space-y-2">
                               <PFSField label="Technical Approach" value={project.technical_approach} />
-                              <PFSField label="Technology / Methodology" value={project.technology_methodology} />
+                              <PFSField label="Technology/Methodology" value={project.technology_methodology} />
                               <PFSField label="Technical Risks" value={project.technical_risks} />
                               {project.has_technical_design && (
                                 <PFSField label="Design Maturity" value={(() => { const f = TECHNICAL_MATURITY_LEVELS.find(l => l.value === project.technical_design_maturity); return f ? f.label : project.technical_design_maturity || null })()} />
@@ -1076,7 +1076,7 @@ export default function ProjectDetailPage() {
                           detailed_fs: 'Detailed Feasibility Study',
                           firr_assessment: 'Financial Analysis',
                           eirr_assessment: 'Economic Analysis',
-                          ppp_structuring: 'PPP / VGF Structuring',
+                          ppp_structuring: 'PPP/VGF Structuring',
                         };
                         // Group by upload stage
                         const grouped: Record<string, any[]> = {};

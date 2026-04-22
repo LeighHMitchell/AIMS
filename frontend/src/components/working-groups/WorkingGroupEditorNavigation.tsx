@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Lock, Copy, Check } from "lucide-react"
+import { Lock, Copy } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import { toast } from "sonner"
 import {
@@ -50,14 +50,11 @@ export default function WorkingGroupEditorNavigation({
 }: WorkingGroupEditorNavigationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const copyToClipboard = async (text: string, id: string) => {
+  const copyToClipboard = async (text: string, _id?: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      setCopiedId(id)
       toast.success('Copied to clipboard')
-      setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
       toast.error('Failed to copy')
@@ -119,28 +116,18 @@ export default function WorkingGroupEditorNavigation({
                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground inline-flex items-center align-middle"
                 title="Copy Working Group Name"
               >
-                {copiedId === 'wgName' ? (
-                  <Check className="w-3.5 h-3.5 text-[hsl(var(--success-icon))]" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
+                <Copy className="w-3.5 h-3.5" />
               </button>
             </h2>
             {workingGroup.code && (
-              <div className="flex items-center gap-1 group mt-2">
-                <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                  {workingGroup.code}
-                </code>
+              <div className="mt-2">
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(workingGroup.code || '', 'wgCode')}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground flex-shrink-0"
-                  title="Copy Code"
+                  title="Click to copy"
+                  className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono cursor-pointer"
                 >
-                  {copiedId === 'wgCode' ? (
-                    <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                  ) : (
-                    <Copy className="w-3 h-3" />
-                  )}
+                  {workingGroup.code}
                 </button>
               </div>
             )}

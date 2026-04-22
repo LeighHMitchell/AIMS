@@ -22,6 +22,7 @@ import {
 import RelatedActivitiesNetworkGraph from './RelatedActivitiesNetworkGraph';
 import { AddLinkedActivityModal } from '@/components/modals/AddLinkedActivityModal';
 import { toast } from 'sonner';
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface RelatedActivity {
@@ -77,6 +78,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   const { confirm, ConfirmDialog } = useConfirmDialog();
   const [loading, setLoading] = useState(true);
   const [relatedActivities, setRelatedActivities] = useState<RelatedActivity[]>([]);
+  useFlushDeletesOnUnmount(`related-activities-${activityId}`);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'graph'>('table');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -171,25 +173,30 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   };
 
   const handleDelete = async (relationshipId: string) => {
-    if (!(await confirm({ title: 'Remove linked activity?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Keep' }))) {
+    if (!(await confirm({ title: 'Remove linked activity?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Remove', cancelLabel: 'Keep' }))) {
       return;
     }
 
-    try {
-      const response = await apiFetch(`/api/activities/${activityId}/related-activities?relationship_id=${relationshipId}`,
-        { method: 'DELETE' }
-      );
+    const snapshot = relatedActivities;
+    setRelatedActivities(prev => prev.filter(a => a.id !== relationshipId));
 
-      if (response.ok) {
-        toast.success('Link removed successfully');
-        setRelatedActivities(prev => prev.filter(a => a.id !== relationshipId));
-      } else {
+    showUndoToast('Link removed', {
+      id: `delete-related-${relationshipId}`,
+      source: `related-activities-${activityId}`,
+      commit: async () => {
+        const response = await apiFetch(
+          `/api/activities/${activityId}/related-activities?relationship_id=${relationshipId}`,
+          { method: 'DELETE' }
+        );
+        if (!response.ok) throw new Error('Failed to remove link');
+      },
+      onUndo: () => setRelatedActivities(snapshot),
+      onCommitError: (err) => {
+        console.error('Error deleting link:', err);
+        setRelatedActivities(snapshot);
         toast.error('Failed to remove link');
-      }
-    } catch (error) {
-      console.error('Error deleting link:', error);
-      toast.error('Failed to remove link');
-    }
+      },
+    });
   };
 
   // Transform data for network graph

@@ -497,13 +497,13 @@ export default function ProjectBankDashboard() {
                                 <div className="flex items-center gap-1">Sector {getSortIcon('sector')}</div>
                               </th>
                               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('nominating_ministry')}>
-                                <div className="flex items-center gap-1">Ministry / Agency {getSortIcon('nominating_ministry')}</div>
+                                <div className="flex items-center gap-1">Ministry/Agency {getSortIcon('nominating_ministry')}</div>
                               </th>
                               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('project_type')}>
                                 <div className="flex items-center gap-1">Project Type {getSortIcon('project_type')}</div>
                               </th>
                               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('region')}>
-                                <div className="flex items-center gap-1">State / Region {getSortIcon('region')}</div>
+                                <div className="flex items-center gap-1">State/Region {getSortIcon('region')}</div>
                               </th>
                               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('estimated_start_date')}>
                                 <div className="flex items-center gap-1">Estimated Start Date {getSortIcon('estimated_start_date')}</div>

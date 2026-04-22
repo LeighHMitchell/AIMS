@@ -1098,22 +1098,18 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                     {activity.title || activity.title_narrative || 'Untitled Activity'}
                   </h3>
                   {activity.iatiIdentifier && (
-                    <>
-                      <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
-                        {activity.iatiIdentifier}
-                      </code>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(activity.iatiIdentifier);
-                          toast.success("IATI ID copied to clipboard");
-                        }}
-                        className="p-1 hover:bg-muted rounded transition-colors shrink-0"
-                        title="Copy IATI ID"
-                      >
-                        <Copy className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(activity.iatiIdentifier);
+                        toast.success("IATI ID copied");
+                      }}
+                      title="Click to copy"
+                      className="text-[10px] font-mono bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0 cursor-pointer"
+                    >
+                      {activity.iatiIdentifier}
+                    </button>
                   )}
                 </div>
               </div>

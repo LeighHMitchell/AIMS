@@ -24,7 +24,7 @@ import type { ReviewTableColumn } from "./ReviewTableView"
 const KANBAN_COLUMNS: { key: CategorizedColumnKey; title: string; color: string }[] = [
   { key: "private", title: "Category A: Private Investment", color: "bg-green-600" },
   { key: "government", title: "Category B: Government Budget", color: "bg-amber-600" },
-  { key: "ppp", title: "Category C: PPP / VGF Structuring", color: "bg-purple-600" },
+  { key: "ppp", title: "Category C: PPP/VGF Structuring", color: "bg-purple-600" },
   { key: "oda", title: "Category D: Development Partner (ODA)", color: "bg-blue-600" },
 ]
 

@@ -4,9 +4,8 @@ import {
   ChevronUp,
   ChevronDown,
   Calendar,
-  Copy,
-  Check,
 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -101,7 +100,6 @@ export function BudgetTable({
 }: BudgetTableProps) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { getOrderedVisibleColumns, handleReorder } = useColumnOrder<BudgetColumnId>({
     storageKey: BUDGET_COLUMN_ORDER_LOCALSTORAGE_KEY,
@@ -110,10 +108,9 @@ export function BudgetTable({
 
   const orderedVisibleColumns = getOrderedVisibleColumns(visibleColumns);
 
-  const copyToClipboard = (text: string, key: string) => {
+  const copyToClipboard = (text: string, label: string = 'Copied') => {
     navigator.clipboard.writeText(text);
-    setCopiedId(key);
-    setTimeout(() => setCopiedId(null), 2000);
+    toast.success(label);
   };
 
   // Calculate colspan for expanded row
@@ -361,25 +358,17 @@ export function BudgetTable({
                       >
                         <span className="text-body">{activityTitle}</span>
                         {budget.activity?.iati_identifier && (
-                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
-                            {budget.activity.iati_identifier}
-                          </span>
-                        )}
-                        {budget.activity?.iati_identifier && (
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              copyToClipboard(budget.activity!.iati_identifier!, `${budgetId}-iati`);
+                              copyToClipboard(budget.activity!.iati_identifier!, 'IATI Identifier copied');
                             }}
-                            className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex align-middle ml-1"
-                            title="Copy IATI Identifier"
+                            title="Click to copy"
+                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 inline-block align-middle cursor-pointer"
                           >
-                            {copiedId === `${budgetId}-iati` ? (
-                              <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                            ) : (
-                              <Copy className="w-3 h-3" />
-                            )}
+                            {budget.activity.iati_identifier}
                           </button>
                         )}
                       </span>
@@ -394,14 +383,11 @@ export function BudgetTable({
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          copyToClipboard(budget.auto_ref!, `${budgetId}-systemId`);
+                          copyToClipboard(budget.auto_ref!, 'Budget ID copied');
                         }}
-                        title={copiedId === `${budgetId}-systemId` ? "Copied!" : "Click to copy"}
+                        title="Click to copy"
                         className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
                       >
-                        {copiedId === `${budgetId}-systemId` && (
-                          <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                        )}
                         <span>{budget.auto_ref}</span>
                       </button>
                     ) : (

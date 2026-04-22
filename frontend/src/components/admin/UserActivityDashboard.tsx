@@ -336,9 +336,8 @@ export function UserActivityDashboard() {
             <TabsTrigger value="inactive">Inactive Users</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportEngagementData}>
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
+            <Button variant="outline" size="icon" onClick={exportEngagementData} title="Export CSV" aria-label="Export CSV">
+              <Download className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={fetchData}>
               <RefreshCw className="h-4 w-4" />

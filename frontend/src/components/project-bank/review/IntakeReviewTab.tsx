@@ -13,6 +13,7 @@ import {
   ChevronRight, AlertCircle, Clock, Loader2, Inbox, Search,
   Building2, DollarSign, MapPin, LayoutGrid, List, Copy, Table2, KanbanSquare, X,
 } from "lucide-react"
+import { toast } from "sonner"
 import { apiFetch } from "@/lib/api-fetch"
 import {
   formatCurrency, formatCurrencyParts, fmtCost, REGIONS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
@@ -584,13 +585,13 @@ export function IntakeReviewTab() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-body font-medium truncate">{p.name}</p>
-                      <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(p.project_code) }}
-                        className="shrink-0 opacity-0 group-hover/info:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
-                        title="Copy code"
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(p.project_code); toast.success('Project code copied') }}
+                        title="Click to copy"
+                        className="font-mono text-[11px] bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded shrink-0 cursor-pointer"
                       >
-                        <Copy className="h-3 w-3 text-muted-foreground" />
+                        {p.project_code}
                       </button>
                     </div>
                   </div>

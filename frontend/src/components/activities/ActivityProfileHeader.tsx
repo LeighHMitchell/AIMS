@@ -449,7 +449,7 @@ export function ActivityProfileHeader({
       <Dialog open={showEditIcon} onOpenChange={setShowEditIcon}>
         <DialogContent className="max-w-2xl">
           <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
-            <DialogTitle>Add Icon / Logo</DialogTitle>
+            <DialogTitle>Add Icon/Logo</DialogTitle>
             <DialogDescription>Recommended size: 512 x 512px</DialogDescription>
           </DialogHeader>
           <IconUpload

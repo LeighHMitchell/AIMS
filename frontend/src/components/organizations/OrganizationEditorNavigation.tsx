@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { Lock, Copy, Check, Trash2 } from "lucide-react"
+import { Lock, Copy, Trash2 } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import { toast } from "sonner"
 import {
@@ -52,14 +52,10 @@ export default function OrganizationEditorNavigation({
   onDelete
 }: OrganizationEditorNavigationProps) {
   const searchParams = useSearchParams()
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-
-  const copyToClipboard = async (text: string, id: string) => {
+  const copyToClipboard = async (text: string, _id?: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      setCopiedId(id)
       toast.success('Copied to clipboard')
-      setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
       toast.error('Failed to copy')
@@ -141,31 +137,19 @@ export default function OrganizationEditorNavigation({
                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
                 title="Copy Organization Name"
               >
-                {copiedId === 'orgName' ? (
-                  <Check className="w-4 h-4 text-[hsl(var(--success-icon))]" />
-                ) : (
-                  <Copy className="w-4 h-4 text-muted-foreground" />
-                )}
+                <Copy className="w-4 h-4 text-muted-foreground" />
               </button>
             </h2>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {organization.iati_org_id && (
-                <div className="flex items-center gap-1 group">
-                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                    {organization.iati_org_id}
-                  </code>
-                  <button
-                    onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
-                    title="Copy IATI Org ID"
-                  >
-                    {copiedId === 'iatiOrgId' ? (
-                      <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                    ) : (
-                      <Copy className="w-3 h-3 text-muted-foreground" />
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
+                  title="Click to copy"
+                  className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono cursor-pointer"
+                >
+                  {organization.iati_org_id}
+                </button>
               )}
             </div>
           </div>

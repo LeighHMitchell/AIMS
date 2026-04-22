@@ -483,7 +483,7 @@ export const APPRAISAL_STAGE_LABELS: Record<AppraisalStage, string> = {
   msdp_screening: 'MSDP Screening',
   firr_assessment: 'Financial Analysis (FIRR)',
   eirr_assessment: 'Economic Analysis (EIRR)',
-  vgf_assessment: 'PPP / VGF Structuring',
+  vgf_assessment: 'PPP/VGF Structuring',
   dp_consultation: 'Review & Submit',
   routing_complete: 'Complete',
   rejected: 'Rejected',
@@ -768,14 +768,14 @@ export const PHASE_LABELS: Record<ProjectPhase, string> = {
   intake: 'Project Intake',
   fs1: 'Preliminary Feasibility Study',
   fs2: 'Detailed Feasibility Study',
-  fs3: 'PPP / VGF Structuring',
+  fs3: 'PPP/VGF Structuring',
 };
 
 /** Category-aware FS-3 phase labels */
 export const FS3_CATEGORY_LABELS: Record<string, string> = {
   category_a: 'Private Investment Structuring',
   category_b: 'Government Budget Structuring',
-  category_c: 'PPP / VGF Structuring',
+  category_c: 'PPP/VGF Structuring',
   category_d: 'AIMS Transfer Preparation',
 };
 

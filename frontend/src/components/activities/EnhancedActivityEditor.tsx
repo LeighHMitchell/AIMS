@@ -14,6 +14,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { EnhancedActivityComments } from './EnhancedActivityComments';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/lib/toast-manager';
 import { LinkedActivityTitle } from '@/components/ui/linked-activity-title';
 import IatiLinkTab from './IatiLinkTab';
 import IatiImportTab from './IatiImportTab';
@@ -335,11 +336,12 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
   };
 
   const removeDocument = (index: number) => {
-    const updatedDocuments = mouDocuments.filter((_, i) => i !== index);
-    setMouDocuments(updatedDocuments);
-    // Also save to database
-    // updateField('mou_documents', JSON.stringify(updatedDocuments), 'MOU Documents');
-    toast.success('Document removed');
+    const snapshot = mouDocuments;
+    setMouDocuments(prev => prev.filter((_, i) => i !== index));
+    showUndoToast('Document removed', {
+      id: `delete-mou-doc-${index}-${Date.now()}`,
+      onUndo: () => setMouDocuments(snapshot),
+    });
   };
 
   // Handle form changes with optimistic updates

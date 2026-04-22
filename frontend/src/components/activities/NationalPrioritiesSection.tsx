@@ -453,25 +453,28 @@ export function NationalPrioritiesSection({
           <div className="space-y-4">
             {editingAllocation ? (
               // Read-only plan + priority display in edit mode
-              <div className="space-y-2">
-                <Label>Plan & Priority</Label>
-                <div className="p-3 border rounded-md bg-muted/30 text-body">
-                  <div className="text-muted-foreground text-helper mb-1">
+              <>
+                <div className="space-y-2">
+                  <Label>Plan/Strategy</Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-body text-muted-foreground">
                     {editingAllocation.nationalPriority?.planName || "—"}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <div className="flex min-h-10 w-full items-center gap-2 rounded-md border border-input bg-muted/40 px-3 py-2 text-body text-muted-foreground">
+                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0">
                       {editingAllocation.nationalPriority?.code}
                     </span>
                     <span>{editingAllocation.nationalPriority?.name}</span>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
               <>
             {/* Plan selector */}
             <div className="space-y-2">
-              <RequiredLabel tooltip="Select the national plan or strategy this activity aligns with.">Plan / Strategy</RequiredLabel>
+              <RequiredLabel tooltip="Select the national plan or strategy this activity aligns with.">Plan/Strategy</RequiredLabel>
               <Select
                 value={selectedPlanId}
                 onValueChange={setSelectedPlanId}
@@ -583,13 +586,17 @@ export function NationalPrioritiesSection({
             </div>
 
             <div className="space-y-2">
-              <OptionalLabel tooltip="Briefly explain how this activity contributes to the selected priority.">Rationale (optional)</OptionalLabel>
+              <OptionalLabel tooltip="Briefly explain how this activity contributes to the selected priority.">Rationale</OptionalLabel>
               <Textarea
                 value={rationale}
                 onChange={(e) => setRationale(e.target.value)}
                 placeholder="Explain how this activity supports the selected priority..."
-                rows={3}
+                rows={6}
+                maxLength={500}
               />
+              <div className="flex justify-end text-helper text-muted-foreground">
+                {rationale.length} / 500
+              </div>
             </div>
           </div>
 

@@ -671,7 +671,7 @@ export function BudgetClassificationsManagement() {
                     className="flex items-center gap-1 hover:text-foreground transition-colors flex-[3] min-w-0"
                     onClick={() => toggleSort("code")}
                   >
-                    Code / Name
+                    Code/Name
                     {sortColumn === "code" || sortColumn === "name" ? (
                       sortDirection === "asc" ? (
                         <ChevronUp className="h-3 w-3" />

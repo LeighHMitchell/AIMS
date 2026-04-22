@@ -266,14 +266,14 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >
-            <Image src="/images/fs-conductor-company.png" alt="Company / Firm" fill className="object-cover opacity-15" />
+            <Image src="/images/fs-conductor-company.png" alt="Company/Firm" fill className="object-cover opacity-15" />
             {formData.fs_conductor_type === 'company' && (
               <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                 <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
             <div className="relative z-10 p-3">
-              <h4 className="text-body font-semibold">Company / Firm</h4>
+              <h4 className="text-body font-semibold">Company/Firm</h4>
               <p className="mt-1 text-helper text-muted-foreground">The study was conducted by a consulting firm or organisation</p>
             </div>
           </button>
@@ -446,7 +446,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
-              <Label className="mb-0">Technology / Methodology <FieldCheck value={formData.technology_methodology} /> <HelpTooltip text="Key technologies, equipment, and methodologies to be used. Minimum 200 characters recommended." /></Label>
+              <Label className="mb-0">Technology/Methodology <FieldCheck value={formData.technology_methodology} /> <HelpTooltip text="Key technologies, equipment, and methodologies to be used. Minimum 200 characters recommended." /></Label>
               <CharacterSuggestion value={formData.technology_methodology} />
             </div>
             <Textarea

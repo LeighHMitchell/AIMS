@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
@@ -84,9 +84,21 @@ interface BreakdownEntry {
   allocationLevel: AllocationLevel
 }
 
+interface ActivityLocationSite {
+  id: string
+  location_name: string | null
+  description: string | null
+  location_description: string | null
+  activity_location_description: string | null
+  latitude?: number
+  longitude?: number
+  site_type: string | null
+}
+
 interface SuggestedTownship {
   townshipName: string
   regionName: string
+  sites?: ActivityLocationSite[]
 }
 
 interface EnhancedSubnationalBreakdownProps {
@@ -170,18 +182,22 @@ export function EnhancedSubnationalBreakdown({
     return units
   }, [])
 
-  // Track which township IDs have activity sites (for visual highlighting)
-  const highlightedTownshipIds = useMemo(() => {
-    const ids = new Set<string>()
+  // Map township ID -> list of Activity Sites sitting in that township,
+  // so we can render a monochrome MapPin indicator with a HoverCard listing
+  // site name/description/coords next to the township name in the table.
+  const townshipIdToSites = useMemo(() => {
+    const map = new Map<string, ActivityLocationSite[]>()
     suggestedTownships.forEach(st => {
       const match = allAdminUnits.find(u =>
         u.type === 'township' &&
         u.name === st.townshipName &&
         u.parentName === st.regionName
       )
-      if (match) ids.add(match.id)
+      if (match) {
+        map.set(match.id, st.sites ?? [])
+      }
     })
-    return ids
+    return map
   }, [suggestedTownships, allAdminUnits])
 
   // Filter admin units based on current view level — always show regions in the selector
@@ -1180,6 +1196,11 @@ export function EnhancedSubnationalBreakdown({
                                   </button>
                                 )}
                                 <span className="text-body font-semibold">{item.regionName}</span>
+                                {viewLevel === 'township' && !isExpanded && (item.townshipCount ?? 0) > 0 && (
+                                  <span className="text-helper text-muted-foreground font-normal">
+                                    {item.townshipCount} {item.townshipCount === 1 ? 'township' : 'townships'}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="px-3 py-2 text-right">
@@ -1222,19 +1243,59 @@ export function EnhancedSubnationalBreakdown({
 
                       // Township row
                       const entry = item.entry!
-                      const isHighlighted = highlightedTownshipIds.has(entry.adminUnit.id)
+                      const sitesAtTownship = townshipIdToSites.get(entry.adminUnit.id) ?? []
+                      const siteCount = sitesAtTownship.length
                       return (
-                        <tr key={entry.id} className={`border-t ${isHighlighted ? 'bg-emerald-50/50' : ''}`}>
-                          <td className="px-3 py-2 pl-10">
+                        <tr key={entry.id} className="border-t">
+                          <td className="px-3 py-2 pl-14">
                             <div className="flex items-center gap-2">
                               <span className="text-body font-normal text-foreground">
                                 {entry.adminUnit.name}
                               </span>
-                              {isHighlighted && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-emerald-600 border-emerald-200">
-                                  <MapPin className="h-2.5 w-2.5 mr-0.5" />
-                                  Site
-                                </Badge>
+                              {siteCount > 0 && (
+                                <HoverCard openDelay={200} closeDelay={100}>
+                                  <HoverCardTrigger asChild>
+                                    <button
+                                      type="button"
+                                      aria-label={`View ${siteCount} site${siteCount > 1 ? 's' : ''} in ${entry.adminUnit.name}`}
+                                      className="inline-flex items-center gap-0.5 rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-help"
+                                    >
+                                      <MapPin className="h-3.5 w-3.5" />
+                                      {siteCount > 1 && (
+                                        <span className="text-helper">{siteCount}</span>
+                                      )}
+                                    </button>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent align="start" className="w-80 p-0 overflow-hidden">
+                                    {sitesAtTownship.slice(0, 4).map((site, idx) => {
+                                      const description =
+                                        site.description ||
+                                        site.location_description ||
+                                        site.activity_location_description ||
+                                        null
+                                      return (
+                                        <div
+                                          key={site.id}
+                                          className={idx > 0 ? 'border-t border-border' : ''}
+                                        >
+                                          <div className="bg-surface-muted px-4 py-2 text-body font-semibold text-foreground">
+                                            {site.location_name || 'Unnamed site'}
+                                          </div>
+                                          {description && (
+                                            <div className="bg-background px-4 py-3 text-helper text-muted-foreground">
+                                              {description}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                    {siteCount > 4 && (
+                                      <div className="bg-background px-4 py-2 text-caption text-muted-foreground border-t border-border">
+                                        + {siteCount - 4} more
+                                      </div>
+                                    )}
+                                  </HoverCardContent>
+                                </HoverCard>
                               )}
                             </div>
                           </td>

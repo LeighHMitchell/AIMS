@@ -1,6 +1,7 @@
 "use client"
 
 import { Check, Lock, Clock, ChevronRight, RotateCcw, XCircle, ShieldCheck, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import type { AppraisalStage, ProjectStage, ProjectPhase, FS1Tab, FS2Tab, CategoryDecision } from '@/types/project-bank';
 import { PHASE_LABELS, FS1_TAB_LABELS, FS2_TAB_LABELS, getPhase, getGateStatus, getFs3Label, getFs3Description } from '@/lib/project-bank-utils';
 import type { GateStatus } from '@/lib/project-bank-utils';
@@ -10,8 +11,8 @@ import { cn } from '@/lib/utils';
 const INTAKE_SUB_ITEMS = [
   { label: 'General Information', anchor: 'section-general-info' },
   { label: 'Contact Officer', anchor: 'section-contact-officer' },
-  { label: 'Sector / Sub-Sector', anchor: 'section-sector' },
-  { label: 'Region / Townships', anchor: 'section-region' },
+  { label: 'Sector/Sub-Sector', anchor: 'section-sector' },
+  { label: 'Region/Townships', anchor: 'section-region' },
   { label: 'MSDP Alignment', anchor: 'section-msdp' },
 ];
 
@@ -127,7 +128,7 @@ export function AppraisalProgressRail({
             <div className="mb-4 pb-3 border-b border-border">
               <div
                 className="group/name inline cursor-pointer"
-                onClick={() => navigator.clipboard.writeText(projectName)}
+                onClick={() => { navigator.clipboard.writeText(projectName); toast.success('Project name copied'); }}
                 title="Copy project name"
               >
                 <h3 className="text-xl font-bold text-foreground inline">
@@ -136,15 +137,15 @@ export function AppraisalProgressRail({
                 <Copy className="h-3.5 w-3.5 text-muted-foreground inline-block ml-1 opacity-0 group-hover/name:opacity-100 transition-opacity align-middle" />
               </div>
               {projectCode && (
-                <div
-                  className="group/code inline-flex items-center gap-1 cursor-pointer mt-1"
-                  onClick={() => navigator.clipboard.writeText(projectCode)}
-                  title="Copy project code"
-                >
-                  <p className="font-mono text-sm text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                <div className="mt-1">
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(projectCode); toast.success('Project code copied'); }}
+                    title="Click to copy"
+                    className="font-mono text-sm text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors rounded px-1.5 py-0.5 cursor-pointer"
+                  >
                     {projectCode}
-                  </p>
-                  <Copy className="h-3 w-3 text-muted-foreground shrink-0 opacity-0 group-hover/code:opacity-100 transition-opacity" />
+                  </button>
                 </div>
               )}
             </div>

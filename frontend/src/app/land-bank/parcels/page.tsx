@@ -210,9 +210,8 @@ export default function ParcelsListPage() {
               </Button>
             </div>
 
-            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1">
+            <Button variant="outline" size="icon" onClick={handleExport} className="h-9 w-9" title="Export CSV" aria-label="Export CSV">
               <Download className="h-4 w-4" />
-              Export CSV
             </Button>
 
             {permissions.canCreateParcels && (

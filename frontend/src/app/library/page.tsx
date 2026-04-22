@@ -37,6 +37,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { toast } from "sonner";
+import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { useUser } from "@/hooks/useUser";
 import { USER_ROLES } from "@/types/user";
@@ -72,6 +73,7 @@ export default function LibraryPage() {
 
   // Data state
   const [documents, setDocuments] = useState<UnifiedDocument[]>([]);
+  useFlushDeletesOnUnmount("library-list");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState(() => {
@@ -255,23 +257,28 @@ export default function LibraryPage() {
       return;
     }
 
-    try {
-      const response = await apiFetch(`/api/library/${doc.id}`, {
-        method: 'DELETE',
-      });
+    const snapshot = documents;
+    setDocuments(prev => prev.filter(d => d.id !== doc.id));
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete document');
-      }
-
-      toast.success('Document deleted successfully');
-      fetchDocuments();
-    } catch (err: any) {
-      console.error('Error deleting document:', err);
-      toast.error(err.message || 'Failed to delete document');
-    }
-  }, [fetchDocuments]);
+    showUndoToast('Document deleted', {
+      id: `delete-library-${doc.id}`,
+      source: "library-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/library/${doc.id}`, { method: 'DELETE' });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to delete document');
+        }
+        fetchDocuments();
+      },
+      onUndo: () => setDocuments(snapshot),
+      onCommitError: (err: any) => {
+        console.error('Error deleting document:', err);
+        setDocuments(snapshot);
+        toast.error(err?.message || 'Failed to delete document');
+      },
+    });
+  }, [documents, fetchDocuments]);
 
   // Handle bulk delete
   const handleBulkDelete = useCallback(async () => {
@@ -283,33 +290,36 @@ export default function LibraryPage() {
       return;
     }
 
-    setIsBulkDeleting(true);
-    try {
-      const results = await Promise.allSettled(
-        standaloneIds.map(id =>
-          apiFetch(`/api/library/${id}`, { method: 'DELETE' })
-        )
-      );
+    setShowBulkDeleteDialog(false);
 
-      const successCount = results.filter(r => r.status === 'fulfilled').length;
-      const failCount = results.filter(r => r.status === 'rejected').length;
+    const snapshot = documents;
+    setDocuments(prev => prev.filter(d => !standaloneIds.includes(d.id)));
+    setSelectedIds(new Set());
 
-      if (failCount > 0) {
-        toast.warning(`Deleted ${successCount} documents, ${failCount} failed`);
-      } else {
-        toast.success(`Deleted ${successCount} document${successCount === 1 ? '' : 's'}`);
-      }
-
-      setSelectedIds(new Set());
-      setShowBulkDeleteDialog(false);
-      fetchDocuments();
-    } catch (err) {
-      console.error('Error deleting documents:', err);
-      toast.error('Failed to delete documents');
-    } finally {
-      setIsBulkDeleting(false);
-    }
-  }, [selectedIds, fetchDocuments]);
+    const count = standaloneIds.length;
+    showUndoToast(`Deleted ${count} document${count === 1 ? '' : 's'}`, {
+      id: `delete-library-bulk-${Date.now()}`,
+      source: "library-list",
+      commit: async () => {
+        const results = await Promise.allSettled(
+          standaloneIds.map(id =>
+            apiFetch(`/api/library/${id}`, { method: 'DELETE' })
+          )
+        );
+        const failCount = results.filter(r => r.status === 'rejected').length;
+        if (failCount > 0) {
+          throw new Error(`${failCount} document${failCount === 1 ? '' : 's'} failed to delete`);
+        }
+        fetchDocuments();
+      },
+      onUndo: () => setDocuments(snapshot),
+      onCommitError: (err: any) => {
+        console.error('Error deleting documents:', err);
+        setDocuments(snapshot);
+        toast.error(err?.message || 'Failed to delete some documents');
+      },
+    });
+  }, [selectedIds, documents, fetchDocuments]);
 
   // Handle preview
   const handlePreview = useCallback((doc: UnifiedDocument) => {

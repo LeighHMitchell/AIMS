@@ -39,6 +39,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/lib/toast-manager';
 import { DocumentCard } from './DocumentCard';
 import { DocumentFormEnhanced } from './DocumentFormEnhanced';
 import {
@@ -268,9 +269,11 @@ export function DocumentsAndImagesTabV2({
   };
   
   const handleDeleteDocument = (url: string) => {
+    const snapshot = documents;
     onChange(documents.filter(d => d.url !== url));
-    toast.success('Document removed', {
-      description: 'The document link has been removed.',
+    showUndoToast('Document removed', {
+      id: `delete-doc-v2-${url}`,
+      onUndo: () => onChange(snapshot),
     });
   };
   

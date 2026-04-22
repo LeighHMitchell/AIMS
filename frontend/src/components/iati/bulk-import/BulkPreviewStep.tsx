@@ -794,20 +794,18 @@ export default function BulkPreviewStep({
                                 </button>
                               </span>
                               {' '}
-                              <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground font-normal whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  navigator.clipboard.writeText(activity.iatiIdentifier)
+                                  toast.success('IATI ID copied')
+                                }}
+                                title="Click to copy"
+                                className="inline-flex items-center bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground font-normal whitespace-nowrap cursor-pointer"
+                              >
                                 {activity.iatiIdentifier}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    navigator.clipboard.writeText(activity.iatiIdentifier)
-                                    toast.success('IATI ID copied')
-                                  }}
-                                  className="opacity-0 group-hover/activity:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded"
-                                  title="Copy IATI ID"
-                                >
-                                  <Copy className="h-3 w-3 text-muted-foreground" />
-                                </button>
-                              </span>
+                              </button>
                               {activity.matched && (
                                 <span title="Exists in database" className="inline-flex ml-0.5 align-middle"><Database className="h-3 w-3 text-muted-foreground" /></span>
                               )}
@@ -1785,7 +1783,7 @@ export default function BulkPreviewStep({
                               {activity.tags && activity.tags.length > 0 && (
                                 <div>
                                   <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
-                                    <Tag className="h-3 w-3" /> Tags / SDGs
+                                    <Tag className="h-3 w-3" /> Tags/SDGs
                                   </span>
                                   <div className="mt-1 flex flex-wrap gap-1">
                                     {activity.tags.map((tag, i) => {

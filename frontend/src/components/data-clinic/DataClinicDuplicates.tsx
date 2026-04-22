@@ -371,7 +371,7 @@ export function DataClinicDuplicates() {
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                  <p className="text-body text-muted-foreground">Low / Review</p>
+                  <p className="text-body text-muted-foreground">Low/Review</p>
                 </div>
                 <p className="text-2xl font-semibold">{currentStats?.byConfidence.low || 0}</p>
               </div>
@@ -424,7 +424,7 @@ export function DataClinicDuplicates() {
                   <SelectItem value="all">All Confidence Levels</SelectItem>
                   <SelectItem value="high">High Confidence</SelectItem>
                   <SelectItem value="medium">Medium Confidence</SelectItem>
-                  <SelectItem value="low">Low / Review</SelectItem>
+                  <SelectItem value="low">Low/Review</SelectItem>
                 </SelectContent>
               </Select>
 

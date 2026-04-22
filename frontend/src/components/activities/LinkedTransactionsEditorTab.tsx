@@ -226,10 +226,11 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
               <Button
                 onClick={exportToCSV}
                 variant="outline"
-                size="sm"
+                size="icon"
+                title="Export CSV"
+                aria-label="Export CSV"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
+                <Download className="w-4 h-4" />
               </Button>
             </div>
 

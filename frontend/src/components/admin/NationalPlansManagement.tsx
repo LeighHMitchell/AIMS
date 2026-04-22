@@ -582,7 +582,7 @@ export function NationalPlansManagement() {
             <div className="space-y-2">
               <Label className="text-body flex items-center gap-1">
                 Hierarchy Labels
-                <HelpTextTooltip text="Name the three levels used to structure this plan's objectives. For example, a national plan might use Pillar / Goal / Strategy, while a sector plan might use Priority Area / Objective / Action." size="sm" />
+                <HelpTextTooltip text="Name the three levels used to structure this plan's objectives. For example, a national plan might use Pillar/Goal/Strategy, while a sector plan might use Priority Area/Objective/Action." size="sm" />
               </Label>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">

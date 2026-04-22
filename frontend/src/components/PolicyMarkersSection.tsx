@@ -76,7 +76,7 @@ const FALLBACK_POLICY_MARKERS: PolicyMarker[] = [
   // Other
   { id: 'fallback-8', code: 'disability', name: 'Disability Inclusion', description: 'Activities that promote inclusion of persons with disabilities', marker_type: 'other' },
   { id: 'fallback-9', code: 'nutrition', name: 'Nutrition', description: 'Activities that address nutrition outcomes', marker_type: 'other' },
-  { id: 'fallback-10', code: 'peacebuilding', name: 'Peacebuilding / Conflict Sensitivity', description: 'Activities that contribute to peace and conflict prevention', marker_type: 'other' }
+  { id: 'fallback-10', code: 'peacebuilding', name: 'Peacebuilding/Conflict Sensitivity', description: 'Activities that contribute to peace and conflict prevention', marker_type: 'other' }
 ];
 
 export default function PolicyMarkersSection({ activityId, policyMarkers, onChange, setHasUnsavedChanges }: PolicyMarkersSectionProps) {

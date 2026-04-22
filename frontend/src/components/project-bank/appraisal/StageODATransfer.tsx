@@ -165,7 +165,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
           </div>
         </div>
         <div>
-          <label className="text-helper text-muted-foreground">Conditions / Notes <HelpTooltip text="Any conditionalities, disbursement conditions, or special terms attached to the financing." /></label>
+          <label className="text-helper text-muted-foreground">Conditions/Notes <HelpTooltip text="Any conditionalities, disbursement conditions, or special terms attached to the financing." /></label>
           <Textarea
             value={formData.oda_conditions || ''}
             onChange={e => updateField('oda_conditions', e.target.value)}

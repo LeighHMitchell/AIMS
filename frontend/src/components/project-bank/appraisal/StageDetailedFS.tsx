@@ -146,7 +146,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">Individual Consultant</SelectItem>
-                  <SelectItem value="company">Consulting Firm / Company</SelectItem>
+                  <SelectItem value="company">Consulting Firm/Company</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -256,7 +256,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
           </div>
 
           <div>
-            <Label>Tariff / Pricing Structure <FieldCheck value={sd.tariff_structure} /> <HelpTooltip text="Proposed tariff or pricing structure and rationale." /></Label>
+            <Label>Tariff/Pricing Structure <FieldCheck value={sd.tariff_structure} /> <HelpTooltip text="Proposed tariff or pricing structure and rationale." /></Label>
             <Textarea
               value={sd.tariff_structure || ''}
               onChange={e => updateFS2Field('tariff_structure', e.target.value)}

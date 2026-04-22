@@ -162,7 +162,7 @@ const validateOrganizationForm = (data: any) => {
   }
   
   if (!data.acronym?.trim()) {
-    errors.push('Acronym / Short Name is required')
+    errors.push('Acronym/Short Name is required')
   }
   
   if (!data.Organisation_Type_Code?.trim()) {
@@ -742,7 +742,7 @@ export function EditOrganizationModal({
               {/* Acronym / Short Name (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="acronym" className="text-body font-medium">
-                  Acronym / Short Name <RequiredDot />
+                  Acronym/Short Name <RequiredDot />
                 </Label>
                 <Input
                   id="acronym"
@@ -1373,7 +1373,7 @@ export function EditOrganizationModal({
                 <div className="space-y-2">
                   <Label htmlFor="social_twitter" className="text-body font-medium flex items-center gap-2">
                     <Twitter className="h-4 w-4 text-muted-foreground" />
-                    Twitter / X
+                    Twitter/X
                   </Label>
                   <Input
                     id="social_twitter"

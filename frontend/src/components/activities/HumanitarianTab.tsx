@@ -268,7 +268,7 @@ export function HumanitarianTab({
           {humanitarian && !readOnly && activityId !== 'NEW' && (
             <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Emergency / Appeal
+              Add Emergency/Appeal
             </Button>
           )}
         </div>
@@ -301,7 +301,7 @@ export function HumanitarianTab({
                 <img src="/images/empty-pallet.webp" alt="No humanitarian scopes" className="h-32 mx-auto mb-4 opacity-50" />
                 <h3 className="text-base font-medium mb-2">No emergencies or appeals linked</h3>
                 <p className="text-muted-foreground">
-                  Click &ldquo;Add Emergency / Appeal&rdquo; above to identify specific emergencies or humanitarian appeals this activity responds to.
+                  Click &ldquo;Add Emergency/Appeal&rdquo; above to identify specific emergencies or humanitarian appeals this activity responds to.
                 </p>
               </div>
             )}
@@ -312,7 +312,7 @@ export function HumanitarianTab({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Type</TableHead>
-                      <TableHead className="whitespace-nowrap">Vocabulary (GLIDE / OCHA)</TableHead>
+                      <TableHead className="whitespace-nowrap">Vocabulary (GLIDE/OCHA)</TableHead>
                       <TableHead className="whitespace-nowrap">Emergency/Appeal</TableHead>
                       <TableHead className="whitespace-nowrap">Location</TableHead>
                       <TableHead className="whitespace-nowrap">Date</TableHead>

@@ -468,11 +468,12 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               {(viewMode === 'table' || viewMode === 'time-series') && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={handleExportCSV}
+                  title="Export CSV"
+                  aria-label="Export CSV"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
+                  <Download className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -718,11 +719,12 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               </div>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={handleExportCSV}
+                title="Export CSV"
+                aria-label="Export CSV"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
+                <Download className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>
@@ -833,11 +835,12 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               </div>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={handleExportCSV}
+                title="Export CSV"
+                aria-label="Export CSV"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
+                <Download className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>

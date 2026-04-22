@@ -361,21 +361,17 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                   {org.iati_org_id && (
                                     <>
                                       {' '}
-                                      <span className="inline-flex items-center gap-0.5 whitespace-nowrap align-middle">
-                                        <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                                          {org.iati_org_id}
-                                        </span>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            copyToClipboard(org.iati_org_id!, 'IATI ID');
-                                          }}
-                                          className="p-0.5 hover:bg-muted rounded transition-colors"
-                                          title="Copy IATI ID"
-                                        >
-                                          <Copy className="h-3 w-3 text-muted-foreground hover:text-muted-foreground" />
-                                        </button>
-                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(org.iati_org_id!, 'IATI ID');
+                                        }}
+                                        title="Click to copy"
+                                        className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded align-middle cursor-pointer"
+                                      >
+                                        {org.iati_org_id}
+                                      </button>
                                     </>
                                   )}
                                 </span>

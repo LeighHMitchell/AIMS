@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { MapPin, Layers, Copy } from 'lucide-react';
+import { MapPin, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { ParcelStatusBadge } from './ParcelStatusBadge';
 import { TitleStatusBadge } from './TitleStatusBadge';
@@ -54,19 +54,17 @@ const ParcelCardModern: React.FC<ParcelCardModernProps> = ({
               {parcel.name}
             </Link>{' '}
             <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
-              <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                {parcel.parcel_code}
-              </span>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   copyToClipboard(parcel.parcel_code);
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
-                title="Copy code"
+                title="Click to copy"
+                className="text-xs font-mono font-normal bg-white/20 text-white/80 hover:bg-white/30 hover:text-white transition-colors px-1.5 py-0.5 rounded backdrop-blur-sm relative z-10 cursor-pointer"
               >
-                <Copy className="w-3 h-3 text-white/70" />
+                {parcel.parcel_code}
               </button>
             </span>
           </h2>

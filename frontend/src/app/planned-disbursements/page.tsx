@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
 import { Download, ChevronLeft, ChevronRight, FileText, Building2, CalendarClock, AlignLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
@@ -44,6 +45,7 @@ export default function PlannedDisbursementsPage() {
 
   // Bulk selection state
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
+  useFlushDeletesOnUnmount("planned-disbursements-list");
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
@@ -236,25 +238,30 @@ export default function PlannedDisbursementsPage() {
       return;
     }
 
-    if (!(await confirm({ title: 'Delete this planned disbursement?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete this planned disbursement?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
-    try {
-      const response = await apiFetch(`/api/planned-disbursements/${disbursementId}`, {
-        method: 'DELETE',
-      });
+    const snapshot = disbursements;
+    setDisbursements(prev => prev.filter(d => d.id !== disbursementId));
 
-      if (!response.ok) {
-        throw new Error('Failed to delete planned disbursement');
-      }
-
-      toast.success("Planned disbursement deleted successfully");
-      fetchDisbursements();
-    } catch (error: any) {
-      console.error('Error deleting planned disbursement:', error);
-      toast.error(error.message || "Failed to delete planned disbursement");
-    }
+    showUndoToast("Planned disbursement deleted", {
+      id: `delete-pd-${disbursementId}`,
+      source: "planned-disbursements-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/planned-disbursements/${disbursementId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete planned disbursement');
+        await fetchDisbursements();
+      },
+      onUndo: () => setDisbursements(snapshot),
+      onCommitError: (err: any) => {
+        console.error('Error deleting planned disbursement:', err);
+        setDisbursements(snapshot);
+        toast.error(err?.message || "Failed to delete planned disbursement");
+      },
+    });
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -281,36 +288,31 @@ export default function PlannedDisbursementsPage() {
     if (selectedArray.length === 0) return;
 
     setShowBulkDeleteDialog(false);
-    setIsBulkDeleting(true);
 
-    try {
-      const response = await apiFetch('/api/planned-disbursements/bulk-delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ids: selectedArray
-        })
-      });
+    const snapshot = disbursements;
+    setDisbursements(prev => prev.filter(d => !selectedDisbursementIds.has(d.id)));
+    setSelectedDisbursementIds(new Set());
 
-      if (!response.ok) {
-        throw new Error('Failed to delete planned disbursements');
-      }
-
-      const result = await response.json();
-      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'disbursement' : 'disbursements'} deleted successfully`);
-
-      // Refresh data first
-      await fetchDisbursements();
-
-      // Clear selection AFTER refresh completes to ensure proper state sync
-      setSelectedDisbursementIds(new Set());
-
-    } catch (error) {
-      console.error('Bulk delete failed:', error);
-      toast.error('Failed to delete some planned disbursements');
-    } finally {
-      setIsBulkDeleting(false);
-    }
+    const count = selectedArray.length;
+    showUndoToast(`${count} ${count === 1 ? 'disbursement' : 'disbursements'} deleted`, {
+      id: `delete-pd-bulk-${Date.now()}`,
+      source: "planned-disbursements-list",
+      commit: async () => {
+        const response = await apiFetch('/api/planned-disbursements/bulk-delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: selectedArray }),
+        });
+        if (!response.ok) throw new Error('Failed to delete planned disbursements');
+        await fetchDisbursements();
+      },
+      onUndo: () => setDisbursements(snapshot),
+      onCommitError: (err) => {
+        console.error('Bulk delete failed:', err);
+        setDisbursements(snapshot);
+        toast.error('Failed to delete some planned disbursements');
+      },
+    });
   };
 
   return (
@@ -329,11 +331,12 @@ export default function PlannedDisbursementsPage() {
             {disbursements.length > 0 && (
               <Button
                 variant="outline"
+                size="icon"
                 onClick={exportDisbursements}
-                className="flex items-center space-x-2"
+                title="Export CSV"
+                aria-label="Export CSV"
               >
                 <Download className="h-4 w-4" />
-                <span>Export</span>
               </Button>
             )}
           </div>
@@ -392,27 +395,6 @@ export default function PlannedDisbursementsPage() {
                 />
               </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Descriptions Toggle */}
-            <div className="flex flex-col gap-1">
-              <Label className="text-helper text-muted-foreground">Descriptions</Label>
-              <Button
-                variant={showDescriptions ? "default" : "outline"}
-                size="sm"
-                className="h-9 gap-1.5"
-                onClick={() => {
-                  const next = !showDescriptions;
-                  setShowDescriptions(next);
-                  localStorage.setItem('plannedDisbursements_showDescriptions', String(next));
-                }}
-              >
-                <AlignLeft className="h-4 w-4" />
-                <span>Descriptions</span>
-              </Button>
-            </div>
-
             {/* Column Selector */}
             <div className="flex flex-col gap-1">
               <Label className="text-helper text-muted-foreground">Columns</Label>
@@ -421,6 +403,24 @@ export default function PlannedDisbursementsPage() {
                 onColumnsChange={setVisibleColumns}
               />
             </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Descriptions Toggle */}
+            <Button
+              variant={showDescriptions ? "default" : "outline"}
+              size="sm"
+              className="h-9 w-9 flex-shrink-0 p-0"
+              title={showDescriptions ? "Hide descriptions" : "Show descriptions"}
+              onClick={() => {
+                const next = !showDescriptions;
+                setShowDescriptions(next);
+                localStorage.setItem('plannedDisbursements_showDescriptions', String(next));
+              }}
+            >
+              <AlignLeft className="h-4 w-4" />
+            </Button>
         </FilterBar>
 
         {/* Planned Disbursements Table */}

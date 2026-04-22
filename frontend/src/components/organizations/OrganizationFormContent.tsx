@@ -184,7 +184,7 @@ export const validateOrganizationForm = (data: any) => {
   }
   
   if (!data.acronym?.trim()) {
-    errors.push('Acronym / Short Name is required')
+    errors.push('Acronym/Short Name is required')
   }
   
   if (!data.Organisation_Type_Code?.trim()) {
@@ -926,7 +926,7 @@ export function OrganizationFormContent({
               isSaved={!!acronymAutosave.state.lastSaved}
               hasValue={!!formData.acronym}
             >
-              Acronym / Short Name <RequiredDot />
+              Acronym/Short Name <RequiredDot />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1666,7 +1666,7 @@ export function OrganizationFormContent({
                 hasValue={!!formData.twitter}
               >
                 <Twitter className="h-4 w-4 text-muted-foreground mr-2" />
-                Twitter / X
+                Twitter/X
               </LabelSaveIndicator>
               <Input
                 id="twitter"

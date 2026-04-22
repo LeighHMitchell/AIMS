@@ -988,7 +988,7 @@ function SubnationalChoroplethMapComponent({
               <Button
                 variant={viewLevel === 'region' ? 'default' : 'ghost'}
                 size="sm"
-                className="h-9 rounded-r-none text-helper"
+                className="h-9 rounded-r-none text-sm"
                 onClick={() => onViewLevelChange('region')}
                 title="ADM1 — states and regions"
               >
@@ -998,7 +998,7 @@ function SubnationalChoroplethMapComponent({
               <Button
                 variant={viewLevel === 'township' ? 'default' : 'ghost'}
                 size="sm"
-                className="h-9 rounded-l-none text-helper"
+                className="h-9 rounded-l-none text-sm"
                 onClick={() => onViewLevelChange('township')}
                 title="ADM3 — townships"
               >
@@ -1039,7 +1039,7 @@ function SubnationalChoroplethMapComponent({
                   <Button
                     variant={viewLevel === 'region' ? 'default' : 'ghost'}
                     size="sm"
-                    className="h-8 rounded-r-none text-helper"
+                    className="h-8 rounded-r-none text-sm"
                     onClick={() => onViewLevelChange('region')}
                   >
                     ADM1
@@ -1047,7 +1047,7 @@ function SubnationalChoroplethMapComponent({
                   <Button
                     variant={viewLevel === 'township' ? 'default' : 'ghost'}
                     size="sm"
-                    className="h-8 rounded-l-none text-helper"
+                    className="h-8 rounded-l-none text-sm"
                     onClick={() => onViewLevelChange('township')}
                   >
                     ADM3

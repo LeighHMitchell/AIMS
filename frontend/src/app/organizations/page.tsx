@@ -21,6 +21,7 @@ import { exportOrganizationToPDF, exportOrganizationToExcel } from '@/lib/organi
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager'
 import { useDropzone } from 'react-dropzone'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import Flag from 'react-world-flags'
@@ -445,7 +446,7 @@ const deriveCategory = (orgTypeCode: string, country: string): string => {
   switch (orgTypeCode) {
     case "10": // Government
       if (isMyanmar) return "National Government";
-      if (isGlobal) return "Intergovernmental / Regional Body";
+      if (isGlobal) return "Intergovernmental/Regional Body";
       return "External Government";
     case "11":
       return isMyanmar ? "Subnational Government" : "External Subnational Government";
@@ -579,7 +580,7 @@ const validateOrganizationForm = (data: Partial<Organization>) => {
   }
   
   if (!data.acronym?.trim()) {
-    errors.push('Acronym / Short Name is required')
+    errors.push('Acronym/Short Name is required')
   }
   
   if (!data.Organisation_Type_Code?.trim()) {
@@ -797,9 +798,7 @@ const DeleteConfirmationModal: React.FC<{
       await onConfirm()
       onClose()
       setConfirmationText('')
-      toast.success('Organization deleted successfully')
     } catch (error) {
-      // Show the actual error message if available
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete organization'
       toast.error(errorMessage)
     } finally {
@@ -1094,22 +1093,18 @@ const OrganizationListView: React.FC<{
                   </span>
                 )}
                 {org.iati_org_id && (
-                  <>
-                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{org.iati_org_id}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigator.clipboard.writeText(org.iati_org_id || '')
-                        toast.success('Copied to clipboard')
-                      }}
-                      className="h-4 w-4 p-0 flex-shrink-0"
-                      title="Copy IATI ID"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigator.clipboard.writeText(org.iati_org_id || '')
+                      toast.success('IATI ID copied')
+                    }}
+                    title="Click to copy"
+                    className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded flex-shrink-0 cursor-pointer"
+                  >
+                    {org.iati_org_id}
+                  </button>
                 )}
               </div>
 
@@ -1175,6 +1170,7 @@ const OrganizationListView: React.FC<{
 function OrganizationsPageContent() {
   // State management
   const [organizations, setOrganizations] = useState<Organization[]>([])
+  useFlushDeletesOnUnmount("organizations-list")
   const [availableTypes, setAvailableTypes] = useState<OrganizationType[]>(DEFAULT_ORGANIZATION_TYPES)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -1231,7 +1227,7 @@ function OrganizationsPageContent() {
     { label: "Government Partners", value: "partner_gov" },
     { label: "Private Sector", value: "private_sector" },
     { label: "INGOs", value: "ingo" },
-    { label: "CSOs / Local NGOs", value: "csos" },
+    { label: "CSOs/Local NGOs", value: "csos" },
     { label: "Other Public Sector", value: "other_public" },
     { label: "Custom Groups", value: "custom_groups" },
   ];
@@ -1551,29 +1547,60 @@ function OrganizationsPageContent() {
   }
 
 
+  const handleDeleteCustomGroup = async (group: any) => {
+    if (!(await confirm({ title: 'Delete this group?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
+
+    const snapshot = customGroups
+    setCustomGroups(prev => prev.filter(g => g.id !== group.id))
+
+    showUndoToast('Group deleted', {
+      id: `delete-custom-group-${group.id}`,
+      source: "organizations-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/custom-groups/${group.id}`, {
+          method: 'DELETE',
+        })
+        if (!response.ok) throw new Error('Failed to delete group')
+        fetchCustomGroups()
+      },
+      onUndo: () => setCustomGroups(snapshot),
+      onCommitError: (err) => {
+        console.error('Error deleting group:', err)
+        setCustomGroups(snapshot)
+        toast.error('Failed to delete group')
+      },
+    })
+  }
+
   const handleConfirmDelete = async () => {
     if (!selectedOrganization) return
-    
-    const response = await apiFetch(`/api/organizations?id=${selectedOrganization.id}`, {
-      method: 'DELETE'
+
+    const orgId = selectedOrganization.id
+    const snapshot = organizations
+    setOrganizations(prev => prev.filter(o => o.id !== orgId))
+
+    showUndoToast(`"${selectedOrganization.name}" deleted`, {
+      id: `delete-org-${orgId}`,
+      source: "organizations-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/organizations?id=${orgId}`, {
+          method: 'DELETE',
+        })
+        if (!response.ok) {
+          let errorData;
+          try { errorData = await response.json(); }
+          catch { errorData = { error: `Server returned ${response.status}: ${response.statusText}` }; }
+          throw new Error(errorData.details || errorData.error || 'Failed to delete organization')
+        }
+        await fetchOrganizations(true)
+      },
+      onUndo: () => setOrganizations(snapshot),
+      onCommitError: (err) => {
+        console.error('[OrganizationsPage] Delete failed:', err);
+        setOrganizations(snapshot);
+        toast.error(err instanceof Error ? err.message : 'Failed to delete organization');
+      },
     })
-    
-    if (!response.ok) {
-      // Try to parse JSON error response, but handle cases where it might not be JSON
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (jsonError) {
-        console.error('[OrganizationsPage] Failed to parse error response as JSON:', jsonError);
-        errorData = { error: `Server returned ${response.status}: ${response.statusText}` };
-      }
-      // Use the detailed error message from the API if available
-      const errorMessage = errorData.details || errorData.error || 'Failed to delete organization'
-      throw new Error(errorMessage)
-    }
-    
-    // Refresh organizations list with cache busting
-    await fetchOrganizations(true)
   }
 
   // Export handlers
@@ -1875,25 +1902,7 @@ function OrganizationsPageContent() {
                             setSelectedGroup(group)
                             setEditGroupModalOpen(true)
                           }}
-                          onDelete={async (group) => {
-                            if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
-
-                            try {
-                              const response = await apiFetch(`/api/custom-groups/${group.id}`, {
-                                method: 'DELETE'
-                              })
-
-                              if (response.ok) {
-                                toast.success('Group deleted successfully')
-                                fetchCustomGroups()
-                              } else {
-                                toast.error('Failed to delete group')
-                              }
-                            } catch (error) {
-                              console.error('Error deleting group:', error)
-                              toast.error('Error deleting group')
-                            }
-                          }}
+                          onDelete={handleDeleteCustomGroup}
                         />
                       ))}
                     </div>
@@ -1974,23 +1983,7 @@ function OrganizationsPageContent() {
                                     variant="ghost"
                                     size="sm"
                                     className="text-destructive hover:text-destructive"
-                                    onClick={async () => {
-                                      if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
-                                      try {
-                                        const response = await apiFetch(`/api/custom-groups/${group.id}`, {
-                                          method: 'DELETE'
-                                        })
-                                        if (response.ok) {
-                                          toast.success('Group deleted successfully')
-                                          fetchCustomGroups()
-                                        } else {
-                                          toast.error('Failed to delete group')
-                                        }
-                                      } catch (error) {
-                                        console.error('Error deleting group:', error)
-                                        toast.error('Error deleting group')
-                                      }
-                                    }}
+                                    onClick={() => handleDeleteCustomGroup(group)}
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>

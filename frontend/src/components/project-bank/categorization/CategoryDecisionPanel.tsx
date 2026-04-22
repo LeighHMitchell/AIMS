@@ -227,7 +227,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {/* Optional rationale when not overriding */}
       {selected && !isOverride && (
         <div className="space-y-2">
-          <Label className="text-body text-muted-foreground">Rationale (optional)</Label>
+          <Label className="text-body text-muted-foreground">Rationale</Label>
           <Textarea
             value={rationale}
             onChange={e => setRationale(e.target.value)}

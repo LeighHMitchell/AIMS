@@ -56,7 +56,7 @@ export const IATI_COLLABORATION_TYPES: CollaborationTypeGroup[] = [
     ]
   },
   {
-    label: "Other / Non-State Types",
+    label: "Other/Non-State Types",
     types: [
       {
         code: "6",

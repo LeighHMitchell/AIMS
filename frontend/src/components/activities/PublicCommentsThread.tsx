@@ -25,6 +25,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
+import { showUndoToast } from "@/lib/toast-manager";
 import { PublicComment, formatCommentTimestamp } from "@/types/public-comment";
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -597,24 +598,30 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
   const handleDelete = async (commentId: string) => {
     if (!currentUser) return;
 
-    try {
-      const url = new URL(
-        `/api/activities/${activityId}/public-comments`,
-        window.location.origin
-      );
-      url.searchParams.set("commentId", commentId);
-      url.searchParams.set("userId", currentUser.id);
+    const snapshot = comments;
+    setComments(prev => prev.filter(c => c.id !== commentId));
 
-      const response = await fetch(url.toString(), { method: "DELETE" });
-
-      if (!response.ok) throw new Error("Failed to delete comment");
-
-      toast.success("Comment deleted");
-      await fetchComments();
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      toast.error("Failed to delete comment");
-    }
+    showUndoToast("Comment deleted", {
+      id: `delete-public-comment-${commentId}`,
+      source: `public-comments-${activityId}`,
+      commit: async () => {
+        const url = new URL(
+          `/api/activities/${activityId}/public-comments`,
+          window.location.origin
+        );
+        url.searchParams.set("commentId", commentId);
+        url.searchParams.set("userId", currentUser.id);
+        const response = await fetch(url.toString(), { method: "DELETE" });
+        if (!response.ok) throw new Error("Failed to delete comment");
+        await fetchComments();
+      },
+      onUndo: () => setComments(snapshot),
+      onCommitError: (err) => {
+        console.error("Error deleting comment:", err);
+        setComments(snapshot);
+        toast.error("Failed to delete comment");
+      },
+    });
   };
 
   // Sort comments

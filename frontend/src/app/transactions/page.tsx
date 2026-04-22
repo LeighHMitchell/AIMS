@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
 import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Receipt, ShieldCheck, Building2, Banknote, Search, ArrowLeftRight, AlignLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -65,6 +66,7 @@ export default function TransactionsPage() {
   // Bulk selection state
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  useFlushDeletesOnUnmount("transactions-list");
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkAccepting, setIsBulkAccepting] = useState(false);
   const [isBulkRejecting, setIsBulkRejecting] = useState(false);
@@ -348,38 +350,36 @@ export default function TransactionsPage() {
       return;
     }
 
-    if (!(await confirm({ title: 'Delete this transaction?', description: 'This action cannot be undone. The transaction will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete this transaction?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
-    // Find the transaction to delete (for potential recovery)
     const transactionToDelete = transactions.data.find(t => (t.uuid || t.id) === transactionId);
-    
-    // Optimistic update - remove from UI immediately
+    if (!transactionToDelete) return;
+
     deleteTransaction(transactionId);
 
-    try {
-      const response = await apiFetch(`/api/transactions?uuid=${transactionId}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete transaction');
-      }
-
-      toast.success("Transaction deleted successfully");
-    } catch (error: any) {
-      console.error('Error deleting transaction:', error);
-      toast.error(error.message || "Failed to delete transaction");
-      
-      // Revert the optimistic update on error
-      if (transactionToDelete) {
+    showUndoToast("Transaction deleted", {
+      id: `delete-transaction-${transactionId}`,
+      source: "transactions-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/transactions?uuid=${transactionId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || 'Failed to delete transaction');
+        }
+      },
+      onUndo: () => {
         addTransaction(transactionToDelete);
-      } else {
-        refetch(); // Fallback: refresh the entire list
-      }
-    }
+      },
+      onCommitError: (err: any) => {
+        console.error('Error deleting transaction:', err);
+        addTransaction(transactionToDelete);
+        toast.error(err?.message || "Failed to delete transaction");
+      },
+    });
   };
 
   const handleConvertCurrency = async (transactionId: string) => {
@@ -452,43 +452,35 @@ export default function TransactionsPage() {
   const handleBulkDelete = async () => {
     const selectedArray = Array.from(selectedTransactionIds);
     if (selectedArray.length === 0) return;
-    
+
     setShowBulkDeleteDialog(false);
-    setIsBulkDeleting(true);
-    
-    // Clear selection immediately - ensures checkbox state is correct right away
+
+    const snapshot = transactions.data.filter(t => selectedArray.includes(t.uuid || t.id));
     setSelectedTransactionIds(new Set());
-    
-    try {
-      // Optimistic update - remove from UI immediately
-      selectedArray.forEach(id => deleteTransaction(id));
-      
-      const response = await apiFetch('/api/transactions', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuids: selectedArray
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete transactions');
-      }
-      
-      const result = await response.json();
-      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'transaction' : 'transactions'} deleted successfully`);
-      
-      // Refetch to ensure data is in sync with the server
-      refetch();
-      
-    } catch (error) {
-      console.error('Bulk delete failed:', error);
-      toast.error('Failed to delete some transactions');
-      // Revert optimistic updates by refetching
-      refetch();
-    } finally {
-      setIsBulkDeleting(false);
-    }
+    selectedArray.forEach(id => deleteTransaction(id));
+
+    const count = selectedArray.length;
+    showUndoToast(`${count} ${count === 1 ? 'transaction' : 'transactions'} deleted`, {
+      id: `delete-transactions-bulk-${Date.now()}`,
+      source: "transactions-list",
+      commit: async () => {
+        const response = await apiFetch('/api/transactions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uuids: selectedArray }),
+        });
+        if (!response.ok) throw new Error('Failed to delete transactions');
+        refetch();
+      },
+      onUndo: () => {
+        snapshot.forEach(t => addTransaction(t));
+      },
+      onCommitError: (err) => {
+        console.error('Bulk delete failed:', err);
+        snapshot.forEach(t => addTransaction(t));
+        toast.error('Failed to delete some transactions');
+      },
+    });
   };
 
   const handleBulkAccept = async () => {
@@ -636,11 +628,12 @@ export default function TransactionsPage() {
             {transactions.data.length > 0 && (
               <Button
                 variant="outline"
+                size="icon"
                 onClick={exportTransactions}
-                className="flex items-center space-x-2"
+                title="Export CSV"
+                aria-label="Export CSV"
               >
                 <Download className="h-4 w-4" />
-                <span>Export</span>
               </Button>
             )}
           </div>
@@ -748,27 +741,6 @@ export default function TransactionsPage() {
               />
             </div>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Descriptions Toggle */}
-          <div className="flex flex-col gap-1">
-            <Label className="text-helper text-muted-foreground">Descriptions</Label>
-            <Button
-              variant={showDescriptions ? "default" : "outline"}
-              size="sm"
-              className="h-9 gap-1.5"
-              onClick={() => {
-                const next = !showDescriptions;
-                setShowDescriptions(next);
-                localStorage.setItem('transactions_showDescriptions', String(next));
-              }}
-            >
-              <AlignLeft className="h-4 w-4" />
-              <span>Descriptions</span>
-            </Button>
-          </div>
-
           {/* Column Selector */}
           <div className="flex flex-col gap-1">
             <Label className="text-helper text-muted-foreground">Columns</Label>
@@ -780,6 +752,24 @@ export default function TransactionsPage() {
               groupLabels={transactionColumnGroups}
             />
           </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Descriptions Toggle */}
+          <Button
+            variant={showDescriptions ? "default" : "outline"}
+            size="sm"
+            className="h-9 w-9 flex-shrink-0 p-0"
+            title={showDescriptions ? "Hide descriptions" : "Show descriptions"}
+            onClick={() => {
+              const next = !showDescriptions;
+              setShowDescriptions(next);
+              localStorage.setItem('transactions_showDescriptions', String(next));
+            }}
+          >
+            <AlignLeft className="h-4 w-4" />
+          </Button>
         </FilterBar>
 
         {/* Performance Warning (if applicable) */}

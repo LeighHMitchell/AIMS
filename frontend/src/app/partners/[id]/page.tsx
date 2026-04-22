@@ -710,7 +710,7 @@ export default function PartnerProfilePage() {
             {/* Acronym / Short Name */}
             <div>
               <label htmlFor="acronym" className="text-body font-medium flex items-center">
-                Acronym / Short Name *
+                Acronym/Short Name *
                 <OrganizationFieldHelp field="acronym" />
               </label>
               <Input
@@ -761,7 +761,7 @@ export default function PartnerProfilePage() {
                 </SelectContent>
               </Select>
               <p className="text-helper text-muted-foreground mt-1">
-                Select 'Global / Not Country-Specific' for multilaterals or regional organisations like UN agencies, the World Bank, etc.
+                Select 'Global/Not Country-Specific' for multilaterals or regional organisations like UN agencies, the World Bank, etc.
               </p>
               {validationErrors.countryRepresented && (
                 <p className="text-body text-destructive mt-1">{validationErrors.countryRepresented}</p>

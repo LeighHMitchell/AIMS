@@ -302,13 +302,13 @@ export function CellDrillDownSheet({
             </div>
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={handleExport}
               disabled={data.length === 0 || isLoading}
-              className="gap-2"
+              title="Export CSV"
+              aria-label="Export CSV"
             >
               <Download className="h-4 w-4" />
-              Export CSV
             </Button>
           </div>
 

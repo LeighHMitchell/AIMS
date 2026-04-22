@@ -26,7 +26,7 @@ interface StagePPPStructuringProps {
 }
 
 const CHECKLIST_ITEMS = [
-  { key: 'land_identified', label: 'Land parcel identified / reserved' },
+  { key: 'land_identified', label: 'Land parcel identified/reserved' },
   { key: 'dp_consulted', label: 'Development partners consulted' },
   { key: 'budget_allocated', label: 'Budget allocation secured' },
   { key: 'dap_compliant', label: 'Development Assistance Policy (DAP) compliant' },
@@ -90,7 +90,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-1">PPP / VGF Structuring</h3>
+        <h3 className="text-lg font-semibold mb-1">PPP/VGF Structuring</h3>
         <p className="text-body text-muted-foreground">
           Estimate the Viability Gap Funding required and prepare for PPP structuring.
         </p>

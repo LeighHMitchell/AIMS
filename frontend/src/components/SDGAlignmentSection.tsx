@@ -473,10 +473,10 @@ export default function SDGAlignmentSection({
                       </TableCell>
                       {canEdit && (
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={(e) => { e.stopPropagation(); setModalGoalId(goalId); }}
                               className="hover:bg-blue-50 hover:text-blue-600"
                             >
@@ -484,7 +484,7 @@ export default function SDGAlignmentSection({
                             </Button>
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={(e) => { e.stopPropagation(); removeGoal(goalId); }}
                               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >

@@ -14,7 +14,7 @@ const STAGE_TITLES: Record<ScoringStage, string> = {
   intake: 'Project Intake',
   fs1: 'Preliminary Feasibility',
   fs2: 'Detailed Feasibility',
-  fs3: 'PPP / VGF Structuring',
+  fs3: 'PPP/VGF Structuring',
 }
 
 const DIMENSION_LABELS: Record<ScoringDimension, string> = {

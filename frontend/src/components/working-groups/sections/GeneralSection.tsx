@@ -218,7 +218,7 @@ export default function GeneralSection({
               isSaved={!!iconAutosave.state.lastSaved || (!isCreating && !!iconUrl)}
               hasValue={!!iconUrl}
             >
-              Icon / Logo
+              Icon/Logo
             </LabelSaveIndicator>
             {iconUrl ? (
               <div className="relative w-32 h-32">
@@ -315,7 +315,7 @@ export default function GeneralSection({
             isSaved={!!descAutosave.state.lastSaved || (!isCreating && !!description)}
             hasValue={!!description}
           >
-            Description / Mandate
+            Description/Mandate
           </LabelSaveIndicator>
           <HelpTextTooltip size="sm" text="The purpose, mandate, and scope of this working group. This appears on the profile page." />
         </div>

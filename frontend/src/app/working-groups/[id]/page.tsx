@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { showUndoToast } from '@/lib/toast-manager'
 import { format } from 'date-fns'
 import {
   AlertDialog,
@@ -200,26 +201,24 @@ export default function WorkingGroupProfilePage() {
   const handleDelete = async () => {
     if (!workingGroup) return
 
-    setIsDeleting(true)
-    try {
-      const response = await apiFetch(`/api/working-groups/${workingGroup.id}`, {
-        method: 'DELETE',
-      })
+    const wg = workingGroup
+    setShowDeleteDialog(false)
 
-      if (response.ok || response.status === 204) {
-        toast.success(`"${workingGroup.label}" was deleted successfully`)
+    showUndoToast(`"${wg.label}" deleted`, {
+      id: `delete-wg-detail-${wg.id}`,
+      commit: async () => {
+        const response = await apiFetch(`/api/working-groups/${wg.id}`, { method: 'DELETE' })
+        if (!(response.ok || response.status === 204)) {
+          const data = await response.json().catch(() => ({}))
+          throw new Error(data.error || 'Failed to delete working group')
+        }
         router.push('/working-groups')
-      } else {
-        const data = await response.json()
-        toast.error(data.error || 'Failed to delete working group')
-      }
-    } catch (error) {
-      console.error('Error deleting:', error)
-      toast.error('Failed to delete working group')
-    } finally {
-      setIsDeleting(false)
-      setShowDeleteDialog(false)
-    }
+      },
+      onCommitError: (err: any) => {
+        console.error('Error deleting working group:', err)
+        toast.error(err?.message || 'Failed to delete working group')
+      },
+    })
   }
 
   if (loading) {
@@ -319,7 +318,7 @@ export default function WorkingGroupProfilePage() {
         {workingGroup.description && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Purpose / Mandate</CardTitle>
+              <CardTitle>Purpose/Mandate</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-foreground whitespace-pre-wrap">

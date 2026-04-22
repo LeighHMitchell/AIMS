@@ -31,10 +31,10 @@ export async function POST() {
       // Other Cross-Cutting Issues
       { code: 'disability', name: 'Disability Inclusion', description: 'Activities that promote inclusion of persons with disabilities', marker_type: 'other', display_order: 12 },
       { code: 'nutrition', name: 'Nutrition', description: 'Activities that address nutrition outcomes', marker_type: 'other', display_order: 13 },
-      { code: 'peacebuilding', name: 'Peacebuilding / Conflict Sensitivity', description: 'Activities that contribute to peace and conflict prevention', marker_type: 'other', display_order: 14 },
+      { code: 'peacebuilding', name: 'Peacebuilding/Conflict Sensitivity', description: 'Activities that contribute to peace and conflict prevention', marker_type: 'other', display_order: 14 },
       { code: 'rural_development', name: 'Rural Development', description: 'Activities focused on rural areas and communities', marker_type: 'other', display_order: 15 },
       { code: 'urban_development', name: 'Urban Development', description: 'Activities focused on urban areas and cities', marker_type: 'other', display_order: 16 },
-      { code: 'digitalization', name: 'Digitalization / Technology', description: 'Activities that leverage digital technologies', marker_type: 'other', display_order: 17 },
+      { code: 'digitalization', name: 'Digitalization/Technology', description: 'Activities that leverage digital technologies', marker_type: 'other', display_order: 17 },
       { code: 'private_sector', name: 'Private Sector Engagement', description: 'Activities that engage or strengthen private sector', marker_type: 'other', display_order: 18 }
     ];
     

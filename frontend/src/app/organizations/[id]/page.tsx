@@ -32,7 +32,6 @@ import {
   CalendarDays,
   Target,
   Copy,
-  Check,
   Pencil,
   Mail,
   Phone,
@@ -128,6 +127,7 @@ import {
 } from "@/components/ui/dialog"
 import { getCountryCode } from '@/lib/country-utils'
 import { toast } from 'sonner'
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager'
 import { format } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
@@ -254,6 +254,7 @@ export default function OrganizationProfilePage() {
   const { isBookmarked, toggleBookmark } = useOrganizationBookmarks()
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
+  useFlushDeletesOnUnmount("org-detail-activities")
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -274,7 +275,6 @@ export default function OrganizationProfilePage() {
   const [sectorAllocations, setSectorAllocations] = useState<Array<{ code: string; name: string; percentage: number }>>([])
   const [sectorVisualizationTab, setSectorVisualizationTab] = useState<'sankey' | 'sunburst'>('sankey')
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [modalityComposition, setModalityComposition] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [modalityCompositionByCount, setModalityCompositionByCount] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [modalityCompositionByValue, setModalityCompositionByValue] = useState<Array<{ name: string; value: number; color: string }>>([])
@@ -441,12 +441,10 @@ export default function OrganizationProfilePage() {
   const { startLoading, stopLoading } = useLoadingBar()
 
   // Copy to clipboard helper
-  const copyToClipboard = async (text: string, id: string) => {
+  const copyToClipboard = async (text: string, _id?: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      setCopiedId(id)
       toast.success('Copied to clipboard')
-      setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
       toast.error('Failed to copy')
@@ -1294,40 +1292,35 @@ export default function OrganizationProfilePage() {
 
   const handleDeleteActivity = async (activityId: string) => {
     if (!activityId) return
-    
-    // Get activity title for better feedback
+
     const activity = activities.find(a => a.id === activityId)
     const activityTitle = activity?.title || 'Activity'
-    
-    setIsDeleting(true)
-    try {
-      const response = await apiFetch('/api/activities', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id: activityId,
-          // Note: We don't have user context here, but the API should handle this gracefully
-        }),
-      })
-      
-      if (response.ok) {
-        // Remove the activity from the local state
-        setActivities(prev => prev.filter(activity => activity.id !== activityId))
-        setDeleteActivityId(null)
-        toast.success(`"${activityTitle}" was deleted successfully`)
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Failed to delete activity:', errorData.error)
-        toast.error(`Failed to delete "${activityTitle}": ${errorData.error || 'Unknown error'}`)
-        // Don't close the modal on error so user can try again
-      }
-    } catch (error) {
-      console.error('Error deleting activity:', error)
-      toast.error(`Failed to delete "${activityTitle}": Network error`)
-      // Don't close the modal on error so user can try again
-    } finally {
-      setIsDeleting(false)
-    }
+    const snapshot = activities
+
+    setActivities(prev => prev.filter(a => a.id !== activityId))
+    setDeleteActivityId(null)
+
+    showUndoToast(`"${activityTitle}" deleted`, {
+      id: `delete-activity-${activityId}`,
+      source: `org-activities-${organization?.id || 'org'}`,
+      commit: async () => {
+        const response = await apiFetch('/api/activities', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: activityId }),
+        })
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          throw new Error(errorData.error || 'Unknown error')
+        }
+      },
+      onUndo: () => setActivities(snapshot),
+      onCommitError: (err: any) => {
+        console.error('Error deleting activity:', err)
+        setActivities(snapshot)
+        toast.error(`Failed to delete "${activityTitle}": ${err?.message || 'Network error'}`)
+      },
+    })
   }
 
   return (
@@ -1447,33 +1440,21 @@ export default function OrganizationProfilePage() {
                           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
                           title="Copy Organization Name"
                         >
-                          {copiedId === 'orgName' ? (
-                            <Check className="w-5 h-5 text-[hsl(var(--success-icon))]" />
-                          ) : (
-                            <Copy className="w-5 h-5 text-muted-foreground" />
-                          )}
+                          <Copy className="w-5 h-5 text-muted-foreground" />
                         </button>
                       </h1>
 
                       {/* ID and Badges Row */}
                       <div className="flex flex-wrap items-center gap-3 py-3 border-y border-border">
                         {organization.iati_org_id && (
-                          <div className="flex items-center gap-1 group">
-                            <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                              {organization.iati_org_id}
-                            </code>
-                            <button
-                              onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
-                              title="Copy IATI Org ID"
-                            >
-                              {copiedId === 'iatiOrgId' ? (
-                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                              ) : (
-                                <Copy className="w-3 h-3" />
-                              )}
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
+                            title="Click to copy"
+                            className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono cursor-pointer"
+                          >
+                            {organization.iati_org_id}
+                          </button>
                         )}
                         {organization.country && (
                           <Badge variant="outline" className="border-border text-foreground flex items-center gap-1.5">
@@ -2992,20 +2973,19 @@ export default function OrganizationProfilePage() {
                                         <span className="font-medium ml-1">({activity.acronym})</span>
                                       )}
                                       {activity.iati_identifier && (
-                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-flex items-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            navigator.clipboard.writeText(activity.iati_identifier);
+                                            toast.success('IATI Identifier copied');
+                                          }}
+                                          title="Click to copy"
+                                          className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 inline-flex items-center cursor-pointer"
+                                        >
                                           {activity.iati_identifier}
-                                          <button
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              navigator.clipboard.writeText(activity.iati_identifier);
-                                            }}
-                                            className="hover:text-foreground transition-colors"
-                                            title="Copy ID"
-                                          >
-                                            <Copy className="w-3 h-3" />
-                                          </button>
-                                        </span>
+                                        </button>
                                       )}
                                     </div>
                                     {/* Activity description */}

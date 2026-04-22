@@ -369,9 +369,8 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
           <HelpTextTooltip text="Add chairs, co-chairs, and members from the Rolodex. Roles determine access levels and visibility in reports." />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportCSV} disabled={members.length === 0}>
+          <Button variant="outline" size="icon" onClick={handleExportCSV} disabled={members.length === 0} title="Export CSV" aria-label="Export CSV">
             <Download className="h-4 w-4" />
-            Export CSV
           </Button>
           <Button onClick={() => { resetForm(); setShowAddDialog(true) }} className="gap-2">
             <UserPlus className="h-4 w-4" />

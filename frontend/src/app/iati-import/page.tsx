@@ -15,6 +15,7 @@ import { useUser } from '@/hooks/useUser'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager'
 import {
   Upload,
   FileCode,
@@ -109,6 +110,7 @@ function HistoryTab() {
   const isSuperUser = user?.role === 'super_user'
 
   const [historyData, setHistoryData] = useState<any[]>([])
+  useFlushDeletesOnUnmount("iati-import-history")
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -237,30 +239,37 @@ function HistoryTab() {
 
   const deleteBatch = async (batchId: string, batchName: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!(await confirm({ title: 'Delete import record?', description: `Delete import "${batchName}"? This removes the import history record only — imported activities are not affected.`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
-    setDeletingBatchId(batchId)
-    try {
-      const res = await apiFetch('/api/iati/history', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ batchId })
-      })
-      if (res.ok) {
-        toast.success('Import history deleted')
-        if (expandedBatchId === batchId) {
-          setExpandedBatchId(null)
-          setBatchItems([])
+    if (!(await confirm({ title: 'Delete import record?', description: `You can undo this within 5 seconds. Imported activities are not affected.`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
+
+    const snapshot = historyData
+    setHistoryData(prev => prev.filter(h => h.batchId !== batchId && h.id !== batchId))
+    if (expandedBatchId === batchId) {
+      setExpandedBatchId(null)
+      setBatchItems([])
+    }
+
+    showUndoToast('Import history deleted', {
+      id: `delete-iati-batch-${batchId}`,
+      source: "iati-import-history",
+      commit: async () => {
+        const res = await apiFetch('/api/iati/history', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ batchId }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Failed to delete')
         }
         fetchHistory()
-      } else {
-        const err = await res.json()
-        toast.error(err.error || 'Failed to delete')
-      }
-    } catch {
-      toast.error('Failed to delete import history')
-    } finally {
-      setDeletingBatchId(null)
-    }
+      },
+      onUndo: () => setHistoryData(snapshot),
+      onCommitError: (err: any) => {
+        console.error('Error deleting import history:', err)
+        setHistoryData(snapshot)
+        toast.error(err?.message || 'Failed to delete import history')
+      },
+    })
   }
 
   const getStatusBadge = (status: string) => {

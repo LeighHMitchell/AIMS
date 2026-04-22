@@ -457,11 +457,11 @@ export function ScoringRubricManagement() {
               <Input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="e.g. Updated weights for 2026" />
             </div>
             <div>
-              <Label>Description (optional)</Label>
+              <Label>Description</Label>
               <Input value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Brief description of changes" />
             </div>
             <div>
-              <Label>Clone From (optional)</Label>
+              <Label>Clone From</Label>
               <select
                 className="w-full h-9 rounded-md border border-input px-3 text-body"
                 value={cloneFrom}

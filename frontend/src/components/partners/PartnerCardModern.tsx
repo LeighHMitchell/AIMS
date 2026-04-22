@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Building2, Globe, MapPin, Copy } from 'lucide-react';
+import { Building2, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import type { Partner } from '@/hooks/usePartners';
@@ -95,19 +95,17 @@ const PartnerCardModern: React.FC<PartnerCardModernProps> = ({
           )}
           {partner.iatiOrgId && (
             <div className="flex items-center gap-2 text-helper">
-              <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                {partner.iatiOrgId}
-              </span>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   copyToClipboard(partner.iatiOrgId!);
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
-                title="Copy IATI ID"
+                title="Click to copy"
+                className="font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer"
               >
-                <Copy className="w-3 h-3 text-muted-foreground" />
+                {partner.iatiOrgId}
               </button>
             </div>
           )}

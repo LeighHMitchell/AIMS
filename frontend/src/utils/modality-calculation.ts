@@ -62,7 +62,7 @@ export function getModalityName(modalityCode: string): string {
     case "2": return "Loan";
     case "3": return "Grant – Technical Assistance";
     case "4": return "Loan – Technical Assistance";
-    case "5": return "Other / Needs Review";
+    case "5": return "Other/Needs Review";
     default: return "Unknown";
   }
 }

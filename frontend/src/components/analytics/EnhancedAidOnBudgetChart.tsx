@@ -1139,7 +1139,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               <Table2 className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={exportToCSV} variant="outline" size="sm" title="Export to CSV">
+          <Button onClick={exportToCSV} variant="outline" size="icon" title="Export CSV" aria-label="Export CSV">
             <Download className="h-4 w-4" />
           </Button>
         </div>

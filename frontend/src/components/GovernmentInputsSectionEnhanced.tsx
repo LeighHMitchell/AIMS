@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Lock, Unlock, CalendarRange, SplitSquareHorizontal, Trash2, Info, Package } from "lucide-react";
 import { toast } from "sonner";
@@ -168,6 +167,12 @@ interface GovernmentInputs {
   strategicConsiderations?: any;
 }
 
+export type GovernmentInputsSection =
+  | 'budget-classification'
+  | 'financial-contribution'
+  | 'risk-assessment'
+  | 'evaluation';
+
 interface GovernmentInputsSectionProps {
   activityId: string;
   governmentInputs: GovernmentInputs;
@@ -175,6 +180,7 @@ interface GovernmentInputsSectionProps {
   plannedStartDate?: string;
   plannedEndDate?: string;
   readOnly?: boolean;
+  section?: GovernmentInputsSection;
 }
 
 // ─── Helper Functions ───────────────────────────────────────────────────────
@@ -213,6 +219,7 @@ export function GovernmentInputsSectionEnhanced({
   plannedStartDate,
   plannedEndDate,
   readOnly = false,
+  section,
 }: GovernmentInputsSectionProps) {
   // Migrate legacy inKindContributions string → inKindItems on first render
   useEffect(() => {
@@ -418,24 +425,8 @@ export function GovernmentInputsSectionEnhanced({
             <span>This section is view-only. Government staff and donor partners can edit these fields.</span>
           </div>
         )}
-        <Tabs defaultValue="budget-finance" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="budget-finance" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Budget & Finance
-            </TabsTrigger>
-            <TabsTrigger value="risk-assessment" className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4" />
-              Risk Assessment
-            </TabsTrigger>
-            <TabsTrigger value="evaluation" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Evaluation
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ──────────────── Budget & Finance Tab ──────────────── */}
-          <TabsContent value="budget-finance" className="space-y-6 mt-6">
+        {(!section || section === 'budget-classification') && (
+          <div className="space-y-6">
             {/* Budget Classification */}
             <Card>
               <CardHeader>
@@ -538,7 +529,11 @@ export function GovernmentInputsSectionEnhanced({
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
 
+        {(!section || section === 'financial-contribution') && (
+          <div className="space-y-6">
             {/* Government Financial Contribution */}
             <Card>
               <CardHeader>
@@ -1087,10 +1082,11 @@ export function GovernmentInputsSectionEnhanced({
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ──────────────── Risk Assessment Tab ──────────────── */}
-          <TabsContent value="risk-assessment" className="space-y-6 mt-6">
+        {(!section || section === 'risk-assessment') && (
+          <div className="space-y-6">
             {/* Overall Risk Summary */}
             <div className="border rounded-lg p-5">
               <div className="flex items-center justify-between mb-4">
@@ -1190,10 +1186,11 @@ export function GovernmentInputsSectionEnhanced({
                 </CardContent>
               </Card>
             ))}
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ──────────────── Evaluation Tab ──────────────── */}
-          <TabsContent value="evaluation" className="space-y-6 mt-6">
+        {(!section || section === 'evaluation') && (
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -1304,8 +1301,8 @@ export function GovernmentInputsSectionEnhanced({
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );

@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
 import { Download, ChevronLeft, ChevronRight, FileText, ShieldCheck, Building2, Banknote } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
@@ -38,6 +39,7 @@ export default function BudgetsPage() {
 
   // Bulk selection state
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
+  useFlushDeletesOnUnmount("budgets-list");
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   
@@ -210,45 +212,36 @@ export default function BudgetsPage() {
       return;
     }
 
-    if (!(await confirm({ title: 'Delete this budget?', description: 'This action cannot be undone. The budget will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete this budget?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
-    // Find the budget to delete (for potential recovery)
     const budgetToDelete = sortedBudgets.find(b => b.id === budgetId);
-    
-    // Optimistic update - remove from UI immediately
+    if (!budgetToDelete) return;
+
     deleteBudget(budgetId);
 
-    try {
-      // Use bulk delete endpoint with single ID
-      const response = await apiFetch('/api/budgets/bulk-delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ids: [budgetId]
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete budget');
-      }
-
-      toast.success("Budget deleted successfully");
-    } catch (error: any) {
-      console.error('Error deleting budget:', error);
-      toast.error(error.message || "Failed to delete budget");
-      
-      // Revert the optimistic update on error
-      if (budgetToDelete) {
+    showUndoToast("Budget deleted", {
+      id: `delete-budget-${budgetId}`,
+      source: "budgets-list",
+      commit: async () => {
+        const response = await apiFetch('/api/budgets/bulk-delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: [budgetId] }),
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || 'Failed to delete budget');
+        }
+      },
+      onUndo: () => addBudget(budgetToDelete),
+      onCommitError: (err: any) => {
+        console.error('Error deleting budget:', err);
         addBudget(budgetToDelete);
-      } else {
-        refetch(); // Fallback: refresh the entire list
-      }
-    }
+        toast.error(err?.message || "Failed to delete budget");
+      },
+    });
   };
 
   // Bulk selection handlers
@@ -276,39 +269,30 @@ export default function BudgetsPage() {
     if (selectedArray.length === 0) return;
 
     setShowBulkDeleteDialog(false);
-    setIsBulkDeleting(true);
 
-    try {
-      const response = await apiFetch('/api/budgets/bulk-delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ids: selectedArray
-        })
-      });
+    const snapshot = sortedBudgets.filter(b => selectedArray.includes(b.id));
+    selectedArray.forEach(id => deleteBudget(id));
+    setSelectedBudgetIds(new Set());
 
-      if (!response.ok) {
-        throw new Error('Failed to delete budgets');
-      }
-
-      const result = await response.json();
-
-      // Optimistic update - remove from UI after successful delete
-      selectedArray.forEach(id => deleteBudget(id));
-
-      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'budget' : 'budgets'} deleted successfully`);
-
-      // Clear selection AFTER optimistic update completes to ensure proper state sync
-      setSelectedBudgetIds(new Set());
-
-    } catch (error) {
-      console.error('Bulk delete failed:', error);
-      toast.error('Failed to delete some budgets');
-      // Revert optimistic updates by refetching
-      refetch();
-    } finally {
-      setIsBulkDeleting(false);
-    }
+    const count = selectedArray.length;
+    showUndoToast(`${count} ${count === 1 ? 'budget' : 'budgets'} deleted`, {
+      id: `delete-budgets-bulk-${Date.now()}`,
+      source: "budgets-list",
+      commit: async () => {
+        const response = await apiFetch('/api/budgets/bulk-delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: selectedArray }),
+        });
+        if (!response.ok) throw new Error('Failed to delete budgets');
+      },
+      onUndo: () => snapshot.forEach(b => addBudget(b)),
+      onCommitError: (err) => {
+        console.error('Bulk delete failed:', err);
+        snapshot.forEach(b => addBudget(b));
+        toast.error('Failed to delete some budgets');
+      },
+    });
   };
 
   return (
@@ -327,11 +311,12 @@ export default function BudgetsPage() {
             {sortedBudgets.length > 0 && (
               <Button
                 variant="outline"
+                size="icon"
                 onClick={exportBudgets}
-                className="flex items-center space-x-2"
+                title="Export CSV"
+                aria-label="Export CSV"
               >
                 <Download className="h-4 w-4" />
-                <span>Export</span>
               </Button>
             )}
           </div>
@@ -406,9 +391,6 @@ export default function BudgetsPage() {
                 />
               </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
             {/* Column Selector */}
             <div className="flex flex-col gap-1">
               <Label className="text-helper text-muted-foreground">Columns</Label>
@@ -417,6 +399,9 @@ export default function BudgetsPage() {
                 onColumnsChange={setVisibleColumns}
               />
             </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
         </FilterBar>
 
         {/* Budgets Table */}

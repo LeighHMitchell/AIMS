@@ -35,7 +35,7 @@ export function ImportPreviewTable({ preview, onValueOverride, repeatGroups }: I
           <tr className="bg-muted/50 border-b">
             <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[30%]">Field Name</th>
             <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[30%]">Imported Value</th>
-            <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[40%]">Mapped Value / Status</th>
+            <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[40%]">Mapped Value/Status</th>
           </tr>
         </thead>
         <tbody>
@@ -100,7 +100,7 @@ function PreviewTableRow({
         )}
       </td>
 
-      {/* Mapped Value / Status */}
+      {/* Mapped Value/Status */}
       <td className="px-4 py-2.5">
         <StatusCell
           fieldKey={fieldKey}

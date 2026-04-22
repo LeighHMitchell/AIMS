@@ -107,7 +107,7 @@ const ORGANIZATION_TYPES = {
 };
 
 const DISBURSEMENT_CHANNELS = {
-  '1': 'Central Ministry of Finance / Treasury',
+  '1': 'Central Ministry of Finance/Treasury',
   '2': 'Direct to Implementing Institution (Separate Account)',
   '3': 'Aid in Kind via Third Party (NGOs, Management Companies)',
   '4': 'Aid in Kind Managed by Donor'
@@ -851,7 +851,7 @@ export default function TransactionModal({
   };
 
   const DISBURSEMENT_CHANNELS_WITH_DESC = {
-    '1': { label: 'Central Ministry of Finance / Treasury', desc: 'Money is disbursed through central Ministry of Finance or Treasury' },
+    '1': { label: 'Central Ministry of Finance/Treasury', desc: 'Money is disbursed through central Ministry of Finance or Treasury' },
     '2': { label: 'Direct to Implementing Institution (Separate Account)', desc: 'Money is disbursed directly to the implementing institution and managed through a separate bank account' },
     '3': { label: 'Aid in Kind via Third Party (NGOs, Management Companies)', desc: 'Donors utilise third party agencies, e.g. NGOs or management companies' },
     '4': { label: 'Aid in Kind Managed by Donor', desc: 'Donors manage funds themselves' }

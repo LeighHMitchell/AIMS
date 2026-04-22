@@ -12,6 +12,7 @@ import { QueryProvider } from "@/components/providers/QueryProvider"
 import { TourProvider } from "@/components/tour/TourProvider"
 import { Toaster } from "sonner"
 import { MobileGate } from "@/components/MobileGate"
+import { PendingDeletesFlusher } from "@/components/PendingDeletesFlusher"
 
 export const metadata: Metadata = {
   title: "æther",
@@ -50,6 +51,9 @@ export default function RootLayout({
                   </LoadingBarProvider>
                 </Suspense>
               </MobileGate>
+              <Suspense fallback={null}>
+                <PendingDeletesFlusher />
+              </Suspense>
               <Toaster
                 position="top-center"
                 richColors
@@ -63,8 +67,8 @@ export default function RootLayout({
                     fontSize: '14px',
                   },
                   actionButtonStyle: {
-                    backgroundColor: 'hsl(var(--success-text))',
-                    color: 'hsl(var(--primary-foreground))',
+                    backgroundColor: '#166534',
+                    color: '#ffffff',
                     fontWeight: 500,
                   },
                 }}

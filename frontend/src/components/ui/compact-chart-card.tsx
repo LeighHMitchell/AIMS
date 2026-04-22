@@ -181,12 +181,13 @@ export function CompactChartCard({
                 {(exportData || onExport) && (
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={handleExport}
-                    className="h-9"
+                    className="h-9 w-9"
+                    title="Export CSV"
+                    aria-label="Export CSV"
                   >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
+                    <Download className="h-4 w-4" />
                   </Button>
                 )}
               </div>

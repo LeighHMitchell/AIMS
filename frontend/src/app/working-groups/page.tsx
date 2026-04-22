@@ -38,6 +38,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import WorkingGroupCardModern from '@/components/working-groups/WorkingGroupCardModern'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager'
 import { useUserRole } from '@/hooks/useUserRole'
 
 interface WorkingGroup {
@@ -78,6 +79,7 @@ export default function WorkingGroupsPage() {
   const router = useRouter()
   const { isSuperUser } = useUserRole()
   const [workingGroups, setWorkingGroups] = useState<WorkingGroup[]>([])
+  useFlushDeletesOnUnmount("working-groups-list")
   const [filteredGroups, setFilteredGroups] = useState<WorkingGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -92,18 +94,26 @@ export default function WorkingGroupsPage() {
 
   const handleDeleteWorkingGroup = async () => {
     if (!wgToDelete) return
-    setDeleting(true)
-    try {
-      const res = await fetch(`/api/working-groups/${wgToDelete.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed to delete working group')
-      toast.success('Working group deleted')
-      setWgToDelete(null)
-      fetchWorkingGroups()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete working group')
-    } finally {
-      setDeleting(false)
-    }
+    const wg = wgToDelete
+    const snapshot = workingGroups
+    setWgToDelete(null)
+    setWorkingGroups(prev => prev.filter(g => g.id !== wg.id))
+
+    showUndoToast('Working group deleted', {
+      id: `delete-wg-${wg.id}`,
+      source: "working-groups-list",
+      commit: async () => {
+        const res = await fetch(`/api/working-groups/${wg.id}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error('Failed to delete working group')
+        fetchWorkingGroups()
+      },
+      onUndo: () => setWorkingGroups(snapshot),
+      onCommitError: (err: any) => {
+        console.error('Error deleting working group:', err)
+        setWorkingGroups(snapshot)
+        toast.error(err?.message || 'Failed to delete working group')
+      },
+    })
   }
 
   useEffect(() => {

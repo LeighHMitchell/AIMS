@@ -400,7 +400,7 @@ export function DefaultFieldsAutosave({
                       </SelectItem>
                       <SelectItem value="5">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">5</span>
-                        <span className="font-medium">Other / Needs Review</span>
+                        <span className="font-medium">Other/Needs Review</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>

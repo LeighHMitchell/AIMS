@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Building2, MapPin, DollarSign, TrendingUp, Copy } from 'lucide-react';
+import { Building2, MapPin, DollarSign, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import type { ProjectBankProject } from '@/types/project-bank';
@@ -92,19 +92,17 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
               {project.name}
             </Link>{' '}
             <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
-              <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                {project.project_code}
-              </span>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   copyToClipboard(project.project_code);
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
-                title="Copy code"
+                title="Click to copy"
+                className="text-xs font-mono font-normal bg-white/20 text-white/80 hover:bg-white/30 hover:text-white transition-colors px-1.5 py-0.5 rounded backdrop-blur-sm relative z-10 cursor-pointer"
               >
-                <Copy className="w-3 h-3 text-white/70" />
+                {project.project_code}
               </button>
             </span>
           </h2>

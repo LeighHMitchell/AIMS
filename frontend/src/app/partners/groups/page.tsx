@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Plus, Search, Users, Pencil, Trash2, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager'
 import { Badge } from '@/components/ui/badge'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
 import { apiFetch } from '@/lib/api-fetch';
@@ -52,6 +53,7 @@ const formatRelativeDate = (dateString: string | null | undefined): string => {
 
 export default function ManageGroupsPage() {
   const [groups, setGroups] = useState<CustomGroup[]>([])
+  useFlushDeletesOnUnmount("partner-groups-list")
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -81,23 +83,26 @@ export default function ManageGroupsPage() {
   }
 
   const handleDelete = async (groupId: string) => {
-    if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
+    if (!(await confirm({ title: 'Delete this group?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
 
-    try {
-      const response = await apiFetch(`/api/custom-groups/${groupId}`, {
-        method: 'DELETE'
-      })
+    const snapshot = groups
+    setGroups(prev => prev.filter(g => g.id !== groupId))
 
-      if (response.ok) {
-        toast.success('Group deleted successfully')
+    showUndoToast('Group deleted', {
+      id: `delete-partner-group-${groupId}`,
+      source: "partner-groups-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/custom-groups/${groupId}`, { method: 'DELETE' })
+        if (!response.ok) throw new Error('Failed to delete group')
         fetchGroups()
-      } else {
+      },
+      onUndo: () => setGroups(snapshot),
+      onCommitError: (err) => {
+        console.error('Error deleting group:', err)
+        setGroups(snapshot)
         toast.error('Failed to delete group')
-      }
-    } catch (error) {
-      console.error('Error deleting group:', error)
-      toast.error('Error deleting group')
-    }
+      },
+    })
   }
 
   const filteredGroups = groups.filter(group => 

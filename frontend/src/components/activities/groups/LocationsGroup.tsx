@@ -147,13 +147,43 @@ export function LocationsGroup({
   }, [currentLocations])
 
   const suggestedTownships = useMemo(() => {
-    const townships: Array<{ townshipName: string; regionName: string }> = []
+    const townships: Array<{
+      townshipName: string
+      regionName: string
+      sites: Array<{
+        id: string
+        location_name: string | null
+        description: string | null
+        location_description: string | null
+        activity_location_description: string | null
+        latitude?: number
+        longitude?: number
+        site_type: string | null
+      }>
+    }> = []
     currentLocations.forEach(loc => {
-      if (loc.township_name && loc.state_region_name) {
-        // Avoid duplicates
-        if (!townships.some(t => t.townshipName === loc.township_name && t.regionName === loc.state_region_name)) {
-          townships.push({ townshipName: loc.township_name, regionName: loc.state_region_name })
-        }
+      if (!loc.township_name || !loc.state_region_name) return
+      const site = {
+        id: loc.id,
+        location_name: loc.location_name ?? null,
+        description: loc.description ?? null,
+        location_description: loc.location_description ?? null,
+        activity_location_description: loc.activity_location_description ?? null,
+        latitude: typeof loc.latitude === 'number' ? loc.latitude : undefined,
+        longitude: typeof loc.longitude === 'number' ? loc.longitude : undefined,
+        site_type: loc.site_type ?? null,
+      }
+      const existing = townships.find(
+        t => t.townshipName === loc.township_name && t.regionName === loc.state_region_name
+      )
+      if (existing) {
+        existing.sites.push(site)
+      } else {
+        townships.push({
+          townshipName: loc.township_name,
+          regionName: loc.state_region_name,
+          sites: [site],
+        })
       }
     })
     return townships

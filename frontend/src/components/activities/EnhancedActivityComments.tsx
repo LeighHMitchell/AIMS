@@ -16,6 +16,7 @@ import { UserAvatar } from '@/components/ui/user-avatar';
 import { ActivityComment, CommentReply } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/lib/toast-manager';
 import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { LoadingText } from '@/components/ui/loading-text';
 import {
@@ -538,33 +539,36 @@ export function EnhancedActivityComments({
 
   const handleDeleteComment = async (commentId: string) => {
     if (!user) return;
-    
-    // Show confirmation dialog
-    if (!(await confirm({ title: 'Delete this comment?', description: 'This action cannot be undone. The comment will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+
+    if (!(await confirm({ title: 'Delete this comment?', description: 'You can undo this within 5 seconds.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
-    
-    try {
-      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user,
-          commentId,
-        }),
-      });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to delete comment');
-      }
-      
-      await fetchComments();
-      toast.success('Comment deleted successfully');
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete comment');
-    }
+
+    const snapshot = comments;
+    setComments(prev => prev.filter(c => c.id !== commentId));
+
+    showUndoToast('Comment deleted', {
+      id: `delete-comment-${commentId}`,
+      source: `comments-${activityId}`,
+      commit: async () => {
+        const res = await apiFetch(`/api/activities/${activityId}/comments`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user, commentId }),
+        });
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          throw new Error(error.error || 'Failed to delete comment');
+        }
+        await fetchComments();
+      },
+      onUndo: () => setComments(snapshot),
+      onCommitError: (err) => {
+        console.error('Error deleting comment:', err);
+        setComments(snapshot);
+        toast.error(err instanceof Error ? err.message : 'Failed to delete comment');
+      },
+    });
   };
 
   const filterComments = (comments: ActivityComment[]) => {

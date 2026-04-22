@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check, HelpCircle, LayoutGrid, List, Activity } from 'lucide-react';
+import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check, HelpCircle, LayoutGrid, Table as TableIcon, Activity } from 'lucide-react';
 import { CardShell } from '@/components/ui/card-shell';
 import { getIconForMarker } from '@/lib/policy-marker-utils';
 
@@ -98,7 +98,7 @@ const MARKER_TYPE_ICONS: Record<string, React.ReactNode> = {
   environmental: <Leaf className="w-4 h-4 text-muted-foreground" />,
   social_governance: <Users className="w-4 h-4 text-muted-foreground" />,
   other: <Wrench className="w-4 h-4 text-muted-foreground" />,
-  custom: <Plus className="w-4 h-4 text-muted-foreground" />
+  custom: null
 };
 
 const MARKER_TYPE_LABELS: Record<string, string> = {
@@ -514,18 +514,18 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
         {activeMarkerCount > 0 && (
           <div className="flex items-center border rounded-md flex-shrink-0">
             <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('list')}
-              className="rounded-r-none h-9"
+              className={`rounded-r-none h-9 ${viewMode === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
             >
-              <List className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('card')}
-              className="rounded-l-none h-9"
+              className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -649,7 +649,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead style={{ width: '280px' }}>Policy Marker</TableHead>
+                <TableHead>Policy Marker</TableHead>
                 <TableHead style={{ width: '220px' }}>Significance</TableHead>
                 <TableHead>Rationale</TableHead>
                 {!readOnly && <TableHead style={{ width: '90px' }} />}
@@ -673,21 +673,14 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     {/* Marker rows */}
                     {markersInGroup.map(({ marker, activityMarker }) => {
                       const markerUuid = marker.uuid || marker.id;
-                      const effectiveVisibility = getEffectiveVisibility(marker, activityMarker);
                       return (
                         <TableRow key={markerUuid}>
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {getDisplayCode(marker)}
                               </span>
                               <span className="font-medium text-body">{marker.name}</span>
-                              {!marker.is_iati_standard && (
-                                <Badge variant="outline" className="text-helper">Custom</Badge>
-                              )}
-                              {!marker.is_iati_standard && (
-                                <VisibilityIcon visibility={effectiveVisibility} />
-                              )}
                             </div>
                           </TableCell>
                           <TableCell>

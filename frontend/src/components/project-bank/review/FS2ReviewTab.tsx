@@ -742,7 +742,7 @@ export function FS2ReviewTab() {
                       </div>
                     ) : categoryDecision ? (
                       <div className="space-y-2">
-                        <Label className="text-body text-muted-foreground">Rationale (optional)</Label>
+                        <Label className="text-body text-muted-foreground">Rationale</Label>
                         <Textarea
                           value={rationale}
                           onChange={e => setRationale(e.target.value)}

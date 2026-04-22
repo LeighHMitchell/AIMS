@@ -450,13 +450,13 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         </div>
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={handleDownloadCSV}
           disabled={totalIssues === 0}
-          title="Download all failures as CSV"
+          title="Export CSV"
+          aria-label="Export CSV"
         >
-          <Download className="h-4 w-4 mr-1" />
-          Export CSV
+          <Download className="h-4 w-4" />
         </Button>
       </div>
 

@@ -574,7 +574,7 @@ export function AidEffectivenessOptionsManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="opt-description">Description (optional)</Label>
+              <Label htmlFor="opt-description">Description</Label>
               <Textarea
                 id="opt-description"
                 value={formDescription}

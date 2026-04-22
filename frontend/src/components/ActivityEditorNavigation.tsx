@@ -129,7 +129,12 @@ export default function ActivityEditorNavigation({
     {
       title: "Administration",
       sections: [
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
+        ...(showGovernmentInputs ? [
+          { id: "government-budget-classification", label: "Government Budget Classification" },
+          { id: "government-financial-inputs", label: "Government Financial Inputs" },
+          { id: "government-risk-assessment", label: "Government Risk Assessment" },
+          { id: "government-evaluation", label: "Government Evaluation" },
+        ] : []),
         { id: "readiness_checklist", label: "Readiness Checklist" },
         { id: "metadata", label: "Metadata" }
       ]

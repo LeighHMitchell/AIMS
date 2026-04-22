@@ -455,7 +455,7 @@ export async function GET(request: NextRequest) {
             'Finland': '🇫🇮',
             'Myanmar': '🇲🇲',
             'Global': '🌐',
-            'Global / Not Country-Specific': '🌐'
+            'Global/Not Country-Specific': '🌐'
           };
           return flagMap[country] || '🏳️';
         };

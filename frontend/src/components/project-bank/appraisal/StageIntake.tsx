@@ -341,7 +341,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-helper text-muted-foreground">Position / Job Title <FieldCheck value={formData.contact_position} /></Label>
+                <Label className="text-helper text-muted-foreground">Position/Job Title <FieldCheck value={formData.contact_position} /></Label>
                 <Input
                   value={formData.contact_position || ''}
                   onChange={e => updateField('contact_position', e.target.value)}
@@ -681,7 +681,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
 
       {/* ─── G: Sector / Sub-Sector — from DB, no border/bg ─── */}
       <div id="section-sector" className="scroll-mt-20 space-y-4">
-        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Sector / Sub-Sector</h4>
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Sector/Sub-Sector</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Sector <RequiredDot /> <HelpTooltip text="The primary development sector this project falls under." /> <FieldCheck value={formData.sector} /></Label>
@@ -740,7 +740,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
 
       {/* ─── J: Region / Townships — Grouped by type + Nationwide ─── */}
       <div id="section-region" className="scroll-mt-20 space-y-4">
-        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Region / Townships</h4>
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Region/Townships</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Region <HelpTooltip text="The state or region where this project will be implemented." /> <FieldCheck value={formData.region} /></Label>

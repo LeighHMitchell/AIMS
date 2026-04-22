@@ -42,6 +42,7 @@ import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressSearch, AddressComponents } from "@/components/ui/address-search";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { toast } from "sonner";
+import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
 import { format } from "date-fns";
 import { UserManagementSkeleton } from "@/components/skeletons";
 import { ResetPasswordModal } from "@/components/ResetPasswordModal";
@@ -156,6 +157,7 @@ export default function UserManagement() {
   const { organizations, loading: organizationsLoading } = useOrganizations();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  useFlushDeletesOnUnmount("admin-users-list");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
   const [emailChangeUser, setEmailChangeUser] = useState<User | null>(null);
@@ -441,21 +443,26 @@ export default function UserManagement() {
       return;
     }
 
-    try {
-      const response = await apiFetch(`/api/users?id=${userId}`, {
-        method: 'DELETE',
-      });
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) return;
+    const snapshot = users;
+    setUsers(prev => prev.filter(u => u.id !== userId));
 
-      if (response.ok) {
-        setUsers(users.filter(u => u.id !== userId));
-        toast.success("User deleted successfully");
-      } else {
+    const userName = (userToDelete as any).name || (userToDelete as any).email || "User";
+    showUndoToast(`"${userName}" deleted`, {
+      id: `delete-user-${userId}`,
+      source: "admin-users-list",
+      commit: async () => {
+        const response = await apiFetch(`/api/users?id=${userId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error("Failed to delete user");
+      },
+      onUndo: () => setUsers(snapshot),
+      onCommitError: (err) => {
+        console.error('Error deleting user:', err);
+        setUsers(snapshot);
         toast.error("Failed to delete user");
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error("Failed to delete user");
-    }
+      },
+    });
   };
 
   const handleResetOnboarding = async (targetUser: User) => {
@@ -1212,7 +1219,7 @@ function UserEditor({
           </div>
 
           <div>
-            <Label htmlFor="bio">Bio / Description</Label>
+            <Label htmlFor="bio">Bio/Description</Label>
             <Textarea
               id="bio"
               value={formData.bio}

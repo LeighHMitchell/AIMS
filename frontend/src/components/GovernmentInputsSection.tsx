@@ -696,7 +696,7 @@ export default function GovernmentInputsSection({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-body font-medium text-foreground" htmlFor="sub-goal">Sub-goal / Priority area</label>
+                      <label className="text-body font-medium text-foreground" htmlFor="sub-goal">Sub-goal/Priority area</label>
                       <Input
                         id="sub-goal"
                         value={governmentInputs.nationalPlanAlignment?.subGoal || ""}

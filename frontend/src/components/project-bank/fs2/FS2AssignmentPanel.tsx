@@ -211,7 +211,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-helper">Consultant / Firm Name</Label>
+              <Label className="text-helper">Consultant/Firm Name</Label>
               <Input
                 value={assignedTo}
                 onChange={e => setAssignedTo(e.target.value)}
@@ -347,7 +347,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-helper">Consultant / Firm Name</Label>
+              <Label className="text-helper">Consultant/Firm Name</Label>
               <Input
                 value={editAssignedTo}
                 onChange={e => setEditAssignedTo(e.target.value)}

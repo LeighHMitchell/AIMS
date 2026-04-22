@@ -306,9 +306,8 @@ export function StaleTransactionsTable() {
             </CardDescription>
           </div>
           {filteredActivities.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleExportCSV}>
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
+            <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export CSV" aria-label="Export CSV">
+              <Download className="h-4 w-4" />
             </Button>
           )}
         </div>

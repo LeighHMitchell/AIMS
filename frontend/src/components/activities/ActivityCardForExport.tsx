@@ -122,7 +122,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
     // Helper function to get status label from code
     const getStatusLabel = (status: string) => {
       const statusMap: Record<string, string> = {
-        '1': 'Pipeline / Identification',
+        '1': 'Pipeline/Identification',
         '2': 'Implementation',
         '3': 'Finalisation',
         '4': 'Closed',

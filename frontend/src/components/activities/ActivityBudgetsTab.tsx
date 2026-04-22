@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine, X, Save } from 'lucide-react';
+import { Trash2, Copy, Loader2, Check, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine, X, Save } from 'lucide-react';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
-import { showValidationError } from '@/lib/toast-manager';
+import { showValidationError, showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -261,6 +261,7 @@ export default function ActivityBudgetsTab({
   onLoadingChange
 }: ActivityBudgetsTabProps) {
   const [budgets, setBudgets] = useState<ActivityBudget[]>([]);
+  useFlushDeletesOnUnmount(`activity-budgets-${activityId}`);
   
   // Log only on mount or when key props change (not on every render)
   useEffect(() => {
@@ -309,6 +310,12 @@ export default function ActivityBudgetsTab({
   // Bulk selection state
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Click-to-copy for Budget ID column
+  const copyBudgetId = (value: string) => {
+    navigator.clipboard.writeText(value);
+    toast.success('Budget ID copied');
+  };
 
   // Confirmation dialog state
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
@@ -686,39 +693,35 @@ export default function ActivityBudgetsTab({
     const selectedArray = Array.from(selectedBudgetIds);
     if (selectedArray.length === 0) return;
 
-    setIsBulkDeleting(true);
-    
-    try {
-      // Delete all selected budgets
-      await Promise.all(selectedArray.map(async (id) => {
-        const { error } = await supabase
-          .from('activity_budgets')
-          .delete()
-          .eq('id', id);
-        
-        if (error) throw error;
-      }));
-      
-      // Remove deleted budgets from state
-      setBudgets(prev => prev.filter(b => !selectedBudgetIds.has(b.id!)));
-      
-      // Clear selection
-      setSelectedBudgetIds(new Set());
-      
-      // Refresh summary cards
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('refreshFinancialSummaryCards');
-        window.dispatchEvent(event);
-      }
-      
-      toast.success(`Successfully deleted ${selectedArray.length} budget(s)`);
-    } catch (err) {
-      console.error('Error deleting budgets:', err);
-      toast.error('Failed to delete some budgets');
-    } finally {
-      setIsBulkDeleting(false);
-    }
-  }, [selectedBudgetIds]);
+    const snapshot = budgets.filter(b => b.id && selectedBudgetIds.has(b.id));
+    setBudgets(prev => prev.filter(b => !selectedBudgetIds.has(b.id!)));
+    setSelectedBudgetIds(new Set());
+
+    showUndoToast(`${selectedArray.length} budget${selectedArray.length === 1 ? '' : 's'} deleted`, {
+      id: `delete-budgets-bulk-${Date.now()}`,
+      source: `activity-budgets-${activityId}`,
+      commit: async () => {
+        await Promise.all(selectedArray.map(async (id) => {
+          const { error } = await supabase
+            .from('activity_budgets')
+            .delete()
+            .eq('id', id);
+          if (error) throw error;
+        }));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
+        }
+      },
+      onUndo: () => {
+        setBudgets(prev => [...prev, ...snapshot]);
+      },
+      onCommitError: (err) => {
+        console.error('Error deleting budgets:', err);
+        setBudgets(prev => [...prev, ...snapshot]);
+        toast.error('Failed to delete some budgets');
+      },
+    });
+  }, [selectedBudgetIds, budgets, activityId]);
 
   // Helper function to find next non-overlapping period
   const findNextAvailablePeriod = useCallback((sourceStart: string, sourceEnd: string, existingBudgets: ActivityBudget[]) => {
@@ -1951,6 +1954,9 @@ export default function ActivityBudgetsTab({
                       />
                     </TableHead>
                   )}
+                  <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
+                    Budget ID
+                  </TableHead>
                   <TableHead className="py-3 px-4" style={{ width: '200px' }}>
                     <div
                       className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -2022,14 +2028,29 @@ export default function ActivityBudgetsTab({
                           />
                         </TableCell>
                       )}
-                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '200px' }}>
-                        {(budget as any).auto_ref && (
-                          <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{(budget as any).auto_ref}</code>
+                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }} onClick={(e) => e.stopPropagation()}>
+                        {(budget as any).auto_ref ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              copyBudgetId((budget as any).auto_ref);
+                            }}
+                            title="Click to copy"
+                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
+                          >
+                            <span>{(budget as any).auto_ref}</span>
+                          </button>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
+                      </TableCell>
+                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '200px' }}>
                         {budget.reference && (
                           <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{budget.reference}</code>
                         )}
-                        <span className="font-medium">
+                        <span>
                           {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                         </span>
                       </TableCell>
@@ -2043,7 +2064,7 @@ export default function ActivityBudgetsTab({
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '160px' }}>
                         <div className="flex flex-col items-end">
-                          <span className="font-medium">
+                          <span>
                             <span className="text-muted-foreground text-helper">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                         </div>
@@ -2061,13 +2082,13 @@ export default function ActivityBudgetsTab({
                           <TooltipProvider>
                             <UITooltip>
                               <TooltipTrigger asChild>
-                                <span className="font-medium cursor-help flex items-center gap-1">
+                                <span className="cursor-help flex items-center gap-1">
                                   <span className="w-4 shrink-0 flex items-center justify-center">
                                     {(budget as any).exchange_rate_manual && (
                                       <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                     )}
                                   </span>
-                                  <span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  <span className="text-helper text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="min-w-[200px]">
@@ -2253,22 +2274,21 @@ export default function ActivityBudgetsTab({
               </DialogTitle>
               <div className="flex items-center gap-3">
                 {(modalBudget as any)?.auto_ref && (
-                  <div className="group inline-flex items-center gap-2 text-muted-foreground whitespace-nowrap">
-                    <span className="text-2xl font-mono">{(modalBudget as any).auto_ref}</span>
-                    <HelpTextTooltip side="bottom" align="end" size="sm">
-                      A unique, immutable identifier (BUD-####) automatically generated by the system when this budget was created. It cannot be edited.
-                    </HelpTextTooltip>
+                  <div className="inline-flex items-center gap-2 text-muted-foreground whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText((modalBudget as any).auto_ref);
                         toast.success(`Copied ${(modalBudget as any).auto_ref}`);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-foreground"
-                      title="Copy ID"
+                      title="Click to copy"
+                      className="text-2xl font-mono hover:text-foreground transition-colors cursor-pointer"
                     >
-                      <Copy className="w-5 h-5" />
+                      {(modalBudget as any).auto_ref}
                     </button>
+                    <HelpTextTooltip side="bottom" align="end" size="sm">
+                      A unique, immutable identifier (BUD-####) automatically generated by the system when this budget was created. It cannot be edited.
+                    </HelpTextTooltip>
                   </div>
                 )}
                 {modalBudget?.id && !isReviseMode && (

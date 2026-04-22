@@ -873,19 +873,17 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                               <div>
                                 <span className="text-muted-foreground font-medium">IATI ID:</span>
                                 <div className="mt-0.5 flex items-center gap-2">
-                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                                    {activity.iatiIdentifier}
-                                  </code>
                                   <button
+                                    type="button"
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       navigator.clipboard.writeText(activity.iatiIdentifier)
-                                      toast.success("IATI ID copied to clipboard")
+                                      toast.success("IATI ID copied")
                                     }}
-                                    className="p-1 hover:bg-muted rounded transition-colors"
-                                    title="Copy IATI ID"
+                                    title="Click to copy"
+                                    className="text-xs font-mono bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded text-muted-foreground cursor-pointer"
                                   >
-                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                    {activity.iatiIdentifier}
                                   </button>
                                 </div>
                               </div>

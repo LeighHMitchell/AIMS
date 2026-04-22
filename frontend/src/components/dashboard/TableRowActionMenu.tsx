@@ -24,16 +24,16 @@ export function TableRowActionMenu({ activityId, entityType, entityId, onDelete 
   const handleEdit = () => {
     switch (entityType) {
       case 'activity':
-        router.push(`/activities/${activityId}`);
+        router.push(`/activities/new?id=${activityId}`);
         break;
       case 'transaction':
-        router.push(`/activities/${activityId}?tab=financials&editTransaction=${entityId}`);
+        router.push(`/activities/new?id=${activityId}&section=finances&editTransaction=${entityId}`);
         break;
       case 'budget':
-        router.push(`/activities/${activityId}?tab=financials&editBudget=${entityId}`);
+        router.push(`/activities/new?id=${activityId}&section=finances&editBudget=${entityId}`);
         break;
       case 'planned-disbursement':
-        router.push(`/activities/${activityId}?tab=financials&editPlannedDisbursement=${entityId}`);
+        router.push(`/activities/new?id=${activityId}&section=finances&editPlannedDisbursement=${entityId}`);
         break;
     }
   };

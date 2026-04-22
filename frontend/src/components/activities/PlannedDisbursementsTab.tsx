@@ -241,6 +241,12 @@ export default function PlannedDisbursementsTab({
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Click-to-copy for Planned Disbursement ID column
+  const copyPdId = (value: string) => {
+    navigator.clipboard.writeText(value);
+    toast.success('Planned Disbursement ID copied');
+  };
+
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -1723,6 +1729,9 @@ export default function PlannedDisbursementsTab({
                           />
                         </TableHead>
                       )}
+                      <TableHead className="py-3 px-4" style={{ width: '140px' }}>
+                        Planned Disbursement ID
+                      </TableHead>
                       <TableHead className="py-3 px-4">
                         <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -1832,12 +1841,31 @@ export default function PlannedDisbursementsTab({
                               />
                             </TableCell>
                           )}
+                          {/* Planned Disbursement ID */}
+                          <TableCell className="py-3 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            {(disbursement as any).auto_ref ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  copyPdId((disbursement as any).auto_ref);
+                                }}
+                                title="Click to copy"
+                                className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
+                              >
+                                <span>{(disbursement as any).auto_ref}</span>
+                              </button>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           {/* Period */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
                             {disbursement.reference && (
                               <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{disbursement.reference}</code>
                             )}
-                            <span className="font-medium">
+                            <span>
                               {format(parseISO(disbursement.period_start), 'MMM yyyy')} - {format(parseISO(disbursement.period_end), 'MMM yyyy')}
                             </span>
                           </TableCell>
@@ -1881,7 +1909,7 @@ export default function PlannedDisbursementsTab({
                               };
                               
                               return (
-                                <div className="flex items-center gap-1.5 font-medium overflow-hidden">
+                                <div className="flex items-center gap-1.5 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                                     <OrganizationLogo
                                       logo={disbursement.provider_org_logo}
@@ -1911,7 +1939,7 @@ export default function PlannedDisbursementsTab({
                           {/* Amount (merged with currency) */}
                           <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="flex flex-col items-end">
-                              <div className="font-medium">
+                              <div>
                                 {disbursement.amount > 0
                                   ? <><span className="text-muted-foreground text-helper">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
                                   : '-'
@@ -1936,13 +1964,13 @@ export default function PlannedDisbursementsTab({
                                 <TooltipProvider>
                                   <UITooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="font-medium cursor-help flex items-center gap-1">
+                                      <span className="cursor-help flex items-center gap-1">
                                         <span className="w-4 shrink-0 flex items-center justify-center">
                                           {(disbursement as any).exchange_rate_manual && (
                                             <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                           )}
                                         </span>
-                                        <span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        <span className="text-helper text-muted-foreground">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent className="min-w-[200px]">
@@ -2144,22 +2172,21 @@ export default function PlannedDisbursementsTab({
                 </DialogDescription>
               </div>
               {(modalDisbursement as any)?.auto_ref && (
-                <div className="group inline-flex items-center gap-2 text-muted-foreground whitespace-nowrap">
-                  <span className="text-2xl font-mono">{(modalDisbursement as any).auto_ref}</span>
-                  <HelpTextTooltip side="bottom" align="end" size="sm">
-                    A unique, immutable identifier (PD-####) automatically generated by the system when this planned disbursement was created. It cannot be edited.
-                  </HelpTextTooltip>
+                <div className="inline-flex items-center gap-2 text-muted-foreground whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText((modalDisbursement as any).auto_ref);
                       toast.success(`Copied ${(modalDisbursement as any).auto_ref}`);
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-foreground"
-                    title="Copy ID"
+                    title="Click to copy"
+                    className="text-2xl font-mono hover:text-foreground transition-colors cursor-pointer"
                   >
-                    <Copy className="w-5 h-5" />
+                    {(modalDisbursement as any).auto_ref}
                   </button>
+                  <HelpTextTooltip side="bottom" align="end" size="sm">
+                    A unique, immutable identifier (PD-####) automatically generated by the system when this planned disbursement was created. It cannot be edited.
+                  </HelpTextTooltip>
                 </div>
               )}
             </div>

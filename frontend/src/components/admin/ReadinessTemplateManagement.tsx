@@ -370,7 +370,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Pre-Appraisal / Fact-Finding"
+                placeholder="Pre-Appraisal/Fact-Finding"
               />
             </div>
 

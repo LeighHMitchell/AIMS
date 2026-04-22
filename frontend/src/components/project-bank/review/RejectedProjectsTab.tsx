@@ -107,7 +107,7 @@ function RecoverModal({
 
           {/* Optional reason */}
           <div className="space-y-1.5">
-            <Label className="text-helper">Notes (optional)</Label>
+            <Label className="text-helper">Notes</Label>
             <Textarea
               placeholder="Reason for recovery…"
               value={reason}
@@ -222,7 +222,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   },
   {
     key: "rejection_reason",
-    label: "Reason / Comments",
+    label: "Reason/Comments",
     render: (p: RejectedProject) => (
       <p className="text-helper text-muted-foreground truncate max-w-[200px]">
         {p.rejection_reason || p.review_comments || "—"}

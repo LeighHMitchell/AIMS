@@ -371,16 +371,6 @@ export function SidebarNav({
                 <ArrowLeft className="h-3 w-3 transition-transform duration-200 group-hover:-translate-x-0.5" />
                 <span className="whitespace-nowrap">All modules</span>
               </Link>
-              <div className="mt-2 px-3 flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: `hsl(${moduleAccentVar})` }}
-                />
-                <span className="text-section-label font-semibold uppercase tracking-wider text-foreground">
-                  {moduleLabel}
-                </span>
-              </div>
             </div>
           )}
 

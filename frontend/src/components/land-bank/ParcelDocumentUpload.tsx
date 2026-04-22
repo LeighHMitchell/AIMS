@@ -136,7 +136,7 @@ export function ParcelDocumentUpload({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Description (optional)</Label>
+                <Label>Description</Label>
                 <Input
                   value={description}
                   onChange={e => setDescription(e.target.value)}

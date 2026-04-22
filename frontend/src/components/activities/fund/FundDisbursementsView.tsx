@@ -272,7 +272,7 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-medium">Region / Country</TableHead>
+                <TableHead className="font-medium">Region/Country</TableHead>
                 <TableHead className="text-right font-medium">Committed</TableHead>
                 <TableHead className="text-right font-medium">Disbursed</TableHead>
                 <TableHead className="text-right font-medium">Activities</TableHead>

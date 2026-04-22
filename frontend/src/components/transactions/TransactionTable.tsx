@@ -26,7 +26,6 @@ import {
   Shuffle,
   Link2,
   Copy,
-  Check,
   Globe,
   MapPin,
   Target,
@@ -347,7 +346,6 @@ export function TransactionTable({
   showDescriptions = false,
 }: TransactionTableProps) {
   const router = useRouter();
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [activityDetails, setActivityDetails] = useState<Record<string, {title: string; iati_identifier: string; acronym?: string; reporting_org?: string; reporting_org_acronym?: string; partner_id?: string} | null>>({});
   const [loadingActivities, setLoadingActivities] = useState<Set<string>>(new Set());
@@ -518,11 +516,10 @@ export function TransactionTable({
     }));
   }, [groupedTransactions, usdValues]);
 
-  const copyToClipboard = async (text: string, type: string, transactionId: string) => {
+  const copyToClipboard = async (text: string, type: string, _transactionId: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedId(`${transactionId}-${type}`);
-      setTimeout(() => setCopiedId(null), 2000);
+      toast.success(type === 'systemId' ? 'Transaction ID copied' : 'IATI Identifier copied');
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }
@@ -890,15 +887,17 @@ export function TransactionTable({
                         <div className="cursor-pointer hover:opacity-75 group" onClick={(e) => { e.stopPropagation(); if (transaction.activity_id) { window.location.href = `/activities/${transaction.activity_id}`; } }}>
                           <div className="text-body">
                             {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
-                            {(transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier) && (
-                              <span className="text-xs font-mono font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
-                                {transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier}
-                              </span>
-                            )}
                             {(() => {
                               const iatiId = transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier;
                               return iatiId ? (
-                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(iatiId, 'iati', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-iati` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-body">Copy IATI Identifier</p></TooltipContent></Tooltip>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); copyToClipboard(iatiId, 'iati', transaction.uuid || transaction.id); }}
+                                  title="Click to copy"
+                                  className="text-xs font-mono font-normal text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block cursor-pointer"
+                                >
+                                  {iatiId}
+                                </button>
                               ) : null;
                             })()}
                           </div>
@@ -918,12 +917,9 @@ export function TransactionTable({
                               e.preventDefault();
                               copyToClipboard((transaction as any).auto_ref, 'systemId', transactionId);
                             }}
-                            title={copiedId === `${transactionId}-systemId` ? "Copied!" : "Click to copy"}
+                            title="Click to copy"
                             className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
                           >
-                            {copiedId === `${transactionId}-systemId` && (
-                              <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                            )}
                             <span>{(transaction as any).auto_ref}</span>
                           </button>
                         ) : (

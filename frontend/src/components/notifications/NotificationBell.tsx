@@ -231,7 +231,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
             <motion.span
               initial={shouldReduceMotion ? { scale: 1 } : { scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground"
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-white"
             >
               {displayCount}
             </motion.span>

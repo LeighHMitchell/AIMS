@@ -35,6 +35,7 @@ import { apiFetch } from "@/lib/api-fetch"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
+import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager"
 import { Search, DollarSign, Users, Layers, TrendingUp, ChevronsUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
@@ -82,6 +83,7 @@ export default function FundsPage() {
   const router = useRouter()
   const { user } = useUser()
   const [funds, setFunds] = useState<FundSummary[]>([])
+  useFlushDeletesOnUnmount("funds-list")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -142,29 +144,35 @@ export default function FundsPage() {
 
   const handleDeleteFund = useCallback(async (id: string) => {
     setDeleteFundId(null)
-    setIsDeleting(true)
     const fund = funds.find(f => f.id === id)
     const fundTitle = fund?.title || "Pooled fund"
-    try {
-      const res = await apiFetch("/api/activities", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          user: user ? { id: user.id, name: user.name, role: user.role } : undefined,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || "Failed to delete")
-      }
-      toast.success(`"${fundTitle}" was deleted successfully`)
-      setFunds(prev => prev.filter(f => f.id !== id))
-    } catch (e: any) {
-      toast.error(e.message || "Failed to delete activity")
-    } finally {
-      setIsDeleting(false)
-    }
+    const snapshot = funds
+    setFunds(prev => prev.filter(f => f.id !== id))
+
+    showUndoToast(`"${fundTitle}" deleted`, {
+      id: `delete-fund-${id}`,
+      source: "funds-list",
+      commit: async () => {
+        const res = await apiFetch("/api/activities", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id,
+            user: user ? { id: user.id, name: user.name, role: user.role } : undefined,
+          }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || "Failed to delete")
+        }
+      },
+      onUndo: () => setFunds(snapshot),
+      onCommitError: (e: any) => {
+        console.error('Error deleting fund:', e)
+        setFunds(snapshot)
+        toast.error(e?.message || "Failed to delete activity")
+      },
+    })
   }, [funds, user])
 
   const handleExportPDF = useCallback(async (fundId: string) => {
@@ -344,17 +352,15 @@ export default function FundsPage() {
                               </button>
                             )}
                           </h3>
-                          <span className="group/id inline-flex items-center gap-0.5 mt-0.5">
-                            <code className="inline-block shrink-0 text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                              {fund.identifier}
-                            </code>
+                          <span className="inline-flex mt-0.5">
                             <button
                               type="button"
                               onClick={() => copyToClipboard(fund.identifier, 'Activity ID')}
-                              className="inline-flex p-0.5 rounded hover:bg-muted opacity-0 group-hover/id:opacity-100 focus:opacity-100 focus:outline-none transition-opacity"
+                              title="Click to copy"
                               aria-label="Copy activity ID"
+                              className="inline-block shrink-0 text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer"
                             >
-                              <Copy className="w-3 h-3 text-muted-foreground" />
+                              {fund.identifier}
                             </button>
                           </span>
                           {fund.status && (() => {

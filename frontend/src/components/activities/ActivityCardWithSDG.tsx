@@ -4,6 +4,7 @@ import React, { useRef, useState, memo } from 'react';
 import Link from 'next/link';
 
 import { Calendar, MoreVertical, Pencil, Trash2, Clock, Copy, Bookmark, BookmarkCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import {
   DropdownMenu,
@@ -229,13 +230,13 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
     onDelete?.(activity.id);
   };
 
-  const handleCopy = async (text: string, e: React.MouseEvent) => {
+  const handleCopy = async (text: string, label: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     try {
       await navigator.clipboard.writeText(text);
-      // You could add a toast notification here if you have a toast system
+      toast.success(`${label} copied`);
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
@@ -414,36 +415,30 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               {/* Activity ID and IATI ID - Always displayed */}
               <div className="text-helper text-muted-foreground line-clamp-1 flex items-center gap-1">
                 {activity.partner_id ? (
-                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.partner_id}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopy(activity.partner_id!, 'Activity ID', e)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    title="Click to copy"
+                    className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer"
+                  >
+                    {activity.partner_id}
+                  </button>
                 ) : (
                   <span className="text-muted-foreground">Activity ID not reported</span>
                 )}
-                {activity.partner_id && (
+                {activity.iati_id ? (
                   <button
                     type="button"
-                    onClick={(e) => handleCopy(activity.partner_id!, e)}
+                    onClick={(e) => handleCopy(activity.iati_id!, 'IATI Identifier', e)}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground"
-                    title="Copy Activity ID"
+                    title="Click to copy"
+                    className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 cursor-pointer"
                   >
-                    <Copy className="w-3 h-3" />
+                    {activity.iati_id}
                   </button>
-                )}
-                {activity.iati_id ? (
-                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2">{activity.iati_id}</span>
                 ) : (
                   <span className="text-muted-foreground ml-2">IATI Identifier not reported</span>
-                )}
-                {activity.iati_id && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopy(activity.iati_id!, e)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground"
-                    title="Copy IATI Identifier"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
                 )}
               </div>
 

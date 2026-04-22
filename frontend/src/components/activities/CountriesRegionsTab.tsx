@@ -1293,7 +1293,7 @@ export default function CountriesRegionsTab({
 
                   {/* Narrative field */}
                   <div className="space-y-2">
-                    <Label className="text-body font-medium">Narrative / Description <HelpTextTooltip content="Optional free-text description providing additional context for this allocation, such as the scope or rationale." /></Label>
+                    <Label className="text-body font-medium">Narrative/Description <HelpTextTooltip content="Optional free-text description providing additional context for this allocation, such as the scope or rationale." /></Label>
                     <Input
                       type="text"
                       value={narrative}

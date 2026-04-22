@@ -29,6 +29,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/lib/toast-manager';
 import { DocumentCard } from './DocumentCard';
 import { DocumentForm } from './DocumentForm';
 import {
@@ -182,9 +183,11 @@ export function DocumentsAndImagesTab({
   };
   
   const handleDeleteDocument = (url: string) => {
+    const snapshot = documents;
     onChange(documents.filter(d => d.url !== url));
-    toast.success('Document removed', {
-      description: 'The document link has been removed.',
+    showUndoToast('Document removed', {
+      id: `delete-doc-${url}`,
+      onUndo: () => onChange(snapshot),
     });
   };
   

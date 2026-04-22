@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Transaction, TransactionFormData } from '@/types/transaction';
 import TransactionList from './TransactionList';
 import { toast } from 'sonner';
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface TransactionTabProps {
@@ -36,6 +37,7 @@ export default function TransactionTab({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  useFlushDeletesOnUnmount(`activity-transactions-${activityId}`);
   
   // Track last notified transaction count to prevent infinite loops
   const lastNotifiedCountRef = React.useRef<number>(-1);
@@ -208,48 +210,48 @@ export default function TransactionTab({
       console.error('[TransactionTab] Attempted to delete transaction with invalid UUID:', uuid);
       return;
     }
-    
-    // Optimistically remove transaction from UI immediately
+
     const deletedIndex = transactions.findIndex(t => (t.uuid || t.id) === uuid);
-    const deletedTransaction = deletedIndex >= 0 ? transactions[deletedIndex] : undefined;
+    if (deletedIndex < 0) return;
+    const deletedTransaction = transactions[deletedIndex];
+
     setTransactions(prev => prev.filter(t => (t.uuid || t.id) !== uuid));
 
-    try {
-      const response = await apiFetch(`/api/activities/${activityId}/transactions/${uuid}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        // If delete failed, restore the transaction at its original position
-        if (deletedTransaction) {
-          setTransactions(prev => {
-            const restored = [...prev];
-            restored.splice(deletedIndex, 0, deletedTransaction);
-            return restored;
-          });
+    showUndoToast("Transaction deleted", {
+      id: `delete-transaction-${uuid}`,
+      source: `activity-transactions-${activityId}`,
+      commit: async () => {
+        const response = await apiFetch(`/api/activities/${activityId}/transactions/${uuid}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          let errorMessage = 'Failed to delete transaction';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch {}
+          throw new Error(errorMessage);
         }
-        
-        let errorMessage = 'Failed to delete transaction';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          // No JSON response
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      // Refresh the entire transaction list to ensure we have the latest data
-      // This ensures consistency even if optimistic update was slightly off
-      await fetchTransactions();
-      
-      toast.success("Transaction deleted successfully");
-    } catch (error) {
-      console.error('[TransactionTab] Error deleting transaction:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete transaction");
-      throw error;
-    }
+        await fetchTransactions();
+      },
+      onUndo: () => {
+        setTransactions(prev => {
+          const restored = [...prev];
+          restored.splice(Math.min(deletedIndex, restored.length), 0, deletedTransaction);
+          return restored;
+        });
+      },
+      onCommitError: (err) => {
+        console.error('[TransactionTab] Error deleting transaction:', err);
+        setTransactions(prev => {
+          if (prev.some(t => (t.uuid || t.id) === uuid)) return prev;
+          const restored = [...prev];
+          restored.splice(Math.min(deletedIndex, restored.length), 0, deletedTransaction);
+          return restored;
+        });
+        toast.error(err instanceof Error ? err.message : "Failed to delete transaction");
+      },
+    });
   };
 
   if (isLoading) {

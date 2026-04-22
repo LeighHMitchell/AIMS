@@ -877,6 +877,10 @@ export function getTabCompletionStatus(
     case 'documents':
       return checkDocumentsTabCompletion(data);
     case 'government':
+    case 'government-budget-classification':
+    case 'government-financial-inputs':
+    case 'government-risk-assessment':
+    case 'government-evaluation':
       return checkGovernmentInputsTabCompletion(data);
     case 'aid_effectiveness':
       return checkAidEffectivenessTabCompletion(data);

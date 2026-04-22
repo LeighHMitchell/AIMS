@@ -39,6 +39,7 @@ import {
   ChevronUp,
   ChevronDown,
   FileClock,
+  Check,
   CheckCircle,
   ArrowRightLeft,
   Loader2,
@@ -100,7 +101,7 @@ const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
 
 // Column configuration for the activity transaction list
 type ActivityTransactionColumnId =
-  | 'transactionDate' | 'transactionType' | 'financeType' | 'organizations'
+  | 'transactionId' | 'transactionDate' | 'transactionType' | 'financeType' | 'organizations'
   | 'amount' | 'valueDate' | 'usdValue' | 'exchangeRate'
   | 'aidType' | 'flowType' | 'tiedStatus' | 'currency'
   | 'description' | 'disbursementChannel' | 'humanitarian'
@@ -117,6 +118,7 @@ interface ActivityTransactionColumnConfig {
 
 const ACTIVITY_TRANSACTION_COLUMN_CONFIGS: ActivityTransactionColumnConfig[] = [
   // Default columns (visible by default)
+  { id: 'transactionId', label: 'Transaction ID', group: 'additionalDetails', defaultVisible: false, sortable: false },
   { id: 'transactionDate', label: 'Transaction Date', group: 'default', defaultVisible: true, sortable: true },
   { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true, sortable: true },
   { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true, sortable: true },
@@ -147,7 +149,7 @@ const ACTIVITY_TRANSACTION_COLUMN_GROUPS = {
 const DEFAULT_VISIBLE_ACTIVITY_COLUMNS: ActivityTransactionColumnId[] = 
   ACTIVITY_TRANSACTION_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
 
-const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns_v4';  // v4: Value Date moved under Amount by default
+const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns_v5';  // v5: added optional Transaction ID column
 
 // Column Selector Component for Activity Transaction List
 interface ActivityTransactionColumnSelectorProps {
@@ -499,6 +501,14 @@ export default function TransactionList({
   // Column visibility helper
   const isColumnVisible = (columnId: ActivityTransactionColumnId) => {
     return visibleColumns.includes(columnId);
+  };
+
+  // Click-to-copy state for Transaction ID column
+  const [copiedTxnId, setCopiedTxnId] = useState<string | null>(null);
+  const copyTransactionId = (value: string, rowId: string) => {
+    navigator.clipboard.writeText(value);
+    setCopiedTxnId(rowId);
+    setTimeout(() => setCopiedTxnId((prev) => (prev === rowId ? null : prev)), 1500);
   };
   
   useEffect(() => {
@@ -1545,6 +1555,13 @@ export default function TransactionList({
                     {/* Expand/collapse column - always visible */}
                     <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '40px', maxWidth: '40px' }}></TableHead>
                     
+                    {/* Transaction ID column (optional) */}
+                    {isColumnVisible('transactionId') && (
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '140px', maxWidth: '140px' }}>
+                        Transaction ID
+                      </TableHead>
+                    )}
+
                     {/* Date column */}
                     {isColumnVisible('transactionDate') && (
                       <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
@@ -1753,6 +1770,31 @@ export default function TransactionList({
                         </Button>
                       </TableCell>
                       
+                      {/* Transaction ID (optional) */}
+                      {isColumnVisible('transactionId') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          {(transaction as any).auto_ref ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                copyTransactionId((transaction as any).auto_ref, transaction.uuid || transaction.id);
+                              }}
+                              title={copiedTxnId === (transaction.uuid || transaction.id) ? 'Copied!' : 'Click to copy'}
+                              className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
+                            >
+                              {copiedTxnId === (transaction.uuid || transaction.id) && (
+                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                              )}
+                              <span>{(transaction as any).auto_ref}</span>
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      )}
+
                       {/* Date */}
                       {isColumnVisible('transactionDate') && (
                         <TableCell className="py-3 px-4 font-medium whitespace-nowrap">

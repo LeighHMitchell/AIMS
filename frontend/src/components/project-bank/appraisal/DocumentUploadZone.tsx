@@ -41,7 +41,7 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   dap_compliance: 'DAP Compliance Justification',
   terms_of_reference: 'Terms of Reference (TOR)',
   budget_estimate: 'Budget Estimate',
-  site_map: 'Site / Location Map',
+  site_map: 'Site/Location Map',
   stakeholder_analysis: 'Stakeholder Analysis',
   endorsement_letter: 'Government Endorsement Letter',
   proponent_profile: 'Proponent Company Profile',

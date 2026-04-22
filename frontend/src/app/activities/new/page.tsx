@@ -1348,7 +1348,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   {identifier.label || `Other Identifier ${index + 1}`}
                 </LabelSaveIndicator>
                 <div
-                  className="relative bg-background border border-input rounded-md px-3 py-2 pr-14 cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="relative bg-background border border-input rounded-md h-10 flex items-center px-3 py-2 pr-14 cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => {
                     setEditingIdentifierIndex(index);
                     const matchingOrg = organizations.find((o: any) =>
@@ -1371,7 +1371,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="text-body text-foreground truncate pr-2">{identifier.code || ''}</div>
+                        <div className="text-body text-foreground truncate pr-2 flex-1">{identifier.code || ''}</div>
                       </TooltipTrigger>
                       {(identifier.type || identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
                         <TooltipContent side="bottom" align="start" className="max-w-xs">
@@ -1390,7 +1390,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       )}
                     </Tooltip>
                   </TooltipProvider>
-                  <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -2736,12 +2736,27 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               <label className="text-body font-medium text-foreground">
                 Description/Context
               </label>
-              <Textarea
-                value={activityDateForm.description}
-                onChange={(e) => setActivityDateForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Add context about this date"
-                className="min-h-[80px]"
-              />
+              <div className="relative">
+                <Textarea
+                  value={activityDateForm.description}
+                  onChange={(e) => setActivityDateForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Add context about this date"
+                  className="min-h-[120px] pr-16"
+                />
+                <div
+                  className={`pointer-events-none absolute bottom-2 right-2 text-xs tabular-nums transition-colors ${
+                    activityDateForm.description.length > 500
+                      ? "text-red-600"
+                      : activityDateForm.description.length >= 450
+                      ? "text-orange-500"
+                      : activityDateForm.description.length >= 400
+                      ? "text-amber-500"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {activityDateForm.description.length} / 500
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -2776,7 +2791,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 customDatesAutosave.triggerFieldSave(updatedDates);
                 setShowActivityDateModal(false);
               }}
-              disabled={!activityDateForm.label.trim() || !activityDateForm.date}
+              disabled={!activityDateForm.label.trim() || !activityDateForm.date || activityDateForm.description.length > 500}
             >
               Save
             </Button>
@@ -3185,12 +3200,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     // Note: sectors, humanitarian, country-region, locations are now handled by ActivityOverviewGroup above
     // Note: organisations, contacts, focal_points, linked_activities are now handled by StakeholdersGroup above
     // Note: finances, budgets, planned-disbursements, forward-spending-survey, results, capital-spend, financing-terms, conditions are now handled by FundingDeliveryGroup above
-    case "government":
+    case "government-budget-classification":
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-3xl font-semibold text-foreground">Government Inputs</h2>
-            <HelpTextTooltip content="Record government involvement, budget classification, national plan alignment, and other inputs from the recipient government that relate to this activity.">
+            <h2 className="text-3xl font-semibold text-foreground">Government Budget Classification</h2>
+            <HelpTextTooltip content="Assess how this activity aligns with government budget systems: on plan, on budget, on treasury, on parliament, on procurement, and on audit.">
               <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
             </HelpTextTooltip>
           </div>
@@ -3201,6 +3216,67 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             plannedStartDate={general.plannedStartDate}
             plannedEndDate={general.plannedEndDate}
             readOnly={!user || (!isGovernmentUser(user) && !isDevelopmentPartnerUser(user))}
+            section="budget-classification"
+          />
+        </div>
+      );
+    case "government-financial-inputs":
+      return (
+        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">Government Financial Inputs</h2>
+            <HelpTextTooltip content="Track government co-financing and in-kind resource commitments for this activity, including annual breakdowns.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
+          <GovernmentInputsSectionEnhanced
+            activityId={general.id || ''}
+            governmentInputs={governmentInputs}
+            onChange={setGovernmentInputs}
+            plannedStartDate={general.plannedStartDate}
+            plannedEndDate={general.plannedEndDate}
+            readOnly={!user || (!isGovernmentUser(user) && !isDevelopmentPartnerUser(user))}
+            section="financial-contribution"
+          />
+        </div>
+      );
+    case "government-risk-assessment":
+      return (
+        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">Government Risk Assessment</h2>
+            <HelpTextTooltip content="Assess risks across governance, financial, operational, and other dimensions from the government's perspective.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
+          <GovernmentInputsSectionEnhanced
+            activityId={general.id || ''}
+            governmentInputs={governmentInputs}
+            onChange={setGovernmentInputs}
+            plannedStartDate={general.plannedStartDate}
+            plannedEndDate={general.plannedEndDate}
+            readOnly={!user || (!isGovernmentUser(user) && !isDevelopmentPartnerUser(user))}
+            section="risk-assessment"
+          />
+        </div>
+      );
+    case "government-evaluation":
+      return (
+        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">Government Evaluation</h2>
+            <HelpTextTooltip content="Link this activity to national monitoring and evaluation systems and results frameworks.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
+          <GovernmentInputsSectionEnhanced
+            activityId={general.id || ''}
+            governmentInputs={governmentInputs}
+            onChange={setGovernmentInputs}
+            plannedStartDate={general.plannedStartDate}
+            plannedEndDate={general.plannedEndDate}
+            readOnly={!user || (!isGovernmentUser(user) && !isDevelopmentPartnerUser(user))}
+            section="evaluation"
           />
         </div>
       );
@@ -5092,7 +5168,19 @@ function NewActivityPageContent() {
         isComplete: documentsCompletion.isComplete,
         isInProgress: documentsCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      government: governmentInputsCompletion ? {
+      "government-budget-classification": governmentInputsCompletion ? {
+        isComplete: governmentInputsCompletion.isComplete,
+        isInProgress: governmentInputsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      "government-financial-inputs": governmentInputsCompletion ? {
+        isComplete: governmentInputsCompletion.isComplete,
+        isInProgress: governmentInputsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      "government-risk-assessment": governmentInputsCompletion ? {
+        isComplete: governmentInputsCompletion.isComplete,
+        isInProgress: governmentInputsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      "government-evaluation": governmentInputsCompletion ? {
         isComplete: governmentInputsCompletion.isComplete,
         isInProgress: governmentInputsCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
@@ -5126,7 +5214,7 @@ function NewActivityPageContent() {
       "sdg", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
       "linked_activities", "results", "forward-spending-survey", "capital-spend", "financing-terms", "conditions", "country-budget",
-      ...(showGovernmentInputs ? ["government"] : []), "readiness_checklist", "metadata"
+      ...(showGovernmentInputs ? ["government-budget-classification", "government-financial-inputs", "government-risk-assessment", "government-evaluation"] : []), "readiness_checklist", "metadata"
     ];
 
     const idx = sections.findIndex(s => s === currentId);
@@ -5144,7 +5232,7 @@ function NewActivityPageContent() {
       "sdg", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
       "linked_activities", "results", "forward-spending-survey", "capital-spend", "financing-terms", "conditions", "country-budget",
-      ...(showGovernmentInputs ? ["government"] : []), "readiness_checklist", "metadata"
+      ...(showGovernmentInputs ? ["government-budget-classification", "government-financial-inputs", "government-risk-assessment", "government-evaluation"] : []), "readiness_checklist", "metadata"
     ];
 
     const idx = sections.findIndex(s => s === currentId);
@@ -5533,7 +5621,12 @@ function NewActivityPageContent() {
     {
       title: "Administration",
       sections: [
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
+        ...(showGovernmentInputs ? [
+          { id: "government-budget-classification", label: "Government Budget Classification" },
+          { id: "government-financial-inputs", label: "Government Financial Inputs" },
+          { id: "government-risk-assessment", label: "Government Risk Assessment" },
+          { id: "government-evaluation", label: "Government Evaluation" },
+        ] : []),
         { id: "readiness_checklist", label: "Readiness Checklist" },
         { id: "metadata", label: "Metadata" }
       ]
@@ -5616,38 +5709,32 @@ function NewActivityPageContent() {
                     {/* Activity Identifier and IATI ID */}
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap text-helper">
                       {(general.otherIdentifier || general.partner_id) && (
-                        <span className="group/actid inline-flex items-center gap-0.5">
-                          <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
-                            {general.otherIdentifier || general.partner_id}
-                          </code>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(general.otherIdentifier || general.partner_id);
-                              toast.success('Activity ID copied to clipboard');
-                            }}
-                            className="p-1 hover:bg-muted rounded transition-colors inline-flex items-center opacity-0 group-hover/actid:opacity-100"
-                            title="Copy Activity ID"
-                          >
-                            <Copy className="h-3 w-3 text-muted-foreground" />
-                          </button>
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(general.otherIdentifier || general.partner_id);
+                            toast.success('Activity ID copied');
+                          }}
+                          title="Click to copy"
+                          className="inline-flex items-center px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono break-all cursor-pointer"
+                          style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}
+                        >
+                          {general.otherIdentifier || general.partner_id}
+                        </button>
                       )}
                       {general.iatiIdentifier && (
-                        <span className="group/iatiid inline-flex items-center gap-0.5">
-                          <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
-                            {general.iatiIdentifier}
-                          </code>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(general.iatiIdentifier);
-                              toast.success('IATI ID copied to clipboard');
-                            }}
-                            className="p-1 hover:bg-muted rounded transition-colors inline-flex items-center opacity-0 group-hover/iatiid:opacity-100"
-                            title="Copy IATI ID"
-                          >
-                            <Copy className="h-3 w-3 text-muted-foreground" />
-                          </button>
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(general.iatiIdentifier);
+                            toast.success('IATI ID copied');
+                          }}
+                          title="Click to copy"
+                          className="inline-flex items-center px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono break-all cursor-pointer"
+                          style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}
+                        >
+                          {general.iatiIdentifier}
+                        </button>
                       )}
                     </div>
                   </div>
@@ -5869,7 +5956,10 @@ function NewActivityPageContent() {
                !isAdvancedSection(activeSection) &&
                activeSection !== 'iati' &&
                activeSection !== 'metadata' &&
-               activeSection !== 'government' &&
+               activeSection !== 'government-budget-classification' &&
+               activeSection !== 'government-financial-inputs' &&
+               activeSection !== 'government-risk-assessment' &&
+               activeSection !== 'government-evaluation' &&
                activeSection !== 'readiness_checklist' &&
                activeSection !== 'xml-import' &&
                activeSection !== 'excel-import' && (

@@ -72,6 +72,7 @@ const DISBURSEMENT_CHANNELS: Record<string, string> = {
 // This is a subset of TransactionTable columns relevant to the activity context
 type ActivityEditorColumnId =
   | 'checkbox' | 'actions'
+  | 'systemId'
   | 'transactionDate' | 'transactionType' | 'organizations'
   | 'amount' | 'valueDate' | 'usdValue' | 'financeType'
   | 'activityId' | 'iatiIdentifier' | 'reportingOrg'
@@ -103,6 +104,7 @@ const ACTIVITY_EDITOR_COLUMN_CONFIGS: ActivityEditorColumnConfig[] = [
   { id: 'acceptanceStatus', label: 'Acceptance', group: 'default', defaultVisible: false },
   
   // Activity context columns (optional)
+  { id: 'systemId', label: 'Transaction ID', group: 'activityContext', defaultVisible: false },
   { id: 'activityId', label: 'Activity ID', group: 'activityContext', defaultVisible: false },
   { id: 'iatiIdentifier', label: 'IATI Identifier', group: 'activityContext', defaultVisible: false },
   { id: 'reportingOrg', label: 'Reporting Organisation', group: 'activityContext', defaultVisible: false },
@@ -129,7 +131,7 @@ const ACTIVITY_EDITOR_COLUMN_GROUPS = {
 const DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS: ActivityEditorColumnId[] = 
   ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(col => col.defaultVisible || col.alwaysVisible).map(col => col.id);
 
-const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns_v2';  // v2: Finance Type column now visible
+const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns_v3';  // v3: added optional Transaction ID (systemId)
 
 // Column Selector Component for Activity Editor
 interface ActivityEditorColumnSelectorProps {

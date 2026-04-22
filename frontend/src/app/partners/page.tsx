@@ -1095,7 +1095,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('name')}
                                 className="flex items-center hover:text-foreground"
                               >
-                                Country / Organisation Name
+                                Country/Organisation Name
                                 {getSortIcon('name')}
                               </button>
                             </th>

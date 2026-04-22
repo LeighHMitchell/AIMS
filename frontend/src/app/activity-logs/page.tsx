@@ -312,9 +312,8 @@ export default function ActivityLogsPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportLogs}>
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
+            <Button variant="outline" size="icon" onClick={exportLogs} title="Export CSV" aria-label="Export CSV">
+              <Download className="h-4 w-4" />
             </Button>
             <Button variant="outline" onClick={handleRefresh}>
               <RefreshCw className="h-4 w-4" />

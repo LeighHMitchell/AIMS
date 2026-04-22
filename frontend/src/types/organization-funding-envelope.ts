@@ -68,7 +68,7 @@ export const ORGANIZATION_ROLES = [
   },
   { 
     value: 'fund_manager', 
-    label: 'Fund Manager / Channel', 
+    label: 'Fund Manager/Channel',
     description: 'Managing or channeling funds' 
   },
   { 
@@ -80,7 +80,7 @@ export const ORGANIZATION_ROLES = [
 
 export const FUNDING_TYPE_FLAGS = [
   { value: 'core_resources', label: 'Core Resources' },
-  { value: 'earmarked_pooled', label: 'Earmarked / Pooled Funds' },
+  { value: 'earmarked_pooled', label: 'Earmarked/Pooled Funds' },
   { value: 'on_budget', label: 'On-Budget' },
   { value: 'off_budget', label: 'Off-Budget' },
   { value: 'unknown', label: 'Unknown' }
@@ -99,7 +99,7 @@ export const ENVELOPE_STATUSES = [
   },
   { 
     value: 'indicative', 
-    label: 'Indicative / Planned', 
+    label: 'Indicative/Planned',
     description: 'Future projections' 
   }
 ] as const;

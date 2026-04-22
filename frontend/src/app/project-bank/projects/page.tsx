@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { FilterBar } from "@/components/ui/filter-bar"
 import {
   Plus, Search, ChevronsUpDown, ChevronUp, ChevronDown,
-  MoreVertical, ListTodo, Copy, Check, LayoutGrid, List, Inbox,
+  MoreVertical, ListTodo, Copy, LayoutGrid, List, Inbox,
 } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -128,15 +128,11 @@ export default function ProjectListPage() {
   const [perPage, setPerPage] = useState(20)
   const [sortField, setSortField] = useState<string>("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
 
-  const copyToClipboard = (text: string, field: string, projectId: string) => {
+  const copyToClipboard = (text: string, label: string = 'Copied') => {
     navigator.clipboard.writeText(text)
-    const key = `${projectId}-${field}`
-    setCopiedId(key)
-    toast.success(`Copied to clipboard`)
-    setTimeout(() => setCopiedId(prev => prev === key ? null : prev), 2000)
+    toast.success(label)
   }
   useEffect(() => {
     async function fetchProjects() {
@@ -467,37 +463,27 @@ export default function ProjectListPage() {
                               onClick={(e) => {
                                 e.stopPropagation()
                                 e.preventDefault()
-                                copyToClipboard(p.name, 'name', p.id)
+                                copyToClipboard(p.name, 'Project title copied')
                               }}
                               className="flex-shrink-0 mt-0.5 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-foreground"
                               title="Copy Project Title"
                             >
-                              {copiedId === `${p.id}-name` ? (
-                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                              ) : (
-                                <Copy className="w-3 h-3 text-muted-foreground" />
-                              )}
+                              <Copy className="w-3 h-3 text-muted-foreground" />
                             </button>
                           </div>
                           {p.project_code && (
-                            <div className="group/code flex items-center gap-1 whitespace-nowrap">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{p.project_code}</span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  e.preventDefault()
-                                  copyToClipboard(p.project_code, 'code', p.id)
-                                }}
-                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
-                                title="Copy Project ID"
-                              >
-                                {copiedId === `${p.id}-code` ? (
-                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                                ) : (
-                                  <Copy className="w-3 h-3 text-muted-foreground" />
-                                )}
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                copyToClipboard(p.project_code, 'Project ID copied')
+                              }}
+                              title="Click to copy"
+                              className="text-xs font-mono text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded whitespace-nowrap inline-flex self-start cursor-pointer"
+                            >
+                              {p.project_code}
+                            </button>
                           )}
                         </div>
                       </td>

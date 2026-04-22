@@ -3,7 +3,8 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import { Calendar, Clock, Copy, Building2, DollarSign } from 'lucide-react';
+import { Calendar, Clock, Building2, DollarSign } from 'lucide-react';
+import { toast } from 'sonner';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { formatActivityDate, formatRelativeTime } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
@@ -270,17 +271,19 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               {idLabel}
             </p>
             <p className="text-helper leading-relaxed">
-              <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded-sm" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{displayId}</span>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   navigator.clipboard.writeText(displayId);
+                  toast.success('ID copied');
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity inline-block ml-1 align-middle"
-                title="Copy ID"
+                title="Click to copy"
+                className="font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1 py-0.5 rounded-sm cursor-pointer"
+                style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}
               >
-                <Copy className="w-3 h-3" style={{ color: colors.coolSteel }} />
+                {displayId}
               </button>
             </p>
           </div>

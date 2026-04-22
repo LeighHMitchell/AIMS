@@ -103,7 +103,7 @@ export const OrganizationFieldHelp: React.FC<FieldHelpProps> = ({ field, classNa
 
 // Countries list (can be expanded)
 export const COUNTRIES = [
-  { value: "GLOBAL", label: "🌐 Global / Not Country-Specific" },
+  { value: "GLOBAL", label: "🌐 Global/Not Country-Specific" },
   { value: "AF", label: "Afghanistan" },
   { value: "AL", label: "Albania" },
   { value: "DZ", label: "Algeria" },

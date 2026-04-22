@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager';
 import { RolodexPerson } from '@/app/api/rolodex/route';
 import {
   Tooltip,
@@ -61,6 +62,8 @@ export default function RolodexPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [deleteContact, setDeleteContact] = useState<RolodexPerson | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hiddenContactIds, setHiddenContactIds] = useState<Set<string>>(new Set());
+  useFlushDeletesOnUnmount("rolodex-list");
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
   const handleCopyEmail = (e: React.MouseEvent, email: string) => {
@@ -91,6 +94,10 @@ export default function RolodexPage() {
   useEffect(() => {
     refetch();
   }, []); // Only run once on mount
+
+  const visiblePeople = hiddenContactIds.size > 0
+    ? people.filter(p => !hiddenContactIds.has(p.id))
+    : people;
 
   // Debug logging
   console.log('[RolodexPage] State:', { 
@@ -156,26 +163,46 @@ export default function RolodexPage() {
   const confirmDelete = async () => {
     if (!deleteContact) return;
 
-    setIsDeleting(true);
-    try {
-      const response = await apiFetch(`/api/rolodex?id=${deleteContact.id}&source=${deleteContact.source}`,
-        { method: 'DELETE' }
-      );
+    const contact = deleteContact;
+    setDeleteContact(null);
+    setHiddenContactIds(prev => new Set(prev).add(contact.id));
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete contact');
-      }
-
-      toast.success(`"${deleteContact.name}" was deleted successfully`);
-      setDeleteContact(null);
-      refetch(); // Refresh the list
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete contact');
-    } finally {
-      setIsDeleting(false);
-    }
+    showUndoToast(`"${contact.name}" deleted`, {
+      id: `delete-contact-${contact.id}`,
+      source: "rolodex-list",
+      commit: async () => {
+        const response = await apiFetch(
+          `/api/rolodex?id=${contact.id}&source=${contact.source}`,
+          { method: 'DELETE' }
+        );
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to delete contact');
+        }
+        refetch();
+        setHiddenContactIds(prev => {
+          const next = new Set(prev);
+          next.delete(contact.id);
+          return next;
+        });
+      },
+      onUndo: () => {
+        setHiddenContactIds(prev => {
+          const next = new Set(prev);
+          next.delete(contact.id);
+          return next;
+        });
+      },
+      onCommitError: (err) => {
+        console.error('Error deleting contact:', err);
+        setHiddenContactIds(prev => {
+          const next = new Set(prev);
+          next.delete(contact.id);
+          return next;
+        });
+        toast.error(err instanceof Error ? err.message : 'Failed to delete contact');
+      },
+    });
   };
 
   // Get sort icon for column headers
@@ -422,7 +449,7 @@ export default function RolodexPage() {
             {/* People Grid/Table */}
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-                {people.map((person) => (
+                {visiblePeople.map((person) => (
                   <PersonCard
                     key={person.id}
                     person={person}
@@ -490,7 +517,7 @@ export default function RolodexPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border bg-white">
-                      {people.map((person) => (
+                      {visiblePeople.map((person) => (
                         <tr key={person.id} className="group hover:bg-muted transition-colors">
                           <td className="px-4 py-2 align-middle">
                             <UserAvatar

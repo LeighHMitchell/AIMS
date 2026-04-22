@@ -12,7 +12,7 @@ const STAGE_TITLES: Record<ScoringStage, string> = {
   intake: 'Project Intake Score',
   fs1: 'Preliminary Feasibility Score',
   fs2: 'Detailed Feasibility Score',
-  fs3: 'PPP / VGF Structuring Score',
+  fs3: 'PPP/VGF Structuring Score',
 }
 
 const STAGE_LABELS: Record<ScoringStage, string> = {
