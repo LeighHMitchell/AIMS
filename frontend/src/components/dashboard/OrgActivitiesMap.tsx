@@ -167,6 +167,7 @@ interface LocationData {
   activity?: {
     id: string;
     title: string;
+    acronym?: string;
     status: string;
     organization_id: string;
     organization_name?: string;
@@ -476,7 +477,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[860px] w-full rounded-lg" />
+          <Skeleton className="h-[calc(100vh-260px)] min-h-[700px] w-full rounded-lg" />
         </CardContent>
       </Card>
     );
@@ -596,7 +597,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
           {/* Map View Tab */}
           <TabsContent value="map" className="space-y-4">
             {validLocations.length === 0 ? (
-              <div className="h-[860px] flex items-center justify-center bg-muted rounded-lg">
+              <div className="h-[calc(100vh-260px)] min-h-[700px] flex items-center justify-center bg-muted rounded-lg">
                 <div className="text-center">
                   <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-body text-muted-foreground">No locations recorded</p>
@@ -606,7 +607,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                 </div>
               </div>
             ) : (
-              <div className="h-[860px] w-full relative rounded-lg overflow-hidden border border-border">
+              <div className="h-[calc(100vh-260px)] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-border">
                 {/* MapLibre Map */}
                 <Map
                   key={`org-map-${organizationId}-${mapStyle}`}
@@ -615,8 +616,8 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                   zoom={defaultZoom}
                   minZoom={2}
                   styles={{
-                    light: MAP_STYLES[mapStyle].style as string | object,
-                    dark: MAP_STYLES[mapStyle].style as string | object,
+                    light: MAP_STYLES[mapStyle].style as any,
+                    dark: MAP_STYLES[mapStyle].style as any,
                   }}
                 >
                   <MapControls position="top-right" showZoom />
@@ -668,7 +669,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
 
               {subnationalLoading ? (
                 <div className="space-y-4">
-                  <div className="h-[860px] w-full bg-muted rounded-lg flex items-center justify-center">
+                  <div className="h-[calc(100vh-260px)] min-h-[700px] w-full bg-muted rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
                       <div className="text-body text-muted-foreground">Loading sub-national breakdown data...</div>
@@ -678,7 +679,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               ) : Object.keys(regionBreakdownsWithDetails || {}).length > 0 ? (
                 <>
                   {/* Choropleth Map */}
-                  <div className="h-[860px] w-full">
+                  <div className="h-[calc(100vh-260px)] min-h-[700px] w-full">
                     <SubnationalChoroplethMap
                       breakdowns={regionBreakdownsWithDetails}
                       viewLevel={subnationalViewLevel}

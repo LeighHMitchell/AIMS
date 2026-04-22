@@ -1,7 +1,34 @@
 {
-  "currentVersion": "3.30.0",
-  "narrativeSummary": "Version 3.30 splits the Government Inputs section into four dedicated sidebar entries under Administration (Government Budget Classification, Government Financial Inputs, Government Risk Assessment, Government Evaluation), each rendering as a flat page without internal sub-tabs. System-generated IDs are now surfaced inside the Activity Editor: the Transactions tab gets an optional Transaction ID column (Columns → Activity Context), the Planned Disbursements tab gains a Planned Disbursement ID column as the first data column, and the Budgets tab promotes the Budget ID into its own dedicated column. Click-to-copy IDs now unify on a toast-only confirmation (no inline check mark). Cell body text across the three financial tables is made visually consistent (plain weight, preserving mono code chips and currency prefixes). Other Identifier display boxes in the General tab now match the height of neighbouring inputs. Planned Disbursement ID column header wraps instead of being forced onto a single line.",
+  "currentVersion": "3.30.1",
+  "narrativeSummary": "Version 3.30.1 restores UX improvements that were lost during the 3.30.0 merge: the Workspace Sectors card regains its budget/planned/activities metric picker, the My Organisation's Data tab gets its \"Reported by\" label back above the dropdown (and now shows the filter for all tabs in portfolio context), Dashboard Hero and Total Budgets/Planned Disbursements cards use modernised Wallet/CalendarClock icons, the Activities map resizes to viewport height, and map popups now include activity acronyms. CSV export buttons across list pages, SDG/sector/policy-marker country rankings, and the Reports tile are now icon-only with tooltip labels for visual consistency.",
   "releases": [
+    {
+      "version": "3.30.1",
+      "date": "2026-04-22",
+      "narrativeSummary": "Restore five Workspace/dashboard UX improvements that were dropped during the 3.30.0 merge, and finish the CSV-export-button icon-only cleanup across list pages, chart cards, and the Reports tile.",
+      "changes": [
+        "<b>Restored: Workspace Sectors Card Metric Picker</b>",
+        "&nbsp;&nbsp;Re-adds the budget / planned disbursements / activities toggle on the Sectors card",
+        "&nbsp;&nbsp;Users can switch how sectors are sized: Wallet icon = budget, CalendarClock icon = planned, Briefcase icon = activity count",
+        "<b>Restored: My Organisation's Data &mdash; \"Reported by\" Label</b>",
+        "&nbsp;&nbsp;Dropdown now has a proper <code>&lt;Label&gt;</code> above it instead of an inline span prefix",
+        "&nbsp;&nbsp;In portfolio context, the filter is visible for all tabs (not just Transactions / Planned Disbursements)",
+        "<b>Restored: Dashboard Hero Card Icon Modernisation</b>",
+        "&nbsp;&nbsp;Total Budgets, Planned Disbursements, and dual-metric cards use direct lucide icons (DollarSign / Wallet / CalendarClock)",
+        "&nbsp;&nbsp;Tightened grid proportions on the activity-status card (2fr/3fr/3fr)",
+        "<b>Restored: Activities Map Viewport Sizing</b>",
+        "&nbsp;&nbsp;Map uses <code>calc(100vh-260px)</code> with <code>min-h-[700px]</code> instead of fixed 860px &mdash; scales with viewport",
+        "&nbsp;&nbsp;Activity acronym now exposed on location data for popups",
+        "<b>Restored: Activity Acronym in Map Popups</b>",
+        "&nbsp;&nbsp;Marker popups display acronym in parentheses next to the title with whitespace guard",
+        "<b>CSV Export Buttons &mdash; Icon-Only Cleanup</b>",
+        "&nbsp;&nbsp;Activity list page: icon-only with tooltip (was <code>&lt;Download /&gt; Export CSV</code>)",
+        "&nbsp;&nbsp;Reports tile button: icon-only download (was full-width <code>&lt;Download /&gt; Download CSV</code>)",
+        "&nbsp;&nbsp;SDG, sector, and policy-marker country-ranking buttons: icon-only (were <code>&lt;Download /&gt; CSV</code>)",
+        "&nbsp;&nbsp;All tooltips and aria-labels preserved for accessibility",
+        "&nbsp;&nbsp;Chart format-picker pairs (CSV / JPG) intentionally left labelled for disambiguation"
+      ]
+    },
     {
       "version": "3.30.0",
       "date": "2026-04-22",

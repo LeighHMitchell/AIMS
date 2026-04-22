@@ -1761,12 +1761,13 @@ const router = useRouter();
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={exportActivities}
-            className="h-9"
+            className="h-9 w-9"
+            title="Export CSV"
+            aria-label="Export CSV"
           >
-            <Download className="h-4 w-4 mr-1" />
-            Export CSV
+            <Download className="h-4 w-4" />
           </Button>
         </div>
       </div>

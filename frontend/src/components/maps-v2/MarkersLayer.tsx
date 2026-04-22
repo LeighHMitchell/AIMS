@@ -362,6 +362,9 @@ function LocationMarker({
           {/* Title */}
           <div className="font-semibold text-helper text-foreground mb-2 leading-snug">
             {location.activity?.title || 'Untitled Activity'}
+            {location.activity?.acronym && location.activity.acronym.trim() && (
+              <> <span>({location.activity.acronym})</span></>
+            )}
           </div>
 
           {/* Status & Budget Row */}
@@ -397,7 +400,7 @@ function LocationMarker({
               <div className="text-[10px] text-foreground leading-snug">
                 {location.activity.organization_name}
                 {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
-                  <span className="text-muted-foreground"> ({location.activity.organization_acronym})</span>
+                  <span> ({location.activity.organization_acronym})</span>
                 )}
               </div>
             </div>
@@ -426,8 +429,8 @@ function LocationMarker({
           className="block text-base font-semibold text-foreground mb-3 leading-tight hover:text-muted-foreground cursor-pointer transition-colors pr-6"
         >
           {location.activity?.title || 'Untitled Activity'}
-          {location.activity?.acronym && (
-            <span> {location.activity.acronym}</span>
+          {location.activity?.acronym && location.activity.acronym.trim() && (
+            <> <span>({location.activity.acronym})</span></>
           )}
         </a>
         
@@ -451,7 +454,7 @@ function LocationMarker({
             <span className="text-helper text-foreground">
               {location.activity?.organization_name || '-'}
               {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
-                <span> {location.activity.organization_acronym}</span>
+                <span className="text-foreground"> ({location.activity.organization_acronym})</span>
               )}
             </span>
           </div>

@@ -16,13 +16,11 @@ import {
   Activity,
   ClipboardCheck,
   FileText,
+  DollarSign,
+  Wallet,
+  CalendarClock,
   HelpCircle,
 } from 'lucide-react';
-import {
-  FinancialTransactionsIcon,
-  PlannedDisbursementsIcon,
-  BudgetsIcon,
-} from '@/lib/dashboard-icons';
 
 interface DashboardHeroCardsProps {
   organizationId: string;
@@ -190,7 +188,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       <StaggerItem>
         <DualMetricCard
           title="Financial Transactions"
-          icon={FinancialTransactionsIcon}
+          icon={DollarSign}
           helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
           leftMetric={{
             value: stats?.orgTransactionCount ?? 0,
@@ -212,7 +210,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-2">
-                  <BudgetsIcon className="h-4 w-4 text-muted-foreground" />
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
                   <span className="text-body font-medium text-muted-foreground">Budgets</span>
                 </div>
                 <Tooltip>
@@ -237,7 +235,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       <StaggerItem>
         <DualMetricCard
           title="Planned Disbursements"
-          icon={PlannedDisbursementsIcon}
+          icon={CalendarClock}
           helpText="Planned disbursement records across all your organisation's activities. These define expected fund transfers."
           leftMetric={{
             value: stats?.orgPlannedDisbursementCount ?? 0,
@@ -269,15 +267,15 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <div className="grid grid-cols-3 gap-0">
+              <div className="grid grid-cols-[2fr_3fr_3fr] gap-0">
                 {/* Section 1: Publication Status */}
-                <div className="pr-4">
+                <div className="pr-3">
                   <div className="grid grid-cols-2 gap-3">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.publishedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Published</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Published</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities that have been published and are publicly visible</p></TooltipContent>
@@ -286,7 +284,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.draftCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Draft</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Draft</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities still in draft form, not yet published</p></TooltipContent>
@@ -295,13 +293,13 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                 </div>
 
                 {/* Section 2: Validation Status */}
-                <div className="px-4 border-l border-border min-w-0">
-                  <div className="flex flex-wrap gap-x-3 gap-y-2">
+                <div className="px-3 border-l border-border">
+                  <div className="flex gap-3">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.pendingValidationCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Pending</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Pending</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities submitted and awaiting government review</p></TooltipContent>
@@ -310,7 +308,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.validatedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Validated</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Validated</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities reviewed and approved by the government</p></TooltipContent>
@@ -319,7 +317,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.rejectedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Rejected</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Rejected</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities that were reviewed and rejected by the government</p></TooltipContent>
@@ -328,13 +326,13 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                 </div>
 
                 {/* Section 3: Activity Status */}
-                <div className="pl-4 border-l border-border min-w-0">
-                  <div className="flex flex-wrap gap-x-3 gap-y-2">
+                <div className="pl-3 border-l border-border">
+                  <div className="flex gap-3">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.pipelineCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Pipeline</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Pipeline</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities in the pipeline/planning stage</p></TooltipContent>
@@ -343,7 +341,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{((stats?.implementationCount ?? 0) + (stats?.finalisationCount ?? 0)).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Active</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Active</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities in implementation or finalisation stage</p></TooltipContent>
@@ -352,7 +350,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.closedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-helper text-muted-foreground mt-1">Closed</p>
+                          <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Closed</p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent><p className="text-body">Activities that have been closed</p></TooltipContent>

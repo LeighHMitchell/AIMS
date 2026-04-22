@@ -813,11 +813,11 @@ export default function SDGProfilePage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-body font-medium">Country Rankings</CardTitle>
-                    <Button variant="ghost" size="sm" className="text-helper h-7" onClick={() => {
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Export CSV" aria-label="Export CSV" onClick={() => {
                       const exportData = geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value }))
                       exportChartToCSV(exportData, `SDG ${sdg.id} Countries`)
                     }}>
-                      <Download className="h-3 w-3 mr-1" />CSV
+                      <Download className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardHeader>

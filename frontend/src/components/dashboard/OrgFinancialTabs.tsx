@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { DollarSign, ListTodo, Wallet, Banknote } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { OrgTransactionsTable } from './OrgTransactionsTable';
@@ -52,8 +53,8 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
   const [activeTab, setActiveTab] = useState('activities');
   const [reportedBy, setReportedBy] = useState<ReportedByFilter>(financialFilter.defaultFilter);
 
-  // In portfolio context, hide the filter (always "me"). In overview, show on transactions + planned disbursements.
-  const showFilter = !isPortfolio && (activeTab === 'transactions' || activeTab === 'planned-disbursements');
+  // In portfolio context, show the filter (me vs my_org) for all tabs. In overview, show on transactions + planned disbursements.
+  const showFilter = isPortfolio || activeTab === 'transactions' || activeTab === 'planned-disbursements';
 
   // Build a filterConfig with the selected value baked in as default
   const activeFilterConfig: TableFilterConfig = {
@@ -74,7 +75,7 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-end justify-between gap-4 mb-4">
             <TabsList>
               <TabsTrigger value="activities" className="flex items-center gap-1.5">
                 <ListTodo className="h-3.5 w-3.5" />
@@ -95,21 +96,16 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
             </TabsList>
 
             {showFilter && (
-              <div className="flex items-center gap-2">
-                <span className="text-helper text-muted-foreground whitespace-nowrap">Reported by:</span>
+              <div className="space-y-1">
+                <Label htmlFor="org-financial-reported-by" className="text-helper text-muted-foreground">Reported by</Label>
                 <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => setReportedBy(val)}>
-                  <SelectTrigger className="w-[320px] h-8">
-                    <SelectValue>
-                      {financialFilter.filterLabels[reportedBy] || reportedBy}
-                    </SelectValue>
+                  <SelectTrigger id="org-financial-reported-by" className="w-[280px] h-8">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {financialFilter.allowedFilters.map((filter, index) => (
-                      <SelectItem key={filter} value={filter} className="pl-2 [&>span:first-child]:hidden">
-                        <span className="flex items-center gap-2">
-                          <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{index + 1}</span>
-                          {financialFilter.filterLabels[filter] || filter}
-                        </span>
+                    {financialFilter.allowedFilters.map((filter) => (
+                      <SelectItem key={filter} value={filter}>
+                        {financialFilter.filterLabels[filter] || filter}
                       </SelectItem>
                     ))}
                   </SelectContent>

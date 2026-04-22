@@ -90,18 +90,15 @@ export function ReportCard({
           onClick={handleDownload}
           disabled={isLoading}
           variant="outline"
-          className="w-full"
+          size="icon"
+          className="h-9 w-9 ml-auto"
+          title="Download CSV"
+          aria-label="Download CSV"
         >
           {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              Download CSV
-            </>
+            <Download className="h-4 w-4" />
           )}
         </Button>
       </CardContent>

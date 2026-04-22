@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,17 +31,15 @@ import {
 } from 'recharts';
 import {
   DollarSign,
+  CalendarClock,
+  BarChart3,
+  Wallet,
   Maximize2,
   HelpCircle,
   LineChart as LineChartIcon,
   Table as TableIcon,
-  BarChart3,
+  Briefcase,
 } from 'lucide-react';
-import {
-  TransactionsByTypeIcon,
-  PlannedDisbursementsIcon,
-  SectorsIcon,
-} from '@/lib/dashboard-icons';
 import {
   Table,
   TableBody,
@@ -238,6 +237,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
   const [budgetViewMode, setBudgetViewMode] = useState<'bar' | 'line' | 'table'>('bar');
   const [plannedViewMode, setPlannedViewMode] = useState<'bar' | 'line' | 'table'>('bar');
   const [transactionsViewMode, setTransactionsViewMode] = useState<'bar' | 'line' | 'table'>('line');
+  const [sectorsMetric, setSectorsMetric] = useState<'budget' | 'planned' | 'activities'>('budget');
+  const transactionChartRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -313,13 +314,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <Wallet className="h-4 w-4 text-muted-foreground" />
               Total Budgets
               <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
             </CardTitle>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</p>
-              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Year: p.year, 'USD Value': p.amount })), 'Total Budgets')} />
+              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Total Budgets')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -331,7 +332,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-helper py-1 h-auto">Year</TableHead>
-                          <TableHead className="text-helper py-1 h-auto text-right">USD Value</TableHead>
+                          <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -359,7 +360,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">USD Value</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -390,7 +391,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">USD Value</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -432,13 +433,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <PlannedDisbursementsIcon className="h-4 w-4 text-muted-foreground" />
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
               Planned Disbursements
               <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
             </CardTitle>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalPlanned)}</p>
-              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Year: p.year, 'USD Value': p.amount })), 'Planned Disbursements')} />
+              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Planned Disbursements')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -450,7 +451,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-helper py-1 h-auto">Year</TableHead>
-                          <TableHead className="text-helper py-1 h-auto text-right">USD Value</TableHead>
+                          <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -478,7 +479,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">USD Value</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -509,7 +510,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">USD Value</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -540,7 +541,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         </Card>
 
         {/* Card 3: Transactions by Type (USD Values) */}
-        <Card className="bg-white relative group overflow-visible">
+        <Card className="bg-white relative group">
           <Button
             variant="ghost"
             size="sm"
@@ -551,17 +552,17 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <TransactionsByTypeIcon className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
               Transactions by Type
               <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
             </CardTitle>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalTransactionValue)}</p>
-              <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} onExport={() => data?.transactionTrend && exportChartToCSV(data.transactionTrend.map(p => ({ Month: p.month, Count: p.count, 'USD Value': p.amount })), 'Transactions by Type')} />
+              <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} onExport={() => data?.transactionTrend && exportChartToCSV(data.transactionTrend.map(p => ({ Month: p.month, Count: p.count, 'Amount (USD)': p.amount })), 'Transactions by Type')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
-            <div className="h-32">
+            <div className="h-32" ref={transactionChartRef}>
               {data?.transactionTrend && data.transactionTrend.length > 0 ? (
                 (() => {
                   const uniqueTypes = getUniqueTransactionTypes(data.transactionTrend);
@@ -572,21 +573,29 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
 
                   const transactionTooltip = (
                     <Tooltip
-                      wrapperStyle={{ zIndex: 50 }}
-                      allowEscapeViewBox={{ x: true, y: true }}
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const dataPoint = data.transactionTrend.find(t => t.month === label);
-                          return (
+                      wrapperStyle={{ visibility: 'hidden' }}
+                      cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
+                      content={(props) => {
+                        const { active, payload, label, coordinate } = props as { active?: boolean; payload?: unknown[]; label?: string | number; coordinate?: { x: number; y: number } };
+                        if (!active || !payload || !payload.length || typeof document === 'undefined') return null;
+                        const dataPoint = data.transactionTrend.find(t => t.month === label);
+                        const chartEl = transactionChartRef.current;
+                        if (!chartEl) return null;
+                        const rect = chartEl.getBoundingClientRect();
+                        const cursorX = coordinate?.x ?? 0;
+                        const cursorY = coordinate?.y ?? 0;
+                        const topPx = rect.top + Math.max(0, cursorY - 8);
+                        const leftPx = rect.left + cursorX + 12;
+                        return createPortal(
+                          <div
+                            style={{ position: 'fixed', top: topPx, left: leftPx, zIndex: 9999, pointerEvents: 'none' }}
+                          >
                             <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                               <table className="border-collapse">
                                 <thead className="bg-surface-muted">
                                   <tr className="bg-surface-muted">
-                                    <th className="px-3 py-1.5 text-left font-medium text-foreground" colSpan={2}>Year {label}</th>
-                                  </tr>
-                                  <tr className="bg-surface-muted">
-                                    <th className="px-3 py-1 text-left font-medium text-muted-foreground">Type</th>
-                                    <th className="px-3 py-1 text-right font-medium text-muted-foreground">USD Value</th>
+                                    <th className="px-3 py-1.5 text-left font-medium text-foreground whitespace-nowrap">Year {label}</th>
+                                    <th className="px-3 py-1.5 text-right font-medium text-foreground whitespace-nowrap">{formatCurrency(dataPoint?.amount || 0)}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -594,28 +603,24 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                     .sort(([, a], [, b]) => b - a)
                                     .map(([type, amount]) => (
                                       <tr key={type} className="border-t border-border">
-                                        <td className="px-3 py-1">
+                                        <td className="px-3 py-1 whitespace-nowrap">
                                           <span className="flex items-center gap-1.5">
                                             <span
-                                              className="w-2 h-2 rounded-full inline-block"
+                                              className="w-2 h-2 rounded-full inline-block flex-shrink-0"
                                               style={{ backgroundColor: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}
                                             />
                                             {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                                           </span>
                                         </td>
-                                        <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
+                                        <td className="px-3 py-1 text-right font-medium whitespace-nowrap">{formatCurrency(amount)}</td>
                                       </tr>
                                     ))}
-                                  <tr className="border-t-2 border-input">
-                                    <td className="px-3 py-1.5 font-semibold">Total</td>
-                                    <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
-                                  </tr>
                                 </tbody>
                               </table>
                             </div>
-                          );
-                        }
-                        return null;
+                          </div>,
+                          document.body,
+                        );
                       }}
                     />
                   );
@@ -718,11 +723,28 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <SectorsIcon className="h-4 w-4 text-muted-foreground" />
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
               Sectors
-              <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Share is calculated from actual disbursements (USD)." />
+              <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Toggle to size bars by budget, planned disbursements, or number of activities. Hover for full financial details in USD." />
               <div className="flex gap-0.5 ml-auto">
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted" title="Export CSV" onClick={() => data?.sectorBreakdown && exportChartToCSV(data.sectorBreakdown.map(s => ({ Sector: s.name, Code: s.code, Activities: s.activityCount, 'Disbursed (USD)': s.totalDisbursements, 'Planned Disb. (USD)': s.totalPlannedDisbursements, 'Budget (USD)': s.totalBudget })), 'Sectors')}>
+                {(() => {
+                  const activeCls = "bg-muted text-foreground font-semibold";
+                  const inactiveCls = "text-muted-foreground hover:bg-muted";
+                  return (
+                    <>
+                      <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${sectorsMetric === 'budget' ? activeCls : inactiveCls}`} title="Size by budget" onClick={() => setSectorsMetric('budget')}>
+                        <DollarSign className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${sectorsMetric === 'planned' ? activeCls : inactiveCls}`} title="Size by planned disbursements" onClick={() => setSectorsMetric('planned')}>
+                        <CalendarClock className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${sectorsMetric === 'activities' ? activeCls : inactiveCls}`} title="Size by number of activities" onClick={() => setSectorsMetric('activities')}>
+                        <Briefcase className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  );
+                })()}
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted" title="Export CSV" onClick={() => data?.sectorBreakdown && exportChartToCSV(data.sectorBreakdown.map(s => ({ Sector: s.name, Code: s.code, Activities: s.activityCount, 'Budget (USD)': s.totalBudget, 'Planned Disbursements (USD)': s.totalPlannedDisbursements, 'Disbursed (USD)': s.totalDisbursements })), 'Sectors')}>
                   <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -732,25 +754,34 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               {data?.sectorBreakdown && data.sectorBreakdown.length > 0 ? (
                 (() => {
                   const sectors = data.sectorBreakdown;
-                  const totalDisbursed = sectors.reduce((sum, s) => sum + s.totalDisbursements, 0);
+                  const getMetric = (s: SectorBreakdown) => (
+                    sectorsMetric === 'budget' ? s.totalBudget
+                    : sectorsMetric === 'planned' ? s.totalPlannedDisbursements
+                    : s.activityCount
+                  );
+                  const totalMetric = sectors.reduce((sum, s) => sum + getMetric(s), 0);
+                  const totalPlanned = sectors.reduce((sum, s) => sum + s.totalPlannedDisbursements, 0);
 
                   return (
                     <TooltipProvider>
                       <div className="h-10 flex rounded-lg overflow-hidden bg-muted">
                         {sectors.map((sector, index) => {
-                          const pct = totalDisbursed > 0 ? (sector.totalDisbursements / totalDisbursed) * 100 : 0;
+                          const pct = totalMetric > 0 ? (getMetric(sector) / totalMetric) * 100 : 0;
                           if (pct === 0) return null;
+                          const sharePct = totalPlanned > 0 ? (sector.totalPlannedDisbursements / totalPlanned) * 100 : 0;
                           return (
                             <UITooltip key={sector.code}>
                               <TooltipTrigger asChild>
                                 <div className="h-full cursor-default transition-opacity hover:opacity-80" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="p-0 overflow-hidden max-w-[220px]">
+                              <TooltipContent side="top" className="p-0 overflow-hidden w-max max-w-[340px]">
                                 <div className="bg-white text-helper">
                                   <div className="px-3 py-1.5 bg-surface-muted font-semibold text-foreground border-b border-border flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
-                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground">Disbursed</span><span className="font-medium">{formatCurrency(sector.totalDisbursements)}</span></div>
-                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
-                                  <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-muted-foreground">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Budget</span><span className="font-medium">{formatCurrency(sector.totalBudget)}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Planned Disbursements</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Disbursed</span><span className="font-medium">{formatCurrency(sector.totalDisbursements)}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
+                                  <div className="px-3 py-1 pb-1.5 flex justify-between gap-4 border-t border-border"><span className="text-muted-foreground whitespace-nowrap">Share of Planned Disbursements</span><span className="font-medium">{sharePct.toFixed(1)}%</span></div>
                                 </div>
                               </TooltipContent>
                             </UITooltip>
@@ -781,7 +812,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               <TableHeader>
                 <TableRow>
                   <TableHead>Year</TableHead>
-                  <TableHead className="text-right">USD Value</TableHead>
+                  <TableHead className="text-right">Amount (USD)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -810,7 +841,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
-                                <th className="px-3 py-1.5 text-right font-medium">USD Value</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -842,7 +873,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
-                                <th className="px-3 py-1.5 text-right font-medium">USD Value</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -876,7 +907,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               <TableHeader>
                 <TableRow>
                   <TableHead>Year</TableHead>
-                  <TableHead className="text-right">USD Value</TableHead>
+                  <TableHead className="text-right">Amount (USD)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -905,7 +936,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
-                                <th className="px-3 py-1.5 text-right font-medium">USD Value</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -937,7 +968,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
-                                <th className="px-3 py-1.5 text-right font-medium">USD Value</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1142,7 +1173,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 {sector.name} ({sector.code})
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
-                                <span className="text-muted-foreground">Planned Disb. (USD)</span>
+                                <span className="text-muted-foreground">Planned Disbursements (USD)</span>
                                 <span className="font-medium">{formatCurrencyFull(sector.totalPlannedDisbursements)}</span>
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
