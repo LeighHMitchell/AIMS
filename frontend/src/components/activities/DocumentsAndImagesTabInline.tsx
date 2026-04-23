@@ -700,7 +700,7 @@ export function DocumentsAndImagesTabInline({
                       <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse" />
                     ) : (
                       <img
-                        src="/images/empty-message-bottle.png"
+                        src="/images/empty-message-bottle.webp"
                         alt=""
                         className="h-40 mx-auto mb-4 opacity-80"
                       />
@@ -1027,7 +1027,7 @@ export function DocumentsAndImagesTabInline({
             /* Empty State */
             <div className="text-center py-16 text-muted-foreground">
               <img
-                src="/images/empty-bookshelf.png"
+                src="/images/empty-bookshelf.webp"
                 alt="Empty library"
                 className="h-40 mx-auto mb-6 opacity-80"
               />

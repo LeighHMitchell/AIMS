@@ -289,10 +289,10 @@ export function DocumentsAndImagesTab({
           
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="All categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {categories.map(cat => (
                 <SelectItem key={cat.code} value={cat.code}>
                   {cat.code}
@@ -303,10 +303,10 @@ export function DocumentsAndImagesTab({
           
           <Select value={filterLanguage} onValueChange={setFilterLanguage}>
             <SelectTrigger className="w-24">
-              <SelectValue placeholder="Lang" />
+              <SelectValue placeholder="All languages" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All languages</SelectItem>
               {languages.map(lang => (
                 <SelectItem key={lang.code} value={lang.code}>
                   {lang.code}
@@ -320,7 +320,7 @@ export function DocumentsAndImagesTab({
               <SelectValue placeholder="Date Range" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
               <SelectItem value="week">Last Week</SelectItem>
               <SelectItem value="month">Last Month</SelectItem>
               <SelectItem value="3months">Last 3 Months</SelectItem>
@@ -356,7 +356,7 @@ export function DocumentsAndImagesTab({
           {documents.length === 0 ? (
             <>
               <img
-                src="/images/empty-bookshelf.png"
+                src="/images/empty-bookshelf.webp"
                 alt="No documents"
                 className="h-32 mx-auto mb-4 opacity-80"
               />
@@ -374,7 +374,7 @@ export function DocumentsAndImagesTab({
           ) : (
             <>
               <img
-                src="/images/empty-bookshelf.png"
+                src="/images/empty-bookshelf.webp"
                 alt="No documents match"
                 className="h-24 mx-auto mb-4 opacity-60"
               />

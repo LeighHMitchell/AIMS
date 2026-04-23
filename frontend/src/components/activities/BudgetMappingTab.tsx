@@ -666,7 +666,7 @@ export default function BudgetMappingTab({
           {countryBudgetItems.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <img
-                src="/images/empty-scaffolding.png"
+                src="/images/empty-scaffolding.webp"
                 alt="No budget mappings"
                 className="h-32 mx-auto mb-4 opacity-80"
               />

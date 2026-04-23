@@ -505,7 +505,7 @@ export function ConditionsTab({
           </CardHeader>
           <CardContent className="text-center pb-8">
             <img
-              src="/images/empty-canal-lock.png"
+              src="/images/empty-canal-lock.webp"
               alt="No conditions"
               className="h-32 mx-auto mb-4 opacity-80"
             />

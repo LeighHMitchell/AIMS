@@ -485,7 +485,7 @@ export function ActivityExcelImportTab({
             className="hidden"
           />
           <img
-            src="/images/empty-amphitheatre.png"
+            src="/images/empty-amphitheatre.webp"
             alt=""
             className="h-28 mx-auto mb-4 opacity-80"
           />

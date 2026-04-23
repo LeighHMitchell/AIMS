@@ -816,7 +816,7 @@ export function ResultsTab({
       {displayResults.length === 0 && !showDummyData ? (
         <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
           <img
-            src="/images/empty-haybales.png"
+            src="/images/empty-haybales.webp"
             alt="No results yet"
             className="h-32 mx-auto mb-4 opacity-80"
           />
