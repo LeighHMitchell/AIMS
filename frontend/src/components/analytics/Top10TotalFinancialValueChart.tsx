@@ -88,8 +88,7 @@ export function Top10TotalFinancialValueChart({
       // IATI org id rather than the internal UUID.
       onDataChange?.(donors.map((d: DonorData) => ({
         'Organisation ID': d.organisationId ?? '',
-        'Name': d.name,
-        'Acronym': d.acronym ?? '',
+        'Name': d.acronym ? `${d.name} (${d.acronym})` : d.name,
         'Total Value (USD)': d.totalValue,
       })) as any)
     } catch (error) {
