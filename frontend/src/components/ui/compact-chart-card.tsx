@@ -144,7 +144,10 @@ export function CompactChartCard({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-1">
-          <div style={{ height: compactHeight }} className="overflow-hidden">
+          <div
+            style={{ height: compactHeight }}
+            className="overflow-hidden [&_.text-body.text-muted-foreground.leading-relaxed]:hidden"
+          >
             {renderChart(true)}
           </div>
         </CardContent>

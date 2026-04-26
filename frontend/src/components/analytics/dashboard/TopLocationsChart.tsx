@@ -419,10 +419,6 @@ export function TopLocationsChart() {
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {renderControls(false)}
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed">
-            This chart shows the geographic distribution of funding across subnational locations. Use the metric selector to compare budgets, disbursements, or commitments across states and regions, and switch between chart and table views to explore the data.
-          </p>
         </CardContent>
       </Card>
 
@@ -440,6 +436,11 @@ export function TopLocationsChart() {
 
           <div className="mt-4">{renderContent(true)}</div>
           {renderControls(true)}
+
+          {/* Explanatory text */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart shows the geographic distribution of funding across subnational locations. Use the metric selector to compare budgets, disbursements, or commitments across states and regions, and switch between chart and table views to explore the data.
+          </p>
         </DialogContent>
       </Dialog>
     </>

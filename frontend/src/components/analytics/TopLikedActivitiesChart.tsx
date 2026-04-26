@@ -14,7 +14,7 @@ import {
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, ThumbsDown, ThumbsUp } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -36,6 +36,7 @@ const COLORS = {
 }
 
 type ViewMode = 'score' | 'pyramid'
+type SortMode = 'score' | 'downvotes'
 
 interface TopVotedActivitiesChartProps {
   refreshKey: number
@@ -62,15 +63,16 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('pyramid')
   const [orgType, setOrgType] = useState<string>('all')
+  const [sortMode, setSortMode] = useState<SortMode>('score')
 
   useEffect(() => {
     fetchData()
-  }, [refreshKey, orgType])
+  }, [refreshKey, orgType, sortMode])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams({ limit: '10' })
+      const params = new URLSearchParams({ limit: '10', sort: sortMode })
       if (orgType && orgType !== 'all') {
         params.append('orgType', orgType)
       }
@@ -272,6 +274,30 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
       {/* Filters and view toggle buttons - only show when expanded */}
       {!compact && (
         <div className="flex items-center justify-end gap-3 mb-4">
+          {/* Sort mode toggle: Most Voted vs Most Downvoted */}
+          <div className="flex">
+            <Button
+              variant={sortMode === 'score' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortMode('score')}
+              className="h-8 rounded-r-none"
+              title="Most voted (highest net score first)"
+            >
+              <ThumbsUp className="h-4 w-4 mr-1.5" />
+              Most Voted
+            </Button>
+            <Button
+              variant={sortMode === 'downvotes' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortMode('downvotes')}
+              className="h-8 rounded-l-none"
+              title="Most downvoted (highest downvote count first)"
+            >
+              <ThumbsDown className="h-4 w-4 mr-1.5" />
+              Most Downvoted
+            </Button>
+          </div>
+
           {/* Organization Type Filter */}
           <Select value={orgType} onValueChange={setOrgType}>
             <SelectTrigger className="w-auto min-w-[200px] h-9">
@@ -328,7 +354,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         {hasNoData ? (
           <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground min-h-[300px]">
             <TrendingUp className="h-8 w-8 text-slate-300 mb-2" />
-            <p className="text-body">No voted activities yet</p>
+            <p className="text-body">{sortMode === 'downvotes' ? 'No downvoted activities yet' : 'No voted activities yet'}</p>
             <p className="text-helper text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
           </div>
         ) : (

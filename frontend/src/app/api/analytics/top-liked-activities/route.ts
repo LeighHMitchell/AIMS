@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const orgType = searchParams.get('orgType') || 'all'
+    const sort = searchParams.get('sort') === 'downvotes' ? 'downvotes' : 'score'
 
     // If filtering by org type, first get the org IDs of that type
     let orgIdsOfType: string[] | null = null
@@ -34,20 +35,27 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch activities with votes, ordered by vote_score
-    // Only include activities that have received at least one vote
+    // Fetch activities with votes
+    // For 'score' sort: include any activity with at least one vote, order by net score desc
+    // For 'downvotes' sort: only include activities with at least one downvote, order by downvote count desc
     let query = supabase
       .from('activities')
       .select('id, iati_identifier, title_narrative, acronym, activity_status, reporting_org_id, vote_score, upvote_count, downvote_count')
-      .or('upvote_count.gt.0,downvote_count.gt.0')
+
+    if (sort === 'downvotes') {
+      query = query.gt('downvote_count', 0)
+    } else {
+      query = query.or('upvote_count.gt.0,downvote_count.gt.0')
+    }
 
     // Filter by org type if specified
     if (orgIdsOfType) {
       query = query.in('reporting_org_id', orgIdsOfType)
     }
 
+    const orderColumn = sort === 'downvotes' ? 'downvote_count' : 'vote_score'
     const { data: activities, error: activitiesError } = await query
-      .order('vote_score', { ascending: false })
+      .order(orderColumn, { ascending: false })
       .limit(limit)
 
     if (activitiesError) {

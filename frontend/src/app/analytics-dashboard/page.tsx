@@ -29,19 +29,11 @@ import {
   MapPin,
   Network,
   Info,
-  ChevronDown,
 } from 'lucide-react'
 import { format, startOfYear, endOfYear } from 'date-fns'
-import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { AnalyticsDashboardSkeleton } from '@/components/skeletons'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
@@ -109,8 +101,21 @@ import { SectorBarChart } from '@/components/analytics/sectors/SectorBarChart'
 import { SectorTimeSeriesPanel } from '@/components/analytics/sectors/SectorTimeSeriesPanel'
 import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
 
-// National Priorities Dashboard
-import { Dashboard as NationalPrioritiesDashboard } from '@/components/analytics/national-priorities-dashboard'
+// National Priorities charts (dissolved into per-tab placement)
+import { TopDonorAgenciesChart as NPTopDonorAgenciesChart } from '@/components/analytics/national-priorities-dashboard/TopDonorAgenciesChart'
+import { TopDonorGroupsChart as NPTopDonorGroupsChart } from '@/components/analytics/national-priorities-dashboard/TopDonorGroupsChart'
+import { TopSectorsChart as NPTopSectorsChart } from '@/components/analytics/national-priorities-dashboard/TopSectorsChart'
+import { ImplementingAgenciesChart as NPImplementingAgenciesChart } from '@/components/analytics/national-priorities-dashboard/ImplementingAgenciesChart'
+import { ExecutingAgenciesChart as NPExecutingAgenciesChart } from '@/components/analytics/national-priorities-dashboard/ExecutingAgenciesChart'
+import { AidPredictabilityChart as NPAidPredictabilityChart } from '@/components/analytics/national-priorities-dashboard/AidPredictabilityChart'
+import { SubnationalAllocationsChart as NPSubnationalAllocationsChart } from '@/components/analytics/national-priorities-dashboard/SubnationalAllocationsChart'
+import { TopCapitalSpendChart as NPTopCapitalSpendChart } from '@/components/analytics/national-priorities-dashboard/TopCapitalSpendChart'
+import { CapitalSpendOverTimeChart as NPCapitalSpendOverTimeChart } from '@/components/analytics/national-priorities-dashboard/CapitalSpendOverTimeChart'
+import { FundingByModalityChart } from '@/components/analytics/dashboard/FundingByModalityChart'
+import { RecipientGovBodiesChart } from '@/components/analytics/dashboard/RecipientGovBodiesChart'
+import { ProgramFragmentationChart } from '@/components/analytics/dashboard/ProgramFragmentationChart'
+import { SectorFragmentationChart } from '@/components/analytics/dashboard/SectorFragmentationChart'
+import { LocationFragmentationChart } from '@/components/analytics/dashboard/LocationFragmentationChart'
 
 // Planned and Actual Disbursement by Sector (new chart)
 import { PlannedActualDisbursementBySector } from '@/components/analytics/PlannedActualDisbursementBySector'
@@ -127,9 +132,6 @@ import { PortfolioSpendTrajectoryChart } from '@/components/charts/PortfolioSpen
 // Aid Ecosystem Charts
 import { OrganizationalPositioningMap } from '@/components/analytics/OrganizationalPositioningMap'
 import { AidEcosystemSolarSystem } from '@/components/analytics/AidEcosystemSolarSystem'
-
-// Intervention Tree Map
-import { InterventionTreeMap } from '@/components/analytics/InterventionTreeMap'
 
 // Financial Totals Bar Chart
 import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
@@ -167,8 +169,19 @@ export default function AnalyticsDashboardPage() {
   const router = useRouter()
   const pathname = usePathname()
   
-  // Get initial tab from URL or default to 'portfolio-summary'
-  const tabFromUrl = searchParams.get('tab') || 'portfolio-summary'
+  // Get initial tab from URL or default to 'overview'
+  // Legacy tab values from the old structure are migrated to the new structure.
+  const LEGACY_TAB_MAP: Record<string, string> = {
+    'portfolio-summary': 'overview',
+    'sector-thematic': 'sectors-sdgs',
+    'partner-network': 'networks-fragmentation',
+    'aid-on-budget': 'government-view',
+    'humanitarian': 'trends-performance',
+    'aid-ecosystem': 'networks-fragmentation',
+    'tree-map': 'overview',
+  }
+  const rawTab = searchParams.get('tab') || 'overview'
+  const tabFromUrl = LEGACY_TAB_MAP[rawTab] || rawTab
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -202,8 +215,10 @@ export default function AnalyticsDashboardPage() {
   // Sync activeTab with URL on mount and when URL changes
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && tabParam !== activeTab) {
-      setActiveTab(tabParam)
+    if (!tabParam) return
+    const mapped = LEGACY_TAB_MAP[tabParam] || tabParam
+    if (mapped !== activeTab) {
+      setActiveTab(mapped)
     }
   }, [searchParams])
 
@@ -659,7 +674,6 @@ export default function AnalyticsDashboardPage() {
         <div className="mx-auto p-6">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
-            <BarChart3 className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
               <p className="text-muted-foreground mt-1">Comprehensive financial and operational analytics across the aid portfolio</p>
@@ -676,74 +690,33 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                {(() => {
-                  const primaryTabs = [
-                    { value: 'portfolio-summary', label: 'Portfolio Summary' },
-                    { value: 'sector-thematic', label: 'Sector & Thematic' },
-                    { value: 'partner-network', label: 'Partner Network' },
+                <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                  {[
+                    { value: 'overview', label: 'Overview' },
+                    { value: 'trends-performance', label: 'Trends & Performance' },
+                    { value: 'sectors-sdgs', label: 'Sectors & SDGs' },
+                    { value: 'government-view', label: 'Government View' },
+                    { value: 'networks-fragmentation', label: 'Networks & Fragmentation' },
                     { value: 'operations', label: 'Operations' },
-                  ];
-                  const overflowTabs = [
-                    { value: 'aid-on-budget', label: 'Aid on Budget' },
-                    { value: 'humanitarian', label: 'Humanitarian' },
-                    { value: 'aid-ecosystem', label: 'Aid Ecosystem' },
-                    { value: 'tree-map', label: 'Tree Map' },
-                  ];
-                  const activeOverflow = overflowTabs.find((t) => t.value === activeTab);
-                  return (
-                    <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                      {primaryTabs.map((t) => (
-                        <TabsTrigger
-                          key={t.value}
-                          value={t.value}
-                          className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                        >
-                          {t.label}
-                        </TabsTrigger>
-                      ))}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                              activeOverflow
-                                ? "bg-muted text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                          >
-                            {activeOverflow ? activeOverflow.label : 'More views'}
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="min-w-[10rem]">
-                          {overflowTabs.map((t) => (
-                            <DropdownMenuItem
-                              key={t.value}
-                              onSelect={() => handleTabChange(t.value)}
-                              className={cn(
-                                activeTab === t.value && 'bg-muted font-medium',
-                              )}
-                            >
-                              {t.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TabsList>
-                  );
-                })()}
+                  ].map((t) => (
+                    <TabsTrigger
+                      key={t.value}
+                      value={t.value}
+                      className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                    >
+                      {t.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
 
-                {/* ==================== PORTFOLIO SUMMARY TAB ==================== */}
-                {/* Contains: Main overview charts, Dashboard, Top 10 rankings */}
-                <TabsContent value="portfolio-summary">
+                {/* ==================== OVERVIEW TAB ==================== */}
+                {/* Audience: general public, journalists. Answers: how much aid? from whom? where? */}
+                <TabsContent value="overview">
                   <div className="space-y-8">
-                    {/* Main Overview Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Overview</h2>
-                      <p className="text-muted-foreground mb-4">Key financial metrics and portfolio performance at a glance</p>
-                      
-                      {/* Full-width Financial Totals Chart */}
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Headline Figures</h2>
+                      <p className="text-muted-foreground mb-4">How much aid is coming in, who's funding it, and where it's going</p>
+
                       <div className="mb-6">
                         <CompactChartCard
                           title="Financial Totals"
@@ -761,38 +734,77 @@ export default function AnalyticsDashboardPage() {
 
                       <ChartGrid>
                         <CompactChartCard
-                          title="Financial Summary by Sector"
-                          shortDescription="Budgets, commitments, and disbursements by sector"
-                          fullDescription="Compare budgets, planned disbursements, commitments, and actual disbursements across sectors"
+                          title="All Donors Financial Overview"
+                          shortDescription="All donors ranked by budgets, planned & actual disbursements"
+                          fullDescription="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements"
                         >
-                          <PlannedActualDisbursementBySector
+                          <AllDonorsHorizontalBarChart
                             dateRange={fiveYearRange}
                             refreshKey={refreshKey}
+                            onDataChange={setDonorsData}
                           />
                         </CompactChartCard>
 
                         <CompactChartCard
-                          title="Projects & Organisations by Sector"
-                          shortDescription="Count of projects and organisations across all sectors"
-                          fullDescription="Number of projects and participating organisations by sector"
+                          title="Top Voted Activities"
+                          shortDescription="Activities ranked by vote score (upvotes - downvotes)"
+                          fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
                         >
-                          <ProjectOrgCountsBySector
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                          />
+                          <TopLikedActivitiesChart refreshKey={refreshKey} />
                         </CompactChartCard>
+                      </ChartGrid>
+                    </div>
 
-                        <CompactChartCard
-                          title="Sector Financial Trends"
-                          shortDescription="Track sector disbursement patterns and trends over time"
-                          fullDescription="Time series analysis of sector disbursements over time"
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Top Partners & Sectors</h2>
+                      <p className="text-muted-foreground mb-4">Who is funding the most, and where the money is going</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title="Top 10 Development Partners by Total Disbursements (USD)"
+                          description="Sum of all commitments and disbursements made by each donor (funding organisation)"
+                          exportData={top10TotalFinancialData}
                         >
-                          <SectorDisbursementOverTime
-                            dateRange={fiveYearRange}
+                          <Top10TotalFinancialValueChart
+                            dateRange={dateRange}
                             refreshKey={refreshKey}
+                            onDataChange={setTop10TotalFinancialData}
                           />
-                        </CompactChartCard>
+                        </ExpandableCard>
 
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title="Aid Distribution by Sector"
+                          description="Breakdown of funding across sectors"
+                          exportData={sectorPieData}
+                        >
+                          <SectorPieChart
+                            dateRange={dateRange}
+                            refreshKey={refreshKey}
+                            onDataChange={setSectorPieData}
+                          />
+                        </ExpandableCard>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Flow Map</h2>
+                      <p className="text-muted-foreground mb-4">Interactive visualization of aid flows between donors and recipients</p>
+                      <div className="w-full">
+                        <AidFlowMap height={500} />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ==================== TRENDS & PERFORMANCE TAB ==================== */}
+                {/* Audience: managers, analysts. Answers: how is it changing? are donors delivering? */}
+                <TabsContent value="trends-performance">
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Trends Over Time</h2>
+                      <p className="text-muted-foreground mb-4">How budgets, commitments, and disbursements are evolving</p>
+                      <ChartGrid>
                         <CompactChartCard
                           title="Cumulative Financial Overview"
                           shortDescription="Total commitments, disbursements & budgets accumulated over time"
@@ -809,130 +821,55 @@ export default function AnalyticsDashboardPage() {
                           shortDescription="Track actual spend against an even-spend budget baseline"
                           fullDescription="Compare actual cumulative disbursements against an even-spend budget baseline across all activities with reported budgets"
                         >
-                          <PortfolioSpendTrajectoryChart
-                            refreshKey={refreshKey}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="Financial Flows by Finance Type"
-                          shortDescription="Distribution of grants, loans & other finance types by flow category"
-                          fullDescription="Visualize financial flows by finance types across different flow types over time"
-                        >
-                          <FinanceTypeFlowChart
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                            onDataChange={setFinanceTypeFlowData}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="All Donors Financial Overview"
-                          shortDescription="All donors ranked by budgets, planned & actual disbursements"
-                          fullDescription="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements"
-                        >
-                          <AllDonorsHorizontalBarChart
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                            onDataChange={setDonorsData}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="Funding Source Breakdown"
-                          shortDescription="Sankey diagram showing provider-to-receiver disbursement flows"
-                          fullDescription="Distribution of funding by donor/provider across all activities"
-                        >
-                          <AllActivitiesFundingSourceBreakdown
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="Top Voted Activities"
-                          shortDescription="Activities ranked by vote score (upvotes - downvotes)"
-                          fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
-                        >
-                          <TopLikedActivitiesChart
-                            refreshKey={refreshKey}
-                          />
+                          <PortfolioSpendTrajectoryChart refreshKey={refreshKey} />
                         </CompactChartCard>
                       </ChartGrid>
                     </div>
 
-                    {/* Top 10 Rankings Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Top 10 Rankings</h2>
-                      <p className="text-muted-foreground mb-4">Leading organizations by various performance metrics</p>
-                      <ChartGrid>
-                        <CompactChartCard
-                          title="Top 10 by Active Projects"
-                          shortDescription="Organizations ranked by number of active activities as partner"
-                          fullDescription="Count of activities where the organisation is listed as a funding or implementing partner"
-                          exportData={top10ActiveProjectsData}
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Performance & Predictability</h2>
+                      <p className="text-muted-foreground mb-4">Are donors delivering what they promised? How predictable is aid?</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <ExpandableCard
+                          className="bg-card border-border lg:col-span-2"
+                          title="Commitments vs Disbursements Over Time"
+                          description="Track funding commitments and actual disbursements by period"
+                          exportData={commitmentsData}
                         >
-                          <Top10ActiveProjectsChart
+                          <CommitmentsChart
+                            dateRange={dateRange}
                             refreshKey={refreshKey}
-                            onDataChange={setTop10ActiveProjectsData}
+                            onDataChange={setCommitmentsData}
                           />
-                        </CompactChartCard>
+                        </ExpandableCard>
 
-                        <CompactChartCard
-                          title="Top 10 by Government-Validated"
-                          shortDescription="Partners with highest value of government-validated activities"
-                          fullDescription="Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government."
-                          exportData={top10GovernmentValidatedData}
-                        >
-                          <Top10GovernmentValidatedChart
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                            onDataChange={setTop10GovernmentValidatedData}
-                          />
-                        </CompactChartCard>
+                        <PlannedVsActualDisbursements
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                        />
 
-                        <CompactChartCard
-                          title="Top 10 by Total Disbursements"
-                          shortDescription="Highest-disbursing partners across all sectors combined"
-                          fullDescription="Top 10 partners across all sectors. Used for sectoral coordination groups or working group dashboards."
-                          exportData={top10SectorFocusedData}
+                        <CumulativeSpendingOverTime
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                        />
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title="Budget vs Actual Spending"
+                          description="Compare planned budgets with actual expenditures"
+                          exportData={budgetVsActualData}
                         >
-                          <Top10SectorFocusedChart
-                            dateRange={fiveYearRange}
+                          <BudgetVsActualChart
+                            dateRange={dateRange}
                             refreshKey={refreshKey}
-                            onDataChange={setTop10SectorFocusedData}
+                            onDataChange={setBudgetVsActualData}
                           />
-                        </CompactChartCard>
-                      </ChartGrid>
+                        </ExpandableCard>
+
+                        <NPAidPredictabilityChart />
+                      </div>
                     </div>
 
-                    {/* National Priorities Dashboard Section */}
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">National Priorities Dashboard</h2>
-                      <p className="text-muted-foreground mb-4">Comprehensive view of alignment with national development priorities</p>
-                      <NationalPrioritiesDashboard />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* ==================== AID ON BUDGET TAB ==================== */}
-                {/* Contains: Aid on Budget analysis and reporting */}
-                <TabsContent value="aid-on-budget">
-                  <div className="space-y-8">
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid on Budget</h2>
-                      <p className="text-muted-foreground mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
-                      <EnhancedAidOnBudgetChart
-                        refreshKey={refreshKey}
-                      />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* ==================== HUMANITARIAN TAB ==================== */}
-                {/* Contains: Humanitarian aid analysis */}
-                <TabsContent value="humanitarian">
-                  <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Humanitarian Aid</h2>
                       <p className="text-muted-foreground mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
@@ -965,16 +902,14 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </TabsContent>
 
-                {/* ==================== SECTOR & THEMATIC TAB ==================== */}
-                {/* Contains: Sectors, SDGs, Policy Markers */}
-                <TabsContent value="sector-thematic">
+                {/* ==================== SECTORS & SDGs TAB ==================== */}
+                {/* Audience: sector specialists, line ministries. Answers: what's funded in my sector? */}
+                <TabsContent value="sectors-sdgs">
                   <div className="space-y-8">
-                    {/* Sectors Section */}
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Sector Analysis</h2>
                       <p className="text-muted-foreground mb-4">Financial flows and coordination across development sectors</p>
 
-                      {/* Sector Filters */}
                       <SectorFilters
                         filters={sectorAnalyticsFilters}
                         onFiltersChange={setSectorAnalyticsFilters}
@@ -1014,15 +949,65 @@ export default function AnalyticsDashboardPage() {
                             />
                           )}
                         </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Financial Summary by Sector"
+                          shortDescription="Budgets, commitments, and disbursements by sector"
+                          fullDescription="Compare budgets, planned disbursements, commitments, and actual disbursements across sectors"
+                        >
+                          <PlannedActualDisbursementBySector
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Sector Financial Trends"
+                          shortDescription="Track sector disbursement patterns and trends over time"
+                          fullDescription="Time series analysis of sector disbursements over time"
+                        >
+                          <SectorDisbursementOverTime
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Projects & Organisations by Sector"
+                          shortDescription="Count of projects and organisations across all sectors"
+                          fullDescription="Number of projects and participating organisations by sector"
+                        >
+                          <ProjectOrgCountsBySector
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
                       </ChartGrid>
 
-                      {/* Sector Time Series Panel - full width */}
                       <div className="mt-6">
                         <SectorTimeSeriesPanel />
                       </div>
+
+                      <div className="mt-6">
+                        <DashboardDisbursementsBySection
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                        />
+                      </div>
                     </div>
 
-                    {/* SDGs Section */}
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Capital Spend & Top Sectors</h2>
+                      <p className="text-muted-foreground mb-4">Where capital investment is concentrated</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <NPTopSectorsChart />
+                        <NPTopCapitalSpendChart />
+                        <div className="lg:col-span-2">
+                          <NPCapitalSpendOverTimeChart />
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Sustainable Development Goals</h2>
                       <p className="text-muted-foreground mb-4">Activity alignment with the UN Sustainable Development Goals</p>
@@ -1033,7 +1018,6 @@ export default function AnalyticsDashboardPage() {
                       />
                     </div>
 
-                    {/* Policy Markers Section */}
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
                       <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
@@ -1042,68 +1026,290 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </TabsContent>
 
-                {/* ==================== PARTNER NETWORK TAB ==================== */}
-                {/* Contains: Network, Participating Orgs */}
-                <TabsContent value="partner-network">
+                {/* ==================== GOVERNMENT VIEW TAB ==================== */}
+                {/* Audience: MoF, planning, government users. Answers: how much aid is on/off budget? where in govt? */}
+                <TabsContent value="government-view">
                   <div className="space-y-8">
-                    {/* Network Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Flow Network</h2>
-                      <p className="text-muted-foreground mb-4">Interactive visualization of aid flows between donors and recipients</p>
-                      <div className="w-full">
-                        <AidFlowMap height={500} />
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid on Budget</h2>
+                      <p className="text-muted-foreground mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
+                      <EnhancedAidOnBudgetChart refreshKey={refreshKey} />
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Where Aid Lands in Government</h2>
+                      <p className="text-muted-foreground mb-4">Recipient bodies, executing/implementing agencies, and subnational allocations</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <RecipientGovBodiesChart refreshKey={refreshKey} />
+                        <NPSubnationalAllocationsChart />
+                        <NPExecutingAgenciesChart />
+                        <NPImplementingAgenciesChart />
                       </div>
                     </div>
 
-                    {/* Participating Organizations Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Participating Organizations Flow</h2>
-                      <p className="text-muted-foreground mb-4">
-                        4-tier Sankey visualization showing the flow of organizations across IATI participating-org roles:
-                        Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
-                      </p>
-                      <ParticipatingOrgsSankey refreshKey={refreshKey} />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* ==================== AID ECOSYSTEM TAB ==================== */}
-                {/* Contains: Organizational Positioning Map, Aid Ecosystem Solar System */}
-                <TabsContent value="aid-ecosystem">
-                  <div className="space-y-8">
-                    {/* Aid Ecosystem Charts - Two Column Layout */}
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Ecosystem Analysis</h2>
-                      <p className="text-muted-foreground mb-4">Visualizing organizational roles and financial gravity in the aid system</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Modality, Flows & Funding Sources</h2>
+                      <p className="text-muted-foreground mb-4">How aid is delivered — by modality, finance type, and flow type</p>
                       <ChartGrid>
                         <CompactChartCard
-                          title="Organizational Positioning Map"
-                          shortDescription="Organizations positioned by humanitarian/development focus and funder/implementer role"
-                          compactHeight={350}
+                          title="Financial Flows by Finance Type"
+                          shortDescription="Distribution of grants, loans & other finance types by flow category"
+                          fullDescription="Visualize financial flows by finance types across different flow types over time"
                         >
-                          <OrganizationalPositioningMap
+                          <FinanceTypeFlowChart
                             dateRange={fiveYearRange}
                             refreshKey={refreshKey}
+                            onDataChange={setFinanceTypeFlowData}
                           />
                         </CompactChartCard>
 
                         <CompactChartCard
-                          title="Aid Ecosystem Solar System"
-                          shortDescription="Organizations ranked by financial gravity and arranged in concentric rings"
-                          compactHeight={350}
+                          title="Funding Source Breakdown"
+                          shortDescription="Sankey diagram showing provider-to-receiver disbursement flows"
+                          fullDescription="Distribution of funding by donor/provider across all activities"
                         >
-                          <AidEcosystemSolarSystem
+                          <AllActivitiesFundingSourceBreakdown
                             dateRange={fiveYearRange}
                             refreshKey={refreshKey}
                           />
                         </CompactChartCard>
                       </ChartGrid>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+                        <FundingByModalityChart />
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title="ODA by Flow Type"
+                          description="Composition of Official Development Assistance (ODA) flows by type of financial flow"
+                          exportData={odaByFlowTypeData}
+                        >
+                          <ODAByFlowTypeChart
+                            dateRange={dateRange}
+                            refreshKey={refreshKey}
+                            onDataChange={setOdaByFlowTypeData}
+                          />
+                        </ExpandableCard>
+
+                        <FundingSourceBreakdown
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Budget vs Spending — Detailed Cuts</h2>
+                      <p className="text-muted-foreground mb-4">Compare budget allocations with actual spending across categories</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <ExpandableCard
+                          className="bg-card border-border lg:col-span-2"
+                          title={
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="h-5 w-5" />
+                              <span>Budget vs. Spending Over Time</span>
+                            </div>
+                          }
+                          description="Compare total budget allocations with actual spending (disbursements + expenditures) over time"
+                          exportData={budgetVsSpendingData}
+                        >
+                          <BudgetVsSpendingChart
+                            filters={filters}
+                            onDataChange={setBudgetVsSpendingData}
+                          />
+                        </ExpandableCard>
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title={
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-5 w-5" />
+                              <span>Budget vs. Spending by Reporting Organization</span>
+                            </div>
+                          }
+                          description="Compare budget and spending across different reporting organizations"
+                          exportData={reportingOrgData}
+                        >
+                          <ReportingOrgChart
+                            filters={filters}
+                            onDataChange={setReportingOrgData}
+                          />
+                        </ExpandableCard>
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title={
+                            <div className="flex items-center gap-2">
+                              <Info className="h-5 w-5" />
+                              <span>Budget vs. Spending by Aid Type</span>
+                            </div>
+                          }
+                          description="Analyze budget and spending patterns across different aid types"
+                          exportData={aidTypeData}
+                        >
+                          <AidTypeChart
+                            filters={filters}
+                            onDataChange={setAidTypeData}
+                          />
+                        </ExpandableCard>
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title={
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="h-5 w-5" />
+                              <span>Budget vs. Spending by Finance Type</span>
+                            </div>
+                          }
+                          description="Compare budget and spending across different finance types"
+                          exportData={financeTypeData}
+                        >
+                          <FinanceTypeChart
+                            filters={filters}
+                            onDataChange={setFinanceTypeData}
+                          />
+                        </ExpandableCard>
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title={
+                            <div className="flex items-center gap-2">
+                              <Users className="h-5 w-5" />
+                              <span>Budget vs. Spending by Organization Type</span>
+                            </div>
+                          }
+                          description="Analyze budget and spending patterns by organization type (Government, NGO, Multilateral, etc.)"
+                          exportData={orgTypeData}
+                        >
+                          <OrgTypeChart
+                            filters={filters}
+                            onDataChange={setOrgTypeData}
+                          />
+                        </ExpandableCard>
+
+                        <ExpandableCard
+                          className="bg-card border-border"
+                          title={
+                            <div className="flex items-center gap-2">
+                              <Target className="h-5 w-5" />
+                              <span>Sector Analysis</span>
+                            </div>
+                          }
+                          description="Analyze activity distribution across different sectors with percentage allocations"
+                          exportData={sectorAnalysisData}
+                        >
+                          <SectorAnalysisChart
+                            filters={filters}
+                            onDataChange={setSectorAnalysisData}
+                          />
+                        </ExpandableCard>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
 
-                {/* ==================== OPERATIONS TAB ==================== */}
-                {/* Contains: Activity Status, Calendar, Under Development */}
+                {/* ==================== NETWORKS & FRAGMENTATION TAB ==================== */}
+                {/* Audience: technical / research. Answers: how concentrated or fragmented is aid? who works with whom? */}
+                <TabsContent value="networks-fragmentation">
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Networks</h2>
+                      <p className="text-muted-foreground mb-4">Relationships and roles between organizations across the aid system</p>
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-2">Participating Organizations Flow</h3>
+                          <p className="text-muted-foreground mb-4">
+                            4-tier Sankey visualization showing the flow of organizations across IATI participating-org roles:
+                            Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
+                          </p>
+                          <ParticipatingOrgsSankey refreshKey={refreshKey} />
+                        </div>
+
+                        <ChartGrid>
+                          <CompactChartCard
+                            title="Organizational Positioning Map"
+                            shortDescription="Organizations positioned by humanitarian/development focus and funder/implementer role"
+                            compactHeight={350}
+                          >
+                            <OrganizationalPositioningMap
+                              dateRange={fiveYearRange}
+                              refreshKey={refreshKey}
+                            />
+                          </CompactChartCard>
+
+                          <CompactChartCard
+                            title="Aid Ecosystem Solar System"
+                            shortDescription="Organizations ranked by financial gravity and arranged in concentric rings"
+                            compactHeight={350}
+                          >
+                            <AidEcosystemSolarSystem
+                              dateRange={fiveYearRange}
+                              refreshKey={refreshKey}
+                            />
+                          </CompactChartCard>
+                        </ChartGrid>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Top Donor Agencies & Groups</h2>
+                      <p className="text-muted-foreground mb-4">Technical donor breakdowns by agency and group</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <NPTopDonorAgenciesChart />
+                        <NPTopDonorGroupsChart />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Fragmentation Analysis</h2>
+                      <p className="text-muted-foreground mb-4">How concentrated or fragmented donor portfolios are across programs, sectors, and locations</p>
+                      <div className="space-y-6">
+                        <Card className="border-border">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-foreground uppercase tracking-wide">
+                              Program Fragmentation
+                            </CardTitle>
+                            <CardDescription>
+                              How donors distribute aid across National Priorities. Each cell shows the percentage of that category's total funding contributed by each donor.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <ProgramFragmentationChart />
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border-border">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-foreground uppercase tracking-wide">
+                              Sector Fragmentation
+                            </CardTitle>
+                            <CardDescription>
+                              How donors distribute aid across DAC Sectors. Each cell shows the percentage of that sector's total funding contributed by each donor.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <SectorFragmentationChart />
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border-border">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold text-foreground uppercase tracking-wide">
+                              Location Fragmentation
+                            </CardTitle>
+                            <CardDescription>
+                              How donors distribute aid across geographic regions. Each cell shows the percentage of that location's total funding contributed by each donor.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <LocationFragmentationChart />
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="operations">
                   <div className="space-y-8">
                     {/* Activity Status Section */}
@@ -1382,24 +1588,6 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </TabsContent>
 
-                {/* ==================== TREE MAP TAB ==================== */}
-                {/* Contains: Intervention Tree Map - Violence Types > Approaches > Interventions */}
-                <TabsContent value="tree-map">
-                  <div className="space-y-8">
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Intervention Tree Map</h2>
-                      <p className="text-muted-foreground mb-4">
-                        Explore interventions by violence type, approach, and specific programs.
-                        Click on categories to drill down into the hierarchy.
-                      </p>
-                      <Card className="bg-card border-border">
-                        <CardContent className="p-6">
-                          <InterventionTreeMap />
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                </TabsContent>
               </Tabs>
         </div>
       </div>

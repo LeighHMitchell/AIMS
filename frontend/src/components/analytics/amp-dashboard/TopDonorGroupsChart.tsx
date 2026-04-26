@@ -540,10 +540,6 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {/* Explanatory footer */}
-          <p className="text-body text-muted-foreground leading-relaxed mt-2">
-            This chart ranks donor groups by their contributions across different metrics. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and choose bar, pie, or table views for different perspectives.
-          </p>
           {renderResetOthers()}
           {renderControls(false)}
         </CardContent>
@@ -576,6 +572,11 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
 
           {/* Controls */}
           {renderControls(true)}
+
+          {/* Explanatory footer */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart ranks donor groups by their contributions across different metrics. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and choose bar, pie, or table views for different perspectives.
+          </p>
         </DialogContent>
       </Dialog>
     </>

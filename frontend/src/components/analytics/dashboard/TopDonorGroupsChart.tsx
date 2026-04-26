@@ -195,11 +195,6 @@ export function TopDonorGroupsChart({
         </div>
       </div>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart ranks the top donor groups by total funding value. Donors are grouped by their country of origin or multilateral institution to show consolidated contributions. Hover over bars for detailed value breakdowns.
-      </p>
-
       {/* Expanded Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-3xl w-[80vw] max-h-[85vh] overflow-y-auto">
@@ -218,6 +213,11 @@ export function TopDonorGroupsChart({
             </div>
             {renderLegend()}
           </div>
+
+          {/* Explanatory text */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart ranks the top donor groups by total funding value. Donors are grouped by their country of origin or multilateral institution to show consolidated contributions. Hover over bars for detailed value breakdowns.
+          </p>
         </DialogContent>
       </Dialog>
     </>

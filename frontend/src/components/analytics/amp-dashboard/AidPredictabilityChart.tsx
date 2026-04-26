@@ -476,10 +476,6 @@ export function AidPredictabilityChart() {
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {/* Explanatory footer */}
-          <p className="text-body text-muted-foreground leading-relaxed mt-2">
-            Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period. Use the chart type toggles to switch between bar, line, and area visualizations, or expand to view detailed data in table format.
-          </p>
           {renderControls(false)}
         </CardContent>
       </Card>
@@ -501,6 +497,11 @@ export function AidPredictabilityChart() {
 
           {/* Controls */}
           <div className="flex-shrink-0">{renderControls(true)}</div>
+
+          {/* Explanatory footer */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period. Use the chart type toggles to switch between bar, line, and area visualizations, or expand to view detailed data in table format.
+          </p>
         </DialogContent>
       </Dialog>
     </>
