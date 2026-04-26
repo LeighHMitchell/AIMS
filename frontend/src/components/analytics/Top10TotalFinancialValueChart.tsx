@@ -112,9 +112,43 @@ export function Top10TotalFinancialValueChart({
     }
   }
 
-  // Shared monochromatic slate ramp — keeps this chart visually consistent
-  // with the sector pie and other ranked charts on the dashboard.
-  const barColors = CHART_RANKED_PALETTE
+  // Single bar colour — the bar length already encodes "more vs less", so
+  // a varying ramp would just add noise. Use the darkest slate from the
+  // shared ranked palette; "Others" stays a lighter shade for contrast.
+  const BAR_COLOR = CHART_RANKED_PALETTE[0]
+
+  // Tooltip styled to match the Financial Totals chart (light card, header
+  // strip, table body) so hover UI is consistent across the dashboard.
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || !payload.length) return null
+    const item = payload[0].payload
+    const fullName = item.acronym ? `${item.name} (${item.acronym})` : item.name
+    return (
+      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+        <div className="bg-surface-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground">{fullName}</p>
+        </div>
+        <div className="p-3">
+          <table className="w-full text-body">
+            <tbody>
+              <tr>
+                <td className="py-1 pr-3 flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: item.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR }}
+                  />
+                  <span className="text-foreground">Total Disbursements</span>
+                </td>
+                <td className="py-1 text-right font-semibold text-foreground">
+                  {formatCurrency(item.totalValue)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -161,21 +195,14 @@ export function Top10TotalFinancialValueChart({
             width={90}
           />
           <Tooltip
-            formatter={(value: number) => formatCurrency(value)}
-            contentStyle={{
-              backgroundColor: '#1e293b',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
-            labelStyle={{ color: '#94a3b8' }}
+            content={<CustomTooltip />}
             cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
           />
           <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]}
+                fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
               />
             ))}
           </Bar>

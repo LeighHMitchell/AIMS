@@ -761,7 +761,7 @@ export default function AnalyticsDashboardPage() {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <ExpandableCard
                           className="bg-card border-border"
-                          title="Top 10 Development Partners by Total Disbursements (USD)"
+                          title="Top 10 Development Partners by Total Disbursements"
                           description="Sum of all commitments and disbursements made by each donor (funding organisation)"
                           exportData={top10TotalFinancialData}
                         >
