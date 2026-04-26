@@ -141,6 +141,8 @@ interface TopCapitalSpendChartProps {
   refreshKey?: number;
 }
 
+type OpenFilter = 'metric' | 'timeRange' | null;
+
 export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartProps) {
   const [data, setData] = useState<ActivityCapitalSpend[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,6 +151,10 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
   const [grandTotal, setGrandTotal] = useState(0);
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev));
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -403,7 +409,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
 
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-      <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
+      <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)} open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
         <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
@@ -457,7 +463,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
 
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
-      <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
+      <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)} open={openFilter === 'timeRange'} onOpenChange={filterOpenHandler('timeRange')}>
         <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>

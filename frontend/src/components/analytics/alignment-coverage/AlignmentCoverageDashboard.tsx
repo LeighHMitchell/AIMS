@@ -185,6 +185,8 @@ function CoverageTreeNode({
 interface OrgOption { id: string; name: string; acronym?: string | null }
 interface SectorOption { code: string; name: string }
 
+type OpenFilter = 'plan' | 'donor' | 'sector' | null
+
 export function AlignmentCoverageDashboard() {
   const [plans, setPlans] = useState<NationalPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
@@ -201,6 +203,12 @@ export function AlignmentCoverageDashboard() {
 
   // Drill-down dialog
   const [drillNode, setDrillNode] = useState<AlignmentCoverageNode | null>(null);
+
+  // Coordinate which filter dropdown is open (only one at a time)
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev));
+  };
 
   // Fetch plans
   useEffect(() => {
@@ -446,7 +454,7 @@ export function AlignmentCoverageDashboard() {
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1">
           <Label className="text-helper text-muted-foreground">Plan</Label>
-          <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+          <Select value={selectedPlanId} onValueChange={setSelectedPlanId} open={openFilter === 'plan'} onOpenChange={filterOpenHandler('plan')}>
             <SelectTrigger className="w-[280px]">
               <SelectValue placeholder="Select a plan..." />
             </SelectTrigger>
@@ -463,7 +471,7 @@ export function AlignmentCoverageDashboard() {
 
         <div className="flex flex-col gap-1">
           <Label className="text-helper text-muted-foreground">Donor</Label>
-          <Select value={selectedDonorId} onValueChange={setSelectedDonorId}>
+          <Select value={selectedDonorId} onValueChange={setSelectedDonorId} open={openFilter === 'donor'} onOpenChange={filterOpenHandler('donor')}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="All donors" />
             </SelectTrigger>
@@ -480,7 +488,7 @@ export function AlignmentCoverageDashboard() {
 
         <div className="flex flex-col gap-1">
           <Label className="text-helper text-muted-foreground">Sector</Label>
-          <Select value={selectedSectorCode} onValueChange={setSelectedSectorCode}>
+          <Select value={selectedSectorCode} onValueChange={setSelectedSectorCode} open={openFilter === 'sector'} onOpenChange={filterOpenHandler('sector')}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="All sectors" />
             </SelectTrigger>

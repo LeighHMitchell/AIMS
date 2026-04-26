@@ -76,6 +76,7 @@ const ORG_TYPE_COLORS: Record<string, string> = {
 type ViewMode = 'budgets' | 'planned' | 'commitments' | 'disbursements'
 type ChartViewMode = 'bar' | 'stacked' | 'table'
 type SectorAggregationLevel = 'group' | 'category' | 'sector'
+type OpenFilter = 'calendar' | 'year' | 'orgType' | 'sector' | 'metric' | null
 
 interface SectorHierarchyItem {
   code: string
@@ -129,6 +130,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set())
   const [sectorData, setSectorData] = useState<SectorHierarchyItem[]>([])
   const [sectorFilterSearch, setSectorFilterSearch] = useState('')
+
+  // Coordinate which filter dropdown is open (only one at a time)
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev))
+  }
 
   // Calculate effective date range from selected years and local date range
   const effectiveDateRange = useMemo(() => {
@@ -846,7 +853,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               <>
                 {/* Calendar Type Selector */}
                 <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                  <DropdownMenu>
+                  <DropdownMenu open={openFilter === 'calendar'} onOpenChange={filterOpenHandler('calendar')}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 gap-1">
                         {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
@@ -879,7 +886,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 {/* Year Range Selector */}
                 <div className="flex flex-col items-center gap-0.5">
                   <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                    <DropdownMenu>
+                    <DropdownMenu open={openFilter === 'year'} onOpenChange={filterOpenHandler('year')}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 gap-1">
                           <CalendarIcon className="h-4 w-4" />
@@ -955,7 +962,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
           {/* Right Side - Org Type Filter */}
           <div className="flex items-center gap-2">
-            <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+            <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter} open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
@@ -996,7 +1003,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <>
               {/* Calendar Type Selector */}
               <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                <DropdownMenu>
+                <DropdownMenu open={openFilter === 'calendar'} onOpenChange={filterOpenHandler('calendar')}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 gap-1">
                       {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
@@ -1029,7 +1036,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               {/* Year Range Selector with Date Range below */}
               <div className="flex flex-col items-center gap-0.5">
                 <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                  <DropdownMenu>
+                  <DropdownMenu open={openFilter === 'year'} onOpenChange={filterOpenHandler('year')}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 gap-1">
                         <CalendarIcon className="h-4 w-4" />
@@ -1106,7 +1113,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
         {/* Right Side - Org Type Filter, Sector Filter, Metric Selector, View Mode and Export Controls */}
         <div className="flex items-center gap-2">
-          <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+          <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter} open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
@@ -1152,7 +1159,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </Button>
 
             {/* Sector Filter Dropdown */}
-            <DropdownMenu>
+            <DropdownMenu open={openFilter === 'sector'} onOpenChange={filterOpenHandler('sector')}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -1245,7 +1252,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </DropdownMenu>
           </div>
 
-          <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+          <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
             <SelectTrigger className="w-[220px]">
               <SelectValue />
             </SelectTrigger>

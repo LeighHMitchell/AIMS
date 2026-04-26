@@ -78,6 +78,7 @@ interface FinanceTypeFlowChartProps {
 
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
 type TimeMode = 'periodic' | 'cumulative'
+type OpenFilter = 'calendar' | 'year' | 'flow' | 'finance' | 'transaction' | null
 
 // Local alias for transaction type colors - each transaction type has a distinct color
 // Finance types within each transaction type are rendered as shades of that color
@@ -137,6 +138,12 @@ export function FinanceTypeFlowChart({
   const [customYearsLoading, setCustomYearsLoading] = useState(true)
   const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
   const [localDateRange, setLocalDateRange] = useState<{ from: Date; to: Date } | null>(null)
+
+  // Coordinate which filter dropdown is open (only one at a time)
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev))
+  }
 
   // Calculate effective date range from selected years and local date range
   const effectiveDateRange = useMemo(() => {
@@ -907,7 +914,7 @@ export function FinanceTypeFlowChart({
               <>
                 {/* Calendar Type Selector */}
                 <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                    <DropdownMenu>
+                    <DropdownMenu open={openFilter === 'calendar'} onOpenChange={filterOpenHandler('calendar')}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 gap-1">
                           {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
@@ -940,7 +947,7 @@ export function FinanceTypeFlowChart({
                   {/* Year Range Selector with Date Range below */}
                   <div className="flex flex-col items-center gap-0.5">
                     <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                      <DropdownMenu>
+                      <DropdownMenu open={openFilter === 'year'} onOpenChange={filterOpenHandler('year')}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 gap-1">
                             <CalendarIcon className="h-4 w-4" />
@@ -1031,6 +1038,8 @@ export function FinanceTypeFlowChart({
                   placeholder="Flow Types..."
                   showSelectAll={true}
                   selectedLabel="Flow Types selected"
+                  open={openFilter === 'flow'}
+                  onOpenChange={filterOpenHandler('flow')}
                   renderOption={(option: any) => (
                     <span className="flex items-center gap-2">
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
@@ -1056,6 +1065,8 @@ export function FinanceTypeFlowChart({
                   placeholder="Finance Types (All)"
                   showSelectAll={true}
                   selectedLabel="Finance Types selected"
+                  open={openFilter === 'finance'}
+                  onOpenChange={filterOpenHandler('finance')}
                   renderOption={(option: any) => (
                     <span className="flex items-center gap-2">
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
@@ -1080,6 +1091,8 @@ export function FinanceTypeFlowChart({
                   onChange={setSelectedTransactionTypes}
                   placeholder="Transaction Types..."
                   selectedLabel="Transaction Types selected"
+                  open={openFilter === 'transaction'}
+                  onOpenChange={filterOpenHandler('transaction')}
                   onClear={() => {
                     // Keep at least one transaction type selected - default to Disbursement
                     setSelectedTransactionTypes(['3'])

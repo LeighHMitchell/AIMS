@@ -168,6 +168,8 @@ interface TopDonorGroupsChartProps {
   refreshKey?: number;
 }
 
+type OpenFilter = 'metric' | 'timeRange' | null;
+
 export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps) {
   const [data, setData] = useState<DonorGroupData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,6 +178,10 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
   const [grandTotal, setGrandTotal] = useState(0);
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev));
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -391,7 +397,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
 
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-      <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
+      <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)} open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
         <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
@@ -454,7 +460,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
 
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
-      <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
+      <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)} open={openFilter === 'timeRange'} onOpenChange={filterOpenHandler('timeRange')}>
         <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>

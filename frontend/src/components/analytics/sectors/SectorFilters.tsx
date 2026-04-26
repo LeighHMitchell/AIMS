@@ -12,9 +12,15 @@ interface SectorFiltersProps {
   onFiltersChange: (filters: SectorAnalyticsFilters) => void
 }
 
+type OpenFilter = 'year' | 'org' | 'status' | 'groupBy' | null
+
 export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) {
   const [organizations, setOrganizations] = useState<Array<{id: string, name: string, acronym: string | null}>>([])
   const [loadingOrgs, setLoadingOrgs] = useState(true)
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev))
+  }
 
   useEffect(() => {
     fetchOrganizations()
@@ -45,9 +51,11 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
           {/* Year Filter */}
           <div className="space-y-2">
             <Label className="text-helper text-muted-foreground">Calendar Year</Label>
-            <Select 
-              value={filters.year || 'all'} 
+            <Select
+              value={filters.year || 'all'}
               onValueChange={(value) => onFiltersChange({ ...filters, year: value })}
+              open={openFilter === 'year'}
+              onOpenChange={filterOpenHandler('year')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select year" />
@@ -64,10 +72,12 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
           {/* Organization Filter */}
           <div className="space-y-2">
             <Label className="text-helper text-muted-foreground">Organization</Label>
-            <Select 
-              value={filters.organizationId || 'all'} 
+            <Select
+              value={filters.organizationId || 'all'}
               onValueChange={(value) => onFiltersChange({ ...filters, organizationId: value })}
               disabled={loadingOrgs}
+              open={openFilter === 'org'}
+              onOpenChange={filterOpenHandler('org')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={loadingOrgs ? "Loading..." : "Select organization"} />
@@ -86,9 +96,11 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
           {/* Activity Status Filter */}
           <div className="space-y-2">
             <Label className="text-helper text-muted-foreground">Activity Status</Label>
-            <Select 
-              value={filters.publicationStatus || 'all'} 
+            <Select
+              value={filters.publicationStatus || 'all'}
               onValueChange={(value: 'published' | 'all') => onFiltersChange({ ...filters, publicationStatus: value })}
+              open={openFilter === 'status'}
+              onOpenChange={filterOpenHandler('status')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -103,9 +115,11 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
           {/* Group By Level */}
           <div className="space-y-2">
             <Label className="text-helper text-muted-foreground">Group By</Label>
-            <Select 
-              value={filters.groupByLevel} 
+            <Select
+              value={filters.groupByLevel}
               onValueChange={(value: '1' | '3' | '5') => onFiltersChange({ ...filters, groupByLevel: value })}
+              open={openFilter === 'groupBy'}
+              onOpenChange={filterOpenHandler('groupBy')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />

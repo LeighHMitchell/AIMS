@@ -23,6 +23,8 @@ interface SectorTimeSeriesFiltersProps {
   availableSectors?: string[]
 }
 
+type OpenFilter = 'sectors' | 'fromYear' | 'toYear' | 'groupBy' | 'org' | null
+
 export function SectorTimeSeriesFilters({
   filters,
   onFiltersChange,
@@ -31,6 +33,10 @@ export function SectorTimeSeriesFilters({
   const [organizations, setOrganizations] = useState<Array<{id: string, name: string, acronym: string | null}>>([])
   const [loadingOrgs, setLoadingOrgs] = useState(true)
   const [sectorSearchQuery, setSectorSearchQuery] = useState('')
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev))
+  }
 
   useEffect(() => {
     fetchOrganizations()
@@ -96,7 +102,7 @@ export function SectorTimeSeriesFilters({
       {/* Sector Multi-Select */}
       <div className="space-y-1.5">
         <Label className="text-helper text-muted-foreground">Sectors</Label>
-        <Popover>
+        <Popover open={openFilter === 'sectors'} onOpenChange={filterOpenHandler('sectors')}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -180,16 +186,18 @@ export function SectorTimeSeriesFilters({
       {/* Year Range - From */}
       <div className="space-y-1.5 w-[120px]">
         <Label className="text-helper text-muted-foreground">From Year</Label>
-        <Select 
-          value={filters.yearRange?.from ? filters.yearRange.from.toString() : 'all'} 
+        <Select
+          value={filters.yearRange?.from ? filters.yearRange.from.toString() : 'all'}
           onValueChange={(value) => {
             const fromYear = value === 'all' ? undefined : parseInt(value)
             const toYear = filters.yearRange?.to
-            onFiltersChange({ 
-              ...filters, 
+            onFiltersChange({
+              ...filters,
               yearRange: fromYear || toYear ? { from: fromYear, to: toYear } : undefined
             })
           }}
+          open={openFilter === 'fromYear'}
+          onOpenChange={filterOpenHandler('fromYear')}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="From" />
@@ -206,16 +214,18 @@ export function SectorTimeSeriesFilters({
       {/* Year Range - To */}
       <div className="space-y-1.5 w-[120px]">
         <Label className="text-helper text-muted-foreground">To Year</Label>
-        <Select 
-          value={filters.yearRange?.to ? filters.yearRange.to.toString() : 'all'} 
+        <Select
+          value={filters.yearRange?.to ? filters.yearRange.to.toString() : 'all'}
           onValueChange={(value) => {
             const fromYear = filters.yearRange?.from
             const toYear = value === 'all' ? undefined : parseInt(value)
-            onFiltersChange({ 
-              ...filters, 
+            onFiltersChange({
+              ...filters,
               yearRange: fromYear || toYear ? { from: fromYear, to: toYear } : undefined
             })
           }}
+          open={openFilter === 'toYear'}
+          onOpenChange={filterOpenHandler('toYear')}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="To" />
@@ -232,9 +242,11 @@ export function SectorTimeSeriesFilters({
       {/* Group By Level */}
       <div className="space-y-1.5">
         <Label className="text-helper text-muted-foreground">Group By</Label>
-        <Select 
-          value={filters.groupByLevel} 
+        <Select
+          value={filters.groupByLevel}
           onValueChange={(value: '1' | '3' | '5') => onFiltersChange({ ...filters, groupByLevel: value })}
+          open={openFilter === 'groupBy'}
+          onOpenChange={filterOpenHandler('groupBy')}
         >
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -250,10 +262,12 @@ export function SectorTimeSeriesFilters({
       {/* Organization Filter */}
       <div className="space-y-1.5">
         <Label className="text-helper text-muted-foreground">Organization</Label>
-        <Select 
-          value={filters.organizationId || 'all'} 
+        <Select
+          value={filters.organizationId || 'all'}
           onValueChange={(value) => onFiltersChange({ ...filters, organizationId: value === 'all' ? undefined : value })}
           disabled={loadingOrgs}
+          open={openFilter === 'org'}
+          onOpenChange={filterOpenHandler('org')}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder={loadingOrgs ? "Loading..." : "Select organization"} />
