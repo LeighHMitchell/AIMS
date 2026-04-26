@@ -61,6 +61,12 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
   const [viewMode, setViewMode] = useState<ViewMode>('transaction')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<string>('all')
+  // Coordinate filter dropdowns so only one is open at a time.
+  type OpenFilter = 'time' | 'txType' | 'txStatus' | null
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
+  const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
+    setOpenFilter(prev => open ? key : (prev === key ? null : prev))
+  }
   
   // Quick date range presets
   const datePresets = [
@@ -296,7 +302,12 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           {/* Time Period */}
           <div className="space-y-1.5">
             <label className="text-body font-medium text-foreground">Time Period</label>
-            <Select value={selectedTimePeriod} onValueChange={handlePresetSelect}>
+            <Select
+              value={selectedTimePeriod}
+              onValueChange={handlePresetSelect}
+              open={openFilter === 'time'}
+              onOpenChange={filterOpenHandler('time')}
+            >
               <SelectTrigger className="w-full h-10 bg-white">
                 <SelectValue />
               </SelectTrigger>
@@ -325,7 +336,9 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
                   setStagedTransactionTypes(['3'])
                   setTransactionTypeFilter(['3'])
                 }}
+                open={openFilter === 'txType'}
                 onOpenChange={(open) => {
+                  filterOpenHandler('txType')(open)
                   // When dropdown closes, apply the staged selection
                   if (!open) {
                     setTransactionTypeFilter(stagedTransactionTypes)
@@ -354,7 +367,12 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
               <label className="text-body font-medium text-foreground">Transaction Status</label>
-              <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value: any) => setStatusFilter(value)}
+                open={openFilter === 'txStatus'}
+                onOpenChange={filterOpenHandler('txStatus')}
+              >
                 <SelectTrigger className="w-full h-10 bg-white">
                   <SelectValue />
                 </SelectTrigger>

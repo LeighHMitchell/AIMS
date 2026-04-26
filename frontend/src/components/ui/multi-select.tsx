@@ -36,6 +36,7 @@ interface MultiSelectProps {
   showSelectAll?: boolean
   onClear?: () => void
   selectedLabel?: string
+  open?: boolean
   onOpenChange?: (open: boolean) => void
   searchable?: boolean
   searchPlaceholder?: string
@@ -54,13 +55,19 @@ export function MultiSelect({
   showSelectAll = false,
   onClear,
   selectedLabel,
+  open: controlledOpen,
   onOpenChange,
   searchable = false,
   searchPlaceholder = "Search...",
   dropdownAlign = "start",
   dropdownSide = "bottom",
 }: MultiSelectProps) {
-  const [open, setOpen] = React.useState(false)
+  const [internalOpen, setInternalOpen] = React.useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = (value: boolean) => {
+    if (!isControlled) setInternalOpen(value)
+  }
   const [search, setSearch] = React.useState("")
   const isSelectingRef = React.useRef(false)
   const searchInputRef = React.useRef<HTMLInputElement>(null)
