@@ -788,8 +788,6 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Flow Map</h2>
-                      <p className="text-muted-foreground mb-4">Interactive visualization of aid flows between donors and recipients</p>
                       <div className="w-full">
                         <AidFlowMap height={500} />
                       </div>
