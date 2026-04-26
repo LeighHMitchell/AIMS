@@ -257,6 +257,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           name="Downvotes"
           stackId="stack"
           fill="#DC2625"
+          radius={[4, 0, 0, 4]}
         />
         {/* Upvotes bar (steel blue #7b95a7) - extends right from center */}
         <Bar
@@ -264,6 +265,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           name="Upvotes"
           stackId="stack"
           fill="#7b95a7"
+          radius={[0, 4, 4, 0]}
         />
       </BarChart>
     </ResponsiveContainer>
