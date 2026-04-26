@@ -67,8 +67,20 @@ export function ExpandableCard({
       )
     }
 
-    // Get column headers from first data item
+    // Get column headers from first data item.
+    // A header ending in "(USD)" (or "(EUR)", any 3-letter code) is treated
+    // as a currency column: strip the parenthetical from the visible header
+    // and render each cell with the code as a small gray prefix, matching
+    // the activity-list currency styling.
     const headers = Object.keys(exportData[0])
+    const currencyMatch = (h: string) => h.match(/\(([A-Z]{3})\)\s*$/)
+    const stripCurrency = (h: string) => h.replace(/\s*\([A-Z]{3}\)\s*$/, '')
+    const formatHeader = (h: string) => {
+      const cleaned = stripCurrency(h)
+      return cleaned.includes(' ')
+        ? cleaned
+        : cleaned.charAt(0).toUpperCase() + cleaned.slice(1).replace(/([A-Z])/g, ' $1')
+    }
 
     return (
       <div className="overflow-auto max-h-[500px]">
@@ -77,9 +89,7 @@ export function ExpandableCard({
             <TableRow>
               {headers.map((header) => (
                 <TableHead key={header} className="font-medium">
-                  {header.includes(' ')
-                    ? header
-                    : header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')}
+                  {formatHeader(header)}
                 </TableHead>
               ))}
             </TableRow>
@@ -87,13 +97,21 @@ export function ExpandableCard({
           <TableBody>
             {exportData.map((row, idx) => (
               <TableRow key={idx}>
-                {headers.map((header) => (
-                  <TableCell key={header}>
-                    {typeof row[header] === 'number'
-                      ? row[header].toLocaleString()
-                      : String(row[header] ?? '')}
-                  </TableCell>
-                ))}
+                {headers.map((header) => {
+                  const value = row[header]
+                  const ccy = currencyMatch(header)?.[1]
+                  if (typeof value === 'number') {
+                    return (
+                      <TableCell key={header}>
+                        {ccy && (
+                          <span className="text-helper text-muted-foreground font-normal mr-1">{ccy}</span>
+                        )}
+                        {value.toLocaleString()}
+                      </TableCell>
+                    )
+                  }
+                  return <TableCell key={header}>{String(value ?? '')}</TableCell>
+                })}
               </TableRow>
             ))}
           </TableBody>
