@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
 
 interface SectorData {
   sectorCode: string;
@@ -80,7 +80,9 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
     }
   };
 
-  const COLORS = ['#3B82F6', '#64748b', '#475569', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'];
+  // Shared monochromatic slate ramp — keeps the ranked pie breakdown
+  // visually consistent with other ranked charts on the dashboard.
+  const COLORS = CHART_RANKED_PALETTE;
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {

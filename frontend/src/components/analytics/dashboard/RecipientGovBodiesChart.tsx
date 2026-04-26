@@ -49,7 +49,7 @@ import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-te
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
-import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { CHART_RANKED_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
 
 type ViewMode = "bar" | "pie" | "table";
@@ -122,8 +122,8 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
 
   const chartData = data.map((item, index) => ({
     ...item,
-    color: CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length],
-    fill: CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length],
+    color: CHART_RANKED_PALETTE[index % CHART_RANKED_PALETTE.length],
+    fill: CHART_RANKED_PALETTE[index % CHART_RANKED_PALETTE.length],
     percentage: grandTotal > 0 ? (item.value / grandTotal) * 100 : 0,
     acronym: item.name.length > 12 ? item.name.slice(0, 10) + '...' : item.name,
   }));

@@ -45,7 +45,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
-import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
@@ -60,14 +60,9 @@ interface ActivityCapitalSpend {
   capitalSpendValue: number;
 }
 
-// Custom palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
-const TOP_CAPITAL_PALETTE = [
-  "#dc2626", // Primary Scarlet
-  "#cfd0d5", // Pale Slate
-  "#4c5568", // Blue Slate
-  "#7b95a7", // Cool Steel
-  "#f1f4f8", // Platinum
-];
+// Shared monochromatic slate ramp — keeps ranked Top N charts visually
+// consistent across the dashboard. Darker shades = higher rank.
+const TOP_CAPITAL_PALETTE = CHART_RANKED_PALETTE;
 
 const METRIC_OPTIONS = [
   { value: "budgets", label: "Total Budgets" },

@@ -15,7 +15,7 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { Button } from '@/components/ui/button'
 import { BarChart3, Activity, Table as TableIcon } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors'
 
 interface Top10ActiveProjectsChartProps {
   filters?: {
@@ -126,8 +126,9 @@ export function Top10ActiveProjectsChart({
     )
   }
 
-  const BAR_COLOR = '#4C5568'
-  const OTHERS_COLOR = '#94a3b8'
+  // Shared monochromatic slate ramp — keeps ranked Top N charts visually
+  // consistent across the dashboard. Darker shades = higher rank.
+  const barColors = CHART_RANKED_PALETTE
 
   // Compact mode renders just the chart
   if (compact) {
@@ -151,7 +152,7 @@ export function Top10ActiveProjectsChart({
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
             <Bar dataKey="projectCount" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR} />
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]} />
               ))}
             </Bar>
           </BarChart>
@@ -229,7 +230,7 @@ export function Top10ActiveProjectsChart({
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
+                  fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]}
                 />
               ))}
             </Bar>

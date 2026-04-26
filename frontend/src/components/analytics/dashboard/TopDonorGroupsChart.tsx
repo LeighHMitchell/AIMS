@@ -11,7 +11,7 @@ import {
   Cell,
   CartesianGrid,
 } from "recharts";
-import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from "@/lib/chart-colors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,7 +28,9 @@ interface TopDonorGroupsChartProps {
   grandTotal: number;
 }
 
-const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#6b7280"];
+// Shared monochromatic slate ramp — keeps ranked Top N charts visually
+// consistent across the dashboard. Darker shades = higher rank.
+const COLORS = CHART_RANKED_PALETTE;
 
 function WrapTick({ x, y, payload, width }: { x: number; y: number; payload: { value: string }; width: number }) {
   const maxWidth = width || 75;

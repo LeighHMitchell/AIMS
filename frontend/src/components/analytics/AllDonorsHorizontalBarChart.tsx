@@ -26,7 +26,7 @@ import { format } from 'date-fns'
 import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName, getOrganizationTypeCode } from '@/data/iati-organization-types'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -620,7 +620,9 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   }
 
   // Single color for non-stacked bar chart (all bars same color)
-  const barColor = '#334155' // slate-700
+  // Use the darkest shade from the shared ranked palette so this chart stays
+  // visually consistent with other ranked breakdown charts on the dashboard.
+  const barColor = CHART_RANKED_PALETTE[0] // slate-700
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

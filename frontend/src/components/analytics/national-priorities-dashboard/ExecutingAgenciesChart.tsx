@@ -48,7 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
-import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "commitments" | "disbursements";
@@ -61,8 +61,6 @@ interface AgencyData {
   value: number;
   activityCount: number;
 }
-
-const OTHERS_COLOR = "#6b7280";
 
 const METRIC_OPTIONS = [
   { value: "commitments", label: "Commitments" },
@@ -184,7 +182,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
   // Prepare chart data with colors
   const chartData = data.map((item, index) => ({
     ...item,
-    fill: item.id === "others" ? OTHERS_COLOR : CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length],
+    fill: item.id === "others" ? OTHERS_COLOR : CHART_RANKED_PALETTE[index % CHART_RANKED_PALETTE.length],
   }));
 
   const renderBarChart = (height: number | string = "100%") => (

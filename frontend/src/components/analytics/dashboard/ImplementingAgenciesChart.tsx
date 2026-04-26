@@ -41,6 +41,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
+import { CHART_RANKED_PALETTE } from "@/lib/chart-colors";
 
 interface ImplementingAgenciesChartProps {
   data: RankedItem[];
@@ -49,14 +50,9 @@ interface ImplementingAgenciesChartProps {
 
 type ViewMode = "bar" | "pie" | "table";
 
-const COLORS = [
-  "#dc2625", // Primary Scarlet
-  "#4c5568", // Blue Slate
-  "#7b95a7", // Cool Steel
-  "#9b4d4c", // Muted scarlet variant
-  "#5d6b7d", // Darker steel
-  "#8a9dad", // Lighter steel
-];
+// Shared monochromatic slate ramp — keeps ranked Top N charts visually
+// consistent across the dashboard. Darker shades = higher rank.
+const COLORS = CHART_RANKED_PALETTE;
 
 const CHART_STRUCTURE_COLORS = {
   grid: "#cfd0d5",

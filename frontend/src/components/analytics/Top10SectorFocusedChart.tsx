@@ -14,7 +14,7 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Target, Table as TableIcon } from 'lucide-react'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors'
 
 interface Top10SectorFocusedChartProps {
   dateRange: {
@@ -142,8 +142,9 @@ export function Top10SectorFocusedChart({
     return null
   }
 
-  const BAR_COLOR = '#4C5568'
-  const OTHERS_COLOR = '#94a3b8'
+  // Shared monochromatic slate ramp — keeps ranked Top N charts visually
+  // consistent across the dashboard. Darker shades = higher rank.
+  const barColors = CHART_RANKED_PALETTE
 
   // Compact mode renders just the chart
   if (compact) {
@@ -167,7 +168,7 @@ export function Top10SectorFocusedChart({
             <Tooltip content={<SectorFocusedTooltip />} />
             <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR} />
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]} />
               ))}
             </Bar>
           </BarChart>
@@ -251,7 +252,7 @@ export function Top10SectorFocusedChart({
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
+                  fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]}
                 />
               ))}
             </Bar>

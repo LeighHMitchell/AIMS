@@ -52,7 +52,7 @@ import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-te
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
-import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
 
 type ViewMode = "bar" | "pie";
@@ -129,7 +129,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
 
   const chartData = data.map((item, index) => ({
     ...item,
-    color: item.id === "others" ? "#9CA3AF" : CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length],
+    color: item.id === "others" ? OTHERS_COLOR : CHART_RANKED_PALETTE[index % CHART_RANKED_PALETTE.length],
     percentage: grandTotal > 0 ? (item.value / grandTotal) * 100 : 0,
   }));
 
