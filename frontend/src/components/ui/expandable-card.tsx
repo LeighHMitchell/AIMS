@@ -160,7 +160,7 @@ export function ExpandableCard({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="[&_.text-body.text-muted-foreground.leading-relaxed]:hidden">
           {viewMode === 'chart' ? children : renderTableView()}
         </CardContent>
       </Card>
