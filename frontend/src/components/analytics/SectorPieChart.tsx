@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { CHART_RANKED_PALETTE } from '@/lib/chart-colors'
 
 interface SectorPieChartProps {
   dateRange: {
@@ -27,16 +28,9 @@ interface SectorData {
   percentage: number
 }
 
-// Sector colors - limited palette of slate shades
-const COLORS = [
-  '#334155', // slate-700
-  '#475569', // slate-600
-  '#64748b', // slate-500
-  '#94a3b8', // slate-400
-  '#cbd5e1', // slate-300
-  '#e2e8f0', // slate-200
-  '#f1f5f9'  // slate-100
-]
+// Shared monochromatic slate ramp — keeps this chart visually consistent
+// with the Top 10 Partners chart and other ranked breakdowns on the dashboard.
+const COLORS = CHART_RANKED_PALETTE
 
 export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPieChartProps) {
   const [data, setData] = useState<SectorData[]>([])

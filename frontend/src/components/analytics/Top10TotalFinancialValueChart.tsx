@@ -14,7 +14,7 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { BarChart3, DollarSign } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors';
 
 interface Top10TotalFinancialValueChartProps {
   dateRange: {
@@ -112,20 +112,9 @@ export function Top10TotalFinancialValueChart({
     }
   }
 
-  // Generate shades of blue for bars
-  const barColors = [
-    '#1e40af', // blue-800
-    '#2563eb', // blue-600
-    '#3b82f6', // blue-500
-    '#60a5fa', // blue-400
-    '#93c5fd', // blue-300
-    '#bfdbfe', // blue-200
-    '#1e40af', // repeat
-    '#2563eb',
-    '#3b82f6',
-    '#60a5fa',
-    '#94a3b8' // slate-400 for "Others"
-  ]
+  // Shared monochromatic slate ramp — keeps this chart visually consistent
+  // with the sector pie and other ranked charts on the dashboard.
+  const barColors = CHART_RANKED_PALETTE
 
   if (loading) {
     return (
@@ -186,7 +175,7 @@ export function Top10TotalFinancialValueChart({
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]}
+                fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]}
               />
             ))}
           </Bar>

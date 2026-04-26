@@ -50,6 +50,23 @@ export const CHART_COLOR_PALETTE = [
   '#f1f4f8',  // Platinum
 ] as const
 
+// Monochromatic slate ramp for ranked / share-of-whole charts where the
+// only visual signal needed is "darker = higher". Used for things like
+// Top 10 rankings and sector pies so single-series breakdowns share one
+// visual language across the dashboard. Use OTHERS_COLOR for any
+// "All Others" bucket.
+export const CHART_RANKED_PALETTE = [
+  '#334155',  // slate-700
+  '#475569',  // slate-600
+  '#64748b',  // slate-500
+  '#94a3b8',  // slate-400
+  '#cbd5e1',  // slate-300
+  '#e2e8f0',  // slate-200
+  '#f1f5f9',  // slate-100
+] as const
+
+export const OTHERS_COLOR = '#94a3b8'  // slate-400
+
 // Specific color assignments for common data types
 export const DATA_COLORS = {
   budget: '#dc2625',          // Primary Scarlet - for budget
