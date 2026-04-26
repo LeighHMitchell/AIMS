@@ -119,7 +119,6 @@ export default function PolicyMarkersListingPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <Bookmark className="h-8 w-8 text-muted-foreground" />
               <div>
                 <h1 className="text-3xl font-bold text-foreground">Policy Markers</h1>
                 <p className="text-muted-foreground mt-1">

@@ -87,7 +87,6 @@ export default function NewTransferPage() {
           { label: "New Transfer" },
         ]} />
         <div className="flex items-center gap-3 mb-6">
-          <TrendingDown className="h-8 w-8 text-muted-foreground" />
           <h1 className="text-3xl font-bold">New SEE Transfer</h1>
         </div>
 

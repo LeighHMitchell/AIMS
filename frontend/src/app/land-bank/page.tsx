@@ -105,7 +105,6 @@ export default function LandBankDashboard() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <MapPin className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Land Bank</h1>
               <p className="text-muted-foreground mt-1">

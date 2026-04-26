@@ -321,7 +321,6 @@ export default function FAQPage() {
         <div className="border-b bg-card">
           <div className="flex items-center justify-between p-6">
             <div className="flex items-center space-x-3">
-              <HelpCircle className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center space-x-2">
                   <h1 className="text-3xl font-bold text-foreground">Frequently Asked Questions</h1>

@@ -57,7 +57,6 @@ export default function BuildHistoryPage() {
         <div className="border-b bg-white">
           <div className="flex items-center justify-between p-6">
             <div className="flex items-center space-x-3">
-              <History className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-3xl font-bold text-foreground">Build History</h1>

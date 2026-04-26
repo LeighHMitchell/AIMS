@@ -264,7 +264,6 @@ export default function ProjectBankDashboard() {
       <div className="w-full">
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <FolderKanban className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Project Bank</h1>
               <p className="text-muted-foreground mt-1">National development project pipeline</p>

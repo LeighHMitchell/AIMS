@@ -301,7 +301,6 @@ export default function BudgetsPage() {
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <Banknote className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Budgets</h1>
               <p className="text-muted-foreground mt-1">View and manage all activity budgets</p>

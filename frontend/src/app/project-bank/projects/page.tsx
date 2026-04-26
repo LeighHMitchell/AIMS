@@ -241,7 +241,6 @@ export default function ProjectListPage() {
         {/* Header with icon + subtitle like Funding Gaps */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <ListTodo className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Project List</h1>
               <p className="text-muted-foreground mt-1">

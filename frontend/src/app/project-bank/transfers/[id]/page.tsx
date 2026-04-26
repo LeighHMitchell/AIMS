@@ -172,7 +172,6 @@ export default function TransferDetailPage() {
           ]} />
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <TrendingDown className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-3xl font-bold">{transfer.see_name}</h1>

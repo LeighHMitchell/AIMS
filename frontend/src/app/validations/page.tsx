@@ -102,7 +102,6 @@ export default function ValidationsPage() {
         <div className="p-8 max-w-7xl mx-auto">
           <div className="mb-8">
             <div className="flex items-center gap-3">
-              <ShieldCheck className="h-8 w-8 text-muted-foreground" />
               <div>
                 <h1 className="text-3xl font-bold">Activity Validations</h1>
                 <p className="text-muted-foreground mt-1">Review and validate submitted activities</p>

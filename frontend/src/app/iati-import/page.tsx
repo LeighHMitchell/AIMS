@@ -2014,7 +2014,6 @@ export default function IATIImportPage() {
                               <p className="text-body text-muted-foreground">Organizations</p>
                               <p className="text-2xl font-bold">{importState.organizations.imported.length}</p>
                             </div>
-                            <Building2 className="h-8 w-8 text-muted-foreground" />
                           </div>
                         </CardContent>
                       </Card>
@@ -2026,7 +2025,6 @@ export default function IATIImportPage() {
                               <p className="text-body text-muted-foreground">Activities</p>
                               <p className="text-2xl font-bold">{importState.activities.imported.length}</p>
                             </div>
-                            <Activity className="h-8 w-8 text-muted-foreground" />
                           </div>
                         </CardContent>
                       </Card>
@@ -2038,7 +2036,6 @@ export default function IATIImportPage() {
                               <p className="text-body text-muted-foreground">Transactions</p>
                               <p className="text-2xl font-bold">{importState.transactions.imported.length}</p>
                             </div>
-                            <CreditCard className="h-8 w-8 text-muted-foreground" />
                           </div>
                         </CardContent>
                       </Card>

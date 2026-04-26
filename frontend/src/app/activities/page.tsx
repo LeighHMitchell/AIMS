@@ -1747,7 +1747,6 @@ const router = useRouter();
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-6" data-tour="activities-header">
         <div className="flex items-center gap-3">
-          <ActivityIcon className="h-8 w-8 text-muted-foreground" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold text-foreground">Activities</h1>

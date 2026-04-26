@@ -169,7 +169,6 @@ export default function ImportParcelsPage() {
         ]} />
 
         <div className="flex items-center gap-3 mb-6">
-          <ArrowUpFromLine className="h-8 w-8 text-muted-foreground" />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Import Parcels</h1>
             <p className="text-muted-foreground mt-1">

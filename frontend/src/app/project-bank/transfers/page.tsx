@@ -72,7 +72,6 @@ export default function TransfersListPage() {
       <div className="w-full">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <TrendingDown className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">SEE Transfers</h1>
               <p className="text-muted-foreground mt-1">State Economic Enterprise equitization pipeline</p>

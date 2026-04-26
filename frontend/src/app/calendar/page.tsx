@@ -270,7 +270,6 @@ export default function CalendarPage() {
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div>
           <div className="flex items-center gap-3">
-            <Calendar className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Calendar Events</h1>
               <p className="text-muted-foreground mt-1">

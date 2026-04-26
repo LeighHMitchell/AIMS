@@ -618,7 +618,6 @@ export default function TransactionsPage() {
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <ArrowLeftRight className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Transactions</h1>
               <p className="text-muted-foreground">View and manage all financial transactions</p>
