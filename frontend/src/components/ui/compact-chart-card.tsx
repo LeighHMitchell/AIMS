@@ -87,7 +87,9 @@ export function CompactChartCard({
             <TableRow>
               {headers.map((header) => (
                 <TableHead key={header} className="font-medium">
-                  {header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')}
+                  {header.includes(' ')
+                    ? header
+                    : header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')}
                 </TableHead>
               ))}
             </TableRow>

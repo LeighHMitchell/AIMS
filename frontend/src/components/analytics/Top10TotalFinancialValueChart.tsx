@@ -31,6 +31,7 @@ interface Top10TotalFinancialValueChartProps {
 
 interface DonorData {
   orgId: string
+  organisationId: string | null
   name: string
   acronym: string | null
   totalValue: number
@@ -82,7 +83,15 @@ export function Top10TotalFinancialValueChart({
       }))
 
       setData(donors)
-      onDataChange?.(donors)
+      // Table-friendly shape with explicit, spaced column names so the
+      // expanded dialog's table view shows "Organisation ID" with the
+      // IATI org id rather than the internal UUID.
+      onDataChange?.(donors.map((d: DonorData) => ({
+        'Organisation ID': d.organisationId ?? '',
+        'Name': d.name,
+        'Acronym': d.acronym ?? '',
+        'Total Value (USD)': d.totalValue,
+      })) as any)
     } catch (error) {
       console.error('[Top10TotalFinancialValueChart] Error:', error)
       setData([])

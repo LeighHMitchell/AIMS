@@ -100,10 +100,10 @@ export async function GET(request: NextRequest) {
     const orgIds = Array.from(donorTotals.keys());
     const { data: orgs } = await supabase
       .from('organizations')
-      .select('id, name, acronym')
+      .select('id, name, acronym, iati_org_id')
       .in('id', orgIds);
 
-    const orgMap = new Map(orgs?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym }]) || []);
+    const orgMap = new Map(orgs?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym, iatiOrgId: o.iati_org_id }]) || []);
 
     // Convert to array, sort, and limit
     const result = Array.from(donorTotals.entries())
@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
         const org = orgMap.get(orgId);
         return {
           orgId,
+          organisationId: org?.iatiOrgId || null,
           name: org?.name || 'Unknown Organization',
           acronym: org?.acronym || null,
           totalValue: data.total
@@ -127,6 +128,7 @@ export async function GET(request: NextRequest) {
     if (othersTotal > 0) {
       result.push({
         orgId: 'others',
+        organisationId: null,
         name: 'All Others',
         acronym: null,
         totalValue: othersTotal
