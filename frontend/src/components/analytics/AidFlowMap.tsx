@@ -383,9 +383,20 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="both">All Statuses</SelectItem>
-                  <SelectItem value="actual">Actual Only</SelectItem>
-                  <SelectItem value="draft">Draft Only</SelectItem>
+                  {[
+                    { code: '1', label: 'All Statuses', value: 'both' },
+                    { code: '2', label: 'Actual Only', value: 'actual' },
+                    { code: '3', label: 'Draft Only', value: 'draft' },
+                  ].map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="flex items-center gap-2">
+                        <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">
+                          {opt.code}
+                        </code>
+                        <span className="text-body">{opt.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
