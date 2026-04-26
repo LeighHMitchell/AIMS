@@ -2,6 +2,22 @@
 
 import * as React from "react"
 import { Check, ChevronsUpDown, X } from "lucide-react"
+
+// Visual checkbox marker for option items. Pure presentation — selection
+// is driven by the parent CommandItem's onSelect, not by clicking this.
+const CheckboxMark = ({ checked }: { checked: boolean }) => (
+  <span
+    aria-hidden
+    className={cn(
+      "mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
+      checked
+        ? "bg-primary border-primary text-primary-foreground"
+        : "bg-background border-input"
+    )}
+  >
+    {checked && <Check className="h-3 w-3" strokeWidth={3} />}
+  </span>
+)
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -192,12 +208,7 @@ export function MultiSelect({
                       onSelect={() => handleSelect("SELECT_ALL")}
                       className="font-semibold"
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selected.length === options.length ? "opacity-100" : "opacity-0"
-                        )}
-                      />
+                      <CheckboxMark checked={selected.length === options.length} />
                       Select All
                     </CommandItem>
                   </CommandGroup>
@@ -209,12 +220,7 @@ export function MultiSelect({
                         key={option.value}
                         onSelect={() => handleSelect(option.value)}
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selected.includes(option.value) ? "opacity-100" : "opacity-0"
-                          )}
-                        />
+                        <CheckboxMark checked={selected.includes(option.value)} />
                         {renderOption ? renderOption(option) : option.label}
                       </CommandItem>
                     ))}

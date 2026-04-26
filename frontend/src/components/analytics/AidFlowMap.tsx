@@ -68,14 +68,15 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
     setOpenFilter(prev => open ? key : (prev === key ? null : prev))
   }
   
-  // Quick date range presets
+  // Quick date range presets. `code` is the short token shown in the
+  // dropdown next to the label, styled like the IATI codes elsewhere.
   const datePresets = [
-    { label: 'Last 3 months', value: '3m' },
-    { label: 'Last 6 months', value: '6m' },
-    { label: 'Last 12 months', value: '12m' },
-    { label: 'This year', value: 'thisYear' },
-    { label: 'Last year', value: 'lastYear' },
-    { label: 'All time', value: 'all' }
+    { code: '1', label: 'Last 3 months', value: '3m' },
+    { code: '2', label: 'Last 6 months', value: '6m' },
+    { code: '3', label: 'Last 12 months', value: '12m' },
+    { code: '4', label: 'This year', value: 'thisYear' },
+    { code: '5', label: 'Last year', value: 'lastYear' },
+    { code: '6', label: 'All time', value: 'all' }
   ]
   
   // Fetch aid flow data based on view mode
@@ -314,7 +315,12 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
               <SelectContent>
                 {datePresets.map(preset => (
                   <SelectItem key={preset.value} value={preset.value}>
-                    {preset.label}
+                    <span className="flex items-center gap-2">
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">
+                        {preset.code}
+                      </code>
+                      <span className="text-body">{preset.label}</span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
