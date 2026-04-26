@@ -496,7 +496,12 @@ export function AlignmentCoverageDashboard() {
               <SelectItem value="all">All sectors</SelectItem>
               {sectorOptions.map((s) => (
                 <SelectItem key={s.code} value={s.code}>
-                  {s.code} — {s.name}
+                  <span className="flex items-center gap-2">
+                    <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">
+                      {s.code}
+                    </code>
+                    <span className="text-body">{s.name}</span>
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
