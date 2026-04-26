@@ -107,7 +107,7 @@ export function ExpandableCard({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {typeof title === 'string' ? (
-                <CardTitle className="text-lg font-medium text-foreground">
+                <CardTitle className="text-base font-medium text-foreground">
                   {title}
                 </CardTitle>
               ) : (
@@ -115,7 +115,7 @@ export function ExpandableCard({
               )}
               {description && (
                 typeof description === 'string' ? (
-                  <CardDescription>{description}</CardDescription>
+                  <CardDescription className="text-helper mt-0.5">{description}</CardDescription>
                 ) : (
                   description
                 )
