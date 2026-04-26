@@ -182,6 +182,41 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
     }
   }
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{label}</p>
+          </div>
+          <div className="p-3">
+            <table className="w-full text-body">
+              <tbody>
+                {payload.map((entry: any, index: number) => (
+                  <tr key={index}>
+                    <td className="py-1 pr-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-sm flex-shrink-0"
+                          style={{ backgroundColor: entry.color || entry.stroke }}
+                        />
+                        <span className="text-foreground">{entry.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 text-right font-semibold text-foreground">
+                      {formatCurrency(Number(entry.value) || 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   if (loading) {
     return (
       <ChartLoadingPlaceholder />
@@ -217,7 +252,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
             </SelectItem>
           </SelectContent>
         </Select>
-        
+
         {groupBy === 'fiscal' && (
           <div className="text-helper text-muted-foreground">
             Financial Year: July–June
@@ -227,36 +262,30 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={400}>
-        <LineChart 
+        <LineChart
           data={data}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke={CHART_STRUCTURE_COLORS.grid} 
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={CHART_STRUCTURE_COLORS.grid}
             vertical={false}
           />
-          <XAxis 
-            dataKey="period" 
+          <XAxis
+            dataKey="period"
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />
-          <YAxis 
+          <YAxis
             tickFormatter={formatCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />
-          <Tooltip 
-            formatter={(value: number) => formatCurrency(value)}
-            contentStyle={{
-              backgroundColor: '#1e293b',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
-            labelStyle={{ color: '#94a3b8' }}
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
           />
-          <Legend 
+          <Legend
             wrapperStyle={{
               paddingTop: '20px'
             }}

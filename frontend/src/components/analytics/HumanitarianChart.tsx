@@ -366,14 +366,58 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
     )
   }
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const total = payload.reduce((sum: number, entry: any) => sum + (Number(entry.value) || 0), 0)
+      return (
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{label}</p>
+          </div>
+          <div className="p-3">
+            <table className="w-full text-body">
+              <tbody>
+                {payload.map((entry: any, index: number) => (
+                  <tr key={index}>
+                    <td className="py-1 pr-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-sm flex-shrink-0"
+                          style={{ backgroundColor: entry.color || entry.fill }}
+                        />
+                        <span className="text-foreground">{entry.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 text-right font-semibold text-foreground">
+                      {formatCurrencyFull(Number(entry.value) || 0)}
+                    </td>
+                  </tr>
+                ))}
+                {payload.length > 1 && (
+                  <tr className="border-t border-border">
+                    <td className="pt-1 pr-3 text-muted-foreground">Total</td>
+                    <td className="pt-1 text-right font-semibold text-foreground">
+                      {formatCurrencyFull(total)}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   const renderAreaChart = () => (
     <ResponsiveContainer width="100%" height={300}>
-      <AreaChart 
+      <AreaChart
         data={data}
         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
+        <CartesianGrid
+          strokeDasharray="3 3"
           stroke={CHART_STRUCTURE_COLORS.grid}
           vertical={false}
         />
@@ -389,14 +433,8 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           allowDecimals={false}
         />
         <Tooltip
-          formatter={(value: number) => formatCurrency(value)}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
+          content={<CustomTooltip />}
+          cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
         />
         <Legend
           wrapperStyle={{
@@ -436,28 +474,22 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           stroke={CHART_STRUCTURE_COLORS.grid}
           vertical={false}
         />
-        <XAxis 
-          dataKey="period" 
+        <XAxis
+          dataKey="period"
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#94a3b8' }}
         />
-        <YAxis 
+        <YAxis
           tickFormatter={formatCurrency}
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#94a3b8' }}
           allowDecimals={false}
         />
-        <Tooltip 
-          formatter={(value: number) => formatCurrency(value)}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
+        <Tooltip
+          content={<CustomTooltip />}
+          cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
         />
-        <Legend 
+        <Legend
           wrapperStyle={{
             paddingTop: '20px',
             color: '#64748b'

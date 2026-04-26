@@ -313,30 +313,67 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
     </div>
   )
 
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const datum = payload[0]?.payload
+      if (!datum) return null
+      return (
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{datum.name}</p>
+            <p className="text-helper text-muted-foreground mt-0.5">Share of total aid</p>
+          </div>
+          <div className="p-3">
+            <table className="w-full text-body">
+              <tbody>
+                <tr>
+                  <td className="py-1 pr-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: datum.color }}
+                      />
+                      <span className="text-foreground">Value</span>
+                    </div>
+                  </td>
+                  <td className="py-1 text-right font-semibold text-foreground">
+                    {formatCurrency(datum.value)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-1 pr-3 text-muted-foreground">Share</td>
+                  <td className="py-1 text-right font-semibold text-foreground">
+                    {datum.percent}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   const renderBarView = () => (
     <div className="py-6">
       <ResponsiveContainer width="100%" height={250}>
         <BarChart data={barChartData} layout="vertical" margin={{ left: 20, right: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={true} vertical={false} />
-          <XAxis 
-            type="number" 
+          <XAxis
+            type="number"
             tickFormatter={(value) => formatCurrency(value)}
             tick={{ fill: '#64748b', fontSize: 12 }}
           />
-          <YAxis 
-            type="category" 
-            dataKey="name" 
+          <YAxis
+            type="category"
+            dataKey="name"
             tick={{ fill: '#64748b', fontSize: 12 }}
             width={120}
           />
-          <Tooltip 
-            formatter={(value: number) => [formatCurrency(value), 'Value']}
-            contentStyle={{
-              backgroundColor: '#1e293b',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
           />
           <Bar dataKey="value" radius={[0, 4, 4, 0]}>
             {barChartData.map((entry, index) => (
