@@ -202,6 +202,50 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
     )
   }
 
+  // Tooltip styled to match the Financial Totals chart (light card, header
+  // strip, table body) so hover UI is consistent across the dashboard.
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || !payload.length) return null
+    const item = payload[0]
+    const sectorName = item.name
+    const value = item.value
+    const percentage = item.payload?.percentage
+    const swatch = item.payload?.fill || item.color
+    return (
+      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+        <div className="bg-surface-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground">{sectorName}</p>
+        </div>
+        <div className="p-3">
+          <table className="w-full text-body">
+            <tbody>
+              <tr>
+                <td className="py-1 pr-3 flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: swatch }}
+                  />
+                  <span className="text-foreground">Disbursements</span>
+                </td>
+                <td className="py-1 text-right font-semibold text-foreground">
+                  {formatCurrency(value)}
+                </td>
+              </tr>
+              {typeof percentage === 'number' && !isNaN(percentage) && (
+                <tr>
+                  <td className="py-1 pr-3 text-muted-foreground">Share of total</td>
+                  <td className="py-1 text-right font-semibold text-foreground">
+                    {percentage.toFixed(1)}%
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <ChartLoadingPlaceholder />
@@ -237,16 +281,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip
-            formatter={(value: number, name: string) => [formatCurrency(value), name]}
-            contentStyle={{
-              backgroundColor: '#1e293b',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
-            labelStyle={{ color: '#94a3b8' }}
-          />
+          <Tooltip content={<CustomTooltip />} />
           <Legend
             verticalAlign="bottom"
             height={36}
