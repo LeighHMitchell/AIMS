@@ -33,6 +33,7 @@ interface Top10GovernmentValidatedChartProps {
 
 interface PartnerData {
   orgId: string
+  organisationId: string | null
   name: string
   acronym: string | null
   totalValue: number
@@ -89,7 +90,14 @@ export function Top10GovernmentValidatedChart({
       }))
 
       setData(partners)
-      onDataChange?.(partners)
+      // Table-friendly shape with explicit, spaced column names so the
+      // expanded dialog's table view shows "Organisation ID" with the
+      // IATI org id rather than the internal UUID.
+      onDataChange?.(partners.map((p: PartnerData) => ({
+        'Organisation ID': p.organisationId ?? '',
+        'Name': p.acronym ? `${p.name} (${p.acronym})` : p.name,
+        'Total Value (USD)': p.totalValue,
+      })) as any)
     } catch (error) {
       console.error('[Top10GovernmentValidatedChart] Error:', error)
       setData([])
@@ -129,24 +137,34 @@ export function Top10GovernmentValidatedChart({
     )
   }
 
-  const ValidatedTooltip = ({ active, payload }: any) => {
+  // Tooltip styled to match the Financial Totals chart (light card, header
+  // strip, table body with colour swatch) so hover UI is consistent across
+  // the dashboard.
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const item = payload[0].payload
       const orgDisplay = item.acronym ? `${item.name} (${item.acronym})` : item.name
+      const swatchColor = item.orgId === 'others' ? OTHERS_COLOR : (item.fill || CHART_RANKED_PALETTE[0])
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">{orgDisplay}</p>
+            <p className="font-semibold text-foreground">{orgDisplay}</p>
           </div>
-          <div className="p-2">
+          <div className="p-3">
             <table className="w-full text-body">
               <tbody>
                 <tr>
-                  <td className="py-1 pr-4 text-foreground font-medium">Value</td>
+                  <td className="py-1 pr-3 flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: swatchColor }}
+                    />
+                    <span className="text-foreground">Total Value</span>
+                  </td>
                   <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.totalValue)}</td>
                 </tr>
                 <tr>
-                  <td className="py-1 pr-4 text-foreground font-medium">Projects</td>
+                  <td className="py-1 pr-3 pl-5 text-foreground">Projects</td>
                   <td className="py-1 text-right font-semibold text-foreground">{item.projectCount}</td>
                 </tr>
               </tbody>
@@ -181,7 +199,7 @@ export function Top10GovernmentValidatedChart({
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
             <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={<NoWrapTick fontSize={9} />} width={55} interval={0} />
-            <Tooltip content={<ValidatedTooltip />} />
+            <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]} />
@@ -263,7 +281,7 @@ export function Top10GovernmentValidatedChart({
               width={90}
               interval={0}
             />
-            <Tooltip content={<ValidatedTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
             <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
                 <Cell

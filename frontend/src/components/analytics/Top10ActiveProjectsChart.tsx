@@ -29,27 +29,37 @@ interface Top10ActiveProjectsChartProps {
 
 interface PartnerData {
   orgId: string
+  organisationId: string | null
   name: string
   acronym: string | null
   projectCount: number
   shortName: string
 }
 
-// Custom tooltip component for consistent styling
+// Custom tooltip component for consistent styling — matches the
+// Financial Totals chart (light card, header strip, body table with
+// colour swatch + metric label + formatted value).
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
     const orgDisplay = data.acronym ? `${data.name} (${data.acronym})` : data.name
+    const swatchColor = data.orgId === 'others' ? OTHERS_COLOR : (data.fill || CHART_RANKED_PALETTE[0])
     return (
-      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
         <div className="bg-surface-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground text-body">{orgDisplay}</p>
+          <p className="font-semibold text-foreground">{orgDisplay}</p>
         </div>
-        <div className="p-2">
+        <div className="p-3">
           <table className="w-full text-body">
             <tbody>
               <tr>
-                <td className="py-1 pr-4 text-foreground font-medium">Active Projects</td>
+                <td className="py-1 pr-3 flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: swatchColor }}
+                  />
+                  <span className="text-foreground">Active Projects</span>
+                </td>
                 <td className="py-1 text-right font-semibold text-foreground">{data.projectCount}</td>
               </tr>
             </tbody>
@@ -107,7 +117,14 @@ export function Top10ActiveProjectsChart({
       }))
 
       setData(partners)
-      onDataChange?.(partners)
+      // Table-friendly shape with explicit, spaced column names so the
+      // expanded dialog's table view shows "Organisation ID" with the
+      // IATI org id rather than the internal UUID.
+      onDataChange?.(partners.map((p: PartnerData) => ({
+        'Organisation ID': p.organisationId ?? '',
+        'Name': p.acronym ? `${p.name} (${p.acronym})` : p.name,
+        'Active Projects': p.projectCount,
+      })) as any)
     } catch (error) {
       console.error('[Top10ActiveProjectsChart] Error:', error)
       setData([])
