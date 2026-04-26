@@ -332,11 +332,6 @@ export function ImplementingAgenciesChart({
         {renderContent(false)}
       </div>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart shows implementing agencies -- organizations responsible for the physical delivery of assistance on the ground. Compare their relative financial shares to understand which organizations carry out the most implementation work.
-      </p>
-
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -350,6 +345,11 @@ export function ImplementingAgenciesChart({
 
           <div className="mt-4">{renderContent(true)}</div>
           {renderControls(true)}
+
+          {/* Explanatory text */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart shows implementing agencies -- organizations responsible for the physical delivery of assistance on the ground. Compare their relative financial shares to understand which organizations carry out the most implementation work.
+          </p>
         </DialogContent>
       </Dialog>
     </>

@@ -702,10 +702,6 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed">
-            This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.
-          </p>
         </CardContent>
       </Card>
 
@@ -733,6 +729,11 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
 
           {/* Controls */}
           {renderControls(true)}
+
+          {/* Explanatory text */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.
+          </p>
         </DialogContent>
       </Dialog>
     </>

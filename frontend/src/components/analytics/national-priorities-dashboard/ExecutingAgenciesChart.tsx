@@ -447,10 +447,6 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed">
-            This chart shows executing agencies -- organizations that manage and administer budgets on behalf of the funding organization. Use the metric selector to compare by commitments or disbursements, and switch between chart and table views.
-          </p>
         </CardContent>
       </Card>
 
@@ -475,6 +471,11 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
 
           {/* Controls */}
           {renderControls(true)}
+
+          {/* Explanatory text */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart shows executing agencies -- organizations that manage and administer budgets on behalf of the funding organization. Use the metric selector to compare by commitments or disbursements, and switch between chart and table views.
+          </p>
         </DialogContent>
       </Dialog>
     </>

@@ -537,10 +537,6 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col min-h-0">
           {renderContent(false)}
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed">
-            This chart shows how development funding is distributed across subnational states and regions. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and switch between bar and pie chart views.
-          </p>
         </CardContent>
       </Card>
 
@@ -640,6 +636,11 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             Understanding subnational allocation patterns helps identify geographic priorities, reveals potential
             gaps in coverage, and supports more equitable distribution of aid resources. Use the metric selector
             to compare budgets, planned disbursements, commitments, or actual disbursements across regions.
+          </p>
+
+          {/* Explanatory text */}
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart shows how development funding is distributed across subnational states and regions. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and switch between bar and pie chart views.
           </p>
         </DialogContent>
       </Dialog>
