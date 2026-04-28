@@ -1188,7 +1188,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="e.g., ACT-001, PJ-2024-567"
-              className="font-mono"
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 3 : -1}
             />
@@ -1255,7 +1254,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="Enter IATI identifier"
-              className="font-mono"
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 4 : -1}
             />

@@ -1,14 +1,22 @@
 import React from "react";
-import { ChevronsUpDown, Search, Check, X } from "lucide-react";
+import { ChevronsUpDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Badge } from "./badge";
+import { Checkbox } from "./checkbox";
 
 export interface EnhancedMultiSelectOption {
   code: string;
   name: string;
   description?: string;
   indent?: number;
+  /**
+   * Optional override for the small code pill / selected-badge display.
+   * When provided, this text is shown in place of `code` while `code`
+   * remains the underlying value. Useful when the real identifier is
+   * opaque (e.g. a UUID) but you want a human-readable short label.
+   */
+  displayCode?: string;
 }
 
 export interface EnhancedMultiSelectGroup {
@@ -24,6 +32,19 @@ interface EnhancedMultiSelectProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   className?: string;
+  /**
+   * When false, the option's `code` is treated as an opaque value and hidden
+   * from the UI (badges show `name`; the dropdown omits the code pill).
+   * Defaults to true for callers whose codes are meaningful identifiers
+   * (e.g. IATI sector codes).
+   */
+  showCode?: boolean;
+  /**
+   * When true, selected badges render as "{code} {name}" (e.g. "1 Grant").
+   * Takes precedence over `showCode`. The dropdown option still shows the
+   * code pill + name as usual.
+   */
+  showCodeAndName?: boolean;
 }
 
 export function EnhancedMultiSelect({
@@ -34,6 +55,8 @@ export function EnhancedMultiSelect({
   searchPlaceholder = "Search...",
   disabled = false,
   className,
+  showCode = true,
+  showCodeAndName = false,
 }: EnhancedMultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -106,19 +129,44 @@ export function EnhancedMultiSelect({
         >
           <div className="flex flex-wrap gap-1 items-center min-h-[1.5rem] flex-1">
             {selectedOptions.length > 0 ? (
-              selectedOptions.map(opt => (
-                <Badge key={opt.code} variant="secondary" className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono">
-                  {opt.code}
-                  <button
-                    type="button"
-                    className="ml-1 p-0.5 rounded hover:bg-muted-foreground/20"
-                    onClick={e => handleRemoveChip(opt.code, e)}
-                    tabIndex={-1}
+              selectedOptions.map(opt => {
+                // Badge display:
+                //   showCodeAndName=true → code pill + name (e.g. "1 Grant")
+                //   showCode=true        → displayCode (if set) else code  (mono)
+                //   showCode=false       → name                              (regular)
+                const codeLabel = opt.displayCode ?? opt.code;
+                return (
+                  <Badge
+                    key={opt.code}
+                    variant="secondary"
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-0.5",
+                      showCodeAndName
+                        ? "text-body font-normal"
+                        : showCode ? "text-xs font-mono" : "text-body font-normal"
+                    )}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))
+                    {showCodeAndName ? (
+                      <>
+                        <span className="text-xs font-mono text-muted-foreground">
+                          {codeLabel}
+                        </span>
+                        <span>{opt.name}</span>
+                      </>
+                    ) : (
+                      showCode ? codeLabel : opt.name
+                    )}
+                    <button
+                      type="button"
+                      className="ml-1 p-0.5 rounded hover:bg-muted-foreground/20"
+                      onClick={e => handleRemoveChip(opt.code, e)}
+                      tabIndex={-1}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                );
+              })
             ) : (
               <span>{placeholder}</span>
             )}
@@ -201,17 +249,19 @@ export function EnhancedMultiSelect({
                           paddingLeft: `${6 + (option.indent || 0) * 20}px`
                         }}
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4 mt-1 flex-shrink-0",
-                            isSelected ? "opacity-100" : "opacity-0"
-                          )}
+                        <Checkbox
+                          checked={isSelected}
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          className="mr-2 mt-1 flex-shrink-0 pointer-events-none"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
-                              {option.code}
-                            </span>
+                            {(showCode || option.displayCode) && (
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {option.displayCode ?? option.code}
+                              </span>
+                            )}
                             <span className={cn(
                               "text-foreground truncate",
                               option.name.includes('(Entire Group)') && "font-bold text-blue-700",

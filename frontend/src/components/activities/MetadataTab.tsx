@@ -254,7 +254,7 @@ const metadataCache = new Map<string, MetadataResponse>();
 
 export default function MetadataTab({ activityId }: MetadataTabProps) {
   const cached = activityId ? metadataCache.get(activityId) : null;
-  const [data, setData] = useState<MetadataResponse | null>(cached);
+  const [data, setData] = useState<MetadataResponse | null>(cached ?? null);
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
   const [savingReportingOrg, setSavingReportingOrg] = useState(false);
@@ -418,7 +418,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchMetadata}
+            onClick={() => fetchMetadata()}
             className="ml-4"
           >
             <RefreshCw className="h-4 w-4 mr-1" />
@@ -443,18 +443,13 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => setShowTechnical(!showTechnical)}
-          className="text-muted-foreground"
         >
           {showTechnical ? 'Hide technical details' : 'Show technical details'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={fetchMetadata}>
-          <RefreshCw className="h-4 w-4 mr-1" />
-          Refresh
         </Button>
       </div>
 
@@ -579,8 +574,8 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">
                 <LabelSaveIndicator
-                  isSaving={languageAutosave.isSaving}
-                  isSaved={languageAutosave.isPersistentlySaved || !!language}
+                  isSaving={languageAutosave.state.isSaving}
+                  isSaved={languageAutosave.state.isPersistentlySaved || !!language}
                   hasValue={!!language}
                 >
                   Narrative Language
@@ -604,7 +599,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Reporting Organization</td>
               <td className="px-4 py-3">
-                <div className="max-w-md">
+                <div className="w-full">
                   <LockedOrganizationField
                     label="Reported by"
                     value={metadata.reporting_org_id || ""}

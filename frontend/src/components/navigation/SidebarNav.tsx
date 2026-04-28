@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
@@ -87,41 +87,8 @@ export function SidebarNav({
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
-  const [sidebarCounts, setSidebarCounts] = useState<Record<string, number>>({})
 
   const currentModule = getCurrentModule(pathname)
-
-  useEffect(() => {
-    // Only fetch sidebar counts for AIMS module
-    if (currentModule !== 'aims') return
-    let cancelled = false
-    async function fetchCounts() {
-      try {
-        const res = await apiFetch('/api/sidebar-counts')
-        if (!res.ok) return
-        const data = await res.json()
-        if (!cancelled) setSidebarCounts(data)
-      } catch {
-        // silently fail - counts are cosmetic
-      }
-    }
-    fetchCounts()
-    return () => { cancelled = true }
-  }, [currentModule])
-
-  // Map href to count key
-  const countMap: Record<string, number | undefined> = {
-    '/activities': sidebarCounts.activities,
-    '/transactions': sidebarCounts.transactions,
-    '/planned-disbursements': sidebarCounts.plannedDisbursements,
-    '/budgets': sidebarCounts.budgets,
-    '/organizations': sidebarCounts.organizations,
-    '/rolodex': sidebarCounts.rolodex,
-    '/library': sidebarCounts.documents,
-    '/faq': sidebarCounts.faqs,
-    '/sectors': sidebarCounts.sectors,
-    '/policy-markers': sidebarCounts.policyMarkers,
-  }
 
   if (isLoading) {
     return (
@@ -647,8 +614,6 @@ export function SidebarNav({
                               : pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
                           })()
 
-                          const itemCount = countMap[item.href]
-
                           const linkContent = (
                             <Link
                               href={item.href}
@@ -679,16 +644,6 @@ export function SidebarNav({
                               >
                                 {item.name}
                               </span>
-                              {!isCollapsed && itemCount != null && itemCount > 0 && (
-                                <span className={cn(
-                                  "text-[11px] tabular-nums font-normal ml-auto",
-                                  isActive
-                                    ? "text-[hsl(var(--nav-active-fg))] opacity-80"
-                                    : "text-muted-foreground dark:text-muted-foreground"
-                                )}>
-                                  {itemCount.toLocaleString()}
-                                </span>
-                              )}
                             </Link>
                           )
 

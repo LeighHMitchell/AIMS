@@ -11,7 +11,7 @@ interface EnhancedDatePickerProps {
   placeholder?: string
   disabled?: boolean
   className?: string
-  format?: 'dd/mm/yyyy' | 'mm/dd/yyyy' | 'yyyy-mm-dd'
+  format?: 'dd/mm/yyyy' | 'mm/dd/yyyy' | 'yyyy-mm-dd' | 'd MMMM yyyy'
 }
 
 export function EnhancedDatePicker({
@@ -76,10 +76,15 @@ export function EnhancedDatePicker({
   }, [isOpen])
 
   const formatDate = (date: Date, format: string) => {
-    const day = String(date.getDate()).padStart(2, '0')
+    const dayNum = date.getDate()
+    const day = String(dayNum).padStart(2, '0')
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const year = String(date.getFullYear())
-    
+    const monthLong = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ][date.getMonth()]
+
     switch (format) {
       case 'dd/mm/yyyy':
         return `${day}/${month}/${year}`
@@ -87,6 +92,8 @@ export function EnhancedDatePicker({
         return `${month}/${day}/${year}`
       case 'yyyy-mm-dd':
         return `${year}-${month}-${day}`
+      case 'd MMMM yyyy':
+        return `${dayNum} ${monthLong} ${year}`
       default:
         return `${day}/${month}/${year}`
     }
@@ -94,12 +101,33 @@ export function EnhancedDatePicker({
 
   const parseDate = (dateString: string, format: string): Date | null => {
     if (!dateString) return null
-    
+
     let day: number, month: number, year: number
-    
+
+    if (format === 'd MMMM yyyy') {
+      // Accepts "1 March 2025", "01 Mar 2025", "1-march-2025", etc.
+      const monthNames = [
+        'january', 'february', 'march', 'april', 'may', 'june',
+        'july', 'august', 'september', 'october', 'november', 'december'
+      ]
+      const parts = dateString.trim().toLowerCase().split(/[\s\-\/,]+/).filter(Boolean)
+      if (parts.length !== 3) return null
+      day = parseInt(parts[0])
+      const monthIdx = monthNames.findIndex(m => m === parts[1] || m.slice(0, 3) === parts[1])
+      if (monthIdx === -1) return null
+      month = monthIdx
+      year = parseInt(parts[2])
+      if (isNaN(day) || isNaN(year)) return null
+      if (day < 1 || day > 31) return null
+      if (year < 1000 || year > 9999) return null
+      const date = new Date(year, month, day)
+      if (date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) return null
+      return date
+    }
+
     // Remove any non-digit characters except slashes and dashes
     const cleaned = dateString.replace(/[^\d\/\-]/g, '')
-    
+
     switch (format) {
       case 'dd/mm/yyyy':
         const ddmmyyyy = cleaned.split(/[\/\-]/)
