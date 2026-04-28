@@ -55,11 +55,14 @@ export function useReadinessChecklist({
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
   // Fetch readiness state
-  const fetchState = useCallback(async () => {
+  // `silent` skips the global loading flag so in-flight refetches after a
+  // save don't blow the UI away with a skeleton — the tab stays interactive
+  // while the network request completes.
+  const fetchState = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!activityId) return;
 
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       const response = await apiFetch(`/api/activities/${activityId}/readiness`);
@@ -74,7 +77,7 @@ export function useReadinessChecklist({
       console.error('[useReadinessChecklist] Error fetching state:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [activityId]);
 
@@ -174,7 +177,7 @@ export function useReadinessChecklist({
       }
 
       // Refresh to get updated state
-      await fetchState();
+      await fetchState({ silent: true });
 
       toast.success('Response saved');
     } catch (err) {
@@ -210,7 +213,7 @@ export function useReadinessChecklist({
       }
 
       // Refresh to get updated state
-      await fetchState();
+      await fetchState({ silent: true });
 
       toast.success('Document uploaded');
     } catch (err) {
@@ -242,9 +245,11 @@ export function useReadinessChecklist({
       }
 
       // Refresh to get updated state
-      await fetchState();
+      await fetchState({ silent: true });
 
-      toast.success('Document deleted');
+      // Component (ReadinessDocumentUpload) owns the deferred-delete UX and
+      // surfaces its own "Document removed" toast with an Undo action, so
+      // we deliberately don't re-toast here on success.
     } catch (err) {
       console.error('[useReadinessChecklist] Error deleting document:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to delete document');
@@ -275,7 +280,7 @@ export function useReadinessChecklist({
         throw new Error(result.error || 'Failed to rename document');
       }
 
-      await fetchState();
+      await fetchState({ silent: true });
       toast.success('Document renamed');
     } catch (err) {
       console.error('[useReadinessChecklist] Error renaming document:', err);
@@ -312,7 +317,7 @@ export function useReadinessChecklist({
       }
 
       // Refresh to get updated state
-      await fetchState();
+      await fetchState({ silent: true });
 
       toast.success('Stage signed off successfully');
     } catch (err) {

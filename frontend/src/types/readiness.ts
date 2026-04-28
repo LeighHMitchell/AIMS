@@ -29,19 +29,19 @@ export const CHECKLIST_STATUS_OPTIONS: { value: ChecklistStatus; label: string; 
   { value: 'not_required', label: 'Not Required', color: 'text-gray-900' },
 ];
 
-export const FINANCING_TYPE_OPTIONS: { value: FinancingType; label: string; description: string; icon: 'Gift' | 'Landmark' | 'GraduationCap' | 'Layers' | 'MoreHorizontal' }[] = [
-  { value: 'grant', label: 'Grant', description: 'Non-repayable funds, typically public sector support', icon: 'Gift' },
-  { value: 'loan', label: 'Loan', description: 'Repayable funds with terms and conditions', icon: 'Landmark' },
-  { value: 'technical_assistance', label: 'Technical Assistance', description: 'Personnel, training, or capacity support', icon: 'GraduationCap' },
-  { value: 'reimbursable', label: 'Reimbursable Grant or Other', description: 'Partial repayment or hybrid arrangement', icon: 'Layers' },
-  { value: 'investment_guarantee', label: 'Investment/Guarantee', description: 'Risk capital or financial instruments without cash transfer', icon: 'MoreHorizontal' },
+export const FINANCING_TYPE_OPTIONS: { value: FinancingType; code: string; label: string; description: string; icon: 'Gift' | 'Landmark' | 'GraduationCap' | 'Layers' | 'MoreHorizontal' }[] = [
+  { value: 'grant', code: '1', label: 'Grant', description: 'Non-repayable funds, typically public sector support', icon: 'Gift' },
+  { value: 'loan', code: '2', label: 'Loan', description: 'Repayable funds with terms and conditions', icon: 'Landmark' },
+  { value: 'technical_assistance', code: '3', label: 'Technical Assistance', description: 'Personnel, training, or capacity support', icon: 'GraduationCap' },
+  { value: 'reimbursable', code: '4', label: 'Reimbursable Grant or Other', description: 'Partial repayment or hybrid arrangement', icon: 'Layers' },
+  { value: 'investment_guarantee', code: '5', label: 'Investment/Guarantee', description: 'Risk capital or financial instruments without cash transfer', icon: 'MoreHorizontal' },
 ];
 
-export const FINANCING_MODALITY_OPTIONS: { value: FinancingModality; label: string; description: string; icon: 'Briefcase' | 'Target' | 'Wallet' | 'Pencil' }[] = [
-  { value: 'standard', label: 'Standard Project', description: 'Traditional investment project financing', icon: 'Briefcase' },
-  { value: 'results_based', label: 'Results-Based Financing', description: 'Disbursements linked to achievement of results (PforR/RBL)', icon: 'Target' },
-  { value: 'budgetary_support', label: 'Budgetary Support', description: 'Direct budget support tied to policy reforms', icon: 'Wallet' },
-  { value: 'project_preparation', label: 'Project Preparation', description: 'Financing for project preparation activities', icon: 'Pencil' },
+export const FINANCING_MODALITY_OPTIONS: { value: FinancingModality; code: string; label: string; description: string; icon: 'Briefcase' | 'Target' | 'Wallet' | 'Pencil' }[] = [
+  { value: 'standard', code: '1', label: 'Standard Project', description: 'Traditional investment project financing', icon: 'Briefcase' },
+  { value: 'results_based', code: '2', label: 'Results-Based Financing', description: 'Disbursements linked to achievement of results (PforR/RBL)', icon: 'Target' },
+  { value: 'budgetary_support', code: '3', label: 'Budgetary Support', description: 'Direct budget support tied to policy reforms', icon: 'Wallet' },
+  { value: 'project_preparation', code: '4', label: 'Project Preparation', description: 'Financing for project preparation activities', icon: 'Pencil' },
 ];
 
 // ============================================
@@ -102,7 +102,7 @@ export interface ReadinessChecklistItem {
 export interface ActivityReadinessConfig {
   id: string;
   activity_id: string;
-  financing_type: FinancingType | null;
+  financing_type: FinancingType[] | null;
   financing_modality: FinancingModality | null;
   is_infrastructure: boolean;
   additional_flags: Record<string, unknown>;
@@ -243,7 +243,7 @@ export interface ActivityReadinessState {
  * Request to update activity readiness config
  */
 export interface UpdateReadinessConfigRequest {
-  financing_type?: FinancingType | null;
+  financing_type?: FinancingType[] | null;
   financing_modality?: FinancingModality | null;
   is_infrastructure?: boolean;
   additional_flags?: Record<string, unknown>;
@@ -300,7 +300,7 @@ export interface UpsertChecklistItemRequest {
  * Context for filtering applicable items
  */
 export interface ReadinessFilterContext {
-  financing_type: FinancingType | null;
+  financing_type: FinancingType[] | null;
   financing_modality: FinancingModality | null;
   is_infrastructure: boolean;
 }
@@ -313,15 +313,19 @@ export function isItemApplicable(
   context: ReadinessFilterContext
 ): boolean {
   const conditions = item.applicable_conditions;
-  
+
   // If no conditions, always applicable
   if (!conditions || Object.keys(conditions).length === 0) {
     return true;
   }
 
-  // Check financing_type condition
+  // Check financing_type condition — item applies if any of the project's
+  // selected financing types is in the item's required set.
   if (conditions.financing_type && conditions.financing_type.length > 0) {
-    if (!context.financing_type || !conditions.financing_type.includes(context.financing_type)) {
+    const selected = context.financing_type || [];
+    if (selected.length === 0) return false;
+    const required = conditions.financing_type;
+    if (!selected.some(t => required.includes(t))) {
       return false;
     }
   }

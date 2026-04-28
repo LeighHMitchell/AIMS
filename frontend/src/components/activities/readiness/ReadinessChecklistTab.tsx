@@ -11,16 +11,26 @@ import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import {
   AlertCircle,
-  RefreshCw,
   Eye,
   Lock,
-  FileCheck,
   CheckCircle,
   Clock,
   XCircle,
   HelpCircle,
-  Building2
+  Download,
+  Loader2,
+  ChevronDown,
+  FileArchive,
+  FileText,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { OrganizationSearchableSelect } from '@/components/ui/organization-searchable-select';
 import { Button } from '@/components/ui/button';
 
 import { useReadinessChecklist } from './hooks/useReadinessChecklist';
@@ -61,9 +71,12 @@ interface ReadinessChecklistTabProps {
   activityId: string;
   /** Default Modality value from Transaction Defaults tab (e.g. "1"=Grant, "2"=Loan) */
   defaultModality?: string;
+  /** Notify the parent when the activity reaches the Endorsement stage
+   *  (i.e. a government_endorsement row exists with a validation_status set). */
+  onEndorsementReachedChange?: (reached: boolean) => void;
 }
 
-export function ReadinessChecklistTab({ activityId, defaultModality }: ReadinessChecklistTabProps) {
+export function ReadinessChecklistTab({ activityId, defaultModality, onEndorsementReachedChange }: ReadinessChecklistTabProps) {
   const permissions = useReadinessPermissions();
 
   const {
@@ -99,6 +112,9 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
   const [governmentOrgs, setGovernmentOrgs] = useState<GovernmentOrganization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
+  // Download-package state
+  const [downloadingPackage, setDownloadingPackage] = useState(false);
+
   // Wizard step state
   const [activeStep, setActiveStep] = useState(0);
   const hasSetInitialStep = useRef(false);
@@ -111,11 +127,14 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
         const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const allOrgs = await response.json();
-          const govOrgs = allOrgs.filter((org: any) =>
-            org.Organisation_Type_Code === '10' ||
-            org.Organisation_Type_Code === '11' ||
-            org.type === 'partner_government'
-          );
+          // "Government Partners" — matches the Organizations page tab:
+          // Organisation_Type_Code 10 (Government) or 11 (Local Govt) AND
+          // the organisation is based in Myanmar.
+          const govOrgs = allOrgs.filter((org: any) => {
+            const code = String(org.Organisation_Type_Code ?? '');
+            const country = String(org.country_represented ?? org.country ?? '').toLowerCase().trim();
+            return (code === '10' || code === '11') && country === 'myanmar';
+          });
           setGovernmentOrgs(govOrgs);
         }
       } catch (error) {
@@ -141,6 +160,12 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
       lastSavedRef.current = JSON.stringify(formData);
     }
   }, [endorsement]);
+
+  // Notify the parent (sidebar tab-completion) whenever the endorsement
+  // validation_status flips between set/unset.
+  useEffect(() => {
+    onEndorsementReachedChange?.(!!endorsement?.validation_status);
+  }, [endorsement?.validation_status, onEndorsementReachedChange]);
 
   // Auto-save endorsement with debounce
   const saveEndorsementDebounced = useCallback(async (data: GovernmentEndorsementFormData) => {
@@ -181,13 +206,13 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
       !loading &&
       !hasPrePopulated.current &&
       defaultModality &&
-      !state?.config?.financing_type
+      (!state?.config?.financing_type || state.config.financing_type.length === 0)
     ) {
       hasPrePopulated.current = true;
       const mapped = mapModalityToFinancingType(defaultModality);
       if (mapped) {
         updateConfig({
-          financing_type: mapped,
+          financing_type: [mapped],
           financing_modality: state?.config?.financing_modality || null,
           is_infrastructure: state?.config?.is_infrastructure || false,
         });
@@ -222,7 +247,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
       if (step.type === 'config') {
-        if (!state?.config?.financing_type) break;
+        if (!state?.config?.financing_type || state.config.financing_type.length === 0) break;
       } else if (step.type === 'stage') {
         const stage = filteredStages.find((s) => s.id === step.id);
         if (stage && stage.progress.not_completed > 0) {
@@ -243,7 +268,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
     if (index < 0 || index >= steps.length) return false;
     const step = steps[index];
     if (step.type === 'config') {
-      return !!state?.config?.financing_type;
+      return !!state?.config?.financing_type && state.config.financing_type.length > 0;
     }
     if (step.type === 'stage') {
       const stage = filteredStages.find((s) => s.id === step.id);
@@ -294,6 +319,48 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
     if (canNavigateToStep(index)) {
       setActiveStep(index);
       scrollToWizard();
+    }
+  };
+
+  // Download a self-contained package. Two formats supported:
+  //   'zip' — summary PDF + evidence files in native formats (default)
+  //   'pdf' — summary merged with every PDF/image evidence into one file
+  const handleDownloadPackage = async (outputFormat: 'zip' | 'pdf' = 'zip') => {
+    if (downloadingPackage) return;
+    setDownloadingPackage(true);
+    try {
+      const res = await apiFetch(
+        `/api/activities/${activityId}/readiness/export?format=${outputFormat}`,
+        { method: 'POST' }
+      );
+      if (!res.ok) {
+        let msg = 'Could not build the package. Please try again.';
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.details ? `${data.error}: ${data.details}` : data.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const cd = res.headers.get('Content-Disposition') || '';
+      const m = /filename\s*=\s*"?([^";]+)"?/i.exec(cd);
+      const filename = m?.[1] || `readiness-package_${activityId}.${outputFormat}`;
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast('Package ready', { description: filename });
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not build the package. Please try again.');
+    } finally {
+      setDownloadingPackage(false);
     }
   };
 
@@ -349,23 +416,14 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
   return (
     <div className="space-y-4">
       {/* Action bar */}
-      <div className="flex items-center justify-end gap-2">
-        {permissions.isReadOnly && (
+      {permissions.isReadOnly && (
+        <div className="flex items-center justify-end gap-2">
           <Badge variant="secondary" className="gap-1">
             <Eye className="h-3 w-3" />
             Read-only
           </Badge>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refresh}
-          disabled={isUpdating}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isUpdating ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
+        </div>
+      )}
 
       {/* Read-only notice */}
       {permissions.isReadOnly && (
@@ -397,7 +455,8 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                 <div className="p-6 pb-2">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Project Configuration</h3>
                   <p className="text-body text-muted-foreground mt-1.5">
-                    Configure the project type to see applicable checklist items
+                    Configure the project type to see applicable checklist items.
+                    {(!state?.config?.financing_type || state.config.financing_type.length === 0) && ' Please select a financing type to proceed to the checklist stages.'}
                   </p>
                 </div>
                 <div className="p-6 pt-4">
@@ -408,15 +467,6 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                   />
                 </div>
               </div>
-
-              {!state?.config?.financing_type && (
-                <Alert className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Please select a financing type to proceed to the checklist stages.
-                  </AlertDescription>
-                </Alert>
-              )}
 
               <ReadinessWizardFooter
                 activeStep={activeStep}
@@ -459,10 +509,64 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
           {/* Endorsement step */}
           {steps[activeStep]?.type === 'endorsement' && (
             <div>
+              {/* Package download — always available on the Endorsement step.
+                  Offers a choice of ZIP (native-format originals) or a single
+                  merged PDF (summary + embedded PDF/image evidence). */}
+              <div className="flex items-center justify-end mb-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={downloadingPackage}
+                    >
+                      {downloadingPackage ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                          Building package…
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-1.5" />
+                          Download package
+                          <ChevronDown className="h-4 w-4 ml-1.5 opacity-60" />
+                        </>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-72">
+                    <DropdownMenuItem
+                      onSelect={() => handleDownloadPackage('zip')}
+                      disabled={downloadingPackage}
+                    >
+                      <FileArchive className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">ZIP — summary + originals</span>
+                        <span className="text-helper text-muted-foreground">
+                          Keeps Word / Excel / PDF / images in their native formats.
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => handleDownloadPackage('pdf')}
+                      disabled={downloadingPackage}
+                    >
+                      <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Single PDF — everything merged</span>
+                        <span className="text-helper text-muted-foreground">
+                          Summary + PDF and image evidence in one file. Word/Excel listed only.
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
               <div className="border rounded-lg">
                 <div className="p-6 pb-2">
-                  <h3 className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
-                    <FileCheck className="h-5 w-5" />
+                  <h3 className="text-lg font-semibold leading-none tracking-tight">
                     Endorsement Details
                   </h3>
                   <p className="text-body text-muted-foreground mt-1.5">
@@ -498,7 +602,25 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                           disabled={permissions.isReadOnly}
                         >
                           <SelectTrigger className="text-left">
-                            <SelectValue placeholder="Select validation status" />
+                            <SelectValue placeholder="Select validation status">
+                              {(() => {
+                                const selected = VALIDATION_STATUS_OPTIONS.find(
+                                  (o) => o.value === endorsementForm.validation_status
+                                );
+                                if (!selected) return null;
+                                const Icon = selected.value === 'validated'
+                                  ? CheckCircle
+                                  : selected.value === 'rejected'
+                                    ? XCircle
+                                    : HelpCircle;
+                                return (
+                                  <span className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                    <span className="font-medium">{selected.label}</span>
+                                  </span>
+                                );
+                              })()}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {VALIDATION_STATUS_OPTIONS.map((option) => {
@@ -507,15 +629,10 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                                 : option.value === 'rejected'
                                   ? XCircle
                                   : HelpCircle;
-                              const iconColor = option.value === 'validated'
-                                ? 'text-[hsl(var(--success-icon))]'
-                                : option.value === 'rejected'
-                                  ? 'text-destructive'
-                                  : 'text-amber-600';
                               return (
                                 <SelectItem key={option.value} value={option.value}>
                                   <div className="flex items-start gap-2">
-                                    <IconComponent className={`h-4 w-4 mt-0.5 flex-shrink-0 ${iconColor}`} />
+                                    <IconComponent className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
                                     <div>
                                       <div className="font-medium">{option.label}</div>
                                       <div className="text-helper text-muted-foreground">{option.description}</div>
@@ -532,44 +649,23 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
                           Validating Authority
-                          <HelpTextTooltip content="Government ministry responsible for validating the activity" />
+                          <HelpTextTooltip content="Myanmar government partner responsible for validating this activity" />
                         </Label>
-                        <Select
+                        <OrganizationSearchableSelect
+                          // Endorsement table stores the authority as the organisation name,
+                          // so we key each option by its name for round-trip compatibility.
+                          organizations={governmentOrgs.map((org) => ({
+                            ...org,
+                            id: org.name,
+                          }))}
                           value={endorsementForm.validating_authority || ''}
                           onValueChange={(value) => handleEndorsementChange('validating_authority', value)}
+                          placeholder={loadingOrgs ? 'Loading government partners…' : 'Select government partner…'}
+                          searchPlaceholder="Search government partners…"
                           disabled={permissions.isReadOnly || loadingOrgs}
-                        >
-                          <SelectTrigger className="text-left">
-                            <SelectValue placeholder={loadingOrgs ? "Loading ministries..." : "Select government ministry"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {governmentOrgs.length === 0 && !loadingOrgs ? (
-                              <div className="p-2 text-body text-muted-foreground">No government organizations found</div>
-                            ) : (
-                              governmentOrgs.map((org) => (
-                                <SelectItem key={org.id} value={org.name}>
-                                  <div className="flex items-center gap-3">
-                                    {org.logo ? (
-                                      <img
-                                        src={org.logo}
-                                        alt=""
-                                        className="h-5 w-5 object-contain flex-shrink-0 rounded"
-                                      />
-                                    ) : (
-                                      <Building2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                                    )}
-                                    <div className="flex items-center gap-2">
-                                      {org.acronym && (
-                                        <span className="font-medium text-muted-foreground">{org.acronym}</span>
-                                      )}
-                                      <span>{org.name}</span>
-                                    </div>
-                                  </div>
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
+                          emptyStateMessage="No government partners found."
+                          emptyStateSubMessage="Only organisations classified as Government Partners appear here."
+                        />
                       </div>
 
                       {/* Dates */}
@@ -584,6 +680,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                             onChange={(date) => handleEndorsementChange('effective_date', date?.toISOString().split('T')[0])}
                             placeholder="Select effective date"
                             disabled={permissions.isReadOnly}
+                            format="d MMMM yyyy"
                           />
                         </div>
 
@@ -597,6 +694,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                             onChange={(date) => handleEndorsementChange('validation_date', date?.toISOString().split('T')[0])}
                             placeholder="Select validation date"
                             disabled={permissions.isReadOnly}
+                            format="d MMMM yyyy"
                           />
                         </div>
                       </div>
@@ -616,11 +714,11 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                         />
                       </div>
 
-                      {/* Show validation status badge if validated */}
+                      {/* Show validation status banner if validated */}
                       {endorsementForm.validation_status === 'validated' && (
-                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
-                          <span className="text-green-700 font-medium">This activity has been validated by the government</span>
+                        <div className="flex items-center gap-2 p-3 bg-green-800 border border-green-900 rounded-lg">
+                          <CheckCircle className="h-5 w-5 text-white" />
+                          <span className="text-white font-medium">This activity has been validated by the government</span>
                         </div>
                       )}
                     </>

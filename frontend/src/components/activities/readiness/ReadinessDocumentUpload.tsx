@@ -1,20 +1,40 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Upload,
-  FileText,
   Trash2,
-  ExternalLink,
   Loader2,
   Pencil,
   Check,
   X,
+  HelpCircle,
+  Download,
+  FileText,
+  FileImage,
+  FileSpreadsheet,
+  File as FileIcon,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -28,6 +48,7 @@ interface ReadinessDocumentUploadProps {
   isUploading: boolean;
   readOnly: boolean;
   isRequired?: boolean;
+  guidanceText?: string | null;
 }
 
 export function ReadinessDocumentUpload({
@@ -38,9 +59,24 @@ export function ReadinessDocumentUpload({
   isUploading,
   readOnly,
   isRequired = false,
+  guidanceText,
 }: ReadinessDocumentUploadProps) {
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Docs the user has confirmed removal for but whose DELETE call is still
+  // pending (holds inside the undo window). They're hidden from the table
+  // and their timer is kept in deferredRef so the undo toast can cancel it.
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+  const deferredRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  // On unmount, flush any still-pending deletions so we don't orphan rows
+  useEffect(() => {
+    return () => {
+      deferredRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      deferredRef.current.clear();
+    };
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -62,16 +98,15 @@ export function ReadinessDocumentUpload({
     disabled: readOnly || isUploading,
   });
 
-  const hasDocuments = documents.length > 0;
-
   const getFileIcon = (fileType: string | null) => {
-    if (fileType?.startsWith('image/')) {
-      return '🖼️';
-    }
-    if (fileType === 'application/pdf') {
-      return '📄';
-    }
-    return '📎';
+    const t = fileType || '';
+    if (t.startsWith('image/'))
+      return <FileImage className="h-4 w-4 text-muted-foreground" />;
+    if (t.includes('pdf'))
+      return <FileText className="h-4 w-4 text-muted-foreground" />;
+    if (t.includes('spreadsheet') || t.includes('excel') || t.includes('csv'))
+      return <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />;
+    return <FileIcon className="h-4 w-4 text-muted-foreground" />;
   };
 
   const formatFileSize = (bytes: number | null) => {
@@ -99,140 +134,285 @@ export function ReadinessDocumentUpload({
     setEditName('');
   };
 
+  // Filter out docs whose deletion is in the undo window
+  const visibleDocuments = documents.filter((d) => !pendingDeleteIds.has(d.id));
+  const hasDocuments = visibleDocuments.length > 0;
+
+  const confirmDeletion = () => {
+    const docId = confirmDeleteId;
+    setConfirmDeleteId(null);
+    if (!docId) return;
+
+    // Optimistically hide the row and start a 5s deferred deletion
+    setPendingDeleteIds((prev) => {
+      const next = new Set(prev);
+      next.add(docId);
+      return next;
+    });
+
+    const timeoutId = setTimeout(async () => {
+      deferredRef.current.delete(docId);
+      setPendingDeleteIds((prev) => {
+        const next = new Set(prev);
+        next.delete(docId);
+        return next;
+      });
+      try {
+        await onDelete(docId);
+      } catch {
+        // onDelete already toasts on failure; nothing else to do
+      }
+    }, 5000);
+    deferredRef.current.set(docId, timeoutId);
+
+    toast('Document removed', {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const t = deferredRef.current.get(docId);
+          if (t) {
+            clearTimeout(t);
+            deferredRef.current.delete(docId);
+          }
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev);
+            next.delete(docId);
+            return next;
+          });
+        },
+      },
+    });
+  };
+
+  const pendingDoc = confirmDeleteId
+    ? documents.find((d) => d.id === confirmDeleteId) || null
+    : null;
+
   return (
     <div className="space-y-3">
-      <Label className="text-body font-medium text-foreground flex items-center gap-2">
-        <FileText className="h-4 w-4" />
-        Supporting Document
+      <Label className="text-body font-medium text-foreground flex items-center gap-1.5">
+        Supporting Documents
+        {guidanceText && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm">
+                <p className="text-body">{guidanceText}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </Label>
 
-      {/* Uploaded Documents List */}
-      {hasDocuments && (
-        <div className="space-y-2">
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex items-center justify-between p-3 bg-muted/50 border rounded-lg"
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-lg flex-shrink-0">
-                  {getFileIcon(doc.file_type)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  {editingDocId === doc.id ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-7 text-body"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveEdit(doc.id);
-                          if (e.key === 'Escape') cancelEditing();
-                        }}
-                      />
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(doc.id)}>
-                        <Check className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={cancelEditing}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-body font-medium text-foreground truncate">
-                        {doc.file_name}
-                      </p>
-                      {!readOnly && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-5 w-5 p-0 flex-shrink-0"
-                          onClick={(e) => { e.stopPropagation(); startEditing(doc); }}
-                          title="Rename document"
-                        >
-                          <Pencil className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                  <p className="text-helper text-muted-foreground">
-                    {formatFileSize(doc.file_size)}
-                    {doc.uploaded_at && (
-                      <> • Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}</>
-                    )}
-                    {doc.uploaded_by_user?.name && (
-                      <> by {doc.uploaded_by_user.name}</>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => window.open(doc.file_url, '_blank')}
-                  title="Open document"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-                {!readOnly && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onDelete(doc.id)}
-                    disabled={isUploading}
-                    title="Delete document"
-                  >
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Upload Drop Zone */}
+      {/* Upload Drop Zone — matches DocumentDropzone (Gov Inputs / Evaluation) */}
       {!readOnly && (
         <div
           {...getRootProps()}
           className={cn(
-            "border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer",
+            "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
             isDragActive
-              ? "border-foreground/50 bg-muted"
-              : "border-border hover:border-muted-foreground hover:bg-muted/50",
-            isUploading && "opacity-50 cursor-wait",
-            readOnly && "opacity-50 cursor-not-allowed"
+              ? "border-primary bg-primary/5"
+              : "border-input hover:border-slate-400",
+            (isUploading) && "opacity-50 cursor-not-allowed"
           )}
         >
           <input {...getInputProps()} />
-
           {isUploading ? (
-            <div className="space-y-2">
-              <Loader2 className="h-6 w-6 mx-auto text-muted-foreground animate-spin" />
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
               <p className="text-body text-muted-foreground">Uploading...</p>
             </div>
-          ) : isDragActive ? (
-            <div className="space-y-2">
-              <Upload className="h-6 w-6 mx-auto text-foreground" />
-              <p className="text-body font-medium text-foreground">Drop file here</p>
-            </div>
           ) : (
-            <div className="space-y-2">
-              <Upload className="h-6 w-6 mx-auto text-muted-foreground/60" />
-              <p className="text-body text-muted-foreground">
-                {hasDocuments ? 'Add another document' : 'Drag & drop evidence document'}
-                <br />
-                <span className="text-helper text-muted-foreground/60">
-                  or click to browse (PDF, Word, Images - max 10MB)
-                  {isRequired && ' · Recommended for completed items'}
-                </span>
-              </p>
+            <div className="flex flex-col items-center gap-2">
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              {isDragActive ? (
+                <p className="text-body font-medium text-primary">Drop files here</p>
+              ) : (
+                <>
+                  <p className="text-body font-medium text-foreground">
+                    Drag & drop files here, or click to browse
+                  </p>
+                  <p className="text-helper text-muted-foreground">
+                    PDF, Word, images up to 10.0 MB
+                    {isRequired && ' · Recommended for completed items'}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>
       )}
+
+      {/* Uploaded Documents Table */}
+      {hasDocuments && (
+        <div className="relative w-full overflow-x-auto overflow-y-visible">
+          <table className="w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg">
+            <thead className="bg-surface-muted">
+              <tr>
+                <th className="w-8 p-2" />
+                <th className="text-left p-2 font-medium text-helper">File name</th>
+                <th className="text-right p-2 font-medium text-helper w-28">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {visibleDocuments.map((doc) => {
+                const isRenaming = editingDocId === doc.id;
+                return (
+                  <tr key={doc.id} className="hover:bg-muted/50 group">
+                    <td className="p-2 align-top">{getFileIcon(doc.file_type)}</td>
+                    <td className="p-2 align-top">
+                      {isRenaming ? (
+                        <input
+                          autoFocus
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              saveEdit(doc.id);
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              cancelEditing();
+                            }
+                          }}
+                          onBlur={() => saveEdit(doc.id)}
+                          className="w-full px-2 py-1 text-body font-medium border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      ) : (
+                        <div className="min-w-0">
+                          <span
+                            className="text-body font-medium truncate block cursor-text"
+                            onDoubleClick={() => !readOnly && startEditing(doc)}
+                            title="Double-click to rename"
+                          >
+                            {doc.file_name}
+                          </span>
+                          <span className="text-helper text-muted-foreground block">
+                            {formatFileSize(doc.file_size)}
+                            {doc.uploaded_at && (
+                              <> · Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}</>
+                            )}
+                            {doc.uploaded_by_user?.name && (
+                              <> by {doc.uploaded_by_user.name}</>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-2 align-top text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {isRenaming ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => saveEdit(doc.id)}
+                              title="Save"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={cancelEditing}
+                              title="Cancel"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            {doc.file_url && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(doc.file_url, '_blank');
+                                }}
+                                title="Download"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {!readOnly && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEditing(doc);
+                                }}
+                                title="Rename"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {!readOnly && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteId(doc.id);
+                                }}
+                                disabled={isUploading}
+                                title="Remove"
+                              >
+                                {isUploading ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <AlertDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => !open && setConfirmDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this document?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDoc ? (
+                <>You're about to remove <span className="font-medium">{pendingDoc.file_name}</span>. You'll have 5 seconds to undo before it's permanently deleted.</>
+              ) : (
+                <>You'll have 5 seconds to undo before it's permanently deleted.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeletion}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

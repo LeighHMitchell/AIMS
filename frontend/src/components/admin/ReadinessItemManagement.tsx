@@ -209,7 +209,7 @@ export function ReadinessItemManagement({
         throw new Error(data.error || 'Failed to delete item');
       }
 
-      toast.success('Item deleted');
+      toast('Item deleted');
       fetchItems();
     } catch (err) {
       console.error('Error deleting item:', err);

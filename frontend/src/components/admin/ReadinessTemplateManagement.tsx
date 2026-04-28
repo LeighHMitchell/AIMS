@@ -167,7 +167,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
         throw new Error(data.error || 'Failed to delete template');
       }
 
-      toast.success('Template deleted');
+      toast('Template deleted');
       fetchTemplates();
     } catch (err) {
       console.error('Error deleting template:', err);

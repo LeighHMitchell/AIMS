@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { 
   ChevronDown, 
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { RequiredDot } from '@/components/ui/required-dot';
 
 import type { 
   ReadinessChecklistItem as ChecklistItemType,
@@ -42,9 +43,12 @@ interface ReadinessChecklistItemProps {
   onUpdateResponse: (data: UpdateReadinessResponseRequest) => Promise<void>;
   onUploadDocument: (file: File) => Promise<void>;
   onDeleteDocument: (documentId: string) => Promise<void>;
-  onRenameDocument: (documentId: string, fileName: string) => Promise<void>;
+  onRenameDocument?: (documentId: string, fileName: string) => Promise<void>;
   isUpdating: boolean;
   readOnly: boolean;
+  /** Controlled expansion — when provided, parent owns the open/closed state. */
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
 }
 
 export function ReadinessChecklistItem({
@@ -57,8 +61,16 @@ export function ReadinessChecklistItem({
   onRenameDocument,
   isUpdating,
   readOnly,
+  isExpanded: controlledExpanded,
+  onToggleExpanded,
 }: ReadinessChecklistItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
+  const isControlled = controlledExpanded !== undefined;
+  const isExpanded = isControlled ? (controlledExpanded as boolean) : uncontrolledExpanded;
+  const toggleExpanded = () => {
+    if (isControlled) onToggleExpanded?.();
+    else setUncontrolledExpanded((v) => !v);
+  };
   const [localRemarks, setLocalRemarks] = useState(response?.remarks || '');
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRemarksRef = useRef(response?.remarks || '');
@@ -77,7 +89,7 @@ export function ReadinessChecklistItem({
   const getStatusIcon = () => {
     switch (currentStatus) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-foreground" />;
+        return <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />;
       case 'in_progress':
         return <Clock className="h-5 w-5 text-muted-foreground" />;
       case 'not_required':
@@ -150,7 +162,7 @@ export function ReadinessChecklistItem({
         {/* Main Row - Always Visible */}
         <div
           className="p-4 flex items-start gap-3 cursor-pointer"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpanded}
         >
           {/* Expand/Collapse chevron */}
           <div className="flex-shrink-0 mt-0.5">
@@ -164,7 +176,12 @@ export function ReadinessChecklistItem({
           {/* Item Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h4 className="text-body font-medium text-foreground">{item.title}</h4>
+              <h4 className="text-body font-medium text-foreground">
+                {item.title}
+                {item.is_required && currentStatus !== 'completed' && currentStatus !== 'not_required' && (
+                  <RequiredDot className="ml-1" />
+                )}
+              </h4>
               {/* Guidance tooltip - inline with title */}
               {item.guidance_text && (
                 <Tooltip>
@@ -180,11 +197,6 @@ export function ReadinessChecklistItem({
             {item.description && (
               <p className="text-body text-muted-foreground mt-1">{item.description}</p>
             )}
-            {item.responsible_agency_type && (
-              <p className="text-helper text-muted-foreground mt-0.5">
-                {item.responsible_agency_type}
-              </p>
-            )}
           </div>
 
           {/* Right-side indicators */}
@@ -195,11 +207,6 @@ export function ReadinessChecklistItem({
                 <Paperclip className="h-3 w-3" />
                 {documents.length}
               </Badge>
-            )}
-
-            {/* Required badge */}
-            {item.is_required && currentStatus !== 'completed' && currentStatus !== 'not_required' && (
-              <Badge variant="destructive" className="text-helper">Required</Badge>
             )}
 
             {/* Status Indicator */}
@@ -215,40 +222,33 @@ export function ReadinessChecklistItem({
 
         {/* Expanded Content */}
         {isExpanded && (
-          <div className="px-4 pb-4 pt-0 border-t border-border">
+          <div className="px-4 pb-4 pt-0">
             <div className="mt-4 space-y-4 pl-9">
-              {/* Guidance */}
-              {item.guidance_text && (
-                <div className="text-helper text-muted-foreground bg-muted p-3 rounded-lg flex gap-2">
-                  <HelpCircle className="h-4 w-4 flex-shrink-0 mt-0.5 text-muted-foreground" />
-                  <span>{item.guidance_text}</span>
-                </div>
-              )}
-
               {/* Status Selection */}
               <div className="space-y-2">
-                <Label className="text-body font-medium text-foreground">Status</Label>
-                <RadioGroup
-                  value={currentStatus}
-                  onValueChange={handleStatusChange}
-                  disabled={readOnly || isUpdating}
-                  className="flex flex-wrap gap-4"
-                >
-                  {CHECKLIST_STATUS_OPTIONS.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <RadioGroupItem 
-                        value={option.value} 
-                        id={`${item.id}-${option.value}`} 
-                      />
-                      <Label 
-                        htmlFor={`${item.id}-${option.value}`}
-                        className={cn("text-body cursor-pointer", option.color)}
-                      >
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                <div className="flex flex-wrap gap-4">
+                  {CHECKLIST_STATUS_OPTIONS.map((option) => {
+                    const isSelected = currentStatus === option.value;
+                    return (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`${item.id}-${option.value}`}
+                          checked={isSelected}
+                          disabled={readOnly || isUpdating}
+                          onCheckedChange={() => {
+                            if (!isSelected) handleStatusChange(option.value);
+                          }}
+                        />
+                        <Label
+                          htmlFor={`${item.id}-${option.value}`}
+                          className={cn("text-body cursor-pointer", option.color)}
+                        >
+                          {option.label}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Document Upload */}
@@ -256,19 +256,28 @@ export function ReadinessChecklistItem({
                 documents={documents}
                 onUpload={handleDocumentUpload}
                 onDelete={onDeleteDocument}
-                onRename={onRenameDocument}
+                onRename={onRenameDocument ?? (async () => {})}
                 isUploading={isUpdating}
                 readOnly={readOnly}
                 isRequired={item.is_required && currentStatus === 'completed' && !hasDocuments}
+                guidanceText={item.guidance_text}
               />
 
               {/* Remarks */}
               <div className="space-y-2">
-                <Label className="text-body font-medium text-foreground">
+                <Label className="text-body font-medium text-foreground flex items-center gap-1.5">
                   Remarks
-                  {currentStatus === 'not_required' && (
-                    <span className="text-helper text-muted-foreground ml-2">(Explain why not required)</span>
-                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm">
+                      <p className="text-body">
+                        Add any notes or context for this item — e.g. why it isn't yet complete,
+                        who owns the next action, blockers, or an explanation when marking Not Required.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Textarea
                   value={localRemarks}

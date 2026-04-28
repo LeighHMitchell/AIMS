@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { EnhancedMultiSelect } from '@/components/ui/enhanced-multi-select';
 import { HelpCircle } from 'lucide-react';
 import {
   Tooltip,
@@ -41,38 +42,48 @@ export function ReadinessConfigSection({
   disabled = false,
 }: ReadinessConfigSectionProps) {
   const [localConfig, setLocalConfig] = useState<{
-    financing_type: FinancingType | null;
+    financing_type: FinancingType[];
     financing_modality: FinancingModality | null;
     is_infrastructure: boolean;
   }>({
-    financing_type: config?.financing_type || null,
+    financing_type: config?.financing_type || [],
     financing_modality: config?.financing_modality || null,
     is_infrastructure: config?.is_infrastructure || false,
   });
 
-  const handleFinancingTypeChange = (value: string) => {
-    const newType = value as FinancingType;
-    const updated = { ...localConfig, financing_type: newType };
+  const handleFinancingTypeChange = (values: string[]) => {
+    const newTypes = values as FinancingType[];
+    const updated = { ...localConfig, financing_type: newTypes };
     setLocalConfig(updated);
-    onUpdate(updated);
+    onUpdate({ ...updated, financing_type: newTypes.length > 0 ? newTypes : null });
   };
 
   const handleModalityChange = (value: string) => {
     const newModality = value as FinancingModality;
     const updated = { ...localConfig, financing_modality: newModality };
     setLocalConfig(updated);
-    onUpdate(updated);
+    onUpdate({ ...updated, financing_type: updated.financing_type.length > 0 ? updated.financing_type : null });
   };
 
   const handleInfrastructureChange = (checked: boolean) => {
     const updated = { ...localConfig, is_infrastructure: checked };
     setLocalConfig(updated);
-    onUpdate(updated);
+    onUpdate({ ...updated, financing_type: updated.financing_type.length > 0 ? updated.financing_type : null });
   };
+
+  const financingTypeGroups = [{
+    label: 'Financing Types',
+    options: FINANCING_TYPE_OPTIONS.map(opt => ({
+      code: opt.value,
+      displayCode: opt.code,
+      name: opt.label,
+      description: opt.description,
+    })),
+  }];
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {/* Financing Type */}
         <div className="space-y-2">
           <Label htmlFor="financing-type" className="flex items-center gap-2">
@@ -82,33 +93,19 @@ export function ReadinessConfigSection({
                 <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                <p>Select whether this project is funded through a loan, grant, or other financing mechanism.</p>
+                <p>Select one or more financing mechanisms. Blended projects (e.g. loan + grant) can pick multiple types.</p>
               </TooltipContent>
             </Tooltip>
           </Label>
-          <Select
-            value={localConfig.financing_type || ''}
+          <EnhancedMultiSelect
+            groups={financingTypeGroups}
+            value={localConfig.financing_type}
             onValueChange={handleFinancingTypeChange}
+            placeholder="Select financing type(s)..."
+            searchPlaceholder="Search financing types..."
             disabled={disabled}
-          >
-            <SelectTrigger id="financing-type">
-              <SelectValue placeholder="Select financing type...">
-                {localConfig.financing_type
-                  ? FINANCING_TYPE_OPTIONS.find(o => o.value === localConfig.financing_type)?.label
-                  : 'Select financing type...'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {FINANCING_TYPE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value} className="pl-2">
-                  <div>
-                    <div>{option.label}</div>
-                    <div className="text-helper text-muted-foreground">{option.description}</div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            showCodeAndName
+          />
         </div>
 
         {/* Financing Modality */}
@@ -131,17 +128,30 @@ export function ReadinessConfigSection({
           >
             <SelectTrigger id="financing-modality">
               <SelectValue placeholder="Select modality...">
-                {localConfig.financing_modality
-                  ? FINANCING_MODALITY_OPTIONS.find(o => o.value === localConfig.financing_modality)?.label
-                  : 'Select modality...'}
+                {localConfig.financing_modality ? (() => {
+                  const opt = FINANCING_MODALITY_OPTIONS.find(o => o.value === localConfig.financing_modality);
+                  return opt ? (
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                        {opt.code}
+                      </span>
+                      <span>{opt.label}</span>
+                    </span>
+                  ) : null;
+                })() : 'Select modality...'}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {FINANCING_MODALITY_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value} className="pl-2">
-                  <div>
-                    <div>{option.label}</div>
-                    <div className="text-helper text-muted-foreground">{option.description}</div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
+                      {option.code}
+                    </span>
+                    <div>
+                      <div>{option.label}</div>
+                      <div className="text-helper text-muted-foreground">{option.description}</div>
+                    </div>
                   </div>
                 </SelectItem>
               ))}

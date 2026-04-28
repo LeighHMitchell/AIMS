@@ -25,7 +25,7 @@ export function ReadinessWizardFooter({
   const isLastStep = activeStep === totalSteps - 1;
 
   return (
-    <div className="flex items-center justify-between pt-6 mt-6 border-t">
+    <div className="flex items-center justify-between pt-6 mt-6">
       <Button
         variant="outline"
         onClick={onBack}

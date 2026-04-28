@@ -1,15 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Lock, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import {
-  CheckCircle,
-  Clock,
-  Circle,
-  Award,
-  Lock
-} from 'lucide-react';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 import type {
   ReadinessStageWithData,
@@ -50,38 +56,108 @@ export function ReadinessStageContent({
   const isStageSigned = !!signoff;
   const canSign = canSignOffPermission && canSignOffStage(items) && !isStageSigned;
 
-  const getStatusIcon = () => {
-    if (isStageSigned) {
-      return <Award className="h-5 w-5 text-foreground" />;
+  // Parent-owned expansion state keyed by item id. Reset when the stage changes
+  // so opening a different stage collapses any items that were expanded previously.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  React.useEffect(() => {
+    setExpandedIds(new Set());
+  }, [stage.id]);
+
+  const toggleItemExpanded = (itemId: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
+  const allExpanded = items.length > 0 && items.every((i) => expandedIds.has(i.id));
+  const expandOrCollapseAll = () => {
+    if (allExpanded) setExpandedIds(new Set());
+    else setExpandedIds(new Set(items.map((i) => i.id)));
+  };
+
+  // An item is "answered" when it has a persisted response whose status is
+  // anything other than the default 'not_completed', OR when it has remarks.
+  const itemsToClear = useMemo(
+    () => items.filter((i) => {
+      const r = i.response;
+      if (!r) return false;
+      return (r.status && r.status !== 'not_completed') || !!(r.remarks && r.remarks.trim().length > 0);
+    }),
+    [items]
+  );
+  const hasAnything = itemsToClear.length > 0;
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+
+  const clearAll = async () => {
+    setConfirmClearOpen(false);
+    if (itemsToClear.length === 0) return;
+    // Reset each previously-answered item back to its blank state.
+    let ok = 0;
+    for (const item of itemsToClear) {
+      try {
+        await onUpdateResponse(item.id, { status: 'not_completed', remarks: null });
+        ok++;
+      } catch {
+        // hook already surfaces the error toast
+      }
     }
-    if (isComplete) {
-      return <CheckCircle className="h-5 w-5 text-foreground" />;
+    if (ok > 0) {
+      toast(`Cleared ${ok} item${ok === 1 ? '' : 's'}`);
     }
-    if (progress.in_progress > 0 || progress.completed > 0) {
-      return <Clock className="h-5 w-5 text-muted-foreground" />;
-    }
-    return <Circle className="h-5 w-5 text-muted-foreground/50" />;
   };
 
   return (
     <div>
+      {/* Stage-level controls */}
+      {items.length > 0 && (
+        <div className="flex items-center justify-end gap-2 mb-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={expandOrCollapseAll}
+          >
+            {allExpanded ? (
+              <>
+                <ChevronsDownUp className="h-4 w-4 mr-1.5" />
+                Collapse all
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown className="h-4 w-4 mr-1.5" />
+                Expand all
+              </>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmClearOpen(true)}
+            disabled={readOnly || isStageSigned || !hasAnything}
+          >
+            Clear all
+          </Button>
+        </div>
+      )}
+
       {/* Stage header */}
       <div className="p-6 rounded-lg border mb-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {getStatusIcon()}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Stage {stage.stage_order}: {stage.name}
-              </h3>
-              {stage.description && (
-                <p className="text-body text-muted-foreground">{stage.description}</p>
-              )}
-            </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">
+              Stage {stage.stage_order}: {stage.name}
+            </h3>
+            {stage.description && (
+              <p className="text-body text-muted-foreground">{stage.description}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end gap-1">
               <div className="text-body text-muted-foreground">
                 {progress.completed + progress.not_required} / {progress.total} items
               </div>
@@ -98,11 +174,6 @@ export function ReadinessStageContent({
                 <Badge variant="secondary">
                   <Lock className="h-3 w-3 mr-1" />
                   Signed Off
-                </Badge>
-              )}
-              {isComplete && !isStageSigned && (
-                <Badge variant="secondary">
-                  Ready for Sign-off
                 </Badge>
               )}
             </div>
@@ -140,6 +211,8 @@ export function ReadinessStageContent({
               onRenameDocument={(docId, fileName) => onRenameDocument(item.id, docId, fileName)}
               isUpdating={isUpdating && updatingItemId === item.id}
               readOnly={readOnly || isStageSigned}
+              isExpanded={expandedIds.has(item.id)}
+              onToggleExpanded={() => toggleItemExpanded(item.id)}
             />
           ))
         )}
@@ -157,6 +230,26 @@ export function ReadinessStageContent({
           />
         </div>
       )}
+
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all items in this stage?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This resets the status and remarks for {itemsToClear.length} item{itemsToClear.length === 1 ? '' : 's'} in Stage {stage.stage_order}: {stage.name}. Uploaded documents are left in place. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={clearAll}
+            >
+              Clear all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
