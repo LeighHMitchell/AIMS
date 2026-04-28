@@ -488,26 +488,21 @@ export function PlannedDisbursementsTable({
                       <div className="text-body">
                         {activityTitle}
                         {disbursement.activity?.iati_identifier && (
-                          <>
-                            <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block">
-                              {disbursement.activity.iati_identifier}
-                            </span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                copyIatiId(disbursement.activity!.iati_identifier!, disbursementId);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex align-middle ml-1"
-                              title="Copy IATI Identifier"
-                            >
-                              {copiedId === `${disbursementId}-iati` ? (
-                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                              ) : (
-                                <Copy className="w-3 h-3" />
-                              )}
-                            </button>
-                          </>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              copyIatiId(disbursement.activity!.iati_identifier!, disbursementId);
+                            }}
+                            title="Click to copy IATI Identifier"
+                            className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 inline-flex items-center gap-1 align-middle cursor-pointer"
+                          >
+                            <span>{disbursement.activity.iati_identifier}</span>
+                            {copiedId === `${disbursementId}-iati` && (
+                              <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                            )}
+                          </button>
                         )}
                       </div>
                       {showDescriptions && (disbursement.description || disbursement.notes) && (

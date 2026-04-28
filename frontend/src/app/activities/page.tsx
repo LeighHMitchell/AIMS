@@ -769,11 +769,11 @@ const router = useRouter();
   // Debounced empty state display will be handled after totalActivities is computed
 
   // Copy ID to clipboard
-  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier' | 'acronym', activityId: string) => {
+  const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier' | 'acronym' | 'title', activityId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(`${activityId}-${type}`);
     setTimeout(() => setCopiedId(null), 2000);
-    const message = type === 'partnerId' ? 'Activity ID' : type === 'iatiIdentifier' ? 'IATI Identifier' : 'Activity title';
+    const message = type === 'partnerId' ? 'Activity ID' : type === 'iatiIdentifier' ? 'IATI Identifier' : type === 'title' ? 'Activity title' : 'Activity acronym';
     toast.success(`${message} copied to clipboard`);
   };
 
@@ -2333,6 +2333,11 @@ const router = useRouter();
                             <ColumnHeaderText columnId="origin">Origin</ColumnHeaderText>
                           </SortableTableHeader>
                         ),
+                        iatiIdentifier: (
+                          <SortableTableHeader key="iatiIdentifier" id="iatiIdentifier" className="py-3 min-w-[180px] whitespace-nowrap">
+                            <ColumnHeaderText columnId="iatiIdentifier">IATI ID</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
                         budgetStatus: (
                           <SortableTableHeader key="budgetStatus" id="budgetStatus" className="py-3 text-center min-w-[130px]">
                             <ColumnHeaderText columnId="budgetStatus">Budget Status</ColumnHeaderText>
@@ -2708,50 +2713,22 @@ const router = useRouter();
                                   )}
                                 </button>
                               </h3>
-                            {(activity.partnerId || activity.iatiIdentifier) && (
-                              <div className="text-helper text-muted-foreground flex items-center gap-1 text-left">
-                                {activity.partnerId && (
-                                  <div className="group/pid flex items-center gap-1 flex-shrink-0">
-                                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate max-w-[200px]">{activity.partnerId}</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
-                                      }}
-                                      className="opacity-0 group-hover/pid:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
-                                      title="Copy Activity ID"
-                                    >
-                                      {copiedId === `${activity.id}-partnerId` ? (
-                                        <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                                      ) : (
-                                        <Copy className="w-3 h-3" />
-                                      )}
-                                    </button>
-                                  </div>
+                            {activity.partnerId && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
+                                }}
+                                title="Click to copy Activity ID"
+                                className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap flex-shrink-0 inline-flex items-center gap-1"
+                              >
+                                <span>{activity.partnerId}</span>
+                                {copiedId === `${activity.id}-partnerId` && (
+                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                 )}
-
-                                {activity.iatiIdentifier && (
-                                  <div className={`group/iati flex items-center gap-1 flex-shrink min-w-0 ${activity.partnerId ? 'ml-2' : ''}`}>
-                                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">{activity.iatiIdentifier}</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
-                                      }}
-                                      className="opacity-0 group-hover/iati:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
-                                      title="Copy IATI Identifier"
-                                    >
-                                      {copiedId === `${activity.id}-iatiIdentifier` ? (
-                                        <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                                      ) : (
-                                        <Copy className="w-3 h-3" />
-                                      )}
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              </button>
                             )}
                               </div>
                           {showDescriptions && activity.description_general && (
@@ -3310,6 +3287,29 @@ const router = useRouter();
                             <Badge variant="blue">
                               Donor Reported
                             </Badge>
+                          )}
+                        </td>
+                          ),
+                          iatiIdentifier: (
+<td key="iatiIdentifier" className="px-4 py-2 text-body text-foreground whitespace-nowrap">
+                          {activity.iatiIdentifier ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
+                              }}
+                              title="Click to copy IATI Identifier"
+                              className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer inline-flex items-center gap-1 max-w-full"
+                            >
+                              <span className="truncate">{activity.iatiIdentifier}</span>
+                              {copiedId === `${activity.id}-iatiIdentifier` && (
+                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
                           ),

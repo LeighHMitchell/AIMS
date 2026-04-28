@@ -96,7 +96,8 @@ export type ActivityColumnId =
   | "createdAt"
   | "createdByDepartment"
   | "importedFromIrt"
-  | "origin";
+  | "origin"
+  | "iatiIdentifier";
 
 /**
  * Column configuration for the Activities table
@@ -210,6 +211,7 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "createdByDepartment", label: "Creator's Department", group: "metadata", defaultVisible: false, description: "Department or unit of the user who created the activity." },
   { id: "importedFromIrt", label: "Imported from IRT", group: "metadata", defaultVisible: false, description: "Whether this activity was imported from the IATI Registry Tool (IRT) or created manually." },
   { id: "origin", label: "Origin", group: "metadata", defaultVisible: false, description: "Where this activity originated from — donor-reported or Project Bank." },
+  { id: "iatiIdentifier", label: "IATI ID", group: "metadata", defaultVisible: false, description: "The IATI Identifier for this activity, used for global interoperability with the IATI Standard." },
 ];
 
 /**
