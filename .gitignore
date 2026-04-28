@@ -49,3 +49,11 @@ dist/
 build/ 
 .vercel
 .claude/worktrees/
+.claude/launch.json
+
+# Local-only SQL scripts at repo root (seed / backfill / one-off tools).
+# These mutate prod data if run — keep them on disk for re-use, but
+# never commit. Migrations live under frontend/supabase/migrations/ and
+# are tracked normally.
+/seed_*.sql
+/backfill_*.sql
