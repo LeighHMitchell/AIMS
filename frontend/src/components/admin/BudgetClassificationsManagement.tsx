@@ -50,6 +50,7 @@ import {
   AlertCircle,
   Search,
   SlidersHorizontal,
+  ChevronsDownUp,
   ChevronsUpDown,
   ChevronUp,
   Lock,
@@ -369,7 +370,7 @@ export function BudgetClassificationsManagement() {
         throw new Error(data.error || "Failed to delete classification");
       }
 
-      toast.success("Classification deleted successfully");
+      toast("Classification deleted successfully");
       fetchClassifications();
     } catch (err: any) {
       console.error("Error deleting classification:", err);
@@ -617,12 +618,29 @@ export function BudgetClassificationsManagement() {
                 </Label>
               </div>
 
-              <Button variant="outline" size="sm" onClick={expandAll}>
-                Expand All
-              </Button>
-              <Button variant="outline" size="sm" onClick={collapseAll}>
-                Collapse All
-              </Button>
+              {(() => {
+                const anyExpanded = expandedIds.size > 0;
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={anyExpanded ? collapseAll : expandAll}
+                    aria-label={anyExpanded ? 'Collapse all' : 'Expand all'}
+                  >
+                    {anyExpanded ? (
+                      <>
+                        <ChevronsDownUp className="h-4 w-4 mr-2" />
+                        Collapse All
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsUpDown className="h-4 w-4 mr-2" />
+                        Expand All
+                      </>
+                    )}
+                  </Button>
+                );
+              })()}
               <Button
                 size="sm"
                 onClick={() => setIsLocked(!isLocked)}

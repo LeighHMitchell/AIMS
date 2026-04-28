@@ -345,7 +345,7 @@ export function DomesticBudgetManagement() {
         throw new Error(data.error || "Failed to delete budget entry");
       }
 
-      toast.success("Budget entry deleted successfully");
+      toast("Budget entry deleted");
       fetchBudgetData();
     } catch (err: any) {
       console.error("Error deleting budget entry:", err);
