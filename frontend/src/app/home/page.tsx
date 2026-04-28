@@ -51,7 +51,7 @@ export default function HomePage() {
         `${stats.projectBank.projects} projects`,
         `${stats.projectBank.fundingGaps} with funding gaps`,
       ] : [],
-      action: "Enter Project Bank",
+      action: "Enter the Project Bank",
     },
     {
       key: "aims",
@@ -63,7 +63,7 @@ export default function HomePage() {
         `${stats.aims.activities} activities`,
         `${stats.aims.donors} organizations`,
       ] : [],
-      action: "Enter DFMIS",
+      action: "Enter the DFMIS",
     },
     {
       key: "land-bank",
@@ -75,7 +75,7 @@ export default function HomePage() {
         `${stats.landBank.parcels} parcels`,
         `${stats.landBank.hectaresAvailable.toLocaleString()} ha available`,
       ] : [],
-      action: "Enter Land Bank",
+      action: "Enter the Land Bank",
     },
   ]
 

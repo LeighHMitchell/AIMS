@@ -1,7 +1,18 @@
 {
-  "currentVersion": "3.32.0",
-  "narrativeSummary": "Version 3.32.0 is an Analytics dashboard polish release. The dashboard is reorganised into a progressive 6-tab layout, and chart cards across the dashboard are unified visually: a shared ranked-chart colour palette, tooltips migrated to the Financial Totals UI pattern, and chart explanatory paragraphs moved out of compact cards into the expanded dialog. The Top 10 Partners table merges Name + Acronym into a single column and surfaces an Organisation ID column with the IATI ID; matching tooltips appear on every Top 10 chart. AidFlowMap gets a unified outer header, code badges on its dropdowns, and only-one-open dropdown behaviour shared with the Sector and Coordinate filters. List and dashboard pages drop their leading icon next to the H1 for a cleaner header treatment, and ~42 MB of unused empty-state PNGs are removed in favour of WebP variants.",
+  "currentVersion": "3.32.1",
+  "narrativeSummary": "Version 3.32.1 is a small copy fix on the home page: the three module entry buttons now read \"Enter the Project Bank\", \"Enter the DFMIS\", and \"Enter the Land Bank\" for more natural phrasing.",
   "releases": [
+    {
+      "version": "3.32.1",
+      "date": "2026-04-27",
+      "narrativeSummary": "Home page copy fix: the three module entry buttons now read \"Enter the Project Bank\", \"Enter the DFMIS\", and \"Enter the Land Bank\".",
+      "changes": [
+        "<b>Home page &mdash; module button copy</b>",
+        "&nbsp;&nbsp;\"Enter Project Bank\" &rarr; \"Enter the Project Bank\"",
+        "&nbsp;&nbsp;\"Enter DFMIS\" &rarr; \"Enter the DFMIS\"",
+        "&nbsp;&nbsp;\"Enter Land Bank\" &rarr; \"Enter the Land Bank\""
+      ]
+    },
     {
       "version": "3.32.0",
       "date": "2026-04-26",
