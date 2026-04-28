@@ -251,7 +251,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Currencies</SelectItem>
+                  <SelectItem value="all">All currencies</SelectItem>
                   {currencies.map(currency => (
                     <SelectItem key={currency} value={currency}>{currency}</SelectItem>
                   ))}
@@ -263,7 +263,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Transaction Types</SelectItem>
+                  <SelectItem value="all">All transaction types</SelectItem>
                   {transactionTypes.map(type => (
                     <SelectItem key={type} value={type}>
                       {transactions.find(t => t.transactionType === type)?.transactionTypeLabel || type}

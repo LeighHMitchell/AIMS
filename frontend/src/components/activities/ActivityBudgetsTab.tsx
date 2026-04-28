@@ -52,11 +52,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
-import { exportToCSV } from '@/lib/csv-export';
+import { exportToCSV } from '@/lib/exports';
+import { exportBudgetsCsv, type BudgetRow } from '@/lib/exports/entities/budgets';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
+import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -118,6 +120,8 @@ interface ActivityBudget {
   value: number;
   currency: string;
   value_date: string;
+  description?: string | null;
+  reference?: string | null;
   usd_value?: number | null;
   budget_lines?: BudgetLine[];
   isSaving?: boolean;
@@ -493,12 +497,13 @@ export default function ActivityBudgetsTab({
     const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
     for (const budget of paginatedBudgets) {
       const key = budget.id || `${budget.period_start}-${budget.period_end}`;
+      const isUSD = budget.currency === 'USD';
       newUsdValues[key] = {
-        usd: budget.usd_value ?? (budget.currency === 'USD' ? Number(budget.value) : null),
-        rate: null,
+        usd: budget.usd_value ?? (isUSD ? Number(budget.value) : null),
+        rate: (budget as any).exchange_rate_used ?? (isUSD ? 1 : null),
         date: budget.value_date,
         loading: false,
-        error: (budget.usd_value === null && budget.currency !== 'USD') ? 'Not converted' : undefined
+        error: (budget.usd_value === null && !isUSD) ? 'Not converted' : undefined
       };
     }
     setUsdValues(newUsdValues);
@@ -646,7 +651,7 @@ export default function ActivityBudgetsTab({
         window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
       }
 
-      toast.success('Budget deleted', {
+      toast('Budget deleted', {
         action: {
           label: 'Undo',
           onClick: async () => {
@@ -800,7 +805,7 @@ export default function ActivityBudgetsTab({
       period_end: finalPeriod.period_end,
       value: budget.value !== undefined ? budget.value : 0,
       currency: budget.currency || defaultCurrency || 'USD',
-      value_date: today,
+      value_date: finalPeriod.period_start || today,
       budget_lines: budget.budget_lines || []
     };
 
@@ -887,7 +892,7 @@ export default function ActivityBudgetsTab({
       period_end: copyPeriodEnd,
       value: copySourceBudget.value !== undefined ? copySourceBudget.value : 0,
       currency: copySourceBudget.currency || defaultCurrency || 'USD',
-      value_date: today,
+      value_date: copyPeriodStart || today,
       budget_lines: copySourceBudget.budget_lines || []
     };
 
@@ -928,29 +933,16 @@ export default function ActivityBudgetsTab({
 
   // Export budgets to CSV
   const handleExport = useCallback(() => {
-    const dataToExport = budgets.map(b => ({
-      period_start: b.period_start,
-      period_end: b.period_end,
-      type: b.type === 1 ? 'Original' : 'Revised',
-      status: b.status === 1 ? 'Indicative' : 'Committed',
-      value: b.value,
-      currency: b.currency,
-      value_date: b.value_date,
-      usd_value: b.usd_value || 0
-    }));
-
-    const csv = [
-      Object.keys(dataToExport[0] || {}).join(","),
-      ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `budgets-${activityId}-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (budgets.length === 0) return;
+    const rows: BudgetRow[] = budgets.map((b) => ({
+      ...b,
+      activity_id: b.activity_id ?? activityId,
+    } as BudgetRow));
+    exportBudgetsCsv(rows, {
+      scope: activityId.substring(0, 8),
+      filenameEntity: 'budgets',
+      includeActivityContext: false,
+    });
   }, [budgets, activityId]);
 
   // Export single budget details to CSV
@@ -1220,7 +1212,7 @@ export default function ActivityBudgetsTab({
       period_end: periodEndDate,
         value: 0,
         currency: defaultCurrency,
-      value_date: today,
+      value_date: periodStartDate || today,
       budget_lines: []
     };
 
@@ -1249,7 +1241,7 @@ export default function ActivityBudgetsTab({
     setModalBudget({
       ...budget,
       id: undefined as any, // Clear ID so it saves as a new record
-      type: '2', // Set to Revised
+      type: 2, // Set to Revised
     });
     setFieldErrors({}); setValidationAlert(null);
     setIsFormDirty(true); // Mark as dirty since it's a new record with pre-filled data
@@ -1688,10 +1680,10 @@ export default function ActivityBudgetsTab({
                   <div className="flex items-center gap-2">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-[160px] h-9">
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="all">All statuses</SelectItem>
                         <SelectItem value="indicative">
                           <span className="flex items-center gap-2">
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1708,10 +1700,10 @@ export default function ActivityBudgetsTab({
                     </Select>
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
                       <SelectTrigger className="w-[160px] h-9">
-                        <SelectValue placeholder="Type" />
+                        <SelectValue placeholder="All types" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="all">All types</SelectItem>
                         <SelectItem value="original">
                           <span className="flex items-center gap-2">
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1747,10 +1739,10 @@ export default function ActivityBudgetsTab({
                 <div className="flex items-center gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="Status" />
+                      <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="indicative">
                         <span className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1767,10 +1759,10 @@ export default function ActivityBudgetsTab({
                   </Select>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="Type" />
+                      <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="all">All types</SelectItem>
                       <SelectItem value="original">
                         <span className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1804,10 +1796,10 @@ export default function ActivityBudgetsTab({
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="indicative">
                       <span className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1830,10 +1822,10 @@ export default function ActivityBudgetsTab({
                 </label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Type" />
+                    <SelectValue placeholder="All types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="all">All types</SelectItem>
                     <SelectItem value="original">
                       <span className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -2100,7 +2092,9 @@ export default function ActivityBudgetsTab({
                                     </tr>
                                     <tr>
                                       <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
-                                      <td className="text-right py-0.5">{usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].rate}</td>
+                                      <td className="text-right py-0.5">
+                                        <CopyableExchangeRate value={usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].rate} />
+                                      </td>
                                     </tr>
                                     <tr>
                                       <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
@@ -2740,6 +2734,23 @@ export default function ActivityBudgetsTab({
                   </div>
                 </div>
               )}
+
+              {/* Budget Description — internal-only, not part of IATI 2.03 */}
+              <div className="space-y-2">
+                <Label htmlFor="budget-description" className="flex items-center text-body font-medium">
+                  Budget Description
+                  <HelpTextTooltip content="Optional internal notes for this budget period — e.g. purpose, assumptions, or why this revision was made. This is an AIMS-only field and is not part of the IATI 2.03 <budget> element, so it will not appear in IATI imports or exports." />
+                </Label>
+                <Textarea
+                  id="budget-description"
+                  value={modalBudget.description || ''}
+                  onChange={(e) =>
+                    setModalBudget({ ...modalBudget, description: e.target.value })
+                  }
+                  placeholder="Optional notes about this budget period (e.g. purpose, assumptions, revision rationale)."
+                  rows={3}
+                />
+              </div>
 
               {/* Advanced Fields - Budget Lines */}
               <div

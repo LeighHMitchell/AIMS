@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { exportTransactionsCsv, type TransactionRow } from '@/lib/exports/entities/transactions';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -118,44 +119,35 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
   const currencies = Array.from(new Set(transactions.map(t => t.currency)));
   const transactionTypes = Array.from(new Set(transactions.map(t => t.transactionType)));
 
-  // Export to CSV
+  // Export to CSV — full IATI 2.03 transaction shape (code+name pairs)
   const exportToCSV = () => {
-    const headers = [
-      'Transaction Date',
-      'Transaction Type',
-      'Amount',
-      'Currency',
-      'Provider Org',
-      'Receiver Org',
-      'Source Activity',
-      'IATI ID',
-      'Description'
-    ];
-
-    const rows = filteredTransactions.map(t => [
-      t.transactionDate,
-      t.transactionTypeLabel,
-      t.value.toString(),
-      t.currency,
-      t.providerOrg.name || 'N/A',
-      t.receiverOrg.name || 'N/A',
-      t.activityTitle,
-      t.activityIatiId,
-      t.description || ''
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `linked-transactions-${activityId}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    if (filteredTransactions.length === 0) return;
+    const rows: TransactionRow[] = filteredTransactions.map((t) => ({
+      id: t.id,
+      activity_id: t.activityId,
+      activity_title: t.activityTitle,
+      activity_iati_id: t.activityIatiId,
+      transaction_date: t.transactionDate,
+      transaction_type: t.transactionType,
+      value: t.value,
+      currency: t.currency,
+      description: t.description,
+      status: t.status,
+      provider_org_name: t.providerOrg?.name,
+      provider_org_ref: t.providerOrg?.ref,
+      provider_org_id: t.providerOrg?.id,
+      receiver_org_name: t.receiverOrg?.name,
+      receiver_org_ref: t.receiverOrg?.ref,
+      receiver_org_id: t.receiverOrg?.id,
+      aid_type: t.aidType,
+      tied_status: t.tiedStatus,
+      flow_type: t.flowType,
+    }));
+    exportTransactionsCsv(rows, {
+      filenameEntity: 'linked-transactions',
+      scope: activityId.substring(0, 8),
+      includeActivityContext: true,
+    });
   };
 
   // Format currency value

@@ -10,17 +10,26 @@ import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  ScrollText, 
-  Plus, 
-  Trash2, 
+import {
+  ScrollText,
+  Plus,
+  Trash2,
   AlertCircle,
   Info,
   Save,
   ChevronsUpDown,
   Check,
-  Search
+  Search,
+  Pencil
 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useConditions } from '@/hooks/use-conditions';
 import { toast } from 'sonner';
@@ -297,7 +306,7 @@ export function ConditionsTab({
       setIsDeleting(null);
       if (success) {
         onConditionsChange?.(conditions);
-        toast.success('Condition removed', snapshot ? {
+        toast('Condition removed', snapshot ? {
           action: {
             label: 'Undo',
             onClick: async () => {
@@ -392,11 +401,11 @@ export function ConditionsTab({
 
       {/* Attached Status Toggle */}
       {conditions.length > 0 && (
-        <Card className="border-2 border-border">
+        <Card className="border border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <Label htmlFor="conditions-attached" className="text-base font-medium text-foreground">
+                <Label htmlFor="conditions-attached" className="text-lg font-medium text-foreground">
                   Are conditions attached to this activity?
                 </Label>
                 <p className="text-body text-muted-foreground mt-1">
@@ -516,103 +525,128 @@ export function ConditionsTab({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {conditions.map((condition, index) => (
-            <Card key={condition.id} className="border-2 border-border">
-              <CardContent className="pt-6">
-                {editingCondition === condition.id && !readOnly ? (
-                  // Edit Mode
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium text-foreground">
-                        Condition Type
-                      </Label>
-                      <ConditionTypeSelect
-                        value={editingValues.type}
-                        onValueChange={(value) => setEditingValues(prev => ({ ...prev, type: value as ConditionType }))}
-                        placeholder="Select condition type"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium text-foreground">
-                        Description
-                      </Label>
-                      <Textarea
-                        value={editingValues.narrative}
-                        onChange={(e) => setEditingValues(prev => ({ ...prev, narrative: e.target.value }))}
-                        rows={4}
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => handleUpdateCondition(condition.id)}
-                        disabled={!editingValues.narrative.trim() || isUpdating === condition.id}
-                        size="sm"
-                        className="bg-muted hover:bg-gray-300 text-foreground border border-gray-400"
+        <Card className="border border-border bg-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-semibold text-foreground">Conditions</CardTitle>
+              {!readOnly && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowAddCondition(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Condition
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="py-3 px-4 w-48">Type</TableHead>
+                    <TableHead className="py-3 px-4">Description</TableHead>
+                    {!readOnly && <TableHead className="py-3 px-4 text-right w-28" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {conditions.map((condition, index) => (
+                    editingCondition === condition.id && !readOnly ? (
+                      <TableRow key={condition.id} className="bg-muted/30">
+                        <TableCell colSpan={3} className="py-4 px-4">
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-body font-medium text-foreground">
+                                  Condition Type
+                                </Label>
+                                <ConditionTypeSelect
+                                  value={editingValues.type}
+                                  onValueChange={(value) => setEditingValues(prev => ({ ...prev, type: value as ConditionType }))}
+                                  placeholder="Select condition type"
+                                />
+                              </div>
+                              <div className="space-y-1 md:col-span-2">
+                                <Label className="text-body font-medium text-foreground">
+                                  Description
+                                </Label>
+                                <Textarea
+                                  value={editingValues.narrative}
+                                  onChange={(e) => setEditingValues(prev => ({ ...prev, narrative: e.target.value }))}
+                                  rows={3}
+                                  className="w-full"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingCondition(null)}
+                                disabled={isUpdating === condition.id}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={() => handleUpdateCondition(condition.id)}
+                                disabled={!editingValues.narrative.trim() || isUpdating === condition.id}
+                                size="sm"
+                              >
+                                {isUpdating === condition.id ? 'Saving...' : 'Save'}
+                              </Button>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow
+                        key={condition.id}
+                        className="border-b border-border/40 hover:bg-muted/30 transition-colors"
                       >
-                        {isUpdating === condition.id ? 'Saving...' : 'Save'}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingCondition(null)}
-                        disabled={isUpdating === condition.id}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  // View Mode
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-lg font-bold text-foreground">{index + 1}.</span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-md text-body font-medium bg-muted text-foreground border border-gray-400">
+                        <TableCell className="py-3 px-4 font-medium">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{index + 1}</span>
                           {CONDITION_TYPE_LABELS[condition.type]}
-                        </span>
-                      </div>
-                      <p className="text-foreground ml-7 whitespace-pre-wrap">
-                        {condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0]}
-                      </p>
-                    </div>
-                    
-                    {!readOnly && (
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingCondition(condition.id);
-                            setEditingValues({
-                              type: condition.type,
-                              narrative: condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0] || ''
-                            });
-                          }}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteCondition(condition.id)}
-                          disabled={isDeleting === condition.id}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 whitespace-pre-wrap">
+                          {condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0]}
+                        </TableCell>
+                        {!readOnly && (
+                          <TableCell className="py-3 px-4 text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingCondition(condition.id);
+                                  setEditingValues({
+                                    type: condition.type,
+                                    narrative: condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0] || ''
+                                  });
+                                }}
+                              >
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteCondition(condition.id)}
+                                disabled={isDeleting === condition.id}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    )
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
       <ConfirmDialog />
     </div>

@@ -1377,7 +1377,7 @@ export default function TransactionModal({
                     className={cn(
                       "w-full",
                       !showValueDate && "bg-muted cursor-not-allowed",
-                      showValueDate && "text-black"
+                      showValueDate && "text-gunmetal"
                     )}
                   />
                 </div>

@@ -73,7 +73,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
-import { exportToCSV } from '@/lib/csv-export';
+import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
+import { exportToCSV } from '@/lib/exports';
+import {
+  exportPlannedDisbursementsCsv,
+  type PlannedDisbursementRow,
+} from '@/lib/exports/entities/planned-disbursements';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
 
 // Format currency with abbreviations (K, M, B)
@@ -125,6 +130,7 @@ interface PlannedDisbursement {
   currency: string;
   period_start: string;
   period_end: string;
+  type?: '1' | '2';
   provider_org_id?: string;
   provider_org_name?: string;
   provider_org_acronym?: string;
@@ -132,8 +138,11 @@ interface PlannedDisbursement {
   provider_org_type?: string;
   provider_org_country?: string;
   provider_org_iati_id?: string;
+  provider_org_ref?: string;
   provider_org_description?: string;
   provider_org_website?: string;
+  provider_activity_id?: string;
+  provider_activity_uuid?: string;
   receiver_org_id?: string;
   receiver_org_name?: string;
   receiver_org_acronym?: string;
@@ -141,17 +150,23 @@ interface PlannedDisbursement {
   receiver_org_type?: string;
   receiver_org_country?: string;
   receiver_org_iati_id?: string;
+  receiver_org_ref?: string;
   receiver_org_description?: string;
   receiver_org_website?: string;
+  receiver_activity_id?: string;
+  receiver_activity_uuid?: string;
   status?: 'original' | 'revised';
   value_date?: string;
   notes?: string;
+  description?: string;
+  reference?: string;
   created_at?: string;
   updated_at?: string;
   isSaving?: boolean;
   hasError?: boolean;
   errorMessage?: string;
   usdAmount?: number;
+  usd_amount?: number | null;
 }
 
 interface PlannedDisbursementsTabProps {
@@ -172,8 +187,10 @@ interface Organization {
   code?: string;
   acronym?: string;
   type?: string;
+  org_type?: string;
   country?: string;
   iati_org_id?: string;
+  iati_identifier?: string;
 }
 
 export default function PlannedDisbursementsTab({
@@ -338,7 +355,7 @@ export default function PlannedDisbursementsTab({
       receiver_org_type: '',
       receiver_activity_id: '',
       receiver_activity_uuid: '',
-      value_date: format(new Date(), 'yyyy-MM-dd'),
+      value_date: startDate || format(new Date(), 'yyyy-MM-dd'),
       notes: '',
       usdAmount: 0
     };
@@ -671,11 +688,11 @@ export default function PlannedDisbursementsTab({
       receiver_org_ref: '',
       receiver_org_type: '',
       receiver_activity_id: '',
-      value_date: today,
+      value_date: periodStart || today,
       notes: '',
       usdAmount: 0
     };
-    
+
     setModalDisbursement(newDisbursement);
     // Initialize amount input with formatted value
     if (newDisbursement.amount && newDisbursement.amount > 0) {
@@ -806,12 +823,13 @@ export default function PlannedDisbursementsTab({
     const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
     for (const disbursement of disbursements) {
       const key = disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`;
+      const isUSD = disbursement.currency === 'USD';
       newUsdValues[key] = {
-        usd: disbursement.usd_amount ?? null,
-        rate: null,
+        usd: disbursement.usd_amount ?? (isUSD ? Number(disbursement.amount) : null),
+        rate: (disbursement as any).exchange_rate_used ?? (isUSD ? 1 : null),
         date: disbursement.value_date || '',
         loading: false,
-        error: disbursement.usd_amount === null && disbursement.currency !== 'USD' ? 'Not converted' : undefined
+        error: disbursement.usd_amount === null && !isUSD ? 'Not converted' : undefined
       };
     }
     setUsdValues(newUsdValues);
@@ -1150,7 +1168,7 @@ export default function PlannedDisbursementsTab({
     const timeoutId = setTimeout(commitDelete, 5000);
     pendingDeletesRef.current.set(id, timeoutId);
 
-    toast.success(`Removed ${label}`, {
+    toast(`Removed ${label}`, {
       action: {
         label: 'Undo',
         onClick: () => {
@@ -1272,7 +1290,7 @@ export default function PlannedDisbursementsTab({
       // Clear selection
       setSelectedDisbursementIds(new Set());
 
-      toast.success(`Successfully deleted ${selectedArray.length} planned disbursement(s)`);
+      toast(`Deleted ${selectedArray.length} planned disbursement${selectedArray.length === 1 ? '' : 's'}`);
     } catch (error: any) {
       console.error('Error deleting planned disbursements:', error);
       toast.error('Failed to delete some planned disbursements');
@@ -1283,31 +1301,21 @@ export default function PlannedDisbursementsTab({
 
   // Export to CSV
   const handleExport = () => {
-    const dataToExport = filteredDisbursements.map(d => ({
+    if (filteredDisbursements.length === 0) return;
+    // The component uses `amount` / `usdAmount` field names — pass them
+    // through to the shared exporter which understands both the IATI
+    // convention (`value`/`usd_value`) and the legacy alternates.
+    const rows: PlannedDisbursementRow[] = filteredDisbursements.map((d) => ({
+      ...d,
+      activity_id: (d as any).activity_id ?? activityId,
       amount: d.amount,
-      currency: d.currency,
-      usd_amount: d.usdAmount || 0,
-      period_start: d.period_start,
-      period_end: d.period_end,
-      provider_org: d.provider_org_name || '',
-      receiver_org: d.receiver_org_name || '',
-      status: d.status || 'original',
-      value_date: d.value_date || '',
-      notes: d.notes || ''
-    }));
-
-    const csv = [
-      Object.keys(dataToExport[0] || {}).join(","),
-      ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `planned-disbursements-${activityId}-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      usd_amount: (d as any).usdAmount ?? (d as any).usd_amount,
+    } as PlannedDisbursementRow));
+    exportPlannedDisbursementsCsv(rows, {
+      scope: activityId.substring(0, 8),
+      filenameEntity: 'planned-disbursements',
+      includeActivityContext: false,
+    });
   };
 
   const handleExportDisbursement = (disbursement: PlannedDisbursement) => {
@@ -1602,10 +1610,10 @@ export default function PlannedDisbursementsTab({
                 <>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="Status" />
+                      <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="original">
                         <span className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1640,10 +1648,10 @@ export default function PlannedDisbursementsTab({
                 <div className="flex items-center gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="Status" />
+                      <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="original">
                         <span className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1677,10 +1685,10 @@ export default function PlannedDisbursementsTab({
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="original">
                       <span className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
@@ -1982,7 +1990,9 @@ export default function PlannedDisbursementsTab({
                                           </tr>
                                           <tr>
                                             <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
-                                            <td className="text-right py-0.5">{usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].rate}</td>
+                                            <td className="text-right py-0.5">
+                                              <CopyableExchangeRate value={usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].rate} />
+                                            </td>
                                           </tr>
                                           <tr>
                                             <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
@@ -2668,15 +2678,15 @@ export default function PlannedDisbursementsTab({
               />
             </div>
 
-            {/* Description */}
+            {/* Planned Disbursement Description */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="A description of this planned disbursement"
+                helpText="Optional internal notes for this planned disbursement — e.g. purpose or scheduling rationale. This is an AIMS-only field and is not part of the IATI 2.03 <planned-disbursement> element, so it will not appear in IATI imports or exports."
                 isSaving={false}
                 isSaved={false}
                 hasValue={!!modalDisbursement?.notes}
               >
-                Description
+                Planned Disbursement Description
               </LabelWithInfoAndSave>
               <Textarea
                 id="notes"

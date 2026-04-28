@@ -35,6 +35,7 @@ import {
   Calendar,
   Building2,
   DollarSign,
+  ChevronsDownUp,
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
@@ -60,12 +61,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData, FLOW_TYPE_LABELS, TIED_STATUS_LABELS } from '@/types/transaction';
+import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData, FLOW_TYPE_LABELS, TIED_STATUS_LABELS, FlowType, TiedStatus } from '@/types/transaction';
 import TransactionForm from './TransactionForm';
 import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
 import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
 import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
 import { toast } from 'sonner';
 import { 
   Tooltip,
@@ -80,7 +82,12 @@ import aidTypesData from '@/data/aid-types.json';
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { DISBURSEMENT_CHANNEL_TYPES } from '@/data/disbursement-channel-types';
 import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types';
-import { exportToCSV } from '@/lib/csv-export';
+import { exportToCSV } from '@/lib/exports';
+import {
+  exportTransactionsCsv,
+  exportSingleTransactionKeyValue,
+  type TransactionRow,
+} from '@/lib/exports/entities/transactions';
 import { apiFetch } from '@/lib/api-fetch';
 
 // IATI Transaction Type Definitions
@@ -351,7 +358,7 @@ interface TransactionListProps {
   renderFilters?: (filters: React.ReactNode) => React.ReactPortal | null;
 }
 
-type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name' | 'value_date' | 'value_usd' | 'finance_type';
+type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name' | 'value_date' | 'value_usd' | 'finance_type' | 'exchange_rate_used';
 type SortDirection = 'asc' | 'desc';
 
 // Create finance type labels mapping from JSON data
@@ -595,13 +602,17 @@ export default function TransactionList({
   }, [transactions, currency]);
 
   // Get unique transaction types and finance types for filter dropdowns
-  const uniqueTransactionTypes = React.useMemo(() => {
-    const types = new Set(transactions.map(t => t.transaction_type).filter(Boolean));
+  const uniqueTransactionTypes = React.useMemo<string[]>(() => {
+    const types = new Set<string>(
+      transactions.map(t => t.transaction_type).filter(Boolean) as string[]
+    );
     return Array.from(types).sort();
   }, [transactions]);
 
-  const uniqueFinanceTypes = React.useMemo(() => {
-    const types = new Set(transactions.map(t => t.finance_type).filter(Boolean));
+  const uniqueFinanceTypes = React.useMemo<string[]>(() => {
+    const types = new Set<string>(
+      transactions.map(t => t.finance_type).filter(Boolean) as string[]
+    );
     return Array.from(types).sort();
   }, [transactions]);
 
@@ -948,166 +959,46 @@ export default function TransactionList({
   };
 
   const handleExport = () => {
-    const dataToExport = transactions.map(t => {
-      const transactionId = t.uuid || t.id;
-      const usdValue = usdValues[transactionId]?.usd;
+    if (transactions.length === 0) {
+      toast.error('No transactions to export');
+      return;
+    }
+    // Hydrate USD value onto each row so the shared exporter picks it up.
+    const rows: TransactionRow[] = transactions.map((t) => {
+      const id = t.uuid || t.id;
+      const usd = usdValues[id]?.usd;
       return {
-        transaction_date: t.transaction_date,
-        transaction_type: TRANSACTION_TYPE_LABELS[t.transaction_type] || t.transaction_type,
-        value: t.value,
-        currency: t.currency,
-        usd_value: usdValue != null ? usdValue : '',
-        provider_org: t.provider_org_name || '',
-        receiver_org: t.receiver_org_name || '',
-        description: t.description || '',
-        status: t.status || 'planned',
-        finance_type: t.finance_type ? (FINANCE_TYPE_LABELS[t.finance_type] || t.finance_type) : '',
-        aid_type: t.aid_type || '',
-        tied_status: t.tied_status || '',
-        flow_type: t.flow_type || ''
-      };
+        ...t,
+        value_usd: usd ?? (t as any).value_usd ?? (t as any).usd_value ?? '',
+        activity_id: t.activity_id ?? activityId,
+        activity_iati_id: activityIdentifiers.iatiId ?? '',
+      } as TransactionRow;
     });
-
-    const csv = [
-      Object.keys(dataToExport[0] || {}).join(","),
-      ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `transactions-${activityId}-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportTransactionsCsv(rows, {
+      scope: activityId.substring(0, 8),
+      filenameEntity: 'transactions',
+      includeActivityContext: true,
+    });
+    toast.success(`Exported ${rows.length.toLocaleString()} transactions`);
   };
 
   const handleExportTransaction = (transaction: Transaction) => {
     const transactionId = transaction.uuid || transaction.id;
     const usdValue = usdValues[transactionId];
-    
-    const exportData = [];
-
-    // Transaction Details
-    exportData.push(
-      { label: 'Transaction Type', value: `${transaction.transaction_type} - ${TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}` },
-      { label: 'Validation Status', value: transaction.status === 'actual' ? 'Validated' : 'Unvalidated' },
-      { label: 'Original Value', value: transaction.value ? `${transaction.currency} ${transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
-      { label: 'USD Value', value: usdValue?.usd != null ? `USD ${usdValue.usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
-      { label: 'Value Date', value: transaction.value_date ? format(new Date(transaction.value_date), 'MMM d, yyyy') : transaction.transaction_date ? format(new Date(transaction.transaction_date), 'MMM d, yyyy') : '—' },
-      { label: 'Transaction Date', value: format(new Date(transaction.transaction_date), 'MMM d, yyyy') },
-    );
-
-    // Description
-    if (transaction.description) {
-      exportData.push({ label: 'Description', value: transaction.description });
-    }
-
-    // Parties Involved
-    if (transaction.provider_org_name) {
-      exportData.push({ label: 'Provider Organisation', value: getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) });
-    }
-    if (transaction.provider_org_type) {
-      exportData.push({ label: 'Provider Organisation Type', value: ORG_TYPE_LABELS[transaction.provider_org_type] || transaction.provider_org_type });
-    }
-    if (transaction.provider_org_ref) {
-      exportData.push({ label: 'Provider Reference', value: transaction.provider_org_ref });
-    }
-    if (transaction.provider_org_activity_id) {
-      exportData.push({ label: 'Provider Activity', value: transaction.provider_org_activity_id });
-    }
-    if (transaction.receiver_org_name) {
-      exportData.push({ label: 'Receiver Organisation', value: getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) });
-    }
-    if (transaction.receiver_org_type) {
-      exportData.push({ label: 'Receiver Organisation Type', value: ORG_TYPE_LABELS[transaction.receiver_org_type] || transaction.receiver_org_type });
-    }
-    if (transaction.receiver_org_ref) {
-      exportData.push({ label: 'Receiver Reference', value: transaction.receiver_org_ref });
-    }
-    if (transaction.receiver_org_activity_id) {
-      exportData.push({ label: 'Receiver Activity', value: transaction.receiver_org_activity_id });
-    }
-
-    // System Identifiers
-    exportData.push({ label: 'Activity ID', value: activityIdentifiers.customId || '—' });
-    exportData.push({ label: 'IATI Identifier', value: activityIdentifiers.iatiId || '—' });
-    exportData.push({ label: 'Activity UUID', value: transaction.activity_id });
-    exportData.push({ label: 'Transaction ID', value: transaction.transaction_reference || '—' });
-    exportData.push({ label: 'Transaction UUID', value: transactionId });
-    
-    if (transaction.sector_code) {
-      exportData.push({ label: 'Sector', value: transaction.sector_code });
-    }
-    if (transaction.recipient_country_code) {
-      exportData.push({ label: 'Recipient Country', value: transaction.recipient_country_code });
-    }
-    if (transaction.recipient_region_code) {
-      exportData.push({ label: 'Recipient Region', value: transaction.recipient_region_code });
-    }
-
-    // Funding Modality & Aid Classification
-    if (transaction.aid_type) {
-      exportData.push({ label: 'Aid Type', value: `${transaction.aid_type} - ${AID_TYPE_LABELS[transaction.aid_type] || transaction.aid_type}` });
-    }
-    if (transaction.flow_type) {
-      exportData.push({ label: 'Flow Type', value: `${transaction.flow_type} - ${FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type}` });
-    }
-    if (transaction.finance_type) {
-      exportData.push({ label: 'Finance Type', value: `${transaction.finance_type} - ${FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}` });
-    }
-    if (transaction.tied_status) {
-      exportData.push({ label: 'Tied Status', value: `${transaction.tied_status} - ${TIED_STATUS_LABELS[transaction.tied_status] || transaction.tied_status}` });
-    }
-    if (transaction.disbursement_channel) {
-      exportData.push({ label: 'Disbursement Channel', value: `${transaction.disbursement_channel} - ${DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}` });
-    }
-    if (transaction.is_humanitarian) {
-      exportData.push({ label: 'Humanitarian', value: 'Yes' });
-    }
-
-    // Metadata & History
-    if (transaction.created_at) {
-      exportData.push({ label: 'Created', value: format(new Date(transaction.created_at), 'MMM d, yyyy \'at\' h:mm a') });
-    }
-    if (transaction.created_by) {
-      exportData.push({ label: 'Created By', value: `User ID: ${transaction.created_by}` });
-    }
-    if (transaction.updated_at) {
-      exportData.push({ label: 'Last Modified', value: format(new Date(transaction.updated_at), 'MMM d, yyyy \'at\' h:mm a') });
-    }
-    if (transaction.updated_by) {
-      exportData.push({ label: 'Last Modified By', value: `User ID: ${transaction.updated_by}` });
-    }
-    if (!transaction.created_by) {
-      exportData.push({ label: 'Source', value: 'Imported from IATI' });
-    }
-    if (transaction.validated_at) {
-      exportData.push({ label: 'Validated', value: format(new Date(transaction.validated_at), 'MMM d, yyyy \'at\' h:mm a') });
-    }
-    if (transaction.validated_by) {
-      exportData.push({ label: 'Validated By', value: `User ID: ${transaction.validated_by}` });
-    }
-    if (transaction.validation_comments) {
-      exportData.push({ label: 'Validation Notes', value: transaction.validation_comments });
-    }
-
-    // Documents
-    const docs = transactionDocuments[transactionId];
-    if (docs && docs.length > 0) {
-      docs.forEach((doc: any, index: number) => {
-        exportData.push({ label: `Document ${index + 1}`, value: doc.file_name || doc.external_url });
-        if (doc.description) {
-          exportData.push({ label: `Document ${index + 1} Description`, value: doc.description });
-        }
-        if (doc.external_url) {
-          exportData.push({ label: `Document ${index + 1} URL`, value: doc.external_url });
-        }
-      });
-    }
-
-    const filename = `transaction-export-${format(new Date(), 'yyyy-MM-dd')}`;
-    exportToCSV(exportData, filename);
+    const docs = transactionDocuments[transactionId] ?? [];
+    const row: TransactionRow = {
+      ...transaction,
+      activity_id: transaction.activity_id ?? activityId,
+      value_usd: usdValue?.usd ?? (transaction as any).value_usd ?? '',
+    } as TransactionRow;
+    exportSingleTransactionKeyValue(row, {
+      documents: docs,
+      activityContext: {
+        customId: activityIdentifiers.customId ?? '',
+        iatiId: activityIdentifiers.iatiId ?? '',
+      },
+      scope: transactionId.substring(0, 8),
+    });
   };
 
   const handleConvertCurrency = async (transactionId: string) => {
@@ -1324,10 +1215,10 @@ export default function TransactionList({
               {transactions.length > 0 && (
                 <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                   <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder="Transaction Type" />
+                    <SelectValue placeholder="All transaction types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Transaction Types</SelectItem>
+                    <SelectItem value="all">All transaction types</SelectItem>
                     {uniqueTransactionTypes.map(type => (
                       <SelectItem key={type} value={type}>
                         <span className="flex items-center gap-2">
@@ -1344,10 +1235,10 @@ export default function TransactionList({
               {transactions.length > 0 && (
                 <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
                   <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder="Finance Type" />
+                    <SelectValue placeholder="All finance types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Finance Types</SelectItem>
+                    <SelectItem value="all">All finance types</SelectItem>
                     {uniqueFinanceTypes.map(type => (
                       <SelectItem key={type} value={type}>
                         <span className="flex items-center gap-2">
@@ -1375,27 +1266,30 @@ export default function TransactionList({
               )}
               
               {/* Expand/Collapse All */}
-              {transactions.length > 0 && !groupedView && expandedRows.size > 0 ? (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={collapseAllRows}
-                  title="Collapse all expanded rows"
-                >
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Collapse All
-                </Button>
-              ) : transactions.length > 0 && !groupedView ? (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={expandAllRows}
-                  title="Expand all rows"
-                >
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Expand All
-                </Button>
-              ) : null}
+              {transactions.length > 0 && !groupedView && (() => {
+                const anyExpanded = expandedRows.size > 0;
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={anyExpanded ? collapseAllRows : expandAllRows}
+                    title={anyExpanded ? 'Collapse all expanded rows' : 'Expand all rows'}
+                    aria-label={anyExpanded ? 'Collapse all' : 'Expand all'}
+                  >
+                    {anyExpanded ? (
+                      <>
+                        <ChevronsDownUp className="h-4 w-4 mr-2" />
+                        Collapse All
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsUpDown className="h-4 w-4 mr-2" />
+                        Expand All
+                      </>
+                    )}
+                  </Button>
+                );
+              })()}
               
               {/* Column Selector - always visible */}
               <div className="relative z-[200]">
@@ -1453,10 +1347,10 @@ export default function TransactionList({
                 <label className="text-helper font-medium text-muted-foreground">Transaction Type</label>
                 <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                   <SelectTrigger className="w-[280px] h-9">
-                    <SelectValue placeholder="Transaction Type" />
+                    <SelectValue placeholder="All transaction types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Transaction Types</SelectItem>
+                    <SelectItem value="all">All transaction types</SelectItem>
                     {uniqueTransactionTypes.map(type => (
                       <SelectItem key={type} value={type}>
                         <span className="flex items-center gap-2">
@@ -1476,10 +1370,10 @@ export default function TransactionList({
                 <label className="text-helper font-medium text-muted-foreground">Finance Type</label>
                 <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
                   <SelectTrigger className="w-[280px] h-9">
-                    <SelectValue placeholder="Finance Type" />
+                    <SelectValue placeholder="All finance types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Finance Types</SelectItem>
+                    <SelectItem value="all">All finance types</SelectItem>
                     {uniqueFinanceTypes.map(type => (
                       <SelectItem key={type} value={type}>
                         <span className="flex items-center gap-2">
@@ -1494,33 +1388,32 @@ export default function TransactionList({
             )}
             
             {/* Expand/Collapse All - only show when transactions exist */}
-            {transactions.length > 0 && (
-              expandedRows.size > 0 ? (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={collapseAllRows}
-                  title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
+            {transactions.length > 0 && (() => {
+              const anyExpanded = expandedRows.size > 0;
+              return (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={anyExpanded ? collapseAllRows : expandAllRows}
+                  title={groupedView ? "Not available in grouped view" : (anyExpanded ? "Collapse all expanded rows" : "Expand all rows")}
+                  aria-label={anyExpanded ? 'Collapse all' : 'Expand all'}
                   disabled={groupedView}
                   data-expand-all
                 >
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Collapse All
+                  {anyExpanded ? (
+                    <>
+                      <ChevronsDownUp className="h-4 w-4 mr-2" />
+                      Collapse All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsUpDown className="h-4 w-4 mr-2" />
+                      Expand All
+                    </>
+                  )}
                 </Button>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={expandAllRows}
-                  title={groupedView ? "Not available in grouped view" : "Expand all rows"}
-                  disabled={groupedView}
-                  data-expand-all
-                >
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Expand All
-                </Button>
-              )
-            )}
+              );
+            })()}
             
             {/* Export Button - always visible */}
             <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
@@ -1934,7 +1827,7 @@ export default function TransactionList({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-muted-foreground opacity-70 cursor-help text-body">
-                                        {FLOW_TYPE_LABELS[displayValue] || displayValue}
+                                        {FLOW_TYPE_LABELS[displayValue as FlowType] || displayValue}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -1944,7 +1837,7 @@ export default function TransactionList({
                                 </TooltipProvider>
                               );
                             }
-                            return <span className="text-body">{FLOW_TYPE_LABELS[displayValue] || displayValue}</span>;
+                            return <span className="text-body">{FLOW_TYPE_LABELS[displayValue as FlowType] || displayValue}</span>;
                           })()}
                         </TableCell>
                       )}
@@ -1963,7 +1856,7 @@ export default function TransactionList({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-muted-foreground opacity-70 cursor-help text-body">
-                                        {TIED_STATUS_LABELS[displayValue] || displayValue}
+                                        {TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -1973,7 +1866,7 @@ export default function TransactionList({
                                 </TooltipProvider>
                               );
                             }
-                            return <span className="text-body">{TIED_STATUS_LABELS[displayValue] || displayValue}</span>;
+                            return <span className="text-body">{TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue}</span>;
                           })()}
                         </TableCell>
                       )}
@@ -2136,7 +2029,9 @@ export default function TransactionList({
                                         </tr>
                                         <tr>
                                           <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
-                                          <td className="text-right py-0.5">{usdValues[transaction.uuid || transaction.id].rate}</td>
+                                          <td className="text-right py-0.5">
+                                            <CopyableExchangeRate value={usdValues[transaction.uuid || transaction.id].rate} />
+                                          </td>
                                         </tr>
                                         <tr>
                                           <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
@@ -2169,16 +2064,14 @@ export default function TransactionList({
                       {/* Exchange Rate (optional) */}
                       {isColumnVisible('exchangeRate') && (
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                          {(transaction as any).exchange_rate_used != null ? (
-                            <span className="text-sm font-mono flex items-center justify-end gap-1">
-                              {(transaction as any).exchange_rate_used.toFixed(4)}
-                              {(transaction as any).exchange_rate_manual && (
+                          <span className="text-sm flex items-center justify-end">
+                            <CopyableExchangeRate
+                              value={(transaction as any).exchange_rate_used}
+                              suffix={(transaction as any).exchange_rate_manual ? (
                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">M</Badge>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                              ) : null}
+                            />
+                          </span>
                         </TableCell>
                       )}
 
@@ -2510,14 +2403,14 @@ export default function TransactionList({
                                               {transaction.flow_type || defaultFlowType}
                                             </span>
                                             <span className="text-helper">
-                                              {FLOW_TYPE_LABELS[transaction.flow_type || defaultFlowType || ''] || (transaction.flow_type || defaultFlowType)}
+                                              {FLOW_TYPE_LABELS[(transaction.flow_type || defaultFlowType || '') as FlowType] || (transaction.flow_type || defaultFlowType)}
                                             </span>
                                           </div>
                                         </TooltipTrigger>
                                         {((transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType)) && (
                                           <TooltipContent>
                                             <p className="text-helper">
-                                              This flow type has been inherited from the activity's default flow type (code {defaultFlowType || transaction.flow_type} – {FLOW_TYPE_LABELS[defaultFlowType || transaction.flow_type || ''] || defaultFlowType || transaction.flow_type})
+                                              This flow type has been inherited from the activity's default flow type (code {defaultFlowType || transaction.flow_type} – {FLOW_TYPE_LABELS[(defaultFlowType || transaction.flow_type || '') as FlowType] || defaultFlowType || transaction.flow_type})
                                             </p>
                                           </TooltipContent>
                                         )}
@@ -2573,14 +2466,14 @@ export default function TransactionList({
                                                 {displayValue}
                                               </span>
                                               <span className="text-helper">
-                                                {TIED_STATUS_LABELS[displayValue] || displayValue}
+                                                {TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue}
                                               </span>
                                             </div>
                                           </TooltipTrigger>
                                           {isInherited && (
                                             <TooltipContent>
                                               <p className="text-helper">
-                                                Inherited from activity's default tied status (code {displayValue} – {TIED_STATUS_LABELS[displayValue] || displayValue})
+                                                Inherited from activity's default tied status (code {displayValue} – {TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue})
                                               </p>
                                             </TooltipContent>
                                           )}

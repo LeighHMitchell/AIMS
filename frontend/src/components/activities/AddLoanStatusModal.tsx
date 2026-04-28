@@ -16,25 +16,64 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { CreateLoanStatusData } from '@/types/financing-terms';
+import { DatePicker } from '@/components/ui/date-picker';
+import { CurrencySelector } from '@/components/forms/CurrencySelector';
 
-// Common currencies for loan status
-const CURRENCIES = [
-  { code: "USD", name: "US Dollar" },
-  { code: "EUR", name: "Euro" },
-  { code: "GBP", name: "British Pound" },
-  { code: "AUD", name: "Australian Dollar" },
-  { code: "JPY", name: "Japanese Yen" },
-  { code: "MMK", name: "Myanmar Kyat" },
-  { code: "CAD", name: "Canadian Dollar" },
-  { code: "CHF", name: "Swiss Franc" },
-  { code: "CNY", name: "Chinese Yuan" },
-  { code: "SGD", name: "Singapore Dollar" },
-  { code: "INR", name: "Indian Rupee" },
-  { code: "KES", name: "Kenyan Shilling" },
-  { code: "TZS", name: "Tanzanian Shilling" },
-  { code: "UGX", name: "Ugandan Shilling" },
-  { code: "ETB", name: "Ethiopian Birr" },
-];
+// Format a number with thousand separators (no decimals while editing)
+const formatNumberWithCommas = (num: number | string | null | undefined, includeDecimals: boolean = false): string => {
+  if (num === '' || num === null || num === undefined || (typeof num === 'number' && isNaN(num))) return '';
+  const numValue = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(numValue as number)) return '';
+  if (includeDecimals) {
+    return (numValue as number).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+  const [integerPart, decimalPart] = String(numValue).split('.');
+  const formattedInteger = Number(integerPart).toLocaleString('en-US');
+  return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+};
+
+const parseNumberFromFormatted = (formattedStr: string): number | null => {
+  if (!formattedStr || formattedStr === '') return null;
+  const cleanStr = formattedStr.replace(/,/g, '');
+  if (cleanStr === '' || cleanStr === '.') return null;
+  const n = Number(cleanStr);
+  return isNaN(n) ? null : n;
+};
+
+interface MoneyInputProps {
+  id?: string;
+  value: number | null | undefined;
+  onChange: (value: number | null) => void;
+  placeholder?: string;
+}
+
+function MoneyInput({ id, value, onChange, placeholder = "0" }: MoneyInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const display = isFocused
+    ? (value == null || value === 0 ? '' : formatNumberWithCommas(value, false))
+    : (value == null ? '' : formatNumberWithCommas(value, true));
+  return (
+    <Input
+      id={id}
+      type="text"
+      inputMode="decimal"
+      value={display}
+      placeholder={placeholder}
+      onFocus={() => setIsFocused(true)}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (v === '' || /^[\d,]*\.?\d*$/.test(v)) {
+          onChange(parseNumberFromFormatted(v));
+        }
+      }}
+      onBlur={() => setIsFocused(false)}
+      className="text-left"
+    />
+  );
+}
 
 interface AddLoanStatusModalProps {
   open: boolean;
@@ -166,34 +205,22 @@ export function AddLoanStatusModal({
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency">Currency <RequiredDot /></Label>
-              <Select
-                value={formData.currency || ''}
-                onValueChange={(value) => setFormData({ ...formData, currency: value })}
-              >
-                <SelectTrigger id="currency">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currency.code}</span>
-                        <span>{currency.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CurrencySelector
+                id="currency"
+                value={formData.currency || undefined}
+                onValueChange={(v) => setFormData({ ...formData, currency: v || '' })}
+                placeholder="Select currency"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="value-date">Value Date</Label>
-            <Input
+            <DatePicker
               id="value-date"
-              type="date"
               value={formData.value_date || ''}
-              onChange={(e) => setFormData({ ...formData, value_date: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, value_date: value })}
+              placeholder="Select value date"
             />
           </div>
 
@@ -201,24 +228,18 @@ export function AddLoanStatusModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="interest-received">Interest Received</Label>
-              <Input
+              <MoneyInput
                 id="interest-received"
-                type="number"
-                step="0.01"
-                value={formData.interest_received || ''}
-                onChange={(e) => setFormData({ ...formData, interest_received: parseFloat(e.target.value) })}
-                placeholder="0.00"
+                value={formData.interest_received}
+                onChange={(v) => setFormData({ ...formData, interest_received: v })}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="principal-outstanding">Principal Outstanding</Label>
-              <Input
+              <MoneyInput
                 id="principal-outstanding"
-                type="number"
-                step="0.01"
-                value={formData.principal_outstanding || ''}
-                onChange={(e) => setFormData({ ...formData, principal_outstanding: parseFloat(e.target.value) })}
-                placeholder="0.00"
+                value={formData.principal_outstanding}
+                onChange={(v) => setFormData({ ...formData, principal_outstanding: v })}
               />
             </div>
           </div>
@@ -226,24 +247,18 @@ export function AddLoanStatusModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="principal-arrears">Principal Arrears</Label>
-              <Input
+              <MoneyInput
                 id="principal-arrears"
-                type="number"
-                step="0.01"
-                value={formData.principal_arrears || ''}
-                onChange={(e) => setFormData({ ...formData, principal_arrears: parseFloat(e.target.value) })}
-                placeholder="0.00"
+                value={formData.principal_arrears}
+                onChange={(v) => setFormData({ ...formData, principal_arrears: v })}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="interest-arrears">Interest Arrears</Label>
-              <Input
+              <MoneyInput
                 id="interest-arrears"
-                type="number"
-                step="0.01"
-                value={formData.interest_arrears || ''}
-                onChange={(e) => setFormData({ ...formData, interest_arrears: parseFloat(e.target.value) })}
-                placeholder="0.00"
+                value={formData.interest_arrears}
+                onChange={(v) => setFormData({ ...formData, interest_arrears: v })}
               />
             </div>
           </div>

@@ -675,7 +675,7 @@ export default function TransactionsManager({
     const timeoutId = setTimeout(commitDelete, 5000);
     pendingDeletesRef.current.set(id, timeoutId);
 
-    toast.success(label ? `Removed ${label}` : 'Transaction removed', {
+    toast(label ? `Removed ${label}` : 'Transaction removed', {
       action: {
         label: 'Undo',
         onClick: () => {
@@ -736,7 +736,7 @@ export default function TransactionsManager({
       // Clear selection AFTER refresh completes to ensure proper state sync
       setSelectedTransactionIds(new Set());
 
-      toast.success(`Successfully deleted ${selectedArray.length} transaction(s)`);
+      toast(`Deleted ${selectedArray.length} transaction${selectedArray.length === 1 ? '' : 's'}`);
     } catch (error: any) {
       console.error('[TransactionsManager] Error deleting transactions:', error);
       toast.error('Failed to delete some transactions');

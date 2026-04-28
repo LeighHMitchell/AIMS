@@ -405,7 +405,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
 
       if (!response.ok) throw new Error('Failed to delete link');
 
-      toast.success('Link removed', snapshot ? {
+      toast('Link removed', snapshot ? {
         action: {
           label: 'Undo',
           onClick: async () => {
@@ -839,7 +839,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           <Button
               onClick={handleSave}
               disabled={!relationshipType || saving}
-              className="bg-gray-900 text-white hover:bg-gray-800"
+              className="bg-gunmetal text-white hover:bg-gunmetal/90"
             >
               {saving && (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
