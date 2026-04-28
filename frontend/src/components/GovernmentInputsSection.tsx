@@ -611,7 +611,7 @@ export default function GovernmentInputsSection({
                           })}
                           className="border-input"
                         />
-                        <Button onClick={addAnnualContribution} className="bg-gray-800 text-white hover:bg-gray-700">
+                        <Button onClick={addAnnualContribution} className="bg-gunmetal text-white hover:bg-gunmetal/90">
                           <Plus className="h-4 w-4 mr-1" />
                           Add
                         </Button>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,15 +11,16 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
 
   try {
     const { id: activityId } = await params;
-
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
-    }
 
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
@@ -40,6 +42,27 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
     }
 
+    // Resolve uploader names in one batch so we can surface "by <Name>" in the UI
+    const uploaderIds = Array.from(
+      new Set(
+        (documents || [])
+          .map((d: any) => d.uploaded_by)
+          .filter((id: string | null): id is string => !!id)
+      )
+    );
+
+    const uploaderMap = new Map<string, string>();
+    if (uploaderIds.length > 0) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, first_name, last_name')
+        .in('id', uploaderIds);
+      (users || []).forEach((u: any) => {
+        const name = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
+        if (name) uploaderMap.set(u.id, name);
+      });
+    }
+
     // Generate signed URLs
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc: any) => {
@@ -55,6 +78,7 @@ export async function GET(
           category: doc.category,
           signedUrl: signedData?.signedUrl || null,
           uploadedAt: doc.created_at,
+          uploadedBy: doc.uploaded_by ? uploaderMap.get(doc.uploaded_by) || null : null,
         };
       })
     );
@@ -73,15 +97,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, user, response: authResponse } = await requireAuth();
+  const { user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
 
   try {
     const { id: activityId } = await params;
-
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
-    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -138,6 +163,85 @@ export async function POST(
       .from('government-input-documents')
       .createSignedUrl(filePath, 3600);
 
+    // Resolve uploader name so the UI can show "by <Name>" without a refetch
+    let uploadedByName: string | null = null;
+    if (user?.id) {
+      const { data: uploader } = await supabase
+        .from('users')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
+      if (uploader) {
+        uploadedByName = [uploader.first_name, uploader.last_name].filter(Boolean).join(' ').trim() || null;
+      }
+    }
+
+    return NextResponse.json({
+      document: {
+        id: doc.id,
+        fileName: doc.file_name,
+        fileSize: doc.file_size,
+        mimeType: doc.mime_type,
+        category: doc.category,
+        signedUrl: signedData?.signedUrl || null,
+        uploadedAt: doc.created_at,
+        uploadedBy: uploadedByName,
+      },
+    });
+  } catch (error) {
+    console.error('[GovInputDocs] POST error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH - Rename a government input document (updates the `file_name` column;
+ * the underlying Storage object path is unchanged).
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    const { id: activityId } = await params;
+    const { searchParams } = new URL(request.url);
+    const docId = searchParams.get('docId');
+
+    if (!docId) {
+      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const fileName = typeof body?.fileName === 'string' ? body.fileName.trim() : '';
+    if (!fileName) {
+      return NextResponse.json({ error: 'fileName is required' }, { status: 400 });
+    }
+
+    const { data: doc, error } = await supabase
+      .from('government_input_documents')
+      .update({ file_name: fileName })
+      .eq('id', docId)
+      .eq('activity_id', activityId)
+      .select()
+      .single();
+
+    if (error || !doc) {
+      console.error('[GovInputDocs] Rename error:', error);
+      return NextResponse.json({ error: error?.message || 'Rename failed' }, { status: 500 });
+    }
+
+    const { data: signedData } = await supabase.storage
+      .from('government-input-documents')
+      .createSignedUrl(doc.file_path, 3600);
+
     return NextResponse.json({
       document: {
         id: doc.id,
@@ -150,7 +254,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('[GovInputDocs] POST error:', error);
+    console.error('[GovInputDocs] PATCH error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -162,15 +266,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
 
   try {
     const { id: activityId } = await params;
-
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
-    }
 
     const { searchParams } = new URL(request.url);
     const docId = searchParams.get('docId');

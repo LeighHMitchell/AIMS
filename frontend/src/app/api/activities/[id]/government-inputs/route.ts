@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,9 +10,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: activityId } = await params;
-  
+
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+
   try {
-    
+
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
@@ -93,10 +99,15 @@ export async function POST(
 ) {
   const { id: activityId } = await params;
   let body: any;
-  
+
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+
   try {
     body = await request.json();
-    
+
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
@@ -111,20 +122,25 @@ export async function POST(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
-    // Transform frontend format to database format
-    const databaseFormat: any = {
-      activity_id: activityId,
-      on_budget_classification: body.onBudgetClassification || {},
-      rgc_contribution: body.rgcContribution || {},
-      risk_assessment: body.riskAssessment || {},
-      evaluation_results: body.evaluationResults || {},
-      // Preserve legacy fields if sent (backward compat)
-      national_plan_alignment: body.nationalPlanAlignment || {},
-      technical_coordination: body.technicalCoordination || {},
-      oversight_agreement: body.oversightAgreement || {},
-      geographic_context: body.geographicContext || {},
-      strategic_considerations: body.strategicConsiderations || {},
-    };
+    // Transform frontend format to database format.
+    // Only include JSONB fields that actually have content. This keeps saves
+    // robust against schema drift (e.g. a deploy where the `risk_assessment`
+    // column migration hasn't been applied yet) — we only write columns the
+    // user is actively touching.
+    const hasContent = (v: unknown) =>
+      v != null && (typeof v !== 'object' || Array.isArray(v) || Object.keys(v as object).length > 0);
+
+    const databaseFormat: any = { activity_id: activityId };
+    if (hasContent(body.onBudgetClassification)) databaseFormat.on_budget_classification = body.onBudgetClassification;
+    if (hasContent(body.rgcContribution)) databaseFormat.rgc_contribution = body.rgcContribution;
+    if (hasContent(body.riskAssessment)) databaseFormat.risk_assessment = body.riskAssessment;
+    if (hasContent(body.evaluationResults)) databaseFormat.evaluation_results = body.evaluationResults;
+    // Legacy fields — only include when the client actually sends content
+    if (hasContent(body.nationalPlanAlignment)) databaseFormat.national_plan_alignment = body.nationalPlanAlignment;
+    if (hasContent(body.technicalCoordination)) databaseFormat.technical_coordination = body.technicalCoordination;
+    if (hasContent(body.oversightAgreement)) databaseFormat.oversight_agreement = body.oversightAgreement;
+    if (hasContent(body.geographicContext)) databaseFormat.geographic_context = body.geographicContext;
+    if (hasContent(body.strategicConsiderations)) databaseFormat.strategic_considerations = body.strategicConsiderations;
 
     // Handle user tracking fields
     // Check if this is an update (record already exists)
@@ -143,15 +159,33 @@ export async function POST(
       databaseFormat.updated_by = body.userId || null;
     }
 
-    // Use upsert to create or update
-    const { data: governmentInput, error } = await supabase
-      .from('government_inputs')
-      .upsert(databaseFormat, { 
-        onConflict: 'activity_id',
-        ignoreDuplicates: false 
-      })
-      .select()
-      .single();
+    // Use upsert to create or update. If PostgREST reports an unknown column
+    // (migration not yet applied), drop that column and retry — we prefer to
+    // save the remaining fields than fail the whole save.
+    let governmentInput: any = null;
+    let error: any = null;
+    let remaining = { ...databaseFormat };
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const result = await supabase
+        .from('government_inputs')
+        .upsert(remaining, { onConflict: 'activity_id', ignoreDuplicates: false })
+        .select()
+        .single();
+      error = result.error;
+      governmentInput = result.data;
+      if (!error) break;
+      // PGRST204: "Could not find the 'X' column of 'Y' in the schema cache"
+      if (error.code === 'PGRST204' && typeof error.message === 'string') {
+        const match = error.message.match(/Could not find the '([^']+)' column/);
+        if (match && match[1] && match[1] !== 'activity_id' && match[1] in remaining) {
+          console.warn(`[government-inputs] Dropping unknown column "${match[1]}" and retrying.`);
+          const { [match[1]]: _dropped, ...rest } = remaining;
+          remaining = rest;
+          continue;
+        }
+      }
+      break;
+    }
 
     if (error) {
       console.error('Error saving government inputs:', error);
@@ -218,8 +252,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
 
   try {
     const { id: activityId } = await params;

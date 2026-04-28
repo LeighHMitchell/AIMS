@@ -79,6 +79,9 @@ export interface InKindContribution extends ContributionBase {
   estimatedValueLocal?: number;
   estimatedValueUSD?: number;
   period?: 'one_time' | 'annual';
+  valueDate?: string;
+  exchangeRate?: number;
+  exchangeRateManual?: boolean;
 }
 
 export interface OtherContribution extends ContributionBase {
@@ -88,6 +91,9 @@ export interface OtherContribution extends ContributionBase {
   estimatedValueLocal?: number;
   estimatedValueUSD?: number;
   legalReference?: string;
+  valueDate?: string;
+  exchangeRate?: number;
+  exchangeRateManual?: boolean;
 }
 
 export type Contribution =

@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Check, Loader2, Info, CalendarRange, SplitSquareHorizontal, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Info, CalendarRange, SplitSquareHorizontal, Plus, Trash2, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
+import { CurrencyValue } from '@/components/ui/currency-value';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DatePicker } from '@/components/ui/date-picker';
 import { convertToUSD } from '@/lib/currency-conversion-api';
@@ -74,13 +76,19 @@ function newId() {
   return Math.random().toString(36).slice(2);
 }
 
-function emptyForType(type: ContributionType, defaultCurrency?: string): Contribution {
+function emptyForType(
+  type: ContributionType,
+  defaultCurrency?: string,
+  defaultValueDate?: string
+): Contribution {
   const base = { id: newId(), description: '' };
+  const valueDate = defaultValueDate || new Date().toISOString().slice(0, 10);
   if (type === 'financial') {
     return {
       ...base,
       type: 'financial',
       currency: defaultCurrency,
+      valueDate,
       distributionMode: 'lump_sum',
       annual: [],
     };
@@ -92,6 +100,7 @@ function emptyForType(type: ContributionType, defaultCurrency?: string): Contrib
       category: 'staff',
       currency: defaultCurrency,
       period: 'one_time',
+      valueDate,
     };
   }
   return {
@@ -99,6 +108,7 @@ function emptyForType(type: ContributionType, defaultCurrency?: string): Contrib
     type: 'other',
     category: 'tax_exemption',
     currency: defaultCurrency,
+    valueDate,
   };
 }
 
@@ -147,7 +157,7 @@ export function ContributionModal({
   }, [open]);
 
   const pickType = (type: ContributionType) => {
-    setDraft(emptyForType(type, defaultCurrency));
+    setDraft(emptyForType(type, defaultCurrency, plannedStartDate));
     setStep('edit');
   };
 
@@ -174,25 +184,12 @@ export function ContributionModal({
         <DialogHeader className="flex-shrink-0 mx-0 mt-0 bg-surface-muted px-6 py-4 rounded-t-lg border-b">
           <DialogTitle>
             {step === 'pickType' ? 'Add Government Contribution' : (
-              <div className="flex items-center gap-2">
-                {!initial && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={() => { setDraft(null); setStep('pickType'); }}
-                    aria-label="Back"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                )}
-                <span>
-                  {initial ? 'Edit ' : 'New '}
-                  {draft?.type === 'financial' && 'Financial Contribution'}
-                  {draft?.type === 'in_kind' && 'In-Kind Contribution'}
-                  {draft?.type === 'other' && 'Other Contribution'}
-                </span>
-              </div>
+              <>
+                {initial ? 'Edit ' : 'New '}
+                {draft?.type === 'financial' && 'Financial Contribution'}
+                {draft?.type === 'in_kind' && 'In-Kind Contribution'}
+                {draft?.type === 'other' && 'Other Contribution'}
+              </>
             )}
           </DialogTitle>
           <DialogDescription>
@@ -214,19 +211,34 @@ export function ContributionModal({
             />
           )}
           {step === 'edit' && draft?.type === 'in_kind' && (
-            <InKindForm value={draft} onChange={(next) => setDraft(next)} />
+            <InKindForm value={draft} onChange={(next) => setDraft(next)} plannedStartDate={plannedStartDate} />
           )}
           {step === 'edit' && draft?.type === 'other' && (
-            <OtherForm value={draft} onChange={(next) => setDraft(next)} />
+            <OtherForm value={draft} onChange={(next) => setDraft(next)} plannedStartDate={plannedStartDate} />
           )}
         </div>
 
         {step === 'edit' && (
-          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!canSave}>
-              Save contribution
-            </Button>
+          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t sm:justify-between">
+            <div>
+              {!initial && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => { setDraft(null); setStep('pickType'); }}
+                  className="gap-1.5"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button onClick={handleSave} disabled={!canSave}>
+                Save contribution
+              </Button>
+            </div>
           </DialogFooter>
         )}
       </DialogContent>
@@ -270,7 +282,7 @@ function TypePicker({ onPick }: { onPick: (t: ContributionType) => void }) {
           key={card.type}
           type="button"
           onClick={() => onPick(card.type)}
-          className="relative flex flex-col justify-end h-[220px] rounded-lg ring-1 ring-inset ring-border bg-background hover:bg-muted transition-all text-left overflow-hidden"
+          className="relative flex flex-col justify-end h-[280px] rounded-lg ring-1 ring-inset ring-border bg-background hover:bg-muted transition-all text-left overflow-hidden"
         >
           <Image
             src={card.image}
@@ -485,6 +497,74 @@ function FinancialForm({
 
   return (
     <div className="space-y-4 py-2">
+      {/* Row 0: Distribution Mode — determines which fields appear below */}
+      <div className="space-y-2">
+        <FieldLabel help="Lump Sum records a single total. Annual Breakdown splits it across years with per-year exchange rates.">Distribution Mode</FieldLabel>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Lump Sum Card */}
+          <button
+            type="button"
+            onClick={() => patch({ distributionMode: 'lump_sum' })}
+            aria-pressed={(value.distributionMode || 'lump_sum') === 'lump_sum'}
+            className={cn(
+              "relative flex flex-col justify-end h-[300px] rounded-lg ring-1 ring-inset text-left p-3 transition-all overflow-hidden",
+              (value.distributionMode || 'lump_sum') === 'lump_sum'
+                ? "ring-border bg-primary/5"
+                : "ring-border bg-background hover:bg-muted"
+            )}
+          >
+            <Image
+              src="/images/distribution-lump-sum.png"
+              alt="Lump Sum"
+              fill
+              className="object-contain object-top p-3 opacity-70 mix-blend-multiply"
+            />
+            {(value.distributionMode || 'lump_sum') === 'lump_sum' && (
+              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <Check className="h-3 w-3 text-primary-foreground" />
+              </div>
+            )}
+            <div className="relative z-10">
+              <h4 className="text-body font-semibold">Lump Sum</h4>
+              <p className="mt-1 text-helper text-muted-foreground">
+                Single total amount for the whole activity
+              </p>
+            </div>
+          </button>
+
+          {/* Annual Breakdown Card */}
+          <button
+            type="button"
+            onClick={() => patch({ distributionMode: 'annual' })}
+            aria-pressed={value.distributionMode === 'annual'}
+            className={cn(
+              "relative flex flex-col justify-end h-[300px] rounded-lg ring-1 ring-inset text-left p-3 transition-all overflow-hidden",
+              value.distributionMode === 'annual'
+                ? "ring-border bg-primary/5"
+                : "ring-border bg-background hover:bg-muted"
+            )}
+          >
+            <Image
+              src="/images/distribution-annual.png"
+              alt="Annual Breakdown"
+              fill
+              className="object-contain object-top p-3 opacity-70 mix-blend-multiply"
+            />
+            {value.distributionMode === 'annual' && (
+              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <Check className="h-3 w-3 text-primary-foreground" />
+              </div>
+            )}
+            <div className="relative z-10">
+              <h4 className="text-body font-semibold">Annual Breakdown</h4>
+              <p className="mt-1 text-helper text-muted-foreground">
+                Split the total across individual years
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* Row 1: Value | Currency */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -567,133 +647,102 @@ function FinancialForm({
               </div>
             )}
           </div>
-          <div className="relative">
-            <Input
-              type="number"
-              step="0.000001"
-              value={value.currency === 'USD' ? 1 : (value.exchangeRate ?? '')}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                patch({ exchangeRate: isNaN(v) ? undefined : v });
-              }}
-              disabled={
-                !value.currency ||
-                value.currency === 'USD' ||
-                !value.exchangeRateManual ||
-                isLoadingRate
-              }
-              className={cn('h-10', (!value.exchangeRateManual || value.currency === 'USD') && 'bg-muted')}
-              placeholder={isLoadingRate ? 'Loading...' : !value.currency ? 'Select currency' : 'Enter rate'}
-            />
-            {isLoadingRate && (
-              <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-          </div>
+          {(() => {
+            const isEditable = !!value.exchangeRateManual && !!value.currency && value.currency !== 'USD' && !isLoadingRate;
+            const displayRate = value.currency === 'USD' ? 1 : value.exchangeRate;
+            const hasRate = displayRate != null;
+
+            if (isEditable) {
+              // Editable: plain input, no copy icon needed (user is typing it themselves)
+              return (
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={value.exchangeRate ?? ''}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    patch({ exchangeRate: isNaN(v) ? undefined : v });
+                  }}
+                  className="h-10 tabular-nums"
+                  placeholder="Enter rate"
+                />
+              );
+            }
+
+            // Non-editable display: show value and copy icon inline (icon immediately right of rate)
+            return (
+              <div className="group h-10 px-3 py-2 border rounded-md bg-muted flex items-center gap-2">
+                {isLoadingRate ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-muted-foreground">Loading...</span>
+                  </>
+                ) : !value.currency ? (
+                  <span className="text-muted-foreground">Select currency</span>
+                ) : hasRate ? (
+                  <>
+                    <span className="tabular-nums">{displayRate}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const raw = String(displayRate);
+                        try {
+                          await navigator.clipboard.writeText(raw);
+                          toast.success(`Copied ${raw} to clipboard`);
+                        } catch {
+                          toast.error('Failed to copy');
+                        }
+                      }}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                      aria-label="Copy exchange rate"
+                      title="Copy exchange rate"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Enter rate</span>
+                )}
+              </div>
+            );
+          })()}
           {rateError && <p className="text-helper text-destructive">{rateError}</p>}
         </div>
       </div>
       )}
 
       {/* Row 3: USD Value (top-level). In Annual mode, this is the sum of per-year rows. */}
-      <div className="space-y-2">
-        <FieldLabel help="Value converted to USD using the value-date exchange rate. Computed automatically — no manual entry.">USD Value</FieldLabel>
-        <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-foreground">
-          {isAnnual ? (
-            annualTotalUSD > 0
-              ? <>$ {annualTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-              : <span className="text-muted-foreground font-normal text-body">
-                  {!value.currency ? 'Select a currency' : 'Enter amounts in the annual breakdown below'}
-                </span>
-          ) : (
-            computedUSD !== null
-              ? <>$ {computedUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-              : <span className="text-muted-foreground font-normal text-body">
-                  {!value.currency ? 'Select a currency' : !value.exchangeRate ? 'Set value date for rate' : 'Enter amount'}
-                </span>
-          )}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <FieldLabel help="Value converted to USD using the value-date exchange rate. Computed automatically — no manual entry.">USD Value</FieldLabel>
+          <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-foreground">
+            {isAnnual ? (
+              annualTotalUSD > 0
+                ? <CurrencyValue amount={annualTotalUSD} variant="precise" />
+                : <span className="text-muted-foreground font-normal text-body">
+                    {!value.currency ? 'Select a currency' : 'Enter amounts in the annual breakdown below'}
+                  </span>
+            ) : (
+              computedUSD !== null
+                ? <CurrencyValue amount={computedUSD} variant="precise" />
+                : <span className="text-muted-foreground font-normal text-body">
+                    {!value.currency ? 'Select a currency' : !value.exchangeRate ? 'Set value date for rate' : 'Enter amount'}
+                  </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Row 4: Description */}
       <div className="space-y-2">
-        <FieldLabel help="Short label explaining what this contribution is for (e.g., which ministry, which budget line, or the purpose of the funding)." required>Description</FieldLabel>
+        <FieldLabel help="What the contribution is for — the purpose, not the source. Name the activity component or output the money pays for." required>Description</FieldLabel>
         <Textarea
-          placeholder="e.g., Counterpart cash funding from Ministry of Finance"
+          placeholder="e.g., Counterpart funding for Phase 1 feasibility studies"
           value={value.description ?? ''}
           onChange={(e) => patch({ description: e.target.value })}
           rows={2}
           className="resize-y min-h-[40px]"
         />
-      </div>
-
-      <div className="space-y-2">
-        <FieldLabel help="Lump Sum records a single total. Annual Breakdown splits it across years with per-year exchange rates.">Distribution Mode</FieldLabel>
-        <div className="grid grid-cols-2 gap-3">
-          {/* Lump Sum Card */}
-          <button
-            type="button"
-            onClick={() => patch({ distributionMode: 'lump_sum' })}
-            aria-pressed={(value.distributionMode || 'lump_sum') === 'lump_sum'}
-            className={cn(
-              "relative flex flex-col justify-end h-[180px] rounded-lg ring-1 ring-inset text-left p-3 transition-all overflow-hidden",
-              (value.distributionMode || 'lump_sum') === 'lump_sum'
-                ? "ring-border bg-primary/5"
-                : "ring-border bg-background hover:bg-muted"
-            )}
-          >
-            <Image
-              src="/images/distribution-lump-sum.png"
-              alt="Lump Sum"
-              fill
-              className="object-contain object-top p-3 opacity-70 mix-blend-multiply"
-            />
-            {(value.distributionMode || 'lump_sum') === 'lump_sum' && (
-              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                <Check className="h-3 w-3 text-primary-foreground" />
-              </div>
-            )}
-            <div className="relative z-10">
-              <h4 className="text-body font-semibold">Lump Sum</h4>
-              <p className="mt-1 text-helper text-muted-foreground">
-                Single total amount for the whole activity
-              </p>
-            </div>
-          </button>
-
-          {/* Annual Breakdown Card */}
-          <button
-            type="button"
-            onClick={() => patch({ distributionMode: 'annual' })}
-            aria-pressed={value.distributionMode === 'annual'}
-            className={cn(
-              "relative flex flex-col justify-end h-[180px] rounded-lg ring-1 ring-inset text-left p-3 transition-all overflow-hidden",
-              value.distributionMode === 'annual'
-                ? "ring-border bg-primary/5"
-                : "ring-border bg-background hover:bg-muted"
-            )}
-          >
-            <Image
-              src="/images/distribution-annual.png"
-              alt="Annual Breakdown"
-              fill
-              className="object-contain object-top p-3 opacity-70 mix-blend-multiply"
-            />
-            {value.distributionMode === 'annual' && (
-              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                <Check className="h-3 w-3 text-primary-foreground" />
-              </div>
-            )}
-            <div className="relative z-10">
-              <h4 className="text-body font-semibold flex items-center gap-1.5">
-                <SplitSquareHorizontal className="h-3.5 w-3.5" />
-                Annual Breakdown
-              </h4>
-              <p className="mt-1 text-helper text-muted-foreground">
-                Split the total across individual years
-              </p>
-            </div>
-          </button>
-        </div>
       </div>
 
       {value.distributionMode === 'annual' && (
@@ -848,8 +897,8 @@ function FinancialForm({
                             )}
                           />
                         </td>
-                        <td className="p-1.5 text-right tabular-nums text-foreground font-medium">
-                          {rowUSD ? `$ ${rowUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                        <td className="p-1.5 text-right tabular-nums text-foreground">
+                          {rowUSD ? <CurrencyValue amount={rowUSD} variant="precise" /> : '—'}
                         </td>
                         <td className="p-1.5">
                           <button
@@ -870,9 +919,7 @@ function FinancialForm({
                   <tr className="border-t-2 font-medium bg-muted/30">
                     <td className="p-2 text-helper" colSpan={4}>Total</td>
                     <td className="p-2 text-right tabular-nums text-foreground">
-                      {annualTotalUSD > 0
-                        ? `$ ${annualTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : '—'}
+                      {annualTotalUSD > 0 ? <CurrencyValue amount={annualTotalUSD} variant="precise" /> : '—'}
                     </td>
                     <td />
                   </tr>
@@ -911,9 +958,9 @@ function FinancialForm({
       )}
 
       <div className="space-y-2">
-        <FieldLabel help="Which government budget line, ministry, or fund the money comes from. Auditors use this to trace the commitment back to an official source.">Source of Funding</FieldLabel>
+        <FieldLabel help="The appropriation, vote, or budget-line reference the money is drawn from. Auditors use this to trace the commitment back to an official source — not a description of what the money is for.">Government Budget Line</FieldLabel>
         <Textarea
-          placeholder="Specify the government budget line or funding source"
+          placeholder="e.g., MoF-GA/INFRA/2026-037 · MoPF Vote 4, Sub-head 2.1"
           value={value.sourceOfFunding ?? ''}
           onChange={(e) => patch({ sourceOfFunding: e.target.value })}
           rows={2}
@@ -928,12 +975,16 @@ function FinancialForm({
 function InKindForm({
   value,
   onChange,
+  plannedStartDate,
 }: {
   value: InKindContribution;
   onChange: (next: InKindContribution) => void;
+  plannedStartDate?: string;
 }) {
   const [isEditingValue, setIsEditingValue] = useState(false);
   const [editingValueDisplay, setEditingValueDisplay] = useState('');
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
   const patch = (p: Partial<InKindContribution>) => onChange({ ...value, ...p });
 
   const categoryEntries = Object.entries(IN_KIND_CATEGORY_LABELS) as [InKindCategory, string][];
@@ -941,6 +992,79 @@ function InKindForm({
     ['one_time', 'One-time'],
     ['annual', 'Annual / recurring'],
   ];
+
+  // Category-specific guidance for the Description field — tells the user what
+  // detail to capture and how to estimate the value for this kind of contribution.
+  const descriptionHelpByCategory: Record<InKindCategory, { help: string; placeholder: string }> = {
+    staff: {
+      help: 'Describe the role, level, and time commitment (e.g., "Senior engineer, 50% FTE over 12 months"). Estimate value using the government salary scale plus benefits and overhead.',
+      placeholder: 'e.g., Senior engineer seconded 50% FTE for 12 months',
+    },
+    facilities: {
+      help: 'Describe the space provided — building, floor, area, location, exclusivity. Estimate value using prevailing commercial rental rates for comparable space in the area.',
+      placeholder: 'e.g., 200 sqm office space in the Ministry of Finance HQ',
+    },
+    land: {
+      help: 'Describe the parcel — location, area (ha/sqm), tenure (freehold / long lease), and use. Estimate value at market land price or the equivalent lease value for the activity period.',
+      placeholder: 'e.g., 2 ha of government land in Yangon, 30-year lease',
+    },
+    equipment: {
+      help: 'Describe the equipment — make, model, quantity, age/condition, and whether it is loaned or transferred. Estimate value at replacement cost or residual book value.',
+      placeholder: 'e.g., 3 × Toyota Hilux pick-ups (2023), transferred to the project',
+    },
+    utilities: {
+      help: 'Describe which utilities are provided and the coverage (water, power, internet, telecoms). Estimate value using tariff schedules × expected usage for the activity period.',
+      placeholder: 'e.g., Electricity and water at the project site for the 2-year build',
+    },
+    services: {
+      help: 'Describe the service provided (e.g., security, transport, translation, printing). Estimate value using the government rate or the lowest competing market quote.',
+      placeholder: 'e.g., 24/7 site security at the project compound for 18 months',
+    },
+    other: {
+      help: 'Describe what is being contributed, how much of it, and any relevant terms. Record how you estimated the value (fair-market benchmark, procurement cost, salary scale, etc.).',
+      placeholder: 'e.g., Supply of bottled water to the project team',
+    },
+  };
+  const descHelp = descriptionHelpByCategory[value.category] || descriptionHelpByCategory.other;
+
+  const fetchRate = async () => {
+    if (!value.currency || value.currency === 'USD') {
+      patch({ exchangeRate: 1 });
+      setRateError(null);
+      return;
+    }
+    if (!value.valueDate) {
+      setRateError('Please set a value date first');
+      return;
+    }
+    setIsLoadingRate(true);
+    setRateError(null);
+    try {
+      const result = await convertToUSD(1, value.currency, new Date(value.valueDate));
+      if (result.success && result.exchange_rate) {
+        patch({ exchangeRate: result.exchange_rate });
+      } else {
+        setRateError(result.error || 'Failed to fetch exchange rate');
+      }
+    } catch {
+      setRateError('Failed to fetch exchange rate');
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!value.exchangeRateManual && value.currency && value.currency !== 'USD' && value.valueDate) {
+      fetchRate();
+    } else if (value.currency === 'USD') {
+      patch({ exchangeRate: 1 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.currency, value.valueDate, value.exchangeRateManual]);
+
+  const computedUSD = value.estimatedValueLocal && value.exchangeRate
+    ? Math.round(value.estimatedValueLocal * value.exchangeRate * 100) / 100
+    : null;
 
   return (
     <div className="space-y-4 py-2">
@@ -985,19 +1109,9 @@ function InKindForm({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <FieldLabel help="Describe what is being contributed in kind, how many units, and any relevant details (e.g., 200 sqm of office space on the ground floor of the Ministry of Finance HQ)." required>Description</FieldLabel>
-        <Textarea
-          placeholder="e.g., Office space in the ministry HQ (200 sqm)"
-          value={value.description ?? ''}
-          onChange={(e) => patch({ description: e.target.value })}
-          rows={2}
-        />
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <FieldLabel help="Currency used for the estimated value (e.g., AUD, MMK). The USD equivalent will be calculated on save.">Currency</FieldLabel>
+          <FieldLabel help="Currency used for the estimated value (e.g., AUD, MMK).">Currency</FieldLabel>
           <CurrencySelector
             value={value.currency || null}
             onValueChange={(v) => patch({ currency: v || undefined })}
@@ -1021,7 +1135,11 @@ function InKindForm({
                 : intPart.toLocaleString() + (parts.length > 1 ? '.' + parts[1] : '');
               setEditingValueDisplay(formatted);
               const num = parseFloat(raw);
-              patch({ estimatedValueLocal: !isNaN(num) ? num : (raw === '' || raw === '.') ? undefined : value.estimatedValueLocal });
+              const local = !isNaN(num) ? num : (raw === '' || raw === '.') ? undefined : value.estimatedValueLocal;
+              patch({
+                estimatedValueLocal: local,
+                estimatedValueUSD: local && value.exchangeRate ? Math.round(local * value.exchangeRate * 100) / 100 : undefined,
+              });
             }}
             onFocus={() => {
               setIsEditingValue(true);
@@ -1038,6 +1156,126 @@ function InKindForm({
           />
         </div>
       </div>
+
+      {/* Value Date + Exchange Rate */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <FieldLabel help="The date to anchor the exchange rate for USD conversion. Defaults to the activity's planned start date.">Value Date</FieldLabel>
+          <DatePicker
+            value={value.valueDate || ''}
+            onChange={(v) => patch({ valueDate: v })}
+            placeholder="Select date"
+            dropdownId={`contribution-inkind-value-date-${value.id}`}
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between min-h-[24px]">
+            <FieldLabel help="Historical exchange rate at the value date. Toggle Auto/Manual to enter your own rate.">Exchange Rate</FieldLabel>
+            {value.currency && value.currency !== 'USD' && (
+              <div className="flex items-center gap-2">
+                <span className={cn("text-helper", value.exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
+                  {value.exchangeRateManual ? 'Manual' : 'Auto'}
+                </span>
+                <Switch
+                  checked={!value.exchangeRateManual}
+                  onCheckedChange={(checked) => {
+                    patch({ exchangeRateManual: !checked });
+                    if (checked) fetchRate();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          {(() => {
+            const isEditable = !!value.exchangeRateManual && !!value.currency && value.currency !== 'USD' && !isLoadingRate;
+            const displayRate = value.currency === 'USD' ? 1 : value.exchangeRate;
+            const hasRate = displayRate != null;
+
+            if (isEditable) {
+              return (
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={value.exchangeRate ?? ''}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    const rate = isNaN(v) ? undefined : v;
+                    patch({
+                      exchangeRate: rate,
+                      estimatedValueUSD: rate && value.estimatedValueLocal
+                        ? Math.round(value.estimatedValueLocal * rate * 100) / 100
+                        : undefined,
+                    });
+                  }}
+                  className="h-10 tabular-nums"
+                  placeholder="Enter rate"
+                />
+              );
+            }
+
+            return (
+              <div className="group h-10 px-3 py-2 border rounded-md bg-muted flex items-center gap-2">
+                {isLoadingRate ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-muted-foreground">Loading...</span>
+                  </>
+                ) : !value.currency ? (
+                  <span className="text-muted-foreground">Select currency</span>
+                ) : hasRate ? (
+                  <>
+                    <span className="tabular-nums">{displayRate}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const raw = String(displayRate);
+                        try {
+                          await navigator.clipboard.writeText(raw);
+                          toast.success(`Copied ${raw} to clipboard`);
+                        } catch {
+                          toast.error('Failed to copy');
+                        }
+                      }}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                      aria-label="Copy exchange rate"
+                      title="Copy exchange rate"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Enter rate</span>
+                )}
+              </div>
+            );
+          })()}
+          {rateError && <p className="text-helper text-destructive">{rateError}</p>}
+        </div>
+      </div>
+
+      {/* USD Value */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <FieldLabel help="Estimated value converted to USD at the value-date exchange rate. Computed automatically.">USD Value</FieldLabel>
+          <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-foreground">
+            {computedUSD !== null
+              ? <>$ {computedUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+              : <span className="text-muted-foreground font-normal text-body">
+                  {!value.currency ? 'Select a currency' : !value.exchangeRate ? 'Set value date for rate' : 'Enter amount'}
+                </span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <FieldLabel help={descHelp.help} required>Description</FieldLabel>
+        <Textarea
+          placeholder={descHelp.placeholder}
+          value={value.description ?? ''}
+          onChange={(e) => patch({ description: e.target.value })}
+          rows={2}
+        />
+      </div>
     </div>
   );
 }
@@ -1047,15 +1285,58 @@ function InKindForm({
 function OtherForm({
   value,
   onChange,
+  plannedStartDate,
 }: {
   value: OtherContribution;
   onChange: (next: OtherContribution) => void;
+  plannedStartDate?: string;
 }) {
   const [isEditingValue, setIsEditingValue] = useState(false);
   const [editingValueDisplay, setEditingValueDisplay] = useState('');
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
   const patch = (p: Partial<OtherContribution>) => onChange({ ...value, ...p });
 
   const categoryEntries = Object.entries(OTHER_CATEGORY_LABELS) as [OtherCategory, string][];
+
+  const fetchRate = async () => {
+    if (!value.currency || value.currency === 'USD') {
+      patch({ exchangeRate: 1 });
+      setRateError(null);
+      return;
+    }
+    if (!value.valueDate) {
+      setRateError('Please set a value date first');
+      return;
+    }
+    setIsLoadingRate(true);
+    setRateError(null);
+    try {
+      const result = await convertToUSD(1, value.currency, new Date(value.valueDate));
+      if (result.success && result.exchange_rate) {
+        patch({ exchangeRate: result.exchange_rate });
+      } else {
+        setRateError(result.error || 'Failed to fetch exchange rate');
+      }
+    } catch {
+      setRateError('Failed to fetch exchange rate');
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!value.exchangeRateManual && value.currency && value.currency !== 'USD' && value.valueDate) {
+      fetchRate();
+    } else if (value.currency === 'USD') {
+      patch({ exchangeRate: 1 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.currency, value.valueDate, value.exchangeRateManual]);
+
+  const computedUSD = value.estimatedValueLocal && value.exchangeRate
+    ? Math.round(value.estimatedValueLocal * value.exchangeRate * 100) / 100
+    : null;
 
   return (
     <div className="space-y-4 py-2">
@@ -1077,16 +1358,6 @@ function OtherForm({
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="space-y-2">
-        <FieldLabel help="Describe what the government is contributing (e.g., duty waiver on imported equipment, exemption from VAT on services)." required>Description</FieldLabel>
-        <Textarea
-          placeholder="e.g., Import duty waiver on project equipment"
-          value={value.description ?? ''}
-          onChange={(e) => patch({ description: e.target.value })}
-          rows={2}
-        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -1115,7 +1386,11 @@ function OtherForm({
                 : intPart.toLocaleString() + (parts.length > 1 ? '.' + parts[1] : '');
               setEditingValueDisplay(formatted);
               const num = parseFloat(raw);
-              patch({ estimatedValueLocal: !isNaN(num) ? num : (raw === '' || raw === '.') ? undefined : value.estimatedValueLocal });
+              const local = !isNaN(num) ? num : (raw === '' || raw === '.') ? undefined : value.estimatedValueLocal;
+              patch({
+                estimatedValueLocal: local,
+                estimatedValueUSD: local && value.exchangeRate ? Math.round(local * value.exchangeRate * 100) / 100 : undefined,
+              });
             }}
             onFocus={() => {
               setIsEditingValue(true);
@@ -1131,6 +1406,126 @@ function OtherForm({
             onBlur={() => setIsEditingValue(false)}
           />
         </div>
+      </div>
+
+      {/* Value Date + Exchange Rate */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <FieldLabel help="The date to anchor the exchange rate for USD conversion. Defaults to the activity's planned start date.">Value Date</FieldLabel>
+          <DatePicker
+            value={value.valueDate || ''}
+            onChange={(v) => patch({ valueDate: v })}
+            placeholder="Select date"
+            dropdownId={`contribution-other-value-date-${value.id}`}
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between min-h-[24px]">
+            <FieldLabel help="Historical exchange rate at the value date. Toggle Auto/Manual to enter your own rate.">Exchange Rate</FieldLabel>
+            {value.currency && value.currency !== 'USD' && (
+              <div className="flex items-center gap-2">
+                <span className={cn("text-helper", value.exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
+                  {value.exchangeRateManual ? 'Manual' : 'Auto'}
+                </span>
+                <Switch
+                  checked={!value.exchangeRateManual}
+                  onCheckedChange={(checked) => {
+                    patch({ exchangeRateManual: !checked });
+                    if (checked) fetchRate();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          {(() => {
+            const isEditable = !!value.exchangeRateManual && !!value.currency && value.currency !== 'USD' && !isLoadingRate;
+            const displayRate = value.currency === 'USD' ? 1 : value.exchangeRate;
+            const hasRate = displayRate != null;
+
+            if (isEditable) {
+              return (
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={value.exchangeRate ?? ''}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    const rate = isNaN(v) ? undefined : v;
+                    patch({
+                      exchangeRate: rate,
+                      estimatedValueUSD: rate && value.estimatedValueLocal
+                        ? Math.round(value.estimatedValueLocal * rate * 100) / 100
+                        : undefined,
+                    });
+                  }}
+                  className="h-10 tabular-nums"
+                  placeholder="Enter rate"
+                />
+              );
+            }
+
+            return (
+              <div className="group h-10 px-3 py-2 border rounded-md bg-muted flex items-center gap-2">
+                {isLoadingRate ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-muted-foreground">Loading...</span>
+                  </>
+                ) : !value.currency ? (
+                  <span className="text-muted-foreground">Select currency</span>
+                ) : hasRate ? (
+                  <>
+                    <span className="tabular-nums">{displayRate}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const raw = String(displayRate);
+                        try {
+                          await navigator.clipboard.writeText(raw);
+                          toast.success(`Copied ${raw} to clipboard`);
+                        } catch {
+                          toast.error('Failed to copy');
+                        }
+                      }}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                      aria-label="Copy exchange rate"
+                      title="Copy exchange rate"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Enter rate</span>
+                )}
+              </div>
+            );
+          })()}
+          {rateError && <p className="text-helper text-destructive">{rateError}</p>}
+        </div>
+      </div>
+
+      {/* USD Value */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <FieldLabel help="Estimated fiscal value converted to USD at the value-date exchange rate. Computed automatically.">USD Value</FieldLabel>
+          <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-foreground">
+            {computedUSD !== null
+              ? <>$ {computedUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+              : <span className="text-muted-foreground font-normal text-body">
+                  {!value.currency ? 'Select a currency' : !value.exchangeRate ? 'Set value date for rate' : 'Enter amount'}
+                </span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <FieldLabel help="Describe what the government is contributing (e.g., duty waiver on imported equipment, exemption from VAT on services)." required>Description</FieldLabel>
+        <Textarea
+          placeholder="e.g., Import duty waiver on project equipment"
+          value={value.description ?? ''}
+          onChange={(e) => patch({ description: e.target.value })}
+          rows={2}
+        />
       </div>
 
       <div className="space-y-2">
