@@ -9,9 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { ChevronsUpDown, Search } from "lucide-react";
+import { ChevronsUpDown, Search, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EnhancedMultiSelect } from "@/components/ui/enhanced-multi-select";
+import { TiedStatusSelect } from "@/components/forms/TiedStatusSelect";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -57,8 +59,14 @@ export interface AidEffectivenessFormData {
   // Section 1: Government Ownership & Strategic Alignment (GPEDC 1)
   implementingPartner?: string;
   formallyApprovedByGov?: string | null;
+  /** "yes" | "no" | "unsure" — answer to whether the activity is in a national plan */
   includedInNationalPlan?: string | null;
+  /** UUIDs of selected national_plans rows (only used when includedInNationalPlan === "yes") */
+  includedInNationalPlanIds?: string[];
+  /** "yes" | "no" | "unsure" — answer to whether the activity is linked to a govt results framework */
   linkedToGovFramework?: string | null;
+  /** UUIDs of selected national_plans rows (only used when linkedToGovFramework === "yes") */
+  linkedToGovFrameworkIds?: string[];
   indicatorsFromGov?: string | null;
   indicatorsViaGovData?: string | null;
   implementedByNationalInstitution?: string | null;
@@ -118,7 +126,15 @@ export interface AidEffectivenessFormData {
   // Section 9: Documents
   uploadedDocument?: string;
   uploadedDocumentUrl?: string;
+  uploadedDocumentSize?: number;
+  uploadedDocumentAt?: string;
+  uploadedDocumentBy?: string;
   externalDocumentLink?: string;
+  /**
+   * Array of external links. Each link is `{ url, name? }`.
+   * The legacy formats (string, string[]) are normalised to this shape on read.
+   */
+  externalDocumentLinks?: Array<{ url: string; name?: string }>;
 
   // Section 10: Remarks
   remarks?: string;
@@ -158,6 +174,7 @@ interface Organization {
   id: string;
   name: string;
   acronym?: string;
+  iati_org_id?: string;
 }
 
 interface AEOption {
@@ -211,10 +228,10 @@ const MULTI_OPTION_FIELDS: Record<string, { label: string; description?: string 
     { label: "Not engaged", description: "No private sector engagement" },
   ],
   genderObjectivesIntegrated: [
-    { label: "Principal (GEN-3)", description: "Gender equality is the principal objective" },
-    { label: "Significant (GEN-2)", description: "Gender equality is a significant objective" },
-    { label: "Marginal (GEN-1)", description: "Marginal contribution to gender equality" },
-    { label: "Not targeted (GEN-0)", description: "Gender equality is not targeted" },
+    { label: "Principal", description: "Gender equality is the principal objective" },
+    { label: "Significant", description: "Gender equality is a significant objective" },
+    { label: "Marginal", description: "Marginal contribution to gender equality" },
+    { label: "Not targeted", description: "Gender equality is not targeted" },
   ],
   coreFlexibleFundingToCSO: [
     { label: "Core/institutional", description: "Core/institutional funding to CSOs" },
@@ -250,7 +267,7 @@ const DOCUMENT_UPLOAD_FIELDS = new Set([
 
 // GPEDC-aligned tooltips
 const TOOLTIPS: Record<string, string> = {
-  implementingPartner: "The organisation responsible for implementing the project at the point of delivery (GPEDC Indicator 1a).",
+  implementingPartner: "Mirrored from Overview > Reporting Organisation. Edit there to change.",
   formallyApprovedByGov: "Was this activity formally approved by the partner country government before implementation began?",
   includedInNationalPlan: "Is this activity included in a National Development Plan or Sector Strategy, with a document reference?",
   linkedToGovFramework: "Is this project aligned with national development results frameworks? (GPEDC Indicator 1a)",
@@ -267,6 +284,7 @@ const TOOLTIPS: Record<string, string> = {
   finReportingIntegratedPFM: "Is financial reporting integrated into national Public Financial Management systems?",
   govAudit: "Is the project subject to government audit procedures via the National Audit Institution? (GPEDC Indicator 5a)",
   govProcurement: "Does the project use national procurement law and systems? (GPEDC Indicator 5a)",
+  govSystemWhyNot: "Briefly describe why country PFM, audit, or procurement systems are bypassed for this activity — e.g., donor procurement rules, fiduciary risk findings, sector-specific donor frameworks, or capacity constraints in the relevant institution.",
   annualBudgetShared: "Was annual disbursement information shared with government before the start of the fiscal year? (GPEDC Indicator 5b)",
   forwardPlanShared: "Has forward expenditure information been provided covering at least 3 years ahead? (GPEDC Indicator 6)",
   multiYearFinancingAgreement: "Has a multi-year financing agreement been signed for this activity?",
@@ -289,6 +307,131 @@ const TOOLTIPS: Record<string, string> = {
   genderDisaggregatedIndicators: "Are gender-disaggregated indicators included? (GPEDC Indicator 8)",
   remarks: "Additional notes or clarifications on the effectiveness data."
 };
+
+// GPEDC Main Guide reference
+const GPEDC_MAIN_GUIDE_URL =
+  "https://www.effectivecooperation.org/sites/default/files/documents/Main%20Guide%20%28ENG%29.pdf";
+
+// Detailed help text per question. Keys are field ids.
+// Rendered inside an expandable chevron next to each question.
+const EXPANDED_HELP: Record<string, string> = {
+  formallyApprovedByGov:
+    "Formal approval by the partner government — typically through a signed agreement, cabinet decision or sector minister sign-off — signals national ownership and demonstrates the activity reflects partner-country priorities. Tick Yes only if there is a documented approval predating implementation. Examples of evidence: signed financing/cooperation agreement, government letter of endorsement, parliamentary approval where required.",
+  includedInNationalPlan:
+    "Country-led results frameworks (GPEDC Indicator 1a) start from a national plan or sector strategy. Select the specific plan if listed. If the activity is not anchored in any national plan, choose 'Not included' — but be aware this typically lowers alignment scores in monitoring rounds.",
+  linkedToGovFramework:
+    "GPEDC Indicator 1a measures whether project objectives, indicators and targets are drawn from a country-led results framework — for example a National Results Framework, Sector Results Framework, or MTEF performance framework. Strong alignment means the project's logframe maps directly onto government targets, not just thematic similarity.",
+  indicatorsFromGov:
+    "GPEDC Indicator 1b — at least 50% of an activity's results indicators should be drawn from official government sources (national statistics, sector M&E plans, SDG targets) rather than custom donor-defined indicators. Tick Yes if the majority of outcome/output indicators reuse government definitions and baselines.",
+  indicatorsViaGovData:
+    "GPEDC Indicator 1b also asks whether the data used to monitor those indicators flows through government M&E systems — e.g. HMIS, EMIS, national statistical office surveys — rather than parallel donor monitoring. Routing data through government systems strengthens national statistical capacity over time.",
+  implementedByNationalInstitution:
+    "Tick Yes when the day-to-day implementer is a national public institution (a line ministry, a state agency, a sub-national authority). NGO or contractor delivery typically does not count, even when the work is done in-country. This relates to GPEDC Indicators 5a and 9.",
+  govEntityAccountable:
+    "Beyond who implements, this asks who is contractually accountable. A government entity should be the named accountable authority in the financing agreement — not just a steering-committee co-chair. Yes here strengthens national ownership.",
+  supportsPublicSector:
+    "Activities that build the capability of public institutions (training, systems, processes, organisational reform) score positively here. Pure service delivery without institutional strengthening does not.",
+  capacityDevFromNationalPlan:
+    "GPEDC Indicator 9 — capacity development is most effective when it responds to a nationally identified plan (a Public Service Reform Strategy, a Sector Capacity Plan, etc.) rather than donor-driven training menus. Yes signals demand-led capacity building.",
+  numOutcomeIndicators:
+    "Count outcome-level (not output- or activity-level) indicators in your results framework. Outcome indicators measure changes in conditions or behaviour (e.g. 'maternal mortality rate'), not deliverables (e.g. 'number of training days').",
+  fundsViaNationalTreasury:
+    "GPEDC Indicator 5a (PFM use). Yes means disbursements pass through the country's Treasury Single Account or budget execution system. Bypassing the treasury — paying contractors directly, or routing through donor-managed accounts — counts as No.",
+  govBudgetSystem:
+    "GPEDC Indicator 5a — does the activity use the government's own budget execution procedures (chart of accounts, expenditure controls, commitment system)? On-budget reporting alone is not enough; the funds must actually move through government processes.",
+  govFinReporting:
+    "Tick Yes if expenditures are recorded in, and reported through, the government's financial reporting system (e.g. IFMIS), in the same format as domestic spending. Parallel donor reports do not count.",
+  finReportingIntegratedPFM:
+    "Beyond using the system, are reports integrated into national PFM cycles — e.g. consolidated in the budget execution report presented to Parliament? This is a higher bar than simply submitting figures.",
+  govAudit:
+    "GPEDC Indicator 5a — is the activity subject to audit by the country's Supreme Audit Institution under national audit standards? Donor-commissioned external audits do not count, even if rigorous.",
+  govProcurement:
+    "Does procurement follow the country's public procurement law and use national procurement institutions? If donor procurement rules apply (the common practice when concerns about country systems exist), the answer is No — and the reason should be recorded in the comments.",
+  annualBudgetShared:
+    "GPEDC Indicator 5b (annual predictability). Yes means the disbursement schedule for the upcoming fiscal year was communicated to the government before that fiscal year started, so it could be reflected in the national budget.",
+  forwardPlanShared:
+    "GPEDC Indicator 6 (medium-term predictability). Forward expenditure information should cover at least 3 years ahead and be shared with the partner government — typically through MTEF dialogue or a multi-year cooperation framework.",
+  multiYearFinancingAgreement:
+    "A signed multi-year financing agreement provides a stronger predictability signal than annual commitments alone. Tick Yes if a binding multi-year instrument is in place.",
+  tiedStatus:
+    "GPEDC Indicator 10 — Untied: open international competition; Partially Tied: limited to a group of countries (e.g. donor + selected developing countries); Tied: procurement restricted to suppliers from the donor country. Use the legal status as defined in the financing agreement.",
+  annualFinReportsPublic:
+    "GPEDC Indicator 4 (transparency). Annual financial reports should be accessible to the public — typically by publishing on the donor's IATI registry, the country's AMP, or a project website — within a reasonable timeframe.",
+  dataUpdatedPublicly:
+    "Public data should be refreshed at least annually for it to be useful for accountability. A one-off publication does not count.",
+  finalEvalPlanned:
+    "Tick Yes only if a final evaluation is both planned and budgeted in the activity design. Aspirations without resources do not count.",
+  evalReportPublic:
+    "Public availability is a core transparency commitment. If the report will be publicly available (donor website, IATI, national evaluation registry) on completion, tick Yes.",
+  performanceIndicatorsReported:
+    "Annual reporting against performance indicators — not only at completion — is a core requirement of results-based management.",
+  jointAnnualReview:
+    "GPEDC Indicator 7 — a joint annual review brings government, development partners, and ideally non-state actors together to review progress and agree corrective actions. A donor-only review does not count.",
+  mutualAccountabilityFramework:
+    "GPEDC Indicator 7 also asks whether the activity is assessed under a country-level mutual accountability framework (e.g. GPEDC monitoring, a Joint Country Action Plan, a Development Partnership Policy). Select the specific framework if applicable.",
+  correctiveActionsDocumented:
+    "When targets are missed, are corrective actions identified, agreed and documented? This is a marker of adaptive management and a stronger answer than simply 'we noted the variance'.",
+  civilSocietyConsulted:
+    "GPEDC Indicator 2 (civil society engagement). Formal structured: documented consultations with CSO platforms; Informal: ad-hoc conversations; Information sharing only: no two-way dialogue; Not consulted: design closed to civil society.",
+  csoInvolvedInImplementation:
+    "GPEDC Indicator 2 — beyond consultation, are CSOs implementers, co-implementers, or in advisory/oversight roles? Lead implementer reflects the strongest engagement; Not involved means no formal CSO role.",
+  coreFlexibleFundingToCSO:
+    "Core/institutional funding — funding that supports the CSO's mission and overheads, not just projects — is the strongest CSO support type. Earmarked-only funding has the lowest flexibility.",
+  publicPrivateDialogue:
+    "GPEDC Indicator 3 — does the activity include a structured public-private dialogue mechanism (a working group, advisory council, formal forum) where the private sector engages on policy or programme design?",
+  privateSectorEngaged:
+    "GPEDC Indicator 3 — Governance/oversight: private sector is on a steering body; Financial partner: contributing co-finance; Technical partner: providing technical input; Not engaged: no formal role.",
+  genderObjectivesIntegrated:
+    "GPEDC Indicator 8 / OECD-DAC gender marker. Principal: gender equality is the principal objective; Significant: an important and deliberate objective but not the principal; Marginal: mentioned but not deliberately targeted; Not targeted: no gender component.",
+  genderBudgetAllocation:
+    "Has a specific share of the budget been ring-fenced for gender equality outcomes (gender budget tagging)? A general 'we mainstream gender' commitment without a budget line is not enough.",
+  genderDisaggregatedIndicators:
+    "Are at least the people-level indicators reported disaggregated by sex? This is a basic requirement under GPEDC Indicator 8.",
+};
+
+// Sequential numbering of every question in JSX order. Used to prefix labels.
+const QUESTION_ORDER: string[] = [
+  "formallyApprovedByGov",
+  "includedInNationalPlan",
+  "linkedToGovFramework",
+  "indicatorsFromGov",
+  "indicatorsViaGovData",
+  "implementedByNationalInstitution",
+  "govEntityAccountable",
+  "supportsPublicSector",
+  "capacityDevFromNationalPlan",
+  "numOutcomeIndicators",
+  "fundsViaNationalTreasury",
+  "govBudgetSystem",
+  "govFinReporting",
+  "finReportingIntegratedPFM",
+  "govAudit",
+  "govProcurement",
+  "annualBudgetShared",
+  "forwardPlanShared",
+  "multiYearFinancingAgreement",
+  "tiedStatus",
+  "annualFinReportsPublic",
+  "dataUpdatedPublicly",
+  "finalEvalPlanned",
+  "evalReportPublic",
+  "performanceIndicatorsReported",
+  "jointAnnualReview",
+  "mutualAccountabilityFramework",
+  "correctiveActionsDocumented",
+  "civilSocietyConsulted",
+  "csoInvolvedInImplementation",
+  "coreFlexibleFundingToCSO",
+  "publicPrivateDialogue",
+  "privateSectorEngaged",
+  "genderObjectivesIntegrated",
+  "genderBudgetAllocation",
+  "genderDisaggregatedIndicators",
+];
+const QUESTION_NUMBER: Record<string, number> = QUESTION_ORDER.reduce(
+  (acc, id, i) => ({ ...acc, [id]: i + 1 }),
+  {} as Record<string, number>
+);
 
 // Tied aid status options
 const TIED_STATUS_OPTIONS = [
@@ -386,7 +529,58 @@ const InlineDocumentUpload: React.FC<{
   );
 };
 
-// Yes/No radio button field (replaces CheckboxField)
+// Format a byte count as KB / MB / GB.
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes || bytes <= 0) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
+
+// Splits help text on "(GPEDC Indicator X)", strips the parens, and renders the
+// indicator portion in muted-foreground (gray) inline.
+const renderHelp = (text: string): React.ReactNode => {
+  const parts = text.split(/\((GPEDC Indicator [^)]+)\)/g);
+  return parts.map((part, i) =>
+    i % 2 === 1
+      ? <span key={i} className="text-muted-foreground">{part}</span>
+      : <React.Fragment key={i}>{part}</React.Fragment>
+  );
+};
+
+// Expandable "More info" panel: chevron toggle showing detailed help inline.
+const QuestionExpand: React.FC<{ id: string }> = ({ id }) => {
+  const [open, setOpen] = React.useState(false);
+  const detail = EXPANDED_HELP[id];
+  if (!detail) return null;
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 text-helper text-muted-foreground hover:text-foreground transition-colors"
+        aria-expanded={open}
+        aria-controls={`${id}-help`}
+      >
+        {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        <span>More info</span>
+      </button>
+      {open && (
+        <p id={`${id}-help`} className="mt-1.5 text-helper leading-relaxed">
+          {renderHelp(detail)}
+        </p>
+      )}
+    </div>
+  );
+};
+
+// Yes / No / Unsure checkbox field — only one can be ticked at a time;
+// clicking the ticked option again clears the answer (null).
 const RadioButtonField: React.FC<{
   id: string;
   value?: string | null;
@@ -399,48 +593,63 @@ const RadioButtonField: React.FC<{
   uploadingDoc?: boolean;
   onDocUpload?: (fieldName: string, file: File) => void;
   onDocRemove?: (fieldName: string) => void;
-}> = ({ id, value, onValueChange, label, tooltip, description, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => (
-  <div className="py-3 border-b border-border last:border-b-0">
-    <div className="flex items-center gap-3">
-      <RadioGroup
-        value={value || ""}
-        onValueChange={onValueChange}
-        className="flex items-center gap-3 flex-shrink-0"
-      >
-        <div className="flex items-center gap-1">
-          <RadioGroupItem value="yes" id={`${id}-yes`} className="border-orange-300 text-orange-500" />
-          <Label htmlFor={`${id}-yes`} className="text-helper font-medium cursor-pointer text-muted-foreground">Yes</Label>
-        </div>
-        <div className="flex items-center gap-1">
-          <RadioGroupItem value="no" id={`${id}-no`} className="border-orange-300 text-orange-500" />
-          <Label htmlFor={`${id}-no`} className="text-helper font-medium cursor-pointer text-muted-foreground">No</Label>
-        </div>
-      </RadioGroup>
-      <div className="flex-1 flex items-center justify-between gap-3">
-        <div className="space-y-0.5">
-          <Label className="text-body font-medium leading-tight text-foreground">
-            {label}
-          </Label>
-          {tooltip && (
-            <p className="text-helper text-muted-foreground leading-relaxed">{tooltip}</p>
-          )}
-          {description && (
-            <p className="text-helper text-muted-foreground italic">{description}</p>
-          )}
-        </div>
-        {documentUpload && onDocUpload && onDocRemove && (
-          <InlineDocumentUpload
-            fieldName={id}
-            document={document}
-            uploading={uploadingDoc || false}
-            onUpload={onDocUpload}
-            onRemove={onDocRemove}
-          />
+}> = ({ id, value, onValueChange, label, tooltip, description, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => {
+  const toggle = (option: string) => (checked: boolean | "indeterminate") => {
+    onValueChange(checked ? option : "");
+  };
+  const options: Array<{ key: string; label: string }> = [
+    { key: "yes",    label: "Yes" },
+    { key: "no",     label: "No" },
+    { key: "unsure", label: "Unsure" },
+  ];
+  const qNum = QUESTION_NUMBER[id];
+  return (
+    <div className="flex items-start gap-4 py-4">
+      <div className="min-w-0 flex-1 space-y-1">
+        <Label className="text-body font-medium leading-tight text-foreground flex gap-1.5">
+          {qNum && <span className="w-7 shrink-0 tabular-nums">{qNum}.</span>}
+          <span>{label}</span>
+        </Label>
+        {tooltip && (
+          <p className="text-helper leading-relaxed">{renderHelp(tooltip)}</p>
         )}
+        {description && (
+          <p className="text-helper text-muted-foreground italic">{description}</p>
+        )}
+        <QuestionExpand id={id} />
       </div>
+      <div className="flex items-center gap-5 shrink-0 pt-0.5">
+        {options.map((opt) => {
+          const optId = `${id}-${opt.key}`;
+          return (
+            <label
+              key={opt.key}
+              htmlFor={optId}
+              className="flex items-center gap-2 text-body font-medium cursor-pointer"
+            >
+              <Checkbox
+                id={optId}
+                checked={value === opt.key}
+                onCheckedChange={toggle(opt.key)}
+                className="border-orange-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+              />
+              {opt.label}
+            </label>
+          );
+        })}
+      </div>
+      {documentUpload && onDocUpload && onDocRemove && (
+        <InlineDocumentUpload
+          fieldName={id}
+          document={document}
+          uploading={uploadingDoc || false}
+          onUpload={onDocUpload}
+          onRemove={onDocRemove}
+        />
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // Dropdown field for hardcoded multi-option fields
 const DropdownField: React.FC<{
@@ -450,25 +659,42 @@ const DropdownField: React.FC<{
   label: string;
   tooltip?: string;
   options: { label: string; description?: string }[];
-}> = ({ id, value, onValueChange, label, tooltip, options }) => (
-  <div className="py-3 border-b border-border last:border-b-0">
+}> = ({ id, value, onValueChange, label, tooltip, options }) => {
+  const qNum = QUESTION_NUMBER[id];
+  return (
+  <div className="py-3">
     <div className="space-y-2">
       <div className="space-y-0.5">
-        <Label className="text-body font-medium leading-tight text-foreground">
-          {label}
+        <Label className="text-body font-medium leading-tight text-foreground flex gap-1.5">
+          {qNum && <span className="w-7 shrink-0 tabular-nums">{qNum}.</span>}
+          <span>{label}</span>
         </Label>
         {tooltip && (
-          <p className="text-helper text-muted-foreground leading-relaxed">{tooltip}</p>
+          <p className="text-helper leading-relaxed">{renderHelp(tooltip)}</p>
         )}
       </div>
       <Select value={value || ""} onValueChange={onValueChange}>
         <SelectTrigger className="max-w-md">
-          <SelectValue placeholder="Select an option..." />
+          {(() => {
+            const idx = options.findIndex(o => o.label === value);
+            if (idx === -1) return <SelectValue placeholder="Select an option..." />;
+            return (
+              <span className="flex items-center gap-2 truncate">
+                <span className="text-xs font-mono bg-muted text-muted-foreground rounded px-1.5 py-0.5 shrink-0">
+                  {idx + 1}
+                </span>
+                <span className="font-medium truncate">{options[idx].label}</span>
+              </span>
+            );
+          })()}
         </SelectTrigger>
         <SelectContent>
-          {options.map(option => (
+          {options.map((option, idx) => (
             <SelectItem key={option.label} value={option.label} className="pl-2">
-              <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono bg-muted text-muted-foreground rounded px-1.5 py-0.5 shrink-0">
+                  {idx + 1}
+                </span>
                 <span className="font-medium">{option.label}</span>
                 {option.description && (
                   <span className="text-helper text-muted-foreground ml-2">{option.description}</span>
@@ -478,9 +704,11 @@ const DropdownField: React.FC<{
           ))}
         </SelectContent>
       </Select>
+      <QuestionExpand id={id} />
     </div>
   </div>
-);
+  );
+};
 
 // Country-specific dropdown field (fetches options from API + appends negative option)
 const CountryDropdownField: React.FC<{
@@ -520,16 +748,18 @@ const CountryDropdownField: React.FC<{
 
   const selectedOption = options.find(o => o.value === value);
 
+  const qNum = QUESTION_NUMBER[id];
   return (
-    <div className="py-3 border-b border-border last:border-b-0">
+    <div className="py-3">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-0.5">
-            <Label className="text-body font-medium leading-tight text-foreground">
-              {label}
+            <Label className="text-body font-medium leading-tight text-foreground flex gap-1.5">
+              {qNum && <span className="w-7 shrink-0 tabular-nums">{qNum}.</span>}
+              <span>{label}</span>
             </Label>
             {tooltip && (
-              <p className="text-helper text-muted-foreground leading-relaxed">{tooltip}</p>
+              <p className="text-helper leading-relaxed">{renderHelp(tooltip)}</p>
             )}
             {description && (
               <p className="text-helper text-muted-foreground italic">{description}</p>
@@ -605,6 +835,7 @@ const CountryDropdownField: React.FC<{
             </div>
           </PopoverContent>
         </Popover>
+        <QuestionExpand id={id} />
       </div>
     </div>
   );
@@ -692,7 +923,20 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingDocField, setUploadingDocField] = useState<string | null>(null);
   const [aeOptions, setAeOptions] = useState<AEOption[]>([]);
+  const [docDragActive, setDocDragActive] = useState(false);
+  const [isRenamingDoc, setIsRenamingDoc] = useState(false);
+  const [renameDocValue, setRenameDocValue] = useState("");
+  const [externalLinkInput, setExternalLinkInput] = useState("");
+  const [externalLinkNameInput, setExternalLinkNameInput] = useState("");
   const [nationalPlanOptions, setNationalPlanOptions] = useState<AEOption[]>([]);
+  const [rawNationalPlans, setRawNationalPlans] = useState<Array<{
+    id: string;
+    name: string;
+    acronym?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    displayOrder?: number;
+  }>>([]);
   const formDataRef = useRef(formData);
   const autosaveRef = useRef<NodeJS.Timeout>();
 
@@ -700,6 +944,13 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   useEffect(() => {
     formDataRef.current = formData;
   }, [formData]);
+
+  // Hydrate form when aidEffectiveness arrives asynchronously from the parent
+  useEffect(() => {
+    if (general?.aidEffectiveness && Object.keys(general.aidEffectiveness).length > 0) {
+      setFormData(prev => ({ ...prev, ...general.aidEffectiveness }));
+    }
+  }, [general?.aidEffectiveness]);
 
   // Fetch organizations
   useEffect(() => {
@@ -748,19 +999,29 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         const response = await apiFetch('/api/national-plans?activeOnly=true');
         if (response.ok) {
           const result = await response.json();
-          if (result.success) {
-            // Convert national plans into AEOption format for the dropdown
-            const planOptions: AEOption[] = (result.data || []).map((plan: any) => ({
+          if (result?.success && Array.isArray(result.data)) {
+            // Same shape mapping as the Evaluation tab "Linked National Plans" loader
+            const plans = result.data.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              acronym: p.acronym || null,
+              startDate: p.startDate || p.start_date || null,
+              endDate: p.endDate || p.end_date || null,
+              displayOrder: p.displayOrder || p.display_order || 0,
+            }));
+            setRawNationalPlans(plans);
+            // Convert national plans into AEOption format for legacy CountryDropdownField
+            const planOptions: AEOption[] = plans.map((plan: any) => ({
               id: plan.id,
               category: 'includedInNationalPlan',
               label: plan.name,
-              description: plan.description || null,
+              description: null,
               acronym: null,
-              start_date: plan.startDate || null,
+              start_date: plan.startDate,
               start_date_precision: plan.startDate ? 'day' as const : null,
-              end_date: plan.endDate || null,
+              end_date: plan.endDate,
               end_date_precision: plan.endDate ? 'day' as const : null,
-              sort_order: plan.displayOrder || 0,
+              sort_order: plan.displayOrder,
               is_active: true,
             }));
             setNationalPlanOptions(planOptions);
@@ -775,15 +1036,30 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     fetchNationalPlans();
   }, []);
 
-  // Pre-fill implementing partner with user's reporting org
+  // Always mirror the activity's Reporting Organisation (Overview tab).
+  // Source of truth is Overview — this tab only reflects the value.
   useEffect(() => {
-    if (user?.organizationId && !formData.implementingPartner) {
-      setFormData(prev => ({
-        ...prev,
-        implementingPartner: user.organizationId
-      }));
+    const reportingOrgId = general?.reportingOrgId || general?.createdByOrg || "";
+    if (reportingOrgId && formData.implementingPartner !== reportingOrgId) {
+      setFormData(prev => ({ ...prev, implementingPartner: reportingOrgId }));
     }
-  }, [user?.organizationId]);
+  }, [general?.reportingOrgId, general?.createdByOrg, formData.implementingPartner]);
+
+  // Pre-populate Tied Aid Status from the activity's Default Tied Status
+  // (set on Transactions > Defaults). Only fills if the user hasn't picked
+  // a value here yet — they remain free to override.
+  useEffect(() => {
+    if (formData.tiedStatus) return;
+    const iatiCode = general?.defaultTiedStatus;
+    const mapped =
+      iatiCode === '3' ? 'partially_tied' :
+      iatiCode === '4' ? 'tied' :
+      iatiCode === '5' ? 'untied' :
+      '';
+    if (mapped) {
+      setFormData(prev => ({ ...prev, tiedStatus: mapped }));
+    }
+  }, [general?.defaultTiedStatus, formData.tiedStatus]);
 
   // Categories whose options come from national_plans instead of aid_effectiveness_options
   const planBasedCategories = useMemo(() => new Set([
@@ -1004,53 +1280,126 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         return '';
       };
 
-      const exportData = [
-        { Section: '1. Government Ownership', Field: 'Implementing Partner', Value: formData.implementingPartner || '', 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Formally Approved by Government', Value: formatValue(formData.formallyApprovedByGov), 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Included in National Development Plan', Value: formatValue(formData.includedInNationalPlan), 'Responsible Ministry': getMinistryNames('includedInNationalPlan', formData.includedInNationalPlan) },
-        { Section: '1. Government Ownership', Field: 'Linked to Government Results Framework', Value: formatValue(formData.linkedToGovFramework), 'Responsible Ministry': getMinistryNames('linkedToGovFramework', formData.linkedToGovFramework) },
-        { Section: '1. Government Ownership', Field: 'Indicators from Government Frameworks', Value: formatValue(formData.indicatorsFromGov), 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Monitored via Government M&E', Value: formatValue(formData.indicatorsViaGovData), 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Implemented by National Institution', Value: formatValue(formData.implementedByNationalInstitution), 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Gov Entity as Accountable Authority', Value: formatValue(formData.govEntityAccountable), 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Supports Public Sector Capacity', Value: formatValue(formData.supportsPublicSector), 'Responsible Ministry': '' },
-        { Section: '1. Government Ownership', Field: 'Capacity Dev from National Plan', Value: formatValue(formData.capacityDevFromNationalPlan), 'Responsible Ministry': getMinistryNames('capacityDevFromNationalPlan', formData.capacityDevFromNationalPlan) },
-        { Section: '1. Government Ownership', Field: 'Number of Outcome Indicators', Value: formData.numOutcomeIndicators?.toString() || '', 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'Funds via National Treasury', Value: formatValue(formData.fundsViaNationalTreasury), 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'Government Budget Execution', Value: formatValue(formData.govBudgetSystem), 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'Government Financial Reporting', Value: formatValue(formData.govFinReporting), 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'Integrated into National PFM', Value: formatValue(formData.finReportingIntegratedPFM), 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'Government Audit', Value: formatValue(formData.govAudit), 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'National Procurement Systems', Value: formatValue(formData.govProcurement), 'Responsible Ministry': '' },
-        { Section: '2. Country Systems', Field: 'Why Not Using Gov Systems', Value: formData.govSystemWhyNot || '', 'Responsible Ministry': '' },
-        { Section: '3. Predictability', Field: 'Annual Budget Shared', Value: formatValue(formData.annualBudgetShared), 'Responsible Ministry': '' },
-        { Section: '3. Predictability', Field: 'Forward Plan Shared', Value: formatValue(formData.forwardPlanShared), 'Responsible Ministry': '' },
-        { Section: '3. Predictability', Field: 'Multi-Year Financing Agreement', Value: formatValue(formData.multiYearFinancingAgreement), 'Responsible Ministry': '' },
-        { Section: '3. Predictability', Field: 'Tied Status', Value: formData.tiedStatus || '', 'Responsible Ministry': '' },
-        { Section: '4. Transparency', Field: 'Annual Financial Reports Public', Value: formatValue(formData.annualFinReportsPublic), 'Responsible Ministry': '' },
-        { Section: '4. Transparency', Field: 'Data Updated Publicly Annually', Value: formatValue(formData.dataUpdatedPublicly), 'Responsible Ministry': '' },
-        { Section: '4. Transparency', Field: 'Final Evaluation Planned', Value: formatValue(formData.finalEvalPlanned), 'Responsible Ministry': '' },
-        { Section: '4. Transparency', Field: 'Final Evaluation Date', Value: formData.finalEvalDate || '', 'Responsible Ministry': '' },
-        { Section: '4. Transparency', Field: 'Evaluation Report Public', Value: formatValue(formData.evalReportPublic), 'Responsible Ministry': '' },
-        { Section: '4. Transparency', Field: 'Performance Indicators Reported', Value: formatValue(formData.performanceIndicatorsReported), 'Responsible Ministry': '' },
-        { Section: '5. Mutual Accountability', Field: 'Joint Annual Review', Value: formatValue(formData.jointAnnualReview), 'Responsible Ministry': '' },
-        { Section: '5. Mutual Accountability', Field: 'Mutual Accountability Framework', Value: formatValue(formData.mutualAccountabilityFramework), 'Responsible Ministry': getMinistryNames('mutualAccountabilityFramework', formData.mutualAccountabilityFramework) },
-        { Section: '5. Mutual Accountability', Field: 'Corrective Actions Documented', Value: formatValue(formData.correctiveActionsDocumented), 'Responsible Ministry': '' },
-        { Section: '6. Civil Society & Private Sector', Field: 'Civil Society Consulted', Value: formatValue(formData.civilSocietyConsulted), 'Responsible Ministry': '' },
-        { Section: '6. Civil Society & Private Sector', Field: 'CSOs in Implementation', Value: formatValue(formData.csoInvolvedInImplementation), 'Responsible Ministry': '' },
-        { Section: '6. Civil Society & Private Sector', Field: 'Core Funding to CSOs', Value: formatValue(formData.coreFlexibleFundingToCSO), 'Responsible Ministry': '' },
-        { Section: '6. Civil Society & Private Sector', Field: 'Public-Private Dialogue', Value: formatValue(formData.publicPrivateDialogue), 'Responsible Ministry': '' },
-        { Section: '6. Civil Society & Private Sector', Field: 'Private Sector Engaged', Value: formatValue(formData.privateSectorEngaged), 'Responsible Ministry': '' },
-        { Section: '7. Gender Equality', Field: 'Gender Objectives Integrated', Value: formatValue(formData.genderObjectivesIntegrated), 'Responsible Ministry': '' },
-        { Section: '7. Gender Equality', Field: 'Gender Budget Allocation', Value: formatValue(formData.genderBudgetAllocation), 'Responsible Ministry': '' },
-        { Section: '7. Gender Equality', Field: 'Gender-Disaggregated Indicators', Value: formatValue(formData.genderDisaggregatedIndicators), 'Responsible Ministry': '' },
-        { Section: '10. Remarks', Field: 'Additional Notes', Value: formData.remarks || '', 'Responsible Ministry': '' },
+      // Build a 3-line cell for the Reporting Organisation:
+      //   "Name (Acronym)"
+      //   "<uuid>"
+      //   "<iati_org_id>"
+      const reportingOrg = organizations.find(o => o.id === formData.implementingPartner);
+      const reportingOrgValue = formData.implementingPartner
+        ? [
+            reportingOrg
+              ? reportingOrg.acronym
+                ? `${reportingOrg.name} (${reportingOrg.acronym})`
+                : reportingOrg.name
+              : '(unknown organisation)',
+            formData.implementingPartner,
+            reportingOrg?.iati_org_id || '(no IATI ID)',
+          ].join('\n')
+        : '';
+
+      // Tri-state Yes/No/Unsure formatter (replaces the old yes-only formatValue)
+      const formatYNU = (val?: string | null) => {
+        if (val == null || val === '') return '';
+        if (val === 'yes') return 'Yes';
+        if (val === 'no') return 'No';
+        if (val === 'unsure') return 'Unsure';
+        return val;
+      };
+      // Resolve plan UUIDs into a "Name (Acronym) StartYear-EndYear\n…" string.
+      const resolvePlanIds = (ids?: string[]): string => {
+        if (!ids || ids.length === 0) return '';
+        return ids
+          .map(id => {
+            const p = rawNationalPlans.find(rp => rp.id === id);
+            if (!p) return id;
+            const startYear = p.startDate ? String(p.startDate).slice(0, 4) : null;
+            const endYear = p.endDate ? String(p.endDate).slice(0, 4) : null;
+            const years = startYear && endYear ? ` ${startYear}-${endYear}` : startYear ? ` ${startYear}-` : endYear ? ` -${endYear}` : '';
+            return p.acronym ? `${p.name} (${p.acronym})${years}` : `${p.name}${years}`;
+          })
+          .join('\n');
+      };
+      const tiedLabel =
+        formData.tiedStatus === 'untied' ? 'Untied' :
+        formData.tiedStatus === 'partially_tied' ? 'Partially tied' :
+        formData.tiedStatus === 'tied' ? 'Tied' :
+        '';
+      const docInfo = formData.uploadedDocument
+        ? [
+            formData.uploadedDocument,
+            formatFileSize(formData.uploadedDocumentSize),
+            formData.uploadedDocumentAt
+              ? `Uploaded ${new Date(formData.uploadedDocumentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+              : '',
+            formData.uploadedDocumentBy ? `by ${formData.uploadedDocumentBy}` : '',
+            formData.uploadedDocumentUrl || '',
+          ].filter(Boolean).join('\n')
+        : '';
+      const externalLinksText = (() => {
+        const raw = formData.externalDocumentLinks;
+        const list: Array<{ url: string; name?: string }> = Array.isArray(raw)
+          ? raw.map((item: any) => typeof item === 'string' ? { url: item } : { url: item?.url || '', name: item?.name }).filter(l => l.url)
+          : [];
+        const merged =
+          list.length === 0 && formData.externalDocumentLink
+            ? [{ url: formData.externalDocumentLink }]
+            : list;
+        return merged.map(l => (l.name ? `${l.name} — ${l.url}` : l.url)).join('\n');
+      })();
+
+      const exportData: Array<{ Section: string; '#': string; Field: string; Value: string; 'Responsible Ministry': string }> = [
+        { Section: '1. Government Ownership',          '#': '',   Field: 'Reporting Organisation',                                                  Value: reportingOrgValue,                                          'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '1',  Field: 'Formally Approved by Government Before Implementation Began',             Value: formatYNU(formData.formallyApprovedByGov),                  'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '2',  Field: 'Included in National Development Plan or Sector Strategy',                Value: formatYNU(formData.includedInNationalPlan),                 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '2.1',Field: 'Linked to National Development Plan or Sector Strategy',                  Value: resolvePlanIds(formData.includedInNationalPlanIds),         'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '3',  Field: 'Linked to Government Results Framework',                                  Value: formatYNU(formData.linkedToGovFramework),                   'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '4',  Field: 'Indicators Drawn from Government Monitoring Frameworks',                  Value: formatYNU(formData.indicatorsFromGov),                      'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '5',  Field: 'Monitored Through Government M&E Systems',                                Value: formatYNU(formData.indicatorsViaGovData),                   'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '6',  Field: 'Implemented by a National Public Institution',                            Value: formatYNU(formData.implementedByNationalInstitution),       'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '7',  Field: 'Government Entity Contractually Designated as Accountable Authority',     Value: formatYNU(formData.govEntityAccountable),                   'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '8',  Field: 'Supports Public Sector Capacity Strengthening',                           Value: formatYNU(formData.supportsPublicSector),                   'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '9',  Field: 'Capacity Development Based on Nationally Identified Capacity Plan',       Value: formatYNU(formData.capacityDevFromNationalPlan),            'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '10', Field: 'Number of Outcome Indicators',                                            Value: formData.numOutcomeIndicators?.toString() || '',           'Responsible Ministry': '' },
+
+        { Section: '2. Country Systems',               '#': '11', Field: 'Funds Disbursed via National Treasury',                                   Value: formatYNU(formData.fundsViaNationalTreasury),               'Responsible Ministry': '' },
+        { Section: '2. Country Systems',               '#': '12', Field: 'Government Budget Execution System Used',                                 Value: formatYNU(formData.govBudgetSystem),                        'Responsible Ministry': '' },
+        { Section: '2. Country Systems',               '#': '13', Field: 'Government Financial Reporting System Used',                              Value: formatYNU(formData.govFinReporting),                        'Responsible Ministry': '' },
+        { Section: '2. Country Systems',               '#': '14', Field: 'Financial Reporting Integrated into National PFM',                        Value: formatYNU(formData.finReportingIntegratedPFM),              'Responsible Ministry': '' },
+        { Section: '2. Country Systems',               '#': '15', Field: 'Government Audit Procedures Used',                                        Value: formatYNU(formData.govAudit),                               'Responsible Ministry': '' },
+        { Section: '2. Country Systems',               '#': '16', Field: 'National Procurement Law and Systems Used',                               Value: formatYNU(formData.govProcurement),                         'Responsible Ministry': '' },
+        { Section: '2. Country Systems',               '#': '',   Field: 'Why Government Systems Are Not Being Used',                               Value: formData.govSystemWhyNot || '',                             'Responsible Ministry': '' },
+
+        { Section: '3. Predictability',                '#': '17', Field: 'Annual Disbursement Schedule Shared with Government',                     Value: formatYNU(formData.annualBudgetShared),                     'Responsible Ministry': '' },
+        { Section: '3. Predictability',                '#': '18', Field: 'Forward Expenditure Plan (3+ Years) Shared',                              Value: formatYNU(formData.forwardPlanShared),                      'Responsible Ministry': '' },
+        { Section: '3. Predictability',                '#': '19', Field: 'Multi-Year Financing Agreement Signed',                                   Value: formatYNU(formData.multiYearFinancingAgreement),            'Responsible Ministry': '' },
+        { Section: '3. Predictability',                '#': '20', Field: 'Tied Aid Status',                                                         Value: tiedLabel,                                                   'Responsible Ministry': '' },
+
+        { Section: '4. Transparency',                  '#': '21', Field: 'Annual Financial Reports Publicly Accessible',                            Value: formatYNU(formData.annualFinReportsPublic),                 'Responsible Ministry': '' },
+        { Section: '4. Transparency',                  '#': '22', Field: 'Public Data Refreshed at Least Annually',                                 Value: formatYNU(formData.dataUpdatedPublicly),                    'Responsible Ministry': '' },
+        { Section: '4. Transparency',                  '#': '23', Field: 'Final Evaluation Planned and Funded',                                     Value: formatYNU(formData.finalEvalPlanned),                       'Responsible Ministry': '' },
+        { Section: '4. Transparency',                  '#': '24', Field: 'Evaluation Report Publicly Available (Once Completed)',                   Value: formatYNU(formData.evalReportPublic),                       'Responsible Ministry': '' },
+        { Section: '4. Transparency',                  '#': '25', Field: 'Performance Indicators Reported Annually',                                Value: formatYNU(formData.performanceIndicatorsReported),          'Responsible Ministry': '' },
+
+        { Section: '5. Mutual Accountability',         '#': '26', Field: 'Joint Annual Review Conducted',                                           Value: formatYNU(formData.jointAnnualReview),                      'Responsible Ministry': '' },
+        { Section: '5. Mutual Accountability',         '#': '27', Field: 'Activity Assessed Under a Formal Country-Level Mutual Accountability Framework', Value: formatYNU(formData.mutualAccountabilityFramework),    'Responsible Ministry': '' },
+        { Section: '5. Mutual Accountability',         '#': '28', Field: 'Corrective Actions Documented When Targets Are Missed',                   Value: formatYNU(formData.correctiveActionsDocumented),            'Responsible Ministry': '' },
+
+        { Section: '6. Civil Society & Private Sector','#': '29', Field: 'Level of Civil Society Consultation During Design Phase',                 Value: formData.civilSocietyConsulted || '',                       'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector','#': '30', Field: 'Civil Society Involvement in Implementation or Governance',               Value: formData.csoInvolvedInImplementation || '',                 'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector','#': '31', Field: 'Type of Funding Provided to Civil Society Organisations',                 Value: formData.coreFlexibleFundingToCSO || '',                    'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector','#': '32', Field: 'Public–Private Dialogue Mechanisms Included',                             Value: formatYNU(formData.publicPrivateDialogue),                  'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector','#': '33', Field: 'Level of Private Sector Engagement in Governance or Oversight',           Value: formData.privateSectorEngaged || '',                        'Responsible Ministry': '' },
+
+        { Section: '7. Gender Equality',               '#': '34', Field: 'Gender Equality Objectives Integrated into Activity Framework',           Value: formData.genderObjectivesIntegrated || '',                  'Responsible Ministry': '' },
+        { Section: '7. Gender Equality',               '#': '35', Field: 'Dedicated Budget Allocation for Gender Equality Outcomes',                Value: formatYNU(formData.genderBudgetAllocation),                 'Responsible Ministry': '' },
+        { Section: '7. Gender Equality',               '#': '36', Field: 'Gender-Disaggregated Indicators Included',                                Value: formatYNU(formData.genderDisaggregatedIndicators),          'Responsible Ministry': '' },
       ];
 
       if (formData.contacts && formData.contacts.length > 0) {
         formData.contacts.forEach((contact, index) => {
           exportData.push({
             Section: '8. Contacts',
+            '#': '',
             Field: `Contact ${index + 1}`,
             Value: `${contact.firstName} ${contact.lastName}${contact.email ? ` (${contact.email})` : ''}`,
             'Responsible Ministry': '',
@@ -1058,10 +1407,27 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         });
       }
 
+      exportData.push(
+        { Section: '9. Documents', '#': '', Field: 'Supporting Document', Value: docInfo, 'Responsible Ministry': '' },
+        { Section: '9. Documents', '#': '', Field: 'External Document Links', Value: externalLinksText, 'Responsible Ministry': '' },
+        { Section: '10. Remarks',  '#': '', Field: 'Additional Notes', Value: formData.remarks || '', 'Responsible Ministry': '' },
+      );
+
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Aid Effectiveness');
-      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 50 }, { wch: 40 }];
+      // Columns: Section | # | Field | Value | Responsible Ministry
+      ws['!cols'] = [{ wch: 32 }, { wch: 5 }, { wch: 60 }, { wch: 60 }, { wch: 40 }];
+      // Enable wrap-text on the Value column ("D") so multi-line entries
+      // (Reporting Organisation, Linked plans, document metadata, links) render
+      // as separate lines.
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let r = range.s.r + 1; r <= range.e.r; r++) {
+        const addr = XLSX.utils.encode_cell({ r, c: 3 });
+        const cell = ws[addr];
+        if (!cell) continue;
+        cell.s = { ...(cell.s || {}), alignment: { ...(cell.s?.alignment || {}), wrapText: true, vertical: 'top' } };
+      }
       XLSX.writeFile(wb, `aid-effectiveness-${general.iati_id || general.id}.xlsx`);
       toast.success('Aid effectiveness data exported successfully');
     } catch (error) {
@@ -1095,6 +1461,9 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
       updateField('uploadedDocument', file.name);
       updateField('uploadedDocumentUrl', publicUrl);
+      updateField('uploadedDocumentSize', file.size);
+      updateField('uploadedDocumentAt', new Date().toISOString());
+      updateField('uploadedDocumentBy', user?.name || user?.email || '');
       toast.success(`Document "${file.name}" uploaded successfully`);
     } catch (error) {
       console.error('Upload error:', error);
@@ -1120,14 +1489,34 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     updateField('contacts', newContacts);
   };
 
-  // Check if any gov system is "no" (for conditional text)
-  const anyGovSystemNo =
-    formData.fundsViaNationalTreasury === 'no' ||
-    formData.govBudgetSystem === 'no' ||
-    formData.govFinReporting === 'no' ||
-    formData.finReportingIntegratedPFM === 'no' ||
-    formData.govAudit === 'no' ||
-    formData.govProcurement === 'no';
+  // List of country systems answered "no" — drives the conditional explainer
+  // text below so the label and helper reflect exactly what's been declined.
+  const unusedSystems = ([
+    [formData.fundsViaNationalTreasury,    'national treasury'],
+    [formData.govBudgetSystem,             'government budget execution'],
+    [formData.govFinReporting,             'government financial reporting'],
+    [formData.finReportingIntegratedPFM,   'PFM-integrated financial reporting'],
+    [formData.govAudit,                    'national audit'],
+    [formData.govProcurement,              'national procurement'],
+  ] as const)
+    .filter(([v]) => v === 'no')
+    .map(([, name]) => name);
+  const anyGovSystemNo = unusedSystems.length > 0;
+  const formatList = (items: readonly string[]): string => {
+    if (items.length <= 1) return items.join('');
+    if (items.length === 2) return `${items[0]} and ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+  };
+  const govWhyNotLabel = anyGovSystemNo
+    ? unusedSystems.length === 1
+      ? `Please explain why the ${unusedSystems[0]} system is not being used`
+      : `Please explain why the ${formatList(unusedSystems)} systems are not being used`
+    : '';
+  const govWhyNotTooltip = anyGovSystemNo
+    ? `Briefly describe why ${formatList(unusedSystems)} ${
+        unusedSystems.length === 1 ? 'is' : 'are'
+      } bypassed for this activity — e.g., donor procurement rules, fiduciary risk findings, sector-specific donor frameworks, or capacity constraints in the relevant institution.`
+    : TOOLTIPS.govSystemWhyNot;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
@@ -1146,9 +1535,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <h2 className="text-lg font-bold text-white">Aid Effectiveness</h2>
               <p className="text-helper font-bold text-white/70">GPEDC Monitoring Framework</p>
             </div>
-            <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 text-helper font-bold">
-              GPEDC Compliant
-            </Badge>
           </div>
 
           <div className="flex items-center gap-4">
@@ -1167,10 +1553,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                 <span>Saving...</span>
               </div>
             ) : lastSaved ? (
-              <div className="flex items-center gap-1.5 text-helper font-bold text-white">
-                <CheckCircle className="h-3.5 w-3.5" />
-                <span>Saved</span>
-              </div>
+              <CheckCircle className="h-3.5 w-3.5 text-white" aria-label="Saved" />
             ) : null}
           </div>
         </div>
@@ -1179,15 +1562,9 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       <div className="p-6 space-y-8">
         {/* ====== Section 1: Government Ownership & Strategic Alignment ====== */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b">
-            <Building2 className="h-5 w-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Government Ownership & Strategic Alignment</h3>
-            <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicator 1</Badge>
-          </div>
-
-          <div className="space-y-2">
+          <div className="lg:w-2/3 space-y-2">
             <Label className="text-body font-medium text-foreground flex items-center gap-2">
-              Implementing Partner
+              Reporting Organisation
               <HelpTextTooltip content={TOOLTIPS.implementingPartner}>
                 <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
@@ -1196,12 +1573,17 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               organizations={organizations}
               value={formData.implementingPartner}
               onValueChange={(value) => updateField('implementingPartner', value)}
-              placeholder="Select implementing partner..."
-              className="max-w-xl"
+              placeholder="Set on the Overview tab"
+              disabled
             />
           </div>
 
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <h3 className="font-semibold text-foreground">Government Ownership & Strategic Alignment</h3>
+            <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicator 1</Badge>
+          </div>
+
+          <div className="space-y-0">
             <RadioButtonField
               id="formallyApprovedByGov"
               value={formData.formallyApprovedByGov}
@@ -1209,24 +1591,69 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               label="Formally Approved by Government Before Implementation Began"
               tooltip={TOOLTIPS.formallyApprovedByGov}
             />
-            <CountryDropdownField
+            <RadioButtonField
               id="includedInNationalPlan"
               value={formData.includedInNationalPlan}
-              onValueChange={(value) => updateField('includedInNationalPlan', value)}
+              onValueChange={(value) => {
+                updateField('includedInNationalPlan', value);
+                // Clear linked plans when answer is no longer "yes"
+                if (value !== 'yes') updateField('includedInNationalPlanIds', []);
+              }}
               label="Included in National Development Plan or Sector Strategy"
               tooltip={TOOLTIPS.includedInNationalPlan}
-              description=""
-              negativeOption={COUNTRY_DROPDOWN_FIELDS.includedInNationalPlan}
-              aeOptions={getOptionsForCategory('includedInNationalPlan')}
             />
-            <CountryDropdownField
+            {formData.includedInNationalPlan === 'yes' && (
+              <div className="mt-2 mb-3 ml-6">
+                <label className="text-body font-medium text-foreground flex gap-1.5 mb-1">
+                  <span className="w-9 shrink-0 tabular-nums">2.1</span>
+                  <span>Linked to National Development Plan or Sector Strategy</span>
+                </label>
+                <p className="text-body text-muted-foreground mb-2">
+                  Select the national plans, sector strategies, or thematic strategies this activity contributes to.
+                </p>
+                <EnhancedMultiSelect
+                  showCode={false}
+                  groups={[
+                    {
+                      label: "Active plans & strategies",
+                      options: rawNationalPlans.map((p) => {
+                        const startYear = p.startDate ? String(p.startDate).slice(0, 4) : null;
+                        const endYear = p.endDate ? String(p.endDate).slice(0, 4) : null;
+                        const years =
+                          startYear && endYear
+                            ? ` ${startYear}-${endYear}`
+                            : startYear
+                              ? ` ${startYear}-`
+                              : endYear
+                                ? ` -${endYear}`
+                                : "";
+                        const base = p.acronym ? `${p.name} (${p.acronym})` : p.name;
+                        return {
+                          code: p.id,
+                          displayCode: p.acronym || undefined,
+                          name: `${base}${years}`,
+                        };
+                      }),
+                    },
+                  ]}
+                  value={formData.includedInNationalPlanIds || []}
+                  onValueChange={(next) => updateField('includedInNationalPlanIds', next)}
+                  placeholder={
+                    rawNationalPlans.length === 0
+                      ? "No active national plans configured"
+                      : "Select national plans & strategies…"
+                  }
+                  searchPlaceholder="Search plans & strategies…"
+                  disabled={rawNationalPlans.length === 0}
+                />
+              </div>
+            )}
+            <RadioButtonField
               id="linkedToGovFramework"
               value={formData.linkedToGovFramework}
               onValueChange={(value) => updateField('linkedToGovFramework', value)}
               label="Linked to Government Results Framework"
               tooltip={TOOLTIPS.linkedToGovFramework}
-              negativeOption={COUNTRY_DROPDOWN_FIELDS.linkedToGovFramework}
-              aeOptions={getOptionsForCategory('linkedToGovFramework')}
             />
             <RadioButtonField
               id="indicatorsFromGov"
@@ -1263,21 +1690,21 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               label="Supports Public Sector Capacity Strengthening"
               tooltip={TOOLTIPS.supportsPublicSector}
             />
-            <CountryDropdownField
+            <RadioButtonField
               id="capacityDevFromNationalPlan"
               value={formData.capacityDevFromNationalPlan}
               onValueChange={(value) => updateField('capacityDevFromNationalPlan', value)}
               label="Capacity Development Based on Nationally Identified Capacity Plan"
               tooltip={TOOLTIPS.capacityDevFromNationalPlan}
-              description="GPEDC Indicator 9"
-              negativeOption={COUNTRY_DROPDOWN_FIELDS.capacityDevFromNationalPlan}
-              aeOptions={getOptionsForCategory('capacityDevFromNationalPlan')}
             />
           </div>
 
-          <div className="space-y-2 max-w-xs">
+          <div className="space-y-2">
             <FieldWithDescription description={TOOLTIPS.numOutcomeIndicators}>
-              <Label className="text-body font-medium text-foreground">Number of Outcome Indicators</Label>
+              <Label className="text-body font-medium text-foreground flex gap-1.5">
+                <span className="w-7 shrink-0 tabular-nums">10.</span>
+                <span>Number of Outcome Indicators</span>
+              </Label>
             </FieldWithDescription>
             <Input
               type="number"
@@ -1293,12 +1720,11 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 2: Use of Country PFM & Procurement Systems ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Globe className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Use of Country Public Financial & Procurement Systems</h3>
             <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicator 5a</Badge>
           </div>
 
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="space-y-0">
             <RadioButtonField
               id="fundsViaNationalTreasury"
               value={formData.fundsViaNationalTreasury}
@@ -1344,16 +1770,18 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           {anyGovSystemNo && (
-            <div className="p-4 bg-muted border border-border rounded-lg space-y-2">
-              <Label className="text-body font-medium text-foreground">
-                Please explain why government systems are not being used
+            <div className="space-y-2">
+              <Label className="text-body font-medium text-foreground flex items-center gap-2">
+                {govWhyNotLabel}
+                <HelpTextTooltip content={govWhyNotTooltip}>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                </HelpTextTooltip>
               </Label>
               <Textarea
                 value={formData.govSystemWhyNot || ""}
                 onChange={(e) => updateField('govSystemWhyNot', e.target.value)}
                 placeholder="E.g., capacity constraints, donor requirements, legal restrictions..."
                 rows={3}
-                className="bg-white"
               />
             </div>
           )}
@@ -1362,12 +1790,11 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 3: Predictability & Aid Characteristics ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Predictability & Aid Characteristics</h3>
             <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicators 5b, 6, 10</Badge>
           </div>
 
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="space-y-0">
             <RadioButtonField
               id="annualBudgetShared"
               value={formData.annualBudgetShared}
@@ -1393,38 +1820,40 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
           <div className="space-y-2 max-w-md">
             <FieldWithDescription description={TOOLTIPS.tiedStatus}>
-              <Label className="text-body font-medium text-foreground">Tied Aid Status</Label>
+              <Label className="text-body font-medium text-foreground flex gap-1.5">
+                <span className="w-7 shrink-0 tabular-nums">20.</span>
+                <span>Tied Aid Status</span>
+              </Label>
             </FieldWithDescription>
-            <Select
-              value={formData.tiedStatus || ""}
-              onValueChange={(value) => updateField('tiedStatus', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select tied status..." />
-              </SelectTrigger>
-              <SelectContent>
-                {TIED_STATUS_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value} className="pl-2">
-                    <div>
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-helper text-muted-foreground ml-2">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TiedStatusSelect
+              id="aid-eff-tied-status"
+              value={
+                formData.tiedStatus === 'untied'         ? '5' :
+                formData.tiedStatus === 'partially_tied' ? '3' :
+                formData.tiedStatus === 'tied'           ? '4' :
+                ''
+              }
+              onValueChange={(code) => {
+                const mapped =
+                  code === '5' ? 'untied' :
+                  code === '3' ? 'partially_tied' :
+                  code === '4' ? 'tied' :
+                  '';
+                updateField('tiedStatus', mapped);
+              }}
+              placeholder="Select tied status..."
+            />
           </div>
         </div>
 
         {/* ====== Section 4: Transparency & Timely Reporting ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Eye className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Transparency & Timely Reporting</h3>
             <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicator 4</Badge>
           </div>
 
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="space-y-0">
             <RadioButtonField
               id="annualFinReportsPublic"
               value={formData.annualFinReportsPublic}
@@ -1461,33 +1890,16 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               tooltip={TOOLTIPS.performanceIndicatorsReported}
             />
           </div>
-
-          {formData.finalEvalPlanned === 'yes' && (
-            <div className="ml-6 space-y-2">
-              <Label className="text-body text-muted-foreground">Planned Evaluation Date</Label>
-              <Input
-                type="date"
-                value={formData.finalEvalDate || ""}
-                onChange={(e) => updateField('finalEvalDate', e.target.value)}
-                className="w-44"
-              />
-            </div>
-          )}
         </div>
 
         {/* ====== Section 5: Mutual Accountability ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Handshake className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Mutual Accountability</h3>
             <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicator 7</Badge>
           </div>
 
-          <p className="text-helper text-muted-foreground italic">
-            Note: Indicator 7 is formally country-level. These questions approximate it at activity level.
-          </p>
-
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="space-y-0">
             <RadioButtonField
               id="jointAnnualReview"
               value={formData.jointAnnualReview}
@@ -1495,14 +1907,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               label="Joint Annual Review Conducted with Government and Development Partners"
               tooltip={TOOLTIPS.jointAnnualReview}
             />
-            <CountryDropdownField
+            <RadioButtonField
               id="mutualAccountabilityFramework"
               value={formData.mutualAccountabilityFramework}
               onValueChange={(value) => updateField('mutualAccountabilityFramework', value)}
               label="Activity Assessed Under a Formal Country-Level Mutual Accountability Framework"
               tooltip={TOOLTIPS.mutualAccountabilityFramework}
-              negativeOption={COUNTRY_DROPDOWN_FIELDS.mutualAccountabilityFramework}
-              aeOptions={getOptionsForCategory('mutualAccountabilityFramework')}
             />
             <RadioButtonField
               id="correctiveActionsDocumented"
@@ -1517,16 +1927,11 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 6: Civil Society & Private Sector Engagement ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Users className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Civil Society & Private Sector Engagement</h3>
             <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicators 2 & 3</Badge>
           </div>
 
-          <p className="text-helper text-muted-foreground italic">
-            Note: Indicators 2 and 3 are partially systemic, but these are measurable proxies.
-          </p>
-
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="space-y-0">
             <DropdownField
               id="civilSocietyConsulted"
               value={formData.civilSocietyConsulted}
@@ -1572,12 +1977,11 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 7: Gender Equality & Inclusion ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Heart className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Gender Equality & Inclusion</h3>
             <Badge variant="outline" className="text-helper text-[#F37021] border-[#F37021]/30">GPEDC Indicator 8</Badge>
           </div>
 
-          <div className="space-y-0 border rounded-lg px-4 bg-white">
+          <div className="space-y-0">
             <DropdownField
               id="genderObjectivesIntegrated"
               value={formData.genderObjectivesIntegrated}
@@ -1606,7 +2010,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 8: Contact Details ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <MessageSquare className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Contacts</h3>
           </div>
 
@@ -1722,118 +2125,351 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 9: Documents ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <FileText className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Supporting Documentation</h3>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-body font-medium text-foreground">Upload Supporting Document</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-input transition-colors">
-                {formData.uploadedDocument ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-[hsl(var(--success-icon))]">
-                      <CheckCircle className="h-5 w-5" />
-                      <span className="text-body font-medium">{formData.uploadedDocument}</span>
+              <div className="space-y-3">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => !isUploading && document.getElementById('doc-upload')?.click()}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !isUploading) {
+                      e.preventDefault();
+                      document.getElementById('doc-upload')?.click();
+                    }
+                  }}
+                  className={cn(
+                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                    docDragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-input hover:border-slate-400",
+                    isUploading && "opacity-50 cursor-not-allowed"
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isUploading) setDocDragActive(true);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isUploading) setDocDragActive(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDocDragActive(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDocDragActive(false);
+                    if (isUploading) return;
+                    const file = e.dataTransfer.files?.[0];
+                    if (!file) return;
+                    const allowed = ['.pdf', '.doc', '.docx', '.xls', '.xlsx'];
+                    const lower = file.name.toLowerCase();
+                    if (!allowed.some((ext) => lower.endsWith(ext))) {
+                      toast.error('Unsupported file type. Use PDF, Word, or Excel.');
+                      return;
+                    }
+                    handleDocumentUpload(file);
+                  }}
+                >
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleDocumentUpload(file);
+                      if (e.target) e.target.value = '';
+                    }}
+                    className="hidden"
+                    id="doc-upload"
+                    disabled={isUploading}
+                  />
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                      <p className="text-body text-muted-foreground">Uploading...</p>
                     </div>
-                    {formData.uploadedDocumentUrl && (
-                      <a
-                        href={formData.uploadedDocumentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-helper text-blue-600 hover:underline"
-                      >
-                        View Document
-                      </a>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        updateField('uploadedDocument', undefined);
-                        updateField('uploadedDocumentUrl', undefined);
-                      }}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1 text-destructive" />
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <Input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.xls,.xlsx"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleDocumentUpload(file);
-                      }}
-                      className="hidden"
-                      id="doc-upload"
-                      disabled={isUploading}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => document.getElementById('doc-upload')?.click()}
-                      disabled={isUploading}
-                    >
-                      {isUploading ? (
-                        <>
-                          <Clock className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      {docDragActive ? (
+                        <p className="text-body font-medium text-primary">Drop files here</p>
                       ) : (
-                        'Choose File'
+                        <>
+                          <p className="text-body font-medium text-foreground">
+                            Drag &amp; drop files here, or click to browse
+                          </p>
+                          <p className="text-helper text-muted-foreground">
+                            PDF, Word, Excel up to 10.0 MB
+                          </p>
+                        </>
                       )}
-                    </Button>
-                    <p className="text-helper text-muted-foreground mt-2">PDF, Word, or Excel (max 10MB)</p>
-                  </>
+                    </div>
+                  )}
+                </div>
+
+                {formData.uploadedDocument && (
+                  <div className="relative w-full overflow-x-auto overflow-y-visible">
+                    <table className="w-full caption-bottom text-body border border-border rounded-lg">
+                      <thead className="bg-surface-muted">
+                        <tr>
+                          <th className="w-8 p-2" />
+                          <th className="text-left p-2 font-medium text-helper">File name</th>
+                          <th className="text-right p-2 font-medium text-helper w-28">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        <tr className="hover:bg-muted/50 group">
+                          <td className="p-2 align-top">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                          </td>
+                          <td className="p-2 align-top">
+                            {isRenamingDoc ? (
+                              <input
+                                autoFocus
+                                value={renameDocValue}
+                                onChange={(e) => setRenameDocValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const next = renameDocValue.trim();
+                                    if (next) updateField('uploadedDocument', next);
+                                    setIsRenamingDoc(false);
+                                  } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setIsRenamingDoc(false);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  const next = renameDocValue.trim();
+                                  if (next) updateField('uploadedDocument', next);
+                                  setIsRenamingDoc(false);
+                                }}
+                                className="w-full px-2 py-1 text-body font-medium border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                              />
+                            ) : (
+                              <div className="min-w-0">
+                                <span
+                                  className="text-body font-medium truncate block cursor-text"
+                                  onDoubleClick={() => {
+                                    setRenameDocValue(formData.uploadedDocument || "");
+                                    setIsRenamingDoc(true);
+                                  }}
+                                  title="Double-click to rename"
+                                >
+                                  {formData.uploadedDocument}
+                                </span>
+                                <span className="text-helper text-muted-foreground block">
+                                  {formatFileSize(formData.uploadedDocumentSize)}
+                                  {formData.uploadedDocumentAt && (
+                                    <>
+                                      {formData.uploadedDocumentSize ? " · " : ""}
+                                      Uploaded{" "}
+                                      {new Date(formData.uploadedDocumentAt).toLocaleDateString(undefined, {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })}
+                                    </>
+                                  )}
+                                  {formData.uploadedDocumentBy && (
+                                    <> by {formData.uploadedDocumentBy}</>
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-2 align-top text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {!isRenamingDoc && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRenameDocValue(formData.uploadedDocument || "");
+                                    setIsRenamingDoc(true);
+                                  }}
+                                  title="Rename"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {formData.uploadedDocumentUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(formData.uploadedDocumentUrl, "_blank");
+                                  }}
+                                  title="Open"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateField('uploadedDocument', undefined);
+                                  updateField('uploadedDocumentUrl', undefined);
+                                  updateField('uploadedDocumentSize', undefined);
+                                  updateField('uploadedDocumentAt', undefined);
+                                  updateField('uploadedDocumentBy', undefined);
+                                }}
+                                title="Remove"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
 
             <div className="space-y-2 w-full">
-              <Label className="text-body font-medium text-foreground">External Document Link</Label>
-              <div className="relative w-full">
-                <Link2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="url"
-                  value={formData.externalDocumentLink || ""}
-                  onChange={(e) => updateField('externalDocumentLink', e.target.value)}
-                  placeholder="https://..."
-                  className="w-full pl-10"
-                />
-              </div>
+              <Label className="text-body font-medium text-foreground">External Document Links</Label>
+              {(() => {
+                // Normalise legacy formats: string OR string[] -> {url, name?}[]
+                const raw = formData.externalDocumentLinks;
+                const normalised: Array<{ url: string; name?: string }> = Array.isArray(raw)
+                  ? raw.map((item: any) =>
+                      typeof item === 'string' ? { url: item } : { url: item?.url || '', name: item?.name }
+                    ).filter(l => l.url)
+                  : [];
+                const links =
+                  normalised.length === 0 && formData.externalDocumentLink
+                    ? [{ url: formData.externalDocumentLink }]
+                    : normalised;
+
+                const addLink = () => {
+                  const url = externalLinkInput.trim();
+                  if (!url) return;
+                  if (links.some(l => l.url === url)) {
+                    toast.error('That link is already added.');
+                    return;
+                  }
+                  const next = [...links, { url, name: externalLinkNameInput.trim() || undefined }];
+                  updateField('externalDocumentLinks', next);
+                  updateField('externalDocumentLink', url);
+                  setExternalLinkInput("");
+                  setExternalLinkNameInput("");
+                };
+                const removeLink = (idx: number) => {
+                  const next = links.filter((_, i) => i !== idx);
+                  updateField('externalDocumentLinks', next);
+                  updateField('externalDocumentLink', next[next.length - 1]?.url || "");
+                };
+
+                return (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 w-full">
+                      <div className="relative">
+                        <Link2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="url"
+                          value={externalLinkInput}
+                          onChange={(e) => setExternalLinkInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); addLink(); }
+                          }}
+                          placeholder="https://..."
+                          className="w-full pl-10"
+                        />
+                      </div>
+                      <Input
+                        type="text"
+                        value={externalLinkNameInput}
+                        onChange={(e) => setExternalLinkNameInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); addLink(); }
+                        }}
+                        placeholder="Name or context (optional)"
+                        className="w-full"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addLink}
+                        disabled={!externalLinkInput.trim()}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add link
+                      </Button>
+                    </div>
+                    {links.length > 0 && (
+                      <ul className="space-y-1 border border-border rounded-lg divide-y">
+                        {links.map((link, idx) => (
+                          <li key={`${link.url}-${idx}`} className="flex items-center gap-2 px-3 py-2">
+                            <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              {link.name && (
+                                <span className="truncate block text-body font-medium text-foreground">
+                                  {link.name}
+                                </span>
+                              )}
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate block text-helper text-muted-foreground no-underline hover:no-underline"
+                              >
+                                {link.url}
+                              </a>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              onClick={() => removeLink(idx)}
+                              title="Remove"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Evidence Documents */}
-            <div className="space-y-2 w-full">
-              <Label className="text-body font-medium text-foreground">Evidence Documents</Label>
-              <p className="text-helper text-muted-foreground">Upload supporting evidence for any of the questions above</p>
-              <InlineDocumentUpload
-                fieldName="evidence"
-                document={formData.documents?.evidence}
-                uploading={uploadingDocField === 'evidence'}
-                onUpload={handleFieldDocumentUpload}
-                onRemove={handleFieldDocumentRemove}
-              />
-            </div>
           </div>
         </div>
 
         {/* ====== Section 10: Remarks ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <FileText className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold text-foreground">Additional Remarks</h3>
           </div>
 
           <div className="space-y-2">
-            <FieldWithDescription description={TOOLTIPS.remarks}>
-              <Label className="text-body font-medium text-foreground">Additional Notes</Label>
-            </FieldWithDescription>
+            <Label className="text-body font-medium text-foreground flex items-center gap-2">
+              Additional Notes
+              <HelpTextTooltip content={TOOLTIPS.remarks}>
+                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+              </HelpTextTooltip>
+            </Label>
             <Textarea
               value={formData.remarks || ""}
               onChange={(e) => updateField('remarks', e.target.value)}
