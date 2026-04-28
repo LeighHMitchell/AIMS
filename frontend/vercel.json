@@ -46,6 +46,9 @@
     "src/app/api/activities/[id]/sync/route.ts": {
       "maxDuration": 60
     },
+    "src/app/api/activities/[id]/readiness/export/route.ts": {
+      "maxDuration": 60
+    },
     "src/app/api/iati/fetch-org-activities/route.ts": {
       "maxDuration": 300
     },

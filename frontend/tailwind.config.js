@@ -79,6 +79,19 @@ module.exports = {
   				platinum: 'hsl(var(--brand-platinum))',
   			},
   			'surface-muted': 'var(--surface-muted)',
+  			gunmetal: {
+  				DEFAULT: '#1D1F21',
+  				50:  '#f4f5f5',
+  				100: '#e6e7e8',
+  				200: '#c9cbcd',
+  				300: '#9ea2a5',
+  				400: '#6e7378',
+  				500: '#4a4e52',
+  				600: '#33373a',
+  				700: '#26292c',
+  				800: '#1D1F21',
+  				900: '#141517'
+  			},
 			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
