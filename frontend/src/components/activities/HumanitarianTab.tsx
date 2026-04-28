@@ -85,13 +85,23 @@ export function HumanitarianTab({
     }
   };
 
-  // Fetch emergency details for vocab 98 scopes
+  // Fetch emergency details for vocab 98 scopes. We pass the specific codes
+  // so retired (is_active=false) emergencies still resolve — without ?codes
+  // the API filters to active only, which would blank out Location/Date for
+  // any scope referencing a since-deactivated emergency.
   useEffect(() => {
-    const hasVocab98 = scopes.some(s => s.vocabulary === '98');
-    if (!hasVocab98) return;
+    const vocab98Codes = Array.from(
+      new Set(
+        scopes
+          .filter(s => s.vocabulary === '98' && s.code)
+          .map(s => s.code)
+      )
+    );
+    if (vocab98Codes.length === 0) return;
     const fetchEmergencies = async () => {
       try {
-        const response = await fetch('/api/emergencies');
+        const qs = new URLSearchParams({ codes: vocab98Codes.join(',') });
+        const response = await fetch(`/api/emergencies?${qs.toString()}`);
         const data = await response.json();
         if (response.ok && data.data) {
           const map: Record<string, CountryEmergency> = {};
@@ -197,7 +207,7 @@ export function HumanitarianTab({
     const newScopes = scopes.filter(s => s.id !== scopeId);
     setScopes(newScopes);
     await saveHumanitarianData(humanitarian, newScopes);
-    toast.success(`Removed ${scopeLabel || 'humanitarian scope'}`, snapshot ? {
+    toast(`Removed ${scopeLabel || 'humanitarian scope'}`, snapshot ? {
       action: {
         label: 'Undo',
         onClick: async () => {
@@ -230,8 +240,8 @@ export function HumanitarianTab({
         tint via accent tokens.
       */}
       <div className="relative border border-border rounded-lg p-6">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
             <div className="flex items-center gap-2">
               <Heart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {/*
@@ -246,7 +256,7 @@ export function HumanitarianTab({
                 isSaving={isSaving}
                 isSaved={!isLoading && activityId !== 'NEW'}
                 hasValue={humanitarian}
-                className="text-body font-medium cursor-pointer text-foreground"
+                className="text-lg font-medium cursor-pointer text-foreground"
               >
                 <span className="flex items-center gap-2">
                   Humanitarian Activity
@@ -254,23 +264,24 @@ export function HumanitarianTab({
                 </span>
               </LabelSaveIndicator>
             </div>
-            <p className="text-helper text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
             </p>
+          </div>
+          <div className="flex items-center gap-2 ml-4">
             <Switch
               id="humanitarian-toggle"
               checked={humanitarian}
               onCheckedChange={handleHumanitarianToggle}
               disabled={readOnly || isSaving || activityId === 'NEW'}
-              className="mt-3"
             />
+            {humanitarian && !readOnly && activityId !== 'NEW' && (
+              <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Emergency/Appeal
+              </Button>
+            )}
           </div>
-          {humanitarian && !readOnly && activityId !== 'NEW' && (
-            <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Emergency/Appeal
-            </Button>
-          )}
         </div>
 
         {activityId === 'NEW' && (

@@ -276,7 +276,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
         throw new Error('Failed to delete contact');
       }
 
-      toast.success('Contact deleted successfully');
+      toast('Contact deleted');
       await fetchContacts();
     } catch (error) {
       console.error('[OrgContactsTab] Error deleting contact:', error);

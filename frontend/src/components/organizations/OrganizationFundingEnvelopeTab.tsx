@@ -310,7 +310,7 @@ export default function OrganizationFundingEnvelopeTab({
       }
 
       setEnvelopes(prev => prev.filter(e => e.id !== envelopeId))
-      toast.success('Funding envelope deleted')
+      toast('Funding envelope deleted')
     } catch (error) {
       console.error('[Funding Envelope Tab] Error deleting:', error)
       toast.error('Failed to delete funding envelope')

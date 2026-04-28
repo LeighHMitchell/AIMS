@@ -253,7 +253,7 @@ export function EventDetailModal({
 
       if (!response.ok) throw new Error('Failed to delete document')
 
-      toast.success('Document deleted successfully')
+      toast('Document deleted')
       setDocuments(prev => prev.filter(d => d.id !== doc.id))
     } catch (error) {
       console.error('Error deleting document:', error)
@@ -412,7 +412,7 @@ export function EventDetailModal({
         throw new Error('Failed to delete event')
       }
 
-      toast.success('Event deleted successfully!')
+      toast('Event deleted')
       onEventDeleted?.()
       onClose()
     } catch (error) {

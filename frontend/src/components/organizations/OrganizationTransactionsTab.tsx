@@ -19,7 +19,8 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
-import { exportToCSV } from '@/lib/csv-export';
+import { exportToCSV } from '@/lib/exports';
+import { exportTransactionsCsv, type TransactionRow } from '@/lib/exports/entities/transactions';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -336,23 +337,13 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
     setCurrentPage(1);
   };
 
-  // Handle export
+  // Handle export — full IATI 2.03 transaction shape with code+name pairs
   const handleExport = () => {
-    const exportData = sortedTransactions.map(t => ({
-      Activity: t.activity_title,
-      'Activity Acronym': t.activity_acronym || '',
-      Date: t.transaction_date,
-      Type: getTransactionTypeLabel(t.transaction_type),
-      'Type Code': t.transaction_type,
-      'Provider Organization': t.provider_org_name || '',
-      'Receiver Organization': t.receiver_org_name || '',
-      Amount: t.value,
-      Currency: t.currency,
-      'Value Date': t.value_date || '',
-      'USD Value': t.value_usd || '',
-      Description: t.description || ''
-    }));
-    exportToCSV(exportData, 'organization-transactions.csv');
+    if (sortedTransactions.length === 0) return;
+    exportTransactionsCsv(sortedTransactions as unknown as TransactionRow[], {
+      filenameEntity: 'organization-transactions',
+      includeActivityContext: true,
+    });
   };
 
   if (loading) {
@@ -426,7 +417,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
               <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="typeFilter" className={`min-w-[280px] ${typeFilter !== 'all' ? 'pr-12' : ''}`}>
                   {typeFilter === 'all' ? (
-                    <SelectValue placeholder="All Types" />
+                    <SelectValue placeholder="All types" />
                   ) : (
                     <span className="flex items-center text-body">
                       <code className="text-xs font-mono bg-muted px-1 rounded">{typeFilter}</code>
@@ -435,7 +426,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                   )}
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {transactionTypes.map(type => (
                     <SelectItem key={type} value={type}>
                       <span className="flex items-center gap-1">
@@ -463,10 +454,10 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
             <div className="relative">
               <Select value={activityFilter} onValueChange={(v) => { setActivityFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="activityFilter" className={`w-[450px] ${activityFilter !== 'all' ? 'pr-8' : ''}`}>
-                  <SelectValue placeholder="All Activities" />
+                  <SelectValue placeholder="All activities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Activities</SelectItem>
+                  <SelectItem value="all">All activities</SelectItem>
                   {uniqueActivities.map(activity => (
                     <SelectItem key={activity.id} value={activity.id}>
                       <span className="truncate">

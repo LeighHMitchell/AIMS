@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { MainLayout } from '@/components/layout/main-layout'
+import { PageHeaderSkeleton, StatsRowSkeleton, TableSkeleton } from "@/components/ui/skeleton-loader"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   BarChart, 
@@ -157,7 +158,11 @@ export default function TransparencyIndexPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="p-8 text-center">Loading transparency scores...</div>
+        <div className="space-y-6">
+          <PageHeaderSkeleton actions={0} />
+          <StatsRowSkeleton tiles={4} />
+          <TableSkeleton rows={8} columns={6} />
+        </div>
       </MainLayout>
     )
   }
@@ -401,7 +406,7 @@ export default function TransparencyIndexPage() {
             </div>
             
             {isLoadingDonors ? (
-              <div className="p-8 text-center text-muted-foreground">Loading donor rankings...</div>
+              <div className="p-6"><TableSkeleton rows={6} columns={5} /></div>
             ) : donorError ? (
               <div className="p-8 text-center">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

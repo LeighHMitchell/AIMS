@@ -135,10 +135,10 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
             onValueChange={(v) => handleTypeChange(v as TaskType | 'all')}
           >
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="All Types" />
+              <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               <SelectItem value="reporting">Reporting</SelectItem>
               <SelectItem value="validation">Validation</SelectItem>
               <SelectItem value="compliance">Compliance</SelectItem>

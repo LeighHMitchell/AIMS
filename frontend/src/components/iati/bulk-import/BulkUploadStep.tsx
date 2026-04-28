@@ -244,7 +244,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
             </>
           ) : (
             <>
-              <FileCode className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-lg font-medium text-foreground">
                 Drop your IATI XML file here
               </p>

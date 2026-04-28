@@ -61,7 +61,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Years</SelectItem>
+                <SelectItem value="all">All years</SelectItem>
                 {years.map(year => (
                   <SelectItem key={year} value={year}>{year}</SelectItem>
                 ))}
@@ -83,7 +83,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
                 <SelectValue placeholder={loadingOrgs ? "Loading..." : "Select organization"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Organizations</SelectItem>
+                <SelectItem value="all">All organizations</SelectItem>
                 {organizations.map(org => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.acronym || org.name}
@@ -106,7 +106,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Activities</SelectItem>
+                <SelectItem value="all">All activities</SelectItem>
                 <SelectItem value="published">Published Only</SelectItem>
               </SelectContent>
             </Select>

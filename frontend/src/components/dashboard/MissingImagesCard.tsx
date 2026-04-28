@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
-import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
+import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/exports';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface MissingImagesCardProps {

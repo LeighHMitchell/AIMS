@@ -176,7 +176,7 @@ export function IATIBudgetManager({
 
       const newBudgets = currentBudgets.filter((_, index) => index !== budgetIndex);
       updateBudgets(newBudgets);
-      toast.success('Budget deleted');
+      toast('Budget deleted');
     } catch (err) {
       console.error('Error deleting budget:', err);
       toast.error('Failed to delete budget');
@@ -336,7 +336,7 @@ export function IATIBudgetManager({
     }
 
     updateBudgets(newBudgets);
-    toast.success('Budget line deleted');
+    toast('Budget line deleted');
   };
 
   const formatCurrency = (amount: number | undefined, currency: string = defaultCurrency) => {

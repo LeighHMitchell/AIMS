@@ -426,7 +426,7 @@ export function DataClinicTransactions() {
                 <SelectValue placeholder="Filter by missing field" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Transactions</SelectItem>
+                <SelectItem value="all">All transactions</SelectItem>
                 <SelectItem value="missing_finance_type">Missing Finance Type</SelectItem>
                 <SelectItem value="missing_aid_type">Missing Aid Type</SelectItem>
                 <SelectItem value="missing_flow_type">Missing Flow Type</SelectItem>

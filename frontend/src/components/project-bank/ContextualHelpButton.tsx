@@ -52,7 +52,7 @@ export function ContextualHelpButton({ stage }: ContextualHelpButtonProps) {
       {/* Floating button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full bg-gray-800 text-white shadow-lg hover:bg-gray-700 transition-colors flex items-center justify-center"
+        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full bg-gunmetal text-white shadow-lg hover:bg-gunmetal/90 transition-colors flex items-center justify-center"
         title="Glossary & Help"
       >
         <HelpCircle className="h-5 w-5" />

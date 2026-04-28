@@ -207,10 +207,10 @@ export function OptimizedActivityList({
           <div className="flex gap-2">
             <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="All statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
@@ -219,10 +219,10 @@ export function OptimizedActivityList({
 
             <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange('dateRange', value)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Date" />
+                <SelectValue placeholder="All time" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All time</SelectItem>
                 <SelectItem value="this_year">This Year</SelectItem>
                 <SelectItem value="last_year">Last Year</SelectItem>
                 <SelectItem value="this_month">This Month</SelectItem>

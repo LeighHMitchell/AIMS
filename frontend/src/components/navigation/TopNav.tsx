@@ -131,7 +131,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                 </button>
               </Link>
               <Link href="/register">
-                <button className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-neutral-900 hover:bg-black text-body font-medium text-white transition-colors">
+                <button className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-gunmetal hover:bg-gunmetal/90 text-body font-medium text-white transition-colors">
                   <UserPlus className="h-4 w-4" />
                   Create Account
                 </button>

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react";
+import { coded, exportRowsAsCsv, buildExportFilename } from "@/lib/exports";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
   ChevronsUpDown,
   Eye,
   FolderOpen,
@@ -440,51 +442,82 @@ export default function PartnersPage() {
     return filtered;
   };
 
-  // Export to CSV
+  // Export to CSV — partner summary with code+name pairs and explicit year columns
   const exportToCSV = () => {
     if (!summaryData) return;
-    
     const allGroups = [...summaryData.predefinedGroups, ...summaryData.customGroups];
-    const allOrganizations = allGroups.flatMap((group: GroupData) => 
-      group.organizations.map((org: OrganizationMetrics) => ({
-        'Group': group.name,
-        'Organization Name': org.name,
-        'Full Name': org.fullName,
-        'Acronym': org.acronym,
-        'Type': org.organisationType,
-        'Country': org.countryRepresented,
-        'Activities': org.activeProjects,
-        'Total Amount': org.totalAmount,
-        '2022': org.financialData['2022'] || 0,
-        '2023': org.financialData['2023'] || 0,
-        '2024': org.financialData['2024'] || 0,
-        '2025': org.financialData['2025'] || 0,
-        '2026': org.financialData['2026'] || 0,
-        '2027': org.financialData['2027'] || 0
-      }))
+    const yearKeys = ['2022', '2023', '2024', '2025', '2026', '2027'] as const;
+
+    type Row = {
+      group_name: string;
+      group_type: 'predefined' | 'custom';
+      organization_id: string;
+      organization_name: string;
+      organization_full_name: string;
+      organization_acronym: string;
+      organization_type_code: string;
+      organization_type_name: string;
+      country_represented: string;
+      cooperation_modality: string;
+      derived_category: string;
+      website: string;
+      reported_activities: number;
+      active_projects: number;
+      provider_transactions: number;
+      receiver_transactions: number;
+      total_amount_usd: number;
+    } & Record<`${(typeof yearKeys)[number]}_amount_usd`, number>;
+
+    const rows: Row[] = allGroups.flatMap((group: GroupData) =>
+      group.organizations.map((org: OrganizationMetrics) => {
+        const typeCoded = coded('organization_type', org.type ?? org.organisationType);
+        const yearCols = yearKeys.reduce((acc, y) => {
+          (acc as any)[`${y}_amount_usd`] = org.financialData[y] ?? 0;
+          return acc;
+        }, {} as Record<string, number>);
+        return {
+          group_name: group.name,
+          group_type: group.type,
+          organization_id: org.id,
+          organization_name: org.name,
+          organization_full_name: org.fullName,
+          organization_acronym: org.acronym,
+          organization_type_code: typeCoded.code || (org.type ?? ''),
+          organization_type_name: typeCoded.name || org.organisationType,
+          country_represented: org.countryRepresented ?? '',
+          cooperation_modality: org.cooperationModality ?? '',
+          derived_category: org.derivedCategory ?? '',
+          website: org.website ?? '',
+          reported_activities: org.reportedActivities ?? 0,
+          active_projects: org.activeProjects ?? 0,
+          provider_transactions: org.providerTransactionCount ?? 0,
+          receiver_transactions: org.receiverTransactionCount ?? 0,
+          total_amount_usd: org.totalAmount ?? 0,
+          ...yearCols,
+        } as Row;
+      })
     );
 
-    const headers = Object.keys(allOrganizations[0] || {});
-    const csv = [
-      headers.join(","),
-      ...allOrganizations.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof typeof row];
-          return typeof value === "string" && value.includes(",") 
-            ? `"${value}"` 
-            : value;
-        }).join(",")
-      )
-    ].join("\n");
+    if (rows.length === 0) {
+      toast.warning('No partner data to export');
+      return;
+    }
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `partner-summary-${transactionType === 'C' ? 'commitments' : 'disbursements'}-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Data exported successfully");
+    const cols = (Object.keys(rows[0]) as (keyof Row)[]).map((k) => ({
+      header: String(k),
+      accessor: (r: Row) => r[k] as any,
+    }));
+
+    exportRowsAsCsv(
+      rows,
+      cols,
+      buildExportFilename({
+        entity: 'partner-summary',
+        scope: (transactionType as string) === 'C' ? 'commitments' : 'disbursements',
+        format: 'csv',
+      })
+    );
+    toast.success(`Exported ${rows.length.toLocaleString()} partner rows`);
   };
 
   // Format currency
@@ -1018,7 +1051,9 @@ export default function PartnersPage() {
                       size="sm"
                       onClick={handleExpandAll}
                       disabled={expandLevel === 2}
+                      aria-label={expandLevel === 0 ? 'Expand countries and organisations' : expandLevel === 1 ? 'Expand activities' : 'Expand all'}
                     >
+                      <ChevronsUpDown className="h-4 w-4 mr-2" />
                       {expandLevel === 0 ? 'Expand Countries/Organisations' : expandLevel === 1 ? 'Expand Activities' : 'Expand All'}
                     </Button>
                     <Button
@@ -1026,7 +1061,9 @@ export default function PartnersPage() {
                       size="sm"
                       onClick={handleCollapseAll}
                       disabled={expandLevel === 0 && expandedCountries.size === 0 && expandedOrgs.size === 0}
+                      aria-label={expandLevel === 2 ? 'Collapse activities' : 'Collapse all'}
                     >
+                      <ChevronsDownUp className="h-4 w-4 mr-2" />
                       {expandLevel === 2 ? 'Collapse Activities' : 'Collapse All'}
                     </Button>
                     <Button

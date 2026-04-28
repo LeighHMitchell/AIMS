@@ -1174,7 +1174,7 @@ export default function ProjectDetailPage() {
               <CardContent className="space-y-2">
                 {(project as any).appraisal_stage && (project as any).appraisal_stage !== 'routing_complete' && (
                   <Button
-                    className="w-full justify-start gap-2 bg-black hover:bg-black/90 text-white"
+                    className="w-full justify-start gap-2 bg-gunmetal hover:bg-gunmetal/90 text-white"
                     variant="default"
                     asChild
                   >

@@ -205,7 +205,7 @@ export function HumanitarianScopeModal({
           <Button onClick={onClose} variant="outline" disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-black hover:bg-gray-800 text-white">
+          <Button onClick={handleSave} disabled={saving} className="bg-gunmetal hover:bg-gunmetal/90 text-white">
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save'}
           </Button>

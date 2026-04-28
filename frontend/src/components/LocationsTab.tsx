@@ -280,7 +280,7 @@ export default function LocationsTab({
       const result = await response.json();
 
       if (result.success) {
-        toast.success('Location removed', snapshot ? {
+        toast('Location removed', snapshot ? {
           action: { label: 'Undo', onClick: () => restoreLocation(snapshot) },
         } : undefined);
         await loadLocations();

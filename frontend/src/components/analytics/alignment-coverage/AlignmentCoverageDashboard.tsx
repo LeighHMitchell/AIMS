@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatsRowSkeleton } from "@/components/ui/skeleton-loader";
 import {
   Target,
   BookOpen,
@@ -424,12 +425,8 @@ export function AlignmentCoverageDashboard() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-12 w-64" />
-        <div className="grid grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-96" />
+        <StatsRowSkeleton tiles={4} />
+        <Skeleton className="h-96 w-full rounded-lg" />
       </div>
     );
   }
@@ -518,12 +515,8 @@ export function AlignmentCoverageDashboard() {
 
       {loadingCoverage ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-          <Skeleton className="h-96" />
+          <StatsRowSkeleton tiles={4} />
+          <Skeleton className="h-96 w-full rounded-lg" />
         </div>
       ) : coverageData ? (
         <>

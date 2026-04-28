@@ -355,7 +355,7 @@ export default function ContributorsSection({
                     <Users className="h-8 w-8 text-muted-foreground flex-shrink-0 hidden" />
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">
+                        <p className="font-medium whitespace-nowrap">
                           {(() => {
                             // Find the organization details for formatting
                             const organization = organizations.find(o => o.id === getContributorOrganizationId(contributor));

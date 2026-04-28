@@ -166,6 +166,8 @@ export async function GET(
       { count: financingTermsCount },
       { count: conditionsCount },
       { count: countryBudgetItemsCount },
+      { count: nationalPrioritiesCount },
+      endorsementResult,
     ] = await Promise.all([
       supabase.from('activity_participating_organizations').select('id', { count: 'exact', head: true }).eq('activity_id', id),
       supabase.from('activity_contacts').select('id', { count: 'exact', head: true }).eq('activity_id', id).not('type', 'in', '("government_focal_point","development_partner_focal_point")'),
@@ -179,7 +181,14 @@ export async function GET(
       supabase.from('activity_financing_terms').select('id', { count: 'exact', head: true }).eq('activity_id', id),
       supabase.from('activity_conditions').select('id', { count: 'exact', head: true }).eq('activity_id', id),
       supabase.from('country_budget_items').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('activity_national_priorities').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('government_endorsements').select('validation_status').eq('activity_id', id).maybeSingle(),
     ]);
+
+    // Readiness checklist tab is "complete" once the activity has reached the
+    // Endorsement stage — i.e. a government_endorsements row exists with a
+    // validation_status set (validated / rejected / more_info_requested).
+    const readinessEndorsementReached = !!endorsementResult?.data?.validation_status;
 
     // Extract sectors
     const sectors = activity.activity_sectors || [];
@@ -360,6 +369,8 @@ export async function GET(
         financing_terms: financingTermsCount || 0,
         conditions: conditionsCount || 0,
         country_budget_items: countryBudgetItemsCount || 0,
+        national_priorities: nationalPrioritiesCount || 0,
+        readiness_endorsement_reached: readinessEndorsementReached,
       }
     };
     

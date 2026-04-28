@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { FocalPointAvatarGroup, FocalPointInfo } from '@/components/ui/focal-point-avatar-group';
 import { toast } from 'sonner';
-import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
+import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/exports';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface FocalPointCheckCardProps {

@@ -319,7 +319,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
         method: 'DELETE',
       })
       if (!res.ok) throw new Error('Failed to remove member')
-      toast.success('Member removed')
+      toast('Member removed')
       setMemberToDelete(null)
       fetchMembers()
     } catch (error: any) {

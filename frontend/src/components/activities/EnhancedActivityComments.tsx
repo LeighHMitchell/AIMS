@@ -693,7 +693,7 @@ export function EnhancedActivityComments({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="question">Questions</SelectItem>
                 <SelectItem value="feedback">Feedback</SelectItem>
               </SelectContent>

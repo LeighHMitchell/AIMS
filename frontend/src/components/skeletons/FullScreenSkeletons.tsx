@@ -15,7 +15,7 @@ export function AnalyticsDashboardSkeleton() {
         </div>
 
         {/* Filter Section */}
-        <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-card rounded-lg border border-border p-4 mb-6">
           <div className="flex flex-wrap gap-4">
             <Skeleton variant="rounded" width="150px" height="40px" />
             <Skeleton variant="rounded" width="150px" height="40px" />
@@ -360,7 +360,7 @@ export function RolodexSkeleton() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-md ring-1 ring-border overflow-hidden">
+        <div className="bg-card rounded-md ring-1 ring-border overflow-hidden">
           <table className="w-full table-auto border-collapse">
             <thead className="bg-surface-muted border-b border-border">
               <tr>
@@ -374,7 +374,7 @@ export function RolodexSkeleton() {
                 <th className="h-12 px-4 py-3"><Skeleton variant="text" width="60px" height="0.875rem" /></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i}>
                   <td className="px-4 py-3"><Skeleton variant="circular" width="32px" height="32px" /></td>

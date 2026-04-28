@@ -1195,9 +1195,9 @@ export function EnhancedSubnationalBreakdown({
                                     }
                                   </button>
                                 )}
-                                <span className="text-body font-semibold">{item.regionName}</span>
+                                <span className="text-body font-semibold whitespace-nowrap">{item.regionName}</span>
                                 {viewLevel === 'township' && !isExpanded && (item.townshipCount ?? 0) > 0 && (
-                                  <span className="text-helper text-muted-foreground font-normal">
+                                  <span className="text-helper text-muted-foreground font-normal whitespace-nowrap">
                                     {item.townshipCount} {item.townshipCount === 1 ? 'township' : 'townships'}
                                   </span>
                                 )}

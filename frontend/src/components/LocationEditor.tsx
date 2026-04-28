@@ -122,7 +122,7 @@ export default function LocationEditor({
       setErrors(newErrors);
     }
     
-    toast.success('Location removed');
+    toast('Location removed');
   };
 
   // Validate location
@@ -200,7 +200,7 @@ export default function LocationEditor({
                     setLocalLocations([]);
                     onLocationsChange([]);
                     setErrors({});
-                    toast.success('All locations removed');
+                    toast('All locations removed');
                   }
                 }}
                 disabled={!canEdit}

@@ -258,7 +258,7 @@ export default function FAQPage() {
         throw new Error(errorData.error || 'Failed to delete FAQ')
       }
 
-      toast.success('FAQ deleted successfully')
+      toast('FAQ deleted')
       // Optionally refresh in background to sync any other changes
       fetchFAQs().catch(() => {
         // Ignore refresh errors - the delete succeeded

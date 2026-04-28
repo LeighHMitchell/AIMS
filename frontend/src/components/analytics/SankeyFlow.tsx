@@ -20,7 +20,7 @@ import {
   Cell
 } from 'recharts'
 import { ExpandableCard } from '@/components/ui/expandable-card'
-import { exportToCSV } from '@/lib/csv-export'
+import { exportToCSV } from '@/lib/exports'
 import { exportChartToJPG } from '@/lib/chart-export'
 import { CHART_COLORS, CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import {

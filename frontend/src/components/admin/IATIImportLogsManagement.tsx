@@ -279,7 +279,7 @@ export function IATIImportLogsManagement() {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="success">Success</SelectItem>
                       <SelectItem value="partial">Partial</SelectItem>
                       <SelectItem value="failed">Failed</SelectItem>
@@ -292,7 +292,7 @@ export function IATIImportLogsManagement() {
                       <SelectValue placeholder="Filter by source" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Sources</SelectItem>
+                      <SelectItem value="all">All sources</SelectItem>
                       <SelectItem value="xml_upload">XML Upload</SelectItem>
                       <SelectItem value="url_import">URL Import</SelectItem>
                       <SelectItem value="iati_search">IATI Search</SelectItem>

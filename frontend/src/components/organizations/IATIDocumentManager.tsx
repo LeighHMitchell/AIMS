@@ -437,7 +437,7 @@ export function IATIDocumentManager({
 
       const newDocuments = currentDocuments.filter((_, index) => index !== documentIndex);
       updateDocuments(newDocuments);
-      toast.success('Document deleted');
+      toast('Document deleted');
     } catch (err) {
       console.error('Error deleting document:', err);
       toast.error('Failed to delete document');

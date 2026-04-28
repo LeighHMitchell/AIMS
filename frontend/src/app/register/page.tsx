@@ -133,7 +133,7 @@ export default function RegisterPage() {
             <div className="space-y-3 pt-4">
               <Button
                 onClick={() => router.push('/login')}
-                className="w-full bg-gray-900 hover:bg-black text-white border-0"
+                className="w-full bg-gunmetal hover:bg-gunmetal/90 text-white border-0"
               >
                 Go to Sign In
               </Button>
@@ -282,7 +282,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 hover:bg-black text-white border-0"
+              className="w-full bg-gunmetal hover:bg-gunmetal/90 text-white border-0"
             >
               {loading ? (
                 <>
@@ -316,7 +316,7 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-foreground hover:text-black font-medium underline"
+              className="text-foreground hover:text-gunmetal font-medium underline"
             >
               Sign in
             </Link>

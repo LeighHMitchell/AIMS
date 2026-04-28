@@ -181,7 +181,7 @@ export default function LocationsTabNew({
       // Reload to get updated percentage summary
       await loadLocations();
 
-      toast.success('Location deleted successfully');
+      toast('Location deleted');
     } catch (error) {
       console.error('Error deleting location:', error);
       toast.error('Failed to delete location. Please try again.');

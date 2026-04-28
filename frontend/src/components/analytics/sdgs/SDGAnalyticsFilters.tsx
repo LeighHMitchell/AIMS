@@ -86,7 +86,7 @@ export function SDGAnalyticsFilters({
               <SelectValue placeholder="Select organization" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Organizations</SelectItem>
+              <SelectItem value="all">All organizations</SelectItem>
               {organizations.map((org) => (
                 <SelectItem key={org.id} value={org.id}>
                   {org.name}

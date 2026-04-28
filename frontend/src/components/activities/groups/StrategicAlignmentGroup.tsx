@@ -67,6 +67,9 @@ interface StrategicAlignmentGroupProps {
   // Policy Markers props
   policyMarkers: any[]
   onPolicyMarkersChange: (markers: any[]) => void
+
+  // National Priorities props
+  onNationalPrioritiesCountChange?: (count: number) => void
 }
 
 /**
@@ -103,6 +106,9 @@ export function StrategicAlignmentGroup({
   // Policy Markers props
   policyMarkers,
   onPolicyMarkersChange,
+
+  // National Priorities props
+  onNationalPrioritiesCountChange,
 }: StrategicAlignmentGroupProps) {
 
   // Create refs for each section
@@ -286,6 +292,7 @@ export function StrategicAlignmentGroup({
                 <NationalPrioritiesSection
                   activityId={activityId}
                   disabled={!permissions?.canEditActivity}
+                  onCountChange={onNationalPrioritiesCountChange}
                 />
               </div>
             ) : (

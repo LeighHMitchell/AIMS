@@ -258,7 +258,7 @@ export function TransactionDocumentUpload({
       }
 
       onDocumentsChange(documents.filter(doc => doc.id !== documentId));
-      toast.success('Document removed');
+      toast('Document removed');
     } catch (error) {
       console.error('Error removing document:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to remove document');

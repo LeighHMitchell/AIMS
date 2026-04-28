@@ -172,7 +172,7 @@ export function useContributors(activityId: string | undefined) {
       
       // Update local state
       setContributors(prev => prev.filter(c => c.id !== contributorId));
-      toast.success('Contributor removed');
+      toast('Contributor removed');
       
     } catch (err) {
       console.error('[useContributors] Error removing contributor:', err);

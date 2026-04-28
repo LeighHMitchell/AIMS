@@ -21,7 +21,7 @@ export function SortableTableHeader({
   return (
     <th
       className={cn(
-        "h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground",
+        "h-12 px-4 text-left align-top text-body font-medium text-muted-foreground",
         className
       )}
       onClick={onClick}

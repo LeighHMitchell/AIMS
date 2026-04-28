@@ -130,7 +130,7 @@ export function LibraryFiltersPanel({
           options={SOURCE_TYPE_OPTIONS}
           value={filters.sourceTypes || []}
           onChange={handleSourceTypeChange}
-          placeholder="All Sources"
+          placeholder="All sources"
           searchPlaceholder="Search sources..."
           emptyText="No source types found."
           icon={<FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
@@ -148,7 +148,7 @@ export function LibraryFiltersPanel({
           options={FORMAT_OPTIONS}
           value={selectedFormatValues}
           onChange={handleFormatChange}
-          placeholder="All Formats"
+          placeholder="All formats"
           searchPlaceholder="Search formats..."
           emptyText="No formats found."
           icon={<File className="h-4 w-4 text-muted-foreground shrink-0" />}
@@ -171,7 +171,7 @@ export function LibraryFiltersPanel({
               categoryCodes: values.length > 0 ? values : undefined,
             })
           }
-          placeholder="All Categories"
+          placeholder="All categories"
           searchPlaceholder="Search categories..."
           emptyText="No categories found."
           icon={<Library className="h-4 w-4 text-muted-foreground shrink-0" />}
@@ -194,7 +194,7 @@ export function LibraryFiltersPanel({
               reportingOrgIds: value ? [value] : undefined,
             })
           }
-          placeholder="All Organisations"
+          placeholder="All organisations"
           searchPlaceholder="Search organisations..."
           showValueCode={false}
           open={openDropdown === 'org'}

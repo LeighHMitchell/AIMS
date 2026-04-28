@@ -234,7 +234,7 @@ export default function SDGAlignmentSection({
     setHasUserEdited(true);
     setMappings(prev => prev.filter(m => m.sdgGoal !== goalId));
     if (modalGoalId === goalId) setModalGoalId(null);
-    toast.success(goal ? `Removed Goal ${goal.id}` : 'SDG removed', {
+    toast(goal ? `Removed Goal ${goal.id}` : 'SDG removed', {
       action: {
         label: 'Undo',
         onClick: () => {
@@ -276,7 +276,7 @@ export default function SDGAlignmentSection({
     const removed = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
     setHasUserEdited(true);
     setMappings(prev => prev.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
-    toast.success('SDG target removed', {
+    toast('SDG target removed', {
       action: {
         label: 'Undo',
         onClick: () => {

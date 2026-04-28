@@ -677,7 +677,7 @@ export default function UserManagement() {
                           <SelectValue placeholder="Filter by role" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Roles</SelectItem>
+                          <SelectItem value="all">All roles</SelectItem>
                           {Object.entries(ROLE_LABELS).map(([value, label]) => (
                             <SelectItem key={value} value={value}>{label}</SelectItem>
                           ))}
@@ -688,7 +688,7 @@ export default function UserManagement() {
                           <SelectValue placeholder="Filter by organization" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Organizations</SelectItem>
+                          <SelectItem value="all">All organizations</SelectItem>
                           {organizations.map((org) => (
                             <SelectItem key={org.id} value={org.id}>
                               {org.name && org.acronym && org.name !== org.acronym 

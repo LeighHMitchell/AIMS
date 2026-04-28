@@ -10,6 +10,7 @@ export interface ActivityBudget {
   value: number;
   currency: string; // ISO 4217 currency code
   value_date: string; // ISO date string
+  description?: string | null; // Internal-only, not in IATI 2.03
   created_at?: string;
   updated_at?: string;
   created_by?: string;

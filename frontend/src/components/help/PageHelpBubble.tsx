@@ -78,7 +78,7 @@ export function PageHelpBubble({ pageSlug, pageTitle }: PageHelpBubbleProps) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'fixed bottom-6 right-6 z-[10003] h-12 w-12 rounded-full text-white shadow-lg transition-colors flex items-center justify-center',
-          open ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-800 hover:bg-gray-700'
+          open ? 'bg-gunmetal/80 hover:bg-gunmetal/70' : 'bg-gunmetal hover:bg-gunmetal/90'
         )}
         aria-label={open ? 'Close help' : 'Open help'}
         aria-expanded={open}

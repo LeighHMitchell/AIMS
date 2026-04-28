@@ -34,22 +34,22 @@ export const getSubmissionStatusIcon = (status: string): StatusIconConfig => {
       }
     case 'submitted': 
       return { 
-        icon: <Clock className="h-4 w-4 text-black" />, 
+        icon: <Clock className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Submitted - Awaiting validation" 
       }
     case 'validated': 
       return { 
-        icon: <CheckCircle className="h-4 w-4 text-black" />, 
+        icon: <CheckCircle className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Validated - Approved for publication" 
       }
     case 'rejected': 
       return { 
-        icon: <XCircle className="h-4 w-4 text-black" />, 
+        icon: <XCircle className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Rejected - Requires revision" 
       }
     case 'published': 
       return { 
-        icon: <Globe className="h-4 w-4 text-black" />, 
+        icon: <Globe className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Published - Publicly visible" 
       }
     default: 
@@ -64,17 +64,17 @@ export const getPublicationStatusIcon = (status: string): StatusIconConfig => {
   switch (status) {
     case 'draft': 
       return { 
-        icon: <EyeOff className="h-4 w-4 text-black" />, 
+        icon: <EyeOff className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Unpublished - Not published" 
       }
     case 'published': 
       return { 
-        icon: <Eye className="h-4 w-4 text-black" />, 
+        icon: <Eye className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Published - Publicly visible" 
       }
     default: 
       return { 
-        icon: <EyeOff className="h-4 w-4 text-black" />, 
+        icon: <EyeOff className="h-4 w-4 text-gunmetal" />, 
         tooltip: "Unknown status" 
       }
   }

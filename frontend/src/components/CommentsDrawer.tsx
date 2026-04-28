@@ -370,7 +370,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       }
       
       await fetchComments();
-      toast.success('Comment deleted successfully');
+      toast('Comment deleted');
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to delete comment');

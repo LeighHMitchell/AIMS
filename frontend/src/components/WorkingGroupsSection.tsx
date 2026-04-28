@@ -110,7 +110,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
         const removedGroup = WORKING_GROUPS.find(wg => wg.code === removedCodes[0]);
         if (removedGroup) {
           const previousCodes = [...selectedCodes];
-          toast.success(`Activity removed from ${removedGroup.label}`, {
+          toast(`Activity removed from ${removedGroup.label}`, {
             action: {
               label: 'Undo',
               onClick: () => applyWorkingGroupsChange(previousCodes, { silent: true }),
@@ -119,7 +119,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
         }
       } else if (removedCodes.length > 1) {
         const previousCodes = [...selectedCodes];
-        toast.success(`Activity removed from ${removedCodes.length} working groups`, {
+        toast(`Activity removed from ${removedCodes.length} working groups`, {
           action: {
             label: 'Undo',
             onClick: () => applyWorkingGroupsChange(previousCodes, { silent: true }),

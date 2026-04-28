@@ -203,7 +203,7 @@ export default function FocalPointsTab({
           toast.error("Couldn't restore the focal point. Please reassign manually.");
         }
       };
-      toast.success(`Removed ${focalPoint.name} as focal point`, {
+      toast(`Removed ${focalPoint.name} as focal point`, {
         action: { label: 'Undo', onClick: restoreFocalPoint },
       });
       fetchFocalPoints();

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
+import { exportPlannedDisbursementsCsv, type PlannedDisbursementRow } from "@/lib/exports/entities/planned-disbursements";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
-import { Download, ChevronLeft, ChevronRight, FileText, Building2, CalendarClock, AlignLeft } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, FileText, Building2, CalendarClock, AlignLeft, Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -176,44 +177,23 @@ export default function PlannedDisbursementsPage() {
   };
 
   const exportDisbursements = () => {
-    const dataToExport = disbursements.map((disb) => ({
-      "Activity": disb.activity?.title_narrative || disb.activity_id,
-      "Provider Organisation": disb.provider_org_name || "",
-      "Provider Activity": disb.provider_activity?.title_narrative || "",
-      "Receiver Organisation": disb.receiver_org_name || "",
-      "Receiver Activity": disb.receiver_activity?.title_narrative || "",
-      "Type": disb.type || "",
-      "Period Start": disb.period_start ? format(new Date(disb.period_start), "yyyy-MM-dd") : "",
-      "Period End": disb.period_end ? format(new Date(disb.period_end), "yyyy-MM-dd") : "",
-      "Value": disb.value || "",
-      "Currency": disb.currency || "",
-      "Value USD": disb.value_usd || "",
-      "Value Date": disb.value_date ? format(new Date(disb.value_date), "yyyy-MM-dd") : "",
+    if (disbursements.length === 0) {
+      toast.error('No planned disbursements to export');
+      return;
+    }
+    const rows: PlannedDisbursementRow[] = disbursements.map((d: any) => ({
+      ...d,
+      activity_id: d.activity_id ?? d.activity?.id ?? '',
+      activity_iati_id: d.activity?.iati_identifier ?? '',
+      activity_title: d.activity?.title_narrative ?? '',
+      activity_acronym: d.activity?.acronym ?? '',
+      usd_value: d.value_usd ?? d.usd_value ?? d.usd_amount ?? '',
     }));
-
-    const headers = Object.keys(dataToExport[0] || {});
-    const csv = [
-      headers.join(","),
-      ...dataToExport.map((row) =>
-        headers
-          .map((header) => {
-            const value = row[header as keyof typeof row];
-            return typeof value === "string" && value.includes(",")
-              ? `"${value}"`
-              : value;
-          })
-          .join(",")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `planned-disbursements-export-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Planned disbursements exported successfully");
+    exportPlannedDisbursementsCsv(rows, {
+      filenameEntity: 'planned-disbursements',
+      includeActivityContext: true,
+    });
+    toast.success(`Exported ${rows.length.toLocaleString()} planned disbursements`);
   };
 
 
@@ -346,13 +326,26 @@ export default function PlannedDisbursementsPage() {
             {/* Search Input */}
             <div className="flex flex-col gap-1">
               <Label htmlFor="planned-disbursements-search" className="text-helper text-muted-foreground">Search</Label>
-              <Input
-                id="planned-disbursements-search"
-                placeholder="Search planned disbursements..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[240px] h-9"
-              />
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="planned-disbursements-search"
+                  placeholder="Search planned disbursements..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-[240px] h-9 pl-8 pr-8"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Filters */}

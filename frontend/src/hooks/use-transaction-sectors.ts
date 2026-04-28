@@ -249,7 +249,7 @@ export function useTransactionSectors({
       setValidation(data.validation);
       setHasUnsavedChanges(false);
       
-      toast.success('Sector allocation removed');
+      toast('Sector allocation removed');
       return true;
       
     } catch (err) {

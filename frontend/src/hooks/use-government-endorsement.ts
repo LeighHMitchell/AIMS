@@ -99,7 +99,7 @@ export function useGovernmentEndorsement(activityId: string): UseGovernmentEndor
       }
       
       setEndorsement(null);
-      toast.success('Government endorsement deleted successfully');
+      toast('Government endorsement deleted successfully');
       return true;
     } catch (err) {
       console.error('Error deleting government endorsement:', err);

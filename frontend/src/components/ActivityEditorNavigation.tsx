@@ -73,7 +73,7 @@ export default function ActivityEditorNavigation({
       sections: [
         { id: "country-region", label: "Countries & Regions" },
         { id: "locations", label: "Activity Sites" },
-        { id: "subnational-allocation", label: "Sub-national Allocation" },
+        { id: "subnational-allocation", label: "Sub-national" },
       ]
     },
     {
@@ -130,10 +130,10 @@ export default function ActivityEditorNavigation({
       title: "Administration",
       sections: [
         ...(showGovernmentInputs ? [
-          { id: "government-budget-classification", label: "Government Budget Classification" },
-          { id: "government-financial-inputs", label: "Government Financial Inputs" },
-          { id: "government-risk-assessment", label: "Government Risk Assessment" },
-          { id: "government-evaluation", label: "Government Evaluation" },
+          { id: "government-financial-inputs", label: "Contributions" },
+          { id: "government-budget-classification", label: "Budget Classification" },
+          { id: "government-risk-assessment", label: "Risk Assessment" },
+          { id: "government-evaluation", label: "Evaluation" },
         ] : []),
         { id: "readiness_checklist", label: "Readiness Checklist" },
         { id: "metadata", label: "Metadata" }
@@ -158,7 +158,7 @@ export default function ActivityEditorNavigation({
             {/* Group Header */}
             <div 
               id={`group-${groupIndex}`}
-              className="text-section-label font-bold text-black uppercase mb-2 px-1 flex items-center gap-1"
+              className="text-section-label font-bold text-gunmetal uppercase mb-2 px-1 flex items-center gap-1"
               role="heading"
               aria-level={3}
             >
@@ -210,7 +210,7 @@ export default function ActivityEditorNavigation({
                           ? "text-muted-foreground cursor-not-allowed opacity-60"
                           : isActive
                             ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
-                            : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-black"
+                            : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-gunmetal"
                       )}
                       aria-current={isActive ? "page" : undefined}
                       aria-describedby={undefined}

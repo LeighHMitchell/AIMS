@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FilterBar } from "@/components/ui/filter-bar"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -109,10 +110,10 @@ export default function TransfersListPage() {
             <Label className="text-helper text-muted-foreground">Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder="All statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {Object.entries(SEE_STATUS_LABELS).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -139,7 +140,13 @@ export default function TransfersListPage() {
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 7 }).map((_, j) => (
+                          <td key={j} className="px-4 py-2.5"><Skeleton className="h-4 w-20" /></td>
+                        ))}
+                      </tr>
+                    ))
                   ) : transfers.length === 0 ? (
                     <tr><td colSpan={7} className="p-0"><EmptyState icon={<Inbox className="h-10 w-10 text-muted-foreground" />} title="No transfers found" message="Try adjusting your search or filters." /></td></tr>
                   ) : transfers.map(transfer => (

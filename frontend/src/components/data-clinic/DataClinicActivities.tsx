@@ -434,7 +434,7 @@ export function DataClinicActivities() {
                 <SelectValue placeholder="Filter by missing field" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Activities</SelectItem>
+                <SelectItem value="all">All activities</SelectItem>
                 <SelectItem value="missing_aid_type">Missing Aid Type</SelectItem>
                 <SelectItem value="missing_finance_type">Missing Finance Type</SelectItem>
                 <SelectItem value="missing_default_flow_type">Missing Default Flow Type</SelectItem>
@@ -502,7 +502,7 @@ export function DataClinicActivities() {
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
                   {isSuperUser && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">
+                    <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">
                       <Checkbox
                         checked={selectedActivities.size === filteredActivities.length && filteredActivities.length > 0}
                         onCheckedChange={(checked) => {
@@ -515,13 +515,13 @@ export function DataClinicActivities() {
                       />
                     </th>
                   )}
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Title</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">IATI ID</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Aid Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Finance Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Flow Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Status</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Sectors</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Title</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">IATI ID</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Aid Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Finance Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Flow Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Status</th>
+                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Sectors</th>
                 </tr>
               </thead>
               <tbody>

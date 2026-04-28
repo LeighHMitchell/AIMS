@@ -296,7 +296,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       const updatedContacts = contacts.filter(c => !selectedContactIds.has(c.id || ''));
       await saveContacts(updatedContacts);
       exitContactSelectMode();
-      toast.success(`Removed ${count} contact${count === 1 ? '' : 's'}`, {
+      toast(`Removed ${count} contact${count === 1 ? '' : 's'}`, {
         action: {
           label: 'Undo',
           onClick: async () => {
@@ -334,7 +334,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       const previousContacts = contacts;
       const updatedContacts = contacts.filter(c => c.id !== contactId);
       await saveContacts(updatedContacts);
-      toast.success(`Removed ${contactName}`, snapshot ? {
+      toast(`Removed ${contactName}`, snapshot ? {
         action: {
           label: 'Undo',
           onClick: async () => {

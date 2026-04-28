@@ -256,7 +256,7 @@ export function DataClinicOrganizations() {
                 <SelectValue placeholder="Filter by missing field" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Organizations</SelectItem>
+                <SelectItem value="all">All organizations</SelectItem>
                 <SelectItem value="missing_identifier">Missing/Invalid Identifier</SelectItem>
                 <SelectItem value="missing_type">Missing Organization Type</SelectItem>
                 <SelectItem value="missing_currency">Missing Default Currency</SelectItem>

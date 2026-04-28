@@ -46,6 +46,7 @@ interface ActivityCardModernProps {
     created_by_org_acronym?: string;
     totalBudget?: number;
     totalDisbursed?: number;
+    totalPlannedDisbursement?: number;
     is_pooled_fund?: boolean;
   };
   className?: string;
@@ -240,7 +241,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
             </div>
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                Total Budget
+                Total Budgeted
               </p>
               <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
@@ -249,11 +250,11 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
             </div>
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                Disbursed
+                Total Planned Disbursement
               </p>
               <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                <span>{formatCurrency(activity.totalDisbursed || 0)}</span>
+                <span>{formatCurrency(activity.totalPlannedDisbursement || 0)}</span>
               </div>
             </div>
           </div>

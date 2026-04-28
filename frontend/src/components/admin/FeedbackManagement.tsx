@@ -384,7 +384,7 @@ export function FeedbackManagement() {
       });
 
       if (response.ok) {
-        toast.success("Feedback deleted successfully");
+        toast("Feedback deleted");
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete feedback');
@@ -425,7 +425,7 @@ export function FeedbackManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(data.message || `Successfully deleted ${idsToDelete.length} feedback item(s)`);
+        toast(data.message || `Deleted ${idsToDelete.length} feedback item${idsToDelete.length === 1 ? '' : 's'}`);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete feedback');
@@ -572,7 +572,7 @@ export function FeedbackManagement() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {FEEDBACK_STATUS_TYPES.map((status) => {
                     const { icon: StatusIcon, color } = getStatusIcon(status.code);
                     return (
@@ -594,7 +594,7 @@ export function FeedbackManagement() {
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   {FEEDBACK_TYPES.map((type) => {
                     const IconComponent = getIconComponent(type.icon);
                     return (
@@ -616,7 +616,7 @@ export function FeedbackManagement() {
                   <SelectValue placeholder="All priorities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="all">All priorities</SelectItem>
                   {FEEDBACK_PRIORITY_TYPES.map((priorityType) => {
                     const { icon: PriorityIcon, color } = getPriorityIcon(priorityType.code);
                     return (
@@ -638,7 +638,7 @@ export function FeedbackManagement() {
                   <SelectValue placeholder="All features" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Features</SelectItem>
+                  <SelectItem value="all">All features</SelectItem>
                   {ALL_APP_FEATURES.map((feature) => (
                     <SelectItem key={feature.code} value={feature.code}>
                       {feature.name}

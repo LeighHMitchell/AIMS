@@ -430,7 +430,7 @@ export function ResultsTab({
       const success = await deleteResult(resultId);
       if (success) {
         onResultsChange?.(results);
-        toast.success('Result removed', snapshot ? {
+        toast('Result removed', snapshot ? {
           action: {
             label: 'Undo',
             onClick: async () => {
@@ -473,7 +473,7 @@ export function ResultsTab({
         }
 
         fetchResults();
-        toast.success('Indicator deleted', {
+        toast('Indicator deleted', {
           action: {
             label: 'Undo',
             onClick: async () => {
@@ -1385,7 +1385,7 @@ export function ResultsTab({
                                                           return;
                                                         }
 
-                                                        toast.success('Period deleted');
+                                                        toast('Period deleted');
                                                         await fetchResults();
                                                       } catch (err) {
                                                         toast.error('Failed to delete period');

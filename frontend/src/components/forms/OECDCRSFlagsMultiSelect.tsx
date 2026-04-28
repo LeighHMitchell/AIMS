@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { ChevronsUpDown, Check, X } from "lucide-react";
+import { ChevronsUpDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { OECD_CRS_FLAGS } from "@/data/oecd-crs-flags";
 
@@ -93,16 +94,12 @@ export function OECDCRSFlagsMultiSelect({
                       onSelect={() => toggleFlag(flag.code)}
                       className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
-                      <div className="flex items-center gap-2 mr-2">
-                        <div
-                          className={cn(
-                            "h-4 w-4 border rounded flex items-center justify-center transition-colors",
-                            isSelected ? "bg-primary border-primary" : "border-input"
-                          )}
-                        >
-                          {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
-                        </div>
-                      </div>
+                      <Checkbox
+                        checked={isSelected}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        className="mr-2 pointer-events-none"
+                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">

@@ -7,8 +7,10 @@ import {
 
 /**
  * GET /api/emergencies
- * Public endpoint: return only active emergencies, sorted by name
- * Used by the activity editor dropdown (any authenticated user)
+ * Default: returns active emergencies for the picker dropdown.
+ * With `?codes=A,B,C`: returns those specific emergencies regardless of
+ * is_active, so already-attached scopes can still resolve metadata after
+ * the underlying emergency has been retired.
  */
 export async function GET(request: NextRequest) {
   const { supabase, response: authResponse } = await requireAuth();
@@ -22,11 +24,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const codesParam = request.nextUrl.searchParams.get("codes");
+    const codes = codesParam
+      ? codesParam.split(",").map(c => c.trim()).filter(Boolean)
+      : null;
+
+    let query = supabase
       .from("country_emergencies")
       .select("*")
-      .eq("is_active", true)
       .order("name", { ascending: true });
+
+    if (codes && codes.length > 0) {
+      query = query.in("code", codes);
+    } else {
+      query = query.eq("is_active", true);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("[Emergencies] Error fetching:", error);

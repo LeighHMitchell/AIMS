@@ -202,7 +202,7 @@ function EditMeetingModal({
         body: JSON.stringify({ document_id: docId }),
       })
       if (!res.ok && res.status !== 204) throw new Error('Delete failed')
-      toast.success('Document removed')
+      toast('Document removed')
       setDocs(prev => prev.filter(d => d.id !== docId))
     } catch {
       toast.error('Failed to remove document')
@@ -551,7 +551,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
         method: 'DELETE',
       })
       if (!res.ok) throw new Error('Failed to delete meeting')
-      toast.success('Meeting deleted')
+      toast('Meeting deleted')
       setMeetingToDelete(null)
       fetchMeetings()
     } catch (error: any) {

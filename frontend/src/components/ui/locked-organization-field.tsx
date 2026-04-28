@@ -131,11 +131,6 @@ export function LockedOrganizationField({
         )}
       />
       
-      {isFieldDisabled && (
-        <p className="text-helper text-muted-foreground mt-1">
-          Unlock to edit this field
-        </p>
-      )}
     </div>
   )
 }

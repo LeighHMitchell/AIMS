@@ -49,8 +49,7 @@ import {
   ChevronDown,
   ExternalLink,
   ExpandIcon,
-  Minimize2,
-  Maximize2,
+  ChevronsDownUp,
   AlertCircle,
   ChevronsUpDown,
   ChevronUp,
@@ -546,8 +545,14 @@ export default function PartnerSummaryPage() {
 
             {/* Global expand/collapse controls */}
             <div className="flex items-center space-x-2 flex-shrink-0">
-              <Button variant="outline" size="sm" onClick={toggleAllGroups} className="whitespace-nowrap">
-                {allCollapsed ? <Maximize2 className="h-4 w-4 mr-2 flex-shrink-0" /> : <Minimize2 className="h-4 w-4 mr-2 flex-shrink-0" />}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleAllGroups}
+                className="whitespace-nowrap"
+                aria-label={allCollapsed ? 'Expand all' : 'Collapse all'}
+              >
+                {allCollapsed ? <ChevronsUpDown className="h-4 w-4 mr-2 flex-shrink-0" /> : <ChevronsDownUp className="h-4 w-4 mr-2 flex-shrink-0" />}
                 {allCollapsed ? 'Expand All' : 'Collapse All'}
               </Button>
               <Button size="sm" onClick={() => setShowCreateGroupModal(true)} className="whitespace-nowrap">

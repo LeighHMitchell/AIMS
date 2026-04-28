@@ -305,7 +305,7 @@ export function CountrySectorVocabularyManagement() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
-      toast.success("Vocabulary deleted");
+      toast("Vocabulary deleted");
       setDeleteDialogOpen(false);
       setDeletingItem(null);
 
@@ -383,7 +383,7 @@ export function CountrySectorVocabularyManagement() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
-      toast.success("Sector deleted");
+      toast("Sector deleted");
       setDeleteDialogOpen(false);
       setDeletingItem(null);
       fetchSectors(selectedVocabulary.id);

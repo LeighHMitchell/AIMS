@@ -151,7 +151,7 @@ export default function GovernmentEndorsementTab({
         setFormData({});
         setHasUnsavedChanges(false);
         setLastSaved(null);
-        toast.success('Endorsement removed', {
+        toast('Endorsement removed', {
           action: {
             label: 'Undo',
             onClick: async () => {
@@ -269,7 +269,7 @@ export default function GovernmentEndorsementTab({
       );
 
       if (response.ok) {
-        toast.success('Reference removed', snapshot ? {
+        toast('Reference removed', snapshot ? {
           action: {
             label: 'Undo',
             onClick: async () => {

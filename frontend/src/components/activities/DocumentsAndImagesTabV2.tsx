@@ -495,7 +495,7 @@ export function DocumentsAndImagesTabV2({
             <div 
               className={cn(
                 "bg-muted rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted",
+                isDragOver ? "border-primary bg-primary/10 scale-[1.02]" : "border-input hover:border-slate-400 hover:bg-muted",
                 !activityId && "opacity-50 cursor-not-allowed"
               )}
               onDragOver={handleDragOver}
@@ -505,11 +505,12 @@ export function DocumentsAndImagesTabV2({
             >
               <div className="text-center max-w-md">
                 <div className="mb-6">
-                  {isDragOver ? (
-                    <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
-                  ) : (
-                    <Upload className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  )}
+                  <Upload
+                    className={cn(
+                      "w-16 h-16 mx-auto mb-4",
+                      isDragOver ? "text-primary animate-pulse" : "text-muted-foreground"
+                    )}
+                  />
                 </div>
                 <h4 className="text-2xl font-medium text-foreground mb-3">
                   {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
@@ -568,7 +569,7 @@ export function DocumentsAndImagesTabV2({
                   groups={categoryGroups}
                   value={filterCategory === 'all' ? '' : filterCategory}
                   onValueChange={handleCategoryChange}
-                  placeholder="All Categories"
+                  placeholder="All categories"
                   searchPlaceholder="Search categories..."
                   dropdownId="document-category-filter"
                   className="pb-0"
@@ -580,7 +581,7 @@ export function DocumentsAndImagesTabV2({
                   <SelectValue placeholder="Date Range" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
                   <SelectItem value="week">Last Week</SelectItem>
                   <SelectItem value="month">Last Month</SelectItem>
                   <SelectItem value="3months">Last 3 Months</SelectItem>
@@ -616,7 +617,7 @@ export function DocumentsAndImagesTabV2({
       {isDragging && (
         <div className="fixed inset-0 z-50 bg-black/20 flex items-center justify-center pointer-events-none">
           <div className="bg-white rounded-2xl shadow-2xl p-12 flex flex-col items-center gap-4">
-            <FileUp className="w-16 h-16 text-blue-500" />
+            <Upload className="w-16 h-16 text-blue-500" />
             <p className="text-xl font-semibold">Drop files to upload</p>
             <p className="text-body text-muted-foreground">Images and documents supported</p>
           </div>
@@ -628,7 +629,7 @@ export function DocumentsAndImagesTabV2({
         <div
           className={cn(
             "text-center py-12 border-2 border-dashed rounded-lg transition-colors",
-            isDragging ? "border-blue-400 bg-blue-50" : "border-border"
+            isDragging ? "border-primary bg-primary/5" : "border-border"
           )}
         >
           {documents.length === 0 ? (

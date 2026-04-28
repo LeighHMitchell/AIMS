@@ -157,7 +157,7 @@ export default function OrganisationsSection({
         throw new Error(errorData.error || `Failed to remove organization (${response.status})`);
       }
 
-      toast.success('Organization removed successfully');
+      toast('Organization removed');
       
       // Refresh the list
       await refetch();

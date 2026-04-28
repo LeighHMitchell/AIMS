@@ -436,7 +436,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tasks</SelectItem>
+                <SelectItem value="all">All tasks</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>

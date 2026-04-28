@@ -1369,7 +1369,7 @@ export default function OrganizationProfilePage() {
                 hasMore={hasMoreLikes}
               />
               <Link href={`/organizations/${id}/edit`}>
-                <Button className="bg-black hover:bg-primary/90">
+                <Button className="bg-gunmetal hover:bg-gunmetal/90">
                   <Pencil className="h-4 w-4 mr-2 text-white" />
                   Edit Organization
                 </Button>

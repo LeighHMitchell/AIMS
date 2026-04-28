@@ -35,10 +35,10 @@ export function FinancialCompletenessFilters({
       {/* Reporting Organization Dropdown */}
       <Select value={selectedOrgId} onValueChange={onOrgChange}>
         <SelectTrigger className="w-[280px]">
-          <SelectValue placeholder="All Organizations" />
+          <SelectValue placeholder="All organizations" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Organizations</SelectItem>
+          <SelectItem value="all">All organizations</SelectItem>
           {organizations.map((org) => (
             <SelectItem key={org.id} value={org.id}>
               {org.name}

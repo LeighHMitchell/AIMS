@@ -480,7 +480,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
       }
       
       await fetchComments();
-      toast.success('Comment deleted successfully');
+      toast('Comment deleted');
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to delete comment');
@@ -1018,7 +1018,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="question">Questions</SelectItem>
                   <SelectItem value="feedback">Feedback</SelectItem>
                 </SelectContent>

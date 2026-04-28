@@ -142,7 +142,7 @@ export function FinanceTable({
               <TableHead 
                 key={index} 
                 className={cn(
-                  "h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground",
+                  "h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground",
                   column.sortable && sortableHeaderClasses,
                   column.className
                 )}

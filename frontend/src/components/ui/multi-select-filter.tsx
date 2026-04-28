@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useRef, useEffect } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -9,6 +9,18 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+// Module-scoped tracker: ensures only one MultiSelectFilter is open at a time.
+// When a filter opens it closes whichever was previously open.
+let activeFilterClose: (() => void) | null = null
+
+/**
+ * Simple checkbox multi-select for filter bars on list pages (activities,
+ * transactions, budgets, library, reports). Includes search, Select all,
+ * Clear, and a module-scoped tracker that auto-closes other open filters.
+ *
+ * If you need custom row rendering, a staged→applied commit pattern, or a
+ * custom clear-with-defaults behaviour, use `MultiSelect` instead.
+ */
 export interface MultiSelectOption {
   value: string
   label: string
@@ -45,10 +57,35 @@ export function MultiSelectFilter({
 }: MultiSelectFilterProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const [search, setSearch] = useState("")
-  
+
   // Use controlled state if provided, otherwise use internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const closeSelfRef = useRef<() => void>(() => {})
+  closeSelfRef.current = () => {
+    if (controlledOpen === undefined) setInternalOpen(false)
+    if (onOpenChange) onOpenChange(false)
+  }
+
+  // Clean up from the global tracker on unmount.
+  useEffect(() => {
+    return () => {
+      if (activeFilterClose === closeSelfRef.current) {
+        activeFilterClose = null
+      }
+    }
+  }, [])
+
   const setOpen = (value: boolean) => {
+    if (value) {
+      // Close any other filter that is currently open.
+      if (activeFilterClose && activeFilterClose !== closeSelfRef.current) {
+        activeFilterClose()
+      }
+      activeFilterClose = closeSelfRef.current
+    } else if (activeFilterClose === closeSelfRef.current) {
+      activeFilterClose = null
+    }
+
     if (onOpenChange) {
       onOpenChange(value)
     }
@@ -114,12 +151,6 @@ export function MultiSelectFilter({
         >
           <div className="flex items-center gap-2 overflow-hidden">
             {icon}
-            {getSelectedSingle()?.color && (
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: getSelectedSingle()!.color }}
-              />
-            )}
             <span className="truncate">{getDisplayText()}</span>
           </div>
           <div className="flex items-center gap-1 ml-1 shrink-0">
@@ -204,12 +235,6 @@ export function MultiSelectFilter({
                   checked={safeValue.includes(option.value)}
                   onCheckedChange={() => toggleOption(option.value)}
                 />
-                {option.color && (
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: option.color }}
-                  />
-                )}
                 {option.code && (
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     {option.code}

@@ -2,10 +2,16 @@
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api-fetch';
+import {
+  XlsxWorkbookBuilder,
+  buildExportFilename,
+  coded,
+  monetary,
+  dateIso,
+} from '@/lib/exports';
 
 interface OrganizationExportData {
   profile: any;
@@ -260,92 +266,126 @@ export async function exportOrganizationToPDF(orgId: string): Promise<void> {
 }
 
 /**
- * Exports organization data to Excel
+ * Exports organization data to Excel.
+ * Multi-sheet workbook: Profile, Activities, Transactions, Contacts.
+ * Every coded field is split into adjacent code+name columns; every monetary
+ * value carries currency code + name + USD when available.
  */
 export async function exportOrganizationToExcel(orgId: string): Promise<void> {
   const loadingToast = toast.loading('Preparing Excel export...');
-  
+
   try {
     const data = await fetchOrganizationExportData(orgId);
-    const org = data.profile;
-    const workbook = XLSX.utils.book_new();
-    
-    // Profile Sheet
-    const profileData = [
+    const org = data.profile ?? {};
+    const wb = new XlsxWorkbookBuilder();
+
+    // ---- Profile (Field/Value) ----
+    const orgType = coded('organization_type', org?.organisation_type ?? org?.type);
+    const country = coded('country', org?.country_code ?? org?.country);
+    const currency = coded('currency', org?.default_currency ?? 'USD');
+    const lang = coded('currency', undefined); // Language list not in registry; emit blank pair
+    const profile: Array<[string, string | number]> = [
       ['Field', 'Value'],
-      ['Name', org?.name || ''],
-      ['Acronym', org?.acronym || ''],
-      ['Type', org?.Organisation_Type_Name || org?.type || ''],
-      ['Country', org?.country || ''],
-      ['IATI Ref', org?.iati_org_id || ''],
-      ['Website', org?.website || ''],
-      ['Email', org?.email || ''],
-      ['Phone', org?.phone || ''],
-      ['Description', org?.description || ''],
+      ['organization_id', org?.id ?? orgId],
+      ['name', org?.name ?? ''],
+      ['acronym', org?.acronym ?? ''],
+      ['iati_org_ref', org?.iati_org_id ?? ''],
+      ['organization_type_code', orgType.code],
+      ['organization_type_name', orgType.name],
+      ['country_code', country.code],
+      ['country_name', country.name],
+      ['default_currency_code', currency.code],
+      ['default_currency_name', currency.name],
+      ['default_language_code', lang.code],
+      ['default_language_name', lang.name],
+      ['website', org?.website ?? ''],
+      ['email', org?.email ?? ''],
+      ['phone', org?.phone ?? ''],
+      ['description', org?.description ?? ''],
+      ['total_budget_usd', org?.total_budget_usd ?? ''],
+      ['total_expenditure_usd', org?.total_expenditure_usd ?? ''],
+      ['registration_agency', org?.registration_agency ?? ''],
+      ['logo_url', org?.logo ?? ''],
+      ['created_at', dateIso(org?.created_at)],
+      ['updated_at', dateIso(org?.updated_at)],
       ['', ''],
-      [getExportFooter(), '']
+      [getExportFooter(), ''],
     ];
-    const profileSheet = XLSX.utils.aoa_to_sheet(profileData);
-    XLSX.utils.book_append_sheet(workbook, profileSheet, 'Profile');
-    
-    // Activities Sheet
+    wb.addRawSheet('Profile', profile);
+
+    // ---- Activities ----
     if (data.activities.length > 0) {
-      const activityData = [
-        ['Title', 'IATI ID', 'Status', 'Role', 'Start Date', 'End Date'],
-        ...data.activities.map(activity => [
-          activity.title || activity.title_narrative || '',
-          activity.iati_identifier || activity.iati_id || '',
-          activity.activity_status || '',
-          activity.role || '',
-          activity.planned_start_date || activity.start_date ? formatDate(activity.planned_start_date || activity.start_date) : '',
-          activity.planned_end_date || activity.end_date ? formatDate(activity.planned_end_date || activity.end_date) : ''
-        ])
-      ];
-      const activitySheet = XLSX.utils.aoa_to_sheet(activityData);
-      XLSX.utils.book_append_sheet(workbook, activitySheet, 'Activities');
+      wb.addSheet('Activities', [
+        { header: 'activity_uuid', accessor: (a: any) => a.id ?? '' },
+        { header: 'iati_identifier', accessor: (a: any) => a.iati_identifier ?? a.iati_id ?? '' },
+        { header: 'other_identifier', accessor: (a: any) => a.other_identifier ?? '' },
+        { header: 'title', accessor: (a: any) => a.title ?? a.title_narrative ?? '' },
+        { header: 'acronym', accessor: (a: any) => a.acronym ?? '' },
+        { header: 'activity_status_code', accessor: (a: any) => coded('activity_status', a.activity_status).code },
+        { header: 'activity_status_name', accessor: (a: any) => coded('activity_status', a.activity_status).name },
+        { header: 'role_code', accessor: (a: any) => coded('org_role', a.role).code },
+        { header: 'role_name', accessor: (a: any) => coded('org_role', a.role).name || a.role || '' },
+        { header: 'planned_start_date', accessor: (a: any) => dateIso(a.planned_start_date ?? a.start_date) },
+        { header: 'planned_end_date', accessor: (a: any) => dateIso(a.planned_end_date ?? a.end_date) },
+        { header: 'actual_start_date', accessor: (a: any) => dateIso(a.actual_start_date) },
+        { header: 'actual_end_date', accessor: (a: any) => dateIso(a.actual_end_date) },
+      ], data.activities);
     }
-    
-    // Transactions Sheet
+
+    // ---- Transactions ----
     if (data.transactions.length > 0) {
-      const transData = [
-        ['Date', 'Activity', 'Type', 'Value', 'Currency', 'Counterparty'],
-        ...data.transactions.map(trans => [
-          trans.transaction_date ? formatDate(trans.transaction_date) : '',
-          trans.activity_title || trans.activity?.title || '',
-          trans.transaction_type_name || trans.transaction_type || '',
-          trans.value || '',
-          trans.currency || '',
-          trans.provider_org_id === orgId 
-            ? (trans.receiver_org_name || trans.receiver_organization?.name || '')
-            : (trans.provider_org_name || trans.provider_organization?.name || '')
-        ])
-      ];
-      const transSheet = XLSX.utils.aoa_to_sheet(transData);
-      XLSX.utils.book_append_sheet(workbook, transSheet, 'Transactions');
+      wb.addSheet('Transactions', [
+        { header: 'transaction_id', accessor: (t: any) => t.uuid ?? t.id ?? '' },
+        { header: 'activity_uuid', accessor: (t: any) => t.activity_id ?? '' },
+        { header: 'activity_title', accessor: (t: any) => t.activity_title ?? t.activity?.title ?? '' },
+        { header: 'activity_iati_id', accessor: (t: any) => t.activity_iati_id ?? t.activity?.iati_identifier ?? '' },
+        { header: 'transaction_date', accessor: (t: any) => dateIso(t.transaction_date) },
+        { header: 'transaction_type_code', accessor: (t: any) => coded('transaction_type', t.transaction_type).code },
+        { header: 'transaction_type_name', accessor: (t: any) => coded('transaction_type', t.transaction_type).name },
+        { header: 'value', accessor: (t: any) => monetary(t.value, t.currency).value },
+        { header: 'currency_code', accessor: (t: any) => monetary(t.value, t.currency).currencyCode },
+        { header: 'currency_name', accessor: (t: any) => monetary(t.value, t.currency).currencyName },
+        { header: 'usd_value', accessor: (t: any) => t.value_usd ?? t.usd_value ?? '' },
+        { header: 'flow_type_code', accessor: (t: any) => coded('flow_type', t.flow_type).code },
+        { header: 'flow_type_name', accessor: (t: any) => coded('flow_type', t.flow_type).name },
+        { header: 'finance_type_code', accessor: (t: any) => coded('finance_type', t.finance_type).code },
+        { header: 'finance_type_name', accessor: (t: any) => coded('finance_type', t.finance_type).name },
+        { header: 'aid_type_code', accessor: (t: any) => coded('aid_type', t.aid_type).code },
+        { header: 'aid_type_name', accessor: (t: any) => coded('aid_type', t.aid_type).name },
+        { header: 'tied_status_code', accessor: (t: any) => coded('tied_status', t.tied_status).code },
+        { header: 'tied_status_name', accessor: (t: any) => coded('tied_status', t.tied_status).name },
+        { header: 'role', accessor: (t: any) => t.provider_org_id === orgId ? 'provider' : t.receiver_org_id === orgId ? 'receiver' : '' },
+        { header: 'counterparty_name', accessor: (t: any) =>
+            t.provider_org_id === orgId
+              ? (t.receiver_org_name ?? t.receiver_organization?.name ?? '')
+              : (t.provider_org_name ?? t.provider_organization?.name ?? '') },
+        { header: 'counterparty_ref', accessor: (t: any) =>
+            t.provider_org_id === orgId
+              ? (t.receiver_org_ref ?? '')
+              : (t.provider_org_ref ?? '') },
+        { header: 'description', accessor: (t: any) => t.description ?? '' },
+      ], data.transactions);
     }
-    
-    // Contacts Sheet
+
+    // ---- Contacts ----
     if (data.contacts.length > 0) {
-      const contactData = [
-        ['Name', 'Role', 'Email', 'Phone'],
-        ...data.contacts.map(contact => [
-          contact.name || '',
-          contact.role || contact.job_title || '',
-          contact.email || '',
-          contact.phone || ''
-        ])
-      ];
-      const contactSheet = XLSX.utils.aoa_to_sheet(contactData);
-      XLSX.utils.book_append_sheet(workbook, contactSheet, 'Contacts');
+      wb.addSheet('Contacts', [
+        { header: 'contact_id', accessor: (c: any) => c.id ?? '' },
+        { header: 'name', accessor: (c: any) => c.name ?? c.full_name ?? '' },
+        { header: 'role_or_job_title', accessor: (c: any) => c.role ?? c.job_title ?? '' },
+        { header: 'department', accessor: (c: any) => c.department ?? '' },
+        { header: 'email', accessor: (c: any) => c.email ?? '' },
+        { header: 'phone', accessor: (c: any) => c.phone ?? c.telephone ?? '' },
+      ], data.contacts);
     }
-    
-    // Generate filename
-    const nameSlug = (org?.name || orgId).replace(/[^a-z0-9]/gi, '-').toLowerCase().substring(0, 30);
-    const dateStr = format(new Date(), 'yyyy-MM-dd');
-    const filename = `organization-${nameSlug}-${dateStr}.xlsx`;
-    
-    XLSX.writeFile(workbook, filename);
-    
+
+    const filename = buildExportFilename({
+      entity: 'organization',
+      scope: org?.acronym ?? org?.name ?? orgId,
+      format: 'xlsx',
+    });
+    wb.download(filename);
+
     toast.dismiss(loadingToast);
     toast.success('Excel file exported successfully');
   } catch (error) {

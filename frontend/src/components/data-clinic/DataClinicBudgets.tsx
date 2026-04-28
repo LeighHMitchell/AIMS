@@ -455,7 +455,7 @@ export function DataClinicBudgets() {
                 <SelectValue placeholder="Filter by missing field" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Budgets</SelectItem>
+                <SelectItem value="all">All budgets</SelectItem>
                 <SelectItem value="missing_type">Missing Type</SelectItem>
                 <SelectItem value="missing_status">Missing Status</SelectItem>
                 <SelectItem value="missing_period_start">Missing Start Date</SelectItem>

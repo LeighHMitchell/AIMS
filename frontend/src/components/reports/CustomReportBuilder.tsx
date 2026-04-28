@@ -14,7 +14,7 @@ import { CellDrillDownSheet, DrillDownContext } from './CellDrillDownSheet'
 import { computeAllFieldStats, FieldStatsMap } from '@/lib/pivot-field-stats'
 import { Download, AlertCircle, BarChart3, RefreshCw, Info, Search, ArrowLeftRight, RotateCcw, DecimalsArrowLeft, DecimalsArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
-import { exportTableToCSV } from '@/lib/csv-export'
+import { exportTableToCSV } from '@/lib/exports'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // Dynamically import PivotTableUI to avoid SSR issues

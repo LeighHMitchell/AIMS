@@ -335,7 +335,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     newSelectedMarkers.delete(markerUuid);
     setSelectedMarkers(newSelectedMarkers);
     triggerSave(newSelectedMarkers);
-    toast.success(marker ? `Removed "${marker.name}"` : 'Policy marker removed', removedEntry ? {
+    toast(marker ? `Removed "${marker.name}"` : 'Policy marker removed', removedEntry ? {
       action: {
         label: 'Undo',
         onClick: () => {
@@ -362,7 +362,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       newSelectedMarkers.delete(markerId);
       setSelectedMarkers(newSelectedMarkers);
       triggerSave(newSelectedMarkers);
-      toast.success('Custom policy marker deleted');
+      toast('Custom policy marker deleted');
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete custom policy marker');
     }
@@ -688,7 +688,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {activityMarker.significance}
                               </span>
-                              <span className="text-body">
+                              <span className="text-body whitespace-nowrap">
                                 {getSignificanceLabel(marker.iati_code, activityMarker.significance)}
                               </span>
                             </div>

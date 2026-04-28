@@ -9245,7 +9245,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                             countries={IATI_COUNTRIES}
                             value={iatiSearchFilters.recipientCountry}
                             onValueChange={(value) => setIatiSearchFilters({ ...iatiSearchFilters, recipientCountry: value })}
-                            placeholder="All Countries"
+                            placeholder="All countries"
                             allowClear={true}
                           />
                         </div>

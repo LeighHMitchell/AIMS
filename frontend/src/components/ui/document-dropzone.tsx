@@ -1,7 +1,17 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useDropzone } from "react-dropzone";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Upload,
   X,
@@ -12,11 +22,14 @@ import {
   Loader2,
   Download,
   Trash2,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-fetch";
+import { format } from "date-fns";
 
 export interface UploadedDocument {
   id: string;
@@ -26,6 +39,7 @@ export interface UploadedDocument {
   signedUrl?: string;
   uploadedAt: string;
   category: string;
+  uploadedBy?: string | null;
 }
 
 interface DocumentDropzoneProps {
@@ -44,15 +58,15 @@ interface DocumentDropzoneProps {
 
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith("image/"))
-    return <FileImage className="h-4 w-4 text-blue-500" />;
+    return <FileImage className="h-4 w-4 text-muted-foreground" />;
   if (mimeType.includes("pdf"))
-    return <FileText className="h-4 w-4 text-destructive" />;
+    return <FileText className="h-4 w-4 text-muted-foreground" />;
   if (
     mimeType.includes("spreadsheet") ||
     mimeType.includes("excel") ||
     mimeType.includes("csv")
   )
-    return <FileSpreadsheet className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
+    return <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />;
   return <File className="h-4 w-4 text-muted-foreground" />;
 }
 
@@ -86,6 +100,67 @@ export function DocumentDropzone({
 }: DocumentDropzoneProps) {
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Docs that have been optimistically removed from the visible table but
+  // whose DELETE call hasn't fired yet (inside the 5s undo window).
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+  const deferredRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      deferredRef.current.forEach((t) => clearTimeout(t));
+      deferredRef.current.clear();
+    };
+  }, []);
+
+  const startRename = (doc: UploadedDocument) => {
+    setRenamingId(doc.id);
+    setRenameValue(doc.fileName);
+  };
+
+  const cancelRename = () => {
+    setRenamingId(null);
+    setRenameValue("");
+  };
+
+  const submitRename = async () => {
+    if (!renamingId) return;
+    const trimmed = renameValue.trim();
+    const original = documents.find((d) => d.id === renamingId);
+    if (!original) return cancelRename();
+    if (!trimmed || trimmed === original.fileName) return cancelRename();
+
+    setRenameSaving(true);
+    try {
+      const response = await apiFetch(
+        `/api/activities/${activityId}/government-input-documents?docId=${renamingId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: trimmed }),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Rename failed");
+      }
+      const data = await response.json();
+      const updated: UploadedDocument = data.document;
+      onDocumentsChange(
+        documents.map((d) => (d.id === renamingId ? { ...d, fileName: updated.fileName } : d))
+      );
+      toast.success("Document renamed");
+      cancelRename();
+    } catch (err: any) {
+      console.error("Rename error:", err);
+      toast.error(`Rename failed: ${err.message}`);
+    } finally {
+      setRenameSaving(false);
+    }
+  };
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -132,7 +207,8 @@ export function DocumentDropzone({
     [activityId, category, documents, onDocumentsChange]
   );
 
-  const handleDelete = async (docId: string) => {
+  // Actually delete via the API — called after the 5s undo window elapses.
+  const executeDelete = async (docId: string) => {
     setDeletingId(docId);
     try {
       const response = await apiFetch(
@@ -146,13 +222,57 @@ export function DocumentDropzone({
       }
 
       onDocumentsChange(documents.filter((d) => d.id !== docId));
-      toast.success("Document removed");
     } catch (err: any) {
       console.error("Delete error:", err);
       toast.error(`Failed to delete: ${err.message}`);
+      // Restore the row so it isn't ghosted in the UI
+      setPendingDeleteIds((prev) => {
+        const next = new Set(prev);
+        next.delete(docId);
+        return next;
+      });
     } finally {
       setDeletingId(null);
     }
+  };
+
+  // User clicked "Remove" in the confirm dialog — optimistically hide the row
+  // and start the undo timer.
+  const confirmDeletion = () => {
+    const docId = confirmDeleteId;
+    setConfirmDeleteId(null);
+    if (!docId) return;
+
+    setPendingDeleteIds((prev) => {
+      const next = new Set(prev);
+      next.add(docId);
+      return next;
+    });
+
+    const timeoutId = setTimeout(() => {
+      deferredRef.current.delete(docId);
+      executeDelete(docId);
+    }, 5000);
+    deferredRef.current.set(docId, timeoutId);
+
+    toast("Document removed", {
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          const t = deferredRef.current.get(docId);
+          if (t) {
+            clearTimeout(t);
+            deferredRef.current.delete(docId);
+          }
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev);
+            next.delete(docId);
+            return next;
+          });
+        },
+      },
+    });
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -215,58 +335,187 @@ export function DocumentDropzone({
         )}
       </div>
 
-      {/* Document list */}
-      {documents.length > 0 && (
-        <div className="space-y-2">
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex items-center gap-3 p-2.5 bg-muted border rounded-lg group"
-            >
-              {getFileIcon(doc.mimeType)}
-              <div className="flex-1 min-w-0">
-                <p className="text-body font-medium truncate">{doc.fileName}</p>
-                <p className="text-helper text-muted-foreground">
-                  {formatFileSize(doc.fileSize)}
-                </p>
-              </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {doc.signedUrl && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(doc.signedUrl, "_blank");
-                    }}
-                    title="Download"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(doc.id);
-                  }}
-                  disabled={deletingId === doc.id || disabled}
-                  title="Remove"
-                >
-                  {deletingId === doc.id ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
+      {/* Document list — excludes docs inside the 5s undo window */}
+      {documents.some((d) => !pendingDeleteIds.has(d.id)) && (
+        <div className="relative w-full overflow-x-auto overflow-y-visible">
+          <table className="w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg">
+            <thead className="bg-surface-muted">
+              <tr>
+                <th className="w-8 p-2" />
+                <th className="text-left p-2 font-medium text-helper">File name</th>
+                <th className="text-right p-2 font-medium text-helper w-28">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {documents.filter((d) => !pendingDeleteIds.has(d.id)).map((doc) => {
+                const isRenaming = renamingId === doc.id;
+                return (
+                  <tr key={doc.id} className="hover:bg-muted/50 group">
+                    <td className="p-2 align-top">{getFileIcon(doc.mimeType)}</td>
+                    <td className="p-2 align-top">
+                      {isRenaming ? (
+                        <input
+                          autoFocus
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              submitRename();
+                            } else if (e.key === "Escape") {
+                              e.preventDefault();
+                              cancelRename();
+                            }
+                          }}
+                          onBlur={() => {
+                            if (!renameSaving) submitRename();
+                          }}
+                          disabled={renameSaving}
+                          className="w-full px-2 py-1 text-body font-medium border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      ) : (
+                        <div className="min-w-0">
+                          <span
+                            className="text-body font-medium truncate block cursor-text"
+                            onDoubleClick={() => !disabled && startRename(doc)}
+                            title="Double-click to rename"
+                          >
+                            {doc.fileName}
+                          </span>
+                          <span className="text-helper text-muted-foreground block">
+                            {formatFileSize(doc.fileSize)}
+                            {doc.uploadedAt && (
+                              <> · Uploaded {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}</>
+                            )}
+                            {doc.uploadedBy && (
+                              <> by {doc.uploadedBy}</>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-2 align-top text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {isRenaming ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={submitRename}
+                              disabled={renameSaving}
+                              title="Save"
+                            >
+                              {renameSaving ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={cancelRename}
+                              disabled={renameSaving}
+                              title="Cancel"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            {doc.signedUrl && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(doc.signedUrl, "_blank");
+                                }}
+                                title="Download"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startRename(doc);
+                              }}
+                              disabled={disabled}
+                              title="Rename"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmDeleteId(doc.id);
+                              }}
+                              disabled={deletingId === doc.id || disabled}
+                              title="Remove"
+                            >
+                              {deletingId === doc.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
+
+      <AlertDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => !open && setConfirmDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this document?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const doc = confirmDeleteId
+                  ? documents.find((d) => d.id === confirmDeleteId)
+                  : null;
+                return doc ? (
+                  <>
+                    You're about to remove <span className="font-medium">{doc.fileName}</span>. You'll have 5 seconds to undo before it's permanently deleted.
+                  </>
+                ) : (
+                  <>You'll have 5 seconds to undo before it's permanently deleted.</>
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeletion}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { buildCsvFromArrays, dateTimeIso, type Cell } from '@/lib/exports';
 
 export const dynamic = 'force-dynamic';
 
@@ -153,43 +154,93 @@ export async function GET(request: NextRequest) {
         completedAt: item.completed_at || item.updated_at,
       }));
 
-      // CSV export for a specific batch
+      // CSV export for a specific batch — full per-item shape with explicit
+      // entity counts and ISO timestamps. Uses the shared csv-writer.
       if (format === 'csv') {
-        // Also fetch the batch info for the CSV header
         const { data: batchInfo } = await adminClient
           .from('iati_import_batches')
-          .select('reporting_org_name, file_name, source_mode, created_at')
+          .select('id, reporting_org_name, file_name, source_mode, created_at')
           .eq('id', batchId)
           .single();
 
-        const rows = [['IATI Identifier', 'Title', 'Action', 'Status', 'Transactions', 'Organizations', 'Budgets', 'Sectors', 'Locations', 'Contacts', 'Documents', 'Policy Markers', 'Humanitarian Scopes', 'Tags', 'Results', 'Indicators', 'Error']];
-        for (const item of transformedItems) {
-          rows.push([
-            item.iatiIdentifier || '',
-            item.activityTitle || '',
-            item.action || '',
-            item.status || '',
-            String(item.transactionsImported || 0),
-            String(item.importDetails?.organizations || 0),
-            String(item.importDetails?.budgets || 0),
-            String(item.importDetails?.sectors || 0),
-            String(item.importDetails?.locations || 0),
-            String(item.importDetails?.contacts || 0),
-            String(item.importDetails?.documents || 0),
-            String(item.importDetails?.policyMarkers || 0),
-            String(item.importDetails?.humanitarianScopes || 0),
-            String(item.importDetails?.tags || 0),
-            String(item.importDetails?.results || 0),
-            String(item.importDetails?.indicators || 0),
-            item.errorMessage || '',
-          ]);
-        }
-        const csv = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const headers: Cell[] = [
+          'batch_id',
+          'batch_reporting_org_name',
+          'batch_source_mode',
+          'iati_identifier',
+          'activity_uuid',
+          'activity_title',
+          'action_code',
+          'action_name',
+          'status_code',
+          'status_name',
+          'completed_at',
+          'transactions_count',
+          'organizations_count',
+          'budgets_count',
+          'planned_disbursements_count',
+          'sectors_count',
+          'locations_count',
+          'contacts_count',
+          'documents_count',
+          'policy_markers_count',
+          'humanitarian_scopes_count',
+          'tags_count',
+          'results_count',
+          'indicators_count',
+          'error_message',
+        ];
+
+        const actionName = (a: string | undefined) => {
+          if (!a) return '';
+          if (a === 'create') return 'Created';
+          if (a === 'update') return 'Updated';
+          if (a === 'skip') return 'Skipped';
+          return a;
+        };
+        const statusName = (s: string | undefined) => {
+          if (!s) return '';
+          if (s === 'success') return 'Success';
+          if (s === 'failed') return 'Failed';
+          if (s === 'partial') return 'Partial';
+          if (s === 'pending') return 'Pending';
+          return s;
+        };
+
+        const body: Cell[][] = transformedItems.map((item: any) => [
+          batchId,
+          batchInfo?.reporting_org_name ?? '',
+          batchInfo?.source_mode ?? '',
+          item.iatiIdentifier ?? '',
+          item.activityId ?? '',
+          item.activityTitle ?? '',
+          item.action ?? '',
+          actionName(item.action),
+          item.status ?? '',
+          statusName(item.status),
+          dateTimeIso(item.completedAt),
+          item.transactionsImported ?? 0,
+          item.importDetails?.organizations ?? 0,
+          item.importDetails?.budgets ?? 0,
+          item.importDetails?.plannedDisbursements ?? 0,
+          item.importDetails?.sectors ?? 0,
+          item.importDetails?.locations ?? 0,
+          item.importDetails?.contacts ?? 0,
+          item.importDetails?.documents ?? 0,
+          item.importDetails?.policyMarkers ?? 0,
+          item.importDetails?.humanitarianScopes ?? 0,
+          item.importDetails?.tags ?? 0,
+          item.importDetails?.results ?? 0,
+          item.importDetails?.indicators ?? 0,
+          item.errorMessage ?? '',
+        ]);
+
+        const csv = '\ufeff' + buildCsvFromArrays([headers, ...body]);
         const orgName = batchInfo?.reporting_org_name || batchInfo?.file_name || 'import';
         const safeName = orgName.replace(/[^a-zA-Z0-9-_]/g, '_').substring(0, 40);
         return new NextResponse(csv, {
           headers: {
-            'Content-Type': 'text/csv',
+            'Content-Type': 'text/csv; charset=utf-8',
             'Content-Disposition': `attachment; filename="import-${safeName}-${batchId.substring(0, 8)}.csv"`,
           },
         });

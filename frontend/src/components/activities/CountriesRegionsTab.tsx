@@ -724,7 +724,7 @@ export default function CountriesRegionsTab({
     onCountriesChange?.(updatedCountries);
     if (snapshot) {
       const countryName = (snapshot as any).countryName || (snapshot as any).name || 'country';
-      toast.success(`Removed ${countryName}`, {
+      toast(`Removed ${countryName}`, {
         action: {
           label: 'Undo',
           onClick: () => {
@@ -747,7 +747,7 @@ export default function CountriesRegionsTab({
     onRegionsChange?.(updatedRegions);
     if (snapshot) {
       const regionName = (snapshot as any).regionName || (snapshot as any).name || 'region';
-      toast.success(`Removed ${regionName}`, {
+      toast(`Removed ${regionName}`, {
         action: {
           label: 'Undo',
           onClick: () => {
@@ -1440,7 +1440,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">A4</Badge>
-                            <span className="text-body font-medium text-foreground">ISO Country</span>
+                            <span className="text-body font-medium text-foreground whitespace-nowrap">ISO Country</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1504,7 +1504,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">1</Badge>
-                            <span className="text-body font-medium text-foreground">OECD DAC</span>
+                            <span className="text-body font-medium text-foreground whitespace-nowrap">OECD DAC</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1568,7 +1568,7 @@ export default function CountriesRegionsTab({
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-2 cursor-help">
                                   <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">99</Badge>
-                                  <span className="text-body font-medium text-foreground">Custom</span>
+                                  <span className="text-body font-medium text-foreground whitespace-nowrap">Custom</span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">

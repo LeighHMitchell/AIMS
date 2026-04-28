@@ -7,8 +7,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeaderSkeleton, StatsRowSkeleton } from '@/components/ui/skeleton-loader'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, Search, PieChart, List, LayoutGrid, Activity } from 'lucide-react'
+import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Search, PieChart, List, LayoutGrid, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
 import { formatCurrencyShort } from '@/lib/format'
@@ -176,19 +177,14 @@ export default function SectorsListingPage() {
     return (
       <MainLayout>
         <div className="min-h-screen">
-          <div className="w-full p-6">
-            <div className="mb-8">
-              <Skeleton className="h-8 w-64 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-24 rounded-lg" />
+          <div className="w-full p-6 space-y-6">
+            <PageHeaderSkeleton />
+            <StatsRowSkeleton tiles={3} />
+            <div className="space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-md" />
               ))}
             </div>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full mb-2" />
-            ))}
           </div>
         </div>
       </MainLayout>
@@ -248,8 +244,14 @@ export default function SectorsListingPage() {
               </Button>
             </div>
             {viewMode === 'list' && (
-              <Button variant="outline" size="sm" onClick={toggleExpandAll} disabled={filteredGroups.length === 0}>
-                {allExpanded ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleExpandAll}
+                disabled={filteredGroups.length === 0}
+                aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+              >
+                {allExpanded ? <ChevronsDownUp className="h-4 w-4 mr-2" /> : <ChevronsUpDown className="h-4 w-4 mr-2" />}
                 {allExpanded ? 'Collapse All' : 'Expand All'}
               </Button>
             )}

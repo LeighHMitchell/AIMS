@@ -176,7 +176,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
       setParticipatingOrgs(participatingOrgs.filter(
         org => !(org.organization_id === organizationId && org.role_type === roleType)
       ));
-      toast.success(`Removed "${orgName}"`, snapshot ? {
+      toast(`Removed "${orgName}"`, snapshot ? {
         action: { label: 'Undo', onClick: () => restoreParticipatingOrg(snapshot) },
       } : undefined);
     } catch (error) {

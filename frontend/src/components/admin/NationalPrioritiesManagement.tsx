@@ -46,6 +46,9 @@ import {
   Plus,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
+  ChevronsDownUp,
+  ChevronsUpDown,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -410,7 +413,7 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
         throw new Error(result.error || "Failed to delete priority");
       }
 
-      toast.success("Priority deleted successfully");
+      toast("Priority deleted");
       setDeleteDialogOpen(false);
       fetchPriorities();
     } catch (error: any) {
@@ -491,12 +494,27 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={expandAll}>
-              Expand All
-            </Button>
-            <Button variant="outline" size="sm" onClick={collapseAll}>
-              Collapse All
-            </Button>
+            {(() => {
+              const allExpanded =
+                flatPriorities.length > 0 &&
+                expandedIds.size === flatPriorities.length;
+              return (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={allExpanded ? collapseAll : expandAll}
+                  disabled={flatPriorities.length === 0}
+                  aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+                >
+                  {allExpanded ? (
+                    <ChevronsDownUp className="h-4 w-4 mr-2" />
+                  ) : (
+                    <ChevronsUpDown className="h-4 w-4 mr-2" />
+                  )}
+                  {allExpanded ? "Collapse All" : "Expand All"}
+                </Button>
+              );
+            })()}
             <Button size="sm" onClick={() => handleAddNew()}>
               <Plus className="h-4 w-4 mr-1" />
               Add Priority

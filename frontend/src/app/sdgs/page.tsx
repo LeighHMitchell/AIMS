@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
 import { AlertCircle, Target, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SDGCardModern from '@/components/sdgs/SDGCardModern'
@@ -66,20 +66,9 @@ export default function SDGListingPage() {
     return (
       <MainLayout>
         <div className="min-h-screen">
-          <div className="w-full p-6">
-            <div className="mb-8">
-              <Skeleton className="h-8 w-64 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 17 }).map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <Skeleton className="h-24 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="w-full p-6 space-y-6">
+            <PageHeaderSkeleton />
+            <CardGridSkeleton count={17} columns={3} />
           </div>
         </div>
       </MainLayout>

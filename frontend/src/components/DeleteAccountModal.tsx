@@ -99,7 +99,7 @@ export function DeleteAccountModal({
         throw new Error(data.error || data.message || 'Failed to delete account');
       }
 
-      toast.success("Account deleted successfully");
+      toast("Account deleted");
       onDeleted();
     } catch (err) {
       console.error('Delete error:', err);

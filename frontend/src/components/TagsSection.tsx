@@ -125,7 +125,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
 
     onChange(remaining);
     exitSelectMode();
-    toast.success(`Removed ${tagsToRemove.length} tag${tagsToRemove.length === 1 ? '' : 's'}`, {
+    toast(`Removed ${tagsToRemove.length} tag${tagsToRemove.length === 1 ? '' : 's'}`, {
       action: {
         label: 'Undo',
         onClick: async () => {
@@ -344,7 +344,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         }
 
         onChange(tags.filter(t => t.id !== tagId));
-        toast.success('Tag removed', tagToRemove ? {
+        toast('Tag removed', tagToRemove ? {
           action: { label: 'Undo', onClick: () => restoreTag(tagToRemove) },
         } : undefined);
       } catch (error) {
@@ -353,7 +353,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
       }
     } else {
       onChange(tags.filter(t => t.id !== tagId));
-      toast.success('Tag removed', tagToRemove ? {
+      toast('Tag removed', tagToRemove ? {
         action: { label: 'Undo', onClick: () => restoreTag(tagToRemove) },
       } : undefined);
     }

@@ -74,7 +74,7 @@ export function useDeleteWithUndo() {
       const timer = setTimeout(commit, windowMs);
       pending.current.set(id, timer);
 
-      toast.success(label ? `Removed ${label}` : 'Removed', {
+      toast(label ? `Removed ${label}` : 'Removed', {
         duration: windowMs,
         action: {
           label: 'Undo',

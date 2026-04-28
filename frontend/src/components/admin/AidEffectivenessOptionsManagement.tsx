@@ -401,7 +401,7 @@ export function AidEffectivenessOptionsManagement() {
         throw new Error(result.error || "Failed to delete option");
       }
 
-      toast.success("Option deleted successfully");
+      toast("Option deleted successfully");
       fetchOptions();
     } catch (err) {
       console.error("Error deleting option:", err);

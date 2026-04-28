@@ -79,6 +79,7 @@ interface BudgetTableProps {
   onSelectBudget?: (id: string, checked: boolean) => void;
   visibleColumns?: BudgetColumnId[];
   onColumnsChange?: (columns: BudgetColumnId[]) => void;
+  showDescriptions?: boolean;
 }
 
 export function BudgetTable({
@@ -97,6 +98,7 @@ export function BudgetTable({
   onSelectBudget,
   visibleColumns = DEFAULT_VISIBLE_BUDGET_COLUMNS,
   onColumnsChange,
+  showDescriptions = false,
 }: BudgetTableProps) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -318,7 +320,7 @@ export function BudgetTable({
         <Table className="min-w-full data-table-balanced">
           <TableHeader>
             <TableRow>
-              <th className="h-12 px-4 text-center align-middle data-table-col-checkbox">
+              <th className="h-12 px-4 text-center align-top data-table-col-checkbox">
                 {onSelectAll && selectedIds && (
                   <div className="flex items-center justify-center" key={`select-all-wrapper-${budgets.length}`}>
                     <Checkbox
@@ -372,6 +374,9 @@ export function BudgetTable({
                           </button>
                         )}
                       </span>
+                      {showDescriptions && budget.description && (
+                        <p className="text-helper text-muted-foreground mt-1 line-clamp-5">{budget.description}</p>
+                      )}
                     </div>
                   </TableCell>
                 ),
@@ -495,7 +500,7 @@ export function BudgetTable({
                     {orderedVisibleColumns.map((colId) => cellMap[colId])}
 
                     {/* Actions - same layout as activities list */}
-                    <TableCell className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="px-2 py-2 text-center align-top" onClick={(e) => e.stopPropagation()}>
                       <BudgetActionMenu
                         budgetId={budgetId}
                         onEdit={onEdit ? () => onEdit(budget) : undefined}

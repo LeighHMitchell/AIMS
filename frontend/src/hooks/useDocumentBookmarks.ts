@@ -81,7 +81,7 @@ export function useDocumentBookmarks() {
           });
           if (!res.ok) throw new Error('Failed to remove bookmark');
           setPersonalBookmarks(prev => prev.filter(b => b.document_url !== doc.url));
-          toast.success('Removed from My Library');
+          toast('Removed from My Library');
         } else {
           const res = await apiFetch('/api/library/bookmarks', {
             method: 'POST',
@@ -131,7 +131,7 @@ export function useDocumentBookmarks() {
           });
           if (!res.ok) throw new Error('Failed to remove bookmark');
           setReadingRoomBookmarks(prev => prev.filter(b => b.document_url !== doc.url));
-          toast.success('Removed from Reading Room');
+          toast('Removed from Reading Room');
         } else {
           const res = await apiFetch('/api/library/bookmarks', {
             method: 'POST',

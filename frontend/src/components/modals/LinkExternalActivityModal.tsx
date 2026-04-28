@@ -188,7 +188,7 @@ export function LinkExternalActivityModal({
           <Button
             onClick={handleSave}
             disabled={saving || !relationshipType || !externalIatiId.trim()}
-            className="bg-gray-900 text-white hover:bg-gray-800"
+            className="bg-gunmetal text-white hover:bg-gunmetal/90"
           >
             {saving && (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />

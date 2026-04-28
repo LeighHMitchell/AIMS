@@ -41,7 +41,7 @@ export function Skeleton({
 // Skeleton Card Component
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn("space-y-3 p-4 rounded-xl bg-white shadow-sm", className)}>
+    <div className={cn("space-y-3 p-4 rounded-xl bg-card border border-border", className)}>
       <Skeleton variant="text" width="75%" height="1rem" />
       <Skeleton variant="text" width="90%" height="1rem" />
       <Skeleton variant="text" width="60%" height="1rem" />
@@ -54,7 +54,7 @@ export function ActivityListSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+        <div key={i} className="bg-card rounded-lg border border-border p-6 space-y-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 space-y-2">
               <Skeleton variant="text" width="40%" height="1.5rem" />
@@ -76,7 +76,7 @@ export function ActivityListSkeleton() {
 // Organisation Card Skeleton
 export function OrganisationCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
       {/* Banner skeleton - larger to match new design */}
       <Skeleton variant="rectangular" width="100%" height="256px" className="rounded-none" />
       
@@ -108,7 +108,7 @@ export function DashboardStatsSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="bg-white rounded-xl shadow-sm p-6 space-y-3">
+        <div key={i} className="bg-card rounded-xl border border-border p-6 space-y-3">
           <div className="flex items-center justify-between">
             <Skeleton variant="circular" width="40px" height="40px" />
             <Skeleton variant="text" width="60px" height="0.75rem" />
@@ -126,7 +126,7 @@ export function DashboardStatsSkeleton() {
 // Table Skeleton
 export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; columns?: number }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
       <div className="border-b border-border bg-muted px-6 py-3">
         <div className="flex gap-4">
           {[...Array(columns)].map((_, i) => (
@@ -134,7 +134,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
           ))}
         </div>
       </div>
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-border">
         {[...Array(rows)].map((_, rowIndex) => (
           <div key={rowIndex} className="px-6 py-4">
             <div className="flex gap-4">
@@ -157,7 +157,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
 // Chart Skeleton
 export function ChartSkeleton({ height = "300px" }: { height?: string }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton variant="text" width="200px" height="1.5rem" />
@@ -263,7 +263,7 @@ export function PieChartSkeleton({ height = "384px" }: { height?: string }) {
           <Skeleton variant="circular" width="280px" height="280px" />
           {/* Inner cutout for donut effect */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[140px] h-[140px] rounded-full bg-white" />
+            <div className="w-[140px] h-[140px] rounded-full bg-card" />
           </div>
         </div>
       </div>
@@ -283,7 +283,7 @@ export function PieChartSkeleton({ height = "384px" }: { height?: string }) {
 // Map Skeleton
 export function MapSkeleton({ height = "600px" }: { height?: string }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export function MapSkeleton({ height = "600px" }: { height?: string }) {
 // Partner/Contact Skeleton
 export function PartnerSkeleton() {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+    <div className="bg-card rounded-lg border border-border p-6 space-y-4">
       <div className="flex items-start gap-4">
         <Skeleton variant="circular" width="60px" height="60px" />
         <div className="flex-1 space-y-2">
@@ -328,7 +328,7 @@ export function TransactionListSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm p-6">
+        <div key={i} className="bg-card rounded-lg border border-border p-6">
           <div className="flex items-center justify-between mb-3">
             <Skeleton variant="text" width="200px" height="1.25rem" />
             <Skeleton variant="rounded" width="100px" height="24px" />
@@ -362,7 +362,7 @@ export function SearchResultsSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm p-4 border border-border">
+        <div key={i} className="bg-card rounded-lg border border-border p-4 border border-border">
           <div className="flex items-start gap-3">
             <Skeleton variant="circular" width="40px" height="40px" />
             <div className="flex-1 space-y-2">
@@ -384,7 +384,7 @@ export function SearchResultsSkeleton() {
 export function CalendarSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <Skeleton variant="text" width="200px" height="2rem" className="mb-4" />
         <div className="grid grid-cols-7 gap-2">
           {[...Array(35)].map((_, i) => (
@@ -397,7 +397,7 @@ export function CalendarSkeleton() {
       <div className="space-y-3">
         <Skeleton variant="text" width="150px" height="1.25rem" />
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3">
+          <div key={i} className="bg-card rounded-lg border border-border p-4 flex items-center gap-3">
             <Skeleton variant="rectangular" width="4px" height="60px" />
             <div className="flex-1 space-y-1">
               <Skeleton variant="text" width="70%" height="1rem" />
@@ -453,12 +453,12 @@ export function FAQSkeleton() {
   );
 }
 
-// Rolodex/Contacts Skeleton  
+// Rolodex/Contacts Skeleton
 export function RolodexSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {[...Array(9)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+        <div key={i} className="bg-card rounded-lg border border-border p-6 space-y-4">
           <div className="flex items-center gap-3">
             <Skeleton variant="circular" width="48px" height="48px" />
             <div className="flex-1 space-y-1">
@@ -478,4 +478,202 @@ export function RolodexSkeleton() {
       ))}
     </div>
   );
-} 
+}
+
+// --- Phase 0: shared page-level building blocks ------------------------------
+
+// Page header: title + subtitle + right-aligned actions.
+export function PageHeaderSkeleton({
+  showSubtitle = true,
+  actions = 1,
+  className,
+}: {
+  showSubtitle?: boolean;
+  actions?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-start justify-between gap-4", className)}>
+      <div className="space-y-2 flex-1 min-w-0">
+        <Skeleton variant="text" width="240px" height="2rem" />
+        {showSubtitle && <Skeleton variant="text" width="420px" height="1rem" />}
+      </div>
+      {actions > 0 && (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {[...Array(actions)].map((_, i) => (
+            <Skeleton key={i} variant="rounded" width="112px" height="36px" />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Horizontal strip of stat tiles for list pages (e.g. totals above a table).
+export function StatsRowSkeleton({
+  tiles = 4,
+  className,
+}: {
+  tiles?: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-2 md:grid-cols-4 gap-4",
+        className
+      )}
+      style={tiles !== 4 ? { gridTemplateColumns: `repeat(${tiles}, minmax(0, 1fr))` } : undefined}
+    >
+      {[...Array(tiles)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-card rounded-lg border border-border p-4 space-y-2"
+        >
+          <Skeleton variant="text" width="60%" height="0.75rem" />
+          <Skeleton variant="text" width="40%" height="1.5rem" />
+          <Skeleton variant="text" width="70%" height="0.75rem" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Filter/toolbar row: search box + a few selects + optional trailing action.
+export function FiltersBarSkeleton({
+  filters = 3,
+  showSearch = true,
+  showAction = false,
+  className,
+}: {
+  filters?: number;
+  showSearch?: boolean;
+  showAction?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-3 bg-card rounded-lg border border-border p-3",
+        className
+      )}
+    >
+      {showSearch && <Skeleton variant="rounded" width="260px" height="36px" />}
+      {[...Array(filters)].map((_, i) => (
+        <Skeleton key={i} variant="rounded" width="140px" height="36px" />
+      ))}
+      {showAction && (
+        <div className="ml-auto">
+          <Skeleton variant="rounded" width="120px" height="36px" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Grid of generic cards — used by profile directories (SDGs, Policy Markers,
+// Locations, Sectors, etc).
+export function CardGridSkeleton({
+  count = 12,
+  columns = 3,
+  cardHeight = "96px",
+}: {
+  count?: number;
+  columns?: 2 | 3 | 4;
+  cardHeight?: string;
+}) {
+  const gridCols =
+    columns === 2
+      ? "md:grid-cols-2"
+      : columns === 4
+      ? "md:grid-cols-2 lg:grid-cols-4"
+      : "md:grid-cols-2 lg:grid-cols-3";
+  return (
+    <div className={cn("grid grid-cols-1 gap-4", gridCols)}>
+      {[...Array(count)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-card rounded-lg border border-border p-6"
+        >
+          <Skeleton variant="rectangular" width="100%" height={cardHeight} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Standard list-page shell: header + filters + optional stats + table.
+export function ListPageSkeleton({
+  withStats = false,
+  statsTiles = 4,
+  filters = 3,
+  rows = 8,
+  columns = 6,
+}: {
+  withStats?: boolean;
+  statsTiles?: number;
+  filters?: number;
+  rows?: number;
+  columns?: number;
+}) {
+  return (
+    <div className="space-y-6">
+      <PageHeaderSkeleton actions={1} />
+      {withStats && <StatsRowSkeleton tiles={statsTiles} />}
+      <FiltersBarSkeleton filters={filters} />
+      <TableSkeleton rows={rows} columns={columns} />
+    </div>
+  );
+}
+
+// Standard dashboard shell: header + stats + chart grid.
+export function DashboardPageSkeleton({
+  stats = 4,
+  charts = 2,
+}: {
+  stats?: number;
+  charts?: number;
+}) {
+  return (
+    <div className="space-y-6">
+      <PageHeaderSkeleton actions={2} />
+      <StatsRowSkeleton tiles={stats} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[...Array(charts)].map((_, i) => (
+          <ChartSkeleton key={i} height="340px" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Detail page: header + two-column content (main + sidebar).
+export function DetailPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <PageHeaderSkeleton actions={2} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-3">
+            <Skeleton variant="text" width="30%" height="1.25rem" />
+            <Skeleton variant="text" width="100%" height="0.875rem" />
+            <Skeleton variant="text" width="95%" height="0.875rem" />
+            <Skeleton variant="text" width="80%" height="0.875rem" />
+          </div>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-3">
+            <Skeleton variant="text" width="25%" height="1.25rem" />
+            <Skeleton variant="text" width="100%" height="0.875rem" />
+            <Skeleton variant="text" width="90%" height="0.875rem" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-3">
+            <Skeleton variant="text" width="50%" height="1rem" />
+            <Skeleton variant="text" width="80%" height="0.875rem" />
+            <Skeleton variant="text" width="70%" height="0.875rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

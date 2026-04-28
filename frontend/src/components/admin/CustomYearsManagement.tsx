@@ -277,7 +277,7 @@ export function CustomYearsManagement() {
         throw new Error(result.error || "Failed to delete custom year");
       }
 
-      toast.success("Custom year deleted successfully");
+      toast("Custom year deleted");
       fetchCustomYears();
     } catch (err) {
       console.error("Error deleting custom year:", err);

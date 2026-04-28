@@ -528,7 +528,22 @@ export default function SectorProfilePage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-body">Country Rankings</CardTitle>
                   <Button variant="ghost" size="icon" className="h-7 w-7" title="Export CSV" aria-label="Export CSV" onClick={() => {
-                    exportChartToCSV(geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value })), `Sector ${sector.code} Countries`)
+                    exportChartToCSV(
+                      geographicDistribution.map((g, i) => ({
+                        rank: i + 1,
+                        sector_vocabulary_code: '1',
+                        sector_vocabulary_name: 'OECD DAC CRS Purpose Codes (5-digit)',
+                        sector_code: sector.code,
+                        sector_name: sector.name,
+                        country_code: g.countryCode,
+                        country_name: g.countryName,
+                        activities: g.activityCount,
+                        committed_usd: g.commitments,
+                        disbursed_usd: g.disbursements,
+                        total_usd: g.value,
+                      })),
+                      `sector-${sector.code}-countries`
+                    )
                   }}><Download className="h-3 w-3" /></Button>
                 </div>
               </CardHeader><CardContent>

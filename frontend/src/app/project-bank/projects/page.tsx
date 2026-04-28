@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -223,7 +224,7 @@ export default function ProjectListPage() {
 
   const SortHeader = ({ field, children, className, tight }: { field: string; children: React.ReactNode; className?: string; tight?: boolean }) => (
     <th
-      className={`h-10 ${tight ? 'px-2' : 'px-3'} text-left align-middle text-helper font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || ''}`}
+      className={`h-10 ${tight ? 'px-2' : 'px-3'} text-left align-top text-helper font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || ''}`}
       onClick={() => handleSort(field)}
     >
       <span className="flex items-center gap-1">
@@ -316,7 +317,7 @@ export default function ProjectListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sectors</SelectItem>
+                <SelectItem value="all">All sectors</SelectItem>
                 {SECTORS.map(s => (
                   <SelectItem key={s} value={s}>
                     <span className="flex items-center gap-2">
@@ -335,7 +336,7 @@ export default function ProjectListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Origins</SelectItem>
+                <SelectItem value="all">All origins</SelectItem>
                 {ORIGIN_OPTIONS.map(o => (
                   <SelectItem key={o.value} value={o.value}>
                     <span className="flex items-center gap-2">
@@ -354,7 +355,7 @@ export default function ProjectListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Pathways</SelectItem>
+                <SelectItem value="all">All pathways</SelectItem>
                 {PATHWAY_OPTIONS.map(pw => (
                   <SelectItem key={pw.value} value={pw.value}>
                     <span className="flex items-center gap-2">
@@ -373,10 +374,10 @@ export default function ProjectListPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-lg border border-border shadow-sm p-6">
-                  <div className="h-4 bg-muted animate-pulse rounded w-3/4 mb-3" />
-                  <div className="h-3 bg-muted animate-pulse rounded w-1/2 mb-2" />
-                  <div className="h-3 bg-muted animate-pulse rounded w-1/3" />
+                <div key={i} className="bg-card rounded-lg border border-border p-6 space-y-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
                 </div>
               ))
             ) : paginated.length === 0 ? (
@@ -416,7 +417,7 @@ export default function ProjectListPage() {
                   <SortHeader field="pathway" tight>Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right" tight>Gap</SortHeader>
                   <SortHeader field="funded_pct" tight className="w-[100px]">Funding</SortHeader>
-                  <th className="h-10 px-1 text-center align-middle text-helper font-medium text-muted-foreground w-[36px]"></th>
+                  <th className="h-10 px-1 text-center align-top text-helper font-medium text-muted-foreground w-[36px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -425,7 +426,7 @@ export default function ProjectListPage() {
                     <tr key={i}>
                       {Array.from({ length: colCount }).map((_, j) => (
                         <td key={j} className="px-4 py-2">
-                          <div className="h-4 bg-muted animate-pulse rounded w-16" />
+                          <Skeleton className="h-4 w-16" />
                         </td>
                       ))}
                     </tr>

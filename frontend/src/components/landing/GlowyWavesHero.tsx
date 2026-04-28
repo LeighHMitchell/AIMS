@@ -275,7 +275,7 @@ export function GlowyWavesHero() {
             >
               <Button
                 size="lg"
-                className="bg-gray-900 hover:bg-black text-white px-8 text-base"
+                className="bg-gunmetal hover:bg-gunmetal/90 text-white px-8 text-base"
                 onClick={() => router.push("/login")}
               >
                 Login

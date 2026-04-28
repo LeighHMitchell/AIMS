@@ -195,7 +195,7 @@ export function OrgSankeyFlow({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="disbursements">Disbursements Only</SelectItem>
-                <SelectItem value="all">All Transactions</SelectItem>
+                <SelectItem value="all">All transactions</SelectItem>
               </SelectContent>
             </Select>
             <Select value={months.toString()} onValueChange={(v) => setMonths(parseInt(v, 10))}>

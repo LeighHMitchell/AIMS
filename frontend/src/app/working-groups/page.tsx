@@ -32,8 +32,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { PlusIcon, SearchIcon, Users, LayoutGrid, List, Pencil, MoreVertical, Eye, Trash2, Inbox, GitBranch, ChevronRight, ChevronLeft, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { PlusIcon, SearchIcon, Users, LayoutGrid, List, Pencil, MoreVertical, Eye, Trash2, Inbox, GitBranch, ChevronRight, ChevronLeft, ChevronDown, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeaderSkeleton, FiltersBarSkeleton } from "@/components/ui/skeleton-loader"
 import { EmptyState } from "@/components/ui/empty-state"
 import WorkingGroupCardModern from '@/components/working-groups/WorkingGroupCardModern'
 import { useRouter } from 'next/navigation'
@@ -229,26 +230,12 @@ export default function WorkingGroupsPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div>
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-8 w-8 rounded" />
-              <div>
-                <Skeleton className="h-8 w-48 mb-1" />
-                <Skeleton className="h-4 w-80" />
-              </div>
-            </div>
-            <Skeleton className="h-10 w-48 rounded-md" />
-          </div>
-          <div className="flex gap-4 mb-6">
-            <Skeleton className="h-10 flex-1 rounded-md" />
-            <Skeleton className="h-10 w-[170px] rounded-md" />
-            <Skeleton className="h-10 w-[150px] rounded-md" />
-            <Skeleton className="h-10 w-[88px] rounded-md" />
-          </div>
+        <div className="space-y-6">
+          <PageHeaderSkeleton actions={1} />
+          <FiltersBarSkeleton filters={3} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="rounded-3xl border overflow-hidden">
+              <div key={i} className="bg-card rounded-3xl border border-border overflow-hidden">
                 <Skeleton className="h-48 w-full" />
                 <div className="p-5 space-y-3">
                   <Skeleton className="h-5 w-16 rounded-full" />
@@ -325,10 +312,10 @@ export default function WorkingGroupsPage() {
 
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
             <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="All Groups" />
+              <SelectValue placeholder="All groups" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Groups</SelectItem>
+              <SelectItem value="all">All groups</SelectItem>
               <SelectItem value="top-level">Working Groups</SelectItem>
               <SelectItem value="sub-groups">Sub-Working Groups</SelectItem>
             </SelectContent>
@@ -336,10 +323,10 @@ export default function WorkingGroupsPage() {
 
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="All Status" />
+              <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
@@ -395,14 +382,25 @@ export default function WorkingGroupsPage() {
         {viewMode === 'list' && (
           <Card>
             {/* Expand/Collapse All */}
-            {Array.from(subGroupsMap.values()).some(arr => arr.length > 0) && (
-              <div className="px-4 py-2 border-b flex justify-end">
-                <Button variant="ghost" size="sm" className="gap-1.5 text-helper text-muted-foreground" onClick={toggleExpandAll}>
-                  <ChevronsUpDown className="h-3.5 w-3.5" />
-                  {topLevelGroups.filter(wg => (subGroupsMap.get(wg.id)?.length || 0) > 0).every(wg => expandedGroups.has(wg.id)) ? 'Collapse All' : 'Expand All'}
-                </Button>
-              </div>
-            )}
+            {Array.from(subGroupsMap.values()).some(arr => arr.length > 0) && (() => {
+              const allExpanded = topLevelGroups
+                .filter(wg => (subGroupsMap.get(wg.id)?.length || 0) > 0)
+                .every(wg => expandedGroups.has(wg.id))
+              return (
+                <div className="px-4 py-2 border-b flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-helper text-muted-foreground"
+                    onClick={toggleExpandAll}
+                    aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+                  >
+                    {allExpanded ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+                    {allExpanded ? 'Collapse All' : 'Expand All'}
+                  </Button>
+                </div>
+              )
+            })()}
             <Table>
               <TableHeader>
                 <TableRow>

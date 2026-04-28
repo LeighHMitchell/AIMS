@@ -23,7 +23,8 @@ import { apiFetch } from "@/lib/api-fetch"
 import { formatCurrency, STATUS_LABELS, STATUS_BADGE_VARIANT, PATHWAY_LABELS } from "@/lib/project-bank-utils"
 import { CHART_STRUCTURE_COLORS, CHART_COLOR_PALETTE } from "@/lib/chart-colors"
 import { HelpTooltip } from "@/components/project-bank/appraisal/HelpTooltip"
-import { exportTableToCSV } from "@/lib/csv-export"
+import { StatsRowSkeleton } from "@/components/ui/skeleton-loader"
+import { exportRowsAsCsv, buildExportFilename } from '@/lib/exports'
 import type { ProjectBankStats } from "@/types/project-bank"
 
 const STATUS_COLORS: Record<string, string> = {
@@ -231,31 +232,49 @@ export default function ProjectBankDashboard() {
     return null
   }
 
-  // CSV export handlers
+  // CSV export handlers — use shared exportRowsAsCsv with code+name pairs
+  // where the underlying data has a code (status, pathway).
   const exportPipelineCSV = () => {
-    const data = pipelineData.map(d => ({ stage: d.name, projects: d.count, estimated_cost: d.value }))
-    exportTableToCSV(
-      data as unknown as Record<string, unknown>[],
-      [{ key: 'stage', label: 'Stage' }, { key: 'projects', label: 'Projects' }, { key: 'estimated_cost', label: 'Estimated Cost' }],
-      'pipeline-status'
+    if (!stats) return
+    const rows = statusOrder.map(status => ({
+      stage_code: status,
+      stage_name: STATUS_LABELS[status] ?? status,
+      projects: stats.byStatus[status]?.count ?? 0,
+      estimated_cost_usd: stats.byStatus[status]?.value ?? 0,
+    }))
+    exportRowsAsCsv(
+      rows,
+      (Object.keys(rows[0]) as (keyof typeof rows[number])[]).map(k => ({ header: String(k), accessor: (r: typeof rows[number]) => r[k] as any })),
+      buildExportFilename({ entity: 'project-bank-pipeline-status', format: 'csv' })
     )
   }
 
   const exportPathwayCSV = () => {
-    const data = pathwayData.map(d => ({ pathway: d.name, projects: d.count, estimated_cost: d.value }))
-    exportTableToCSV(
-      data as unknown as Record<string, unknown>[],
-      [{ key: 'pathway', label: 'Pathway' }, { key: 'projects', label: 'Projects' }, { key: 'estimated_cost', label: 'Estimated Cost' }],
-      'pathway-breakdown'
+    if (!stats) return
+    const rows = stats.byPathway.map(item => ({
+      pathway_code: item.pathway,
+      pathway_name: PATHWAY_LABELS[item.pathway] ?? item.pathway,
+      projects: item.count,
+      estimated_cost_usd: item.value,
+    }))
+    exportRowsAsCsv(
+      rows,
+      (Object.keys(rows[0] ?? { pathway_code: '', pathway_name: '', projects: 0, estimated_cost_usd: 0 }) as (keyof typeof rows[number])[]).map(k => ({ header: String(k), accessor: (r: typeof rows[number]) => r[k] as any })),
+      buildExportFilename({ entity: 'project-bank-pathway-breakdown', format: 'csv' })
     )
   }
 
   const exportSectorCSV = () => {
-    const data = sectorData.map(d => ({ sector: d.name, projects: d.count, estimated_cost: d.value }))
-    exportTableToCSV(
-      data as unknown as Record<string, unknown>[],
-      [{ key: 'sector', label: 'Sector' }, { key: 'projects', label: 'Projects' }, { key: 'estimated_cost', label: 'Estimated Cost' }],
-      'by-sector'
+    if (!stats) return
+    const rows = stats.bySector.map(item => ({
+      sector: item.sector,
+      projects: item.count,
+      estimated_cost_usd: item.value,
+    }))
+    exportRowsAsCsv(
+      rows,
+      (Object.keys(rows[0] ?? { sector: '', projects: 0, estimated_cost_usd: 0 }) as (keyof typeof rows[number])[]).map(k => ({ header: String(k), accessor: (r: typeof rows[number]) => r[k] as any })),
+      buildExportFilename({ entity: 'project-bank-by-sector', format: 'csv' })
     )
   }
 
@@ -272,10 +291,8 @@ export default function ProjectBankDashboard() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map(i => (
-              <Card key={i}><CardContent className="p-6"><div className="h-16 bg-muted animate-pulse rounded" /></CardContent></Card>
-            ))}
+          <div className="mb-6">
+            <StatsRowSkeleton tiles={4} />
           </div>
         ) : stats && (
           <>

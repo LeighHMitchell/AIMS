@@ -141,7 +141,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 hover:bg-black text-white border-0"
+              className="w-full bg-gunmetal hover:bg-gunmetal/90 text-white border-0"
             >
               {loading ? (
                 <>
@@ -191,7 +191,7 @@ export default function LoginPage() {
             New to æther?{" "}
             <Link
               href="/register"
-              className="text-foreground hover:text-black font-medium underline"
+              className="text-foreground hover:text-gunmetal font-medium underline"
             >
               Create an account
             </Link>

@@ -17,6 +17,7 @@ import {
 import { Plus, Search, Download, Map as MapIcon, List, LayoutGrid, Inbox, MapPin } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
 import {
@@ -157,7 +158,7 @@ export default function ParcelsListPage() {
 
   const SortHeader = ({ field, children, className }: { field: string; children: React.ReactNode; className?: string }) => (
     <th
-      className={`h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors ${className || ""}`}
+      className={`h-12 px-4 text-left align-top text-body font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors ${className || ""}`}
       onClick={() => handleSort(field)}
     >
       <span className="flex items-center gap-1">
@@ -260,7 +261,7 @@ export default function ParcelsListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Regions</SelectItem>
+                <SelectItem value="all">All regions</SelectItem>
                 {STATES_REGIONS.map(r => (
                   <SelectItem key={r} value={r}>{r}</SelectItem>
                 ))}
@@ -275,7 +276,7 @@ export default function ParcelsListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 {classifications.map(c => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
@@ -290,7 +291,7 @@ export default function ParcelsListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Ministries</SelectItem>
+                <SelectItem value="all">All ministries</SelectItem>
                 {ministries.map(m => (
                   <SelectItem key={m.id} value={m.id}>{m.code}</SelectItem>
                 ))}
@@ -305,7 +306,7 @@ export default function ParcelsListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Assets</SelectItem>
+                <SelectItem value="all">All assets</SelectItem>
                 {assetTypes.map(a => (
                   <SelectItem key={a} value={a}>{a}</SelectItem>
                 ))}
@@ -320,7 +321,7 @@ export default function ParcelsListPage() {
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {TITLE_STATUS_OPTIONS.map(s => (
                   <SelectItem key={s} value={s}>{TITLE_STATUS_LABELS[s]}</SelectItem>
                 ))}
@@ -362,7 +363,7 @@ export default function ParcelsListPage() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+                  <Skeleton key={i} className="h-48 w-full rounded-lg" />
                 ))}
               </div>
             ) : paginated.length === 0 ? (
@@ -405,14 +406,14 @@ export default function ParcelsListPage() {
                     <tr>
                       <SortHeader field="name">Name</SortHeader>
                       <SortHeader field="state_region">Region</SortHeader>
-                      <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Township</th>
+                      <th className="h-12 px-4 text-left align-top text-body font-medium text-muted-foreground">Township</th>
                       <SortHeader field="size_hectares">Size</SortHeader>
                       <SortHeader field="classification">Classification</SortHeader>
                       <SortHeader field="asset_type">Asset Type</SortHeader>
                       <SortHeader field="title_status">Title</SortHeader>
                       <SortHeader field="status">Status</SortHeader>
                       <SortHeader field="created_at">Created</SortHeader>
-                      <th className="h-12 px-4 text-right align-middle text-body font-medium text-muted-foreground w-[60px]" />
+                      <th className="h-12 px-4 text-right align-top text-body font-medium text-muted-foreground w-[60px]" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-background">
@@ -421,7 +422,7 @@ export default function ParcelsListPage() {
                         <tr key={i}>
                           {Array.from({ length: 10 }).map((_, j) => (
                             <td key={j} className="px-4 py-2">
-                              <div className="h-4 bg-muted animate-pulse rounded w-16" />
+                              <Skeleton className="h-4 w-16" />
                             </td>
                           ))}
                         </tr>

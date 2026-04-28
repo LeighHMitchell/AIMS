@@ -1,6 +1,11 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { ExportButton } from '@/components/exports/ExportButton'
+import {
+  exportOrganizationsCsv,
+  type OrganizationListRow,
+} from '@/lib/exports/entities/organization-list'
 import { usePreCache } from '@/hooks/use-pre-cached-data'
 import { AsyncErrorBoundary } from '@/components/errors/AsyncErrorBoundary'
 import { MainLayout } from '@/components/layout/main-layout'
@@ -702,7 +707,7 @@ const ImageUpload: React.FC<{
   const removeImage = () => {
     setPreview(null)
     onChange('')
-    toast.success(`${label} removed`)
+    toast(`${label} removed`)
   }
 
   // Update preview when value changes externally
@@ -1719,18 +1724,19 @@ function OrganizationsPageContent() {
               <Plus className="h-4 w-4" />
               <span>Add Organization</span>
             </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Export to CSV">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Export to CSV</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <ExportButton
+              entity="organizations"
+              filteredCount={filteredOrganizations.length}
+              totalCount={organizations.length}
+              formats={[
+                {
+                  label: 'CSV (organisations list)',
+                  description: 'one row per org, codes + names, IATI 2.03 fields',
+                  onFiltered: () => exportOrganizationsCsv(filteredOrganizations as unknown as OrganizationListRow[], { scope: 'filtered' }),
+                  onAll: () => exportOrganizationsCsv(organizations as unknown as OrganizationListRow[], { scope: 'all' }),
+                },
+              ]}
+            />
           </div>
         </div>
 

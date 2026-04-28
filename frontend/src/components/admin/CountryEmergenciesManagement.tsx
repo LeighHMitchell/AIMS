@@ -32,6 +32,14 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getSortIcon } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -43,6 +51,8 @@ import {
   Search,
   Lock,
   Unlock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   CountryEmergency,
@@ -57,6 +67,22 @@ export function CountryEmergenciesManagement() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLocked, setIsLocked] = useState(true);
+
+  type SortField = "name" | "description" | "startDate" | "endDate" | "location" | "isActive";
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(20);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+    setCurrentPage(1);
+  };
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,6 +139,51 @@ export function CountryEmergenciesManagement() {
     );
   }, [emergencies, searchQuery]);
 
+  // Sort filtered results
+  const sortedEmergencies = React.useMemo(() => {
+    const dir = sortDirection === "asc" ? 1 : -1;
+    const compare = (a: any, b: any) => {
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;
+      if (b == null) return -1;
+      if (typeof a === "string" && typeof b === "string") {
+        return a.localeCompare(b) * dir;
+      }
+      return (a > b ? 1 : a < b ? -1 : 0) * dir;
+    };
+    return [...filteredEmergencies].sort((a, b) => {
+      switch (sortField) {
+        case "name":
+          return compare(a.name?.toLowerCase(), b.name?.toLowerCase());
+        case "description":
+          return compare(a.description?.toLowerCase() ?? "", b.description?.toLowerCase() ?? "");
+        case "startDate":
+          return compare(a.startDate ? new Date(a.startDate).getTime() : null, b.startDate ? new Date(b.startDate).getTime() : null);
+        case "endDate":
+          return compare(a.endDate ? new Date(a.endDate).getTime() : null, b.endDate ? new Date(b.endDate).getTime() : null);
+        case "location":
+          return compare(a.location?.toLowerCase() ?? "", b.location?.toLowerCase() ?? "");
+        case "isActive":
+          return compare(a.isActive ? 1 : 0, b.isActive ? 1 : 0);
+        default:
+          return 0;
+      }
+    });
+  }, [filteredEmergencies, sortField, sortDirection]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Paginate
+  const totalEmergencies = sortedEmergencies.length;
+  const totalPages = Math.max(1, Math.ceil(totalEmergencies / pageLimit));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageLimit;
+  const endIndex = startIndex + pageLimit;
+  const pagedEmergencies = sortedEmergencies.slice(startIndex, endIndex);
+
   // Open modal for creating
   const handleAdd = () => {
     setEditingItem(null);
@@ -159,7 +230,7 @@ export function CountryEmergenciesManagement() {
         throw new Error(data.error || "Failed to delete emergency");
       }
 
-      toast.success("Emergency deleted successfully");
+      toast("Emergency deleted");
       fetchEmergencies();
     } catch (err: any) {
       console.error("Error deleting emergency:", err);
@@ -318,7 +389,7 @@ export function CountryEmergenciesManagement() {
           </div>
 
           {/* Table */}
-          {filteredEmergencies.length === 0 ? (
+          {totalEmergencies === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <AlertTriangle className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">No country emergencies found</p>
@@ -335,61 +406,125 @@ export function CountryEmergenciesManagement() {
               )}
             </div>
           ) : (
+            <>
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b-2">
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">
-                        Code
+                      <th className="h-12 px-4 py-3 text-left align-top font-medium text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => handleSort("name")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Emergency
+                          {getSortIcon("name", sortField, sortDirection)}
+                        </button>
                       </th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">
-                        Name
+                      <th className="h-12 px-4 py-3 text-left align-top font-medium text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => handleSort("description")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Description
+                          {getSortIcon("description", sortField, sortDirection)}
+                        </button>
                       </th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">
-                        Description
+                      <th className="h-12 px-4 py-3 text-left align-top font-medium text-muted-foreground w-[150px] min-w-[150px]">
+                        <button
+                          type="button"
+                          onClick={() => handleSort("startDate")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Start Date
+                          {getSortIcon("startDate", sortField, sortDirection)}
+                        </button>
                       </th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[110px]">
-                        Start Date
+                      <th className="h-12 px-4 py-3 text-left align-top font-medium text-muted-foreground w-[150px] min-w-[150px]">
+                        <button
+                          type="button"
+                          onClick={() => handleSort("endDate")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          End Date
+                          {getSortIcon("endDate", sortField, sortDirection)}
+                        </button>
                       </th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[110px]">
-                        End Date
+                      <th className="h-12 px-4 py-3 text-left align-top font-medium text-muted-foreground w-[150px]">
+                        <button
+                          type="button"
+                          onClick={() => handleSort("location")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Location
+                          {getSortIcon("location", sortField, sortDirection)}
+                        </button>
                       </th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[150px]">
-                        Location
+                      <th className="h-12 px-4 py-3 text-center align-top font-medium text-muted-foreground w-[80px]">
+                        <button
+                          type="button"
+                          onClick={() => handleSort("isActive")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Active
+                          {getSortIcon("isActive", sortField, sortDirection)}
+                        </button>
                       </th>
-                      <th className="h-12 px-4 py-3 text-center font-medium text-muted-foreground w-[80px]">
-                        Active
-                      </th>
-                      <th className="h-12 px-4 py-3 text-right font-medium text-muted-foreground w-[60px]">
-                        Actions
-                      </th>
+                      <th className="h-12 px-4 py-3 text-right align-top font-medium text-muted-foreground w-[60px]" />
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEmergencies.map((emergency) => (
+                    {pagedEmergencies.map((emergency) => (
                       <tr key={emergency.id} className="border-b hover:bg-muted/20">
-                        <td className="p-4">
-                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                            {emergency.code}
-                          </span>
+                        <td className="p-4 align-top">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(emergency.name);
+                                  toast.success("Name copied to clipboard");
+                                } catch {
+                                  toast.error("Failed to copy");
+                                }
+                              }}
+                              className="font-medium text-left hover:underline focus:outline-none focus-visible:underline"
+                              title="Click to copy"
+                            >
+                              {emergency.name}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(emergency.code);
+                                  toast.success("Emergency ID copied to clipboard");
+                                } catch {
+                                  toast.error("Failed to copy");
+                                }
+                              }}
+                              className="font-mono text-xs bg-muted hover:bg-muted/70 px-2 py-1 rounded whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                              title="Click to copy"
+                            >
+                              {emergency.code}
+                            </button>
+                          </div>
                         </td>
-                        <td className="p-4 font-medium">
-                          {emergency.name}
-                        </td>
-                        <td className="p-4 text-body text-muted-foreground">
+                        <td className="p-4 align-top text-body text-muted-foreground">
                           {emergency.description || "—"}
                         </td>
-                        <td className="p-4 text-body text-muted-foreground">
+                        <td className="p-4 align-top text-body text-muted-foreground whitespace-nowrap w-[150px] min-w-[150px]">
                           {formatDate(emergency.startDate)}
                         </td>
-                        <td className="p-4 text-body text-muted-foreground">
+                        <td className="p-4 align-top text-body text-muted-foreground whitespace-nowrap w-[150px] min-w-[150px]">
                           {formatDate(emergency.endDate)}
                         </td>
-                        <td className="p-4 text-body text-muted-foreground">
+                        <td className="p-4 align-top text-body text-muted-foreground">
                           {emergency.location || "—"}
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-4 align-top text-center">
                           <Badge
                             variant={emergency.isActive ? "default" : "outline"}
                             className={
@@ -401,7 +536,7 @@ export function CountryEmergenciesManagement() {
                             {emergency.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 align-top text-right">
                           {!isLocked && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -431,12 +566,105 @@ export function CountryEmergenciesManagement() {
                 </table>
               </div>
             </div>
-          )}
 
-          {/* Summary */}
-          <div className="mt-4 text-body text-muted-foreground">
-            Showing {filteredEmergencies.length} emergenc{filteredEmergencies.length !== 1 ? "ies" : "y"}
-          </div>
+            {/* Pagination */}
+            <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="text-body text-muted-foreground">
+                  Showing {Math.min(startIndex + 1, totalEmergencies)} to {Math.min(endIndex, totalEmergencies)} of {totalEmergencies} emergenc{totalEmergencies !== 1 ? "ies" : "y"}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={safePage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
+                    disabled={safePage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (safePage <= 3) {
+                        pageNum = i + 1;
+                      } else if (safePage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = safePage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 p-0 ${safePage === pageNum ? "bg-muted text-foreground" : ""}`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+                    disabled={safePage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={safePage === totalPages}
+                  >
+                    Last
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-body text-muted-foreground">Items per page:</label>
+                  <Select
+                    value={pageLimit.toString()}
+                    onValueChange={(value) => {
+                      setPageLimit(Number(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

@@ -11,6 +11,21 @@ import {
   TIED_STATUS_DEFINITIONS,
 } from '@/data/codelist-definitions';
 import dacSectorsData from '@/data/dac-sectors.json';
+import { GEOGRAPHIC_EXACTNESS } from '@/data/iati-geographic-exactness';
+import { GEOGRAPHIC_LOCATION_CLASS } from '@/data/iati-geographic-location-class';
+import { GEOGRAPHIC_LOCATION_REACH } from '@/data/iati-geographic-location-reach';
+import { GEOGRAPHIC_VOCABULARY } from '@/data/iati-geographic-vocabulary';
+import { VERIFICATION_STATUS } from '@/data/iati-verification-status';
+import { RESULT_VOCABULARY } from '@/data/iati-result-vocabulary';
+import { TAG_VOCABULARY } from '@/data/iati-tag-vocabulary';
+import { POLICY_MARKER_VOCABULARY } from '@/data/iati-policy-marker-vocabulary';
+import { AID_TYPE_VOCABULARY } from '@/data/iati-aid-type-vocabulary';
+import { SECTOR_VOCABULARY } from '@/data/iati-sector-vocabulary';
+import { DOCUMENT_CATEGORY } from '@/data/iati-document-category';
+import { BUDGET_NOT_PROVIDED } from '@/data/iati-budget-not-provided';
+import { HUMANITARIAN_SCOPE_TYPE } from '@/data/iati-humanitarian-scope-type';
+import { HUMANITARIAN_SCOPE_VOCABULARY } from '@/data/iati-humanitarian-scope-vocabulary';
+import { CONTACT_TYPES } from '@/data/contact-types';
 
 // Build codelist entries from existing data sources
 
@@ -153,6 +168,27 @@ const transactionStatuses: CodelistEntry[] = [
   { code: 'actual', name: 'Actual' },
 ];
 
+// New IATI codelists added for export coverage (PR1)
+const toEntries = (
+  list: ReadonlyArray<{ code: string; name: string }>
+): CodelistEntry[] => list.map(e => ({ code: e.code, name: e.name }));
+
+const geographicExactness = toEntries(GEOGRAPHIC_EXACTNESS);
+const geographicLocationClass = toEntries(GEOGRAPHIC_LOCATION_CLASS);
+const geographicLocationReach = toEntries(GEOGRAPHIC_LOCATION_REACH);
+const geographicVocabulary = toEntries(GEOGRAPHIC_VOCABULARY);
+const verificationStatus = toEntries(VERIFICATION_STATUS);
+const resultVocabulary = toEntries(RESULT_VOCABULARY);
+const tagVocabulary = toEntries(TAG_VOCABULARY);
+const policyMarkerVocabulary = toEntries(POLICY_MARKER_VOCABULARY);
+const aidTypeVocabulary = toEntries(AID_TYPE_VOCABULARY);
+const sectorVocabulary = toEntries(SECTOR_VOCABULARY);
+const documentCategory = toEntries(DOCUMENT_CATEGORY);
+const budgetNotProvided = toEntries(BUDGET_NOT_PROVIDED);
+const humanitarianScopeType = toEntries(HUMANITARIAN_SCOPE_TYPE);
+const humanitarianScopeVocabulary = toEntries(HUMANITARIAN_SCOPE_VOCABULARY);
+const contactType = toEntries(CONTACT_TYPES);
+
 // ---------- Registry ----------
 
 const registry: Record<string, CodelistEntry[]> = {
@@ -176,6 +212,21 @@ const registry: Record<string, CodelistEntry[]> = {
   transaction_type: transactionTypes,
   disbursement_channel: disbursementChannels,
   transaction_status: transactionStatuses,
+  geographic_exactness: geographicExactness,
+  geographic_location_class: geographicLocationClass,
+  geographic_location_reach: geographicLocationReach,
+  geographic_vocabulary: geographicVocabulary,
+  verification_status: verificationStatus,
+  result_vocabulary: resultVocabulary,
+  tag_vocabulary: tagVocabulary,
+  policy_marker_vocabulary: policyMarkerVocabulary,
+  aid_type_vocabulary: aidTypeVocabulary,
+  sector_vocabulary: sectorVocabulary,
+  document_category: documentCategory,
+  budget_not_provided: budgetNotProvided,
+  humanitarian_scope_type: humanitarianScopeType,
+  humanitarian_scope_vocabulary: humanitarianScopeVocabulary,
+  contact_type: contactType,
 };
 
 /**

@@ -1117,7 +1117,7 @@ export default function BulkImportSourceStep({
                             <Button
                               variant={countryFilterMode === 'both' ? 'default' : 'outline'}
                               size="sm"
-                              className={countryFilterMode === 'both' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              className={countryFilterMode === 'both' ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                               onClick={() => setCountryFilterMode('both')}
                               title="Activities where the country appears at activity-level OR transaction-level"
                             >
@@ -1126,7 +1126,7 @@ export default function BulkImportSourceStep({
                             <Button
                               variant={countryFilterMode === 'activity' ? 'default' : 'outline'}
                               size="sm"
-                              className={countryFilterMode === 'activity' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              className={countryFilterMode === 'activity' ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                               onClick={() => setCountryFilterMode('activity')}
                               title="Only activities with recipient-country at the activity level"
                             >
@@ -1135,7 +1135,7 @@ export default function BulkImportSourceStep({
                             <Button
                               variant={countryFilterMode === 'transaction' ? 'default' : 'outline'}
                               size="sm"
-                              className={countryFilterMode === 'transaction' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              className={countryFilterMode === 'transaction' ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                               onClick={() => setCountryFilterMode('transaction')}
                               title="Only activities with recipient-country at the transaction level"
                             >
@@ -1154,7 +1154,7 @@ export default function BulkImportSourceStep({
                           <Button
                             variant={selectedHierarchy == null ? 'default' : 'outline'}
                             size="sm"
-                            className={selectedHierarchy == null ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            className={selectedHierarchy == null ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                             onClick={() => setSelectedHierarchy(null)}
                           >
                             All Levels
@@ -1162,7 +1162,7 @@ export default function BulkImportSourceStep({
                           <Button
                             variant={selectedHierarchy === 1 ? 'default' : 'outline'}
                             size="sm"
-                            className={selectedHierarchy === 1 ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            className={selectedHierarchy === 1 ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                             onClick={() => setSelectedHierarchy(1)}
                           >
                             Level 1 (Parent)
@@ -1170,7 +1170,7 @@ export default function BulkImportSourceStep({
                           <Button
                             variant={selectedHierarchy === 2 ? 'default' : 'outline'}
                             size="sm"
-                            className={selectedHierarchy === 2 ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            className={selectedHierarchy === 2 ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                             onClick={() => setSelectedHierarchy(2)}
                           >
                             Level 2 (Sub-Activity)
@@ -1187,7 +1187,7 @@ export default function BulkImportSourceStep({
                           <Button
                             variant={!dateFilterEnabled ? 'default' : 'outline'}
                             size="sm"
-                            className={!dateFilterEnabled ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            className={!dateFilterEnabled ? 'bg-gunmetal text-white hover:bg-gunmetal/90' : ''}
                             onClick={() => setDateFilterEnabled(false)}
                           >
                             All
@@ -1233,7 +1233,7 @@ export default function BulkImportSourceStep({
                   <div className="flex justify-center">
                     <Button
                       onClick={() => fetchFromDatastore(false, selectedOrgId || undefined)}
-                      className="bg-gray-900 hover:bg-gray-800 text-white px-8"
+                      className="bg-gunmetal hover:bg-gunmetal/90 text-white px-8"
                       size="lg"
                     >
                       <Database className="h-4 w-4 mr-2" />

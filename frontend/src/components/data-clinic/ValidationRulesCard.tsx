@@ -22,7 +22,7 @@ import {
   Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
+import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/exports';
 import type {
   ValidationRulesResponse,
   ImplementationPastEndDateActivity,

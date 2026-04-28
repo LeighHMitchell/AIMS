@@ -338,7 +338,7 @@ export function PendingValidationsManagement() {
           setCounts(prev => ({ ...prev, activities: Math.max(0, prev.activities - 1) }));
         }, 500);
       } else {
-        toast.success('Activity validation removed');
+        toast('Activity validation removed');
       }
     } catch (error) {
       console.error('Error validating activity:', error);
@@ -373,7 +373,7 @@ export function PendingValidationsManagement() {
           setCounts(prev => ({ ...prev, transactions: Math.max(0, prev.transactions - 1) }));
         }, 500);
       } else {
-        toast.success('Transaction validation removed');
+        toast('Transaction validation removed');
       }
     } catch (error) {
       console.error('Error validating transaction:', error);

@@ -268,7 +268,7 @@ export function FAQManagement() {
       });
 
       if (response.ok) {
-        toast.success('Question deleted');
+        toast('Question deleted');
         fetchQuestions();
       } else {
         toast.error('Failed to delete question');
@@ -297,7 +297,7 @@ export function FAQManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(data.message || `Successfully deleted ${selectedIds.size} question(s)`);
+        toast(data.message || `Successfully deleted ${selectedIds.size} question(s)`);
         setSelectedIds(new Set());
         fetchQuestions();
       } else {
@@ -538,7 +538,7 @@ export function FAQManagement() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="all">All statuses</SelectItem>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="in_progress">In Progress</SelectItem>
                           <SelectItem value="published">Published</SelectItem>

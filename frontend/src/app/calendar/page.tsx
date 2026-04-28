@@ -286,7 +286,7 @@ export default function CalendarPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Events</SelectItem>
+              <SelectItem value="all">All events</SelectItem>
               <SelectItem value="meeting">Meetings</SelectItem>
               <SelectItem value="deadline">Deadlines</SelectItem>
               <SelectItem value="workshop">Workshops</SelectItem>

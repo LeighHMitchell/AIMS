@@ -37,6 +37,7 @@ interface Activity {
   created_by_org_acronym?: string;
   totalBudget?: number;
   totalDisbursed?: number;
+  totalPlannedDisbursement?: number;
   sdgMappings?: SDGMapping[];
 }
 

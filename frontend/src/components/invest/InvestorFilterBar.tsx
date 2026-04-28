@@ -60,7 +60,7 @@ export function InvestorFilterBar({
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Regions</SelectItem>
+            <SelectItem value="all">All regions</SelectItem>
             {STATES_REGIONS.map(r => (
               <SelectItem key={r} value={r}>{r}</SelectItem>
             ))}
@@ -75,7 +75,7 @@ export function InvestorFilterBar({
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
             {classifications.map(c => (
               <SelectItem key={c} value={c}>{c}</SelectItem>
             ))}
@@ -90,7 +90,7 @@ export function InvestorFilterBar({
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Assets</SelectItem>
+            <SelectItem value="all">All assets</SelectItem>
             {assetTypes.map(a => (
               <SelectItem key={a} value={a}>{a}</SelectItem>
             ))}

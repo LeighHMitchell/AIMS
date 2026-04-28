@@ -197,7 +197,8 @@ export async function POST(
       usd_conversion_date: new Date().toISOString(),
       usd_convertible: usdConvertible,
       exchange_rate_manual: isManualRate,
-      budget_lines: body.budget_lines || []
+      budget_lines: body.budget_lines || [],
+      description: body.description ?? null
     };
 
     const { data: budget, error } = await supabase
@@ -301,6 +302,7 @@ export async function PUT(
     updateData.usd_convertible = usdConvertible;
     updateData.exchange_rate_manual = isManualRate;
     if (body.budget_lines !== undefined) updateData.budget_lines = body.budget_lines;
+    if (body.description !== undefined) updateData.description = body.description;
 
     const { data: budget, error } = await supabase
       .from('activity_budgets')

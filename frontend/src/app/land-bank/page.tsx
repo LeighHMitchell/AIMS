@@ -23,6 +23,7 @@ import { PARCEL_STATUS_LABELS, PARCEL_STATUS_COLORS, formatHectares } from "@/li
 import { ParcelStatusBadge } from "@/components/land-bank/ParcelStatusBadge"
 import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors"
 import type { LandBankStats, ParcelStatus } from "@/types/land-bank"
+import { StatsRowSkeleton } from "@/components/ui/skeleton-loader"
 
 const STATUS_CHART_COLORS: Record<string, string> = {
   available: PARCEL_STATUS_COLORS.available,
@@ -116,14 +117,8 @@ export default function LandBankDashboard() {
 
         {/* Loading skeleton */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map(i => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="h-16 bg-muted animate-pulse rounded" />
-                </CardContent>
-              </Card>
-            ))}
+          <div className="mb-6">
+            <StatsRowSkeleton tiles={4} />
           </div>
         ) : stats && (
           <>

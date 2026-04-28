@@ -37,6 +37,7 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
   ChevronsUpDown,
   ChevronUp,
   Download,
@@ -508,7 +509,7 @@ export function SectorMappingsManagement() {
           throw new Error(data.error);
         }
         newMappingId = undefined;
-        toast.success("Mapping removed");
+        toast("Mapping removed");
       }
 
       // Update local state
@@ -618,7 +619,7 @@ export function SectorMappingsManagement() {
           throw new Error(data.error);
         }
         newMappingId = undefined;
-        toast.success("Mapping removed");
+        toast("Mapping removed");
       }
 
       // Update local state
@@ -710,7 +711,7 @@ export function SectorMappingsManagement() {
           throw new Error(data.error);
         }
         newMappingId = undefined;
-        toast.success("Mapping removed");
+        toast("Mapping removed");
       }
 
       // Update local state
@@ -807,7 +808,7 @@ export function SectorMappingsManagement() {
           throw new Error(data.error);
         }
         newMappingId = undefined;
-        toast.success("Mapping removed");
+        toast("Mapping removed");
       }
 
       // Update local state
@@ -1151,16 +1152,29 @@ export function SectorMappingsManagement() {
                 className="pl-10"
               />
             </div>
-            {activeMode !== "funding_sources" && activeMode !== "administrative" && (
-              <>
-                <Button variant="outline" size="sm" onClick={expandAll}>
-                  Expand All
+            {activeMode !== "funding_sources" && activeMode !== "administrative" && (() => {
+              const anyExpanded = expandedCategories.size > 0;
+              return (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={anyExpanded ? collapseAll : expandAll}
+                  aria-label={anyExpanded ? 'Collapse all' : 'Expand all'}
+                >
+                  {anyExpanded ? (
+                    <>
+                      <ChevronsDownUp className="h-4 w-4 mr-2" />
+                      Collapse All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsUpDown className="h-4 w-4 mr-2" />
+                      Expand All
+                    </>
+                  )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={collapseAll}>
-                  Collapse All
-                </Button>
-              </>
-            )}
+              );
+            })()}
             <Button
               variant={isLocked ? "outline" : "default"}
               size="sm"
@@ -1348,10 +1362,10 @@ export function SectorMappingsManagement() {
               <label className="text-body font-medium text-muted-foreground">Organization Type:</label>
               <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
                 <SelectTrigger className="w-[220px]">
-                  <SelectValue placeholder="All Types" />
+                  <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {uniqueOrgTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}

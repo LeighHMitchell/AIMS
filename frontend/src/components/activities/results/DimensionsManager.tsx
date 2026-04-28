@@ -76,7 +76,7 @@ export function DimensionsManager({
       const success = await deleteDimension(entityType, entityId, dimensionId);
       if (success) {
         onUpdate();
-        toast.success('Dimension deleted', {
+        toast('Dimension deleted', {
           action: {
             label: 'Undo',
             onClick: async () => {

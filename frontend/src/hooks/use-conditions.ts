@@ -110,7 +110,7 @@ export function useConditions(activityId: string) {
       }
 
       setConditions(prev => prev.filter(condition => condition.id !== id));
-      toast.success('Condition deleted successfully');
+      toast('Condition deleted successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete condition';

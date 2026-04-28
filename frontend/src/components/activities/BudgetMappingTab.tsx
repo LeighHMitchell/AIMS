@@ -263,7 +263,7 @@ export default function BudgetMappingTab({
       await loadCountryBudgetItems();
       await loadSuggestions();
 
-      toast.success(`Removed ${snapshot?.budget_items?.length || 0} budget item${snapshot?.budget_items?.length === 1 ? '' : 's'}`, snapshot ? {
+      toast(`Removed ${snapshot?.budget_items?.length || 0} budget item${snapshot?.budget_items?.length === 1 ? '' : 's'}`, snapshot ? {
         action: {
           label: 'Undo',
           onClick: async () => {

@@ -64,7 +64,7 @@ export function ContactSection() {
 
                 <Button
                   asChild
-                  className="w-full gap-2 bg-gray-900 hover:bg-black"
+                  className="w-full gap-2 bg-gunmetal hover:bg-gunmetal/90"
                 >
                   <a
                     href="mailto:leigh.h.mitchell@icloud.com?subject=Inquiry%20about%20aether%20DFMIS"

@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { DocumentCardInlineFixed } from './DocumentCardInlineFixed';
@@ -420,7 +419,7 @@ export function DocumentsAndImagesTabInline({
 
     const previousDocuments = documents;
     onChange(documents.filter(doc => doc.url !== url));
-    toast.success(`Removed ${label}`, snapshot ? {
+    toast(`Removed ${label}`, snapshot ? {
       action: {
         label: 'Undo',
         onClick: () => {
@@ -644,7 +643,6 @@ export function DocumentsAndImagesTabInline({
     }
   };
   
-  const [activeSubTab, setActiveSubTab] = React.useState('upload');
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
 
@@ -671,40 +669,28 @@ export function DocumentsAndImagesTabInline({
     <div className="space-y-6">
 
 
-      {/* Sub-tabs for Upload and Library */}
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upload">Upload</TabsTrigger>
-          <TabsTrigger value="library">Library</TabsTrigger>
-        </TabsList>
-
-        {/* Upload Tab */}
-        <TabsContent value="upload" className="mt-6">
-          {/* Add Documents Section */}
-          <div className="w-full">
-            <div className="mt-4">
-              <div
-                className={cn(
-                  "bg-card rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                  isDragOver ? "border-blue-500 bg-blue-50 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted/30",
-                  !activityId && "opacity-50 cursor-not-allowed"
-                )}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => activityId && fileInputRef.current?.click()}
-              >
+      {/* Add Documents Section */}
+      <div className="w-full">
+        <div>
+          <div
+            className={cn(
+              "bg-card rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+              isDragOver ? "border-primary bg-primary/5 scale-[1.02]" : "border-input hover:border-slate-400 hover:bg-muted/30",
+              !activityId && "opacity-50 cursor-not-allowed"
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => activityId && fileInputRef.current?.click()}
+          >
                 <div className="text-center max-w-md">
                   <div className="mb-6">
-                    {isDragOver ? (
-                      <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse" />
-                    ) : (
-                      <img
-                        src="/images/empty-message-bottle.webp"
-                        alt=""
-                        className="h-40 mx-auto mb-4 opacity-80"
-                      />
-                    )}
+                    <Upload
+                      className={cn(
+                        "w-16 h-16 mx-auto mb-4",
+                        isDragOver ? "text-primary animate-pulse" : "text-muted-foreground"
+                      )}
+                    />
                   </div>
                   <h4 className="text-2xl font-medium text-foreground mb-3">
                     {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
@@ -782,10 +768,7 @@ export function DocumentsAndImagesTabInline({
               />
             </div>
           )}
-        </TabsContent>
 
-        {/* Library Tab */}
-        <TabsContent value="library" className="mt-6">
           {/* Search and Filter Section */}
           {documents.length > 0 && (
             <div className="bg-white border rounded-lg p-4 mb-6">
@@ -835,7 +818,6 @@ export function DocumentsAndImagesTabInline({
                         {uploadedDocs.length > 0 && (
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b">
-                              <Cloud className="w-5 h-5 text-muted-foreground" />
                               <h4 className="font-medium text-foreground">Uploaded Files</h4>
                             </div>
                             
@@ -855,7 +837,7 @@ export function DocumentsAndImagesTabInline({
                                 <TableBody>
                                   {uploadedDocs.slice(startIndex, endIndex).map((doc) => (
                                     <TableRow key={doc.url}>
-                                      <TableCell>
+                                      <TableCell className="align-top text-left">
                                         <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                                           {isImageMime(doc.format) ? (
                                             <FileImage className="w-4 h-4 text-muted-foreground" />
@@ -864,7 +846,7 @@ export function DocumentsAndImagesTabInline({
                                           )}
                                         </div>
                                       </TableCell>
-                                      <TableCell>
+                                      <TableCell className="align-top text-left">
                                         <div className="max-w-xs">
                                           <div className="font-medium text-foreground truncate">
                                             {doc.title[0]?.text || 'Untitled Document'}
@@ -876,10 +858,10 @@ export function DocumentsAndImagesTabInline({
                                           )}
                                         </div>
                                       </TableCell>
-                                      <TableCell>
+                                      <TableCell className="align-top text-left">
                                         {doc.categoryCode && (
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                          <div className="flex items-start gap-2">
+                                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">
                                               {doc.categoryCode}
                                             </span>
                                             <span className="text-body">
@@ -888,7 +870,7 @@ export function DocumentsAndImagesTabInline({
                                           </div>
                                         )}
                                       </TableCell>
-                                      <TableCell>
+                                      <TableCell className="align-top text-left">
                                         {doc.languageCodes && doc.languageCodes.length > 0 && (
                                           <div className="flex flex-wrap gap-1">
                                             {doc.languageCodes.map(code => {
@@ -903,14 +885,14 @@ export function DocumentsAndImagesTabInline({
                                           </div>
                                         )}
                                       </TableCell>
-                                      <TableCell>
+                                      <TableCell className="align-top text-left">
                                         {doc.documentDate && (
                                           <span className="text-body text-muted-foreground">
                                             {new Date(doc.documentDate).toLocaleDateString()}
                                           </span>
                                         )}
                                       </TableCell>
-                                      <TableCell>
+                                      <TableCell className="align-top text-left">
                                         <div className="flex gap-2 items-center">
                                           <button
                                             type="button"
@@ -1037,8 +1019,6 @@ export function DocumentsAndImagesTabInline({
               </p>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
 
       {/* Document Metadata Modal */}
       {showMetadataModal && (pendingUploadedDocument || editingDocument) && (

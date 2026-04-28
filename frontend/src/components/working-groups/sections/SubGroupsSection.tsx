@@ -135,7 +135,7 @@ export default function SubGroupsSection({
         method: 'DELETE',
       })
       if (response.ok || response.status === 204) {
-        toast.success(`"${deleteTarget.label}" deleted`)
+        toast(`"${deleteTarget.label}" deleted`)
         setDeleteTarget(null)
         fetchSubGroups()
       } else {

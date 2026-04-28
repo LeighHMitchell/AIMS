@@ -71,7 +71,7 @@ const BUCKET_CONFIG: Record<FreshnessBucket, { label: string; color: string; ord
 };
 
 const STATUS_OPTIONS = [
-  { value: 'all', label: 'All Statuses' },
+  { value: 'all', label: 'All statuses' },
   { value: '1', label: 'Pipeline/Identification' },
   { value: '2', label: 'Implementation' },
   { value: '3', label: 'Finalisation' },
@@ -436,7 +436,7 @@ export function ActivityFreshnessChart() {
                 <SelectValue placeholder="Select organization" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Organizations</SelectItem>
+                <SelectItem value="all">All organizations</SelectItem>
                 {organizations.map(org => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.acronym ? `${org.acronym} - ${org.name}` : org.name}

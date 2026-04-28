@@ -196,7 +196,7 @@ export function NationalPlansManagement() {
         throw new Error(result.error || "Failed to delete plan");
       }
 
-      toast.success("Plan deleted successfully");
+      toast("Plan deleted");
 
       // Clear selection if deleted plan was selected
       if (selectedPlanId === plan.id) {
@@ -403,7 +403,7 @@ export function NationalPlansManagement() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{formatPlanTitle(selectedPlan)}</span>
                         {selectedPlan.isPrimary && (
-                          <Badge variant="default" className="text-helper">
+                          <Badge variant="default" className="text-helper text-white">
                             Primary
                           </Badge>
                         )}

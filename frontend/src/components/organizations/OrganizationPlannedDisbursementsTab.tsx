@@ -19,7 +19,11 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
-import { exportToCSV } from '@/lib/csv-export';
+import { exportToCSV } from '@/lib/exports';
+import {
+  exportPlannedDisbursementsCsv,
+  type PlannedDisbursementRow,
+} from '@/lib/exports/entities/planned-disbursements';
 import { apiFetch } from '@/lib/api-fetch';
 
 // Format currency with abbreviations (K, M, B)
@@ -269,22 +273,13 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
     setCurrentPage(1);
   };
 
-  // Handle export
+  // Handle export — full IATI 2.03 planned-disbursement shape with code+name pairs
   const handleExport = () => {
-    const exportData = sortedDisbursements.map(d => ({
-      Activity: d.activity_title,
-      'Activity Acronym': d.activity_acronym || '',
-      'Period Start': d.period_start,
-      'Period End': d.period_end,
-      Status: d.status || '',
-      'Provider Organization': d.provider_org_name || '',
-      'Receiver Organization': d.receiver_org_name || '',
-      Amount: d.amount,
-      Currency: d.currency,
-      'Value Date': d.value_date || '',
-      'USD Amount': d.usd_amount || ''
-    }));
-    exportToCSV(exportData, 'organization-planned-disbursements.csv');
+    if (sortedDisbursements.length === 0) return;
+    exportPlannedDisbursementsCsv(sortedDisbursements as unknown as PlannedDisbursementRow[], {
+      filenameEntity: 'organization-planned-disbursements',
+      includeActivityContext: true,
+    });
   };
 
   if (loading) {
@@ -328,10 +323,10 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
             <div className="relative">
               <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="statusFilter" className={`w-[140px] ${statusFilter !== 'all' ? 'pr-8' : ''}`}>
-                  <SelectValue placeholder="All Status" />
+                  <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="original">
                     <span className="flex items-center gap-1">
                       <code className="text-xs font-mono bg-muted px-1 rounded">1</code> Original
@@ -361,10 +356,10 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
             <div className="relative">
               <Select value={activityFilter} onValueChange={(v) => { setActivityFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="activityFilter" className={`w-[450px] ${activityFilter !== 'all' ? 'pr-8' : ''}`}>
-                  <SelectValue placeholder="All Activities" />
+                  <SelectValue placeholder="All activities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Activities</SelectItem>
+                  <SelectItem value="all">All activities</SelectItem>
                   {uniqueActivities.map(activity => (
                     <SelectItem key={activity.id} value={activity.id}>
                       <span className="truncate">

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { exportToCSV } from '@/lib/csv-export';
+import { exportToCSV } from '@/lib/exports';
 import { exportChartToJPG } from '@/lib/chart-export';
 import { cn } from '@/lib/utils';
 

@@ -512,7 +512,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="pl-2">All Statuses</SelectItem>
+                <SelectItem value="all" className="pl-2">All statuses</SelectItem>
                 {ACTIVITY_STATUS_GROUPS.map((group) => (
                   <React.Fragment key={group.label}>
                     {group.options.map((status) => (

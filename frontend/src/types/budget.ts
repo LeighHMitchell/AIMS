@@ -30,6 +30,7 @@ export interface Budget {
   value_date: string; // Date string
   value_usd?: number | null; // Mapped from usd_value in API
   usd_value?: number | null; // Original DB field name
+  description?: string | null; // Internal-only, not part of IATI 2.03
   created_at?: string;
   updated_at?: string;
   created_by?: string;

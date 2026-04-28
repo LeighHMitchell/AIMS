@@ -636,7 +636,7 @@ export function TransactionTable({
         <TableHeader>
           <TableRow>
             {/* Checkbox - always visible, locked first */}
-            <th className="h-12 px-4 text-center align-middle data-table-col-checkbox">
+            <th className="h-12 px-4 text-center align-top data-table-col-checkbox">
               {onSelectAll && selectedIds && (
                 <div className="flex items-center justify-center" key={`select-all-wrapper-${transactions.length}`}>
                   <Checkbox

@@ -75,7 +75,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
   const handleDelete = async (id: string) => {
     const success = await deleteTemplate(id);
     if (success) {
-      toast.success('Template deleted');
+      toast('Template deleted');
       fetchTemplates();
     } else {
       toast.error('Failed to delete template');

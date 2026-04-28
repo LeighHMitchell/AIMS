@@ -378,7 +378,7 @@ export function AdminUserTable() {
 
       if (response.ok) {
         setUsers(prev => prev.filter(u => u.id !== deleteUserTarget.id))
-        toast.success("User deleted successfully")
+        toast("User deleted")
       } else {
         const data = await response.json()
         toast.error(data.error || "Failed to delete user")
@@ -612,7 +612,7 @@ export function AdminUserTable() {
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="all">All roles</SelectItem>
                 {Object.entries(ROLE_LABELS).map(([key, label]) => (
                   <SelectItem key={key} value={key}>
                     {label}

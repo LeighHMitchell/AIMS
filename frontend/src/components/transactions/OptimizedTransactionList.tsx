@@ -281,10 +281,10 @@ export function OptimizedTransactionList({
           <div className="flex gap-2">
             <Select value={filters.transaction_type} onValueChange={(value) => handleFilterChange('transaction_type', value)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="incoming-funds">Incoming</SelectItem>
                 <SelectItem value="commitment">Commitment</SelectItem>
                 <SelectItem value="disbursement">Disbursement</SelectItem>
@@ -294,10 +294,10 @@ export function OptimizedTransactionList({
 
             <Select value={filters.flow_type} onValueChange={(value) => handleFilterChange('flow_type', value)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Flow" />
+                <SelectValue placeholder="All flow types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All flow types</SelectItem>
                 <SelectItem value="ODA">ODA</SelectItem>
                 <SelectItem value="OOF">OOF</SelectItem>
                 <SelectItem value="private">Private</SelectItem>

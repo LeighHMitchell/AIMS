@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { exportTableToCSV } from '@/lib/csv-export'
+import { exportTableToCSV } from '@/lib/exports'
 import { PivotFilterState } from './PivotFilters'
 
 interface DrillDownTransaction {

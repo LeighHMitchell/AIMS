@@ -143,7 +143,7 @@ export function useResults(activityId: string) {
         throw new Error(responseData.error || 'Failed to delete result');
       }
 
-      toast.success('Result deleted successfully');
+      toast('Result deleted successfully');
       await fetchResults(); // Refresh the list
       return true;
     } catch (err) {
@@ -244,7 +244,7 @@ export function useIndicators(resultId: string) {
 
       if (error) throw error;
 
-      toast.success('Indicator deleted successfully');
+      toast('Indicator deleted successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete indicator';
@@ -331,7 +331,7 @@ export function useBaselines() {
 
       if (error) throw error;
 
-      toast.success('Baseline deleted successfully');
+      toast('Baseline deleted successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete baseline';
@@ -417,7 +417,7 @@ export function usePeriods() {
 
       if (error) throw error;
 
-      toast.success('Period deleted successfully');
+      toast('Period deleted successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete period';
@@ -557,7 +557,7 @@ export function useDocumentLinks() {
         throw new Error(error.error || 'Failed to delete document link');
       }
 
-      toast.success('Document link deleted');
+      toast('Document link deleted');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete document link';
@@ -642,7 +642,7 @@ export function useReferences() {
         throw new Error(error.error || 'Failed to delete reference');
       }
 
-      toast.success('Reference deleted');
+      toast('Reference deleted');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete reference';
@@ -726,7 +726,7 @@ export function useDimensions() {
         throw new Error(error.error || 'Failed to delete dimension');
       }
 
-      toast.success('Dimension deleted');
+      toast('Dimension deleted');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete dimension';
@@ -809,7 +809,7 @@ export function useLocations() {
         throw new Error(error.error || 'Failed to delete location');
       }
 
-      toast.success('Location deleted');
+      toast('Location deleted');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete location';

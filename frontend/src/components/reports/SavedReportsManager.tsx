@@ -268,7 +268,7 @@ export function SavedReportsManager({
       })
 
       if (response.ok) {
-        toast.success('Report deleted')
+        toast('Report deleted')
         fetchSavedReports()
       } else {
         const error = await response.json()

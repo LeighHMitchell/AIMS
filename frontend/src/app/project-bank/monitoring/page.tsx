@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { FilterBar } from "@/components/ui/filter-bar"
 import { CalendarClock, AlertTriangle, CheckCircle, Search, BarChart3, Inbox } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import { apiFetch } from "@/lib/api-fetch"
 
 interface DashboardData {
@@ -92,11 +93,11 @@ export default function MonitoringDashboardPage() {
             <table className="w-full border-collapse">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Project</th>
-                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Sector</th>
-                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Next Due</th>
-                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Interval</th>
-                  <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Status</th>
+                  <th className="h-12 px-4 text-left align-top text-body font-medium text-muted-foreground">Project</th>
+                  <th className="h-12 px-4 text-left align-top text-body font-medium text-muted-foreground">Sector</th>
+                  <th className="h-12 px-4 text-left align-top text-body font-medium text-muted-foreground">Next Due</th>
+                  <th className="h-12 px-4 text-left align-top text-body font-medium text-muted-foreground">Interval</th>
+                  <th className="h-12 px-4 text-left align-top text-body font-medium text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -104,7 +105,7 @@ export default function MonitoringDashboardPage() {
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={i}>
                       {Array.from({ length: 5 }).map((_, j) => (
-                        <td key={j} className="px-4 py-2"><div className="h-4 bg-muted animate-pulse rounded w-16" /></td>
+                        <td key={j} className="px-4 py-2"><Skeleton className="h-4 w-16" /></td>
                       ))}
                     </tr>
                   ))

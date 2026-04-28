@@ -11643,7 +11643,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
                   <span className="text-body font-medium text-foreground">Policy Marker</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Significance:</span>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.significance}</span>
                   {field.currentValue.vocabulary && (
@@ -11654,7 +11654,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   )}
                 </div>
                 {field.currentValue.rationale && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Rationale:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.rationale}</span>
                   </div>
@@ -11667,31 +11667,31 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <span className="text-body font-medium text-foreground">Contact</span>
                 </div>
                 {field.currentValue.personName && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Name:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.personName}</span>
                   </div>
                 )}
                 {field.currentValue.organization && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Organization:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
                 {field.currentValue.jobTitle && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Position:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.jobTitle}</span>
                   </div>
                 )}
                 {field.currentValue.email && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Email:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.email}</span>
                   </div>
                 )}
                 {field.currentValue.telephone && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Phone:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.telephone}</span>
                   </div>
@@ -11703,16 +11703,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.role}</span>
                   <span className="text-body font-medium text-foreground">Participating Org</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Name:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.name}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Role:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.role}</span>
                 </div>
                 {field.currentValue.ref && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Ref:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.ref}</span>
                     {field.importValue?.wasCorrected && (
@@ -11733,7 +11733,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   </div>
                 )}
                 {field.currentValue.type && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Type:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.type}</span>
                   </div>
@@ -11746,13 +11746,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <span className="text-body font-medium text-foreground">Organization</span>
                 </div>
                 {field.currentValue.name && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Name:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.name}</span>
                   </div>
                 )}
                 {field.currentValue.acronym && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-helper text-muted-foreground">Acronym:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.acronym}</span>
                   </div>
@@ -11829,7 +11829,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
                 <span className="text-body font-medium text-foreground">Policy Marker</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-helper text-muted-foreground">Significance:</span>
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.significance}</span>
                 {field.importValue.vocabulary && (
@@ -11840,7 +11840,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 )}
               </div>
               {field.importValue.rationale && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Rationale:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.rationale}</span>
                 </div>
@@ -11883,31 +11883,31 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 <span className="text-body font-medium text-foreground">Contact</span>
               </div>
               {field.importValue.personName && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Name:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.personName}</span>
                 </div>
               )}
               {field.importValue.jobTitle && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Position:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.jobTitle}</span>
                 </div>
               )}
               {field.importValue.organization && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Organization:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.organization}</span>
                 </div>
               )}
               {field.importValue.email && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Email:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.email}</span>
                 </div>
               )}
               {field.importValue.telephone && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Phone:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.telephone}</span>
                 </div>
@@ -11964,12 +11964,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
                 <span className="text-body font-medium text-foreground">Organization</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-helper text-muted-foreground">Name:</span>
                 <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.name || field.importValue.narrative}</span>
               </div>
               {field.importValue.ref && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-helper text-muted-foreground">Ref:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.ref}</span>
                 </div>
@@ -12819,7 +12819,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                             countries={IATI_COUNTRIES}
                             value={iatiSearchFilters.recipientCountry}
                             onValueChange={(value) => setIatiSearchFilters({ ...iatiSearchFilters, recipientCountry: value })}
-                            placeholder="All Countries"
+                            placeholder="All countries"
                             allowClear={true}
                           />
                         </div>
@@ -14390,14 +14390,14 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                         <tbody>
                           {items.map((mapping, idx) => (
                             <tr key={mapping.id} className="border-b border-border last:border-b-0 animate-in fade-in slide-in-from-top-2">
-                              <td className="py-2 px-1 align-middle">
+                              <td className="py-2 px-1 align-top">
                                 <SubsectorDropdown
                                   value={mapping.selectedCode}
                                   options={mapping.availableSubsectors}
                                   onSelect={(code) => handleSubsectorChange(mapping.id, code)}
                                 />
                               </td>
-                              <td className="py-2 px-1 align-middle">
+                              <td className="py-2 px-1 align-top">
                                 <div className="flex items-center justify-center gap-1">
                                   <Input
                                     type="number"
@@ -14412,7 +14412,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                   <span className="text-body text-muted-foreground">%</span>
                                 </div>
                               </td>
-                              <td className="py-2 px-1 align-middle">
+                              <td className="py-2 px-1 align-top">
                                 {items.length > 1 && (
                                   <Button
                                     variant="ghost"

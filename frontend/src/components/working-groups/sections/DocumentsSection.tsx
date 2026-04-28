@@ -152,7 +152,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
         body: JSON.stringify({ document_id: docToDelete.id }),
       })
       if (!res.ok && res.status !== 204) throw new Error('Failed to delete document')
-      toast.success('Document deleted')
+      toast('Document deleted')
       setDocToDelete(null)
       fetchDocuments()
     } catch (error: any) {

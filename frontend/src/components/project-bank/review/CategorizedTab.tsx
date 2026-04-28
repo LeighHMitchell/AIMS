@@ -173,7 +173,7 @@ function CategorizedKanbanCard({ project, onProfile, onForm }: { project: Catego
             <Button variant="outline" size="sm" className="flex-1 h-7 text-helper gap-1" onClick={e => { e.stopPropagation(); onProfile() }}>
               <FileText className="h-3 w-3" /> Profile
             </Button>
-            <Button size="sm" className="flex-1 h-7 text-helper gap-1 bg-black hover:bg-black/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
+            <Button size="sm" className="flex-1 h-7 text-helper gap-1 bg-gunmetal hover:bg-gunmetal/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
               <ClipboardList className="h-3 w-3" /> Project Appraisal
             </Button>
           </div>
@@ -267,7 +267,7 @@ export function CategorizedTab() {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Sectors</SelectItem>
+              <SelectItem value="all">All sectors</SelectItem>
               {sectors.map(s => (
                 <SelectItem key={s.id} value={s.name}>
                   <span className="inline-flex items-center gap-2">
@@ -286,7 +286,7 @@ export function CategorizedTab() {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
+              <SelectItem value="all">All regions</SelectItem>
               {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -298,7 +298,7 @@ export function CategorizedTab() {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {CATEGORY_FILTER_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -370,7 +370,7 @@ export function CategorizedTab() {
                   <Button variant="outline" size="sm" className="h-7 text-helper gap-1" onClick={() => router.push(`/project-bank/${p.id}`)}>
                     <FileText className="h-3 w-3" /> Profile
                   </Button>
-                  <Button size="sm" className="h-7 text-helper gap-1 bg-black hover:bg-black/90 text-white" onClick={() => router.push(`/project-bank/${p.id}/appraisal`)}>
+                  <Button size="sm" className="h-7 text-helper gap-1 bg-gunmetal hover:bg-gunmetal/90 text-white" onClick={() => router.push(`/project-bank/${p.id}/appraisal`)}>
                     <ClipboardList className="h-3 w-3" /> Project Appraisal
                   </Button>
                 </div>

@@ -865,7 +865,7 @@ export default function Atlas() {
                       >
                       <span className="truncate">
                         {statusFilter.length === 0
-                          ? 'All Statuses'
+                          ? 'All statuses'
                           : statusFilter.length === 1
                             ? ACTIVITY_STATUS_GROUPS.flatMap(g => g.options).find(s => s.code === statusFilter[0])?.name || statusFilter[0]
                             : `${statusFilter.length} statuses`}

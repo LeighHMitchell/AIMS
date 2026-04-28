@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -71,19 +71,20 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     [onImageChange, label, maxSize]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
       "image/*": acceptedFormats,
     },
     maxFiles: 1,
     disabled: uploading,
+    noClick: false,
   });
 
   const removeImage = () => {
     setPreview(null);
     onImageChange(null);
-    toast.success(`${label} removed`);
+    toast(`${label} removed`);
   };
 
   if (preview) {
@@ -142,20 +143,33 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         {...getRootProps()}
         className={`
           ${previewHeight} border-2 border-dashed rounded-lg cursor-pointer transition-colors
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400"}
+          ${isDragActive ? "border-primary bg-primary/10" : "border-input hover:border-slate-400 hover:bg-muted"}
           ${uploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >
         <input {...getInputProps()} id={id} />
-        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-          <ImageIcon className="h-12 w-12 mb-3" />
-          <p className="text-body font-medium">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground px-4">
+          <Upload className={`h-10 w-10 mb-2 ${isDragActive ? "text-primary" : ""}`} />
+          <p className="text-body font-medium text-foreground text-center">
             {isDragActive
               ? `Drop the ${label.toLowerCase()} here`
-              : `Drag & drop ${label.toLowerCase()} here`}
+              : `Drag and drop ${label.toLowerCase()}, or`}
           </p>
-          <p className="text-helper mt-1">or click to select</p>
-          <p className="text-helper mt-2 text-muted-foreground">
+          <Button
+            type="button"
+            size="sm"
+            variant="default"
+            className="mt-2 gap-2"
+            disabled={uploading}
+            onClick={(e) => {
+              e.stopPropagation();
+              open();
+            }}
+          >
+            <Upload className="h-4 w-4" />
+            Choose File
+          </Button>
+          <p className="text-helper mt-2 text-muted-foreground text-center">
             {acceptedFormats.join(", ").toUpperCase()} up to {maxSize}MB
           </p>
         </div>

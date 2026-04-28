@@ -65,7 +65,7 @@ export function ReferencesManager({
       const success = await deleteReference(entityType, entityId, referenceId);
       if (success) {
         onUpdate();
-        toast.success('Reference deleted', {
+        toast('Reference deleted', {
           action: {
             label: 'Undo',
             onClick: async () => {

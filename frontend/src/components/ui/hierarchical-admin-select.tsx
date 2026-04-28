@@ -322,7 +322,7 @@ export function HierarchicalAdminSelect({
                               tabIndex={0}
                             >
                               <div className="flex items-center gap-2">
-                                <span className="font-medium">{parentUnit.name}</span>
+                                <span className="font-medium whitespace-nowrap">{parentUnit.name}</span>
                                 {isParentSelected && (
                                   <Check
                                     className="h-4 w-4 shrink-0"
@@ -330,7 +330,7 @@ export function HierarchicalAdminSelect({
                                   />
                                 )}
                                 {hasSelectedChildren && !isParentSelected && (
-                                  <Badge variant="outline" className="text-helper">
+                                  <Badge variant="outline" className="text-helper whitespace-nowrap">
                                     {group.children.filter(c => selected.includes(c.id)).length} townships
                                   </Badge>
                                 )}

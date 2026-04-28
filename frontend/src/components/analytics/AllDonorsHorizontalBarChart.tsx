@@ -967,7 +967,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Organization Types</SelectItem>
+                <SelectItem value="all">All organization types</SelectItem>
                 {IATI_ORGANIZATION_TYPES.map(type => (
                   <SelectItem key={type.code} value={type.code}>
                     <span className="flex items-center gap-2">
@@ -1118,7 +1118,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Organization Types</SelectItem>
+              <SelectItem value="all">All organization types</SelectItem>
               {IATI_ORGANIZATION_TYPES.map(type => (
                 <SelectItem key={type.code} value={type.code}>
                   <span className="flex items-center gap-2">

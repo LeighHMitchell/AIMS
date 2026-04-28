@@ -7,6 +7,7 @@ import { AlertTriangle, MoreVertical, ChevronsUpDown, ChevronUp, ChevronDown, In
 import { Button } from "@/components/ui/button"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -98,7 +99,7 @@ export default function FundingGapsPage() {
     const isRight = className?.includes('text-right')
     return (
       <th
-        className={`h-10 px-4 align-middle text-helper font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || 'text-left'}`}
+        className={`h-10 px-4 align-top text-helper font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || 'text-left'}`}
         onClick={() => handleSort(field)}
       >
         <span className={`flex items-center gap-1 ${isRight ? 'justify-end' : ''}`}>
@@ -135,7 +136,7 @@ export default function FundingGapsPage() {
                   <SortHeader field="funding_gap" className="text-right">Gap</SortHeader>
                   <SortHeader field="progress">Progress</SortHeader>
                   <SortHeader field="status">Status</SortHeader>
-                  <th className="h-10 px-2 text-center align-middle text-helper font-medium text-muted-foreground w-[44px]"></th>
+                  <th className="h-10 px-2 text-center align-top text-helper font-medium text-muted-foreground w-[44px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -143,7 +144,7 @@ export default function FundingGapsPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
                       {Array.from({ length: colCount }).map((_, j) => (
-                        <td key={j} className="px-4 py-2"><div className="h-4 bg-muted animate-pulse rounded w-16" /></td>
+                        <td key={j} className="px-4 py-2"><Skeleton className="h-4 w-16" /></td>
                       ))}
                     </tr>
                   ))

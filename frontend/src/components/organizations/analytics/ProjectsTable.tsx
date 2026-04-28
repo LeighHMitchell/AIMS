@@ -173,7 +173,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="all">All projects</SelectItem>
                 <SelectItem value="reporting">Reporting Org</SelectItem>
                 <SelectItem value="funding">Funding</SelectItem>
                 <SelectItem value="implementing">Implementing</SelectItem>

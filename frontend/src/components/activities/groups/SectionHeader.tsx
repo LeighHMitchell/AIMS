@@ -65,7 +65,7 @@ export const SECTION_LABELS: Record<string, string> = {
   humanitarian: "Humanitarian Marker",
   locations: "Activity Sites",
   "country-region": "Countries & Regions",
-  "subnational-allocation": "Sub-national Allocation",
+  "subnational-allocation": "Sub-national",
   organisations: "Participating Organisations",
   contacts: "Activity Contacts",
   focal_points: "Focal Points",

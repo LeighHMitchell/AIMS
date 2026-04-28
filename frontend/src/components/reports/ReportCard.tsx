@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { LucideIcon, Download, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { exportTableToCSV } from "@/lib/csv-export"
+import { exportTableToCSV } from '@/lib/exports'
 import { toast } from "sonner"
 
 export interface ReportHeader {

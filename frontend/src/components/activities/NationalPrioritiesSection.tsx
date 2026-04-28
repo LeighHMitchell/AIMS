@@ -94,12 +94,14 @@ interface NationalPrioritiesSectionProps {
   activityId: string;
   disabled?: boolean;
   onChange?: () => void;
+  onCountChange?: (count: number) => void;
 }
 
 export function NationalPrioritiesSection({
   activityId,
   disabled = false,
   onChange,
+  onCountChange,
 }: NationalPrioritiesSectionProps) {
   const [allocations, setAllocations] = useState<ActivityNationalPriority[]>([]);
   const [plans, setPlans] = useState<NationalPlan[]>([]);
@@ -183,6 +185,11 @@ export function NationalPrioritiesSection({
     };
     loadData();
   }, [fetchAllocations, fetchPlans]);
+
+  // Notify parent of allocation count for the sidebar tab-completion indicator
+  useEffect(() => {
+    onCountChange?.(allocations.length);
+  }, [allocations.length, onCountChange]);
 
   // ============================================
   // COMPUTED VALUES
@@ -298,7 +305,7 @@ export function NationalPrioritiesSection({
         throw new Error(result.error || "Failed to remove allocation");
       }
 
-      toast.success("Priority allocation removed", {
+      toast("Priority allocation removed", {
         action: {
           label: "Undo",
           onClick: () => restoreAllocation(snapshot),

@@ -186,7 +186,7 @@ export function PageHelpManagement() {
     try {
       const res = await apiFetch(`/api/admin/page-help?id=${row.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || 'Delete failed');
-      toast.success('Deleted');
+      toast('Deleted');
       await fetchRows();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');

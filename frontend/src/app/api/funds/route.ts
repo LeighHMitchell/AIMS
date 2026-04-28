@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
+    const status = searchParams.get('status') // legacy single value
+    const statuses = searchParams.get('statuses')?.split(',').filter(Boolean) || []
     const sortBy = searchParams.get('sort') || 'title'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
@@ -24,7 +25,9 @@ export async function GET(request: NextRequest) {
       .select('id, title_narrative, acronym, iati_identifier, activity_status, planned_start_date, planned_end_date, actual_start_date, actual_end_date, reporting_org_id, banner', { count: 'exact' })
       .eq('is_pooled_fund', true)
 
-    if (status) {
+    if (statuses.length > 0) {
+      query = query.in('activity_status', statuses)
+    } else if (status) {
       query = query.eq('activity_status', status)
     }
 

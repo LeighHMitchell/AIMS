@@ -421,7 +421,7 @@ export function DataClinicDuplicates() {
                   <SelectValue placeholder="Filter by confidence" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Confidence Levels</SelectItem>
+                  <SelectItem value="all">All confidence levels</SelectItem>
                   <SelectItem value="high">High Confidence</SelectItem>
                   <SelectItem value="medium">Medium Confidence</SelectItem>
                   <SelectItem value="low">Low/Review</SelectItem>
@@ -433,7 +433,7 @@ export function DataClinicDuplicates() {
                   <SelectValue placeholder="Filter by detection type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Detection Types</SelectItem>
+                  <SelectItem value="all">All detection types</SelectItem>
                   {detectionTypeOptions.map((type) => (
                     <SelectItem key={type} value={type}>
                       {DETECTION_TYPE_LABELS[type]}

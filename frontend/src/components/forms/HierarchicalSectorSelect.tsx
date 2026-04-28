@@ -1,12 +1,13 @@
 'use client';
 
 import React from "react";
-import { ChevronsUpDown, Search, Check, X } from "lucide-react";
+import { ChevronsUpDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json';
@@ -294,11 +295,12 @@ export function HierarchicalSectorSelect({
                               aria-selected={isSelected}
                               aria-disabled={isDisabled}
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
+                              <Checkbox
+                                checked={isSelected}
+                                disabled={isDisabled}
+                                tabIndex={-1}
+                                aria-hidden="true"
+                                className="mr-2 pointer-events-none"
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="text-body truncate">

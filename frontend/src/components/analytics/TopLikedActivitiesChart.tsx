@@ -303,10 +303,10 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           {/* Organization Type Filter */}
           <Select value={orgType} onValueChange={setOrgType}>
             <SelectTrigger className="w-auto min-w-[200px] h-9">
-              <SelectValue placeholder="All Organization Types" />
+              <SelectValue placeholder="All organization types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Organization Types</SelectItem>
+              <SelectItem value="all">All organization types</SelectItem>
               {IATI_ORGANIZATION_TYPES.map((type) => (
                 <SelectItem key={type.code} value={type.code}>
                   <div className="flex items-center gap-2">

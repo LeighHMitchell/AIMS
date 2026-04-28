@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
+import { exportBudgetsCsv, type BudgetRow } from "@/lib/exports/entities/budgets";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
-import { Download, ChevronLeft, ChevronRight, FileText, ShieldCheck, Building2, Banknote } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, FileText, ShieldCheck, Building2, Banknote, Search, X, AlignLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -42,6 +43,14 @@ export default function BudgetsPage() {
   useFlushDeletesOnUnmount("budgets-list");
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
+  // Show descriptions toggle with localStorage persistence
+  const [showDescriptions, setShowDescriptions] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('budgets_showDescriptions') === 'true';
+    }
+    return false;
+  });
   
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useLocalStorage<BudgetColumnId[]>(
@@ -163,40 +172,19 @@ export default function BudgetsPage() {
   };
 
   const exportBudgets = () => {
-    const dataToExport = sortedBudgets.map((budget) => ({
-      "Activity": budget.activity?.title_narrative || budget.activity_id,
-      "Type": budget.type === 1 || budget.type === '1' ? 'Original' : budget.type === 2 || budget.type === '2' ? 'Revised' : budget.type,
-      "Status": budget.status === 1 || budget.status === '1' ? 'Indicative' : budget.status === 2 || budget.status === '2' ? 'Committed' : budget.status,
-      "Period Start": budget.period_start ? format(new Date(budget.period_start), "yyyy-MM-dd") : "",
-      "Period End": budget.period_end ? format(new Date(budget.period_end), "yyyy-MM-dd") : "",
-      "Value": budget.value || "",
-      "Currency": budget.currency || "",
-      "Value USD": budget.value_usd || "",
+    if (sortedBudgets.length === 0) {
+      toast.error('No budgets to export');
+      return;
+    }
+    const rows: BudgetRow[] = sortedBudgets.map((b: any) => ({
+      ...b,
+      activity_id: b.activity_id ?? b.activity?.id ?? '',
+      activity_iati_id: b.activity?.iati_identifier ?? '',
+      activity_title: b.activity?.title_narrative ?? '',
+      activity_acronym: b.activity?.acronym ?? '',
     }));
-
-    const headers = Object.keys(dataToExport[0] || {});
-    const csv = [
-      headers.join(","),
-      ...dataToExport.map((row) =>
-        headers
-          .map((header) => {
-            const value = row[header as keyof typeof row];
-            return typeof value === "string" && value.includes(",")
-              ? `"${value}"`
-              : value;
-          })
-          .join(",")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `budgets-export-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Budgets exported successfully");
+    exportBudgetsCsv(rows, { filenameEntity: 'budgets', includeActivityContext: true });
+    toast.success(`Exported ${rows.length.toLocaleString()} budgets`);
   };
 
 
@@ -326,12 +314,25 @@ export default function BudgetsPage() {
             {/* Search Input */}
             <div className="flex flex-col gap-1">
               <Label className="text-helper text-muted-foreground">Search</Label>
-              <Input
-                placeholder="Search budgets..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[240px] h-9"
-              />
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search budgets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-[240px] h-9 pl-8 pr-8"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Filters */}
@@ -401,6 +402,21 @@ export default function BudgetsPage() {
 
             {/* Spacer */}
             <div className="flex-1" />
+
+            {/* Descriptions Toggle */}
+            <Button
+              variant={showDescriptions ? "default" : "outline"}
+              size="sm"
+              className="h-9 w-9 flex-shrink-0 p-0"
+              title={showDescriptions ? "Hide descriptions" : "Show descriptions"}
+              onClick={() => {
+                const next = !showDescriptions;
+                setShowDescriptions(next);
+                localStorage.setItem('budgets_showDescriptions', String(next));
+              }}
+            >
+              <AlignLeft className="h-4 w-4" />
+            </Button>
         </FilterBar>
 
         {/* Budgets Table */}
@@ -442,6 +458,7 @@ export default function BudgetsPage() {
                 onSelectBudget={handleSelectBudget}
                 visibleColumns={visibleColumns}
                 onColumnsChange={setVisibleColumns}
+                showDescriptions={showDescriptions}
               />
             </div>
           </div>

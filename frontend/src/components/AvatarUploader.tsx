@@ -127,7 +127,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
-    toast.success("Profile picture removed")
+    toast("Profile picture removed")
   }
 
   return (

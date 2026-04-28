@@ -228,7 +228,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
       if (!response.ok) {
         throw new Error('Failed to delete notification')
       }
-      toast.success('Notification deleted')
+      toast('Notification deleted')
     } catch (error: any) {
       console.error('Error deleting notification:', error)
       toast.error('Failed to delete notification')

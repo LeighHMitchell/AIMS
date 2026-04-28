@@ -85,7 +85,7 @@ export function DocumentLinksManager({
       const success = await deleteDocumentLink(entityType, entityId, documentId);
       if (success) {
         onUpdate();
-        toast.success('Document link deleted', {
+        toast('Document link deleted', {
           action: {
             label: 'Undo',
             onClick: async () => {

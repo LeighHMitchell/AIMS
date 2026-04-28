@@ -1106,7 +1106,7 @@ const autoPopulateIatiFields = useCallback((params: {
 
     try {
       await onDelete(location.id);
-      toast.success('Location deleted successfully');
+      toast('Location deleted successfully');
       onClose();
     } catch (error) {
       console.error('Error deleting location:', error);

@@ -189,7 +189,7 @@ export function useFinancingTerms(activityId: string): UseFinancingTermsReturn {
 
         if (deleteError) throw deleteError;
 
-        toast.success('Loan status deleted successfully');
+        toast('Loan status deleted successfully');
         await fetchFinancingTerms();
         return true;
       } catch (err) {

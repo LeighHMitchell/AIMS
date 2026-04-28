@@ -18,6 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { CurrencyValue } from '@/components/ui/currency-value';
+import { useDropdownContextOptional } from '@/contexts/DropdownContext';
 import { convertToUSD } from '@/lib/currency-conversion-api';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Switch } from '@/components/ui/switch';
@@ -63,6 +65,7 @@ export default function ForwardSpendingSurveyTab({
   onFssChange
 }: ForwardSpendingSurveyTabProps) {
   const { confirm, ConfirmDialog } = useConfirmDialog();
+  const dropdownContext = useDropdownContextOptional();
   const [fss, setFss] = useState<ForwardSpendingSurvey | null>(null);
   const [forecasts, setForecasts] = useState<FSSForecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,7 +210,7 @@ export default function ForwardSpendingSurveyTab({
 
       setFss(null);
       setForecasts([]);
-      toast.success('Forward Spending Survey deleted');
+      toast('Forward Spending Survey deleted');
     } catch (err) {
       console.error('[FSS Tab] Error deleting FSS:', err);
       toast.error('Failed to delete FSS');
@@ -468,7 +471,7 @@ export default function ForwardSpendingSurveyTab({
       }
 
       setForecasts(prev => prev.filter(f => f.id !== forecastId));
-      toast.success(`Removed ${snapshot?.forecast_year || ''} forecast`.trim(), snapshot ? {
+      toast(`Removed ${snapshot?.forecast_year || ''} forecast`.trim(), snapshot ? {
         action: {
           label: 'Undo',
           onClick: async () => {
@@ -537,12 +540,12 @@ export default function ForwardSpendingSurveyTab({
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-6">
       {/* FSS Form Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            {fss && !isReadOnly && (
+        {fss && !isReadOnly && (
+          <CardHeader>
+            <div className="flex items-center justify-end">
               <Button
                 variant="destructive"
                 size="sm"
@@ -552,9 +555,9 @@ export default function ForwardSpendingSurveyTab({
                 <Trash2 className="h-4 w-4 mr-2 text-white" />
                 Delete FSS
               </Button>
-            )}
-          </CardTitle>
-        </CardHeader>
+            </div>
+          </CardHeader>
+        )}
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
@@ -588,6 +591,9 @@ export default function ForwardSpendingSurveyTab({
               <Select
                 value={fss?.priority?.toString() || ''}
                 onValueChange={(value) => handleFssFieldChange('priority', value ? parseInt(value) : null)}
+                onOpenChange={(open) => {
+                  if (open) dropdownContext?.closeAllDropdowns();
+                }}
                 disabled={isReadOnly || savingFss}
               >
                 <SelectTrigger id="priority">
@@ -596,7 +602,12 @@ export default function ForwardSpendingSurveyTab({
                 <SelectContent>
                   {FSS_PRIORITY_LEVELS.map((level) => (
                     <SelectItem key={level.code} value={level.code.toString()} className="pl-2">
-                      {level.name}
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {level.code}
+                        </span>
+                        {level.name}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -667,8 +678,8 @@ export default function ForwardSpendingSurveyTab({
       {fss?.id && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Forecast Years</span>
+            <div className="flex items-center justify-between">
+              <CardTitle>Forecast Years</CardTitle>
               {!isReadOnly && (
                 <Button
                   size="sm"
@@ -679,7 +690,7 @@ export default function ForwardSpendingSurveyTab({
                   Add Forecast
                 </Button>
               )}
-            </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             {forecasts.length === 0 ? (
@@ -729,8 +740,11 @@ export default function ForwardSpendingSurveyTab({
                                 <UITooltip>
                                   <TooltipTrigger asChild>
                                     <span className="font-medium cursor-help">
-                                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-1.5">USD</span>
-                                      {usdValues[forecast.id || ''].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      <CurrencyValue
+                                        amount={usdValues[forecast.id || ''].usd}
+                                        currency="USD"
+                                        variant="precise"
+                                      />
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent>

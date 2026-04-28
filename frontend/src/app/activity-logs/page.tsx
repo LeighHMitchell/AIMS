@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import { exportRowsAsCsv, buildExportFilename, dateTimeIso } from '@/lib/exports';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -235,37 +236,34 @@ export default function ActivityLogsPage() {
   };
 
   const exportLogs = () => {
-    const dataToExport = filteredLogs.map(log => ({
-      'Timestamp': format(new Date(log.timestamp), 'yyyy-MM-dd HH:mm:ss'),
-      'User': log.user?.name || 'Unknown User',
-      'Role': getRoleDisplayLabel(log.user?.role || 'unknown'),
-      'Action': log.actionType,
-      'Entity Type': log.entityType,
-      'Description': getActionDescription(log),
-      'Activity ID': log.activityId || '',
-      'Activity Title': log.activityTitle || '',
+    if (filteredLogs.length === 0) return;
+    const role = (log: any) => log.user?.role ?? 'unknown';
+    const rows = filteredLogs.map((log) => ({
+      timestamp_iso: dateTimeIso(log.timestamp),
+      user_id: log.user?.id ?? '',
+      user_name: log.user?.name ?? 'Unknown User',
+      role_code: role(log),
+      role_name: getRoleDisplayLabel(role(log)),
+      action_type_code: log.actionType,
+      action_type_name: log.actionType,
+      entity_type_code: log.entityType,
+      entity_type_name: log.entityType,
+      entity_id: (log as any).entityId ?? '',
+      description: getActionDescription(log),
+      activity_id: log.activityId ?? '',
+      activity_title: log.activityTitle ?? '',
+      ip_address: (log as any).ipAddress ?? '',
+      user_agent: (log as any).userAgent ?? '',
     }));
-
-    const headers = Object.keys(dataToExport[0] || {});
-    const csv = [
-      headers.join(','),
-      ...dataToExport.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof typeof row];
-          return typeof value === 'string' && value.includes(',') 
-            ? `"${value}"` 
-            : value;
-        }).join(',')
-      )
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `activity-logs-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const cols = (Object.keys(rows[0]) as (keyof typeof rows[number])[]).map((k) => ({
+      header: String(k),
+      accessor: (r: typeof rows[number]) => r[k] as any,
+    }));
+    exportRowsAsCsv(
+      rows,
+      cols,
+      buildExportFilename({ entity: 'activity-logs', format: 'csv' })
+    );
   };
 
   if (loading) {
@@ -342,7 +340,7 @@ export default function ActivityLogsPage() {
                   <SelectValue placeholder="Filter by action" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Actions</SelectItem>
+                  <SelectItem value="all">All actions</SelectItem>
                   <SelectItem value="create">Create</SelectItem>
                   <SelectItem value="edit">Edit</SelectItem>
                   <SelectItem value="delete">Delete</SelectItem>
@@ -368,7 +366,7 @@ export default function ActivityLogsPage() {
                   <SelectValue placeholder="Filter by entity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Entities</SelectItem>
+                  <SelectItem value="all">All entities</SelectItem>
                   <SelectItem value="activity">Activities</SelectItem>
                   <SelectItem value="transaction">Transactions</SelectItem>
                   <SelectItem value="contact">Contacts</SelectItem>

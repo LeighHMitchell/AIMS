@@ -520,7 +520,7 @@ export function FS1ReviewTab() {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Sectors</SelectItem>
+              <SelectItem value="all">All sectors</SelectItem>
               {sectors.map(s => (
                 <SelectItem key={s.id} value={s.name}>
                   <span className="inline-flex items-center gap-2">
@@ -539,7 +539,7 @@ export function FS1ReviewTab() {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
+              <SelectItem value="all">All regions</SelectItem>
               {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>

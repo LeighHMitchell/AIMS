@@ -161,7 +161,7 @@ export function WorkingGroupEditor({
       })
 
       if (response.ok || response.status === 204) {
-        toast.success(`"${workingGroup?.label || 'Working Group'}" was deleted successfully`)
+        toast(`"${workingGroup?.label || 'Working Group'}" was deleted successfully`)
         setShowDeleteDialog(false)
         router.push('/working-groups')
       } else {

@@ -757,7 +757,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                 countries={uniqueCountries}
                 value={filters.recipientCountry}
                   onValueChange={(value) => setFilters({ ...filters, recipientCountry: value })}
-                placeholder="All Countries"
+                placeholder="All countries"
                 allowClear={true}
               />
             </div>

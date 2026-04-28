@@ -224,7 +224,7 @@ export default function AuthCallbackPage() {
           <p className="text-body text-muted-foreground mb-6">{errorMessage}</p>
           <button
             onClick={() => router.push('/login')}
-            className="w-full bg-gray-900 text-white py-2 px-4 rounded-md hover:bg-black transition"
+            className="w-full bg-gunmetal text-white py-2 px-4 rounded-md hover:bg-gunmetal/90 transition"
           >
             {authType === 'signup' ? 'Go to Sign In' : 'Try Again'}
           </button>

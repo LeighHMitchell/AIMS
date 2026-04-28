@@ -380,7 +380,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {categories.map(cat => (
               <SelectItem key={cat} value={cat}>
                 {DOCUMENT_CATEGORIES[cat] || cat}
@@ -394,7 +394,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
             <SelectValue placeholder="Attached to" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
             <SelectItem value="result">Result</SelectItem>
             <SelectItem value="indicator">Indicator</SelectItem>
             <SelectItem value="baseline">Baseline</SelectItem>

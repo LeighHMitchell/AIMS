@@ -308,7 +308,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
           <TableHeader>
             <TableRow>
                 {orderedColumns.map((colId) => headerMap[colId])}
-              <th className="h-12 px-4 text-right align-middle text-body font-medium text-muted-foreground w-[13%]">
+              <th className="h-12 px-4 text-right align-top text-body font-medium text-muted-foreground w-[13%]">
                 Actions
               </th>
             </TableRow>

@@ -755,7 +755,7 @@ function ImprovedSectorAllocationFormInner({
     }, 100);
 
     if (snapshot) {
-      toast.success(`Removed ${snapshot.code} – ${snapshot.name}`, {
+      toast(`Removed ${snapshot.code} – ${snapshot.name}`, {
         action: {
           label: 'Undo',
           onClick: () => {

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, Stethoscope } from 'lucide-react';
 import { toast } from 'sonner';
-import { convertToCSV, downloadCSV, formatDateForCSV, CSVColumn } from '@/lib/csv-utils';
+import { convertToCSV, downloadCSV, formatDateForCSV, CSVColumn } from '@/lib/exports';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface DataClinicHeaderProps {

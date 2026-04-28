@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, Image as ImageIcon, Move, Check } from "lucide-react";
+import { Upload, X, Move, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
@@ -90,13 +90,14 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
     [onBannerChange, activityId]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
       "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
     },
     maxFiles: 1,
     disabled: uploading || isRepositioning,
+    noClick: false,
   });
 
   const removeBanner = () => {
@@ -104,9 +105,9 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
     setPosition(50);
     onBannerChange(null);
     if (activityId && activityId !== "new") {
-      toast.success("Banner removed successfully");
+      toast("Banner removed");
     } else {
-      toast.success("Banner removed");
+      toast("Banner removed");
     }
   };
 
@@ -296,17 +297,34 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         {...getRootProps()}
         className={`
           h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400"}
+          ${isDragActive ? "border-primary bg-primary/10" : "border-input hover:border-slate-400 hover:bg-muted"}
           ${uploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-          <ImageIcon className="h-12 w-12 mb-3" />
-          <p className="text-body font-medium">
-            {isDragActive ? "Drop the image here" : "Drag & drop a banner image here"}
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground px-4">
+          {isDragActive ? (
+            <Upload className="h-10 w-10 mb-2 text-primary" />
+          ) : (
+            <Upload className="h-10 w-10 mb-2" />
+          )}
+          <p className="text-body font-medium text-foreground">
+            {isDragActive ? "Drop the image here" : "Drag and drop a banner image, or"}
           </p>
-          <p className="text-helper mt-1">or click to select</p>
+          <Button
+            type="button"
+            size="sm"
+            variant="default"
+            className="mt-2 gap-2"
+            disabled={uploading}
+            onClick={(e) => {
+              e.stopPropagation();
+              open();
+            }}
+          >
+            <Upload className="h-4 w-4" />
+            Choose File
+          </Button>
           <p className="text-helper mt-2 text-muted-foreground">PNG, JPG, GIF up to 10MB (auto-compressed)</p>
         </div>
       </div>

@@ -156,7 +156,7 @@ export function OrganizationEditor({
       })
 
       if (response.ok) {
-        toast.success(`"${organization?.name || 'Organization'}" was deleted successfully`)
+        toast(`"${organization?.name || 'Organization'}" was deleted`)
         setShowDeleteDialog(false)
         router.push('/')
       } else {

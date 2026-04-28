@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { exportRowsAsCsv, buildExportFilename, coded, dateIso } from '@/lib/exports';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -51,7 +52,7 @@ import { PersonCard } from '@/components/rolodex/PersonCard';
 import { FilterPanel } from '@/components/rolodex/FilterPanel';
 import { useRolodexData } from '@/components/rolodex/useRolodexData';
 import { LoadingText } from '@/components/ui/loading-text';
-import { Skeleton } from '@/components/ui/skeleton';
+import { RolodexSkeleton } from '@/components/skeletons/FullScreenSkeletons';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -117,29 +118,47 @@ export default function RolodexPage() {
   };
 
   const handleExport = () => {
-    const csvContent = [
-      ['Name', 'Email', 'Role', 'Organization', 'Activity', 'Phone', 'Country', 'Source'],
-      ...people.map(person => [
-        person.name,
-        person.email,
-        person.role_label,
-        person.organization_name || '',
-        person.activity_title || '',
-        person.phone || '',
-        person.country_code || '',
-        person.source
-      ])
-    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rolodex-export-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (people.length === 0) return;
+    const rows = people.map(p => ({
+      contact_id: p.id,
+      user_id: p.user_id ?? '',
+      first_name: p.first_name ?? '',
+      middle_name: p.middle_name ?? '',
+      last_name: p.last_name ?? '',
+      title: p.title ?? '',
+      full_name: p.name,
+      email: p.email ?? '',
+      secondary_email: p.secondary_email ?? '',
+      phone: p.phone ?? '',
+      fax: p.fax ?? '',
+      position: p.position ?? '',
+      job_title: p.job_title ?? '',
+      department: p.department ?? '',
+      role_label: p.role_label ?? '',
+      contact_type_code: coded('contact_type', p.contact_type).code,
+      contact_type_name: coded('contact_type', p.contact_type).name,
+      organization_id: p.organization_id ?? '',
+      organization_name: p.organization_name ?? '',
+      organization_acronym: p.organization_acronym ?? '',
+      org_type_code: coded('organization_type', p.org_type).code,
+      org_type_name: coded('organization_type', p.org_type).name,
+      activity_id: p.activity_id ?? '',
+      activity_title: p.activity_title ?? '',
+      activity_count: p.activity_count ?? 0,
+      country_code: coded('country', p.country_code).code,
+      country_name: coded('country', p.country_code).name,
+      notes: p.notes ?? '',
+      source: p.source,
+      source_label: p.source_label ?? '',
+      created_at: dateIso(p.created_at),
+      updated_at: dateIso(p.updated_at),
+      last_contacted: dateIso(p.last_contacted),
+    }));
+    const cols = (Object.keys(rows[0]) as (keyof typeof rows[number])[]).map(k => ({
+      header: String(k),
+      accessor: (r: typeof rows[number]) => r[k] as any,
+    }));
+    exportRowsAsCsv(rows, cols, buildExportFilename({ entity: 'rolodex', format: 'csv' }));
   };
 
   const handleSortChange = (sortBy: string) => {
@@ -268,76 +287,11 @@ export default function RolodexPage() {
     </div>
   );
 
-  // Skeleton loader for initial load
-  const renderSkeleton = () => (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-8 w-8 rounded" />
-          <div>
-            <Skeleton className="h-9 w-36 mb-1" />
-            <Skeleton className="h-4 w-80" />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-20 rounded" />
-          <Skeleton className="h-9 w-9 rounded" />
-        </div>
-      </div>
-
-      {/* Filter Panel */}
-      <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
-        <Skeleton className="h-9 w-60 rounded" />
-        <Skeleton className="h-9 w-36 rounded" />
-        <Skeleton className="h-9 w-36 rounded" />
-        <Skeleton className="h-9 w-40 rounded" />
-        <Skeleton className="h-9 w-36 rounded" />
-        <Skeleton className="h-9 w-36 rounded" />
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-md ring-1 ring-border overflow-hidden">
-        <table className="w-full table-auto border-collapse">
-          <thead className="bg-surface-muted border-b border-border">
-            <tr>
-              <th className="h-12 px-4 py-3 w-[60px]"><Skeleton className="h-8 w-8 rounded-full" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-20" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-28" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-14" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-14" /></th>
-              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border bg-white">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <tr key={i}>
-                <td className="px-4 py-3"><Skeleton className="h-8 w-8 rounded-full" /></td>
-                <td className="px-4 py-3">
-                  <Skeleton className="h-4 w-36 mb-1" />
-                  <Skeleton className="h-3 w-24" />
-                </td>
-                <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
-                <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
-                <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
-                <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                <td className="px-4 py-3"><Skeleton className="h-6 w-16 rounded-full" /></td>
-                <td className="px-4 py-3"><Skeleton className="h-7 w-14" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
   // Show skeleton loader during initial load
   if (loading && people.length === 0 && !error && pagination.total === 0) {
     return (
       <MainLayout>
-        {renderSkeleton()}
+        <RolodexSkeleton />
       </MainLayout>
     );
   }
@@ -465,9 +419,9 @@ export default function RolodexPage() {
                   <table className="w-full table-auto border-collapse">
                     <thead className="bg-surface-muted border-b border-border">
                       <tr>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground w-[60px]"></th>
+                        <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground w-[60px]"></th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[180px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[180px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('name')}
                         >
                           <div className="flex items-center">
@@ -476,7 +430,7 @@ export default function RolodexPage() {
                           </div>
                         </th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('email')}
                         >
                           <div className="flex items-center">
@@ -484,9 +438,9 @@ export default function RolodexPage() {
                             {getSortIcon('email')}
                           </div>
                         </th>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[140px]">Phone</th>
+                        <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[140px]">Phone</th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('organization')}
                         >
                           <div className="flex items-center">
@@ -495,7 +449,7 @@ export default function RolodexPage() {
                           </div>
                         </th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('role')}
                         >
                           <div className="flex items-center">
@@ -504,7 +458,7 @@ export default function RolodexPage() {
                           </div>
                         </th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground w-[100px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground w-[100px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('source')}
                         >
                           <div className="flex items-center">
@@ -512,13 +466,13 @@ export default function RolodexPage() {
                             {getSortIcon('source')}
                           </div>
                         </th>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground w-[80px]" />
+                        <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground w-[80px]" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border bg-white">
                       {visiblePeople.map((person) => (
                         <tr key={person.id} className="group hover:bg-muted transition-colors">
-                          <td className="px-4 py-2 align-middle">
+                          <td className="px-4 py-2 align-top">
                             <UserAvatar
                               src={person.profile_photo}
                               seed={person.id || person.email || person.name || ''}
@@ -527,13 +481,13 @@ export default function RolodexPage() {
                               initials={getInitials(person.name || '')}
                             />
                           </td>
-                          <td className="px-4 py-2 text-body text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-top">
                             <div className="font-medium text-foreground leading-tight">{person.name}</div>
                             {person.job_title && (
                               <div className="text-helper text-muted-foreground">{person.job_title}</div>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-body text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-top">
                             {person.email && (
                               <div className="group/email inline-flex items-center">
                                 <a
@@ -557,7 +511,7 @@ export default function RolodexPage() {
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-body text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-top">
                             {person.phone && (
                               <a 
                                 href={`tel:${person.phone}`}
@@ -568,7 +522,7 @@ export default function RolodexPage() {
                               </a>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-body text-foreground align-middle text-left">
+                          <td className="px-4 py-2 text-body text-foreground align-top text-left">
                             {person.organization_name && (
                               <button
                                 onClick={() => person.organization_id && handleOrganizationClick(person.organization_id)}
@@ -588,10 +542,10 @@ export default function RolodexPage() {
                               </button>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-body text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-top">
                             <span>{person.role_label || person.role || '-'}</span>
                           </td>
-                          <td className="px-4 py-2 text-body align-middle">
+                          <td className="px-4 py-2 text-body align-top">
                             <Badge 
                               variant="secondary" 
                               className={`text-xs ${
@@ -603,7 +557,7 @@ export default function RolodexPage() {
                               {person.source === 'user' ? 'User' : 'Activity'}
                             </Badge>
                           </td>
-                          <td className="px-4 py-2 text-body align-middle">
+                          <td className="px-4 py-2 text-body align-top">
                             <div className="flex items-center gap-1">
                               {person.activity_id && (
                                 <Button

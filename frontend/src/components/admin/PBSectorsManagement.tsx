@@ -44,6 +44,8 @@ import {
   Plus,
   ChevronRight,
   ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -334,7 +336,7 @@ export function PBSectorsManagement() {
           body: JSON.stringify({ sub_sectors: remainingSubs }),
         });
         if (!res.ok) throw new Error("Failed to delete sub-sector");
-        toast.success("Sub-sector removed");
+        toast("Sub-sector removed");
       }
 
       setDeleteDialogOpen(false);
@@ -428,12 +430,29 @@ export function PBSectorsManagement() {
               />
             </div>
             <div className="flex items-center gap-2 ml-auto">
-              <Button variant="outline" size="sm" onClick={expandAll}>
-                Expand All
-              </Button>
-              <Button variant="outline" size="sm" onClick={collapseAll}>
-                Collapse All
-              </Button>
+              {(() => {
+                const anyExpanded = expandedIds.size > 0;
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={anyExpanded ? collapseAll : expandAll}
+                    aria-label={anyExpanded ? 'Collapse all' : 'Expand all'}
+                  >
+                    {anyExpanded ? (
+                      <>
+                        <ChevronsDownUp className="h-4 w-4 mr-2" />
+                        Collapse All
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsUpDown className="h-4 w-4 mr-2" />
+                        Expand All
+                      </>
+                    )}
+                  </Button>
+                );
+              })()}
               <Button variant="outline" size="sm" onClick={fetchSectors}>
                 <RefreshCw className="h-4 w-4" />
               </Button>

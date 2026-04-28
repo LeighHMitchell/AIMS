@@ -65,7 +65,7 @@ export function LocationsManager({
       const success = await deleteLocation(entityType, entityId, locationId);
       if (success) {
         onUpdate();
-        toast.success('Location reference deleted', {
+        toast('Location reference deleted', {
           action: {
             label: 'Undo',
             onClick: async () => {

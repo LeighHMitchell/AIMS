@@ -1,5 +1,6 @@
 import React from 'react';
 import { CircleDashed, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SaveIndicatorProps {
   isSaving: boolean;
@@ -98,7 +99,7 @@ export function LabelSaveIndicator({
   };
   
   return (
-    <label className={`text-sm font-medium flex items-center ${className}`}>
+    <label className={cn('text-sm font-medium flex items-center', className)}>
       {children}
       {showIndicator()}
     </label>

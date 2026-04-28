@@ -223,7 +223,7 @@ export function ProjectReferencesManagement() {
         throw new Error(data.error || "Failed to delete reference");
       }
 
-      toast.success("Reference deleted successfully");
+      toast("Reference deleted");
       fetchReferences();
     } catch (err: any) {
       console.error("Error deleting reference:", err);
@@ -459,7 +459,7 @@ export function ProjectReferencesManagement() {
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="government">Government</SelectItem>
                   <SelectItem value="donor">Donor</SelectItem>
                   <SelectItem value="internal">Internal</SelectItem>

@@ -169,7 +169,7 @@ export default function OrganizationEditorNavigation({
             {/* Group Header */}
             <div 
               id={`group-${groupIndex}`}
-              className="text-section-label font-bold text-black uppercase mb-2 px-1 flex items-center gap-1"
+              className="text-section-label font-bold text-gunmetal uppercase mb-2 px-1 flex items-center gap-1"
               role="heading"
               aria-level={3}
             >
@@ -211,7 +211,7 @@ export default function OrganizationEditorNavigation({
                             ? "text-muted-foreground cursor-not-allowed opacity-60"
                             : isActive
                               ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
-                              : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-black"
+                              : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-gunmetal"
                         )}
                         aria-current={isActive ? "page" : undefined}
                         aria-describedby={undefined}
