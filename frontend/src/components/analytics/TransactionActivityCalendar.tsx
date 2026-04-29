@@ -5,7 +5,7 @@ import { TransactionCalendarHeatmap } from '@/components/activities/TransactionC
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Calendar } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 interface TransactionActivityCalendarProps {
   dateRange?: {
@@ -170,8 +170,7 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+          <CardTitle className="text-lg font-semibold text-foreground">
             Transaction Activity Calendar
           </CardTitle>
           <CardDescription>
@@ -189,8 +188,7 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+          <CardTitle className="text-lg font-semibold text-foreground">
             Transaction Activity Calendar
           </CardTitle>
           <CardDescription>
@@ -212,8 +210,7 @@ export function TransactionActivityCalendar({
   return (
     <Card className="bg-white border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
+        <CardTitle className="text-lg font-semibold text-foreground">
           Transaction Activity Calendar
         </CardTitle>
         <CardDescription>

@@ -461,8 +461,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
         <CardHeader className="pb-2 pt-3 px-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2">
-                <Building className="h-4 w-4" />
+              <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                 Executing Agencies
               </CardTitle>
               <p className="text-helper text-muted-foreground mt-0.5">

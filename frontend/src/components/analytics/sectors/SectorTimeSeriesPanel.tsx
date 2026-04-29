@@ -156,8 +156,7 @@ export function SectorTimeSeriesPanel() {
         <div className="flex flex-col gap-4">
           {/* Title */}
           <div>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <TrendingUp className="h-5 w-5" />
+            <CardTitle className="text-xl">
               Sector Disbursements Over Time
             </CardTitle>
             <CardDescription className="mt-1">

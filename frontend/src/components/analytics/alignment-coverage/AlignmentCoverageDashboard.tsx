@@ -583,8 +583,7 @@ export function AlignmentCoverageDashboard() {
           {pillarBarData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChart3 className="h-4 w-4" />
+                <CardTitle className="text-base">
                   Coverage by Pillar
                 </CardTitle>
                 <CardDescription>
@@ -627,8 +626,7 @@ export function AlignmentCoverageDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Target className="h-4 w-4" />
+                  <CardTitle className="text-base">
                     Alignment Coverage
                   </CardTitle>
                   <CardDescription>
@@ -689,8 +687,7 @@ export function AlignmentCoverageDashboard() {
           {gapNodes.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">
                   Neglected Priority Areas
                 </CardTitle>
                 <CardDescription>

@@ -12,8 +12,6 @@ import {
   Grid3X3,
   AlertCircle,
   Target,
-  Layers,
-  MapPin,
 } from "lucide-react";
 
 import { MeasureType, DashboardData } from "@/types/national-priorities";
@@ -236,8 +234,7 @@ export function Dashboard() {
           <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
+                <CardTitle>
                   Program Fragmentation
                 </CardTitle>
                 <CardDescription>
@@ -251,8 +248,7 @@ export function Dashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="h-5 w-5" />
+                <CardTitle>
                   Sector Fragmentation
                 </CardTitle>
                 <CardDescription>
@@ -266,8 +262,7 @@ export function Dashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
+                <CardTitle>
                   Location Fragmentation
                 </CardTitle>
                 <CardDescription>

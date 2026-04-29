@@ -40,7 +40,6 @@ import {
 import {
   BarChart3,
   PieChart as PieChartIcon,
-  Table as TableIcon,
   Maximize2,
   Download,
   ChevronsUpDown,
@@ -545,8 +544,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         <Card className="bg-white border-border h-[240px] flex-shrink-0 flex flex-col">
           <CardHeader className="pb-2 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <TableIcon className="h-5 w-5" />
+              <CardTitle>
                 Allocation Details
               </CardTitle>
               <Button

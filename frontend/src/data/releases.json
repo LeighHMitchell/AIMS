@@ -1,7 +1,27 @@
 {
-  "currentVersion": "3.33.0",
-  "narrativeSummary": "Version 3.33.0 is a major consolidation release: ~5 weeks of in-progress work has been drained from a local WIP stash and shipped together. The Activity Editor finance area (Budgets, Planned Disbursements, Conditions, Linked Transactions, Loan Terms) is rebuilt with type-safe schemas. Every list page now has a unified Export button (Filtered / All × CSV / Excel) and an optimistic-delete + undo-toast pattern. Government Financial Contributions, the Readiness Wizard, and the Aid Effectiveness Form have been rebuilt. The Activity list gains a separate IATI ID column with click-to-copy chips. A new gunmetal palette + slightly cooler primary token modernise the look. Documents, Locations, and Working Groups tabs receive UX polish, and 14 new IATI 2.03 codelist tables are added as the foundation for upcoming compliance work.",
+  "currentVersion": "3.33.1",
+  "narrativeSummary": "Version 3.33.1 is an Analytics Dashboard reorganisation. Four new tabs (Rankings, Capital Spend, SDGs, Humanitarian Spend) split previously crowded sections into focused narratives. Coordination and Sector Disbursements Over Time move into Overview to surface them earlier in the user journey. Decorative icons are removed from chart titles across eleven chart components for a calmer, more uniform look.",
   "releases": [
+    {
+      "version": "3.33.1",
+      "date": "2026-04-29",
+      "narrativeSummary": "Analytics Dashboard tab reorganisation + chart-title icon cleanup. Four new focused tabs split overcrowded sections; two charts move into Overview to surface them earlier; decorative icons removed from chart titles for visual consistency.",
+      "changes": [
+        "<b>Analytics Dashboard &mdash; four new tabs</b>",
+        "&nbsp;&nbsp;<i>Rankings</i> &mdash; new home for Top Voted Activities (moved out of Overview); structured to absorb other Top 10 leaderboards over time",
+        "&nbsp;&nbsp;<i>Capital Spend</i> &mdash; consolidates Top Sectors, Top Activities by Capital Spend, and Capital vs Non-Capital Spend Over Time into one focused tab",
+        "&nbsp;&nbsp;<i>SDGs</i> &mdash; lifted out of <i>Sectors &amp; SDGs</i> to give SDG Coverage and SDG Concentration their own space (with the existing filter and table view)",
+        "&nbsp;&nbsp;<i>Humanitarian Spend</i> &mdash; lifted out of <i>Trends &amp; Performance</i>: Share of Humanitarian Aid and Humanitarian vs Development Aid",
+        "<b>Overview tab &mdash; surfacing key visualisations earlier</b>",
+        "&nbsp;&nbsp;<i>Coordination</i> circle-pack moved from <i>Sectors &amp; SDGs</i> into Overview as a full-width card",
+        "&nbsp;&nbsp;<i>Sector Disbursements Over Time</i> moved from <i>Sectors &amp; SDGs</i> into Overview (renamed from <i>Sector Financial Trends</i> to match the chart's intent)",
+        "&nbsp;&nbsp;<i>All Donors Financial Overview</i> now spans the full width after Top Voted Activities was relocated",
+        "<b>Chart titles &mdash; decorative icons removed</b>",
+        "&nbsp;&nbsp;<code>TransactionActivityCalendar</code> (3 Calendar icons), <code>PolicyMarkersChart</code>, <code>FundingOverTimeAnalytics</code>, <code>SectorBarChart</code>, <code>SectorSummaryTable</code>, <code>SectorTimeSeriesPanel</code>, <code>dashboard/Dashboard</code>, <code>SubnationalAllocationsChart</code>, <code>AlignmentCoverageDashboard</code>, <code>ExecutingAgenciesChart</code>, <code>ImplementingAgenciesChart</code>",
+        "&nbsp;&nbsp;Title text + size classes preserved; <code>flex items-center gap-2</code> alignment removed where it was only there for icons; orphaned Lucide imports cleaned up",
+        "&nbsp;&nbsp;Functional <code>HelpCircle</code> tooltip-trigger icons in the National Priorities Dashboard intentionally kept"
+      ]
+    },
     {
       "version": "3.33.0",
       "date": "2026-04-28",

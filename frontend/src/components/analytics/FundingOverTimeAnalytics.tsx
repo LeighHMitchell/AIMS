@@ -22,7 +22,6 @@ import {
   ReferenceLine
 } from 'recharts'
 import {
-  TrendingUp,
   BarChart3,
   LineChart as LineChartIcon,
   Table as TableIcon,
@@ -376,8 +375,7 @@ export function FundingOverTimeAnalytics() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" style={{ color: COLORS.primaryScarlet }} />
+                <CardTitle>
                   Funding Over Time
                 </CardTitle>
                 <CardDescription className="mt-1">

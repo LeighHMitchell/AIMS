@@ -695,9 +695,13 @@ export default function AnalyticsDashboardPage() {
                     { value: 'overview', label: 'Overview' },
                     { value: 'trends-performance', label: 'Trends & Performance' },
                     { value: 'sectors-sdgs', label: 'Sectors & SDGs' },
+                    { value: 'sdgs', label: 'SDGs' },
+                    { value: 'humanitarian-spend', label: 'Humanitarian Spend' },
+                    { value: 'capital-spend', label: 'Capital Spend' },
                     { value: 'government-view', label: 'Government View' },
                     { value: 'networks-fragmentation', label: 'Networks & Fragmentation' },
                     { value: 'operations', label: 'Operations' },
+                    { value: 'rankings', label: 'Rankings' },
                   ].map((t) => (
                     <TabsTrigger
                       key={t.value}
@@ -732,27 +736,18 @@ export default function AnalyticsDashboardPage() {
                         </CompactChartCard>
                       </div>
 
-                      <ChartGrid>
-                        <CompactChartCard
-                          title="All Donors Financial Overview"
-                          shortDescription="All donors ranked by budgets, planned & actual disbursements"
-                          fullDescription="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements"
-                        >
-                          <AllDonorsHorizontalBarChart
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                            onDataChange={setDonorsData}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="Top Voted Activities"
-                          shortDescription="Activities ranked by vote score (upvotes - downvotes)"
-                          fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
-                        >
-                          <TopLikedActivitiesChart refreshKey={refreshKey} />
-                        </CompactChartCard>
-                      </ChartGrid>
+                      <CompactChartCard
+                        title="All Donors Financial Overview"
+                        shortDescription="All donors ranked by budgets, planned & actual disbursements"
+                        fullDescription="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements"
+                        className="w-full"
+                      >
+                        <AllDonorsHorizontalBarChart
+                          dateRange={fiveYearRange}
+                          refreshKey={refreshKey}
+                          onDataChange={setDonorsData}
+                        />
+                      </CompactChartCard>
                     </div>
 
                     <div>
@@ -785,6 +780,42 @@ export default function AnalyticsDashboardPage() {
                           />
                         </ExpandableCard>
                       </div>
+                    </div>
+
+                    <div>
+                      <CompactChartCard
+                        title="Coordination"
+                        shortDescription="Network visualization of organizations and their sector focus"
+                        fullDescription={coordinationView === 'sectors'
+                          ? "Who's working in each sector? Each circle represents a sector with partners shown as smaller circles."
+                          : "What is each partner working on? Each circle represents a partner with sectors shown as smaller circles."}
+                        className="w-full"
+                      >
+                        {coordinationLoading ? (
+                          <Skeleton className="h-full w-full" />
+                        ) : (
+                          <CoordinationCirclePack
+                            view={coordinationView}
+                            data={coordinationData?.data || null}
+                            width={400}
+                            height={250}
+                          />
+                        )}
+                      </CompactChartCard>
+                    </div>
+
+                    <div>
+                      <CompactChartCard
+                        title="Sector Disbursements Over Time"
+                        shortDescription="Track sector disbursement patterns and trends over time"
+                        fullDescription="Time series analysis of sector disbursements over time"
+                        className="w-full"
+                      >
+                        <SectorDisbursementOverTime
+                          dateRange={fiveYearRange}
+                          refreshKey={refreshKey}
+                        />
+                      </CompactChartCard>
                     </div>
 
                     <div>
@@ -868,35 +899,6 @@ export default function AnalyticsDashboardPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Humanitarian Aid</h2>
-                      <p className="text-muted-foreground mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
-                      <ChartGrid>
-                        <CompactChartCard
-                          title="Share of Humanitarian Aid"
-                          shortDescription="Humanitarian portion as percentage of total international aid"
-                          fullDescription="Share of humanitarian aid compared to total international aid"
-                        >
-                          <HumanitarianShareChart
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="Humanitarian vs Development Aid"
-                          shortDescription="Year-over-year comparison of humanitarian and development flows"
-                          fullDescription="Historical comparison of humanitarian and development aid flows over time"
-                          exportData={humanitarianData}
-                        >
-                          <HumanitarianChart
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                            onDataChange={setHumanitarianData}
-                          />
-                        </CompactChartCard>
-                      </ChartGrid>
-                    </div>
                   </div>
                 </TabsContent>
 
@@ -930,41 +932,11 @@ export default function AnalyticsDashboardPage() {
                         </CompactChartCard>
 
                         <CompactChartCard
-                          title="Coordination"
-                          shortDescription="Network visualization of organizations and their sector focus"
-                          fullDescription={coordinationView === 'sectors'
-                            ? "Who's working in each sector? Each circle represents a sector with partners shown as smaller circles."
-                            : "What is each partner working on? Each circle represents a partner with sectors shown as smaller circles."}
-                        >
-                          {coordinationLoading ? (
-                            <Skeleton className="h-full w-full" />
-                          ) : (
-                            <CoordinationCirclePack
-                              view={coordinationView}
-                              data={coordinationData?.data || null}
-                              width={400}
-                              height={250}
-                            />
-                          )}
-                        </CompactChartCard>
-
-                        <CompactChartCard
                           title="Financial Summary by Sector"
                           shortDescription="Budgets, commitments, and disbursements by sector"
                           fullDescription="Compare budgets, planned disbursements, commitments, and actual disbursements across sectors"
                         >
                           <PlannedActualDisbursementBySector
-                            dateRange={fiveYearRange}
-                            refreshKey={refreshKey}
-                          />
-                        </CompactChartCard>
-
-                        <CompactChartCard
-                          title="Sector Financial Trends"
-                          shortDescription="Track sector disbursement patterns and trends over time"
-                          fullDescription="Time series analysis of sector disbursements over time"
-                        >
-                          <SectorDisbursementOverTime
                             dateRange={fiveYearRange}
                             refreshKey={refreshKey}
                           />
@@ -995,17 +967,17 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Capital Spend & Top Sectors</h2>
-                      <p className="text-muted-foreground mb-4">Where capital investment is concentrated</p>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <NPTopSectorsChart />
-                        <NPTopCapitalSpendChart />
-                        <div className="lg:col-span-2">
-                          <NPCapitalSpendOverTimeChart />
-                        </div>
-                      </div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
+                      <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
+                      <PolicyMarkersChart refreshKey={refreshKey} />
                     </div>
+                  </div>
+                </TabsContent>
 
+                {/* ==================== SDGs TAB ==================== */}
+                {/* Audience: SDG analysts, policy teams. Answers: how do activities align with the SDGs? */}
+                <TabsContent value="sdgs">
+                  <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Sustainable Development Goals</h2>
                       <p className="text-muted-foreground mb-4">Activity alignment with the UN Sustainable Development Goals</p>
@@ -1015,11 +987,59 @@ export default function AnalyticsDashboardPage() {
                         refreshKey={refreshKey}
                       />
                     </div>
+                  </div>
+                </TabsContent>
 
+                {/* ==================== HUMANITARIAN SPEND TAB ==================== */}
+                {/* Audience: humanitarian analysts, donors. Answers: how much is humanitarian vs development? */}
+                <TabsContent value="humanitarian-spend">
+                  <div className="space-y-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
-                      <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
-                      <PolicyMarkersChart refreshKey={refreshKey} />
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Humanitarian Aid</h2>
+                      <p className="text-muted-foreground mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
+                      <ChartGrid>
+                        <CompactChartCard
+                          title="Share of Humanitarian Aid"
+                          shortDescription="Humanitarian portion as percentage of total international aid"
+                          fullDescription="Share of humanitarian aid compared to total international aid"
+                        >
+                          <HumanitarianShareChart
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Humanitarian vs Development Aid"
+                          shortDescription="Year-over-year comparison of humanitarian and development flows"
+                          fullDescription="Historical comparison of humanitarian and development aid flows over time"
+                          exportData={humanitarianData}
+                        >
+                          <HumanitarianChart
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                            onDataChange={setHumanitarianData}
+                          />
+                        </CompactChartCard>
+                      </ChartGrid>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ==================== CAPITAL SPEND TAB ==================== */}
+                {/* Audience: planners, finance leads. Answers: where is capital investment concentrated? */}
+                <TabsContent value="capital-spend">
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Capital Spend & Top Sectors</h2>
+                      <p className="text-muted-foreground mb-4">Where capital investment is concentrated</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <NPTopSectorsChart />
+                        <NPTopCapitalSpendChart />
+                        <div className="lg:col-span-2">
+                          <NPCapitalSpendOverTimeChart />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
@@ -1582,6 +1602,26 @@ export default function AnalyticsDashboardPage() {
                 </CardContent>
               </Card> */}
                       </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ==================== RANKINGS TAB ==================== */}
+                {/* Audience: all users. Answers: which activities and partners stand out? */}
+                <TabsContent value="rankings">
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Activity Rankings</h2>
+                      <p className="text-muted-foreground mb-4">Top activities and partners based on user voting and engagement</p>
+
+                      <CompactChartCard
+                        title="Top Voted Activities"
+                        shortDescription="Activities ranked by vote score (upvotes - downvotes)"
+                        fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
+                        className="w-full"
+                      >
+                        <TopLikedActivitiesChart refreshKey={refreshKey} />
+                      </CompactChartCard>
                     </div>
                   </div>
                 </TabsContent>

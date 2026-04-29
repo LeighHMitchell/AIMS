@@ -506,8 +506,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
     return (
       <Card className="border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+          <CardTitle>
             Sector Analysis
           </CardTitle>
           <CardDescription>No sector data available for the selected filters</CardDescription>
@@ -530,8 +529,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <CardTitle>
               Sector Analysis by {getLevelLabel()}
             </CardTitle>
             <CardDescription>

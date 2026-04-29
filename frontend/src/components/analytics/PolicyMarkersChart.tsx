@@ -432,8 +432,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+              <CardTitle>
                 Policy Markers Analytics
               </CardTitle>
               <CardDescription className="mt-1">

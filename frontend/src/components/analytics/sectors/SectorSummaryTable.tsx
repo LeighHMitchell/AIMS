@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SectorMetrics, SectorSortField, SortDirection } from '@/types/sector-analytics'
-import { Search, Download, Table as TableIcon } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -195,8 +195,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <TableIcon className="h-5 w-5" />
+            <CardTitle>
               Sector Summary Table
             </CardTitle>
             <CardDescription>
