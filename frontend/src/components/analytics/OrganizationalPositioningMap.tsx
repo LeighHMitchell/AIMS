@@ -23,6 +23,8 @@ import { AlertCircle } from 'lucide-react'
 import { getOrgTypeLabel } from '@/lib/org-type-mappings'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency } from '@/lib/format'
 
 /**
  * Organizational Positioning Map
@@ -133,6 +135,7 @@ export function OrganizationalPositioningMap({
   compact = false,
   onDataChange
 }: OrganizationalPositioningMapProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<EcosystemOrganization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -237,7 +240,7 @@ export function OrganizationalPositioningMap({
         <div className="space-y-1 text-helper">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Total Value:</span>
-            <span className="font-medium text-foreground">{formatCurrency(org.totalValue)}</span>
+            <span className="font-medium text-foreground">{formatTooltipCurrency(org.totalValue, isExpanded)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Humanitarian Share:</span>

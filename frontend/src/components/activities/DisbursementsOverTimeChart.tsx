@@ -21,7 +21,8 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { TrendingUp, TableIcon, AreaChartIcon } from 'lucide-react'
-import { LoadingText } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { formatAxisCurrency } from '@/lib/format'
 
 interface YearData {
   year: number;
@@ -114,10 +115,9 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
       <Card>
         <CardHeader>
           <CardTitle>Disbursements Over Time by Sector</CardTitle>
-          <CardDescription><LoadingText>Loading data...</LoadingText></CardDescription>
         </CardHeader>
-        <CardContent className="h-96 flex items-center justify-center">
-          <LoadingText>Loading disbursements...</LoadingText>
+        <CardContent className="h-96">
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     );
@@ -198,8 +198,8 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                 type="number"
                 domain={['dataMin', 'dataMax']}
               />
-              <YAxis 
-                tickFormatter={formatYAxis}
+              <YAxis
+                tickFormatter={formatAxisCurrency}
               />
               <Tooltip 
                 formatter={(value: number, name: string) => {
@@ -236,8 +236,8 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                 type="number"
                 domain={['dataMin', 'dataMax']}
               />
-              <YAxis 
-                tickFormatter={formatYAxis}
+              <YAxis
+                tickFormatter={formatAxisCurrency}
               />
               <Tooltip 
                 formatter={(value: number, name: string) => {

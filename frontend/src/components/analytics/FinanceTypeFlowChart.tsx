@@ -39,6 +39,8 @@ import { format, parseISO } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 // Generate list of available years (from 2010 to current year + 10)
 const currentYear = new Date().getFullYear()
@@ -119,6 +121,7 @@ export function FinanceTypeFlowChart({
   compact = false,
   organizationId
 }: FinanceTypeFlowChartProps) {
+  const isExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rawData, setRawData] = useState<any[]>([])
@@ -641,7 +644,7 @@ export function FinanceTypeFlowChart({
                         <span className="text-foreground font-medium">{entry.name}</span>
                       </td>
                       <td className="py-1.5 text-right font-semibold text-foreground">
-                        {formatTooltipValue(entry.value)}
+                        {formatTooltipCurrency(entry.value, isExpanded)}
                       </td>
                     </tr>
                   ))}
@@ -805,7 +808,7 @@ export function FinanceTypeFlowChart({
               interval={Math.max(0, Math.floor(chartData.length / 10))}
               tick={{ fill: '#64748B' }}
             />
-            <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
+            <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={10} />
             <Tooltip content={<CustomTooltip />} />
             {selectedFlowTypes.slice(0, 1).map(flowType => {
               const financeTypesToShow = selectedFinanceTypes.length > 0
@@ -1225,7 +1228,7 @@ export function FinanceTypeFlowChart({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} wrapperStyle={{ paddingTop: '20px' }} />
                   {selectedFlowTypes.map(flowType => {
@@ -1281,7 +1284,7 @@ export function FinanceTypeFlowChart({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} wrapperStyle={{ paddingTop: '20px' }} />
                   {selectedFlowTypes.map(flowType => {
@@ -1366,7 +1369,7 @@ export function FinanceTypeFlowChart({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} wrapperStyle={{ paddingTop: '20px' }} />
                   {selectedFlowTypes.map(flowType => {

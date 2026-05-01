@@ -157,7 +157,7 @@ export function AssignFocalPointModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{typeLabel ? `Assign ${typeLabel}` : 'Assign Focal Point'}</DialogTitle>
           <DialogDescription>
@@ -192,13 +192,15 @@ export function AssignFocalPointModal({
                     <p className="text-helper text-muted-foreground truncate">{selectedUser.organization}</p>
                   )}
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => onSelectedUserChange(null, null)}
-                  className="text-muted-foreground hover:text-foreground text-body"
+                  className="bg-white"
                 >
                   Change
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="relative">

@@ -38,3 +38,43 @@ export function formatDate(date: Date | string): string {
     day: 'numeric'
   })
 }
+
+/**
+ * Format currency in short lowercase form: $18.0m, $1.2b, $43.3k, $234.
+ * Use in chart tooltips when the chart is in compact (non-expanded) view.
+ */
+export function formatCurrencyShortLower(value: number): string {
+  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) return '$0'
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}b`
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}m`
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
+  return `${sign}$${abs.toFixed(0)}`
+}
+
+/**
+ * Format currency for chart Y-axis (or X-axis on horizontal bar charts).
+ * Always whole numbers, lowercase suffix: $10m, $20b, $5k, $234.
+ * No decimals — axes should be terse and easily scannable.
+ */
+export function formatAxisCurrency(value: number): string {
+  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) return '$0'
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+  if (abs >= 1_000_000_000) return `${sign}$${Math.round(abs / 1_000_000_000)}b`
+  if (abs >= 1_000_000) return `${sign}$${Math.round(abs / 1_000_000)}m`
+  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}k`
+  return `${sign}$${Math.round(abs)}`
+}
+
+/**
+ * Format currency for chart tooltips, picking the right form based on
+ * whether the chart is in its expanded view.
+ *  - compact:  $23.2m / $1.2b (short, lowercase)
+ *  - expanded: $23,234,567   (full, no decimals)
+ */
+export function formatTooltipCurrency(value: number, isExpanded: boolean): string {
+  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) return '$0'
+  return isExpanded ? formatCurrency(value) : formatCurrencyShortLower(value)
+}

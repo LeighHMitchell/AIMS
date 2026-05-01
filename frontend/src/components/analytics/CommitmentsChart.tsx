@@ -17,6 +17,8 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface CommitmentsChartProps {
   dateRange: {
@@ -40,6 +42,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
+  const isExpanded = useChartExpansion()
 
   useEffect(() => {
     fetchData()
@@ -182,12 +185,22 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
     }
   }
 
+  const periodTypeLabel = (() => {
+    if (groupBy === 'calendar') return 'Gregorian Calendar Year'
+    if (groupBy === 'fiscal') return 'Financial Year (Jul–Jun)'
+    if (groupBy === 'quarter') return 'Calendar Quarter'
+    return null
+  })()
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-foreground">{label}</p>
+            {periodTypeLabel && (
+              <p className="text-helper text-muted-foreground mt-0.5">{periodTypeLabel}</p>
+            )}
           </div>
           <div className="p-3">
             <table className="w-full text-body">
@@ -204,7 +217,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
                       </div>
                     </td>
                     <td className="py-1 text-right font-semibold text-foreground">
-                      {formatCurrency(Number(entry.value) || 0)}
+                      {formatTooltipCurrency(Number(entry.value) || 0, isExpanded)}
                     </td>
                   </tr>
                 ))}
@@ -277,7 +290,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
             axisLine={{ stroke: '#cbd5e1' }}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />

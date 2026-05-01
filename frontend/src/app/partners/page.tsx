@@ -356,8 +356,8 @@ export default function PartnersPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 ml-1 text-muted-foreground" />;
-    return sortOrder === 'asc' 
+    if (sortField !== field) return null;
+    return sortOrder === 'asc'
       ? <ChevronUp className="h-3 w-3 ml-1 text-muted-foreground" />
       : <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground" />;
   };

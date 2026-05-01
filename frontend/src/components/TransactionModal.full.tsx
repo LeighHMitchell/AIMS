@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren } from "lucide-react";
+import { Calendar, Info, HelpCircle, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -741,7 +741,7 @@ export default function TransactionModal({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="h-3 w-3 text-muted-foreground inline-block ml-1" />
+          <HelpCircle className="h-3 w-3 text-muted-foreground inline-block ml-1" />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p className="text-body">{text}</p>

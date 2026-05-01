@@ -49,7 +49,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  Info,
+  HelpCircle,
   ExternalLink,
   Link as LinkIcon,
   Columns3,
@@ -898,10 +898,8 @@ export default function TransactionList({
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
-    }
-    return sortDirection === 'asc' 
+    if (sortField !== field) return null;
+    return sortDirection === 'asc'
       ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
       : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
   };
@@ -1910,7 +1908,7 @@ export default function TransactionList({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                      <HelpCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Inferred from activity data</p>
@@ -1944,7 +1942,7 @@ export default function TransactionList({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                      <HelpCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Inferred from activity data</p>

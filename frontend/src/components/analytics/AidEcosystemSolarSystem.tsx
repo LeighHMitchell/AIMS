@@ -16,6 +16,8 @@ import { useRouter } from 'next/navigation'
 import sectorGroupData from '@/data/SectorGroup.json'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency } from '@/lib/format'
 
 /**
  * Aid Ecosystem Solar System
@@ -153,6 +155,7 @@ export function AidEcosystemSolarSystem({
   compact = false,
   onDataChange
 }: AidEcosystemSolarSystemProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<EcosystemOrganization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -570,7 +573,7 @@ export function AidEcosystemSolarSystem({
               {hoveredOrg.name}
             </p>
             <p className="text-helper text-muted-foreground">
-              #{hoveredOrg.rank} - {formatCurrency(hoveredOrg.totalValue)}
+              #{hoveredOrg.rank} - {formatTooltipCurrency(hoveredOrg.totalValue, isExpanded)}
             </p>
           </div>
         )}
@@ -883,7 +886,7 @@ export function AidEcosystemSolarSystem({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Value:</span>
-                <span className="font-medium text-foreground">{formatCurrency(hoveredOrg.totalValue)}</span>
+                <span className="font-medium text-foreground">{formatTooltipCurrency(hoveredOrg.totalValue, isExpanded)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Ring:</span>

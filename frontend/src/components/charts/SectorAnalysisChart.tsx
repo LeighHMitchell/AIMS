@@ -15,9 +15,10 @@ import {
 import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LoadingText } from "@/components/ui/loading-text";
+import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
+import { formatAxisCurrency } from '@/lib/format';
 
 interface SectorData {
   sectorCode: string;
@@ -115,7 +116,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
   };
 
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+    return <ChartLoadingPlaceholder />;
   }
 
   if (error) {
@@ -276,7 +277,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
             <YAxis
               stroke="#6B7280"
               fontSize={12}
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
               label={{
                 value: `Amount (USD)`,
                 angle: -90,

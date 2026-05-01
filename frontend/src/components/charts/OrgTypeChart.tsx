@@ -10,9 +10,10 @@ import {
   Legend,
 } from "recharts";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { formatAxisCurrency } from "@/lib/format";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { LoadingText } from "@/components/ui/loading-text";
+import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 
 interface AnalyticsFilters {
@@ -133,7 +134,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
   };
 
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+    return <ChartLoadingPlaceholder />;
   }
 
   if (error) {
@@ -196,9 +197,9 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
             height={80}
             interval={0}
           />
-          <YAxis 
-            tickFormatter={formatYAxis} 
-            stroke={CHART_STRUCTURE_COLORS.axis} 
+          <YAxis
+            tickFormatter={formatAxisCurrency}
+            stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
             label={{ 
               value: `Amount (${currency})`, 

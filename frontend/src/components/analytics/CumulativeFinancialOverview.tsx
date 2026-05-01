@@ -44,6 +44,8 @@ import { format, parseISO } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -94,6 +96,7 @@ export function CumulativeFinancialOverview({
   compact = false,
   organizationId
 }: CumulativeFinancialOverviewProps) {
+  const isExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
@@ -894,7 +897,7 @@ export function CumulativeFinancialOverview({
               </span>
             </td>
             <td className="py-1 text-right font-semibold text-foreground">
-              {formatTooltipValue(entry.displayValue)}
+              {formatTooltipCurrency(entry.displayValue, isExpanded)}
             </td>
           </tr>
         )
@@ -1096,12 +1099,7 @@ export function CumulativeFinancialOverview({
               height={30}
             />
             <YAxis
-              tickFormatter={(value) => {
-                if (value >= 1000000000) return `$${(value / 1000000000).toFixed(0)}b`
-                if (value >= 1000000) return `$${(value / 1000000).toFixed(0)}m`
-                if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
-                return `$${value}`
-              }}
+              tickFormatter={formatAxisCurrency}
               stroke="#64748B"
               fontSize={10}
             />
@@ -1543,14 +1541,14 @@ export function CumulativeFinancialOverview({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
                             <p className="font-semibold text-foreground text-body">{payload[0].payload.name}</p>
-                            <p className="font-bold text-foreground text-lg">{formatTooltipValue(payload[0].value as number)}</p>
+                            <p className="font-bold text-foreground text-lg">{formatTooltipCurrency(payload[0].value as number, isExpanded)}</p>
                           </div>
                         )
                       }
@@ -1589,7 +1587,7 @@ export function CumulativeFinancialOverview({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
                   {activeSeries.has('Incoming Commitments') && (
@@ -1694,7 +1692,7 @@ export function CumulativeFinancialOverview({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
                   {activeSeries.has('Incoming Commitments') && (
@@ -1876,7 +1874,7 @@ export function CumulativeFinancialOverview({
                     height={60}
                     interval={0}
                   />
-                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
                   {activeSeries.has('Incoming Commitments') && (

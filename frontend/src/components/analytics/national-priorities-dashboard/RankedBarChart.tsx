@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 
 interface RankedBarChartProps {
   data: RankedItem[];
@@ -33,11 +35,11 @@ function formatCurrency(value: number): string {
   return `$${value.toFixed(0)}`;
 }
 
-const CustomTooltip = ({ active, payload, grandTotal }: any) => {
+const CustomTooltip = ({ active, payload, grandTotal, isExpanded }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload as RankedItem;
     const percentage = grandTotal > 0 ? ((data.value / grandTotal) * 100).toFixed(1) : "0";
-    
+
     return (
       <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
         <p className="font-semibold text-foreground mb-1">{data.name}</p>
@@ -49,7 +51,7 @@ const CustomTooltip = ({ active, payload, grandTotal }: any) => {
         )}
         <div className="border-t mt-2 pt-2 space-y-1">
           <p className="text-body font-medium text-foreground">
-            {formatCurrency(data.value)}
+            {formatTooltipCurrency(data.value, isExpanded)}
           </p>
           <p className="text-helper text-muted-foreground">
             {percentage}% of total
@@ -73,6 +75,7 @@ export function RankedBarChart({
   height = 300,
   showPercentage = true,
 }: RankedBarChartProps) {
+  const isExpanded = useChartExpansion();
   if (!data || data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
@@ -106,7 +109,7 @@ export function RankedBarChart({
           type="number"
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
         />
         <YAxis
           type="category"
@@ -117,7 +120,7 @@ export function RankedBarChart({
           tickLine={false}
         />
         <Tooltip
-          content={<CustomTooltip grandTotal={grandTotal} />}
+          content={<CustomTooltip grandTotal={grandTotal} isExpanded={isExpanded} />}
           cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
         />
         <Bar

@@ -19,6 +19,8 @@ import { AlertCircle, BarChart3, TrendingUpIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -59,6 +61,7 @@ export function PlannedVsActualDisbursements({
   filters,
   refreshKey
 }: PlannedVsActualDisbursementsProps) {
+  const isExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rawData, setRawData] = useState<any[]>([])
@@ -284,7 +287,7 @@ export function PlannedVsActualDisbursements({
               className="text-body"
               style={{ color: entry.color }}
             >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
+              {`${entry.name}: ${formatTooltipCurrency(entry.value, isExpanded)}`}
             </p>
           ))}
         </div>
@@ -433,7 +436,7 @@ export function PlannedVsActualDisbursements({
                   textAnchor={groupBy === 'month' ? 'end' : 'middle'}
                   height={groupBy === 'month' ? 80 : 30}
                 />
-                <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Line
@@ -475,7 +478,7 @@ export function PlannedVsActualDisbursements({
                   textAnchor={groupBy === 'month' ? 'end' : 'middle'}
                   height={groupBy === 'month' ? 80 : 30}
                 />
-                <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                 <Legend />
                 <Bar dataKey="planned" name="Planned" fill="DATA_COLORS.actual" radius={[4, 4, 0, 0]} animationDuration={300} />

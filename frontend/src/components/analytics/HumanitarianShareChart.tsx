@@ -6,6 +6,8 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { supabase } from '@/lib/supabase'
 import { BarChart3, PieChart, Table } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import {
   BarChart,
@@ -39,6 +41,7 @@ interface ShareData {
 type ViewMode = 'chart' | 'bar' | 'table'
 
 export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, compact = false }: HumanitarianShareChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<ShareData | null>(null)
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('chart')
@@ -337,7 +340,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
                     </div>
                   </td>
                   <td className="py-1 text-right font-semibold text-foreground">
-                    {formatCurrency(datum.value)}
+                    {formatTooltipCurrency(datum.value, isExpanded)}
                   </td>
                 </tr>
                 <tr>
@@ -362,7 +365,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={true} vertical={false} />
           <XAxis
             type="number"
-            tickFormatter={(value) => formatCurrency(value)}
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
           />
           <YAxis

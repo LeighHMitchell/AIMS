@@ -999,6 +999,7 @@ export function ResultsTab({
                     <Button
                       onClick={() => handleSaveResultEdit(result.id)}
                     >
+                      <Save className="h-4 w-4 mr-2" />
                       Save
                     </Button>
                   </DialogFooter>
@@ -1652,6 +1653,7 @@ export function ResultsTab({
                                   }
                                 }}
                               >
+                                <Save className="h-4 w-4 mr-2" />
                                 Save
                               </Button>
                             </DialogFooter>

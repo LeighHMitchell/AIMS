@@ -3,24 +3,24 @@ export const IATI_ACTIVITY_SCOPE = [
     label: "Geographic Scope",
     types: [
       {
+        code: "4",
+        name: "National",
+        description: "The activity scope covers one country"
+      },
+      {
         code: "1",
         name: "Global",
         description: "The activity scope is global"
       },
       {
-        code: "2", 
+        code: "2",
         name: "Regional",
         description: "The activity scope is a supranational region"
       },
       {
         code: "3",
-        name: "Multi-national", 
+        name: "Multi-national",
         description: "The activity scope covers multiple countries, that don't constitute a region"
-      },
-      {
-        code: "4",
-        name: "National",
-        description: "The activity scope covers one country"
       },
       {
         code: "5",
@@ -28,13 +28,13 @@ export const IATI_ACTIVITY_SCOPE = [
         description: "The activity scope covers more than one first-level subnational administrative areas (e.g. counties, provinces, states)"
       },
       {
-        code: "6", 
+        code: "6",
         name: "Sub-national: Single first-level administrative area",
         description: "The activity scope covers one first-level subnational administrative area (e.g. country, province, state)"
       },
       {
         code: "7",
-        name: "Sub-national: Single second-level administrative area", 
+        name: "Sub-national: Single second-level administrative area",
         description: "The activity scope covers one second-level subnational administrative area (e.g. municipality or district)"
       },
       {

@@ -31,11 +31,13 @@ import {
   TooltipProps,
 } from 'recharts'
 import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, SlidersHorizontal, Check, Search } from 'lucide-react'
-import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import html2canvas from 'html2canvas'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 // Color palette based on brand colors - distinct colors for data visualization
 // Brand colors: Primary Scarlet, Blue Slate, Cool Steel, Deep Teal, Soft Ochre, Pale Slate
@@ -109,6 +111,7 @@ export function SectorDisbursementOverTime({
   compact = false,
   organizationId
 }: SectorDisbursementOverTimeProps) {
+  const isExpanded = useChartExpansion()
   const [dataMode, setDataMode] = useState<DataMode>('actual')
   const [viewMode, setViewMode] = useState<ViewMode>('area')
   const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>('group') // Default to Sector Categories
@@ -723,7 +726,7 @@ export function SectorDisbursementOverTime({
             <p className="text-helper text-muted-foreground">{customYears.find(cy => cy.id === calendarType)!.name}</p>
           )}
           <div className="text-helper text-muted-foreground mt-1">
-            Total: <span className="font-bold text-foreground">{formatCurrencyCompact(total)}</span>
+            Total: <span className="font-bold text-foreground">{formatTooltipCurrency(total, isExpanded)}</span>
           </div>
         </div>
 
@@ -759,7 +762,7 @@ export function SectorDisbursementOverTime({
                       </span>
                     </div>
                     <span className="text-body font-semibold text-foreground flex-shrink-0">
-                      {formatCurrencyCompact(entry.value)}
+                      {formatTooltipCurrency(entry.value, isExpanded)}
                     </span>
                   </div>
                 )
@@ -775,7 +778,7 @@ export function SectorDisbursementOverTime({
                     </span>
                     <span className="text-helper font-semibold text-foreground">{group.groupName}</span>
                   </div>
-                  <span className="text-helper font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
+                  <span className="text-helper font-bold text-foreground">{formatTooltipCurrency(group.groupTotal, isExpanded)}</span>
                 </div>
                 <div className="ml-3 space-y-1">
                   {Array.from(group.categories.values())
@@ -795,7 +798,7 @@ export function SectorDisbursementOverTime({
                           </span>
                         </div>
                         <span className="text-helper font-medium text-foreground flex-shrink-0">
-                          {formatCurrencyCompact(cat.categoryTotal)}
+                          {formatTooltipCurrency(cat.categoryTotal, isExpanded)}
                         </span>
                       </div>
                     ))}
@@ -813,7 +816,7 @@ export function SectorDisbursementOverTime({
                     </span>
                     <span className="text-helper font-semibold text-foreground">{group.groupName}</span>
                   </div>
-                  <span className="text-helper font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
+                  <span className="text-helper font-bold text-foreground">{formatTooltipCurrency(group.groupTotal, isExpanded)}</span>
                 </div>
                 <div className="ml-3 space-y-1">
                   {Array.from(group.categories.values())
@@ -827,7 +830,7 @@ export function SectorDisbursementOverTime({
                             </span>
                             <span className="text-helper text-muted-foreground">{category.categoryName}</span>
                           </div>
-                          <span className="text-helper font-medium text-foreground">{formatCurrencyCompact(category.categoryTotal)}</span>
+                          <span className="text-helper font-medium text-foreground">{formatTooltipCurrency(category.categoryTotal, isExpanded)}</span>
                         </div>
                         <div className="ml-3 space-y-0.5">
                           {category.items
@@ -844,7 +847,7 @@ export function SectorDisbursementOverTime({
                                   </span>
                                 </div>
                                 <span className="text-helper font-medium text-foreground flex-shrink-0">
-                                  {formatCurrencyCompact(item.value)}
+                                  {formatTooltipCurrency(item.value, isExpanded)}
                                 </span>
                               </div>
                             ))}
@@ -919,7 +922,7 @@ export function SectorDisbursementOverTime({
               tickLine={{ stroke: '#E5E7EB' }}
             />
             <YAxis
-              tickFormatter={formatYAxisCurrency}
+              tickFormatter={formatAxisCurrency}
               fontSize={10}
               tick={{ fill: '#6B7280' }}
               axisLine={false}
@@ -946,8 +949,8 @@ export function SectorDisbursementOverTime({
 
   if (loading && data.length === 0) {
     return (
-      <div className="h-80 flex items-center justify-center">
-        <LoadingText>Loading disbursement data...</LoadingText>
+      <div className="h-80">
+        <ChartLoadingPlaceholder />
       </div>
     )
   }
@@ -1311,7 +1314,7 @@ export function SectorDisbursementOverTime({
                     tickLine={{ stroke: '#E5E7EB' }}
                   />
                   <YAxis
-                    tickFormatter={formatYAxisCurrency}
+                    tickFormatter={formatAxisCurrency}
                     fontSize={12}
                     tick={{ fill: '#6B7280' }}
                     axisLine={false}
@@ -1356,7 +1359,7 @@ export function SectorDisbursementOverTime({
                     tickLine={{ stroke: '#E5E7EB' }}
                   />
                   <YAxis
-                    tickFormatter={formatYAxisCurrency}
+                    tickFormatter={formatAxisCurrency}
                     fontSize={12}
                     tick={{ fill: '#6B7280' }}
                     axisLine={false}

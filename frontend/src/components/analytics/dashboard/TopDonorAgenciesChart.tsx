@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from "@/lib/chart-colors";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 
 interface TopDonorAgenciesChartProps {
   data: RankedItem[];
@@ -43,6 +45,7 @@ export function TopDonorAgenciesChart({
   data,
   grandTotal,
 }: TopDonorAgenciesChartProps) {
+  const isExpanded = useChartExpansion();
   if (!data || data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground">
@@ -68,7 +71,7 @@ export function TopDonorAgenciesChart({
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
             type="number"
-            tickFormatter={(v) => formatCurrency(v)}
+            tickFormatter={formatAxisCurrency}
             fontSize={11}
           />
           <YAxis
@@ -79,7 +82,7 @@ export function TopDonorAgenciesChart({
             tickFormatter={(v) => (v.length > 12 ? `${v.slice(0, 12)}...` : v)}
           />
           <Tooltip
-            formatter={(value: number) => [formatCurrency(value), "Value"]}
+            formatter={(value: number) => [formatTooltipCurrency(value, isExpanded), "Value"]}
             labelFormatter={(label) => {
               const item = chartData.find((d) => d.name === label);
               return `${label}${item?.country ? ` (${item.country})` : ""}`;

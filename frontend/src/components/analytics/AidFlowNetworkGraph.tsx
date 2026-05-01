@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { Button } from '@/components/ui/button'
 import { Info, Maximize2, Minimize2, Network, ArrowRight, X } from 'lucide-react'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency } from '@/lib/format'
 
 export interface GraphNode {
   id: string
@@ -57,6 +59,7 @@ export default function AidFlowNetworkGraph({
   height = 600,
   showMiniSankey = false
 }: AidFlowNetworkGraphProps) {
+  const isExpanded = useChartExpansion()
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [fullscreen, setFullscreen] = useState(false)
@@ -452,8 +455,8 @@ export default function AidFlowNetworkGraph({
 
       {/* Hover Tooltip - follows mouse */}
       {tooltip && (
-        <div 
-          className="absolute z-20 bg-slate-900 text-white p-3 rounded-lg shadow-xl pointer-events-none max-w-xs"
+        <div
+          className="absolute z-20 bg-card border border-border rounded-lg shadow-lg pointer-events-none max-w-xs min-w-[220px] overflow-hidden"
           style={{
             left: Math.min(tooltip.x + 15, (containerRef.current?.clientWidth || 400) - 280),
             top: tooltip.y + 15,
@@ -462,66 +465,70 @@ export default function AidFlowNetworkGraph({
         >
           {tooltip.type === 'node' && tooltip.node && (
             <>
-              <div className="font-semibold text-body">{tooltip.node.name}</div>
-              <div className="flex items-center gap-2 mt-1">
-                <span 
-                  className="w-2 h-2 rounded-full" 
-                  style={{ 
-                    backgroundColor: tooltip.node.type === 'donor' ? '#4c5568' : 
-                                    tooltip.node.type === 'recipient' ? '#7b95a7' : 
-                                    tooltip.node.type === 'implementer' ? '#dc2625' : '#cfd0d5' 
-                  }}
-                />
-                <span className="text-helper text-slate-300 capitalize">{tooltip.node.type}</span>
+              <div className="bg-surface-muted px-3 py-2 border-b border-border">
+                <p className="font-semibold text-foreground">{tooltip.node.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{
+                      backgroundColor: tooltip.node.type === 'donor' ? '#4c5568' :
+                                      tooltip.node.type === 'recipient' ? '#7b95a7' :
+                                      tooltip.node.type === 'implementer' ? '#dc2625' : '#cfd0d5'
+                    }}
+                  />
+                  <span className="text-helper text-muted-foreground capitalize">{tooltip.node.type}</span>
+                </div>
               </div>
-              {tooltip.node.sector && (
-                <div className="text-helper text-muted-foreground mt-1">Sector: {tooltip.node.sector}</div>
-              )}
-              <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
+              <div className="px-3 py-2 space-y-1">
+                {tooltip.node.sector && (
+                  <div className="text-helper text-muted-foreground">Sector: {tooltip.node.sector}</div>
+                )}
                 {tooltip.node.totalIn !== undefined && tooltip.node.totalIn > 0 && (
                   <div className="flex justify-between text-helper">
-                    <span className="text-green-400">↓ Inflow:</span>
-                    <span className="font-medium">{formatCurrency(tooltip.node.totalIn)}</span>
+                    <span className="text-emerald-600">↓ Inflow:</span>
+                    <span className="font-medium text-foreground">{formatTooltipCurrency(tooltip.node.totalIn, isExpanded)}</span>
                   </div>
                 )}
                 {tooltip.node.totalOut !== undefined && tooltip.node.totalOut > 0 && (
                   <div className="flex justify-between text-helper">
-                    <span className="text-blue-400">↑ Outflow:</span>
-                    <span className="font-medium">{formatCurrency(tooltip.node.totalOut)}</span>
+                    <span className="text-blue-600">↑ Outflow:</span>
+                    <span className="font-medium text-foreground">{formatTooltipCurrency(tooltip.node.totalOut, isExpanded)}</span>
                   </div>
                 )}
                 {(tooltip.node.totalIn || 0) > 0 && (tooltip.node.totalOut || 0) > 0 && (
-                  <div className="flex justify-between text-helper pt-1 border-t border-slate-700">
+                  <div className="flex justify-between text-helper pt-1 border-t border-border">
                     <span className="text-muted-foreground">Net Flow:</span>
-                    <span className={`font-medium ${((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-destructive'}`}>
-                      {formatCurrency((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0))}
+                    <span className={`font-medium ${((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0)) >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                      {formatTooltipCurrency((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0), isExpanded)}
                     </span>
                   </div>
                 )}
               </div>
             </>
           )}
-          
+
           {tooltip.type === 'link' && tooltip.link && (
             <>
-              <div className="flex items-center gap-2 text-body">
-                <span className="font-medium truncate max-w-[100px]">
-                  {tooltip.sourceNode?.name || 'Unknown'}
-                </span>
-                <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="font-medium truncate max-w-[100px]">
-                  {tooltip.targetNode?.name || 'Unknown'}
-                </span>
+              <div className="bg-surface-muted px-3 py-2 border-b border-border">
+                <div className="flex items-center gap-2 text-body">
+                  <span className="font-medium text-foreground truncate max-w-[100px]">
+                    {tooltip.sourceNode?.name || 'Unknown'}
+                  </span>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="font-medium text-foreground truncate max-w-[100px]">
+                    {tooltip.targetNode?.name || 'Unknown'}
+                  </span>
+                </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
+              <div className="px-3 py-2 space-y-1">
                 <div className="flex justify-between text-helper">
                   <span className="text-muted-foreground">Amount:</span>
-                  <span className="font-semibold text-white">{formatCurrency(tooltip.link.value)}</span>
+                  <span className="font-semibold text-foreground">{formatTooltipCurrency(tooltip.link.value, isExpanded)}</span>
                 </div>
                 {tooltip.link.flowType && (
                   <div className="flex justify-between text-helper">
                     <span className="text-muted-foreground">Flow Type:</span>
-                    <span 
+                    <span
                       className="capitalize font-medium"
                       style={{
                         color: tooltip.link.flowType === 'commitment' ? '#7b95a7' :
@@ -535,13 +542,13 @@ export default function AidFlowNetworkGraph({
                 {tooltip.link.transactionType && (
                   <div className="flex justify-between text-helper">
                     <span className="text-muted-foreground">Transaction Type:</span>
-                    <span className="text-slate-300">{getTransactionTypeName(tooltip.link.transactionType)}</span>
+                    <span className="text-foreground">{getTransactionTypeName(tooltip.link.transactionType)}</span>
                   </div>
                 )}
                 {tooltip.link.aidType && (
                   <div className="flex justify-between text-helper">
                     <span className="text-muted-foreground">Aid Type:</span>
-                    <span className="text-slate-300">{tooltip.link.aidType}</span>
+                    <span className="text-foreground">{tooltip.link.aidType}</span>
                   </div>
                 )}
               </div>
@@ -552,58 +559,60 @@ export default function AidFlowNetworkGraph({
 
       {/* Selected Node Popup - appears near clicked node */}
       {selectedNode && selectedNodePosition && (
-        <div 
-          className="absolute z-20 bg-slate-900 text-white p-3 rounded-lg shadow-xl max-w-xs"
+        <div
+          className="absolute z-20 bg-card border border-border rounded-lg shadow-lg max-w-xs min-w-[220px] overflow-hidden"
           style={{
             left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 280),
             top: selectedNodePosition.y + 15,
             transform: selectedNodePosition.y > (height - 200) ? 'translateY(-100%)' : undefined
           }}
         >
-          {/* Close button */}
-          <button
-            onClick={() => {
-              setSelectedNode(null)
-              setSelectedNodePosition(null)
-            }}
-            className="absolute top-2 right-2 text-muted-foreground hover:text-white transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          
-          <div className="font-semibold text-body pr-6">{selectedNode.name}</div>
-          <div className="flex items-center gap-2 mt-1">
-            <span 
-              className="w-2 h-2 rounded-full" 
-              style={{ 
-                backgroundColor: selectedNode.type === 'donor' ? '#4c5568' : 
-                                selectedNode.type === 'recipient' ? '#7b95a7' : 
-                                selectedNode.type === 'implementer' ? '#dc2625' : '#cfd0d5' 
+          <div className="bg-surface-muted px-3 py-2 border-b border-border relative">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setSelectedNode(null)
+                setSelectedNodePosition(null)
               }}
-            />
-            <span className="text-helper text-slate-300 capitalize">{selectedNode.type}</span>
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <p className="font-semibold text-foreground pr-6">{selectedNode.name}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor: selectedNode.type === 'donor' ? '#4c5568' :
+                                  selectedNode.type === 'recipient' ? '#7b95a7' :
+                                  selectedNode.type === 'implementer' ? '#dc2625' : '#cfd0d5'
+                }}
+              />
+              <span className="text-helper text-muted-foreground capitalize">{selectedNode.type}</span>
+            </div>
           </div>
-          {selectedNode.sector && (
-            <div className="text-helper text-muted-foreground mt-1">Sector: {selectedNode.sector}</div>
-          )}
-          <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
+          <div className="px-3 py-2 space-y-1">
+            {selectedNode.sector && (
+              <div className="text-helper text-muted-foreground">Sector: {selectedNode.sector}</div>
+            )}
             {selectedNode.totalIn !== undefined && selectedNode.totalIn > 0 && (
               <div className="flex justify-between text-helper">
-                <span className="text-green-400">Total Inflow:</span>
-                <span className="font-medium">{formatCurrency(selectedNode.totalIn)}</span>
+                <span className="text-emerald-600">Total Inflow:</span>
+                <span className="font-medium text-foreground">{formatTooltipCurrency(selectedNode.totalIn, isExpanded)}</span>
               </div>
             )}
             {selectedNode.totalOut !== undefined && selectedNode.totalOut > 0 && (
               <div className="flex justify-between text-helper">
-                <span className="text-blue-400">Total Outflow:</span>
-                <span className="font-medium">{formatCurrency(selectedNode.totalOut)}</span>
+                <span className="text-blue-600">Total Outflow:</span>
+                <span className="font-medium text-foreground">{formatTooltipCurrency(selectedNode.totalOut, isExpanded)}</span>
               </div>
             )}
             {(selectedNode.totalIn || 0) > 0 && (selectedNode.totalOut || 0) > 0 && (
-              <div className="flex justify-between text-helper pt-1 border-t border-slate-700">
+              <div className="flex justify-between text-helper pt-1 border-t border-border">
                 <span className="text-muted-foreground">Net Flow:</span>
-                <span className={`font-medium ${((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-destructive'}`}>
-                  {formatCurrency((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0))}
+                <span className={`font-medium ${((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0)) >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                  {formatTooltipCurrency((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0), isExpanded)}
                 </span>
               </div>
             )}

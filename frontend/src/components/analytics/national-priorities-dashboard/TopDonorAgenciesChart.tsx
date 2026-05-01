@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency } from '@/lib/format';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -224,7 +225,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
           )}
           <div className="border-t mt-2 pt-2 space-y-1">
             <p className="text-body font-medium text-foreground">
-              {formatCurrency(item.value)}
+              {formatTooltipCurrency(item.value, isExpanded)}
             </p>
             {item.activityCount > 0 && (
               <p className="text-helper text-muted-foreground">

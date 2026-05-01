@@ -746,32 +746,34 @@ export function InterventionTreeMap() {
       {/* Tooltip */}
       {tooltip.show && tooltip.content && (
         <div
-          className="absolute pointer-events-none z-50 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-body max-w-sm transition-opacity duration-150"
+          className="absolute pointer-events-none z-50 bg-card border border-border rounded-lg shadow-lg overflow-hidden text-body max-w-sm min-w-[200px] transition-opacity duration-150"
           style={{
             left: Math.min(tooltip.x + 15, dimensions.width - 280),
             top: Math.max(tooltip.y - 120, 10),
           }}
         >
-          <div className="font-semibold text-base mb-2">{tooltip.content.name}</div>
-          <div className="space-y-1">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{tooltip.content.name}</p>
+          </div>
+          <div className="px-3 py-2 space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Direction:</span>
               <span
                 className={
                   tooltip.content.direction === "Favorable & Significant"
-                    ? "text-teal-400"
+                    ? "text-emerald-600 font-medium"
                     : tooltip.content.direction === "Favorable"
-                    ? "text-green-300"
+                    ? "text-emerald-600"
                     : tooltip.content.direction === "Unfavorable"
-                    ? "text-orange-300"
+                    ? "text-orange-600"
                     : "text-destructive"
                 }
               >
                 {tooltip.content.direction}
               </span>
             </div>
-            <div className="mt-2 pt-2 border-t border-slate-700">
-              <span className="text-slate-300 text-helper leading-relaxed">
+            <div className="mt-2 pt-2 border-t border-border">
+              <span className="text-muted-foreground text-helper leading-relaxed">
                 {tooltip.content.description}
               </span>
             </div>

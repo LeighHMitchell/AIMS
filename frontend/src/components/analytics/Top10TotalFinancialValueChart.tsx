@@ -15,6 +15,8 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { BarChart3, DollarSign } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors';
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface Top10TotalFinancialValueChartProps {
   dateRange: {
@@ -44,6 +46,7 @@ export function Top10TotalFinancialValueChart({
   refreshKey,
   onDataChange
 }: Top10TotalFinancialValueChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -148,7 +151,7 @@ export function Top10TotalFinancialValueChart({
                   <span className="text-foreground">Total Disbursements</span>
                 </td>
                 <td className="py-1 text-right font-semibold text-foreground">
-                  {formatCurrency(item.totalValue)}
+                  {formatTooltipCurrency(item.totalValue, isExpanded)}
                 </td>
               </tr>
             </tbody>
@@ -191,7 +194,7 @@ export function Top10TotalFinancialValueChart({
           />
           <XAxis
             type="number"
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />

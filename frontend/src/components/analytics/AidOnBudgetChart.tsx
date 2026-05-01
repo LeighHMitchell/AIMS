@@ -7,6 +7,8 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/format';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { formatTooltipCurrency } from '@/lib/format';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface AidOnBudgetChartProps {
@@ -59,6 +61,7 @@ interface ApiResponse {
 }
 
 export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProps) {
+  const isExpanded = useChartExpansion();
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({ show: false, x: 0, y: 0, content: null });
   const [loading, setLoading] = useState(true);
@@ -241,7 +244,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
           const percentage = ((d.data.value / totalCenterValue) * 100).toFixed(1);
           showTooltip(event, {
             title: d.data.type,
-            value: formatAbbreviated(d.data.value),
+            value: formatTooltipCurrency(d.data.value, isExpanded),
             percentage: `${percentage}% of total aid`
           });
         })
@@ -249,7 +252,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
           const percentage = ((d.data.value / totalCenterValue) * 100).toFixed(1);
           showTooltip(event, {
             title: d.data.type,
-            value: formatAbbreviated(d.data.value),
+            value: formatTooltipCurrency(d.data.value, isExpanded),
             percentage: `${percentage}% of total aid`
           });
         })
@@ -337,7 +340,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
               : '0.0';
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
-              value: formatAbbreviated(sector.value),
+              value: formatTooltipCurrency(sector.value, isExpanded),
               percentage: `${pct}% of total aid`
             });
           })
@@ -347,7 +350,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
               : '0.0';
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
-              value: formatAbbreviated(sector.value),
+              value: formatTooltipCurrency(sector.value, isExpanded),
               percentage: `${pct}% of total aid`
             });
           })
@@ -443,7 +446,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
       .attr("fill", palette.blueSlate)
       .text(`${summary.mappedActivityCount} of ${summary.activityCount} activities mapped`);
 
-  }, [data]);
+  }, [data, isExpanded]);
 
   if (loading) {
     return (

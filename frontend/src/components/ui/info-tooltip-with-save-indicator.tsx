@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, CheckCircle, CircleDashed } from 'lucide-react';
+import { CheckCircle, CircleDashed, HelpCircle } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -31,7 +31,7 @@ export function InfoTooltipWithSaveIndicator({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
+            <HelpCircle className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
           </TooltipTrigger>
           <TooltipContent>
             <p>{text}</p>

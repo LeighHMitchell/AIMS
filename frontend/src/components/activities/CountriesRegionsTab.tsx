@@ -18,6 +18,7 @@ import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Plus,
+  Save,
   Trash2,
   Pencil,
   Globe,
@@ -28,7 +29,7 @@ import {
   X,
   Loader2,
   ChevronsUpDown,
-  Info,
+  HelpCircle,
   Lock
 } from 'lucide-react';
 import { GeographyLevelToggle } from '@/components/activities/GeographyLevelToggle';
@@ -1071,7 +1072,7 @@ export default function CountriesRegionsTab({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-label="Why is this disabled?" />
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-label="Why is this disabled?" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs">
                             <p>
@@ -1369,7 +1370,7 @@ export default function CountriesRegionsTab({
                     (selectedType === 'custom' && (!customName.trim() || !customCode.trim()))
                   }
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Save className="h-4 w-4 mr-2" />
                   {editingId ? 'Update' : 'Add'}
                 </Button>
               </DialogFooter>

@@ -47,6 +47,7 @@ import { useOrganizations } from '@/hooks/use-organizations'
 import { ActivitySpendTrajectoryChart } from '@/components/charts/ActivitySpendTrajectoryChart'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
+import { formatAxisCurrency } from '@/lib/format'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -2560,7 +2561,7 @@ export default function FinancialAnalyticsTab({
                         textAnchor="middle"
                         height={60}
                       />
-                      <YAxis tickFormatter={formatCompactCurrency} stroke="#64748B" fontSize={12} />
+                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                       <Tooltip
                         formatter={(value: any) => [formatCompactCurrencyTooltip(value), '']}
                         separator=""
@@ -2702,7 +2703,7 @@ export default function FinancialAnalyticsTab({
                         textAnchor="middle"
                         height={40}
                       />
-                      <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
                       {activeSeries.has('Incoming Funds') && (
@@ -2853,7 +2854,7 @@ export default function FinancialAnalyticsTab({
                         textAnchor="middle"
                         height={40}
                       />
-                      <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
                       {activeSeries.has('Incoming Funds') && (
@@ -2971,7 +2972,7 @@ export default function FinancialAnalyticsTab({
                         textAnchor="middle"
                         height={40}
                       />
-                      <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
                       {activeSeries.has('Incoming Funds') && (
@@ -3183,7 +3184,7 @@ export default function FinancialAnalyticsTab({
                       textAnchor="middle"
                       height={40}
                     />
-                    <YAxis tickFormatter={formatCompactCurrency} stroke="#64748B" fontSize={12} />
+                    <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip
                       formatter={(value: any) => [formatCompactCurrencyTooltip(value), '']}
                       separator=""
@@ -3263,7 +3264,7 @@ export default function FinancialAnalyticsTab({
                       textAnchor="middle"
                       height={40}
                     />
-                    <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                    <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />
                     <Line
@@ -3311,7 +3312,7 @@ export default function FinancialAnalyticsTab({
                       textAnchor="middle"
                       height={40}
                     />
-                    <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                    <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                     <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />
                     <Bar

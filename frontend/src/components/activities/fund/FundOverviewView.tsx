@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DollarSign, Users, Layers, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { formatAxisCurrency } from "@/lib/format"
 
 interface FundSummary {
   fundName: string
@@ -236,7 +237,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="quarter" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => formatUSD(v)} width={60} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={formatAxisCurrency} width={60} />
                 <Tooltip
                   formatter={(value: number) => [`$${value.toLocaleString()}`, 'Disbursed']}
                   contentStyle={{ fontSize: 12 }}

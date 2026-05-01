@@ -8,7 +8,7 @@ import {
   CheckCircle, 
   Clock, 
   RefreshCw,
-  Info,
+  HelpCircle,
   Loader2
 } from 'lucide-react';
 import { convertToUSD } from '@/lib/currency-conversion-api';
@@ -286,7 +286,7 @@ export function TransactionValueDisplay({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-muted-foreground cursor-help"} />
+                  <HelpCircle className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-muted-foreground cursor-help"} />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>USD value calculated using value date: {transaction.value_date}</p>
@@ -302,7 +302,7 @@ export function TransactionValueDisplay({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-muted-foreground cursor-help"} />
+                  <HelpCircle className={monotone ? "h-4 w-4 text-foreground cursor-help" : "h-4 w-4 text-muted-foreground cursor-help"} />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>1 {transaction.currency} = {conversionData.exchange_rate.toFixed(4)} USD</p>

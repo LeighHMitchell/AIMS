@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { formatAxisCurrency } from '@/lib/format';
 import { RankedItem } from "@/types/national-priorities";
 
 interface RecipientGovBodiesChartProps {
@@ -132,7 +133,7 @@ export function RecipientGovBodiesChart({
           tick={{ fontSize: 10 }}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v)}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 10 }}
           width={60}
         />

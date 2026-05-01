@@ -10,37 +10,32 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
-import { 
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { 
-  Trash2, 
-  AlertCircle, 
-  CheckCircle, 
-  Loader2, 
+import {
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
   Sparkles,
   Info,
-  ChevronUp,
-  ChevronDown,
   HelpCircle
 } from 'lucide-react';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
-import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
-
-import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { toast } from 'sonner';
 import { SectorAllocationModeToggle } from '@/components/activities/SectorAllocationModeToggle';
 import { useSectorAllocationMode, SectorAllocationMode } from '@/hooks/use-sector-allocation-mode';
-import { Lock, ExternalLink, BarChart2 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Lock, ExternalLink } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface Sector {
@@ -283,7 +278,6 @@ function ImprovedSectorAllocationFormInner({
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [showVisualization, setShowVisualization] = useState(false);
 
   // User action tracking for toast notifications
   const userActionInProgressRef = useRef(false);
@@ -344,17 +338,13 @@ function ImprovedSectorAllocationFormInner({
   const SortableHeader = ({ field, children, className = "" }: { field: SortField; children: React.ReactNode; className?: string }) => {
     const isRightAligned = className.includes('text-right');
     return (
-      <TableHead 
+      <TableHead
         className={cn("cursor-pointer hover:bg-muted select-none py-3", className)}
         onClick={() => handleSort(field)}
       >
         <div className={cn("flex items-center gap-1", isRightAligned ? "justify-end" : "justify-start")}>
           {children}
-          {sortField === field && (
-            sortDirection === 'asc' ? 
-              <ChevronUp className="h-4 w-4" /> : 
-              <ChevronDown className="h-4 w-4" />
-          )}
+          {getSortIcon(field, sortField, sortDirection)}
         </div>
       </TableHead>
     );
@@ -901,12 +891,6 @@ function ImprovedSectorAllocationFormInner({
     }
   }, [allocations]);
 
-  // Handle sunburst chart segment selection - only show info, don't modify
-  const handleSunburstSegmentClick = (code: string, level: 'category' | 'sector' | 'subsector') => {
-    // For now, just show information about the clicked segment
-    // Could be extended later to highlight or show details
-  };
-
   // Calculate summary statistics
   const totalAllocated = allocations.reduce((sum, a) => sum + (a.percentage || 0), 0);
   const totalUnallocated = Math.max(0, 100 - totalAllocated);
@@ -1280,32 +1264,6 @@ function ImprovedSectorAllocationFormInner({
           </Alert>
         )}
 
-        {/* Visualization - Interactive Charts (collapsed by default) */}
-        {allocations.length > 0 && (
-          <Collapsible onOpenChange={setShowVisualization}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <BarChart2 className="h-4 w-4" />
-                {showVisualization ? 'Hide Allocation Visualization' : 'Show Allocation Visualization'}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="relative overflow-hidden w-full">
-                    <SectorSankeyVisualization
-                      allocations={allocations}
-                      onSegmentClick={handleSunburstSegmentClick}
-                      showControls={false}
-                      defaultView="sankey"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
       </div>
       </div>
       <ConfirmDialog />

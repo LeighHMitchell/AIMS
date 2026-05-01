@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_RANKED_PALETTE } from "@/lib/chart-colors";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 
 interface ExecutingAgenciesChartProps {
   data: RankedItem[];
@@ -110,7 +111,7 @@ export function ExecutingAgenciesChart({
             <div className="flex items-center justify-between gap-4">
               <span className="text-body text-foreground">Value</span>
               <span className="text-body font-medium text-foreground">
-                {formatCurrency(data.value)}
+                {formatTooltipCurrency(data.value, isExpanded)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -176,7 +177,7 @@ export function ExecutingAgenciesChart({
           tickFormatter={(v) => (v.length > 8 ? `${v.slice(0, 8)}...` : v)}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v)}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={70}

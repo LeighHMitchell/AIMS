@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Pencil, Trash2, ArrowRight, ArrowLeft, ChevronsUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
+import { Search, Link2, Plus, Save, X, ExternalLink, AlertCircle, Pencil, Trash2, ArrowRight, ArrowLeft, ChevronsUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -841,8 +841,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               disabled={!relationshipType || saving}
               className="bg-gunmetal text-white hover:bg-gunmetal/90"
             >
-              {saving && (
+              {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
               )}
               {saving ? 'Saving...' : `${editingActivity ? 'Update' : 'Create'} Link`}
           </Button>

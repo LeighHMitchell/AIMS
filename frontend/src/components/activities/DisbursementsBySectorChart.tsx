@@ -20,9 +20,10 @@ import {
   Cell
 } from 'recharts'
 import { BarChart3, TableIcon, ChevronDown, ChevronUp } from 'lucide-react'
-import { LoadingText } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
+import { formatAxisCurrency } from '@/lib/format'
 
 interface YearData {
   year: number;
@@ -122,10 +123,9 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
       <Card>
         <CardHeader>
           <CardTitle>Disbursements by Sector</CardTitle>
-          <CardDescription><LoadingText>Loading data...</LoadingText></CardDescription>
         </CardHeader>
-        <CardContent className="h-96 flex items-center justify-center">
-          <LoadingText>Loading sector data...</LoadingText>
+        <CardContent className="h-96">
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     );
@@ -258,8 +258,8 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                 height={120}
                 fontSize={12}
               />
-              <YAxis 
-                tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
+              <YAxis
+                tickFormatter={formatAxisCurrency}
               />
               <Tooltip 
                 formatter={(value: number) => formatCurrency(value)}

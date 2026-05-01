@@ -314,6 +314,7 @@ interface TransactionsManagerProps {
   geographyLevel?: 'activity' | 'transaction';
   activitySectors?: ActivitySector[];
   isPooledFund?: boolean;
+  activityIsHumanitarian?: boolean;
 }
 
 export default function TransactionsManager({ 
@@ -331,7 +332,8 @@ export default function TransactionsManager({
   initialTransactionId,
   geographyLevel = 'activity',
   activitySectors = [],
-  isPooledFund = false
+  isPooledFund = false,
+  activityIsHumanitarian = false,
 }: TransactionsManagerProps) {
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -1285,6 +1287,7 @@ export default function TransactionsManager({
         geographyLevel={geographyLevel}
         activitySectors={activitySectors}
         isPooledFund={isPooledFund}
+        activityIsHumanitarian={activityIsHumanitarian}
       />
 
       {/* Bulk Action Toolbar - appears from bottom when items selected */}

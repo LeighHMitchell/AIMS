@@ -8,6 +8,7 @@ import { Maximize2, Download, Table as TableIcon, BarChart3 } from 'lucide-react
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { ChartExpansionProvider } from '@/lib/chart-expansion-context'
 import {
   Table,
   TableBody,
@@ -167,7 +168,9 @@ export function CompactChartCard({
             style={{ height: compactHeight }}
             className="overflow-hidden [&_.text-body.text-muted-foreground.leading-relaxed]:hidden"
           >
-            {renderChart(true)}
+            <ChartExpansionProvider isExpanded={false}>
+              {renderChart(true)}
+            </ChartExpansionProvider>
           </div>
         </CardContent>
       </Card>
@@ -225,7 +228,9 @@ export function CompactChartCard({
           
           {/* Chart content */}
           <div className="mt-6">
-            {viewMode === 'chart' ? renderChart(false) : renderTableView()}
+            <ChartExpansionProvider isExpanded={true}>
+              {viewMode === 'chart' ? renderChart(false) : renderTableView()}
+            </ChartExpansionProvider>
           </div>
         </DialogContent>
       </Dialog>

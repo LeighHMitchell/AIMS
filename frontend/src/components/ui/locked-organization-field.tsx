@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Lock, Unlock } from "lucide-react"
+import { Lock, Unlock, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
@@ -88,8 +88,9 @@ export function LockedOrganizationField({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="h-6 px-2 text-helper"
+              className="h-6 px-2 text-helper gap-1"
             >
+              <Save className="h-3 w-3" />
               Save
             </Button>
           )}

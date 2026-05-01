@@ -49,6 +49,8 @@ import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { ChartExpansionProvider, useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 
 type ChartType = "bar" | "line" | "area";
 type ViewMode = "chart" | "table";
@@ -87,6 +89,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
     customYears,
     selectedId: selectedCustomYearId,
     setSelectedId: setSelectedCustomYearId,
+    selectedYear: selectedCustomYear,
     loading: customYearsLoading,
   } = useCustomYears();
 
@@ -147,21 +150,29 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
+    const isExpanded = useChartExpansion();
     if (active && payload && payload.length) {
       // Get the yearLabel from the payload's data point
       const yearLabel = payload[0]?.payload?.yearLabel || label;
       return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-2">{yearLabel}</p>
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-body"
-              style={{ color: entry.color }}
-            >
-              {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatCurrency(entry.value)}`}
-            </p>
-          ))}
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{yearLabel}</p>
+            {selectedCustomYear?.name && (
+              <p className="text-helper text-muted-foreground mt-0.5">{selectedCustomYear.name}</p>
+            )}
+          </div>
+          <div className="p-3">
+            {payload.map((entry: any, index: number) => (
+              <p
+                key={index}
+                className="text-body"
+                style={{ color: entry.color }}
+              >
+                {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatTooltipCurrency(entry.value, isExpanded)}`}
+              </p>
+            ))}
+          </div>
         </div>
       );
     }
@@ -182,7 +193,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             stroke={CHART_STRUCTURE_COLORS.axis}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
             width={70}
@@ -231,7 +242,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             stroke={CHART_STRUCTURE_COLORS.axis}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
             width={70}
@@ -294,7 +305,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
             stroke={CHART_STRUCTURE_COLORS.axis}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
             width={70}
@@ -515,7 +526,9 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
-          {renderContent(false)}
+          <ChartExpansionProvider isExpanded={false}>
+            {renderContent(false)}
+          </ChartExpansionProvider>
         </CardContent>
       </Card>
 
@@ -532,7 +545,11 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
           </DialogHeader>
 
           {/* Chart/Table content */}
-          <div className="mt-4 flex-1 min-h-0 flex flex-col">{renderContent(true)}</div>
+          <div className="mt-4 flex-1 min-h-0 flex flex-col">
+            <ChartExpansionProvider isExpanded={true}>
+              {renderContent(true)}
+            </ChartExpansionProvider>
+          </div>
 
           {/* Controls */}
           <div className="flex-shrink-0">{renderControls(true)}</div>

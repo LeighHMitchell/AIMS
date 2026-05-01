@@ -13,11 +13,12 @@ import {
   Legend,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LoadingText } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { formatAxisCurrency } from '@/lib/format';
 
 // Colour palette as specified
 const COLOURS = {
@@ -363,7 +364,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )
@@ -469,7 +470,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
               tickLine={{ stroke: COLOURS.blueSlate }}
             />
             <YAxis 
-              tickFormatter={formatCurrencyCompact} 
+              tickFormatter={formatAxisCurrency}
               stroke={COLOURS.blueSlate} 
               fontSize={12}
               domain={[0, yAxisMax]}

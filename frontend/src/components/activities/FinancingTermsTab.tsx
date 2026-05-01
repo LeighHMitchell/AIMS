@@ -22,6 +22,7 @@ import {
   Pencil
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { getSortIcon } from '@/components/ui/table';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { cn } from '@/lib/utils';
 import { useFinancingTerms } from '@/hooks/use-financing-terms';
@@ -688,13 +689,7 @@ export function FinancingTermsTab({
                         >
                           <span className={cn('inline-flex items-center gap-1', col.align === 'right' && 'justify-end w-full')}>
                             {col.label}
-                            {isActive ? (
-                              loanStatusSort.direction === 'asc'
-                                ? <ChevronUp className="h-3 w-3" />
-                                : <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                            )}
+                            {getSortIcon(col.key, loanStatusSort.key, loanStatusSort.direction)}
                           </span>
                         </th>
                       );

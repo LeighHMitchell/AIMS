@@ -31,6 +31,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartExpansionProvider, useChartExpansion } from '@/lib/chart-expansion-context';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 type ChartType = "bar" | "line" | "area";
 
@@ -165,14 +167,14 @@ export function AidPredictabilityChart() {
               tickFormatter={(v) => v.toString()}
             />
             <YAxis
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
               tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
               stroke={CHART_STRUCTURE_COLORS.axis}
               width={70}
             />
             <Tooltip
               formatter={(value: number, name: string) => [
-                formatCurrency(value),
+                formatTooltipCurrency(value, isExpanded),
                 name === "plannedDisbursements"
                   ? "Planned"
                   : "Actual",
@@ -225,14 +227,14 @@ export function AidPredictabilityChart() {
               tickFormatter={(v) => v.toString()}
             />
             <YAxis
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
               tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
               stroke={CHART_STRUCTURE_COLORS.axis}
               width={70}
             />
             <Tooltip
               formatter={(value: number, name: string) => [
-                formatCurrency(value),
+                formatTooltipCurrency(value, isExpanded),
                 name === "plannedDisbursements"
                   ? "Planned"
                   : "Actual",
@@ -300,14 +302,14 @@ export function AidPredictabilityChart() {
               tickFormatter={(v) => v.toString()}
             />
             <YAxis
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
               tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
               stroke={CHART_STRUCTURE_COLORS.axis}
               width={70}
             />
             <Tooltip
               formatter={(value: number, name: string) => [
-                formatCurrency(value),
+                formatTooltipCurrency(value, isExpanded),
                 name === "plannedDisbursements"
                   ? "Planned"
                   : "Actual",
@@ -417,14 +419,14 @@ export function AidPredictabilityChart() {
                     tickFormatter={(v) => v.toString()}
                   />
                   <YAxis
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                     tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
                     stroke={CHART_STRUCTURE_COLORS.axis}
                     width={70}
                   />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      formatCurrency(value),
+                      formatTooltipCurrency(value, isExpanded),
                       name === "plannedDisbursements" ? "Planned" : "Actual",
                     ]}
                     labelFormatter={(label) => `Year ${label}`}
@@ -461,14 +463,14 @@ export function AidPredictabilityChart() {
                     tickFormatter={(v) => v.toString()}
                   />
                   <YAxis
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                     tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
                     stroke={CHART_STRUCTURE_COLORS.axis}
                     width={70}
                   />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      formatCurrency(value),
+                      formatTooltipCurrency(value, isExpanded),
                       name === "plannedDisbursements" ? "Planned" : "Actual",
                     ]}
                     labelFormatter={(label) => `Year ${label}`}
@@ -519,14 +521,14 @@ export function AidPredictabilityChart() {
                     tickFormatter={(v) => v.toString()}
                   />
                   <YAxis
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                     tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
                     stroke={CHART_STRUCTURE_COLORS.axis}
                     width={70}
                   />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      formatCurrency(value),
+                      formatTooltipCurrency(value, isExpanded),
                       name === "plannedDisbursements" ? "Planned" : "Actual",
                     ]}
                     labelFormatter={(label) => `Year ${label}`}

@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { FundingByType } from "@/types/national-priorities";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 
 interface FundingTypeTimeSeriesChartProps {
   data: FundingByType[];
@@ -43,6 +45,7 @@ function formatCurrency(value: number): string {
 export function FundingTypeTimeSeriesChart({
   data,
 }: FundingTypeTimeSeriesChartProps) {
+  const isExpanded = useChartExpansion();
   // Transform data to have years as rows and finance types as columns
   const { chartData, financeTypes } = useMemo(() => {
     const years = new Map<number, Record<string, number>>();
@@ -88,13 +91,13 @@ export function FundingTypeTimeSeriesChart({
             tickFormatter={(v) => v.toString()}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11 }}
             width={70}
           />
           <Tooltip
             formatter={(value: number, name: string) => [
-              formatCurrency(value),
+              formatTooltipCurrency(value, isExpanded),
               name,
             ]}
             contentStyle={{

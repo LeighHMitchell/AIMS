@@ -23,6 +23,8 @@ import { ExpandableCard } from '@/components/ui/expandable-card'
 import { exportToCSV } from '@/lib/exports'
 import { exportChartToJPG } from '@/lib/chart-export'
 import { CHART_COLORS, CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import {
   Table,
   TableBody,
@@ -58,6 +60,7 @@ interface ChartDataPoint {
 }
 
 export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<FlowData[]>([])
   const [donors, setDonors] = useState<{name: string, total: number}[]>([])
   const [sectors, setSectors] = useState<{name: string, total: number}[]>([])
@@ -397,8 +400,8 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       <LineChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis dataKey="period" />
-        <YAxis tickFormatter={(value) => formatCurrency(value)} />
-        <Tooltip formatter={(value: any) => formatCurrencyFull(value)} />
+        <YAxis tickFormatter={formatAxisCurrency} />
+        <Tooltip formatter={(value: any) => formatTooltipCurrency(value, isExpanded)} />
         <Legend />
         {sectors.map((sector, index) => (
           <Line
@@ -419,8 +422,8 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       <BarChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis dataKey="period" />
-        <YAxis tickFormatter={(value) => formatCurrency(value)} />
-        <Tooltip formatter={(value: any) => formatCurrencyFull(value)} />
+        <YAxis tickFormatter={formatAxisCurrency} />
+        <Tooltip formatter={(value: any) => formatTooltipCurrency(value, isExpanded)} />
         <Legend />
         {sectors.map((sector, index) => (
           <Bar

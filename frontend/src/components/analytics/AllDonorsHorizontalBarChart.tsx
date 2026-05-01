@@ -27,6 +27,8 @@ import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName, getOrganizationTypeCo
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -109,6 +111,7 @@ interface DonorData {
 }
 
 export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChange, compact = false }: AllDonorsChartProps) {
+  const isExpanded = useChartExpansion()
   const [allData, setAllData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('disbursements')
@@ -675,7 +678,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted-foreground text-body">{selectedMetric.name}</span>
               <span className="text-lg font-bold text-foreground">
-                {formatCurrencyAbbreviated(selectedMetric.value)}
+                {formatTooltipCurrency(selectedMetric.value, isExpanded)}
               </span>
             </div>
             {showPercentage && (
@@ -814,7 +817,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
-            <XAxis type="number" tickFormatter={formatCurrency} fontSize={10} />
+            <XAxis type="number" tickFormatter={formatAxisCurrency} fontSize={10} />
             <YAxis
               type="category"
               dataKey="name"
@@ -1410,7 +1413,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 />
                 <XAxis
                   type="number"
-                  tickFormatter={formatCurrency}
+                  tickFormatter={formatAxisCurrency}
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   axisLine={{ stroke: '#cbd5e1' }}
                 />
@@ -1446,14 +1449,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                               <span className="font-semibold text-foreground text-body">{label}</span>
                             </div>
                             <p className="text-body text-foreground mt-1 font-medium">
-                              {dataPoint?.donorCount} organization{dataPoint?.donorCount !== 1 ? 's' : ''}, Total {formatCurrencyAbbreviated(dataPoint?.totalValue || 0)}
+                              {dataPoint?.donorCount} organization{dataPoint?.donorCount !== 1 ? 's' : ''}, Total {formatTooltipCurrency(dataPoint?.totalValue || 0, isExpanded)}
                             </p>
                           </div>
                           {donorDetails && hoveredValue ? (
                             <div className="p-3">
                               <p className="font-semibold text-foreground text-body">{donorDisplay}</p>
                               <p className="text-lg font-bold text-foreground mt-1">
-                                {formatCurrencyAbbreviated(hoveredValue)}
+                                {formatTooltipCurrency(hoveredValue, isExpanded)}
                               </p>
                             </div>
                           ) : (
@@ -1495,7 +1498,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 />
                 <XAxis
                   type="number"
-                  tickFormatter={formatCurrency}
+                  tickFormatter={formatAxisCurrency}
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   axisLine={{ stroke: '#cbd5e1' }}
                 />

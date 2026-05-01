@@ -33,6 +33,8 @@ import {
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface PolicyMarker {
   id: string
@@ -72,6 +74,7 @@ const SIGNIFICANCE_LABELS: Record<number, { label: string; color: string; descri
 }
 
 export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = false }: PolicyMarkersChartProps) {
+  const isExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<PolicyMarkerAnalyticsRow[]>([])
   const [timeSeriesData, setTimeSeriesData] = useState<PolicyMarkerTimeSeriesRow[]>([])
@@ -244,18 +247,25 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
 
     const data = payload[0].payload
     return (
-      <div className="bg-slate-900 text-white p-3 rounded-lg shadow-lg border border-slate-700">
-        <p className="font-semibold mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => {
-          if (entry.value === 0) return null
-          const significance = entry.dataKey === 'notTargeted' ? 0 : entry.dataKey === 'significant' ? 1 : 2
-          const sigInfo = SIGNIFICANCE_LABELS[significance]
-          return (
-            <p key={index} className="text-body" style={{ color: entry.color }}>
-              {sigInfo.label}: {entry.value} {entry.value === 1 ? 'activity' : 'activities'}
-            </p>
-          )
-        })}
+      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+        <div className="bg-surface-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground">{label}</p>
+        </div>
+        <div className="px-3 py-2">
+          {payload.map((entry: any, index: number) => {
+            if (entry.value === 0) return null
+            const significance = entry.dataKey === 'notTargeted' ? 0 : entry.dataKey === 'significant' ? 1 : 2
+            const sigInfo = SIGNIFICANCE_LABELS[significance]
+            return (
+              <p key={index} className="text-body flex items-center gap-2">
+                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: entry.color }} />
+                <span className="text-foreground">
+                  {sigInfo.label}: {entry.value} {entry.value === 1 ? 'activity' : 'activities'}
+                </span>
+              </p>
+            )
+          })}
+        </div>
       </div>
     )
   }
@@ -266,18 +276,25 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
 
     const data = payload[0].payload
     return (
-      <div className="bg-slate-900 text-white p-3 rounded-lg shadow-lg border border-slate-700">
-        <p className="font-semibold mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => {
-          if (entry.value === 0) return null
-          const significance = entry.dataKey === 'significantValue' ? 1 : 2
-          const sigInfo = SIGNIFICANCE_LABELS[significance]
-          return (
-            <p key={index} className="text-body" style={{ color: entry.color }}>
-              {sigInfo.label}: {formatCurrencyFull(entry.value)}
-            </p>
-          )
-        })}
+      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+        <div className="bg-surface-muted px-3 py-2 border-b border-border">
+          <p className="font-semibold text-foreground">{label}</p>
+        </div>
+        <div className="px-3 py-2">
+          {payload.map((entry: any, index: number) => {
+            if (entry.value === 0) return null
+            const significance = entry.dataKey === 'significantValue' ? 1 : 2
+            const sigInfo = SIGNIFICANCE_LABELS[significance]
+            return (
+              <p key={index} className="text-body flex items-center gap-2">
+                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: entry.color }} />
+                <span className="text-foreground">
+                  {sigInfo.label}: {formatTooltipCurrency(entry.value, isExpanded)}
+                </span>
+              </p>
+            )
+          })}
+        </div>
       </div>
     )
   }
@@ -675,7 +692,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         tick={{ fontSize: 12, fill: '#64748b' }}
                       />
                       <YAxis
-                        tickFormatter={formatCurrency}
+                        tickFormatter={formatAxisCurrency}
                         tick={{ fontSize: 12, fill: '#64748b' }}
                         label={{ value: 'Total Activity Budget (USD)', angle: -90, position: 'insideLeft' }}
                       />

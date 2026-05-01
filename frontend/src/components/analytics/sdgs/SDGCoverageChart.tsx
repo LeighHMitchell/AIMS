@@ -17,6 +17,7 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { formatAxisCurrency } from '@/lib/format'
 
 interface SDGCoverageChartProps {
   organizationId: string
@@ -300,7 +301,7 @@ export function SDGCoverageChart({
               type="number"
               fontSize={9}
               tick={{ fill: '#64748b' }}
-              tickFormatter={(v) => metric === 'activities' ? v.toFixed(1) : formatCurrency(v)}
+              tickFormatter={(v) => metric === 'activities' ? v.toFixed(1) : formatAxisCurrency(v)}
               domain={[0, 'auto']}
             >
               <Label value={getMetricLabel()} position="bottom" offset={5} fontSize={9} fill="#64748b" />
@@ -381,7 +382,7 @@ export function SDGCoverageChart({
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={metric === 'activities' ? (v) => v.toFixed(1) : formatCurrency}
+              tickFormatter={metric === 'activities' ? (v) => v.toFixed(1) : formatAxisCurrency}
               tick={{ fill: '#64748b', fontSize: 12 }}
               axisLine={{ stroke: '#cbd5e1' }}
               orientation="bottom"

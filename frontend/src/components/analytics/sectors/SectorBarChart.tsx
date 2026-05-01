@@ -22,6 +22,7 @@ import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { formatAxisCurrency } from '@/lib/format'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -485,7 +486,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
             margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={true} vertical={false} />
-            <XAxis type="number" tickFormatter={(v) => v >= 1e6 ? `$${(v/1e6).toFixed(0)}m` : `$${(v/1e3).toFixed(0)}k`} fontSize={10} />
+            <XAxis type="number" tickFormatter={formatAxisCurrency} fontSize={10} />
             <YAxis
               type="category"
               dataKey="name"
@@ -677,11 +678,11 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-              <XAxis 
-                type="number" 
-                tickFormatter={formatCurrency} 
-                stroke="#64748B" 
-                fontSize={12} 
+              <XAxis
+                type="number"
+                tickFormatter={formatAxisCurrency}
+                stroke="#64748B"
+                fontSize={12}
               />
               <YAxis 
                 type="category" 
@@ -766,10 +767,10 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                 height={120}
                 interval={0}
               />
-              <YAxis 
-                tickFormatter={formatCurrency} 
-                stroke="#64748B" 
-                fontSize={12} 
+              <YAxis
+                tickFormatter={formatAxisCurrency}
+                stroke="#64748B"
+                fontSize={12}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={renderLegend} />

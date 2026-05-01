@@ -47,6 +47,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "table";
@@ -226,11 +227,11 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
                 </tr>
                 <tr className="border-b border-border">
                   <td className="py-1 pr-4 text-foreground font-medium">Base Value</td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.baseValue)}</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(item.baseValue, isExpanded)}</td>
                 </tr>
                 <tr>
                   <td className="py-1 pr-4 text-foreground font-medium">Capital Spend</td>
-                  <td className="py-1 text-right font-semibold" style={{ color: TOP_CAPITAL_PALETTE[0] }}>{formatCurrency(item.capitalSpendValue)}</td>
+                  <td className="py-1 text-right font-semibold" style={{ color: TOP_CAPITAL_PALETTE[0] }}>{formatTooltipCurrency(item.capitalSpendValue, isExpanded)}</td>
                 </tr>
               </tbody>
             </table>
@@ -322,7 +323,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
           type="number"
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={(value) => formatCurrency(value)}
+          tickFormatter={formatAxisCurrency}
           tickLine={false}
           axisLine={false}
         />

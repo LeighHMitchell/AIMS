@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, Check, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine, X, Save } from 'lucide-react';
+import { Trash2, Copy, Loader2, Check, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, HelpCircle, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine, X, Save } from 'lucide-react';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BUDGET_TYPES } from '@/data/budget-type';
@@ -1955,11 +1956,7 @@ export default function ActivityBudgetsTab({
                       onClick={() => handleSort('period_start')}
                     >
                       Period
-                      {sortColumn === 'period_start' ? (
-                        sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                      ) : (
-                        <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                      )}
+                      {getSortIcon('period_start', sortColumn || '', sortDirection)}
                     </div>
                   </TableHead>
                   {[
@@ -1980,11 +1977,7 @@ export default function ActivityBudgetsTab({
                           onClick={() => handleSort(header.sortKey)}
                         >
                           {header.label}
-                          {sortColumn === header.sortKey ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon(header.sortKey, sortColumn || '', sortDirection)}
                         </div>
                       ) : (
                         header.label
@@ -2642,7 +2635,7 @@ export default function ActivityBudgetsTab({
                         <TooltipProvider>
                           <UITooltip>
                             <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 text-muted-foreground" />
+                              <HelpCircle className="h-3 w-3 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                               <p className="text-body">The exchange rate used to convert the budget value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
@@ -2715,7 +2708,7 @@ export default function ActivityBudgetsTab({
                         <TooltipProvider>
                           <UITooltip>
                             <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 text-muted-foreground" />
+                              <HelpCircle className="h-3 w-3 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                               <p className="text-body">The budget value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>

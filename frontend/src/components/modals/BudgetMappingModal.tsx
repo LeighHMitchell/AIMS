@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, Pencil, Trash2, AlertCircle, ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
+import { X, Plus, Pencil, Trash2, AlertCircle, ChevronsUpDown, Check, Search, Loader2, Save } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BudgetIdentifierVocabularySelect } from "@/components/forms/BudgetIdentifierVocabularySelect";
@@ -528,6 +528,7 @@ export function BudgetMappingModal({
                     onClick={saveBudgetItem}
                     disabled={!selectedClassificationType || !editingItem.code || editingItem.percentage === null || editingItem.percentage === undefined}
                   >
+                    <Save className="h-4 w-4 mr-2" />
                     {editingItemIndex !== null ? 'Update' : 'Add'} Item
                   </Button>
                 </div>
@@ -552,7 +553,17 @@ export function BudgetMappingModal({
             onClick={handleSave}
             disabled={saving || !validation.isValid || budgetItems.length === 0 || editingItem !== null}
           >
-            {saving ? 'Saving...' : 'Save Budget Mapping'}
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Budget Mapping
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>

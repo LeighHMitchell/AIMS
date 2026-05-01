@@ -2,7 +2,7 @@
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag, X } from "lucide-react";
+import { Calendar, Info, HelpCircle, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag, X } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { toast } from "sonner";
 import { 
@@ -331,6 +331,7 @@ interface TransactionModalProps {
   geographyLevel?: 'activity' | 'transaction'; // Whether geography is set at activity or transaction level
   activitySectors?: ActivitySector[]; // Sectors defined at activity level
   isPooledFund?: boolean; // Whether the parent activity is a pooled fund
+  activityIsHumanitarian?: boolean; // Whether the parent activity is flagged humanitarian — defaults transaction flag to true for NEW transactions
 }
 
 export default function TransactionModal({
@@ -351,7 +352,8 @@ export default function TransactionModal({
   isSubmitting,
   geographyLevel = 'activity',
   activitySectors = [],
-  isPooledFund = false
+  isPooledFund = false,
+  activityIsHumanitarian = false,
 }: TransactionModalProps) {
   const { partners } = usePartners();
   const { participatingOrganizations } = useParticipatingOrganizations({ activityId });
@@ -600,8 +602,11 @@ export default function TransactionModal({
       aid_types: transaction?.aid_types || [],
       use_activity_sectors: transaction?.use_activity_sectors ?? true, // Default to inheriting from activity
       
-      // Other
-      is_humanitarian: transaction?.is_humanitarian || false,
+      // Other — for NEW transactions, inherit the activity-level humanitarian flag
+      // so the toggle defaults on if the parent activity is humanitarian.
+      is_humanitarian: transaction
+        ? (transaction.is_humanitarian || false)
+        : activityIsHumanitarian,
     };
   });
 
@@ -1022,7 +1027,9 @@ export default function TransactionModal({
         sectors: [],
         aid_types: [],
         use_activity_sectors: true, // Default to inheriting from activity
-        is_humanitarian: false,
+        // Inherit the activity-level humanitarian flag so new transactions
+        // default to "on" when the parent activity is flagged humanitarian.
+        is_humanitarian: activityIsHumanitarian,
       });
       setShowValueDate(false);
       setUseActivitySectorChoice(true); // Reset to inherit from activity
@@ -1228,7 +1235,7 @@ export default function TransactionModal({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground cursor-help inline-block ml-1" />
+          <HelpCircle className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground cursor-help inline-block ml-1" />
         </TooltipTrigger>
         <TooltipContent>
           <p>{text}</p>
@@ -1312,7 +1319,7 @@ export default function TransactionModal({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
+              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent>
               <p>{helpText}</p>

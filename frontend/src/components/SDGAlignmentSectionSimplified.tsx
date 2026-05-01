@@ -33,7 +33,7 @@ import {
   Globe,
   ChevronDown,
   ChevronRight,
-  Info,
+  HelpCircle,
   Eye
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -470,7 +470,7 @@ export default function SDGAlignmentSectionSimplified({
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Info className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
+                                    <HelpCircle className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-md">
                                     <p><strong>Target {target.id}:</strong> {target.text}</p>

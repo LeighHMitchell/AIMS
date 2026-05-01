@@ -16,6 +16,8 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart3, DollarSign, Wallet, Calendar } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 type ViewMode = 'budgets' | 'disbursements' | 'planned'
 
@@ -35,6 +37,7 @@ interface DonorData {
 }
 
 export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('disbursements')
@@ -359,7 +362,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
         />
         <XAxis 
           type="number"
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#cbd5e1' }}
         />
@@ -383,7 +386,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
                       <tbody>
                         <tr>
                           <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
-                          <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(payload[0].value)}</td>
+                          <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(payload[0].value, isExpanded)}</td>
                         </tr>
                       </tbody>
                     </table>

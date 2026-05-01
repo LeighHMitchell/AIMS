@@ -146,47 +146,41 @@ export function EmergencySearchableSelect({
                     Loading emergencies...
                   </div>
                 ) : (
-                  filteredEmergencies.map((emergency) => (
-                    <CommandItem
-                      key={emergency.id}
-                      onSelect={() => {
-                        onValueChange?.(emergency.code, emergency);
-                        setIsOpen(false);
-                        setSearchQuery("");
-                      }}
-                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === emergency.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  filteredEmergencies.map((emergency) => {
+                    const dateRange = formatDateRange(emergency);
+                    const metaParts = [emergency.location, dateRange].filter(Boolean);
+                    return (
+                      <CommandItem
+                        key={emergency.id}
+                        onSelect={() => {
+                          onValueChange?.(emergency.code, emergency);
+                          setIsOpen(false);
+                          setSearchQuery("");
+                        }}
+                        className="cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4 shrink-0",
+                            value === emergency.code ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex flex-1 items-center gap-2 min-w-0">
+                          <span className="shrink-0 text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {emergency.code}
                           </span>
-                          <span className="font-medium text-foreground">
+                          <span className="font-medium text-foreground truncate">
                             {emergency.name}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {emergency.location && (
-                            <span className="text-helper text-muted-foreground">
-                              {emergency.location}
-                            </span>
-                          )}
-                          {formatDateRange(emergency) && (
-                            <span className="text-helper text-muted-foreground">
-                              {emergency.location ? " · " : ""}
-                              {formatDateRange(emergency)}
+                          {metaParts.length > 0 && (
+                            <span className="shrink-0 text-helper text-muted-foreground">
+                              · {metaParts.join(" · ")}
                             </span>
                           )}
                         </div>
-                      </div>
-                    </CommandItem>
-                  ))
+                      </CommandItem>
+                    );
+                  })
                 )}
               </CommandGroup>
               {!loading && filteredEmergencies.length === 0 && (

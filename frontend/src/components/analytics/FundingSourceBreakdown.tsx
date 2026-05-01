@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency } from '@/lib/format'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -51,6 +53,7 @@ export function FundingSourceBreakdown({
   filters,
   refreshKey
 }: FundingSourceBreakdownProps) {
+  const isExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fundingSourceData, setFundingSourceData] = useState<any[]>([])
@@ -194,7 +197,7 @@ export function FundingSourceBreakdown({
                     <span className="text-foreground font-medium">Amount</span>
                   </td>
                   <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipValue(entry.value)}
+                    {formatTooltipCurrency(entry.value, isExpanded)}
                   </td>
                 </tr>
               </tbody>

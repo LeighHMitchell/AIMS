@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { Layers, MapPin, PieChart as PieChartIcon, Calendar } from "lucide-react"
 import Link from "next/link"
+import { formatAxisCurrency } from "@/lib/format"
 
 interface ChildActivity {
   id: string
@@ -170,7 +171,7 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.byYear}>
               <XAxis dataKey="year" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={(v) => formatUSD(v)} tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={formatAxisCurrency} tick={{ fontSize: 11 }} />
               <Tooltip
                 formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name.charAt(0).toUpperCase() + name.slice(1)]}
                 contentStyle={{ fontSize: 12 }}

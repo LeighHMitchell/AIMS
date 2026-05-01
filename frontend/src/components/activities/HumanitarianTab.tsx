@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -15,8 +15,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, AlertCircle, Heart, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Plus, Trash2, Pencil, AlertCircle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { HumanitarianScope } from '@/types/humanitarian';
 import { CountryEmergency } from '@/types/country-emergency';
@@ -53,6 +55,57 @@ export function HumanitarianTab({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<HumanitarianScope | null>(null);
   const [emergencyMap, setEmergencyMap] = useState<Record<string, CountryEmergency>>({});
+
+  type ScopeSortField = 'type' | 'vocabulary' | 'code' | 'location' | 'date';
+  const [sortField, setSortField] = useState<ScopeSortField>('type');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: ScopeSortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedScopes = useMemo(() => {
+    const arr = [...scopes];
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      let av: string | number = '';
+      let bv: string | number = '';
+      switch (sortField) {
+        case 'type':
+          av = getScopeTypeName(a.type) || '';
+          bv = getScopeTypeName(b.type) || '';
+          break;
+        case 'vocabulary':
+          av = a.vocabulary || '';
+          bv = b.vocabulary || '';
+          break;
+        case 'code': {
+          const aName = a.vocabulary === '98' ? emergencyMap[a.code]?.name : '';
+          const bName = b.vocabulary === '98' ? emergencyMap[b.code]?.name : '';
+          av = (aName || a.code || '').toLowerCase();
+          bv = (bName || b.code || '').toLowerCase();
+          break;
+        }
+        case 'location':
+          av = (emergencyMap[a.code]?.location || '').toLowerCase();
+          bv = (emergencyMap[b.code]?.location || '').toLowerCase();
+          break;
+        case 'date':
+          av = emergencyMap[a.code]?.startDate ? new Date(emergencyMap[a.code]!.startDate!).getTime() : 0;
+          bv = emergencyMap[b.code]?.startDate ? new Date(emergencyMap[b.code]!.startDate!).getTime() : 0;
+          break;
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [scopes, sortField, sortOrder, emergencyMap]);
 
   // Fetch humanitarian data
   useEffect(() => {
@@ -232,18 +285,10 @@ export function HumanitarianTab({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/*
-        Humanitarian flag — a metadata marker, not a warning. Dropped the
-        border-destructive/30 / text-red-* / bg-destructive styling that dressed this
-        section like an error zone. A single <Heart /> icon at the heading
-        carries the thematic cue; the active-state Switch keeps a calm red
-        tint via accent tokens.
-      */}
       <div className="relative border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <Heart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {/*
                 LabelSaveIndicator renders its spinner/tick after its children.
                 We include the help-text tooltip inside as a child so the render
@@ -267,21 +312,22 @@ export function HumanitarianTab({
             <p className="text-body text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
             </p>
+            <div className="mt-4">
+              <Switch
+                id="humanitarian-toggle"
+                checked={humanitarian}
+                onCheckedChange={handleHumanitarianToggle}
+                disabled={readOnly || isSaving || activityId === 'NEW'}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2 ml-4">
-            <Switch
-              id="humanitarian-toggle"
-              checked={humanitarian}
-              onCheckedChange={handleHumanitarianToggle}
-              disabled={readOnly || isSaving || activityId === 'NEW'}
-            />
-            {humanitarian && !readOnly && activityId !== 'NEW' && (
-              <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Emergency/Appeal
-              </Button>
-            )}
-          </div>
+          {humanitarian && !readOnly && activityId !== 'NEW' && (
+            <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Emergency/Appeal
+            </Button>
+          )}
         </div>
 
         {activityId === 'NEW' && (
@@ -322,16 +368,41 @@ export function HumanitarianTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="whitespace-nowrap">Type</TableHead>
-                      <TableHead className="whitespace-nowrap">Vocabulary (GLIDE/OCHA)</TableHead>
-                      <TableHead className="whitespace-nowrap">Emergency/Appeal</TableHead>
-                      <TableHead className="whitespace-nowrap">Location</TableHead>
-                      <TableHead className="whitespace-nowrap">Date</TableHead>
+                      <TableHead
+                        className={cn("whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors select-none")}
+                        onClick={() => handleSort('type')}
+                      >
+                        <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortOrder)}</div>
+                      </TableHead>
+                      <TableHead
+                        className={cn("whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors select-none")}
+                        onClick={() => handleSort('vocabulary')}
+                      >
+                        <div className="flex items-center gap-1">Vocabulary (GLIDE/OCHA) {getSortIcon('vocabulary', sortField, sortOrder)}</div>
+                      </TableHead>
+                      <TableHead
+                        className={cn("whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors select-none")}
+                        onClick={() => handleSort('code')}
+                      >
+                        <div className="flex items-center gap-1">Emergency/Appeal {getSortIcon('code', sortField, sortOrder)}</div>
+                      </TableHead>
+                      <TableHead
+                        className={cn("whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors select-none")}
+                        onClick={() => handleSort('location')}
+                      >
+                        <div className="flex items-center gap-1">Location {getSortIcon('location', sortField, sortOrder)}</div>
+                      </TableHead>
+                      <TableHead
+                        className={cn("whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors select-none")}
+                        onClick={() => handleSort('date')}
+                      >
+                        <div className="flex items-center gap-1">Date {getSortIcon('date', sortField, sortOrder)}</div>
+                      </TableHead>
                       {!readOnly && <TableHead className="w-[100px]" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {scopes.map((scope) => (
+                    {sortedScopes.map((scope) => (
                       <TableRow key={scope.id}>
                         <TableCell className="text-body align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">

@@ -28,7 +28,7 @@ import {
   TooltipProps,
 } from 'recharts'
 import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
-import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
@@ -625,8 +625,8 @@ export function ProjectOrgCountsBySector({
             Projects & Organisations by Sector
           </CardTitle>
         </CardHeader>
-        <CardContent className="h-80 flex items-center justify-center">
-          <LoadingText>Loading sector data...</LoadingText>
+        <CardContent className="h-80">
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )

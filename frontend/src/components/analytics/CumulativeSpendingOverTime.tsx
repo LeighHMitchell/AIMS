@@ -16,6 +16,8 @@ import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -59,6 +61,7 @@ export function CumulativeSpendingOverTime({
   const [error, setError] = useState<string | null>(null)
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('all')
+  const isExpanded = useChartExpansion()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -193,22 +196,27 @@ export function CumulativeSpendingOverTime({
   }
 
   // Use the module-level currency formatter for tooltips
-  const formatTooltipValue = formatCurrencyAbbreviated
+  const formatTooltipValue = (value: number) => formatTooltipCurrency(value, isExpanded)
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-body"
-              style={{ color: entry.color }}
-            >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
-            </p>
-          ))}
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{label}</p>
+            <p className="text-helper text-muted-foreground mt-0.5">Gregorian Calendar Year</p>
+          </div>
+          <div className="p-3">
+            {payload.map((entry: any, index: number) => (
+              <p
+                key={index}
+                className="text-body"
+                style={{ color: entry.color }}
+              >
+                {`${entry.name}: ${formatTooltipValue(entry.value)}`}
+              </p>
+            ))}
+          </div>
         </div>
       )
     }
@@ -314,7 +322,7 @@ export function CumulativeSpendingOverTime({
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
               <XAxis dataKey="displayDate" stroke="#64748B" fontSize={12} />
-              <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+              <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone"

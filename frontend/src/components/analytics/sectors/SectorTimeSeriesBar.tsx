@@ -3,7 +3,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import { CardContent } from '@/components/ui/card';
-import { ChartDataPoint, formatCurrency, formatTooltipCurrency, getYearTotal } from './sectorTimeSeriesQueries';
+import { ChartDataPoint, formatTooltipCurrency, getYearTotal } from './sectorTimeSeriesQueries';
+import { formatAxisCurrency } from '@/lib/format';
 import { generateSectorColorMap } from './sectorColorMap';
 import { TimeSeriesDataType } from '@/types/sector-analytics';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
@@ -89,7 +90,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
             axisLine={{ stroke: '#e2e8f0' }}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             tickLine={false}
             axisLine={{ stroke: '#e2e8f0' }}

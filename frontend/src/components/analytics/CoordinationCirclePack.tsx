@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency } from "@/lib/format";
 // Brand color palette
 const COORDINATION_COLORS = [
   "#4c5568", // Blue Slate (primary)
@@ -60,6 +62,7 @@ export function CoordinationCirclePack({
   height = 700,
   compact = false,
 }: CoordinationCirclePackProps) {
+  const isExpanded = useChartExpansion();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -195,7 +198,7 @@ export function CoordinationCirclePack({
             content: {
               title: d.data.name,
               subtitle: d.data.code ? `Code: ${d.data.code}` : undefined,
-              value: formatFullCurrency(d.data.totalValue || d.value || 0),
+              value: formatTooltipCurrency(d.data.totalValue || d.value || 0, isExpanded),
               activityCount: d.children?.reduce(
                 (sum, c) => sum + (c.data.activityCount || 0),
                 0
@@ -251,7 +254,7 @@ export function CoordinationCirclePack({
             content: {
               title: d.data.name,
               subtitle: d.data.code ? `Code: ${d.data.code}` : undefined,
-              value: formatFullCurrency(d.data.value || 0),
+              value: formatTooltipCurrency(d.data.value || 0, isExpanded),
               activityCount: d.data.activityCount || 0,
               isParent: false,
             },
@@ -325,7 +328,7 @@ export function CoordinationCirclePack({
         const maxLength = Math.floor(d.r / 4);
         return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
       });
-  }, [hierarchyData, dimensions, data]);
+  }, [hierarchyData, dimensions, data, isExpanded]);
 
   if (!data || data.children.length === 0) {
     return (
@@ -347,28 +350,30 @@ export function CoordinationCirclePack({
       {/* Tooltip */}
       {tooltip.show && tooltip.content && (
         <div
-          className="absolute pointer-events-none z-50 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg text-body max-w-xs"
+          className="absolute pointer-events-none z-50 bg-card border border-border rounded-lg shadow-lg overflow-hidden text-body max-w-xs min-w-[200px]"
           style={{
             left: Math.min(tooltip.x + 10, dimensions.width - 200),
             top: tooltip.y - 10,
             transform: tooltip.y < 100 ? "translateY(20px)" : "translateY(-100%)",
           }}
         >
-          <div className="font-semibold">{tooltip.content.title}</div>
-          {tooltip.content.subtitle && (
-            <div className="text-muted-foreground text-helper">{tooltip.content.subtitle}</div>
-          )}
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-emerald-400">{tooltip.content.value}</span>
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{tooltip.content.title}</p>
+            {tooltip.content.subtitle && (
+              <p className="text-helper text-muted-foreground mt-0.5">{tooltip.content.subtitle}</p>
+            )}
           </div>
-          <div className="text-muted-foreground text-helper mt-1">
-            {tooltip.content.activityCount} {tooltip.content.activityCount === 1 ? "activity" : "activities"}
-          </div>
-          {tooltip.content.isParent && tooltip.content.childCount && (
-            <div className="text-muted-foreground text-helper">
-              {tooltip.content.childCount} {view === "sectors" ? "partners" : "sectors"}
+          <div className="px-3 py-2">
+            <div className="font-semibold text-foreground">{tooltip.content.value}</div>
+            <div className="text-muted-foreground text-helper mt-1">
+              {tooltip.content.activityCount} {tooltip.content.activityCount === 1 ? "activity" : "activities"}
             </div>
-          )}
+            {tooltip.content.isParent && tooltip.content.childCount && (
+              <div className="text-muted-foreground text-helper">
+                {tooltip.content.childCount} {view === "sectors" ? "partners" : "sectors"}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

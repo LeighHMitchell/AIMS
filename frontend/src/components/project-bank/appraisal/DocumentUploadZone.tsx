@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Trash2, Loader2, Clock, Pencil } from 'lucide-react';
+import { Upload, FileText, Trash2, Loader2, Clock, Pencil, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -353,7 +353,7 @@ export function DocumentUploadZone({
                       </Select>
                     </div>
                     <Button size="sm" onClick={handleSaveEdit} disabled={saving} className="w-full">
-                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
                       Save
                     </Button>
                   </PopoverContent>

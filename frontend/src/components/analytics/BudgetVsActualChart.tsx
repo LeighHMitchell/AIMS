@@ -17,9 +17,11 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
-import { 
-  splitBudgetAcrossYears, 
-  splitTransactionAcrossYears 
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import {
+  splitBudgetAcrossYears,
+  splitTransactionAcrossYears
 } from '@/utils/year-allocation'
 
 interface BudgetVsActualChartProps {
@@ -47,6 +49,7 @@ interface ChartData {
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 
 export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChange }: BudgetVsActualChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
@@ -262,7 +265,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
                       </div>
                     </td>
                     <td className="py-1 text-right font-semibold text-foreground">
-                      {formatCurrency(Number(entry.value) || 0)}
+                      {formatTooltipCurrency(Number(entry.value) || 0, isExpanded)}
                     </td>
                   </tr>
                 ))}
@@ -339,7 +342,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
             axisLine={{ stroke: '#cbd5e1' }}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />

@@ -41,6 +41,7 @@ import {
   Target,
   Plus,
   Pencil,
+  Save,
   Trash2,
   AlertCircle,
   CheckCircle,
@@ -616,6 +617,7 @@ export function NationalPrioritiesSection({
               Cancel
             </Button>
             <Button onClick={handleAddAllocation} disabled={saving || !selectedPriorityId}>
+              <Save className="h-4 w-4 mr-2" />
               {saving ? "Adding..." : "Add Allocation"}
             </Button>
           </DialogFooter>

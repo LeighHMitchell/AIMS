@@ -14,6 +14,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency } from "@/lib/format";
 
 interface FragmentationHeatmapProps {
   data: FragmentationData;
@@ -36,6 +38,7 @@ function formatPercent(value: number): string {
 }
 
 export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
+  const isExpanded = useChartExpansion();
   if (!data || data.donors.length === 0 || data.categories.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground">
@@ -124,7 +127,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
                           </p>
                         )}
                         <p className="text-helper mt-1">
-                          Total: {formatCurrency(donor.total)}
+                          Total: {formatTooltipCurrency(donor.total, isExpanded)}
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -160,7 +163,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
                               <p className="font-medium">{donor.name}</p>
                               <p className="text-helper">{cat.name}</p>
                               <div className="mt-1 text-helper space-y-0.5">
-                                <p>Value: {formatCurrency(cell.value)}</p>
+                                <p>Value: {formatTooltipCurrency(cell.value, isExpanded)}</p>
                                 <p>
                                   Share: {formatPercent(cell.percentage)} of donor
                                 </p>

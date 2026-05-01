@@ -59,7 +59,7 @@ import {
   Printer,
   FileCode,
   Calendar,
-  Info,
+  HelpCircle,
   ExternalLink,
   MoreHorizontal,
 } from "lucide-react"
@@ -288,7 +288,7 @@ export function ActivityProfileHeader({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Info className="h-3 w-3 text-muted-foreground" />
+              <HelpCircle className="h-3 w-3 text-muted-foreground" />
             </TooltipTrigger>
             <TooltipContent>
               <p className="max-w-xs">{desc}</p>

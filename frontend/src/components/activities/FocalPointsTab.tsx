@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { UserOption } from './AssignFocalPointModal';
@@ -23,7 +23,8 @@ import {
   Trash2,
   Clock
 } from 'lucide-react';
-import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/components/ui/user-avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
 import { AssignFocalPointModal } from './AssignFocalPointModal';
 import {
@@ -368,16 +369,20 @@ export default function FocalPointsTab({
       <div key={focalPoint.id} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
         {/* Top: Avatar + Name + Status */}
         <div className="flex items-start gap-3">
-          <UserAvatar
-            src={focalPoint.avatar_url}
-            seed={focalPoint.id || displayName}
-            name={displayName}
-            size="sm"
-            initials={getInitials(displayName)}
-          />
+          <Avatar className="h-10 w-10 flex-shrink-0">
+            {focalPoint.avatar_url && (
+              <AvatarImage src={focalPoint.avatar_url} alt={displayName} />
+            )}
+            <AvatarFallback className="bg-muted text-body font-medium text-muted-foreground">
+              {getInitials(displayName)}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-body font-medium text-foreground">{displayName}</span>
+              {(focalPoint.status === 'assigned' || focalPoint.status === 'accepted') && (
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" aria-label="Active focal point" />
+              )}
               {isCurrentUserFocalPoint(focalPoint) && (
                 <Badge variant="secondary" className="text-helper bg-muted">You</Badge>
               )}
@@ -553,19 +558,14 @@ export default function FocalPointsTab({
                 <CardTitle className="flex items-center gap-2 text-xl font-semibold">
                   <Building2 className="h-5 w-5 text-muted-foreground" />
                   Government Focal Points
-                  {governmentFocalPoints.length > 0 && (
-                    <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                  )}
                   <HelpTextTooltip>
-                    Government officials who can review, endorse, and approve this
-                    activity. They'll receive notifications when updates need their
-                    attention. You can assign multiple focal points, and the role
-                    can be handed off to another person at any time.
+                    Government officials responsible for reviewing, endorsing, and
+                    approving this activity. They'll receive notifications when
+                    updates need their attention. You can assign multiple focal
+                    points, and the role can be handed off to another person at
+                    any time.
                   </HelpTextTooltip>
                 </CardTitle>
-                <CardDescription className="text-helper mt-1.5">
-                  Government officials responsible for reviewing, endorsing, and approving this activity.
-                </CardDescription>
               </div>
               {permissions.canAssignFocalPoints && (
                 <Button size="sm" onClick={() => openAssignModal('government_focal_point')} className="shrink-0">
@@ -598,19 +598,13 @@ export default function FocalPointsTab({
                 <CardTitle className="flex items-center gap-2 text-xl font-semibold">
                   <Users className="h-5 w-5 text-muted-foreground" />
                   Development Partner Focal Points
-                  {developmentPartnerFocalPoints.length > 0 && (
-                    <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                  )}
                   <HelpTextTooltip>
-                    Staff from the funding or implementing organisation who own the
-                    day-to-day information for this activity. They'll be the main
-                    point of contact for updates and questions, and will receive
-                    notifications about activity changes.
+                    Main contacts from the funding or implementing organisation who
+                    own the day-to-day information for this activity. They'll be
+                    the main point of contact for updates and questions, and will
+                    receive notifications about activity changes.
                   </HelpTextTooltip>
                 </CardTitle>
-                <CardDescription className="text-helper mt-1.5">
-                  Main contacts responsible for updating and managing the activity information.
-                </CardDescription>
               </div>
               {permissions.canAssignFocalPoints && (
                 <Button size="sm" onClick={() => openAssignModal('development_partner_focal_point')} className="shrink-0">

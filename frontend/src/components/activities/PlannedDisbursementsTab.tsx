@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, PenLine, Save, X, Check, MoreVertical, Calendar, ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle, ChevronLeft, ChevronRight, Lock, Unlock, RefreshCw, Info, AlertCircle } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, PenLine, Save, X, Check, MoreVertical, Calendar, ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle, ChevronLeft, ChevronRight, Lock, Unlock, RefreshCw, Info, HelpCircle, AlertCircle } from 'lucide-react';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from "@/components/ui/table"
 import {
   Tooltip as UITooltip,
@@ -1746,11 +1747,7 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('period')}
                         >
                           Period
-                          {sortColumn === 'period' ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon('period', sortColumn || '', sortDirection)}
                         </div>
                       </TableHead>
                       <TableHead className="py-3 px-4">
@@ -1759,11 +1756,7 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('status')}
                         >
                           Type
-                          {sortColumn === 'status' ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon('status', sortColumn || '', sortDirection)}
                         </div>
                       </TableHead>
                       <TableHead className="py-3 px-4">
@@ -1772,11 +1765,7 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('provider')}
                         >
                           Provider → Receiver
-                          {sortColumn === 'provider' ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon('provider', sortColumn || '', sortDirection)}
                         </div>
                       </TableHead>
                       <TableHead className="py-3 px-4 text-right">
@@ -1785,11 +1774,7 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('amount')}
                         >
                           Original Value
-                          {sortColumn === 'amount' ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon('amount', sortColumn || '', sortDirection)}
                         </div>
                       </TableHead>
                       <TableHead className="py-3 px-4">
@@ -1798,11 +1783,7 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('value_date')}
                         >
                           Value Date
-                          {sortColumn === 'value_date' ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon('value_date', sortColumn || '', sortDirection)}
                         </div>
                       </TableHead>
                       <TableHead className="py-3 px-4 text-right">
@@ -1811,11 +1792,7 @@ export default function PlannedDisbursementsTab({
                           onClick={() => handleSort('usd_value')}
                         >
                           USD Value
-                          {sortColumn === 'usd_value' ? (
-                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {getSortIcon('usd_value', sortColumn || '', sortDirection)}
                         </div>
                       </TableHead>
                       {!readOnly && (
@@ -2441,7 +2418,7 @@ export default function PlannedDisbursementsTab({
                       <TooltipProvider>
                         <UITooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p className="text-body">The exchange rate used to convert the disbursement value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
@@ -2519,7 +2496,7 @@ export default function PlannedDisbursementsTab({
                     <TooltipProvider>
                       <UITooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground" />
+                          <HelpCircle className="h-3 w-3 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p className="text-body">The disbursement value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>

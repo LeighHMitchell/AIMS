@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
-import { formatCurrencyShort } from '@/lib/format'
+import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
 
 interface DonorData {
@@ -99,7 +99,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
             <XAxis
               type="number"
               tick={{ fontSize: 10, fill: '#64748b' }}
-              tickFormatter={(v) => metric === 'activities' ? v.toString() : formatCurrencyShort(v)}
+              tickFormatter={(v) => metric === 'activities' ? v.toString() : formatAxisCurrency(v)}
               axisLine={{ stroke: '#e5e7eb' }}
               tickLine={false}
             />

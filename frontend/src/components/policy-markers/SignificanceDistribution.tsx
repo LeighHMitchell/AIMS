@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
-import { formatCurrencyShort } from '@/lib/format'
+import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
 
 interface SignificanceItem {
   significance: number
@@ -54,7 +54,7 @@ export function SignificanceDistribution({ distribution, themeColor, compact = f
                 tick={{ fontSize: 10, fill: '#64748b' }}
                 axisLine={{ stroke: '#e5e7eb' }}
                 tickLine={false}
-                tickFormatter={(v) => formatCurrencyShort(v)}
+                tickFormatter={formatAxisCurrency}
               />
               <YAxis
                 type="category"

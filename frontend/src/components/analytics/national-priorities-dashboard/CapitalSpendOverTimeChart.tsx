@@ -57,6 +57,7 @@ import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ChartType = "bar" | "line" | "area" | "table";
@@ -252,7 +253,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
                       <span className="text-foreground font-medium">Capital</span>
                     </div>
                   </td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(capitalValue)}</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(capitalValue, isExpanded)}</td>
                   <td className="py-1 text-right text-helper text-muted-foreground pl-2">{capitalPct}%</td>
                 </tr>
                 <tr className="border-b border-border">
@@ -262,12 +263,12 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
                       <span className="text-foreground font-medium">Non-Capital</span>
                     </div>
                   </td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(nonCapitalValue)}</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(nonCapitalValue, isExpanded)}</td>
                   <td className="py-1 text-right text-helper text-muted-foreground pl-2">{nonCapitalPct}%</td>
                 </tr>
                 <tr>
                   <td className="py-1 pr-3 text-foreground font-medium">Total</td>
-                  <td className="py-1 text-right font-bold text-foreground">{formatCurrency(total)}</td>
+                  <td className="py-1 text-right font-bold text-foreground">{formatTooltipCurrency(total, isExpanded)}</td>
                   <td></td>
                 </tr>
               </tbody>
@@ -296,7 +297,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <YAxis
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={(value) => formatCurrency(value)}
+          tickFormatter={formatAxisCurrency}
           tickLine={false}
           axisLine={false}
         />
@@ -352,7 +353,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <YAxis
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={(value) => formatCurrency(value)}
+          tickFormatter={formatAxisCurrency}
           tickLine={false}
           axisLine={false}
         />
@@ -420,7 +421,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <YAxis
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={(value) => formatCurrency(value)}
+          tickFormatter={formatAxisCurrency}
           tickLine={false}
           axisLine={false}
         />

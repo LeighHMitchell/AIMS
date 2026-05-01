@@ -14,6 +14,8 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { BarChart3, TrendingUp } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface Top10DisbursementCommitmentRatioChartProps {
   dateRange: {
@@ -42,6 +44,7 @@ export function Top10DisbursementCommitmentRatioChart({
   filters, 
   refreshKey 
 }: Top10DisbursementCommitmentRatioChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -172,7 +175,7 @@ export function Top10DisbursementCommitmentRatioChart({
           />
           <XAxis
             type="number"
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />
@@ -184,7 +187,7 @@ export function Top10DisbursementCommitmentRatioChart({
             width={90}
           />
           <Tooltip
-            formatter={(value: number) => formatCurrency(value)}
+            formatter={(value: number) => formatTooltipCurrency(value, isExpanded)}
             contentStyle={{
               backgroundColor: '#1e293b',
               border: 'none',

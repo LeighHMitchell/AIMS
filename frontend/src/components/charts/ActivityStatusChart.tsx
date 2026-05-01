@@ -16,7 +16,7 @@ import { AlertCircle, BarChart3, PieChart as PieChartIcon, Table as TableIcon } 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LoadingText } from "@/components/ui/loading-text";
+import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import Link from "next/link";
@@ -171,7 +171,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+      return <ChartLoadingPlaceholder />;
     }
     if (error || !currentData || currentData.length === 0) {
       return (
@@ -208,7 +208,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   }
 
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+    return <ChartLoadingPlaceholder />;
   }
 
   if (error) {

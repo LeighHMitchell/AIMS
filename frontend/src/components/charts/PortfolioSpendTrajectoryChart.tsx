@@ -13,7 +13,7 @@ import {
   Legend,
   ReferenceLine,
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Info, CalendarIcon, Download, FileImage, BarChart3, Table as TableIcon } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import html2canvas from 'html2canvas'
@@ -30,6 +30,7 @@ import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { formatAxisCurrency } from '@/lib/format';
 
 // Colour palette as specified
 const COLOURS = {
@@ -728,7 +729,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   // Compact mode check FIRST - before any Card returns
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (error || !data || displayData.length === 0) {
       return (
@@ -778,7 +779,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               tick={{ fill: COLOURS.blueSlate }}
             />
             <YAxis 
-              tickFormatter={formatCurrencyCompact} 
+              tickFormatter={formatAxisCurrency}
               stroke={COLOURS.blueSlate} 
               fontSize={10}
               domain={[0, yAxisMax]}
@@ -825,7 +826,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
-        <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+        <ChartLoadingPlaceholder />
       </div>
     )
   }
@@ -1076,7 +1077,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               tickLine={{ stroke: COLOURS.blueSlate }}
             />
             <YAxis 
-              tickFormatter={formatCurrencyCompact} 
+              tickFormatter={formatAxisCurrency}
               stroke={COLOURS.blueSlate} 
               fontSize={12}
               domain={[0, yAxisMax]}

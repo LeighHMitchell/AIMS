@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react"
+import { ChevronUp, ChevronDown } from "lucide-react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -105,21 +105,14 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
-/**
- * Utility function for consistent sort icon rendering across all tables
- * @param field - The field name for this column
- * @param sortField - The currently sorted field
- * @param sortOrder - The current sort order ('asc' or 'desc')
- * @returns JSX element with the appropriate sort icon
- */
+// Shows a single chevron only when the column is the active sort field.
+// Returns null when the column is not actively sorted (no double-chevron default).
 function getSortIcon(
   field: string,
   sortField: string,
   sortOrder: 'asc' | 'desc'
-): React.ReactElement {
-  if (sortField !== field) {
-    return <ChevronsUpDown className="h-4 w-4 text-muted-foreground/50" />;
-  }
+): React.ReactElement | null {
+  if (sortField !== field) return null;
   return sortOrder === 'asc'
     ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
     : <ChevronDown className="h-4 w-4 text-muted-foreground" />;

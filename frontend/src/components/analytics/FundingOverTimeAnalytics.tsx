@@ -29,7 +29,7 @@ import {
   Download,
   Building2,
   AlertCircle,
-  Info,
+  HelpCircle,
   Maximize2
 } from 'lucide-react'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/tooltip"
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 // Color scheme
 const COLORS = {
@@ -118,6 +120,7 @@ const getDataTypeLabel = (dataType: string) => {
 }
 
 export function FundingOverTimeAnalytics() {
+  const chartIsExpanded = useChartExpansion()
   const [selectedDonors, setSelectedDonors] = useState<string[]>([])
   const [chartView, setChartView] = useState<ChartViewType>('line')
   const [loading, setLoading] = useState(false)
@@ -287,7 +290,7 @@ export function FundingOverTimeAnalytics() {
                       {entry.name}
                     </td>
                     <td className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                      {formatCurrency(entry.value)}
+                      {formatTooltipCurrency(entry.value, chartIsExpanded)}
                       {txCount && <span className="text-helper text-muted-foreground ml-1">({txCount} txns)</span>}
                     </td>
                     <td className="px-3 py-2 text-center" style={{ borderBottom: `1px solid ${COLORS.paleSlate}` }}>
@@ -387,7 +390,7 @@ export function FundingOverTimeAnalytics() {
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Info className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
+                      <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-sm p-4 bg-white border shadow-lg">
@@ -558,7 +561,7 @@ export function FundingOverTimeAnalytics() {
                   <YAxis
                     stroke={COLORS.blueSlate}
                     tick={{ fill: COLORS.blueSlate }}
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   {isExpanded && <Legend />}
@@ -614,7 +617,7 @@ export function FundingOverTimeAnalytics() {
                   <YAxis
                     stroke={COLORS.blueSlate}
                     tick={{ fill: COLORS.blueSlate }}
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   {isExpanded && <Legend />}
@@ -662,7 +665,7 @@ export function FundingOverTimeAnalytics() {
                   <YAxis
                     stroke={COLORS.blueSlate}
                     tick={{ fill: COLORS.blueSlate }}
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   {isExpanded && <Legend />}

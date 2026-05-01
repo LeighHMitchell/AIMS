@@ -24,6 +24,7 @@ import { format } from 'date-fns'
 import { useCustomYears } from '@/hooks/useCustomYears'
 import { getCustomYearLabel } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
+import { formatAxisCurrency } from '@/lib/format';
 
 const COLOURS = {
   primaryScarlet: '#dc2625',
@@ -478,7 +479,7 @@ export function OrganizationSpendTrajectoryChart({
             tick={{ fill: COLOURS.blueSlate }}
           />
           <YAxis
-            tickFormatter={formatCurrencyCompact}
+            tickFormatter={formatAxisCurrency}
             stroke={COLOURS.blueSlate}
             fontSize={10}
             domain={[0, compactYAxisMax]}
@@ -661,7 +662,7 @@ export function OrganizationSpendTrajectoryChart({
                   tick={{ fill: COLOURS.blueSlate }}
                 />
                 <YAxis
-                  tickFormatter={formatCurrencyCompact}
+                  tickFormatter={formatAxisCurrency}
                   stroke={COLOURS.blueSlate}
                   fontSize={12}
                   domain={[0, yAxisMax]}

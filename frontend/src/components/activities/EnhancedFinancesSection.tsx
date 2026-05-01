@@ -66,6 +66,7 @@ interface EnhancedFinancesSectionProps {
   initialTransactionId?: string;
   geographyLevel?: 'activity' | 'transaction';
   activitySectors?: ActivitySector[];
+  activityIsHumanitarian?: boolean;
 }
 
 export function EnhancedFinancesSection({
@@ -78,7 +79,8 @@ export function EnhancedFinancesSection({
   disabled = false,
   initialTransactionId,
   geographyLevel = 'activity',
-  activitySectors = []
+  activitySectors = [],
+  activityIsHumanitarian = false,
 }: EnhancedFinancesSectionProps) {
   // State for modality override toggle
   const [modalityOverride, setModalityOverride] = useState(
@@ -501,6 +503,7 @@ export function EnhancedFinancesSection({
             geographyLevel={geographyLevel}
             activitySectors={activitySectors}
             isPooledFund={general?.is_pooled_fund === true}
+            activityIsHumanitarian={activityIsHumanitarian}
           />
         </TabsContent>
 

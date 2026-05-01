@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { formatCurrency } from '@/lib/chart-utils'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
-import { formatCurrencyShort } from '@/lib/format'
+import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
 
 interface TargetData {
   targetId: string
@@ -42,7 +42,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
         <div className={compact ? "h-48" : "h-72"}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 20, left: 40, bottom: 0 }}>
-              <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(v) => formatCurrency(v)} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={formatAxisCurrency} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={40} />
               <RechartsTooltip
                 content={({ active, payload }) => {

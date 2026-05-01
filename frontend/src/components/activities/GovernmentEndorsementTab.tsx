@@ -899,6 +899,7 @@ export default function GovernmentEndorsementTab({
               Cancel
             </Button>
             <Button onClick={handleSaveRef} disabled={savingRef}>
+              <Save className="h-4 w-4 mr-2" />
               {savingRef ? 'Saving...' : editingRef ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>

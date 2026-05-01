@@ -48,6 +48,8 @@ import { AidPredictabilityPoint } from "@/types/national-priorities";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartExpansionProvider } from '@/lib/chart-expansion-context';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 type ChartType = "bar" | "line" | "area";
 type ViewMode = "chart" | "table";
@@ -134,7 +136,7 @@ export function AidPredictabilityChart() {
               className="text-body"
               style={{ color: entry.color }}
             >
-              {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatCurrency(entry.value)}`}
+              {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatTooltipCurrency(entry.value, isExpanded)}`}
             </p>
           ))}
         </div>
@@ -158,7 +160,7 @@ export function AidPredictabilityChart() {
             tickFormatter={(v) => v.toString()}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
             width={70}
@@ -206,7 +208,7 @@ export function AidPredictabilityChart() {
             tickFormatter={(v) => v.toString()}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
             width={70}
@@ -268,7 +270,7 @@ export function AidPredictabilityChart() {
             tickFormatter={(v) => v.toString()}
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
             width={70}

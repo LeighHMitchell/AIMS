@@ -11,7 +11,8 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { ChartDataPoint, formatCurrency, formatTooltipCurrency, getYearTotal } from './sectorTimeSeriesQueries'
+import { ChartDataPoint, formatTooltipCurrency, getYearTotal } from './sectorTimeSeriesQueries'
+import { formatAxisCurrency } from '@/lib/format'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { generateSectorColorMap } from './sectorColorMap'
 
@@ -154,7 +155,7 @@ export function SectorTimeSeriesArea({
           />
           
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={formatAxisCurrency}
             stroke="#64748b"
             fontSize={12}
             tickLine={false}

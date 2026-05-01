@@ -940,7 +940,7 @@ export default function ForwardSpendingSurveyTab({
                       <TooltipProvider>
                         <UITooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p className="text-body">The exchange rate used to convert the forecast value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
@@ -1012,7 +1012,7 @@ export default function ForwardSpendingSurveyTab({
                       <TooltipProvider>
                         <UITooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p className="text-body">The forecast value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>

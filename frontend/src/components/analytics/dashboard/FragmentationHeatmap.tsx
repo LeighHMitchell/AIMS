@@ -14,6 +14,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { formatTooltipCurrency } from "@/lib/format";
 
 interface FragmentationHeatmapProps {
   data: FragmentationData;
@@ -38,6 +40,7 @@ function formatPercent(value: number): string {
 }
 
 export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart' }: FragmentationHeatmapProps) {
+  const isExpanded = useChartExpansion();
   if (!data || data.donors.length === 0 || data.categories.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground">
@@ -178,7 +181,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                         )}
                         {col.total !== undefined && (
                           <p className="text-helper text-muted-foreground">
-                            Total: {formatCurrency(col.total)}
+                            Total: {formatTooltipCurrency(col.total, isExpanded)}
                           </p>
                         )}
                       </TooltipContent>
@@ -227,7 +230,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                             </p>
                           )}
                           <p className="text-helper mt-1">
-                            Total: {formatCurrency(row.total)}
+                            Total: {formatTooltipCurrency(row.total, isExpanded)}
                           </p>
                           <p className="text-helper">
                             Share: {formatPercent(rowShareOfTotal)} of total
@@ -269,7 +272,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                                 <p className="font-medium">{swapAxes ? col.name : row.name}</p>
                                 <p className="text-helper">{swapAxes ? row.name : col.name}</p>
                                 <div className="mt-1 text-helper space-y-0.5">
-                                  <p>Value: {formatCurrency(cell.value)}</p>
+                                  <p>Value: {formatTooltipCurrency(cell.value, isExpanded)}</p>
                                   <p>
                                     Column share: {formatPercent(percentage)}
                                   </p>
@@ -305,7 +308,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                         <TooltipContent>
                           <p className="font-medium">{row.name}</p>
                           <p className="text-helper mt-1">
-                            Total: {formatCurrency(row.total)}
+                            Total: {formatTooltipCurrency(row.total, isExpanded)}
                           </p>
                           <p className="text-helper">
                             {formatPercent(rowShareOfTotal)} of all funding

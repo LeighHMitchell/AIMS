@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { LoadingText } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table2, Maximize2, CalendarIcon } from 'lucide-react'
 import {
@@ -30,6 +30,7 @@ import {
 import { CustomYear, crossesCalendarYear, getCustomYearLabel } from '@/types/custom-years'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { formatAxisCurrency } from '@/lib/format'
 
 type ViewMode = 'bar' | 'line' | 'table'
 
@@ -437,7 +438,7 @@ export function YearlyTotalsBarChart({
           height={selectedYear && crossesCalendarYear(selectedYear) ? 60 : 30}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           stroke="#64748B"
           fontSize={12}
           tickLine={false}
@@ -498,7 +499,7 @@ export function YearlyTotalsBarChart({
           height={selectedYear && crossesCalendarYear(selectedYear) ? 60 : 30}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           stroke="#64748B"
           fontSize={12}
           tickLine={false}
@@ -761,7 +762,7 @@ export function YearlyTotalsBarChart({
         </CardHeader>
         {!isCollapsed && (
           <CardContent>
-            <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+            <ChartLoadingPlaceholder />
           </CardContent>
         )}
       </Card>

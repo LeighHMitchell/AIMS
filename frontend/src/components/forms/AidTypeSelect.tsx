@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useRef, useEffect } from "react"
-import { Check, ChevronsUpDown, Info, Search, X } from "lucide-react"
+import { Check, ChevronsUpDown, HelpCircle, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -174,15 +174,14 @@ export function AidTypeSelect({
           "cursor-pointer px-3 py-2 space-y-1 hover:bg-accent/50",
           "flex items-start gap-2",
           indentClass,
-          item.level === 0 && "font-semibold text-body opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit",
+          item.level === 0 && "px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50 cursor-default pointer-events-none hover:bg-muted/50 hover:text-muted-foreground",
           isSelected && item.level > 0 && "bg-accent"
         )}
       >
         <div className="flex-1 min-w-0">
-          <div className="text-body">
+          <div className={cn(item.level === 0 ? "text-helper" : "text-body")}>
             <span className={cn(
-              "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5",
-              item.level === 0 ? "text-foreground" : ""
+              "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5"
             )}>
               {item.code}
             </span>
@@ -202,7 +201,7 @@ export function AidTypeSelect({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                <HelpCircle className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p className="text-helper">{item.description}</p>

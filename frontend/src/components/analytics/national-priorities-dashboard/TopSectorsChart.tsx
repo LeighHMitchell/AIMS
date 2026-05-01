@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency } from '@/lib/format';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -227,7 +228,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
                   <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.value)}</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(item.value, isExpanded)}</td>
                 </tr>
                 {item.activityCount > 0 && (
                   <tr>

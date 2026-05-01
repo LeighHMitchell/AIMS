@@ -1115,7 +1115,7 @@ export async function POST(request: Request) {
       reporting_org_id: insertData.reporting_org_id,
       user_id: body.user?.id
     });
-    const { data: newActivity, error: insertError } = await supabase
+    const { data: insertedActivity, error: insertError } = await supabase
       .from('activities')
       .insert([insertData])
       .select()
@@ -1129,7 +1129,7 @@ export async function POST(request: Request) {
         details: insertError.details,
         hint: insertError.hint
       });
-      
+
       // Check for specific database errors
       if (insertError.code === '22007') {
         return NextResponse.json(
@@ -1137,18 +1137,33 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      
+
       if (insertError.code === '22P02') {
         return NextResponse.json(
           { error: 'Invalid ID format. Please ensure you are logged in with a valid user account from the database.' },
           { status: 400 }
         );
       }
-      
+
       return NextResponse.json(
         { error: insertError.message || 'Failed to create activity' },
         { status: 500 }
       );
+    }
+
+    // Re-fetch the row so AFTER INSERT trigger-generated columns (e.g. auto_ref → ACT-####)
+    // are reflected in the response. INSERT...RETURNING runs before AFTER triggers, so the
+    // initial insert response can have auto_ref = NULL even when a trigger populates it.
+    let newActivity = insertedActivity;
+    if (insertedActivity?.id && !insertedActivity.auto_ref) {
+      const { data: refreshedActivity } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('id', insertedActivity.id)
+        .single();
+      if (refreshedActivity) {
+        newActivity = refreshedActivity;
+      }
     }
 
     // Debug: Check what was actually saved
@@ -1630,6 +1645,8 @@ export async function POST(request: Request) {
       partnerId: newActivity.other_identifier,
       iatiId: newActivity.iati_identifier,
       iatiIdentifier: newActivity.iati_identifier,  // Add this for frontend compatibility
+      autoRef: newActivity.auto_ref,
+      auto_ref: newActivity.auto_ref,
       title: newActivity.title_narrative,
       acronym: newActivity.acronym,
       description: newActivity.description_narrative,

@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface HumanitarianChartProps {
   dateRange: {
@@ -42,6 +44,7 @@ type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 type ViewMode = 'area' | 'bar' | 'table'
 
 export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact = false }: HumanitarianChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
@@ -248,11 +251,11 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
               fontSize={10}
               tickLine={false}
               axisLine={false}
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
             />
             <Tooltip
               formatter={(value: number, name: string) => [
-                formatCurrency(value),
+                formatTooltipCurrency(value, isExpanded),
                 name.charAt(0).toUpperCase() + name.slice(1)
               ]}
               contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
@@ -389,7 +392,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
                       </div>
                     </td>
                     <td className="py-1 text-right font-semibold text-foreground">
-                      {formatCurrencyFull(Number(entry.value) || 0)}
+                      {formatTooltipCurrency(Number(entry.value) || 0, isExpanded)}
                     </td>
                   </tr>
                 ))}
@@ -397,7 +400,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
                   <tr className="border-t border-border">
                     <td className="pt-1 pr-3 text-muted-foreground">Total</td>
                     <td className="pt-1 text-right font-semibold text-foreground">
-                      {formatCurrencyFull(total)}
+                      {formatTooltipCurrency(total, isExpanded)}
                     </td>
                   </tr>
                 )}
@@ -427,7 +430,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           axisLine={{ stroke: '#94a3b8' }}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#94a3b8' }}
           allowDecimals={false}
@@ -480,7 +483,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           axisLine={{ stroke: '#94a3b8' }}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#94a3b8' }}
           allowDecimals={false}

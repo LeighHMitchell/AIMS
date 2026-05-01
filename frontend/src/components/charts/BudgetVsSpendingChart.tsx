@@ -14,7 +14,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
-import { LoadingText } from "@/components/ui/loading-text";
+import { formatAxisCurrency } from "@/lib/format";
+import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
@@ -151,7 +152,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
 
   // Loading state
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+    return <ChartLoadingPlaceholder />;
   }
 
   // Error state
@@ -231,7 +232,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
             height={data.length > 10 ? 80 : 60}
           />
           <YAxis
-            tickFormatter={formatYAxis}
+            tickFormatter={formatAxisCurrency}
             stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
             label={{

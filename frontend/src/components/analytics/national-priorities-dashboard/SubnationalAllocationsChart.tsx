@@ -53,6 +53,7 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 type ViewMode = "bar" | "pie";
 type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
@@ -194,7 +195,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             <div className="flex items-center justify-between gap-4">
               <span className="text-body text-foreground">Value</span>
               <span className="text-body font-medium text-foreground">
-                {formatCurrency(item.value)}
+                {formatTooltipCurrency(item.value, isExpanded)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -290,7 +291,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           interval={0}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v)}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={60}

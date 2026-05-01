@@ -227,10 +227,8 @@ export default function RolodexPage() {
   // Get sort icon for column headers
   const getSortIcon = (column: string) => {
     const currentSortBy = filters.sortBy || 'name';
-    if (currentSortBy !== column) {
-      return <ChevronsUpDown className="h-4 w-4 ml-1 opacity-50" />;
-    }
-    return filters.sortOrder === 'desc' 
+    if (currentSortBy !== column) return null;
+    return filters.sortOrder === 'desc'
       ? <ChevronDown className="h-4 w-4 ml-1" />
       : <ChevronUp className="h-4 w-4 ml-1" />;
   };

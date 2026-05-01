@@ -21,6 +21,7 @@ import {
   Pencil,
   Trash2,
   Download,
+  Save,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1164,6 +1165,7 @@ function DocumentMetadataModal({
             {isEditing ? 'Cancel' : 'Skip for Now'}
           </Button>
           <Button onClick={handleSave}>
+            <Save className="h-4 w-4 mr-2" />
             {isEditing ? 'Update Document' : 'Save Document Information'}
           </Button>
         </DialogFooter>

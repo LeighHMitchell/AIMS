@@ -28,6 +28,8 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 // Brand color palette - 5 distinct colors, no duplicates
 const BRAND_PALETTE = {
   primaryScarlet: '#dc2625',
@@ -128,17 +130,8 @@ interface YearlyData {
   [key: string]: number | string
 }
 
-// Currency formatter for axis labels (no decimals)
-const formatCurrency = (value: number): string => {
-  if (value >= 1000000000) {
-    return `$${Math.round(value / 1000000000)}b`
-  } else if (value >= 1000000) {
-    return `$${Math.round(value / 1000000)}m`
-  } else if (value >= 1000) {
-    return `$${Math.round(value / 1000)}k`
-  }
-  return `$${Math.round(value)}`
-}
+// Currency formatter for axis labels — delegate to shared helper.
+const formatCurrency = formatAxisCurrency
 
 const formatCurrencyFull = (value: number): string => {
   return new Intl.NumberFormat('en-US', {
@@ -596,6 +589,7 @@ export function FinancialTotalsBarChart({
   }
 
   // Custom tooltip
+  const isExpanded = useChartExpansion()
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -624,7 +618,7 @@ export function FinancialTotalsBarChart({
                     <span className="text-foreground">{entry.name}</span>
                   </td>
                   <td className="py-1 text-right font-semibold text-foreground">
-                    {formatCurrencyFull(entry.value)}
+                    {formatTooltipCurrency(entry.value, isExpanded)}
                   </td>
                 </tr>
               ))}

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Maximize2, Download, Table as TableIcon, BarChart3 } from 'lucide-react'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
+import { ChartExpansionProvider } from '@/lib/chart-expansion-context'
 import {
   Table,
   TableBody,
@@ -181,7 +182,9 @@ export function ExpandableCard({
           </div>
         </CardHeader>
         <CardContent className="[&_.text-body.text-muted-foreground.leading-relaxed]:hidden">
-          {viewMode === 'chart' ? children : renderTableView()}
+          <ChartExpansionProvider isExpanded={false}>
+            {viewMode === 'chart' ? children : renderTableView()}
+          </ChartExpansionProvider>
         </CardContent>
       </Card>
 
@@ -238,7 +241,9 @@ export function ExpandableCard({
             </div>
           </DialogHeader>
           <div className="mt-6">
-            {viewMode === 'chart' ? children : renderTableView()}
+            <ChartExpansionProvider isExpanded={true}>
+              {viewMode === 'chart' ? children : renderTableView()}
+            </ChartExpansionProvider>
           </div>
         </DialogContent>
       </Dialog>

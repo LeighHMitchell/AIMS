@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatAxisCurrency } from '@/lib/format';
 
 interface TimeSeriesData {
   year: number;
@@ -134,7 +135,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 label={{ value: 'Year', position: 'insideBottom', offset: -10, style: { fill: '#64748b' } }}
               />
               <YAxis
-                tickFormatter={formatCurrency}
+                tickFormatter={formatAxisCurrency}
                 tick={{ fontSize: 12, fill: '#64748b' }}
                 label={{ value: 'Amount (USD)', angle: -90, position: 'insideLeft', style: { fill: '#64748b' } }}
               />
@@ -182,7 +183,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 label={{ value: 'Year', position: 'insideBottom', offset: -10, style: { fill: '#64748b' } }}
               />
               <YAxis
-                tickFormatter={formatCurrency}
+                tickFormatter={formatAxisCurrency}
                 tick={{ fontSize: 12, fill: '#64748b' }}
                 label={{ value: 'Amount (USD)', angle: -90, position: 'insideLeft', style: { fill: '#64748b' } }}
               />

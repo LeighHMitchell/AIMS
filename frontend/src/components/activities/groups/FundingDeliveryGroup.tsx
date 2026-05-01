@@ -55,6 +55,7 @@ interface FundingDeliveryGroupProps {
   initialTransactionId?: string
   geographyLevel: string
   activitySectors: any[]
+  activityIsHumanitarian?: boolean
 
   // Budgets props
   onBudgetsChange: (budgets: any[]) => void
@@ -89,6 +90,7 @@ export function FundingDeliveryGroup({
   initialTransactionId,
   geographyLevel,
   activitySectors,
+  activityIsHumanitarian = false,
 
   // Callbacks
   onBudgetsChange,
@@ -285,6 +287,7 @@ export function FundingDeliveryGroup({
                   disabled={false}
                   geographyLevel={geographyLevel || 'activity'}
                   activitySectors={activitySectors}
+                  activityIsHumanitarian={activityIsHumanitarian}
                 />
               </div>
             ) : (

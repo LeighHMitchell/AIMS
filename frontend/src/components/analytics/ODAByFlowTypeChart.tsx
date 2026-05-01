@@ -19,6 +19,8 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface ODAByFlowTypeChartProps {
   dateRange: {
@@ -46,6 +48,7 @@ export function ODAByFlowTypeChart({
   refreshKey,
   onDataChange
 }: ODAByFlowTypeChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<FlowData[]>([])
   const [loading, setLoading] = useState(true)
   const [includeNonODA, setIncludeNonODA] = useState(false)
@@ -148,7 +151,7 @@ export function ODAByFlowTypeChart({
                     </div>
                   </td>
                   <td className="py-1 text-right font-semibold text-foreground">
-                    {formatCurrency(Number(payload[0].value) || 0)}
+                    {formatTooltipCurrency(Number(payload[0].value) || 0, isExpanded)}
                   </td>
                 </tr>
                 {datum?.code && (
@@ -214,8 +217,8 @@ export function ODAByFlowTypeChart({
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />
-          <YAxis 
-            tickFormatter={formatCurrency}
+          <YAxis
+            tickFormatter={formatAxisCurrency}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />

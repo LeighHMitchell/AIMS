@@ -12,6 +12,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { formatAxisCurrency } from '@/lib/format';
 
 interface ProjectData {
   id: string;
@@ -148,7 +149,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
               tick={{ fontSize: 11, fill: '#64748b' }}
             />
             <YAxis
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
               tick={{ fontSize: 12, fill: '#64748b' }}
               label={{ value: 'Amount (USD)', angle: -90, position: 'insideLeft', style: { fill: '#64748b' } }}
             />

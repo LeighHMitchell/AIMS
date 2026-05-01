@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Pencil, Trash2, ExternalLink, FileText, Calendar, Globe, Tag, Languages, GripVertical, Loader2, AlertCircle, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2, ExternalLink, FileText, Calendar, Globe, Tag, Languages, GripVertical, Loader2, AlertCircle, Upload, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   DndContext,
@@ -978,7 +978,10 @@ export function IATIDocumentManager({
                   Saving...
                 </>
               ) : (
-                'Save Document'
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Document
+                </>
               )}
             </Button>
           </DialogFooter>

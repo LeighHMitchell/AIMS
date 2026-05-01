@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { BarChart3, PieChart as PieChartIcon, Calendar } from "lucide-react"
+import { formatAxisCurrency } from "@/lib/format"
 
 interface Donor {
   name: string
@@ -175,7 +176,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'bar' ? (
             <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" tickFormatter={(v) => formatUSD(v)} tick={{ fontSize: 11 }} />
+              <XAxis type="number" tickFormatter={formatAxisCurrency} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11 }} />
               <Tooltip
                 formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name.charAt(0).toUpperCase() + name.slice(1)]}

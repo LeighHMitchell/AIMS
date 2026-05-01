@@ -38,7 +38,6 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
@@ -296,7 +295,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -311,7 +310,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -326,7 +325,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -341,7 +340,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -362,7 +361,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       savingIdentifierIndexRef.current = null;
       setSavingIdentifierIndex(null);
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
     }
@@ -382,7 +381,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       savingCustomDateIndexRef.current = null;
       setSavingCustomDateIndex(null);
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
     }
@@ -471,7 +470,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
 
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
     } catch (error) {
@@ -490,7 +489,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
     }
@@ -503,7 +502,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -517,7 +516,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -531,7 +530,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -545,7 +544,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -591,7 +590,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data: any) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -606,7 +605,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data: any) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -622,7 +621,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -636,7 +635,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
     },
@@ -649,7 +648,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -665,7 +664,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
     },
@@ -680,7 +679,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data) => {
       if (data.id && !general.id) {
-        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
@@ -750,7 +749,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.id }));
+      setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.id, autoRef: data.autoRef ?? data.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       setHasUnsavedChanges(false);
       toast.success('Activity created');
@@ -812,11 +811,28 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       
       // Dismiss the loading toast
       toast.dismiss(loadingToastId);
-      
-      setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+
+      let resolvedAutoRef = data.autoRef ?? data.auto_ref;
+      setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id, autoRef: resolvedAutoRef ?? g.autoRef }));
       setShowActivityCreatedAlert(true);
       setHasUnsavedChanges(false);
-      
+
+      // If the create response didn't include the auto_ref (e.g. AFTER INSERT trigger
+      // populates it after RETURNING), fetch the basic record so the System Generated ID
+      // appears in the form without requiring a manual refresh.
+      if (!resolvedAutoRef && data.id) {
+        try {
+          const basicRes = await apiFetch(`/api/activities/${data.id}/basic`);
+          if (basicRes.ok) {
+            const basic = await basicRes.json();
+            const ref = basic.autoRef ?? basic.auto_ref;
+            if (ref) {
+              setGeneral((g: any) => ({ ...g, autoRef: ref }));
+            }
+          }
+        } catch (_) { /* best-effort */ }
+      }
+
       toast.success('Activity created. All tabs are now available.', {
         duration: 3000,
         position: 'top-center',
@@ -1466,7 +1482,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         setShowOtherIdentifierModal(open);
         if (!open) setShowIdentifierTypeDropdown(false);
       }}>
-        <DialogContent className="max-w-2xl min-h-[60vh] max-h-[95vh] flex flex-col">
+        <DialogContent className="max-w-3xl min-h-[60vh] max-h-[95vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{editingIdentifierIndex !== null ? 'Edit Other Identifier' : 'Add Other Identifier'}</DialogTitle>
             <DialogDescription>
@@ -1483,7 +1499,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 type="text"
                 value={otherIdentifierForm.label}
                 onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, label: e.target.value }))}
-                placeholder="e.g., CRS ID, Internal Reference"
+                placeholder="e.g., an older activity ID or internal reference"
               />
             </div>
             <div className="space-y-2">
@@ -1601,6 +1617,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               }}
               disabled={!otherIdentifierForm.code.trim() || !otherIdentifierForm.ownerOrgNarrative.trim()}
             >
+              <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
           </DialogFooter>
@@ -2106,7 +2123,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   }
                 }}
                 onActivityCreated={(activityData) => {
-                  setGeneral((g: any) => ({ ...g, id: activityData.id, uuid: activityData.uuid }));
+                  setGeneral((g: any) => ({ ...g, id: activityData.id, uuid: activityData.uuid, autoRef: (activityData as any).autoRef ?? (activityData as any).auto_ref ?? g.autoRef }));
                   // Clear saved form data since activity is now saved to database
                   clearSavedFormData();
                   toast.success('Activity created. All tabs are now available.', {
@@ -2714,7 +2731,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-body font-medium text-foreground">Date Type/Label</label>
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
+                Date Type/Label
+                <HelpTextTooltip>
+                  A short label describing what this date represents (e.g., "Date of Contract Signing", "Mid-term Review"). Use a label that will be meaningful to readers in lists and reports.
+                </HelpTextTooltip>
+              </label>
               <Input
                 type="text"
                 value={activityDateForm.label}
@@ -2723,7 +2745,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-body font-medium text-foreground">Date</label>
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
+                Date
+                <HelpTextTooltip>
+                  The calendar date this milestone occurred or is expected. Custom dates are in addition to the standard planned/actual start and end dates.
+                </HelpTextTooltip>
+              </label>
               <DatePicker
                 value={activityDateForm.date}
                 onChange={(value) => setActivityDateForm(prev => ({ ...prev, date: value }))}
@@ -2731,29 +2758,26 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-body font-medium text-foreground">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Description/Context
+                <HelpTextTooltip>
+                  Optional context about this date — what happened, why it matters, or any background that helps readers interpret it. The IATI Standard does not impose a length limit on narrative text, so longer descriptions are accepted.
+                </HelpTextTooltip>
               </label>
-              <div className="relative">
-                <Textarea
-                  value={activityDateForm.description}
-                  onChange={(e) => setActivityDateForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Add context about this date"
-                  className="min-h-[120px] pr-16"
-                />
-                <div
-                  className={`pointer-events-none absolute bottom-2 right-2 text-xs tabular-nums transition-colors ${
-                    activityDateForm.description.length > 500
-                      ? "text-red-600"
-                      : activityDateForm.description.length >= 450
-                      ? "text-orange-500"
-                      : activityDateForm.description.length >= 400
-                      ? "text-amber-500"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {activityDateForm.description.length} / 500
-                </div>
+              <Textarea
+                value={activityDateForm.description}
+                onChange={(e) => setActivityDateForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Add context about this date"
+                className="min-h-[120px]"
+              />
+              <div
+                className={`text-xs tabular-nums text-right transition-colors ${
+                  activityDateForm.description.length >= 1000
+                    ? "text-orange-500"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {activityDateForm.description.length} characters
               </div>
             </div>
           </div>
@@ -2789,8 +2813,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 customDatesAutosave.triggerFieldSave(updatedDates);
                 setShowActivityDateModal(false);
               }}
-              disabled={!activityDateForm.label.trim() || !activityDateForm.date || activityDateForm.description.length > 500}
+              disabled={!activityDateForm.label.trim() || !activityDateForm.date}
             >
+              <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
           </DialogFooter>
@@ -2857,7 +2882,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, setFocalPointsCount, onGeographyLevelChange, onSectorExportLevelChange, isNewActivity, visitedGroups }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, humanitarian, setFocalPointsCount, onGeographyLevelChange, onSectorExportLevelChange, isNewActivity, visitedGroups }: any) {
 
   // Calculate total budget in USD for country budget mappings
   const totalBudgetUSD = useMemo(() => {
@@ -3048,6 +3073,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               initialTransactionId={transactionId}
               geographyLevel={general.geographyLevel || 'activity'}
               activitySectors={sectors}
+              activityIsHumanitarian={!!humanitarian}
               onBudgetsChange={setBudgets}
               onDisbursementsChange={handlePlannedDisbursementsChange}
             />
@@ -3577,7 +3603,8 @@ function NewActivityPageContent() {
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [showComments, setShowComments] = useState(false);
-  const [isCommentsDrawerOpen, setIsCommentsDrawerOpen] = useState(false);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  const [unreadCommentCount, setUnreadCommentCount] = useState(0);
   const [participatingOrgsCount, setParticipatingOrgsCount] = useState<number>(0);
   const [linkedActivitiesCount, setLinkedActivitiesCount] = useState<number>(0);
   const [resultsCount, setResultsCount] = useState<number>(0);
@@ -3684,6 +3711,20 @@ function NewActivityPageContent() {
 
   // Track if any modal is open to blur footer buttons
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch unread comment count for the Comments button badge
+  useEffect(() => {
+    if (!general.id) {
+      setUnreadCommentCount(0);
+      return;
+    }
+    let cancelled = false;
+    apiFetch(`/api/activities/${general.id}/comments/unread-count`)
+      .then(r => r.ok ? r.json() : { count: 0 })
+      .then(d => { if (!cancelled) setUnreadCommentCount(d?.count || 0); })
+      .catch(() => { if (!cancelled) setUnreadCommentCount(0); });
+    return () => { cancelled = true; };
+  }, [general.id, isCommentsModalOpen]);
 
   // Detect when dialogs are open by observing DOM
   useEffect(() => {
@@ -5462,7 +5503,7 @@ function NewActivityPageContent() {
         }
         const created = await createRes.json();
         activityId = created.id;
-        setGeneral((g: any) => ({ ...g, id: created.id, uuid: created.uuid || created.id }));
+        setGeneral((g: any) => ({ ...g, id: created.id, uuid: created.uuid || created.id, autoRef: created.autoRef ?? created.auto_ref ?? g.autoRef }));
         setShowActivityCreatedAlert(true);
       } else {
         // Now persist the full General tab via PATCH
@@ -5840,61 +5881,6 @@ function NewActivityPageContent() {
                     Validation Rejected
                   </button>
                 )}
-                {/* Publish Toggle */}
-                                 {canPublish && (
-                   <div className="flex items-center gap-4">
-                     <span className="text-base font-semibold text-foreground">Unpublished</span>
-                     <Switch
-                       checked={general.publicationStatus === 'published'}
-                       onCheckedChange={async (checked) => {
-                         if (checked) {
-                           // Check if we have the required fields for publishing
-                           if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
-                             toast.error('To publish, complete all required fields: Title, Description, Status, Start Date, and End Date.');
-                             return;
-                           }
-
-                           const originalStatus = general.publicationStatus;
-
-                           // Optimistically update the UI
-                           setGeneral((prev: any) => ({ ...prev, publicationStatus: 'published' }));
-
-                           try {
-                             await saveActivity({ publish: true, suppressErrorToast: true });
-                           } catch (error) {
-                             console.error('[AIMS] Publish failed, reverting state:', error);
-                             // Revert the optimistic update on failure
-                             setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
-                             toast.error('Failed to publish activity. Please try again.');
-                           }
-                         } else {
-                           // Unpublish the activity
-                           const originalStatus = general.publicationStatus;
-
-                           // Optimistically update the UI
-                           setGeneral((prev: any) => ({ ...prev, publicationStatus: 'draft' }));
-
-                           try {
-                             await saveActivity({ publish: false, suppressErrorToast: true });
-                           } catch (error) {
-                             console.error('[AIMS] Unpublish failed, reverting state:', error);
-                             // Revert the optimistic update on failure
-                             setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
-                             toast.error('Failed to unpublish activity. Please try again.');
-                           }
-                         }
-                       }}
-                       disabled={
-                         // Disable only when minimum required fields are missing
-                         (!general.title?.trim() || !general.description?.trim() ||
-                          !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
-                       }
-                       className="data-[state=checked]:bg-[hsl(var(--success-icon))] scale-125"
-                       title="Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date"
-                     />
-                     <span className="text-base font-semibold text-foreground">Published</span>
-                   </div>
-                 )}
               </div>
             </div>
             
@@ -6055,6 +6041,7 @@ function NewActivityPageContent() {
                     loadedTabs={loadedTabs}
                     setHumanitarian={setHumanitarian}
                     setHumanitarianScopes={setHumanitarianScopes}
+                    humanitarian={humanitarian}
                     setFocalPointsCount={setFocalPointsCount}
                     onGeographyLevelChange={handleGeographyLevelChange}
                     isNewActivity={!isEditing}
@@ -6116,21 +6103,34 @@ function NewActivityPageContent() {
               <div className={`flex items-center gap-3 transition-all ${isModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
                 {/* Comments Button */}
                 {general.id ? (
-                  <Button
-                    variant="outline"
-                    className="px-4 py-3 text-base font-semibold"
-                    onClick={() => {
-                      setIsCommentsDrawerOpen(true);
-                    }}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Comments
-                    {comments.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1">
-                        {comments.length}
-                      </span>
-                    )}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="px-4 py-3 text-base font-semibold relative"
+                          onClick={() => {
+                            setIsCommentsModalOpen(true);
+                          }}
+                        >
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Comments
+                          {unreadCommentCount > 0 && (
+                            <span className="ml-2 bg-destructive text-destructive-foreground text-xs font-medium rounded-full px-2 py-0.5 min-w-[1.25rem] inline-flex items-center justify-center">
+                              {unreadCommentCount}
+                            </span>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {comments.length === 0
+                          ? 'No comments yet'
+                          : unreadCommentCount > 0
+                            ? `${unreadCommentCount} unread of ${comments.length} ${comments.length === 1 ? 'comment' : 'comments'}`
+                            : `${comments.length} ${comments.length === 1 ? 'comment' : 'comments'}`}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ) : (
                   <Button
                     variant="outline"
@@ -6218,6 +6218,53 @@ function NewActivityPageContent() {
                     )}
                   </>
                 </Button>
+
+                {/* Publish / Unpublish Button */}
+                {canPublish && general.id && (() => {
+                  const isPublished = general.publicationStatus === 'published';
+                  const missingRequiredFields =
+                    !general.title?.trim() ||
+                    !general.description?.trim() ||
+                    !general.activityStatus ||
+                    !general.plannedStartDate ||
+                    !general.plannedEndDate;
+                  return (
+                    <Button
+                      variant={isPublished ? 'outline' : 'default'}
+                      className={`px-6 py-3 text-base font-semibold ${isPublished ? '' : 'bg-[hsl(var(--success-icon))] text-white hover:bg-[hsl(var(--success-icon))]/90'}`}
+                      disabled={saving || tabLoading || (!isPublished && missingRequiredFields)}
+                      title={
+                        !isPublished && missingRequiredFields
+                          ? 'To publish, complete: Title, Description, Status, Start Date, End Date.'
+                          : undefined
+                      }
+                      onClick={async () => {
+                        const originalStatus = general.publicationStatus;
+                        const nextStatus = isPublished ? 'draft' : 'published';
+                        setGeneral((prev: any) => ({ ...prev, publicationStatus: nextStatus }));
+                        try {
+                          await saveActivity({ publish: !isPublished, suppressErrorToast: true });
+                        } catch (error) {
+                          console.error(`[AIMS] ${isPublished ? 'Unpublish' : 'Publish'} failed, reverting:`, error);
+                          setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
+                          toast.error(`Failed to ${isPublished ? 'unpublish' : 'publish'} activity. Please try again.`);
+                        }
+                      }}
+                    >
+                      {isPublished ? (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Unpublish
+                        </>
+                      ) : (
+                        <>
+                          <Megaphone className="mr-2 h-4 w-4" />
+                          Publish
+                        </>
+                      )}
+                    </Button>
+                  );
+                })()}
               </div>
               )}
             </div>
@@ -6289,11 +6336,11 @@ function NewActivityPageContent() {
         </DialogContent>
       </Dialog>
       
-      {/* Comments Drawer */}
+      {/* Comments Modal */}
       <CommentsDrawer
         activityId={general.id || ''}
-        isOpen={isCommentsDrawerOpen}
-        onClose={() => setIsCommentsDrawerOpen(false)}
+        isOpen={isCommentsModalOpen}
+        onClose={() => setIsCommentsModalOpen(false)}
       />
       
       {/* Missing Required Fields Dialog */}

@@ -51,6 +51,7 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_RANKED_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 type ViewMode = "bar" | "pie" | "table";
 type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
@@ -151,7 +152,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           <p className="font-semibold text-foreground mb-1">{item.name}</p>
           <div className="border-t mt-2 pt-2 space-y-1">
             <p className="text-body font-medium text-foreground">
-              {formatCurrency(item.value)}
+              {formatTooltipCurrency(item.value, isExpanded)}
             </p>
             <p className="text-helper text-muted-foreground">
               {formatPercent(item.value, grandTotal)}
@@ -183,7 +184,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           axisLine={false}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v)}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11 }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={60}

@@ -12,6 +12,8 @@ import {
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { CHART_RANKED_PALETTE } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency } from '@/lib/format'
 
 interface SectorPieChartProps {
   dateRange: {
@@ -33,6 +35,7 @@ interface SectorData {
 const COLORS = CHART_RANKED_PALETTE
 
 export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPieChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<SectorData[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -228,7 +231,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
                   <span className="text-foreground">Disbursements</span>
                 </td>
                 <td className="py-1 text-right font-semibold text-foreground">
-                  {formatCurrency(value)}
+                  {formatTooltipCurrency(value, isExpanded)}
                 </td>
               </tr>
               {typeof percentage === 'number' && !isNaN(percentage) && (

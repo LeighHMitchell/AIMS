@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Info, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { HelpCircle, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -266,7 +266,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                             {marker.name}
                             <Tooltip>
                               <TooltipTrigger>
-                                <Info className="w-4 h-4 text-muted-foreground hover:text-muted-foreground" />
+                                <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 <p>{marker.description}</p>
@@ -353,7 +353,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                             )}
                             <Tooltip>
                               <TooltipTrigger>
-                                <Info className="w-4 h-4 text-muted-foreground hover:text-muted-foreground" />
+                                <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 <p>{marker.description}</p>
@@ -437,7 +437,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                             )}
                             <Tooltip>
                               <TooltipTrigger>
-                                <Info className="w-4 h-4 text-muted-foreground hover:text-muted-foreground" />
+                                <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 <p>{marker.description}</p>

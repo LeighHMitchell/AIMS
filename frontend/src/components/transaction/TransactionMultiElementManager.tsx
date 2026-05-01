@@ -18,7 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, Trash2, AlertCircle, CheckCircle, Info, Check, ChevronsUpDown, Search, Sparkles } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle, Info, HelpCircle, Check, ChevronsUpDown, Search, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   TransactionSector, 
@@ -163,7 +163,7 @@ export function TransactionSectorManager({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Label className="text-body font-medium">Transaction Sectors</Label>
-          <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple sectors per transaction with percentage allocations" />
+          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple sectors per transaction with percentage allocations" />
         </div>
         <div className="flex items-center gap-2">
           {hasPercentages && hasPercentageError && (
@@ -507,7 +507,7 @@ export function TransactionAidTypeManager({
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center gap-2">
         <Label className="text-body font-medium">Aid Types</Label>
-        <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple aid types with different vocabularies" />
+        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple aid types with different vocabularies" />
       </div>
       
       {/* Existing aid types */}
@@ -900,7 +900,7 @@ export function TransactionRecipientCountryManager({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Label className="text-body font-medium">Recipient Countries</Label>
-          <Info className="h-4 w-4 text-muted-foreground cursor-help" title="ISO 3166-1 alpha-2 codes (e.g., TZ, KE)" />
+          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" title="ISO 3166-1 alpha-2 codes (e.g., TZ, KE)" />
         </div>
         {hasPercentages && (
           <Badge variant={hasPercentageError ? "destructive" : isComplete ? "default" : "secondary"} className="text-helper">

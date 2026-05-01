@@ -12,6 +12,7 @@ import {
   Legend,
   Cell
 } from 'recharts'
+import { formatAxisCurrency } from '@/lib/format'
 
 interface OrganizationRoleFlowProps {
   data: {
@@ -184,10 +185,10 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
             textAnchor="end"
             height={80}
           />
-          <YAxis 
-            tickFormatter={formatCurrency} 
-            stroke="#64748B" 
-            fontSize={12} 
+          <YAxis
+            tickFormatter={formatAxisCurrency}
+            stroke="#64748B"
+            fontSize={12}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
           <Legend />

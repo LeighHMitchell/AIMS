@@ -25,6 +25,7 @@ import {
 } from '@/types/organization-funding-envelope'
 import { TrendingUp, AlertCircle, BarChart3, LineChart as LineChartIcon, Table as TableIcon, Layers, RefreshCw } from 'lucide-react'
 import { convertToUSD } from '@/lib/currency-conversion-api'
+import { formatAxisCurrency } from '@/lib/format'
 
 // Color scheme
 const COLORS = {
@@ -385,10 +386,10 @@ export default function OrganizationFundingVisualization({
                       stroke={COLORS.blueSlate}
                       tick={{ fill: COLORS.blueSlate }}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke={COLORS.blueSlate}
                       tick={{ fill: COLORS.blueSlate }}
-                      tickFormatter={formatCurrency}
+                      tickFormatter={formatAxisCurrency}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
@@ -448,10 +449,10 @@ export default function OrganizationFundingVisualization({
                     stroke={COLORS.blueSlate}
                     tick={{ fill: COLORS.blueSlate }}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke={COLORS.blueSlate}
                     tick={{ fill: COLORS.blueSlate }}
-                    tickFormatter={formatCurrency}
+                    tickFormatter={formatAxisCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
@@ -498,10 +499,10 @@ export default function OrganizationFundingVisualization({
                       stroke={COLORS.blueSlate}
                       tick={{ fill: COLORS.blueSlate }}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke={COLORS.blueSlate}
                       tick={{ fill: COLORS.blueSlate }}
-                      tickFormatter={formatCurrency}
+                      tickFormatter={formatAxisCurrency}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />

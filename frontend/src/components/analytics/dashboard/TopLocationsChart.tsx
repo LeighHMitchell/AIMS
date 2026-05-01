@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_RANKED_PALETTE } from "@/lib/chart-colors";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 
 interface LocationItem {
   id: string;
@@ -152,7 +153,7 @@ export function TopLocationsChart() {
             <div className="flex items-center justify-between gap-4">
               <span className="text-body text-foreground">{METRIC_LABELS[metric]}</span>
               <span className="text-body font-medium text-foreground">
-                {formatCurrency(item.value)}
+                {formatTooltipCurrency(item.value, isExpanded)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -212,7 +213,7 @@ export function TopLocationsChart() {
           tickFormatter={(v) => (v.length > 8 ? `${v.slice(0, 8)}...` : v)}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v)}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={70}

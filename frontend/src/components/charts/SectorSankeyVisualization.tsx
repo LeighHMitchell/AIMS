@@ -26,6 +26,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { exportToCSV } from '@/lib/exports';
 import { exportChartToJPG } from '@/lib/chart-export';
 import { cn } from '@/lib/utils';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { formatTooltipCurrency as libFormatTooltipCurrency } from '@/lib/format';
 
 // User's simplified data structure
 interface SectorAllocation {
@@ -178,6 +180,7 @@ export default function SectorSankeyVisualization({
   defaultMetric = 'percentage',
   barGroupingMode: externalBarGroupingMode
 }: Props) {
+  const isExpanded = useChartExpansion();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
@@ -631,13 +634,8 @@ export default function SectorSankeyVisualization({
 
     const format = d3.format('.1f');
 
-    // Helper to format currency for tooltips
-    const formatTooltipCurrency = (v: number) => {
-      if (v === 0) return '$0';
-      if (v >= 1000000) return '$' + (v / 1000000).toFixed(2) + 'm';
-      if (v >= 1000) return '$' + (v / 1000).toFixed(2) + 'k';
-      return '$' + v.toFixed(0);
-    };
+    // Helper to format currency for tooltips (uses chart expansion context)
+    const formatTooltipCurrency = (v: number) => libFormatTooltipCurrency(v, isExpanded);
     
     // Helper to get financial data for a node (aggregated for category/sector)
     const getNodeFinancials = (nodeId: string, level: string) => {
@@ -897,7 +895,7 @@ export default function SectorSankeyVisualization({
       tooltip.remove();
     };
 
-  }, [sankeyData, containerSize, onSegmentClick, viewMode]);
+  }, [sankeyData, containerSize, onSegmentClick, viewMode, isExpanded]);
 
   // Render Sunburst Chart (3-level hierarchy)
   useEffect(() => {
@@ -1141,7 +1139,7 @@ export default function SectorSankeyVisualization({
           `<div class="text-helper text-muted-foreground mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
         tooltip.html(`
           <div class="font-semibold">${d.code} - ${d.name}</div>
-          <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : '$' + format(d.value)}</div>
+          <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : libFormatTooltipCurrency(d.value, isExpanded)}</div>
           <div class="text-helper text-muted-foreground">${percentage}% of total</div>
           ${sectorsInfo}
         `)
@@ -1251,7 +1249,7 @@ export default function SectorSankeyVisualization({
     return () => {
       tooltip.remove();
     };
-  }, [stackedBarData, containerSize, viewMode, metricMode, onSegmentClick, barGroupingMode]);
+  }, [stackedBarData, containerSize, viewMode, metricMode, onSegmentClick, barGroupingMode, isExpanded]);
 
   const totalPercentage = useMemo(() => {
     return allocations.reduce((sum, allocation) => sum + allocation.percentage, 0);

@@ -29,13 +29,15 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
-import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -193,6 +195,7 @@ export function PlannedActualDisbursementBySector({
   refreshKey = 0,
   compact = false
 }: PlannedActualDisbursementBySectorProps) {
+  const isExpanded = useChartExpansion()
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
   const [sectors, setSectors] = useState<SectorSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -512,7 +515,7 @@ export function PlannedActualDisbursementBySector({
                 <td className="py-1.5 text-right font-medium">
                   {entry.name?.includes('Number')
                     ? entry.value?.toLocaleString()
-                    : formatCurrencyAbbreviated(entry.value as number)}
+                    : formatTooltipCurrency(entry.value as number, isExpanded)}
                 </td>
               </tr>
             ))}
@@ -694,7 +697,7 @@ export function PlannedActualDisbursementBySector({
                 yAxisId="left"
                 orientation="left"
                 domain={financialYAxisDomain as [number | string, number | string]}
-                tickFormatter={formatYAxisCurrency}
+                tickFormatter={formatAxisCurrency}
                 fontSize={10}
                 tick={{ fill: '#6B7280' }}
                 axisLine={false}
@@ -728,8 +731,8 @@ export function PlannedActualDisbursementBySector({
             Planned and Actual Disbursement by Sector
           </CardTitle>
         </CardHeader>
-        <CardContent className="h-80 flex items-center justify-center">
-          <LoadingText>Loading disbursement data...</LoadingText>
+        <CardContent className="h-80">
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )
@@ -1017,7 +1020,7 @@ export function PlannedActualDisbursementBySector({
                       <YAxis
                         orientation="left"
                         domain={financialYAxisDomain as [number | string, number | string]}
-                        tickFormatter={formatYAxisCurrency}
+                        tickFormatter={formatAxisCurrency}
                         fontSize={12}
                         tick={{ fill: '#6B7280' }}
                         axisLine={false}

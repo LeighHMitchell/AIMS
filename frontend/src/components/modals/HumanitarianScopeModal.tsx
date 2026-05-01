@@ -136,7 +136,7 @@ export function HumanitarianScopeModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Code <RequiredDot /><HelpTextTooltip content="The reference code from the chosen vocabulary (e.g. a GLIDE number such as EQ-2015-000048-NPL, or an HRP code). If using vocabulary 99, use your own reference." /></Label>
+            <Label>Emergency/Appeal Reference <RequiredDot /><HelpTextTooltip content="The reference identifier from the chosen vocabulary — e.g. a GLIDE number (EQ-2015-000048-NPL), an HRP appeal code, or your own reference if using vocabulary 99." /></Label>
             {formData.vocabulary === '98' ? (
               <EmergencySearchableSelect
                 value={formData.code}

@@ -47,6 +47,8 @@ import {
 } from "@/types/aid-on-budget";
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { formatTooltipCurrency } from '@/lib/format';
 
 interface EnhancedAidOnBudgetChartProps {
   refreshKey?: number;
@@ -115,6 +117,7 @@ interface ActivitiesApiResponse {
 type ViewMode = "chart" | "table";
 
 export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChartProps) {
+  const chartIsExpanded = useChartExpansion();
   const svgRef = useRef<SVGSVGElement>(null);
   const mainGroupRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -682,10 +685,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           showTooltip(event, {
             title: d.data.type,
             values: [
-              { label: "Total", value: formatAbbreviated(totalValue) },
+              { label: "Total", value: formatTooltipCurrency(totalValue, chartIsExpanded) },
               ...centerData.map(item => ({
                 label: item.type,
-                value: formatAbbreviated(item.value),
+                value: formatTooltipCurrency(item.value, chartIsExpanded),
                 color: item.color
               })),
               { label: "Share", value: `${percentage}%` },
@@ -697,10 +700,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           showTooltip(event, {
             title: d.data.type,
             values: [
-              { label: "Total", value: formatAbbreviated(totalValue) },
+              { label: "Total", value: formatTooltipCurrency(totalValue, chartIsExpanded) },
               ...centerData.map(item => ({
                 label: item.type,
-                value: formatAbbreviated(item.value),
+                value: formatTooltipCurrency(item.value, chartIsExpanded),
                 color: item.color
               })),
               { label: "Share", value: `${percentage}%` },
@@ -851,10 +854,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
               values: [
-                { label: "Total", value: formatAbbreviated(sectorTotal) },
-                { label: "Domestic", value: formatAbbreviated(sector.domesticExpenditure), color: palette.blueSlate },
-                { label: "On-Budget Aid", value: formatAbbreviated(sector.onBudgetAid), color: palette.coolSteel },
-                { label: "Off-Budget Aid", value: formatAbbreviated(sector.offBudgetAid), color: palette.primaryScarlet },
+                { label: "Total", value: formatTooltipCurrency(sectorTotal, chartIsExpanded) },
+                { label: "Domestic", value: formatTooltipCurrency(sector.domesticExpenditure, chartIsExpanded), color: palette.blueSlate },
+                { label: "On-Budget Aid", value: formatTooltipCurrency(sector.onBudgetAid, chartIsExpanded), color: palette.coolSteel },
+                { label: "Off-Budget Aid", value: formatTooltipCurrency(sector.offBudgetAid, chartIsExpanded), color: palette.primaryScarlet },
                 { label: "Share", value: `${pct}%` },
               ],
             });
@@ -864,10 +867,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
               values: [
-                { label: "Total", value: formatAbbreviated(sectorTotal) },
-                { label: "Domestic", value: formatAbbreviated(sector.domesticExpenditure), color: palette.blueSlate },
-                { label: "On-Budget Aid", value: formatAbbreviated(sector.onBudgetAid), color: palette.coolSteel },
-                { label: "Off-Budget Aid", value: formatAbbreviated(sector.offBudgetAid), color: palette.primaryScarlet },
+                { label: "Total", value: formatTooltipCurrency(sectorTotal, chartIsExpanded) },
+                { label: "Domestic", value: formatTooltipCurrency(sector.domesticExpenditure, chartIsExpanded), color: palette.blueSlate },
+                { label: "On-Budget Aid", value: formatTooltipCurrency(sector.onBudgetAid, chartIsExpanded), color: palette.coolSteel },
+                { label: "Off-Budget Aid", value: formatTooltipCurrency(sector.offBudgetAid, chartIsExpanded), color: palette.primaryScarlet },
                 { label: "Share", value: `${pct}%` },
               ],
             });
@@ -937,7 +940,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       });
     }
 
-  }, [data]); // Only re-render when data changes, NOT when zoom changes
+  }, [data, chartIsExpanded]); // Only re-render when data changes, NOT when zoom changes
 
   // Separate useEffect for animated zoom transitions
   useEffect(() => {

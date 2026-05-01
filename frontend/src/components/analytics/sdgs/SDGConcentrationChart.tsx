@@ -27,6 +27,7 @@ import { format } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { formatAxisCurrency } from '@/lib/format'
 
 // Generate list of available years
 const AVAILABLE_YEARS = Array.from(
@@ -521,7 +522,7 @@ export function SDGConcentrationChart({
               axisLine={{ stroke: '#cbd5e1' }}
             />
             <YAxis
-              tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatCurrency}
+              tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatAxisCurrency}
               tick={{ fill: '#64748b', fontSize: 12 }}
               axisLine={{ stroke: '#cbd5e1' }}
             >

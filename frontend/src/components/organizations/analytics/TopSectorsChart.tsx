@@ -16,6 +16,7 @@ import {
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { PieChart, BarChart3, GitBranch } from 'lucide-react';
+import { formatAxisCurrency } from '@/lib/format';
 
 interface SectorData {
   code: string;
@@ -142,7 +143,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                 />
                 <YAxis
                   yAxisId="left"
-                  tickFormatter={formatCurrency}
+                  tickFormatter={formatAxisCurrency}
                   tick={{ fontSize: 12, fill: '#64748b' }}
                   label={{ value: 'Amount (USD)', angle: -90, position: 'insideLeft', style: { fill: '#64748b' } }}
                 />

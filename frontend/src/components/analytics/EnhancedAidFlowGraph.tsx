@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3'
 import { Button } from '@/components/ui/button'
 import { Info, Maximize2, Minimize2, X, ArrowRight, Shrink, Expand } from 'lucide-react'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency } from '@/lib/format'
 
 export interface GraphNode {
   id: string
@@ -68,6 +70,7 @@ export default function EnhancedAidFlowGraph({
   onNodeClick,
   searchQuery = ''
 }: EnhancedAidFlowGraphProps) {
+  const isExpanded = useChartExpansion()
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null)
@@ -827,7 +830,7 @@ export default function EnhancedAidFlowGraph({
                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                         Inflow
                       </span>
-                      <span className="font-semibold text-emerald-600">{formatCurrency(inflow)}</span>
+                      <span className="font-semibold text-emerald-600">{formatTooltipCurrency(inflow, isExpanded)}</span>
                     </div>
                   )}
                   {outflow > 0 && (
@@ -836,7 +839,7 @@ export default function EnhancedAidFlowGraph({
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                         Outflow
                       </span>
-                      <span className="font-semibold text-blue-600">{formatCurrency(outflow)}</span>
+                      <span className="font-semibold text-blue-600">{formatTooltipCurrency(outflow, isExpanded)}</span>
                     </div>
                   )}
                   {inflow > 0 && outflow > 0 && (
@@ -845,7 +848,7 @@ export default function EnhancedAidFlowGraph({
                         <div className="flex justify-between items-center">
                           <span className="text-body font-medium text-foreground">Net Flow</span>
                           <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                            {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
+                            {netFlow >= 0 ? '+' : ''}{formatTooltipCurrency(netFlow, isExpanded)}
                           </span>
                         </div>
                       </div>
@@ -854,7 +857,7 @@ export default function EnhancedAidFlowGraph({
                   {totalFlow > 0 && (
                     <div className="flex justify-between items-center text-helper text-muted-foreground pt-1">
                       <span>Total Volume</span>
-                      <span>{formatCurrency(totalFlow)}</span>
+                      <span>{formatTooltipCurrency(totalFlow, isExpanded)}</span>
                     </div>
                   )}
                 </div>
@@ -993,7 +996,7 @@ export default function EnhancedAidFlowGraph({
                             </div>
                             <div className="text-right">
                               <div className={`text-sm font-medium ${tx.direction === 'incoming' ? 'text-emerald-600' : 'text-blue-600'}`}>
-                                {tx.direction === 'incoming' ? '+' : '-'}{formatCurrency(tx.value)}
+                                {tx.direction === 'incoming' ? '+' : '-'}{formatTooltipCurrency(tx.value, isExpanded)}
                               </div>
                               <div className="text-helper text-muted-foreground">
                                 {tx.direction === 'incoming' ? '↓ In' : '↑ Out'}

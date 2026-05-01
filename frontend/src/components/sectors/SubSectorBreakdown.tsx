@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
-import { formatCurrencyShort } from '@/lib/format'
+import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
 
 interface SubSectorItem {
   code: string
@@ -55,7 +55,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                 tick={{ fontSize: 10, fill: '#64748b' }}
                 axisLine={{ stroke: '#e5e7eb' }}
                 tickLine={false}
-                tickFormatter={(v) => formatCurrencyShort(v)}
+                tickFormatter={formatAxisCurrency}
               />
               <YAxis
                 type="category"

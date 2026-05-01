@@ -48,6 +48,7 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 
 // Color palette for modalities (matching project palette)
 const MODALITY_COLORS: Record<string, string> = {
@@ -193,7 +194,7 @@ export function FundingByModalityChart() {
                   <span className="text-body text-foreground">{entry.name}</span>
                 </div>
                 <span className="text-body font-medium text-foreground">
-                  {formatCurrency(entry.value)}
+                  {formatTooltipCurrency(entry.value, isExpanded)}
                 </span>
               </div>
             ))}
@@ -202,7 +203,7 @@ export function FundingByModalityChart() {
             <div className="flex items-center justify-between">
               <span className="text-body font-semibold text-foreground">Total</span>
               <span className="text-body font-bold text-foreground">
-                {formatCurrency(yearTotal)}
+                {formatTooltipCurrency(yearTotal, isExpanded)}
               </span>
             </div>
           </div>
@@ -243,7 +244,7 @@ export function FundingByModalityChart() {
           tickFormatter={(v) => v.toString()}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={70}
@@ -280,7 +281,7 @@ export function FundingByModalityChart() {
           tickFormatter={(v) => v.toString()}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={70}
@@ -326,7 +327,7 @@ export function FundingByModalityChart() {
           tickFormatter={(v) => v.toString()}
         />
         <YAxis
-          tickFormatter={formatCurrency}
+          tickFormatter={formatAxisCurrency}
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
           width={70}

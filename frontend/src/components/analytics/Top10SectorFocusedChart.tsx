@@ -15,6 +15,8 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { Button } from '@/components/ui/button'
 import { BarChart3, Target, Table as TableIcon } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
 interface Top10SectorFocusedChartProps {
   dateRange: {
@@ -43,6 +45,7 @@ export function Top10SectorFocusedChart({
   onDataChange,
   compact = false
 }: Top10SectorFocusedChartProps) {
+  const isExpanded = useChartExpansion()
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
   const [sectorName, setSectorName] = useState<string>('All Sectors')
@@ -149,7 +152,7 @@ export function Top10SectorFocusedChart({
                     />
                     <span className="text-foreground">Total Value</span>
                   </td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.totalValue)}</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(item.totalValue, isExpanded)}</td>
                 </tr>
               </tbody>
             </table>
@@ -181,7 +184,7 @@ export function Top10SectorFocusedChart({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-            <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 10 }} />
+            <XAxis type="number" tickFormatter={formatAxisCurrency} tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={<NoWrapTick fontSize={9} />} width={55} interval={0} />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
@@ -253,7 +256,7 @@ export function Top10SectorFocusedChart({
             />
             <XAxis
               type="number"
-              tickFormatter={formatCurrency}
+              tickFormatter={formatAxisCurrency}
               tick={{ fill: '#64748b', fontSize: 12 }}
               axisLine={{ stroke: '#cbd5e1' }}
             />
