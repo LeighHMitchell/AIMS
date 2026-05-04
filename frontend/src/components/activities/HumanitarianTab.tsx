@@ -12,6 +12,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -364,7 +365,7 @@ export function HumanitarianTab({
             )}
 
             {scopes.length > 0 && (
-              <div className="rounded-md border">
+              <TableContainer>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -502,7 +503,7 @@ export function HumanitarianTab({
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </TableContainer>
             )}
           </CardContent>
         </Card>

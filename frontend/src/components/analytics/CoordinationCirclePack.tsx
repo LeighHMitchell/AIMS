@@ -4,16 +4,16 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
 import { formatTooltipCurrency } from "@/lib/format";
-// Brand color palette
+// Slate-only palette aligned with the rest of the analytics dashboard.
 const COORDINATION_COLORS = [
-  "#4c5568", // Blue Slate (primary)
+  "#1e293b", // slate-800
+  "#334155", // slate-700
+  "#4c5568", // Blue Slate
+  "#475569", // slate-600
+  "#5d6b7a", // medium slate
   "#7b95a7", // Cool Steel
-  "#dc2625", // Primary Scarlet
+  "#94a3b8", // slate-400
   "#cfd0d5", // Pale Slate
-  "#3d4451", // Darker Blue Slate
-  "#5a6b7a", // Mid Steel
-  "#8fa3b3", // Light Steel
-  "#b54342", // Muted Scarlet
 ];
 import type {
   CoordinationView,
@@ -377,10 +377,12 @@ export function CoordinationCirclePack({
         </div>
       )}
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This circle pack visualisation groups organisations and sectors into nested bubbles to reveal coordination patterns. The size of each bubble reflects the total financial value, while the nesting shows how entities cluster within broader categories. Hover over any bubble to see detailed breakdowns including activity counts and total spending.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && !compact && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This circle pack visualisation groups organisations and sectors into nested bubbles to reveal coordination patterns. The size of each bubble reflects the total financial value, while the nesting shows how entities cluster within broader categories. Hover over any bubble to see detailed breakdowns including activity counts and total spending.
+        </p>
+      )}
     </div>
   );
 }

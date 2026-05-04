@@ -15,17 +15,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -38,7 +30,6 @@ import {
   AlertCircle,
   BarChart3,
   Table as TableIcon,
-  Maximize2,
   Download,
   LineChart as LineChartIcon,
   TrendingUp,
@@ -49,8 +40,9 @@ import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
-import { ChartExpansionProvider, useChartExpansion } from "@/lib/chart-expansion-context";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 
 type ChartType = "bar" | "line" | "area";
 type ViewMode = "chart" | "table";
@@ -74,15 +66,15 @@ function formatCurrency(value: number): string {
 
 interface AidPredictabilityChartProps {
   organizationId?: string;
+  compact?: boolean;
 }
 
-export function AidPredictabilityChart({ organizationId }: AidPredictabilityChartProps) {
+export function AidPredictabilityChart({ organizationId, compact = false }: AidPredictabilityChartProps) {
   const [data, setData] = useState<AidPredictabilityPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [viewMode, setViewMode] = useState<ViewMode>("chart");
-  const [isExpanded, setIsExpanded] = useState(false);
 
   // Custom year selection
   const {
@@ -152,204 +144,182 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
   const CustomTooltip = ({ active, payload, label }: any) => {
     const isExpanded = useChartExpansion();
     if (active && payload && payload.length) {
-      // Get the yearLabel from the payload's data point
       const yearLabel = payload[0]?.payload?.yearLabel || label;
-      return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{yearLabel}</p>
-            {selectedCustomYear?.name && (
-              <p className="text-helper text-muted-foreground mt-0.5">{selectedCustomYear.name}</p>
-            )}
-          </div>
-          <div className="p-3">
-            {payload.map((entry: any, index: number) => (
-              <p
-                key={index}
-                className="text-body"
-                style={{ color: entry.color }}
-              >
-                {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatTooltipCurrency(entry.value, isExpanded)}`}
-              </p>
-            ))}
-          </div>
-        </div>
-      );
+      const rows = payload.map((entry: any) => ({
+        label: entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements",
+        value: formatTooltipCurrency(entry.value, isExpanded),
+        color: entry.color || entry.fill || entry.stroke,
+      }));
+      return <ChartTooltipCard title={yearLabel} subtitle={selectedCustomYear?.name} rows={rows} />;
     }
     return null;
   };
 
-  const renderBarChart = (expanded: boolean = false) => (
-    <div className={expanded ? "h-[500px]" : "h-[320px]"}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
-          <XAxis
-            dataKey="yearLabel"
-            tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
-            stroke={CHART_STRUCTURE_COLORS.axis}
+  const renderBarChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+        <XAxis
+          dataKey="yearLabel"
+          tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
+          stroke={CHART_STRUCTURE_COLORS.axis}
+        />
+        <YAxis
+          tickFormatter={formatAxisCurrency}
+          tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
+          stroke={CHART_STRUCTURE_COLORS.axis}
+          width={70}
+        />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
+        {!compact && (
+          <Legend
+            wrapperStyle={{ fontSize: "11px" }}
+            formatter={(value) =>
+              value === "plannedDisbursements"
+                ? "Planned Disbursements"
+                : "Actual Disbursements"
+            }
           />
-          <YAxis
-            tickFormatter={formatAxisCurrency}
-            tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
-            stroke={CHART_STRUCTURE_COLORS.axis}
-            width={70}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
-          {expanded && (
-            <Legend
-              wrapperStyle={{ fontSize: "11px" }}
-              formatter={(value) =>
-                value === "plannedDisbursements"
-                  ? "Planned Disbursements"
-                  : "Actual Disbursements"
-              }
-            />
-          )}
-          <Bar
-            dataKey="plannedDisbursements"
-            fill={CHART_COLORS.planned}
-            name="plannedDisbursements"
-            radius={[4, 4, 0, 0]}
-            animationDuration={300}
-          />
-          <Bar
-            dataKey="actualDisbursements"
-            fill={CHART_COLORS.actual}
-            name="actualDisbursements"
-            radius={[4, 4, 0, 0]}
-            animationDuration={300}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+        )}
+        <Bar
+          dataKey="plannedDisbursements"
+          fill={CHART_COLORS.planned}
+          name="plannedDisbursements"
+          radius={[4, 4, 0, 0]}
+          animationDuration={300}
+        />
+        <Bar
+          dataKey="actualDisbursements"
+          fill={CHART_COLORS.actual}
+          name="actualDisbursements"
+          radius={[4, 4, 0, 0]}
+          animationDuration={300}
+        />
+      </BarChart>
+    </ResponsiveContainer>
   );
 
-  const renderLineChart = (expanded: boolean = false) => (
-    <div className={expanded ? "h-[500px]" : "h-[320px]"}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
-          <XAxis
-            dataKey="yearLabel"
-            tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
-            stroke={CHART_STRUCTURE_COLORS.axis}
+  const renderLineChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart
+        data={data}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+        <XAxis
+          dataKey="yearLabel"
+          tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
+          stroke={CHART_STRUCTURE_COLORS.axis}
+        />
+        <YAxis
+          tickFormatter={formatAxisCurrency}
+          tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
+          stroke={CHART_STRUCTURE_COLORS.axis}
+          width={70}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        {!compact && (
+          <Legend
+            wrapperStyle={{ fontSize: "11px" }}
+            formatter={(value) =>
+              value === "plannedDisbursements"
+                ? "Planned Disbursements"
+                : "Actual Disbursements"
+            }
           />
-          <YAxis
-            tickFormatter={formatAxisCurrency}
-            tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
-            stroke={CHART_STRUCTURE_COLORS.axis}
-            width={70}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          {expanded && (
-            <Legend
-              wrapperStyle={{ fontSize: "11px" }}
-              formatter={(value) =>
-                value === "plannedDisbursements"
-                  ? "Planned Disbursements"
-                  : "Actual Disbursements"
-              }
-            />
-          )}
-          <Line
-            type="monotone"
-            dataKey="plannedDisbursements"
-            stroke={CHART_COLORS.planned}
-            strokeWidth={2}
-            name="plannedDisbursements"
-            dot={{ r: 4 }}
-            animationDuration={300}
-          />
-          <Line
-            type="monotone"
-            dataKey="actualDisbursements"
-            stroke={CHART_COLORS.actual}
-            strokeWidth={2}
-            name="actualDisbursements"
-            dot={{ r: 4 }}
-            animationDuration={300}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+        )}
+        <Line
+          type="monotone"
+          dataKey="plannedDisbursements"
+          stroke={CHART_COLORS.planned}
+          strokeWidth={2}
+          name="plannedDisbursements"
+          dot={{ r: 4 }}
+          animationDuration={300}
+        />
+        <Line
+          type="monotone"
+          dataKey="actualDisbursements"
+          stroke={CHART_COLORS.actual}
+          strokeWidth={2}
+          name="actualDisbursements"
+          dot={{ r: 4 }}
+          animationDuration={300}
+        />
+      </LineChart>
+    </ResponsiveContainer>
   );
 
-  const renderAreaChart = (expanded: boolean = false) => (
-    <div className={expanded ? "h-[500px]" : "h-[320px]"}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <defs>
-            <linearGradient id="colorPlanned" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.planned} stopOpacity={0.8} />
-              <stop offset="95%" stopColor={CHART_COLORS.planned} stopOpacity={0.1} />
-            </linearGradient>
-            <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.actual} stopOpacity={0.8} />
-              <stop offset="95%" stopColor={CHART_COLORS.actual} stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
-          <XAxis
-            dataKey="yearLabel"
-            tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
-            stroke={CHART_STRUCTURE_COLORS.axis}
+  const renderAreaChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart
+        data={data}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      >
+        <defs>
+          <linearGradient id="colorPlanned" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={CHART_COLORS.planned} stopOpacity={0.8} />
+            <stop offset="95%" stopColor={CHART_COLORS.planned} stopOpacity={0.1} />
+          </linearGradient>
+          <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={CHART_COLORS.actual} stopOpacity={0.8} />
+            <stop offset="95%" stopColor={CHART_COLORS.actual} stopOpacity={0.1} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+        <XAxis
+          dataKey="yearLabel"
+          tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
+          stroke={CHART_STRUCTURE_COLORS.axis}
+        />
+        <YAxis
+          tickFormatter={formatAxisCurrency}
+          tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
+          stroke={CHART_STRUCTURE_COLORS.axis}
+          width={70}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        {!compact && (
+          <Legend
+            wrapperStyle={{ fontSize: "11px" }}
+            formatter={(value) =>
+              value === "plannedDisbursements"
+                ? "Planned Disbursements"
+                : "Actual Disbursements"
+            }
           />
-          <YAxis
-            tickFormatter={formatAxisCurrency}
-            tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
-            stroke={CHART_STRUCTURE_COLORS.axis}
-            width={70}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          {expanded && (
-            <Legend
-              wrapperStyle={{ fontSize: "11px" }}
-              formatter={(value) =>
-                value === "plannedDisbursements"
-                  ? "Planned Disbursements"
-                  : "Actual Disbursements"
-              }
-            />
-          )}
-          <Area
-            type="monotone"
-            dataKey="plannedDisbursements"
-            stroke={CHART_COLORS.planned}
-            fill="url(#colorPlanned)"
-            name="plannedDisbursements"
-            animationDuration={300}
-          />
-          <Area
-            type="monotone"
-            dataKey="actualDisbursements"
-            stroke={CHART_COLORS.actual}
-            fill="url(#colorActual)"
-            name="actualDisbursements"
-            animationDuration={300}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+        )}
+        <Area
+          type="monotone"
+          dataKey="plannedDisbursements"
+          stroke={CHART_COLORS.planned}
+          fill="url(#colorPlanned)"
+          name="plannedDisbursements"
+          animationDuration={300}
+        />
+        <Area
+          type="monotone"
+          dataKey="actualDisbursements"
+          stroke={CHART_COLORS.actual}
+          fill="url(#colorActual)"
+          name="actualDisbursements"
+          animationDuration={300}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 
-  const renderTable = (expanded: boolean = false) => (
-    <div className={cn("overflow-auto", expanded ? "max-h-[500px]" : "max-h-[320px]")}>
+  const renderTable = () => (
+    <div className="overflow-auto h-full">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
             <TableHead className="text-helper font-medium">Year</TableHead>
-            <TableHead className="text-helper font-medium text-right">Planned Disbursements</TableHead>
-            <TableHead className="text-helper font-medium text-right">Actual Disbursements</TableHead>
+            <TableHead className="text-helper font-medium text-right whitespace-normal">Planned Disbursements</TableHead>
+            <TableHead className="text-helper font-medium text-right whitespace-normal">Actual Disbursements</TableHead>
             <TableHead className="text-helper font-medium text-right">Variance</TableHead>
           </TableRow>
         </TableHeader>
@@ -375,7 +345,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
     </div>
   );
 
-  const renderContent = (expanded: boolean = false) => {
+  const renderContent = () => {
     if (loading) {
       return <ChartLoadingPlaceholder />;
     }
@@ -391,31 +361,31 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
 
     if (!data || data.length === 0) {
       return (
-        <div className={cn("flex items-center justify-center text-muted-foreground", expanded ? "h-[500px]" : "h-[320px]")}>
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
           No predictability data available
         </div>
       );
     }
 
     if (viewMode === "table") {
-      return renderTable(expanded);
+      return renderTable();
     }
 
     switch (chartType) {
       case "line":
-        return renderLineChart(expanded);
+        return renderLineChart();
       case "area":
-        return renderAreaChart(expanded);
+        return renderAreaChart();
       case "bar":
       default:
-        return renderBarChart(expanded);
+        return renderBarChart();
     }
   };
 
-  const renderControls = (expanded: boolean = false) => (
-    <div className={cn("flex items-center justify-end gap-2", expanded && "mt-2 pt-2 border-t")}>
+  const renderControls = () => (
+    <div className={cn("flex items-center justify-end gap-2", !compact && "mt-2 pt-2 border-t")}>
       {/* Custom Year Selector (only in expanded view) */}
-      {expanded && (
+      {!compact && (
         <CustomYearSelector
           customYears={customYears}
           selectedId={selectedCustomYearId}
@@ -428,32 +398,35 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       {/* Chart controls */}
       <div className="flex items-center gap-1">
         {/* Chart type toggles - only show in expanded view when in chart mode */}
-        {expanded && viewMode === "chart" && (
-          <div className="flex items-center border rounded-md">
+        {!compact && viewMode === "chart" && (
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartType("bar")}
               title="Bar Chart"
+              aria-label="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartType("line")}
               title="Line Chart"
+              aria-label="Line Chart"
             >
               <LineChartIcon className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartType("area")}
               title="Area Chart"
+              aria-label="Area Chart"
             >
               <TrendingUp className="h-4 w-4" />
             </Button>
@@ -461,23 +434,25 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
         )}
 
         {/* View mode toggles - only in expanded view */}
-        {expanded && (
-          <div className="flex items-center border rounded-md">
+        {!compact && (
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === "chart" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", viewMode === "chart" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setViewMode("chart")}
               title="Chart"
+              aria-label="Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setViewMode("table")}
-              title="Table"
+              title="Table View"
+              aria-label="Table View"
             >
               <TableIcon className="h-4 w-4" />
             </Button>
@@ -485,81 +460,35 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
         )}
 
         {/* Export button - only in expanded view */}
-        {expanded && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleExport}
-            title="Export CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+        {!compact && (
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
     </div>
   );
 
   return (
-    <>
-      {/* Compact Card View */}
-      <Card className="bg-white border-border h-full flex flex-col">
-        <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-foreground truncate">
-                Aid Predictability
-              </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
-                Planned vs actual disbursements by year
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
-              title="Expand to full screen"
-            >
-              <Maximize2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
-          <ChartExpansionProvider isExpanded={false}>
-            {renderContent(false)}
-          </ChartExpansionProvider>
-        </CardContent>
-      </Card>
-
-      {/* Expanded Dialog View */}
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-2xl font-semibold text-foreground">
-              Aid Predictability
-            </DialogTitle>
-            <DialogDescription className="text-base mt-2">
-              Comparing planned disbursements against actual disbursements by year
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Chart/Table content */}
-          <div className="mt-4 flex-1 min-h-0 flex flex-col">
-            <ChartExpansionProvider isExpanded={true}>
-              {renderContent(true)}
-            </ChartExpansionProvider>
-          </div>
-
-          {/* Controls */}
-          <div className="flex-shrink-0">{renderControls(true)}</div>
-
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed mt-4">
-            This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A close match between planned and actual amounts indicates reliable and predictable aid flows. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.
-          </p>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="h-full flex flex-col">
+      <div className="flex-1 min-h-0">
+        {renderContent()}
+      </div>
+      {!compact && renderControls()}
+      {!compact && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A close match between planned and actual amounts indicates reliable and predictable aid flows. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.
+        </p>
+      )}
+    </div>
   );
 }

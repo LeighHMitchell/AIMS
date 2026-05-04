@@ -271,7 +271,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Top Donors mini */}
             <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Top Donors</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Top Development Partners</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {donorRankings.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -286,7 +286,7 @@ export default function PolicyMarkerProfilePage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No donor data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No development partner data</div>}
               </CardContent>
             </Card>
 
@@ -319,7 +319,7 @@ export default function PolicyMarkerProfilePage() {
               <TabsTrigger value="significance">Significance</TabsTrigger>
               <TabsTrigger value="financials">Financials</TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
-              <TabsTrigger value="donors">Donors</TabsTrigger>
+              <TabsTrigger value="donors">Development Partners</TabsTrigger>
               <TabsTrigger value="organizations">Organizations</TabsTrigger>
               <TabsTrigger value="geography">Geography</TabsTrigger>
             </TabsList>
@@ -552,7 +552,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Donors */}
             <TabsContent value="donors" className="space-y-6">
-              <Card><CardHeader><CardTitle className="text-body">Donor Landscape</CardTitle></CardHeader><CardContent>
+              <Card><CardHeader><CardTitle className="text-body">Development Partner Landscape</CardTitle></CardHeader><CardContent>
                 <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
               </CardContent></Card>
             </TabsContent>

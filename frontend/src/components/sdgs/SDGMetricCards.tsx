@@ -116,7 +116,7 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
         <p className="text-helper font-medium text-muted-foreground truncate">Organizations</p>
         <p className="text-2xl font-bold text-foreground">{metrics.totalOrganizations}</p>
         <div className="text-helper text-muted-foreground">
-          <p>{donorCount} donor{donorCount !== 1 ? 's' : ''}</p>
+          <p>{donorCount} development partner{donorCount !== 1 ? 's' : ''}</p>
         </div>
       </div>
     </div>

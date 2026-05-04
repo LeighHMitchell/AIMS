@@ -158,6 +158,7 @@ const ActivityLocationsMapViewV2 = dynamic(
 )
 import type { LocationSchema } from "@/lib/schemas/location"
 import { formatNumberWithAbbreviation } from "@/utils/format-helpers"
+import { ActivityProfileV2View } from "@/components/profile/ActivityProfileV2View"
 import { IATI_ACTIVITY_SCOPE } from "@/data/iati-activity-scope"
 import { IATI_COLLABORATION_TYPES, getCollaborationTypeByCode } from "@/data/iati-collaboration-types"
 import { TIED_STATUS_LABELS } from "@/types/transaction"
@@ -581,6 +582,7 @@ export default function ActivityDetailPage() {
       loadAllPartners();
       fetchParticipatingOrgs();
       fetchPlannedDisbursements();
+      fetchBudgets();
       fetchCountriesRegions();
       fetchGovernmentEndorsement();
     }
@@ -1546,6 +1548,37 @@ export default function ActivityDetailPage() {
       "40": "ODA Loans"
     }
     return flowTypes[code] || code
+  }
+
+  // v2 layout is now the default. ?v=1 falls through to the legacy layout
+  // for comparison while we port remaining tab content.
+  const isV1Override = searchParams?.get('v') === '1'
+
+  if (!isV1Override && activity) {
+    return (
+      <MainLayout>
+        <ActivityProfileV2View
+          activity={activity}
+          reportingOrg={reportingOrg}
+          participatingOrgs={participatingOrgs}
+          financials={financials}
+          totalBudgeted={totalBudgeted}
+          totalPlannedDisbursements={totalPlannedDisbursements}
+          countryAllocations={countryAllocations}
+          regionAllocations={regionAllocations}
+          sdgMappings={sdgMappings ?? []}
+          user={user}
+          isBookmarked={activity?.id ? isBookmarked(activity.id) : false}
+          isToggling={isToggling}
+          onToggleBookmark={() => activity?.id && toggleBookmark(activity.id)}
+          viewCount={viewCount}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onPrintPDF={handlePrintPDF}
+          onExportCSV={handleExportCSV}
+        />
+      </MainLayout>
+    )
   }
 
   return (

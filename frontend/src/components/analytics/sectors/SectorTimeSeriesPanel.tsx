@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Download, FileImage, TrendingUp, LineChart as LineChartIcon, BarChart3, Layers, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, Download, TrendingUp, LineChart as LineChartIcon, BarChart3, Layers, Table as TableIcon } from 'lucide-react'
 import { SectorTimeSeriesFilters as FilterState, TimeSeriesChartType, TimeSeriesDataType } from '@/types/sector-analytics'
 import { useSectorTimeSeries } from './sectorTimeSeriesQueries'
 import { SectorTimeSeriesFilters } from './SectorTimeSeriesFilters'
@@ -14,11 +14,15 @@ import { SectorTimeSeriesBar } from './SectorTimeSeriesBar'
 import { SectorTimeSeriesTable } from './SectorTimeSeriesTable'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 
 export function SectorTimeSeriesPanel() {
+  const isExpanded = useChartExpansion()
   // State for toggles
   const [dataType, setDataType] = useState<TimeSeriesDataType>('actual')
   const [chartType, setChartType] = useState<TimeSeriesChartType>('area')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
   
   // Track if this is the initial load vs a data type change
   const [hasInitialData, setHasInitialData] = useState(false)
@@ -33,7 +37,6 @@ export function SectorTimeSeriesPanel() {
   })
 
   // Ref for chart export
-  const chartRef = useRef<HTMLDivElement>(null)
 
   // Fetch data using the hook
   const { 
@@ -66,59 +69,6 @@ export function SectorTimeSeriesPanel() {
   
   // Only show skeleton on initial load, not on data type changes
   const showSkeleton = loading && !hasInitialData
-
-  // Handle JPG export
-  const handleExportJPG = async () => {
-    const chartContainer = chartRef.current
-    if (!chartContainer) {
-      toast.error('Chart not found')
-      return
-    }
-
-    try {
-      const loadingToast = toast.loading('Generating image...')
-      
-      // Dynamic import html2canvas
-      const html2canvas = (await import('html2canvas')).default
-      
-      const canvas = await html2canvas(chartContainer, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        width: chartContainer.scrollWidth,
-        height: chartContainer.scrollHeight,
-        onclone: (clonedDoc) => {
-          const clonedContainer = clonedDoc.querySelector('[data-chart-container]') as HTMLElement
-          if (clonedContainer) {
-            clonedContainer.style.fontFamily = 'system-ui, -apple-system, sans-serif'
-            clonedContainer.style.width = chartContainer.scrollWidth + 'px'
-            clonedContainer.style.overflow = 'visible'
-          }
-        }
-      })
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = url
-          link.download = `sector-disbursements-${dataType}-${chartType}-${new Date().toISOString().split('T')[0]}.jpg`
-          link.click()
-          URL.revokeObjectURL(url)
-          toast.dismiss(loadingToast)
-          toast.success('Chart exported successfully')
-        } else {
-          toast.dismiss(loadingToast)
-          toast.error('Failed to generate image')
-        }
-      }, 'image/jpeg', 0.95)
-    } catch (err) {
-      console.error('Error exporting chart:', err)
-      toast.error('Failed to export chart')
-    }
-  }
 
   // Handle CSV export
   const handleExportCSV = () => {
@@ -156,16 +106,22 @@ export function SectorTimeSeriesPanel() {
         <div className="flex flex-col gap-4">
           {/* Title */}
           <div>
-            <CardTitle className="text-xl">
+            <CardTitle className="text-base font-medium text-foreground">
               Sector Disbursements Over Time
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription className="text-helper text-muted-foreground mt-0.5">
               Track planned and actual disbursements by sector across years
             </CardDescription>
           </div>
 
           {/* Top-Level Toggles */}
           <div className="flex flex-wrap items-center justify-between gap-4">
+            {isExpanded && (
+              <YearRangeChip
+                selectedYears={selectedYears}
+                onYearsChange={setSelectedYears}
+              />
+            )}
             {/* Data Type Toggle - Planned vs Actual */}
             <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
@@ -236,28 +192,17 @@ export function SectorTimeSeriesPanel() {
                 </Button>
               </div>
 
-              {/* Export Buttons */}
-              <div className="flex gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportCSV}
-                  className="h-8 px-2"
-                  title="Download as CSV"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportJPG}
-                  className="h-8 px-2"
-                  disabled={chartType === 'table'}
-                  title="Export as JPG"
-                >
-                  <FileImage className="h-4 w-4" />
-                </Button>
-              </div>
+              {/* Export Button */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleExportCSV}
+                className="h-9 w-9"
+                title="Export CSV"
+                aria-label="Export CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
@@ -299,7 +244,7 @@ export function SectorTimeSeriesPanel() {
 
         {/* Data Visualization */}
         {!loading && !error && (
-          <div ref={chartRef} data-chart-container className="bg-white">
+          <div data-chart-container className="bg-white">
             {chartType === 'area' && (
               <SectorTimeSeriesArea
                 data={chartData}

@@ -1,16 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check, HelpCircle, LayoutGrid, Table as TableIcon, Activity } from 'lucide-react';
-import { CardShell } from '@/components/ui/card-shell';
-import { getIconForMarker } from '@/lib/policy-marker-utils';
+import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check, HelpCircle, Activity, Save } from 'lucide-react';
 
-const GROUP_COLORS: Record<string, string> = {
-  environmental: '#16a34a',
-  social_governance: '#2563eb',
-  other: '#7c3aed',
-  custom: '#64748b',
-};
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { Label } from '@/components/ui/label';
@@ -22,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { usePolicyMarkersAutosave } from '@/hooks/use-policy-markers-autosave';
@@ -108,10 +101,10 @@ const MARKER_TYPE_LABELS: Record<string, string> = {
   custom: 'Custom Policy Markers'
 };
 
-const VISIBILITY_OPTIONS: { value: VisibilityLevel; label: string; description: string }[] = [
-  { value: 'public', label: 'Public', description: 'Visible to everyone including external viewers' },
-  { value: 'organization', label: 'Organization-only', description: 'Visible to logged-in users only' },
-  { value: 'hidden', label: 'Hidden', description: 'Visible to activity editors and admins only' }
+const VISIBILITY_OPTIONS: { value: VisibilityLevel; label: string; description: string; code: string }[] = [
+  { value: 'public', label: 'Public', description: 'Visible to everyone including external viewers', code: '1' },
+  { value: 'organization', label: 'Organization-only', description: 'Visible to logged-in users only', code: '2' },
+  { value: 'hidden', label: 'Hidden', description: 'Visible to activity editors and admins only', code: '3' }
 ];
 
 const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: VisibilityLevel | null | undefined; className?: string }) => {
@@ -193,11 +186,11 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingMarkerUuid, setEditingMarkerUuid] = useState<string | null>(null);
   const [modalForm, setModalForm] = useState<ModalFormState>(INITIAL_MODAL_FORM);
   const [markerPopoverOpen, setMarkerPopoverOpen] = useState(false);
+  const [markerSearch, setMarkerSearch] = useState('');
   const [savingModal, setSavingModal] = useState(false);
 
   // Initialize selected markers from props
@@ -490,7 +483,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   // Loading state
   if (loading) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
+      <Card className="p-8 space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-9 w-40" />
@@ -500,7 +493,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -508,29 +501,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   const groupTypes = ['environmental', 'social_governance', 'other', 'custom'] as const;
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
+    <Card className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-end gap-2">
-        {activeMarkerCount > 0 && (
-          <div className="flex items-center border rounded-md flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={`rounded-r-none h-9 ${viewMode === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('card')}
-              className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
         {!readOnly && (
           <Button onClick={openAddModal} size="sm">
             <Plus className="h-4 w-4 mr-1.5" />
@@ -548,104 +521,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             Tag cross-cutting themes this activity addresses — like gender equality, climate change, or biodiversity.
           </p>
         </div>
-      ) : viewMode === 'card' ? (
-        <div className="space-y-8">
-          {groupTypes.map(type => {
-            const markersInGroup = getActiveMarkersForType(type);
-            if (markersInGroup.length === 0) return null;
-            const groupColor = GROUP_COLORS[type] || '#64748b';
-
-            return (
-              <div key={type}>
-                <div className="flex items-center gap-2 mb-3">
-                  {MARKER_TYPE_ICONS[type]}
-                  <h3 className="text-body font-medium text-muted-foreground">{MARKER_TYPE_LABELS[type]}</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {markersInGroup.map(({ marker, activityMarker }) => {
-                    const markerUuid = marker.uuid || marker.id;
-                    const IconComponent = getIconForMarker(marker.iati_code);
-                    const isRMNCH = marker.iati_code === '9';
-                    const significanceLabel = getSignificanceLabel(isRMNCH ? '9' : '0', activityMarker.significance);
-
-                    return (
-                      <CardShell
-                        key={markerUuid}
-                        ariaLabel={marker.name}
-                        bannerColor={groupColor}
-                        bannerContent={
-                          <div className="h-full w-full flex items-center justify-center">
-                            <IconComponent className="h-12 w-12 text-white/20" />
-                          </div>
-                        }
-                        bannerOverlay={
-                          <>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              {marker.is_iati_standard ? (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-white/20 text-white border-0">IATI</Badge>
-                              ) : (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-white/20 text-white border-0">Custom</Badge>
-                              )}
-                              <code className="text-xs px-1.5 py-0.5 bg-white/20 text-white/90 rounded font-mono">{getDisplayCode(marker)}</code>
-                            </div>
-                            <h2 className="text-body font-bold text-white leading-tight">{marker.name}</h2>
-                          </>
-                        }
-                      >
-                        <div className="relative flex-1 p-5 flex flex-col bg-card">
-                          {activityMarker.rationale ? (
-                            <p className="text-helper text-muted-foreground line-clamp-3 mb-3">
-                              {activityMarker.rationale}
-                            </p>
-                          ) : marker.description ? (
-                            <p className="text-helper text-muted-foreground line-clamp-3 mb-3">
-                              {marker.description}
-                            </p>
-                          ) : (
-                            <p className="text-helper text-muted-foreground/60 italic mb-3">No rationale provided</p>
-                          )}
-                          <div className="mt-auto pt-3 border-t border-border">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
-                                {activityMarker.significance}
-                              </span>
-                              <span className="text-body font-medium truncate">{significanceLabel}</span>
-                            </div>
-                            {!readOnly && (
-                              <div className="mt-2 flex items-center justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => openEditModal(markerUuid)}
-                                  className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
-                                  aria-label={`Edit ${marker.name}`}
-                                >
-                                  <Pencil className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeMarker(markerUuid)}
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                  aria-label={`Remove ${marker.name}`}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardShell>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       ) : (
         /* Grouped table */
-        <div className="rounded-md border w-full">
+        <TableContainer>
           <Table>
             <TableHeader>
               <TableRow>
@@ -695,7 +573,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                           </TableCell>
                           <TableCell>
                             {activityMarker.rationale ? (
-                              <p className="text-body text-muted-foreground line-clamp-2">{activityMarker.rationale}</p>
+                              <p className="text-body line-clamp-2 break-words">{activityMarker.rationale}</p>
                             ) : (
                               <span className="text-helper text-muted-foreground/60">—</span>
                             )}
@@ -720,7 +598,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               })}
             </TableBody>
           </Table>
-        </div>
+        </TableContainer>
       )}
 
       {/* Add/Edit Policy Marker Modal */}
@@ -775,87 +653,117 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[400px] p-0 shadow-lg border" align="start" sideOffset={4}>
-                    <Command>
-                      <CommandInput placeholder="Search policy markers..." />
-                      <CommandList>
-                        <CommandEmpty>No policy markers found.</CommandEmpty>
-                        {(['environmental', 'social_governance', 'other'] as const).map(type => {
-                          const markers = availableMarkers.filter(m => m.marker_type === type && m.is_iati_standard);
-                          if (markers.length === 0) return null;
-                          return (
-                            <CommandGroup key={type} heading={MARKER_TYPE_LABELS[type]}>
-                              {markers.map(marker => {
-                                const mUuid = marker.uuid || marker.id;
-                                const isAlreadyAdded = selectedMarkers.has(mUuid);
-                                return (
-                                  <CommandItem
-                                    key={mUuid}
-                                    value={`${marker.code} ${marker.name}`}
-                                    disabled={isAlreadyAdded}
-                                    onSelect={() => {
-                                      setModalForm(prev => ({ ...prev, selectedMarkerId: mUuid, significance: 1 }));
-                                      setMarkerPopoverOpen(false);
-                                    }}
-                                    className={cn("flex items-center gap-3 px-4 py-2.5", isAlreadyAdded && "opacity-40")}
-                                  >
-                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
-                                      {marker.iati_code}
-                                    </span>
-                                    <span className="flex-1 text-body">{marker.name}</span>
-                                    {isAlreadyAdded && <span className="text-helper text-muted-foreground">(Added)</span>}
-                                    {modalForm.selectedMarkerId === mUuid && <Check className="h-4 w-4 text-primary" />}
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          );
-                        })}
-
-                        {/* Custom markers group */}
-                        {availableMarkers.filter(m => !m.is_iati_standard).length > 0 && (
-                          <CommandGroup heading="Custom Policy Markers">
-                            {availableMarkers.filter(m => !m.is_iati_standard).map(marker => {
-                              const mUuid = marker.uuid || marker.id;
-                              const isAlreadyAdded = selectedMarkers.has(mUuid);
+                    {(() => {
+                      const matchesSearch = (m: IATIPolicyMarker) => {
+                        if (!markerSearch) return true;
+                        const q = markerSearch.toLowerCase();
+                        return (
+                          (m.name || '').toLowerCase().includes(q) ||
+                          (m.code || '').toLowerCase().includes(q) ||
+                          (m.iati_code || '').toLowerCase().includes(q) ||
+                          (m.description || '').toLowerCase().includes(q)
+                        );
+                      };
+                      const iatiByType = (['environmental', 'social_governance', 'other'] as const).map(type => ({
+                        type,
+                        markers: availableMarkers.filter(m => m.marker_type === type && m.is_iati_standard && matchesSearch(m)),
+                      }));
+                      const customMarkers = availableMarkers.filter(m => !m.is_iati_standard && matchesSearch(m));
+                      const totalMatches = iatiByType.reduce((n, g) => n + g.markers.length, 0) + customMarkers.length;
+                      const showEmpty = !!markerSearch && totalMatches === 0;
+                      return (
+                        <Command>
+                          <CommandInput
+                            placeholder="Search policy markers..."
+                            value={markerSearch}
+                            onValueChange={setMarkerSearch}
+                          />
+                          <CommandList>
+                            {showEmpty && (
+                              <CommandEmpty>No policy markers match "{markerSearch}".</CommandEmpty>
+                            )}
+                            {iatiByType.map(({ type, markers }) => {
+                              if (markers.length === 0) return null;
                               return (
-                                <CommandItem
-                                  key={mUuid}
-                                  value={`${marker.code} ${marker.name}`}
-                                  disabled={isAlreadyAdded}
-                                  onSelect={() => {
-                                    setModalForm(prev => ({ ...prev, selectedMarkerId: mUuid, significance: 1 }));
-                                    setMarkerPopoverOpen(false);
-                                  }}
-                                  className={cn("flex items-center gap-3 px-4 py-2.5", isAlreadyAdded && "opacity-40")}
-                                >
-                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
-                                    {getDisplayCode(marker)}
-                                  </span>
-                                  <span className="flex-1 text-body">{marker.name}</span>
-                                  <Badge variant="outline" className="text-helper">Custom</Badge>
-                                  {isAlreadyAdded && <span className="text-helper text-muted-foreground">(Added)</span>}
-                                </CommandItem>
+                                <CommandGroup key={type} heading={MARKER_TYPE_LABELS[type]}>
+                                  {markers.map(marker => {
+                                    const mUuid = marker.uuid || marker.id;
+                                    const isAlreadyAdded = selectedMarkers.has(mUuid);
+                                    return (
+                                      <CommandItem
+                                        key={mUuid}
+                                        value={`${marker.code} ${marker.name}`}
+                                        data-disabled={isAlreadyAdded ? '' : undefined}
+                                        onSelect={() => {
+                                          if (isAlreadyAdded) return;
+                                          setModalForm(prev => ({ ...prev, selectedMarkerId: mUuid, significance: 1 }));
+                                          setMarkerPopoverOpen(false);
+                                          setMarkerSearch('');
+                                        }}
+                                        className={cn("flex items-center gap-3 px-4 py-2.5", isAlreadyAdded && "opacity-40")}
+                                      >
+                                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
+                                          {marker.iati_code}
+                                        </span>
+                                        <span className="flex-1 text-body">{marker.name}</span>
+                                        {isAlreadyAdded && <span className="text-helper text-muted-foreground">(Added)</span>}
+                                        {modalForm.selectedMarkerId === mUuid && <Check className="h-4 w-4 text-primary" />}
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandGroup>
                               );
                             })}
-                          </CommandGroup>
-                        )}
 
-                        {/* Create custom marker option */}
-                        <CommandGroup heading="">
-                          <CommandItem
-                            value="__create_custom__"
-                            onSelect={() => {
-                              setModalForm(prev => ({ ...prev, isCreatingCustom: true, selectedMarkerId: null }));
-                              setMarkerPopoverOpen(false);
-                            }}
-                            className="px-4 py-2.5 text-body text-primary font-medium"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create custom policy marker...
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
+                            {customMarkers.length > 0 && (
+                              <CommandGroup heading="Custom Policy Markers">
+                                {customMarkers.map(marker => {
+                                  const mUuid = marker.uuid || marker.id;
+                                  const isAlreadyAdded = selectedMarkers.has(mUuid);
+                                  return (
+                                    <CommandItem
+                                      key={mUuid}
+                                      value={`${marker.code} ${marker.name}`}
+                                      data-disabled={isAlreadyAdded ? '' : undefined}
+                                      onSelect={() => {
+                                        if (isAlreadyAdded) return;
+                                        setModalForm(prev => ({ ...prev, selectedMarkerId: mUuid, significance: 1 }));
+                                        setMarkerPopoverOpen(false);
+                                        setMarkerSearch('');
+                                      }}
+                                      className={cn("flex items-center gap-3 px-4 py-2.5", isAlreadyAdded && "opacity-40")}
+                                    >
+                                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
+                                        {getDisplayCode(marker)}
+                                      </span>
+                                      <span className="flex-1 text-body">{marker.name}</span>
+                                      <Badge variant="outline" className="text-helper">Custom</Badge>
+                                      {isAlreadyAdded && <span className="text-helper text-muted-foreground">(Added)</span>}
+                                    </CommandItem>
+                                  );
+                                })}
+                              </CommandGroup>
+                            )}
+
+                            {/* Create custom marker option — always available */}
+                            <CommandGroup>
+                              <CommandItem
+                                value="__create_custom__"
+                                onSelect={() => {
+                                  setModalForm(prev => ({ ...prev, isCreatingCustom: true, selectedMarkerId: null }));
+                                  setMarkerPopoverOpen(false);
+                                  setMarkerSearch('');
+                                }}
+                                className="px-4 py-2.5 text-body text-primary font-medium"
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Create custom policy marker...
+                              </CommandItem>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      );
+                    })()}
                   </PopoverContent>
                 </Popover>
               </div>
@@ -864,7 +772,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             {/* Edit mode: show locked marker display */}
             {modalMode === 'edit' && modalForm.selectedMarkerId && (
               <div className="space-y-2">
-                <Label>Policy Marker</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Policy Marker</Label>
+                  <HelpTextTooltip content="The IATI standard or custom policy marker linked to this entry. Policy markers identify whether an activity targets a particular policy objective such as gender equality, environment, or governance. The marker cannot be changed once added — remove and re-add to switch markers.">
+                    <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </HelpTextTooltip>
+                </div>
                 <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
                   {(() => {
                     const m = getSelectedMarkerForModal();
@@ -1048,7 +961,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               return marker && !marker.is_iati_standard;
             })() && (
               <div className="space-y-2">
-                <Label>Visibility for this activity</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Visibility for this activity</Label>
+                  <HelpTextTooltip content="Override the default visibility for this custom policy marker on this activity only. Use default keeps the marker's organisation-wide visibility setting; Public shows it to all viewers; Organization-only restricts it to logged-in users; Hidden limits visibility to activity editors and admins.">
+                    <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </HelpTextTooltip>
+                </div>
                 <Select
                   value={modalForm.visibility ?? 'default'}
                   onValueChange={(value) => setModalForm(prev => ({ ...prev, visibility: value === 'default' ? null : value as VisibilityLevel }))}
@@ -1063,7 +981,9 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     {VISIBILITY_OPTIONS.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex items-center gap-2">
-                          <VisibilityIcon visibility={opt.value} />
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0 min-w-[20px] text-center">
+                            {opt.code}
+                          </span>
                           <span>{opt.label}</span>
                         </div>
                       </SelectItem>
@@ -1082,12 +1002,13 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               onClick={handleModalSubmit}
               disabled={savingModal || (!modalForm.selectedMarkerId && !modalForm.isCreatingCustom) || modalForm.significance < 1}
             >
+              {modalMode === 'edit' && !savingModal && <Save className="h-4 w-4 mr-2" />}
               {savingModal ? 'Saving...' : modalMode === 'add' ? 'Add Marker' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       <ConfirmDialog />
-    </div>
+    </Card>
   );
 }

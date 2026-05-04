@@ -26,6 +26,7 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { useUser } from '@/hooks/useUser';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
+import { ModalFooter } from '@/components/ui/modal-footer';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { showValidationError, showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager';
@@ -45,6 +46,7 @@ import {
   TableHeader,
   TableRow,
   getSortIcon,
+  TableContainer,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BUDGET_TYPES } from '@/data/budget-type';
@@ -89,7 +91,7 @@ interface SimpleHeroCardProps {
 
 function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
   return (
-    <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
+    <Card className="p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-body text-muted-foreground">{title}</div>
@@ -98,7 +100,7 @@ function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -204,7 +206,7 @@ interface BudgetLineChartProps {
 
 function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode, usdValues, budgets, defaultCurrency }: BudgetLineChartProps) {
   return (
-    <div className="bg-card border rounded-xl p-6">
+    <Card className="p-6">
       <h3 className="text-lg font-medium text-foreground mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
@@ -248,7 +250,7 @@ function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -1553,24 +1555,24 @@ export default function ActivityBudgetsTab({
         {/* Financial Summary Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-card border rounded-xl p-6">
+            <Card key={i} className="p-6">
               <div className="flex items-center justify-between mb-2">
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-8 w-8 rounded" />
               </div>
               <Skeleton className="h-7 w-32 mb-1" />
               <Skeleton className="h-3 w-24" />
-            </div>
+            </Card>
           ))}
         </div>
 
         {/* Budget Configuration Skeleton */}
-        <div className="bg-card border rounded-xl p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-48" />
           </div>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3">
               <Skeleton className="h-4 w-20" />
@@ -1581,7 +1583,7 @@ export default function ActivityBudgetsTab({
               <Skeleton className="h-4 w-32" />
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Budget Table Skeleton */}
         <Card>
@@ -1589,7 +1591,7 @@ export default function ActivityBudgetsTab({
             <Skeleton className="h-10 w-full" />
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
+            <TableContainer>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1612,17 +1614,17 @@ export default function ActivityBudgetsTab({
                   ))}
                 </TableBody>
               </Table>
-          </div>
+          </TableContainer>
           </CardContent>
         </Card>
 
         {/* Charts Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="bg-card border rounded-xl p-6">
+            <Card key={i} className="p-6">
               <Skeleton className="h-5 w-40 mb-4" />
               <Skeleton className="h-64 w-full" />
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -1933,7 +1935,7 @@ export default function ActivityBudgetsTab({
               </p>
             </div>
           ) : (
-          <div className="rounded-md border w-full">
+          <TableContainer>
             <Table aria-label="Budgets table" className="w-full">
               <TableHeader>
                 <TableRow>
@@ -2164,7 +2166,7 @@ export default function ActivityBudgetsTab({
                 }
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
           )}
 
           {/* Pagination Controls */}
@@ -2897,20 +2899,22 @@ export default function ActivityBudgetsTab({
             </fieldset>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={closeModal}>
-              Cancel
-            </Button>
-            {!modalLocked && (
-              <Button onClick={saveBudget} disabled={isSavingBudget || Object.keys(fieldErrors).length > 0}>
-                {isSavingBudget ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
-                ) : (
-                  <><Save className="h-4 w-4 mr-2" />{isReviseMode ? 'Create Revised Budget' : modalBudget?.id ? 'Update Budget' : 'Create Budget'}</>
-                )}
+          {modalLocked ? (
+            <DialogFooter>
+              <Button variant="outline" onClick={closeModal}>
+                Cancel
               </Button>
-            )}
-          </DialogFooter>
+            </DialogFooter>
+          ) : (
+            <ModalFooter
+              onCancel={closeModal}
+              onSubmit={saveBudget}
+              submitText={isReviseMode ? 'Add Revised Budget' : modalBudget?.id ? 'Update Budget' : 'Add Budget'}
+              loadingText="Saving..."
+              isLoading={isSavingBudget}
+              isDisabled={Object.keys(fieldErrors).length > 0}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

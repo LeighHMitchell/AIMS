@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { RefreshCw, Download, ArrowLeftRight, Activity, Search, Info } from 'lucide-react'
+import { Download, ArrowLeftRight, Activity, Search, Info } from 'lucide-react'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { format, subMonths, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -224,24 +224,16 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle>Aid Flow Map</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base font-medium text-foreground">Aid Flow Map</CardTitle>
+            <CardDescription className="text-helper text-muted-foreground mt-0.5">
               {viewMode === 'transaction'
-                ? 'Interactive visualization of aid flows between donors and recipients'
+                ? 'Interactive visualization of aid flows between development partners and recipients'
                 : 'Visualize relationships between linked activities'
               }
             </CardDescription>
           </div>
           
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={fetchAidFlowData}
-              disabled={loading}
-            >
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            </Button>
             <Button
               variant="outline"
               size="icon"

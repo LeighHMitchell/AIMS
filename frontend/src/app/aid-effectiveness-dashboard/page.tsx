@@ -126,7 +126,7 @@ const CHART_HELP: Record<string, string> = {
   partners: 'Distribution of activities by implementing partner. Shows which organizations are responsible for delivery, important for understanding capacity and coordination.',
   ownership: 'Government Ownership & Strategic Alignment (GPEDC Indicator 1): Measures whether activities are approved by government, included in national plans, linked to results frameworks, implemented by national institutions, and support public sector capacity.',
   countrySystems: 'Use of Country Public Financial & Procurement Systems (GPEDC Indicator 5a): Tracks whether development funds flow through national treasury, use government budget execution, financial reporting, audit procedures, and procurement systems.',
-  govWhyNot: 'When donors do not use government systems, this chart shows the stated reasons. Understanding these barriers is key to the GPEDC agenda of strengthening and using country systems.',
+  govWhyNot: 'When development partners do not use government systems, this chart shows the stated reasons. Understanding these barriers is key to the GPEDC agenda of strengthening and using country systems.',
   outcomeIndicators: 'Distribution of the number of government-defined outcome indicators per activity. Activities with more indicators typically have stronger results frameworks aligned with national M&E systems.',
   predictability: 'Predictability & Aid Characteristics (GPEDC Indicators 5b, 6, 10): Measures whether annual budgets and forward plans are shared, whether multi-year financing agreements exist, and aid tying status.',
   transparency: 'Transparency & Timely Reporting (GPEDC Indicator 4): Tracks whether annual financial reports, evaluation reports, and performance data are publicly available and regularly updated.',
@@ -1184,7 +1184,7 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
           Reasons for Not Using Government Systems
           <HelpTooltip helpKey="govWhyNot" />
         </CardTitle>
-        <CardDescription>Stated reasons when donors choose not to use government public financial management systems.</CardDescription>
+        <CardDescription>Stated reasons when development partners choose not to use government public financial management systems.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

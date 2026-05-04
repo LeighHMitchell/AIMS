@@ -17,11 +17,14 @@ import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuar
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table } from 'lucide-react'
+import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 
 interface HumanitarianChartProps {
   dateRange: {
@@ -49,6 +52,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
   const [viewMode, setViewMode] = useState<ViewMode>('area')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
 
   useEffect(() => {
     fetchData()
@@ -222,6 +226,26 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
     }
   }
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const total = payload.reduce((sum: number, entry: any) => sum + (Number(entry.value) || 0), 0)
+      const rows: any[] = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipCurrency(Number(entry.value) || 0, isExpanded),
+        color: entry.color || entry.fill,
+      }))
+      if (payload.length > 1) {
+        rows[rows.length - 1].bordered = true
+        rows.push({
+          label: 'Total',
+          value: formatTooltipCurrency(total, isExpanded),
+        })
+      }
+      return <ChartTooltipCard title={label} rows={rows} />
+    }
+    return null
+  }
+
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
@@ -253,19 +277,13 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
               axisLine={false}
               tickFormatter={formatAxisCurrency}
             />
-            <Tooltip
-              formatter={(value: number, name: string) => [
-                formatTooltipCurrency(value, isExpanded),
-                name.charAt(0).toUpperCase() + name.slice(1)
-              ]}
-              contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
-            />
+            <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"
               dataKey="development"
               stackId="1"
-              stroke="#1E4D6B"
-              fill="#1E4D6B"
+              stroke="#4c5568"
+              fill="#4c5568"
               fillOpacity={0.8}
               name="Development"
             />
@@ -273,8 +291,8 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
               type="monotone"
               dataKey="humanitarian"
               stackId="1"
-              stroke="#DC2626"
-              fill="#DC2626"
+              stroke="#94a3b8"
+              fill="#94a3b8"
               fillOpacity={0.8}
               name="Humanitarian"
             />
@@ -296,7 +314,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         {/* Controls Row */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-            <SelectTrigger className="w-48 h-9 bg-card border-border">
+            <SelectTrigger className="min-w-[280px] h-9 bg-card border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -329,35 +347,41 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
             )}
             
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
               <Button
-                variant={viewMode === 'area' ? 'default' : 'ghost'}
-                size="sm"
+                variant="ghost"
+                size="icon"
                 onClick={() => setViewMode('area')}
-                className="h-8 px-3"
+                className={cn("h-8 w-8", viewMode === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Area Chart"
+                aria-label="Area Chart"
               >
                 <LineChart className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'bar' ? 'default' : 'ghost'}
-                size="sm"
+                variant="ghost"
+                size="icon"
                 onClick={() => setViewMode('bar')}
-                className="h-8 px-3"
+                className={cn("h-8 w-8", viewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Bar Chart"
+                aria-label="Bar Chart"
               >
                 <BarChart3 className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
-                size="sm"
+                variant="ghost"
+                size="icon"
                 onClick={() => setViewMode('table')}
-                className="h-8 px-3"
+                className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Table View"
+                aria-label="Table View"
               >
-                <Table className="h-4 w-4" />
+                <TableIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
-        
+
         {/* Empty State */}
         <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
           <div className="text-center">
@@ -367,50 +391,6 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         </div>
       </div>
     )
-  }
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const total = payload.reduce((sum: number, entry: any) => sum + (Number(entry.value) || 0), 0)
-      return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{label}</p>
-          </div>
-          <div className="p-3">
-            <table className="w-full text-body">
-              <tbody>
-                {payload.map((entry: any, index: number) => (
-                  <tr key={index}>
-                    <td className="py-1 pr-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: entry.color || entry.fill }}
-                        />
-                        <span className="text-foreground">{entry.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-1 text-right font-semibold text-foreground">
-                      {formatTooltipCurrency(Number(entry.value) || 0, isExpanded)}
-                    </td>
-                  </tr>
-                ))}
-                {payload.length > 1 && (
-                  <tr className="border-t border-border">
-                    <td className="pt-1 pr-3 text-muted-foreground">Total</td>
-                    <td className="pt-1 text-right font-semibold text-foreground">
-                      {formatTooltipCurrency(total, isExpanded)}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )
-    }
-    return null
   }
 
   const renderAreaChart = () => (
@@ -450,16 +430,16 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           type="monotone"
           dataKey="development"
           stackId="1"
-          stroke="#1E4D6B"
-          fill="#1E4D6B"
+          stroke="#4c5568"
+          fill="#4c5568"
           name="Development"
         />
         <Area
           type="monotone"
           dataKey="humanitarian"
           stackId="1"
-          stroke="#DC2626"
-          fill="#DC2626"
+          stroke="#94a3b8"
+          fill="#94a3b8"
           name="Humanitarian"
         />
       </AreaChart>
@@ -502,13 +482,13 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         <Bar
           dataKey="development"
           stackId="1"
-          fill="#1E4D6B"
+          fill="#4c5568"
           name="Development"
         />
         <Bar
           dataKey="humanitarian"
           stackId="1"
-          fill="#DC2626"
+          fill="#94a3b8"
           name="Humanitarian"
           radius={[4, 4, 0, 0]}
         />
@@ -559,9 +539,17 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
     <div className="space-y-4">
       {/* Controls Row */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        {/* Aggregation Mode Selector */}
-        <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="w-48 h-9 bg-card border-border">
+        <div className="flex items-center gap-2 flex-wrap">
+          {isExpanded && (
+            <YearRangeChip
+              selectedYears={selectedYears}
+              onYearsChange={setSelectedYears}
+              initialDateRange={dateRange}
+            />
+          )}
+          {/* Aggregation Mode Selector */}
+          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
+          <SelectTrigger className="min-w-[280px] h-9 bg-card border-border">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -585,6 +573,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
             </SelectItem>
           </SelectContent>
         </Select>
+        </div>
 
         <div className="flex items-center gap-3">
           {groupBy === 'fiscal' && (
@@ -594,30 +583,36 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           )}
           
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
-              variant={viewMode === 'area' ? 'default' : 'ghost'}
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode('area')}
-              className="h-8 px-3"
+              className={cn("h-8 w-8", viewMode === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Area Chart"
+              aria-label="Area Chart"
             >
               <LineChart className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'bar' ? 'default' : 'ghost'}
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode('bar')}
-              className="h-8 px-3"
+              className={cn("h-8 w-8", viewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Bar Chart"
+              aria-label="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode('table')}
-              className="h-8 px-3"
+              className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Table View"
+              aria-label="Table View"
             >
-              <Table className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>

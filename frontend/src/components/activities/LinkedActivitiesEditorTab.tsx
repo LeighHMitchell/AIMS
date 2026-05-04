@@ -466,7 +466,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     <div className="h-[calc(100vh-16rem)] overflow-y-auto">
       <div className="space-y-6">
         {/* Search & Link Activities - Full Width */}
-        <div className="bg-white rounded-lg p-6 border border-border">
+        <Card>
+          <CardContent className="p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-foreground mb-4">Search & Link Activities</h3>
             <div className="flex gap-3">
@@ -584,10 +585,12 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
             </div>
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Linked Activities - Full Width */}
-        <div className="bg-white rounded-lg p-6 border border-border">
+        <Card>
+          <CardContent className="p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               Established Links
@@ -712,7 +715,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               </div>
             )}
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Relationship Visualization - Collapsed by default */}
         {currentActivity && linkedActivities.length > 0 && (

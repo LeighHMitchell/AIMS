@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TableContainer } from '@/components/ui/table';
 import { LockedOrganizationField } from '@/components/ui/locked-organization-field';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { getActivityStatusByCode } from '@/data/activity-status-types';
@@ -454,7 +455,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       </div>
 
       {/* Metadata Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <TableContainer>
         <table className="w-full text-body">
           <tbody className="divide-y divide-border">
             {/* Title */}
@@ -626,10 +627,10 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             </tr>
           </tbody>
         </table>
-      </div>
+      </TableContainer>
 
       {/* Activity Log */}
-      <div className="border rounded-lg overflow-hidden">
+      <TableContainer>
         <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
           <History className="h-4 w-4 text-muted-foreground" />
           <span className="text-body font-medium text-foreground">Activity Log</span>
@@ -686,7 +687,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             </div>
           </ScrollArea>
         )}
-      </div>
+      </TableContainer>
     </div>
   );
 }

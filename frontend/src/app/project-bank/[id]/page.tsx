@@ -380,7 +380,7 @@ export default function ProjectDetailPage() {
                   <div className="text-body font-bold" style={{ color: '#7b95a7' }}>
                     {formatCurrency(totalCommitted, project.currency)}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">{donorCount} donor{donorCount !== 1 ? 's' : ''}</div>
+                  <div className="text-[10px] text-muted-foreground">{donorCount} development partner{donorCount !== 1 ? 's' : ''}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-muted-foreground">Funding Gap</div>
@@ -758,7 +758,7 @@ export default function ProjectDetailPage() {
                   {/* Donor Commitments */}
                   {project.donors && project.donors.length > 0 && (
                     <div>
-                      <div className="text-helper text-muted-foreground mb-2">Donor Commitments</div>
+                      <div className="text-helper text-muted-foreground mb-2">Development Partner Commitments</div>
                       <div className="space-y-2">
                         {project.donors.map((d: ProjectBankDonor) => (
                           <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">

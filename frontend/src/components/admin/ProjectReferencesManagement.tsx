@@ -367,7 +367,7 @@ export function ProjectReferencesManagement() {
             Project References
           </CardTitle>
           <CardDescription>
-            Link activities to government and donor project codes
+            Link activities to government and development partner project codes
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -417,7 +417,7 @@ export function ProjectReferencesManagement() {
                 Project References
               </CardTitle>
               <CardDescription>
-                Link activities to government and donor project codes for budget reconciliation
+                Link activities to government and development partner project codes for budget reconciliation
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ export function ProjectReferencesManagement() {
                 <SelectContent>
                   <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="government">Government</SelectItem>
-                  <SelectItem value="donor">Donor</SelectItem>
+                  <SelectItem value="donor">Development Partner</SelectItem>
                   <SelectItem value="internal">Internal</SelectItem>
                 </SelectContent>
               </Select>
@@ -623,7 +623,7 @@ export function ProjectReferencesManagement() {
               {editingItem ? "Edit Project Reference" : "Add Project Reference"}
             </DialogTitle>
             <DialogDescription>
-              Link an activity to a government or donor project code
+              Link an activity to a government or development partner project code
             </DialogDescription>
           </DialogHeader>
 
@@ -682,7 +682,7 @@ export function ProjectReferencesManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="government">Government</SelectItem>
-                    <SelectItem value="donor">Donor</SelectItem>
+                    <SelectItem value="donor">Development Partner</SelectItem>
                     <SelectItem value="internal">Internal</SelectItem>
                   </SelectContent>
                 </Select>

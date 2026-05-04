@@ -25,6 +25,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 /**
  * Organizational Positioning Map
@@ -222,42 +223,17 @@ export function OrganizationalPositioningMap({
       : '0'
 
     return (
-      <div className="bg-white border border-border rounded-lg shadow-lg p-3 max-w-xs">
-        <div className="flex items-center gap-2 mb-2">
-          <div
-            className="w-3 h-3 rounded-full flex-shrink-0"
-            style={{ backgroundColor: org.color }}
-          />
-          <span className="font-semibold text-foreground text-body truncate">
-            {org.name}
-          </span>
-        </div>
-        {org.organisationType && (
-          <p className="text-helper text-muted-foreground mb-2">
-            {getOrgTypeLabel(org.organisationType)}
-          </p>
-        )}
-        <div className="space-y-1 text-helper">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Total Value:</span>
-            <span className="font-medium text-foreground">{formatTooltipCurrency(org.totalValue, isExpanded)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Humanitarian Share:</span>
-            <span className="font-medium text-foreground">{humanitarianPct}%</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Position:</span>
-            <span className="font-medium text-foreground">
-              {org.funderScore > 0 ? 'Net Funder' : 'Net Implementer'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Rank:</span>
-            <span className="font-medium text-foreground">#{org.rank}</span>
-          </div>
-        </div>
-      </div>
+      <ChartTooltipCard
+        title={org.name}
+        subtitle={org.organisationType ? getOrgTypeLabel(org.organisationType) : undefined}
+        maxWidth={320}
+        rows={[
+          { label: 'Total Value', value: formatTooltipCurrency(org.totalValue, isExpanded), color: org.color },
+          { label: 'Humanitarian Share', value: `${humanitarianPct}%` },
+          { label: 'Position', value: org.funderScore > 0 ? 'Net Funder' : 'Net Implementer' },
+          { label: 'Rank', value: `#${org.rank}` },
+        ]}
+      />
     )
   }
 

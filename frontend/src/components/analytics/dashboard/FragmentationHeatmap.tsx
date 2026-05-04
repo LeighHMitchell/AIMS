@@ -72,7 +72,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
               <thead className="bg-surface-muted">
                 <tr className="bg-muted">
                   <th className="text-left p-2 border-b border-border font-medium">
-                    {swapAxes ? 'Category' : 'Donor'}
+                    {swapAxes ? 'Category' : 'Development Partner'}
                   </th>
                   {columns.map((col: any) => (
                     <th key={col.id} className="text-right p-2 border-b border-border font-medium whitespace-nowrap">

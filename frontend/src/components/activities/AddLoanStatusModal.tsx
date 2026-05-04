@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { CreateLoanStatusData } from '@/types/financing-terms';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
@@ -284,7 +284,7 @@ export function AddLoanStatusModal({
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4" />
+                <Save className="h-4 w-4" />
                 {isEditing ? 'Update Loan Status' : 'Add Loan Status'}
               </>
             )}

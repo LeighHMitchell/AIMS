@@ -3358,7 +3358,7 @@ export default function FinancialAnalyticsTab({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-lg font-semibold text-foreground">Funding Source Breakdown</CardTitle>
-              <CardDescription>Distribution of funding by donor/provider</CardDescription>
+              <CardDescription>Distribution of funding by development partner/provider</CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Source Type Toggle */}

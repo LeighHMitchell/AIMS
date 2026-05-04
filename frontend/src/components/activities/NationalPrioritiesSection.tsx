@@ -448,7 +448,7 @@ export function NationalPrioritiesSection({
           setEditingAllocation(null);
         }
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingAllocation ? "Edit Alignment" : "Add Alignment"}</DialogTitle>
             <DialogDescription>
@@ -464,7 +464,7 @@ export function NationalPrioritiesSection({
               <>
                 <div className="space-y-2">
                   <Label>Plan/Strategy</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-body text-muted-foreground">
+                  <div className="flex min-h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 py-2 text-body text-muted-foreground">
                     {editingAllocation.nationalPriority?.planName || "—"}
                   </div>
                 </div>
@@ -474,7 +474,12 @@ export function NationalPrioritiesSection({
                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0">
                       {editingAllocation.nationalPriority?.code}
                     </span>
-                    <span>{editingAllocation.nationalPriority?.name}</span>
+                    <span
+                      className="truncate min-w-0 whitespace-nowrap"
+                      title={editingAllocation.nationalPriority?.name}
+                    >
+                      {editingAllocation.nationalPriority?.name}
+                    </span>
                   </div>
                 </div>
               </>

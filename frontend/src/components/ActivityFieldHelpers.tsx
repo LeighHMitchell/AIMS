@@ -27,7 +27,7 @@ export const IATI_FIELD_HELP = {
   defaultFinanceType: "The default financial instrument for transactions in this activity (grant, loan, guarantee, etc.). Individual transactions may override this.",
   defaultCurrency: "The default currency for all monetary values in this activity per IATI standards. Use ISO 4217 currency codes (e.g., USD, EUR, GBP). Individual transactions may override if needed.",
   defaultFlowType: "The default flow type for transactions (e.g., ODA, OOF). This value will be automatically applied to new transactions but can be overridden.",
-  defaultTiedStatus: "The default tied status for transactions. Indicates whether aid is tied, partially tied, or untied to procurement from the donor country.",
+  defaultTiedStatus: "The default tied status for transactions. Indicates whether aid is tied, partially tied, or untied to procurement from the development partner country.",
   currency: "The default currency for all financial values in this activity. Use ISO 4217 currency codes.",
   tiedStatus: "Whether the activity is tied, untied, or partially tied according to OECD definitions",
   systemUuid: "System-generated unique identifier for internal database reference. This is not the IATI identifier.",

@@ -14,7 +14,7 @@ export type ReferenceType = 'government' | 'donor' | 'internal';
  */
 export const REFERENCE_TYPE_LABELS: Record<ReferenceType, string> = {
   government: 'Government Project',
-  donor: 'Donor Reference',
+  donor: 'Development Partner Reference',
   internal: 'Internal Reference',
 };
 

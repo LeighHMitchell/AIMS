@@ -813,7 +813,7 @@ export default function GovernmentEndorsementTab({
               {editingRef ? 'Edit Project Reference' : 'Add Project Reference'}
             </DialogTitle>
             <DialogDescription>
-              {editingRef ? 'Update the project reference details.' : 'Add a government or donor project reference identifier.'}
+              {editingRef ? 'Update the project reference details.' : 'Add a government or development partner project reference identifier.'}
             </DialogDescription>
           </DialogHeader>
 

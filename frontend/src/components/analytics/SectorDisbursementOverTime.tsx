@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -30,38 +30,37 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, SlidersHorizontal, Check, Search } from 'lucide-react'
+import { TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, SlidersHorizontal, Check, Search } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import html2canvas from 'html2canvas'
+import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 
-// Color palette based on brand colors - distinct colors for data visualization
-// Brand colors: Primary Scarlet, Blue Slate, Cool Steel, Deep Teal, Soft Ochre, Pale Slate
+// Slate-only palette aligned with the rest of the analytics dashboard.
 const SECTOR_COLORS = [
-  '#dc2625', // Primary Scarlet
+  '#1e293b', // slate-800
+  '#334155', // slate-700
+  '#475569', // slate-600
   '#4c5568', // Blue Slate
-  '#5f7f7a', // Deep Teal
-  '#c9a24d', // Soft Ochre
+  '#3a4050', // Blue Slate dark
+  '#5d6b7a', // medium slate
+  '#64748b', // slate-500
+  '#6b7789', // Blue Slate light
+  '#5f7a8c', // Cool Steel dark
   '#7b95a7', // Cool Steel
-  '#b91f1f', // Darker Scarlet
-  '#3a4050', // Darker Blue Slate
-  '#4a635f', // Darker Teal
-  '#9a7a3a', // Darker Ochre
-  '#5f7a8c', // Darker Cool Steel
-  '#e85454', // Lighter Scarlet
-  '#6b7789', // Lighter Blue Slate
-  '#7a9994', // Lighter Teal
-  '#d4b76a', // Lighter Ochre
-  '#9bb0bf', // Lighter Cool Steel
-  '#8c4642', // Muted Scarlet
-  '#5d6b7a', // Medium Slate
-  '#6a8494', // Steel Blue
-  '#a85a52', // Warm Accent
-  '#8a9199', // Neutral Accent
+  '#6a8494', // steel blue
+  '#7d8891', // cool gray
+  '#94a3b8', // slate-400
+  '#9bb0bf', // Cool Steel light
+  '#a3b5c2', // light steel
+  '#cbd5e1', // slate-300
+  '#cfd0d5', // Pale Slate
+  '#e2e8f0', // slate-200
+  '#8a9199', // neutral accent
+  '#4a5966', // deep slate
 ]
 
 // Generate list of available years (from 2010 to current year + 10 to cover all possible data)
@@ -135,7 +134,6 @@ export function SectorDisbursementOverTime({
   const [localDateRange, setLocalDateRange] = useState<DateRange>(getValidInitialDateRange)
   const [filterSearch, setFilterSearch] = useState('')
   const [hasInitialized, setHasInitialized] = useState(false)
-  const chartRef = useRef<HTMLDivElement>(null)
 
   // Calendar type state (will be set from custom years on load)
   const [calendarType, setCalendarType] = useState<string>('')
@@ -651,13 +649,11 @@ export function SectorDisbursementOverTime({
   const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (!active || !payload || !payload.length) return null
 
-    // Filter entries with values > 0
     const filteredPayload = payload.filter((entry: any) => entry.value && entry.value > 0)
     if (filteredPayload.length === 0) return null
 
     const total = filteredPayload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0)
 
-    // Build hierarchical structure for tooltip based on aggregation level
     const tooltipGroups = new Map<string, {
       groupCode: string
       groupName: string
@@ -681,25 +677,15 @@ export function SectorDisbursementOverTime({
 
       if (!tooltipGroups.has(groupCode)) {
         tooltipGroups.set(groupCode, {
-          groupCode,
-          groupName,
-          groupTotal: 0,
-          categories: new Map()
+          groupCode, groupName, groupTotal: 0, categories: new Map()
         })
       }
-
       const group = tooltipGroups.get(groupCode)!
       group.groupTotal += entry.value || 0
 
       if (!group.categories.has(categoryCode)) {
-        group.categories.set(categoryCode, {
-          categoryCode,
-          categoryName,
-          categoryTotal: 0,
-          items: []
-        })
+        group.categories.set(categoryCode, { categoryCode, categoryName, categoryTotal: 0, items: [] })
       }
-
       const category = group.categories.get(categoryCode)!
       category.categoryTotal += entry.value || 0
       category.items.push({
@@ -710,183 +696,93 @@ export function SectorDisbursementOverTime({
       })
     })
 
-    // Sort groups
     const sortedGroups = Array.from(tooltipGroups.values())
       .sort((a, b) => b.groupTotal - a.groupTotal)
 
-    // Check if content will likely overflow (rough estimate)
-    const hasMoreContent = filteredPayload.length > 5
+    const calendarName = customYears.find(cy => cy.id === calendarType)?.name
+
+    const subtitle = (
+      <div className="space-y-0.5">
+        {calendarName && <div>{calendarName}</div>}
+        <div>
+          Total: <span className="font-bold text-foreground">{formatTooltipCurrency(total, isExpanded)}</span>
+        </div>
+      </div>
+    )
+
+    const rows: ChartTooltipRow[] = []
+
+    if (aggregationLevel === 'group') {
+      filteredPayload
+        .sort((a: any, b: any) => (b.value || 0) - (a.value || 0))
+        .forEach((entry: any) => {
+          const item = aggregatedData.find(d => d.code === entry.dataKey)
+          rows.push({
+            label: item?.name ?? entry.dataKey,
+            value: formatTooltipCurrency(entry.value, isExpanded),
+            color: entry.color,
+            code: entry.dataKey,
+          })
+        })
+    } else if (aggregationLevel === 'category') {
+      sortedGroups.forEach((group) => {
+        rows.push({
+          label: `${group.groupCode} · ${group.groupName} — ${formatTooltipCurrency(group.groupTotal, isExpanded)}`,
+          value: '',
+          isGroupHeader: true,
+        })
+        Array.from(group.categories.values())
+          .sort((a, b) => b.categoryTotal - a.categoryTotal)
+          .forEach((cat) => {
+            rows.push({
+              label: cat.categoryName,
+              value: formatTooltipCurrency(cat.categoryTotal, isExpanded),
+              color: colorMap.get(cat.categoryCode),
+              code: cat.categoryCode,
+            })
+          })
+      })
+    } else {
+      sortedGroups.forEach((group) => {
+        rows.push({
+          label: `${group.groupCode} · ${group.groupName} — ${formatTooltipCurrency(group.groupTotal, isExpanded)}`,
+          value: '',
+          isGroupHeader: true,
+        })
+        Array.from(group.categories.values())
+          .sort((a, b) => b.categoryTotal - a.categoryTotal)
+          .forEach((category) => {
+            rows.push({
+              label: `${category.categoryCode} · ${category.categoryName}`,
+              value: formatTooltipCurrency(category.categoryTotal, isExpanded),
+              color: colorMap.get(category.categoryCode),
+            })
+            category.items
+              .sort((a, b) => b.value - a.value)
+              .forEach((item) => {
+                rows.push({
+                  label: <span className="ml-3 text-muted-foreground">{item.name}</span>,
+                  value: formatTooltipCurrency(item.value, isExpanded),
+                  color: item.color,
+                })
+              })
+          })
+      })
+    }
 
     return (
-      <div className="bg-white border rounded-lg shadow-lg min-w-[300px] max-w-[420px]">
-        {/* Header - Fixed */}
-        <div className="p-3 pb-2 border-b bg-surface-muted rounded-t-lg">
-          <span className="font-semibold text-body">{label}</span>
-          {customYears.find(cy => cy.id === calendarType)?.name && (
-            <p className="text-helper text-muted-foreground">{customYears.find(cy => cy.id === calendarType)!.name}</p>
-          )}
-          <div className="text-helper text-muted-foreground mt-1">
-            Total: <span className="font-bold text-foreground">{formatTooltipCurrency(total, isExpanded)}</span>
-          </div>
-        </div>
-
-        {/* Scrollable Content */}
-        <div
-          className="p-3 pt-2 max-h-[350px] overflow-y-auto"
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#94a3b8 #e2e8f0',
-            overscrollBehavior: 'contain'
-          }}
-          onWheel={(e) => e.stopPropagation()}
-        >
-          <div className="space-y-2">
-          {aggregationLevel === 'group' ? (
-            // Simple list for group level
-            filteredPayload
-              .sort((a: any, b: any) => (b.value || 0) - (a.value || 0))
-              .map((entry: any, idx: number) => {
-                const item = aggregatedData.find(d => d.code === entry.dataKey)
-                return (
-                  <div key={idx} className="flex items-start justify-between gap-2 py-1">
-                    <div className="flex items-start gap-2 min-w-0">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0 mt-0.5"
-                        style={{ backgroundColor: entry.color }}
-                      />
-                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground flex-shrink-0">
-                        {entry.dataKey}
-                      </span>
-                      <span className="text-body text-foreground">
-                        {item?.name}
-                      </span>
-                    </div>
-                    <span className="text-body font-semibold text-foreground flex-shrink-0">
-                      {formatTooltipCurrency(entry.value, isExpanded)}
-                    </span>
-                  </div>
-                )
-              })
-          ) : aggregationLevel === 'category' ? (
-            // Grouped by sector group for category level
-            sortedGroups.map(group => (
-              <div key={group.groupCode} className="border-b last:border-b-0 pb-2 last:pb-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
-                      {group.groupCode}
-                    </span>
-                    <span className="text-helper font-semibold text-foreground">{group.groupName}</span>
-                  </div>
-                  <span className="text-helper font-bold text-foreground">{formatTooltipCurrency(group.groupTotal, isExpanded)}</span>
-                </div>
-                <div className="ml-3 space-y-1">
-                  {Array.from(group.categories.values())
-                    .sort((a, b) => b.categoryTotal - a.categoryTotal)
-                    .map(cat => (
-                      <div key={cat.categoryCode} className="flex items-start justify-between gap-2 py-0.5">
-                        <div className="flex items-start gap-1.5 min-w-0">
-                          <div
-                            className="w-2.5 h-2.5 rounded-sm flex-shrink-0 mt-0.5"
-                            style={{ backgroundColor: colorMap.get(cat.categoryCode) }}
-                          />
-                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0">
-                            {cat.categoryCode}
-                          </span>
-                          <span className="text-helper text-muted-foreground">
-                            {cat.categoryName}
-                          </span>
-                        </div>
-                        <span className="text-helper font-medium text-foreground flex-shrink-0">
-                          {formatTooltipCurrency(cat.categoryTotal, isExpanded)}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ))
-          ) : (
-            // Full hierarchy for sector level
-            sortedGroups.map(group => (
-              <div key={group.groupCode} className="border-b last:border-b-0 pb-2 last:pb-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
-                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
-                      {group.groupCode}
-                    </span>
-                    <span className="text-helper font-semibold text-foreground">{group.groupName}</span>
-                  </div>
-                  <span className="text-helper font-bold text-foreground">{formatTooltipCurrency(group.groupTotal, isExpanded)}</span>
-                </div>
-                <div className="ml-3 space-y-1">
-                  {Array.from(group.categories.values())
-                    .sort((a, b) => b.categoryTotal - a.categoryTotal)
-                    .map(category => (
-                      <div key={category.categoryCode}>
-                        <div className="flex items-center justify-between mb-0.5">
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                              {category.categoryCode}
-                            </span>
-                            <span className="text-helper text-muted-foreground">{category.categoryName}</span>
-                          </div>
-                          <span className="text-helper font-medium text-foreground">{formatTooltipCurrency(category.categoryTotal, isExpanded)}</span>
-                        </div>
-                        <div className="ml-3 space-y-0.5">
-                          {category.items
-                            .sort((a, b) => b.value - a.value)
-                            .map(item => (
-                              <div key={item.code} className="flex items-start justify-between gap-2">
-                                <div className="flex items-start gap-1 min-w-0">
-                                  <div
-                                    className="w-2 h-2 rounded-sm flex-shrink-0 mt-0.5"
-                                    style={{ backgroundColor: item.color }}
-                                  />
-                                  <span className="text-helper text-muted-foreground">
-                                    {item.name}
-                                  </span>
-                                </div>
-                                <span className="text-helper font-medium text-foreground flex-shrink-0">
-                                  {formatTooltipCurrency(item.value, isExpanded)}
-                                </span>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ))
-          )}
-          </div>
-        </div>
-        
-        {/* Scroll indicator */}
-        {hasMoreContent && (
-          <div className="px-3 py-1.5 border-t bg-muted text-center rounded-b-lg">
-            <span className="text-helper text-muted-foreground">↓ Scroll for more</span>
-          </div>
-        )}
-      </div>
+      <ChartTooltipCard
+        title={label}
+        subtitle={subtitle}
+        rows={rows}
+        minWidth={300}
+        maxWidth={420}
+        scrollable
+        maxBodyHeight={350}
+      />
     )
   }
 
-  const handleSaveChart = async () => {
-    if (chartRef.current) {
-      try {
-        const canvas = await html2canvas(chartRef.current, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-        })
-        const link = document.createElement('a')
-        link.download = `sector-disbursement-over-time-${dataMode}.png`
-        link.href = canvas.toDataURL('image/png')
-        link.click()
-      } catch (error) {
-        console.error('Error saving chart:', error)
-      }
-    }
-  }
 
   // Get visible items for rendering - simple check against visibleSectors set
   const visibleItemData = useMemo(() => {
@@ -910,7 +806,7 @@ export function SectorDisbursementOverTime({
       )
     }
     return (
-      <div ref={chartRef} className="h-full w-full">
+      <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={timeSeriesData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
@@ -1008,7 +904,15 @@ export function SectorDisbursementOverTime({
                   <div className="flex gap-1 border rounded-lg p-1 bg-white">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1"
+                          title={localDateRange?.from && localDateRange?.to &&
+                            !isNaN(localDateRange.from.getTime()) && !isNaN(localDateRange.to.getTime())
+                              ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                              : undefined}
+                        >
                           <CalendarIcon className="h-4 w-4" />
                           {selectedYears.length === 0
                             ? 'Select years'
@@ -1072,13 +976,6 @@ export function SectorDisbursementOverTime({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  {/* Date Range Indicator */}
-                  {localDateRange?.from && localDateRange?.to &&
-                   !isNaN(localDateRange.from.getTime()) && !isNaN(localDateRange.to.getTime()) && (
-                    <span className="text-helper text-muted-foreground text-center">
-                      {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
-                    </span>
-                  )}
                 </div>
               </>
             )}
@@ -1244,52 +1141,43 @@ export function SectorDisbursementOverTime({
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
               <Button
                 variant="ghost"
-                size="sm"
-                className={cn("h-8", viewMode === 'area' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                size="icon"
+                className={cn("h-8 w-8", viewMode === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('area')}
                 title="Area"
+                aria-label="Area"
               >
                 <TrendingUp className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className={cn("h-8", viewMode === 'line' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                size="icon"
+                className={cn("h-8 w-8", viewMode === 'line' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('line')}
                 title="Line"
+                aria-label="Line"
               >
                 <LineChartIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                size="icon"
+                className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('table')}
-                title="Table"
+                title="Table View"
+                aria-label="Table View"
               >
                 <TableIcon className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Save Button */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2"
-                onClick={handleSaveChart}
-                title="Save chart as image"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
 
-        <div ref={chartRef} className="bg-white">
+        <div className="bg-white">
           {/* Charts */}
           {viewMode === 'area' ? (
             visibleItemData.length === 0 ? (
@@ -1393,12 +1281,12 @@ export function SectorDisbursementOverTime({
             <div className="overflow-auto max-h-[500px]">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
+                  <TableRow className="sticky top-0 bg-muted/50 z-10 [&>th]:align-bottom">
                     <TableHead className="font-medium text-foreground sticky left-0 bg-muted/50">
                       Year
                     </TableHead>
                     {visibleItemData.map(item => (
-                      <TableHead key={item.code} className="text-right font-medium text-foreground min-w-[120px]">
+                      <TableHead key={item.code} className="text-right font-medium text-foreground min-w-[120px] whitespace-normal">
                         <div className="flex flex-col items-end">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground mb-1">
                             {item.code}

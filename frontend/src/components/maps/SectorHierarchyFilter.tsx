@@ -151,6 +151,11 @@ export function SectorHierarchyFilter({
     return activityCounts[code] || 0;
   };
 
+  // Only render activity count badges when the caller actually provided data.
+  // Avoids "(0)" appearing next to every sector when the consuming chart
+  // aggregates server-side and doesn't have local counts to surface.
+  const showCounts = Object.keys(activityCounts).length > 0;
+
   // Helper to check if a sector is inactive (has no activities)
   const isInactive = (code: string, level: 'group' | 'category' | 'subsector'): boolean => {
     return showOnlyActiveSectors && getActivityCount(code, level) === 0;
@@ -286,6 +291,23 @@ export function SectorHierarchyFilter({
     });
   };
 
+  // Select every group in the hierarchy (matches "All Sectors" intent — picking
+  // every group code automatically covers every category and sub-sector under it).
+  const handleSelectAll = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    onChange({
+      sectorCategories: hierarchicalSectors.map(g => g.code),
+      sectors: [],
+      subSectors: [],
+    });
+  };
+
+  const totalGroups = hierarchicalSectors.length;
+  const allGroupsSelected =
+    selected.sectorCategories.length === totalGroups &&
+    selected.sectors.length === 0 &&
+    selected.subSectors.length === 0;
+
   const totalSelected = 
     selected.sectorCategories.length + 
     selected.sectors.length + 
@@ -341,6 +363,30 @@ export function SectorHierarchyFilter({
       </PopoverTrigger>
       <PopoverContent className="w-[450px] p-0" align="start">
         <div className="flex flex-col">
+          {/* Sticky header — title + Select all / Clear */}
+          <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
+            <span className="text-helper font-semibold text-foreground">Sectors</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                disabled={allGroupsSelected}
+                className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+              >
+                Select all
+              </button>
+              <span className="text-muted-foreground/40">·</span>
+              <button
+                type="button"
+                onClick={handleClear}
+                disabled={totalSelected === 0}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
           {/* Search Input */}
           <div className="flex items-center border-b px-3 py-2">
             <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
@@ -352,21 +398,25 @@ export function SectorHierarchyFilter({
               className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
             />
             {searchQuery && (
-              <X 
+              <X
                 className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
                 onClick={() => setSearchQuery('')}
               />
             )}
           </div>
           
-          {/* Show Only Active Sectors Toggle */}
-          <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-            <span className="text-helper font-medium text-muted-foreground">Show only active sectors</span>
-            <Switch 
-              checked={showOnlyActiveSectors} 
-              onCheckedChange={onShowOnlyActiveSectorsChange}
-            />
-          </div>
+          {/* Show Only Active Sectors Toggle — only meaningful when counts
+              are wired in. Hidden otherwise so the user doesn't see a control
+              that would hide every sector when flipped on. */}
+          {showCounts && (
+            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+              <span className="text-helper font-medium text-muted-foreground">Show only active sectors</span>
+              <Switch
+                checked={showOnlyActiveSectors}
+                onCheckedChange={onShowOnlyActiveSectorsChange}
+              />
+            </div>
+          )}
           
           <Command shouldFilter={false}>
             {searchFilteredHierarchy.length === 0 && (
@@ -384,7 +434,7 @@ export function SectorHierarchyFilter({
                         <span className={cn("font-semibold", groupInactive ? "text-muted-foreground" : "text-foreground")}>
                           <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2">{group.code}</code>
                           {group.name}
-                          <span className="text-muted-foreground font-normal ml-1">({groupCount})</span>
+                          {showCounts && <span className="text-muted-foreground font-normal ml-1">({groupCount})</span>}
                         </span>
                         <Badge 
                           variant={selected.sectorCategories.includes(group.code) ? "default" : "outline"}
@@ -418,7 +468,7 @@ export function SectorHierarchyFilter({
                           />
                           <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
                           <span className={cn("min-w-0 whitespace-normal", categoryInactive && "text-muted-foreground")}>{category.name}</span>
-                          <span className="text-muted-foreground ml-1">({categoryCount})</span>
+                          {showCounts && <span className="text-muted-foreground ml-1">({categoryCount})</span>}
                         </CommandItem>
                         
                         {/* Sub-sector Level (5-digit) */}
@@ -440,7 +490,7 @@ export function SectorHierarchyFilter({
                             />
                             <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
                             <span className={cn("min-w-0 whitespace-normal", sectorInactive && "text-muted-foreground")}>{sector.name}</span>
-                            <span className="text-muted-foreground ml-1">({sectorCount})</span>
+                            {showCounts && <span className="text-muted-foreground ml-1">({sectorCount})</span>}
                           </CommandItem>
                           );
                         })}

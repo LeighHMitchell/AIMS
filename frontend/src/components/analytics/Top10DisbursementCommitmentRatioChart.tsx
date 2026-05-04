@@ -208,10 +208,12 @@ export function Top10DisbursementCommitmentRatioChart({
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed mt-4">
-        This chart ranks the top 10 organisations by their disbursement-to-commitment ratio, showing which partners are most effectively converting committed funds into actual disbursements. A higher ratio indicates stronger delivery performance. Hover over any bar to see the disbursement amount alongside the underlying commitment and ratio figures.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This chart ranks the top 10 organisations by their disbursement-to-commitment ratio, showing which partners are most effectively converting committed funds into actual disbursements. A higher ratio indicates stronger delivery performance. Hover over any bar to see the disbursement amount alongside the underlying commitment and ratio figures.
+        </p>
+      )}
     </div>
   )
 }

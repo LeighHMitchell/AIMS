@@ -12,6 +12,18 @@ import {
 } from "@/components/ui/popover"
 import { isLegacyOrgType } from "@/lib/org-type-mappings";
 import { IATI_COUNTRIES } from "@/data/iati-countries";
+import { getOrganizationTypeName } from "@/data/iati-organization-types";
+
+/**
+ * Resolve an organization's type code/name with fallbacks across the
+ * various column-name conventions in the codebase
+ * (Organisation_Type_Code/Name, organisation_type, org_type, type).
+ */
+function resolveOrgType(org: Organization): { code?: string; name?: string } {
+  const code = org.Organisation_Type_Code || org.organisation_type || org.org_type || org.type
+  const name = org.Organisation_Type_Name || (code ? getOrganizationTypeName(code) : undefined)
+  return { code: code || undefined, name: name || undefined }
+}
 
 /**
  * Get the 2-letter ISO country code for flag display.
@@ -53,6 +65,7 @@ export interface Organization {
   acronym?: string
   type?: string
   org_type?: string  // Database field name (legacy)
+  organisation_type?: string  // Lowercased alternate (legacy)
   Organisation_Type_Code?: string  // New database field name
   Organisation_Type_Name?: string  // New database field name
   country?: string
@@ -67,6 +80,9 @@ interface OrganizationComboboxProps {
   value?: string
   onValueChange: (value: string) => void
   placeholder?: string
+  searchPlaceholder?: string
+  emptyStateMessage?: string
+  emptyStateSubMessage?: string
   allowManualEntry?: boolean
   disabled?: boolean
   className?: string
@@ -84,6 +100,9 @@ export function OrganizationCombobox({
   value,
   onValueChange,
   placeholder = "Select organization...",
+  searchPlaceholder = "Search organizations by name, acronym, or IATI ID...",
+  emptyStateMessage = "No organization found.",
+  emptyStateSubMessage,
   disabled = false,
   className,
   fallbackRef,
@@ -209,7 +228,7 @@ export function OrganizationCombobox({
     // Check if the selected organization has a legacy type code
     const selectedOrg = organizations.find(o => o.id === orgId)
     if (selectedOrg && onLegacyTypeDetected) {
-      const orgTypeCode = selectedOrg.Organisation_Type_Code || selectedOrg.type
+      const orgTypeCode = selectedOrg.Organisation_Type_Code || selectedOrg.organisation_type || selectedOrg.type
       if (isLegacyOrgType(orgTypeCode)) {
         onLegacyTypeDetected(selectedOrg)
       }
@@ -235,8 +254,7 @@ export function OrganizationCombobox({
             const selected = organizations.find((o) => o.id === value);
             if (selected) {
               const iatiRef = selected.iati_org_id || selected.iati_identifier
-              const orgTypeCode = selected.Organisation_Type_Code
-              const orgTypeName = selected.Organisation_Type_Name
+              const { code: orgTypeCode, name: orgTypeName } = resolveOrgType(selected)
 
               return (
                 <div className="flex items-start gap-3 text-left w-full min-w-0 py-0.5">
@@ -357,20 +375,24 @@ export function OrganizationCombobox({
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
               ref={searchInputRef}
-              placeholder="Search organizations by name, acronym, or IATI ID..."
+              placeholder={searchPlaceholder}
               className="flex h-10 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="max-h-[300px] overflow-y-auto">
-            {search && filteredOrgs.length === 0 && (
-              <div className="py-6 text-center text-body text-muted-foreground">No organization found.</div>
+            {filteredOrgs.length === 0 && (
+              <div className="py-6 text-center">
+                <div className="text-body text-muted-foreground">{emptyStateMessage}</div>
+                {emptyStateSubMessage && (
+                  <div className="text-helper text-muted-foreground mt-1">{emptyStateSubMessage}</div>
+                )}
+              </div>
             )}
             {filteredOrgs.map(org => {
               const iatiRef = org.iati_org_id || org.iati_identifier
-              const orgTypeCode = org.Organisation_Type_Code
-              const orgTypeName = org.Organisation_Type_Name
+              const { code: orgTypeCode, name: orgTypeName } = resolveOrgType(org)
 
               return (
                 <div
@@ -378,7 +400,7 @@ export function OrganizationCombobox({
                   role="option"
                   onClick={() => handleSelect(org.id)}
                   className={cn(
-                    "pl-6 pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
+                    "pl-3 pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
                     value === org.id && "bg-accent"
                   )}
                 >

@@ -20,21 +20,24 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  BarChart3, 
-  Table, 
-  Download, 
+import {
+  BarChart3,
+  Table as TableIcon,
+  Download,
   Info,
   AlertCircle,
   CheckCircle2,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  TrendingUp
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 
 interface PolicyMarker {
   id: string
@@ -68,9 +71,9 @@ interface PolicyMarkersChartProps {
 type ViewMode = 'chart' | 'table' | 'time-series'
 
 const SIGNIFICANCE_LABELS: Record<number, { label: string; color: string; description: string }> = {
-  0: { label: 'Not targeted', color: '#94a3b8', description: 'Not targeted (0)' },
-  1: { label: 'Significant objective', color: '#3b82f6', description: 'Significant objective (1)' },
-  2: { label: 'Principal objective', color: '#1e40af', description: 'Principal objective (2)' }
+  0: { label: 'Not targeted', color: '#cfd0d5', description: 'Not targeted (0)' },
+  1: { label: 'Significant objective', color: '#7b95a7', description: 'Significant objective (1)' },
+  2: { label: 'Principal objective', color: '#334155', description: 'Principal objective (2)' }
 }
 
 export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = false }: PolicyMarkersChartProps) {
@@ -91,6 +94,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
   type SortField = 'marker' | 'significance' | 'activity_count' | 'budget'
   const [sortField, setSortField] = useState<SortField>('marker')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
 
   useEffect(() => {
     if (viewMode === 'time-series') {
@@ -449,50 +453,63 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>
+              <CardTitle className="text-base font-medium text-foreground">
                 Policy Markers Analytics
               </CardTitle>
-              <CardDescription className="mt-1">
+              <CardDescription className="text-helper text-muted-foreground mt-0.5">
                 Analyze activities by policy marker and significance level
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'chart' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('chart')}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Chart
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-              >
-                <Table className="h-4 w-4 mr-2" />
-                Table
-              </Button>
-              <Button
-                variant={viewMode === 'time-series' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('time-series')}
-              >
-                <Table className="h-4 w-4 mr-2" />
-                Time Series
-              </Button>
-              {(viewMode === 'table' || viewMode === 'time-series') && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleExportCSV}
-                  title="Export CSV"
-                  aria-label="Export CSV"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            {!compact && isExpanded && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewMode('chart')}
+                    className={cn("h-8 w-8", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Chart View"
+                    aria-label="Chart View"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewMode('table')}
+                    className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Table View"
+                    aria-label="Table View"
+                  >
+                    <TableIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewMode('time-series')}
+                    className={cn("h-8 w-8", viewMode === 'time-series' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Time Series"
+                    aria-label="Time Series"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                  </Button>
+                </div>
+                {(viewMode === 'table' || viewMode === 'time-series') && (
+                  <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleExportCSV}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      title="Export CSV"
+                      aria-label="Export CSV"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -600,8 +617,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           {/* Activity Count Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Number of Activities by Policy Marker and Significance</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base font-medium text-foreground">Number of Activities by Policy Marker and Significance</CardTitle>
+              <CardDescription className="text-helper text-muted-foreground mt-0.5">
                 Count of distinct activities grouped by policy marker and significance level
               </CardDescription>
             </CardHeader>
@@ -667,8 +684,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           {showValueChart && (
             <Card>
               <CardHeader>
-                <CardTitle>Value of Activities by Policy Marker and Significance</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base font-medium text-foreground">Value of Activities by Policy Marker and Significance</CardTitle>
+                <CardDescription className="text-helper text-muted-foreground mt-0.5">
                   Total Activity Budget (USD) for activities where policy marker is Significant or Principal objective
                 </CardDescription>
               </CardHeader>
@@ -730,12 +747,13 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Policy Markers Data</CardTitle>
-                <CardDescription>Detailed breakdown by policy marker and significance</CardDescription>
+                <CardTitle className="text-base font-medium text-foreground">Policy Markers Data</CardTitle>
+                <CardDescription className="text-helper text-muted-foreground mt-0.5">Detailed breakdown by policy marker and significance</CardDescription>
               </div>
               <Button
                 variant="outline"
                 size="icon"
+                className="h-9 w-9"
                 onClick={handleExportCSV}
                 title="Export CSV"
                 aria-label="Export CSV"
@@ -843,15 +861,37 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Policy Markers Time Series</CardTitle>
-                <CardDescription>
-                  Total spend by policy marker and year (disbursements + expenditures)
-                </CardDescription>
+              <div className="flex items-start gap-3">
+                {isExpanded && (
+                  <YearRangeChip
+                    selectedYears={selectedYears}
+                    onYearsChange={setSelectedYears}
+                    availableYears={
+                      timeSeriesYears.length > 0
+                        ? timeSeriesYears.map(y => parseInt(y, 10)).filter(n => !Number.isNaN(n))
+                        : undefined
+                    }
+                    actualDataRange={
+                      timeSeriesYears.length > 0
+                        ? {
+                            minYear: parseInt(timeSeriesYears[0], 10),
+                            maxYear: parseInt(timeSeriesYears[timeSeriesYears.length - 1], 10),
+                          }
+                        : null
+                    }
+                  />
+                )}
+                <div>
+                  <CardTitle className="text-base font-medium text-foreground">Policy Markers Time Series</CardTitle>
+                  <CardDescription className="text-helper text-muted-foreground mt-0.5">
+                    Total spend by policy marker and year (disbursements + expenditures)
+                  </CardDescription>
+                </div>
               </div>
               <Button
                 variant="outline"
                 size="icon"
+                className="h-9 w-9"
                 onClick={handleExportCSV}
                 title="Export CSV"
                 aria-label="Export CSV"
@@ -939,10 +979,12 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
         </Card>
       )}
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart analyses OECD/DAC policy markers such as gender equality, environment, and climate adaptation across your activity portfolio. Activities are grouped by marker and significance level (significant or principal objective). Use the filters to focus on specific markers, toggle the value chart to see associated budgets, and switch to the time series view to track trends over time.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {!compact && isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart analyses OECD/DAC policy markers such as gender equality, environment, and climate adaptation across your activity portfolio. Activities are grouped by marker and significance level (significant or principal objective). Use the filters to focus on specific markers, toggle the value chart to see associated budgets, and switch to the time series view to track trends over time.
+        </p>
+      )}
     </div>
   )
 }

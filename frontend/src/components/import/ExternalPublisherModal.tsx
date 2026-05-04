@@ -44,7 +44,7 @@ const iatiImportStrings = {
   duplicateWarning: 'Warning: An activity with this IATI identifier already exists in your system.',
   'option.merge.title': 'Merge into Current Activity',
   'option.merge.help': 'Link this external record to the activity you are currently editing.',
-  'option.merge.tooltip': 'Attach the external activity record directly to the one you are editing. This creates a link between the two datasets, allowing you to maintain your own reporting while showing its connection to the external activity (for example, a donor\'s parent record or an implementing partner\'s sub-activity).',
+  'option.merge.tooltip': 'Attach the external activity record directly to the one you are editing. This creates a link between the two datasets, allowing you to maintain your own reporting while showing its connection to the external activity (for example, a development partner\'s parent record or an implementing partner\'s sub-activity).',
   'option.reportingOrg.title': 'Import under Original Publisher',
   'option.reportingOrg.help': 'Import under the original reporting organisation to preserve source metadata.',
   'option.reportingOrg.tooltip': 'Import under the original reporting organisation to preserve source metadata. Only available to Super and Government users.',

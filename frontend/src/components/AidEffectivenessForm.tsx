@@ -284,7 +284,7 @@ const TOOLTIPS: Record<string, string> = {
   finReportingIntegratedPFM: "Is financial reporting integrated into national Public Financial Management systems?",
   govAudit: "Is the project subject to government audit procedures via the National Audit Institution? (GPEDC Indicator 5a)",
   govProcurement: "Does the project use national procurement law and systems? (GPEDC Indicator 5a)",
-  govSystemWhyNot: "Briefly describe why country PFM, audit, or procurement systems are bypassed for this activity — e.g., donor procurement rules, fiduciary risk findings, sector-specific donor frameworks, or capacity constraints in the relevant institution.",
+  govSystemWhyNot: "Briefly describe why country PFM, audit, or procurement systems are bypassed for this activity — e.g., development partner procurement rules, fiduciary risk findings, sector-specific development partner frameworks, or capacity constraints in the relevant institution.",
   annualBudgetShared: "Was annual disbursement information shared with government before the start of the fiscal year? (GPEDC Indicator 5b)",
   forwardPlanShared: "Has forward expenditure information been provided covering at least 3 years ahead? (GPEDC Indicator 6)",
   multiYearFinancingAgreement: "Has a multi-year financing agreement been signed for this activity?",
@@ -322,9 +322,9 @@ const EXPANDED_HELP: Record<string, string> = {
   linkedToGovFramework:
     "GPEDC Indicator 1a measures whether project objectives, indicators and targets are drawn from a country-led results framework — for example a National Results Framework, Sector Results Framework, or MTEF performance framework. Strong alignment means the project's logframe maps directly onto government targets, not just thematic similarity.",
   indicatorsFromGov:
-    "GPEDC Indicator 1b — at least 50% of an activity's results indicators should be drawn from official government sources (national statistics, sector M&E plans, SDG targets) rather than custom donor-defined indicators. Tick Yes if the majority of outcome/output indicators reuse government definitions and baselines.",
+    "GPEDC Indicator 1b — at least 50% of an activity's results indicators should be drawn from official government sources (national statistics, sector M&E plans, SDG targets) rather than custom development partner-defined indicators. Tick Yes if the majority of outcome/output indicators reuse government definitions and baselines.",
   indicatorsViaGovData:
-    "GPEDC Indicator 1b also asks whether the data used to monitor those indicators flows through government M&E systems — e.g. HMIS, EMIS, national statistical office surveys — rather than parallel donor monitoring. Routing data through government systems strengthens national statistical capacity over time.",
+    "GPEDC Indicator 1b also asks whether the data used to monitor those indicators flows through government M&E systems — e.g. HMIS, EMIS, national statistical office surveys — rather than parallel development partner monitoring. Routing data through government systems strengthens national statistical capacity over time.",
   implementedByNationalInstitution:
     "Tick Yes when the day-to-day implementer is a national public institution (a line ministry, a state agency, a sub-national authority). NGO or contractor delivery typically does not count, even when the work is done in-country. This relates to GPEDC Indicators 5a and 9.",
   govEntityAccountable:
@@ -332,21 +332,21 @@ const EXPANDED_HELP: Record<string, string> = {
   supportsPublicSector:
     "Activities that build the capability of public institutions (training, systems, processes, organisational reform) score positively here. Pure service delivery without institutional strengthening does not.",
   capacityDevFromNationalPlan:
-    "GPEDC Indicator 9 — capacity development is most effective when it responds to a nationally identified plan (a Public Service Reform Strategy, a Sector Capacity Plan, etc.) rather than donor-driven training menus. Yes signals demand-led capacity building.",
+    "GPEDC Indicator 9 — capacity development is most effective when it responds to a nationally identified plan (a Public Service Reform Strategy, a Sector Capacity Plan, etc.) rather than development partner-driven training menus. Yes signals demand-led capacity building.",
   numOutcomeIndicators:
     "Count outcome-level (not output- or activity-level) indicators in your results framework. Outcome indicators measure changes in conditions or behaviour (e.g. 'maternal mortality rate'), not deliverables (e.g. 'number of training days').",
   fundsViaNationalTreasury:
-    "GPEDC Indicator 5a (PFM use). Yes means disbursements pass through the country's Treasury Single Account or budget execution system. Bypassing the treasury — paying contractors directly, or routing through donor-managed accounts — counts as No.",
+    "GPEDC Indicator 5a (PFM use). Yes means disbursements pass through the country's Treasury Single Account or budget execution system. Bypassing the treasury — paying contractors directly, or routing through development partner-managed accounts — counts as No.",
   govBudgetSystem:
     "GPEDC Indicator 5a — does the activity use the government's own budget execution procedures (chart of accounts, expenditure controls, commitment system)? On-budget reporting alone is not enough; the funds must actually move through government processes.",
   govFinReporting:
-    "Tick Yes if expenditures are recorded in, and reported through, the government's financial reporting system (e.g. IFMIS), in the same format as domestic spending. Parallel donor reports do not count.",
+    "Tick Yes if expenditures are recorded in, and reported through, the government's financial reporting system (e.g. IFMIS), in the same format as domestic spending. Parallel development partner reports do not count.",
   finReportingIntegratedPFM:
     "Beyond using the system, are reports integrated into national PFM cycles — e.g. consolidated in the budget execution report presented to Parliament? This is a higher bar than simply submitting figures.",
   govAudit:
-    "GPEDC Indicator 5a — is the activity subject to audit by the country's Supreme Audit Institution under national audit standards? Donor-commissioned external audits do not count, even if rigorous.",
+    "GPEDC Indicator 5a — is the activity subject to audit by the country's Supreme Audit Institution under national audit standards? Development partner-commissioned external audits do not count, even if rigorous.",
   govProcurement:
-    "Does procurement follow the country's public procurement law and use national procurement institutions? If donor procurement rules apply (the common practice when concerns about country systems exist), the answer is No — and the reason should be recorded in the comments.",
+    "Does procurement follow the country's public procurement law and use national procurement institutions? If development partner procurement rules apply (the common practice when concerns about country systems exist), the answer is No — and the reason should be recorded in the comments.",
   annualBudgetShared:
     "GPEDC Indicator 5b (annual predictability). Yes means the disbursement schedule for the upcoming fiscal year was communicated to the government before that fiscal year started, so it could be reflected in the national budget.",
   forwardPlanShared:
@@ -354,19 +354,19 @@ const EXPANDED_HELP: Record<string, string> = {
   multiYearFinancingAgreement:
     "A signed multi-year financing agreement provides a stronger predictability signal than annual commitments alone. Tick Yes if a binding multi-year instrument is in place.",
   tiedStatus:
-    "GPEDC Indicator 10 — Untied: open international competition; Partially Tied: limited to a group of countries (e.g. donor + selected developing countries); Tied: procurement restricted to suppliers from the donor country. Use the legal status as defined in the financing agreement.",
+    "GPEDC Indicator 10 — Untied: open international competition; Partially Tied: limited to a group of countries (e.g. development partner + selected developing countries); Tied: procurement restricted to suppliers from the development partner country. Use the legal status as defined in the financing agreement.",
   annualFinReportsPublic:
-    "GPEDC Indicator 4 (transparency). Annual financial reports should be accessible to the public — typically by publishing on the donor's IATI registry, the country's AMP, or a project website — within a reasonable timeframe.",
+    "GPEDC Indicator 4 (transparency). Annual financial reports should be accessible to the public — typically by publishing on the development partner's IATI registry, the country's AMP, or a project website — within a reasonable timeframe.",
   dataUpdatedPublicly:
     "Public data should be refreshed at least annually for it to be useful for accountability. A one-off publication does not count.",
   finalEvalPlanned:
     "Tick Yes only if a final evaluation is both planned and budgeted in the activity design. Aspirations without resources do not count.",
   evalReportPublic:
-    "Public availability is a core transparency commitment. If the report will be publicly available (donor website, IATI, national evaluation registry) on completion, tick Yes.",
+    "Public availability is a core transparency commitment. If the report will be publicly available (development partner website, IATI, national evaluation registry) on completion, tick Yes.",
   performanceIndicatorsReported:
     "Annual reporting against performance indicators — not only at completion — is a core requirement of results-based management.",
   jointAnnualReview:
-    "GPEDC Indicator 7 — a joint annual review brings government, development partners, and ideally non-state actors together to review progress and agree corrective actions. A donor-only review does not count.",
+    "GPEDC Indicator 7 — a joint annual review brings government, development partners, and ideally non-state actors together to review progress and agree corrective actions. A development partner-only review does not count.",
   mutualAccountabilityFramework:
     "GPEDC Indicator 7 also asks whether the activity is assessed under a country-level mutual accountability framework (e.g. GPEDC monitoring, a Joint Country Action Plan, a Development Partnership Policy). Select the specific framework if applicable.",
   correctiveActionsDocumented:
@@ -437,7 +437,7 @@ const QUESTION_NUMBER: Record<string, number> = QUESTION_ORDER.reduce(
 const TIED_STATUS_OPTIONS = [
   { value: "untied", label: "Untied", description: "No restrictions on procurement country" },
   { value: "partially_tied", label: "Partially Tied", description: "Some procurement restrictions apply" },
-  { value: "tied", label: "Tied", description: "Procurement restricted to donor country" },
+  { value: "tied", label: "Tied", description: "Procurement restricted to development partner country" },
 ];
 
 // ──────────────────────────────────────────────
@@ -1780,7 +1780,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <Textarea
                 value={formData.govSystemWhyNot || ""}
                 onChange={(e) => updateField('govSystemWhyNot', e.target.value)}
-                placeholder="E.g., capacity constraints, donor requirements, legal restrictions..."
+                placeholder="E.g., capacity constraints, development partner requirements, legal restrictions..."
                 rows={3}
               />
             </div>

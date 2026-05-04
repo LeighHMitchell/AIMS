@@ -316,7 +316,7 @@ export function ParticipatingOrgModal({
               <div className="space-y-2">
                 <Label htmlFor="crs_channel_code" className="flex items-center gap-2">
                   DAC CRS Reporting
-                  <HelpTextTooltip content="OECD-DAC CRS (Creditor Reporting System) channel code, used mainly by bilateral donors for reporting to the DAC. This corresponds to the @crs-channel-code attribute." />
+                  <HelpTextTooltip content="OECD-DAC CRS (Creditor Reporting System) channel code, used mainly by bilateral development partners for reporting to the DAC. This corresponds to the @crs-channel-code attribute." />
                 </Label>
                 <EnhancedSearchableSelect
                   groups={[
@@ -483,7 +483,7 @@ export function ParticipatingOrgModal({
         <ModalFooter
           onCancel={onClose}
           onSubmit={handleSubmit}
-          submitText={editingOrg ? 'Update' : 'Save'}
+          submitText={editingOrg ? 'Update Participating Organization' : 'Add Participating Organization'}
           loadingText="Saving..."
           isLoading={saving}
           isDisabled={!formData.organization_id || !formData.role_type}

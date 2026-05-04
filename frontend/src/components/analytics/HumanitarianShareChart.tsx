@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { supabase } from '@/lib/supabase'
-import { BarChart3, PieChart, Table } from 'lucide-react'
+import { BarChart3, PieChart, Table as TableIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { Button } from '@/components/ui/button'
 import {
   BarChart,
@@ -155,9 +157,9 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
       <div className="h-full flex flex-col items-center justify-center p-4">
         <div className="relative mb-2">
           <svg width="120" height="120" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="70" fill="#FEE2E2" stroke="none" />
-            <circle cx="80" cy="80" r="60" fill="#FECACA" stroke="none" />
-            <text x="80" y="75" textAnchor="middle" fontSize="24" fontWeight="700" fill="#DC2626">
+            <circle cx="80" cy="80" r="70" fill="#e2e8f0" stroke="none" />
+            <circle cx="80" cy="80" r="60" fill="#cbd5e1" stroke="none" />
+            <text x="80" y="75" textAnchor="middle" fontSize="24" fontWeight="700" fill="#94a3b8">
               {data.humanitarianPercent}%
             </text>
             <text x="80" y="100" textAnchor="middle" fontSize="10" fill="#64748B">
@@ -214,8 +216,8 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
 
   // Bar chart data
   const barChartData = [
-    { name: 'Development', value: data.development, percent: data.developmentPercent, color: '#1E4D6B' },
-    { name: 'Humanitarian', value: data.humanitarian, percent: data.humanitarianPercent, color: '#DC2626' }
+    { name: 'Development', value: data.development, percent: data.developmentPercent, color: '#4c5568' },
+    { name: 'Humanitarian', value: data.humanitarian, percent: data.humanitarianPercent, color: '#94a3b8' }
   ]
 
   const renderChartView = () => (
@@ -228,7 +230,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             cx="80"
             cy="80"
             r="70"
-            fill="#FEE2E2"
+            fill="#e2e8f0"
             stroke="none"
           />
           {/* Inner lighter area */}
@@ -236,7 +238,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             cx="80"
             cy="80"
             r="60"
-            fill="#FEF2F2"
+            fill="#f1f5f9"
             stroke="none"
           />
         </svg>
@@ -258,7 +260,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             className="w-full transition-all duration-500"
             style={{ 
               height: `${developmentHeight}%`,
-              backgroundColor: '#1E4D6B' // Dark teal
+              backgroundColor: '#4c5568' // Dark teal
             }}
           />
           {/* Humanitarian (bottom/smaller portion) */}
@@ -266,7 +268,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             className="w-full transition-all duration-500"
             style={{ 
               height: `${humanitarianHeight}%`,
-              backgroundColor: '#DC2626' // Red for humanitarian
+              backgroundColor: '#94a3b8' // Red for humanitarian
             }}
           />
         </div>
@@ -321,38 +323,14 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
       const datum = payload[0]?.payload
       if (!datum) return null
       return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{datum.name}</p>
-            <p className="text-helper text-muted-foreground mt-0.5">Share of total aid</p>
-          </div>
-          <div className="p-3">
-            <table className="w-full text-body">
-              <tbody>
-                <tr>
-                  <td className="py-1 pr-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: datum.color }}
-                      />
-                      <span className="text-foreground">Value</span>
-                    </div>
-                  </td>
-                  <td className="py-1 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(datum.value, isExpanded)}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-3 text-muted-foreground">Share</td>
-                  <td className="py-1 text-right font-semibold text-foreground">
-                    {datum.percent}%
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={datum.name}
+          subtitle="Share of total aid"
+          rows={[
+            { label: 'Value', value: formatTooltipCurrency(datum.value, isExpanded), color: datum.color },
+            { label: 'Share', value: `${datum.percent}%` },
+          ]}
+        />
       )
     }
     return null
@@ -431,30 +409,36 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
               Share of total international aid
             </CardDescription>
           </div>
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
-              variant={viewMode === 'chart' ? 'default' : 'ghost'}
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode('chart')}
-              className="h-8 px-3"
+              className={cn("h-8 w-8", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Pie Chart"
+              aria-label="Pie Chart"
             >
               <PieChart className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'bar' ? 'default' : 'ghost'}
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode('bar')}
-              className="h-8 px-3"
+              className={cn("h-8 w-8", viewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Bar Chart"
+              aria-label="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode('table')}
-              className="h-8 px-3"
+              className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Table View"
+              aria-label="Table View"
             >
-              <Table className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>

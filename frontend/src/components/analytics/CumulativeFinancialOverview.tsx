@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,7 +17,7 @@ import {
   Legend,
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon, CalendarIcon } from 'lucide-react'
+import { AlertCircle, Download, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon, CalendarIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -30,7 +30,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import html2canvas from 'html2canvas'
 import {
   splitBudgetAcrossYears,
   splitPlannedDisbursementAcrossYears,
@@ -46,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -112,7 +112,6 @@ export function CumulativeFinancialOverview({
   const [customYears, setCustomYears] = useState<CustomYear[]>([])
   const [customYearsLoading, setCustomYearsLoading] = useState(true)
   const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
-  const chartRef = useRef<HTMLDivElement>(null)
 
   // Calculate effective date range based on custom years and selected years
   const effectiveDateRange = useMemo(() => {
@@ -878,61 +877,27 @@ export function CumulativeFinancialOverview({
       const transactions = entries.filter((e: any) => !plannedBudgetNames.includes(e.name))
       const plannedBudgets = entries.filter((e: any) => plannedBudgetNames.includes(e.name))
 
-      const renderRow = (entry: any, index: number) => {
-        const transactionTypeCode = getTransactionTypeCode(entry.name)
-        return (
-          <tr key={index}>
-            <td className="py-1 pr-4 flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-foreground font-medium flex items-center gap-2">
-                {transactionTypeCode && (
-                  <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                    {transactionTypeCode}
-                  </code>
-                )}
-                <span>{entry.name}</span>
-              </span>
-            </td>
-            <td className="py-1 text-right font-semibold text-foreground">
-              {formatTooltipCurrency(entry.displayValue, isExpanded)}
-            </td>
-          </tr>
-        )
+      const toRow = (entry: any) => ({
+        label: entry.name,
+        value: formatTooltipCurrency(entry.displayValue, isExpanded),
+        color: entry.color,
+        code: getTransactionTypeCode(entry.name) || undefined,
+      })
+
+      const rows: any[] = transactions.map(toRow)
+      if (transactions.length > 0 && plannedBudgets.length > 0) {
+        rows[rows.length - 1].bordered = true
       }
+      plannedBudgets.forEach((e: any) => rows.push(toRow(e)))
+
+      const calendarName = customYears.find(cy => cy.id === calendarType)?.name
 
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">{fullDate}</p>
-            {customYears.find(cy => cy.id === calendarType)?.name && (
-              <p className="text-helper text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
-            )}
-          </div>
-          <div className="p-2">
-            {transactions.length > 0 && (
-              <>
-                <table className="w-full text-body mb-2">
-                  <tbody>
-                    {transactions.map(renderRow)}
-                  </tbody>
-                </table>
-              </>
-            )}
-            {plannedBudgets.length > 0 && (
-              <>
-                <p className="text-section-label font-semibold text-muted-foreground uppercase mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
-                <table className="w-full text-body">
-                  <tbody>
-                    {plannedBudgets.map(renderRow)}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={fullDate}
+          subtitle={calendarName}
+          rows={rows}
+        />
       )
     }
     return null
@@ -1044,31 +1009,6 @@ export function CumulativeFinancialOverview({
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }
-
-  // Export to JPG
-  const handleExportJPG = async () => {
-    const chartElement = chartRef.current || document.querySelector('#cumulative-financial-chart') as HTMLElement
-    if (!chartElement) return
-
-    try {
-      const canvas = await html2canvas(chartElement, {
-        backgroundColor: '#ffffff',
-        scale: 2
-      })
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.download = `cumulative-financial-overview-${new Date().getTime()}.jpg`
-          link.href = url
-          link.click()
-          URL.revokeObjectURL(url)
-        }
-      }, 'image/jpeg', 0.95)
-    } catch (error) {
-      console.error('Error exporting chart:', error)
-    }
   }
 
   // Compact mode renders just the chart without Card wrapper and filters
@@ -1183,7 +1123,14 @@ export function CumulativeFinancialOverview({
                     <div className="flex gap-1 border rounded-lg p-1 bg-white">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1"
+                            title={effectiveDateRange?.from && effectiveDateRange?.to
+                              ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(effectiveDateRange.to, 'MMM d, yyyy')}`
+                              : undefined}
+                          >
                             <CalendarIcon className="h-4 w-4" />
                             {selectedYears.length === 0
                               ? 'Select years'
@@ -1247,12 +1194,6 @@ export function CumulativeFinancialOverview({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    {/* Date Range Indicator */}
-                    {effectiveDateRange?.from && effectiveDateRange?.to && (
-                      <span className="text-helper text-muted-foreground text-center">
-                        {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
-                      </span>
-                    )}
                   </div>
                 </>
               )}
@@ -1302,81 +1243,77 @@ export function CumulativeFinancialOverview({
               </div>
 
               {/* Chart Type Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setChartType('line')}
-                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                  className={cn("h-8 w-8", chartType === 'line' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                   title="Line"
+                  aria-label="Line"
                 >
                   <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setChartType('bar')}
-                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                  className={cn("h-8 w-8", chartType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                   title="Bar"
+                  aria-label="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setChartType('area')}
-                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                  className={cn("h-8 w-8", chartType === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                   title="Area"
+                  aria-label="Area"
                 >
                   <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setChartType('table')}
-                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Table"
+                  className={cn("h-8 w-8", chartType === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                  title="Table View"
+                  aria-label="Table View"
                 >
                   <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setChartType('total')}
-                  className={cn("h-8", chartType === 'total' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+                  className={cn("h-8 w-8", chartType === 'total' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                   title="Total"
+                  aria-label="Total"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Export Buttons */}
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              {/* Export Button */}
+              <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={handleExportCSV}
-                  className="h-8 px-2"
-                  title="Export to CSV"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  title="Export CSV"
+                  aria-label="Export CSV"
                 >
                   <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExportJPG}
-                  className="h-8 px-2"
-                  title="Export to JPG"
-                  disabled={chartType === 'table'}
-                >
-                  <FileImage className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </div>
         </div>
 
-        <div ref={chartRef} id="cumulative-financial-chart">
+        <div id="cumulative-financial-chart">
         {displayData.length > 0 ? (
           <>
             {/* Table View */}
@@ -1384,19 +1321,19 @@ export function CumulativeFinancialOverview({
               <div className="rounded-md border overflow-auto h-[600px]">
                 <Table>
                   <TableHeader>
-                    <TableRow className="sticky top-0 bg-white z-10">
+                    <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
                       <TableHead>Period</TableHead>
                       {activeSeries.has('Incoming Commitments') && (
-                        <TableHead className="text-right">Incoming Commitments</TableHead>
+                        <TableHead className="text-right whitespace-normal">Incoming Commitments</TableHead>
                       )}
                       {activeSeries.has('Incoming Funds') && (
-                        <TableHead className="text-right">Incoming Funds</TableHead>
+                        <TableHead className="text-right whitespace-normal">Incoming Funds</TableHead>
                       )}
                       {activeSeries.has('Outgoing Commitments') && (
-                        <TableHead className="text-right">Outgoing Commitments</TableHead>
+                        <TableHead className="text-right whitespace-normal">Outgoing Commitments</TableHead>
                       )}
                       {activeSeries.has('Credit Guarantee') && (
-                        <TableHead className="text-right">Credit Guarantee</TableHead>
+                        <TableHead className="text-right whitespace-normal">Credit Guarantee</TableHead>
                       )}
                       {activeSeries.has('Disbursements') && (
                         <TableHead className="text-right">Disbursements</TableHead>
@@ -1405,7 +1342,7 @@ export function CumulativeFinancialOverview({
                         <TableHead className="text-right">Expenditures</TableHead>
                       )}
                       {activeSeries.has('Planned Disbursements') && (
-                        <TableHead className="text-right">Planned Disbursements</TableHead>
+                        <TableHead className="text-right whitespace-normal">Planned Disbursements</TableHead>
                       )}
                       {activeSeries.has('Budgets') && (
                         <TableHead className="text-right">Budgets</TableHead>
@@ -1545,11 +1482,16 @@ export function CumulativeFinancialOverview({
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
+                        const p: any = payload[0]
                         return (
-                          <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
-                            <p className="font-semibold text-foreground text-body">{payload[0].payload.name}</p>
-                            <p className="font-bold text-foreground text-lg">{formatTooltipCurrency(payload[0].value as number, isExpanded)}</p>
-                          </div>
+                          <ChartTooltipCard
+                            title={p.payload.name}
+                            rows={[{
+                              label: p.payload.name,
+                              value: formatTooltipCurrency(p.value as number, isExpanded),
+                              color: p.payload.fill || p.color,
+                            }]}
+                          />
                         )
                       }
                       return null

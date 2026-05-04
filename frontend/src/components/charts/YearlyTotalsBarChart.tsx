@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table2, Maximize2, CalendarIcon } from 'lucide-react'
+import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table as TableIcon, Maximize2, CalendarIcon } from 'lucide-react'
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -31,6 +31,7 @@ import { CustomYear, crossesCalendarYear, getCustomYearLabel } from '@/types/cus
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 type ViewMode = 'bar' | 'line' | 'table'
 
@@ -230,48 +231,18 @@ export function YearlyTotalsBarChart({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const nonZeroPayload = payload.filter((entry: any) => entry.value != null && entry.value > 0)
+      if (nonZeroPayload.length === 0) return null
 
-      if (nonZeroPayload.length === 0) {
-        return null
-      }
-
-      return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">{formatYearLabel(label)}</p>
-          </div>
-          <div className="p-2">
-            <table className="w-full text-body">
-              <tbody>
-                {nonZeroPayload.map((entry: any, index: number) => {
-                  const typeConfig = TRANSACTION_TYPE_CONFIG[entry.dataKey]
-                  return (
-                    <tr key={index} className="border-b border-border last:border-b-0">
-                      <td className="py-1.5 pr-4 flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="text-foreground font-medium flex items-center gap-2">
-                          {typeConfig && (
-                            <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                              {entry.dataKey}
-                            </code>
-                          )}
-                          <span>{typeConfig?.label || entry.name}</span>
-                        </span>
-                      </td>
-                      <td className="py-1.5 text-right font-semibold text-foreground">
-                        {formatTooltipValue(entry.value)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )
+      const rows = nonZeroPayload.map((entry: any) => {
+        const typeConfig = TRANSACTION_TYPE_CONFIG[entry.dataKey]
+        return {
+          label: typeConfig?.label || entry.name,
+          value: formatTooltipValue(entry.value),
+          color: entry.color,
+          code: typeConfig ? entry.dataKey : undefined,
+        }
+      })
+      return <ChartTooltipCard title={formatYearLabel(label)} rows={rows} />
     }
     return null
   }
@@ -279,11 +250,16 @@ export function YearlyTotalsBarChart({
   // Simple tooltip for single series
   const SimpleTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length && payload[0].value > 0) {
+      const p: any = payload[0]
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
-          <p className="font-semibold text-foreground text-body">{formatYearLabel(label)}</p>
-          <p className="font-bold text-foreground text-lg">{formatTooltipValue(payload[0].value)}</p>
-        </div>
+        <ChartTooltipCard
+          title={formatYearLabel(label)}
+          rows={[{
+            label: 'Total',
+            value: formatTooltipValue(p.value),
+            color: p.color || p.fill,
+          }]}
+        />
       )
     }
     return null
@@ -565,7 +541,7 @@ export function YearlyTotalsBarChart({
         className="h-7 w-7 p-0 data-[state=on]:bg-white data-[state=on]:shadow-sm"
         title="Table View"
       >
-        <Table2 className="h-3.5 w-3.5" />
+        <TableIcon className="h-3.5 w-3.5" />
       </ToggleGroupItem>
     </ToggleGroup>
   )

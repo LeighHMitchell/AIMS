@@ -262,7 +262,7 @@ export default function SectorProfilePage() {
             </MiniChartCard>
 
             {/* Top Donors mini */}
-            <MiniChartCard title="Top Donors">
+            <MiniChartCard title="Top Development Partners">
                 {donorRankings.length > 0 ? (
                   <div className="h-36">
                     <ResponsiveContainer width="100%" height="100%">
@@ -276,7 +276,7 @@ export default function SectorProfilePage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No donor data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No development partner data</div>}
             </MiniChartCard>
 
             {/* Geographic Spread mini */}
@@ -369,7 +369,7 @@ export default function SectorProfilePage() {
             </div>
 
             {/* Donors */}
-            <Card><CardHeader><CardTitle className="text-body">Donor Landscape</CardTitle></CardHeader><CardContent>
+            <Card><CardHeader><CardTitle className="text-body">Development Partner Landscape</CardTitle></CardHeader><CardContent>
               <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
             </CardContent></Card>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,7 +33,8 @@ import {
   Maximize2
 } from 'lucide-react'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { exportChartToJPG, downloadCSV, convertToCSV } from '@/lib/chart-export'
+import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
+import { downloadCSV, convertToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import {
   Tooltip as UITooltip,
@@ -129,7 +130,6 @@ export function FundingOverTimeAnalytics() {
   const [loadingOrgs, setLoadingOrgs] = useState(true)
   const [timeSeriesData, setTimeSeriesData] = useState<FundingTimeSeriesPoint[]>([])
   const [metadata, setMetadata] = useState<ApiResponse['metadata'] | null>(null)
-  const chartRef = useRef<HTMLDivElement>(null)
 
   const currentYear = new Date().getFullYear()
 
@@ -248,77 +248,59 @@ export function FundingOverTimeAnalytics() {
     return `$${value.toFixed(0)}`
   }
 
-  // Custom tooltip with data source info
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const uniqueEntries = new Map()
-      payload.forEach((entry: any) => {
-        if (entry.name && !uniqueEntries.has(entry.name)) {
-          uniqueEntries.set(entry.name, entry)
-        }
-      })
-      const deduplicatedPayload = Array.from(uniqueEntries.values())
-      const yearLabel = typeof label === 'number' ? label : parseInt(label)
+    if (!active || !payload || !payload.length) return null
 
-      return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
-          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-border text-foreground">
-            {label}
-          </div>
-          <table className="min-w-full text-body border-collapse">
-            <thead className="bg-surface-muted">
-              <tr style={{ backgroundColor: COLORS.platinum }}>
-                <th className="px-3 py-2 text-left font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                  Donor
-                </th>
-                <th className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                  Amount
-                </th>
-                <th className="px-3 py-2 text-center font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                  Type
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {deduplicatedPayload.map((entry: any, index: number) => {
-                const dataType = entry.payload?.[`${entry.name}_data_type`] || 'actual'
-                const txCount = entry.payload?.[`${entry.name}_transaction_count`]
-                
-                return (
-                  <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : COLORS.platinum }}>
-                    <td className="px-3 py-2" style={{ color: entry.color || COLORS.primaryScarlet, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                      {entry.name}
-                    </td>
-                    <td className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                      {formatTooltipCurrency(entry.value, chartIsExpanded)}
-                      {txCount && <span className="text-helper text-muted-foreground ml-1">({txCount} txns)</span>}
-                    </td>
-                    <td className="px-3 py-2 text-center" style={{ borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                      <Badge 
-                        variant="outline" 
-                        className="text-helper"
-                        style={{ 
-                          borderColor: getDataTypeColor(dataType),
-                          color: getDataTypeColor(dataType)
-                        }}
-                      >
-                        {getDataTypeLabel(dataType)}
-                      </Badge>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          <div className="px-3 py-2 text-helper text-muted-foreground" style={{ borderTop: `1px solid ${COLORS.paleSlate}`, backgroundColor: COLORS.platinum }}>
-            {yearLabel < currentYear && 'Source: Activity transactions (disbursements + expenditures)'}
-            {yearLabel === currentYear && 'Source: Activity transactions (year-to-date)'}
-            {yearLabel > currentYear && 'Source: Organisation indicative budgets'}
-          </div>
-        </div>
-      )
-    }
-    return null
+    const uniqueEntries = new Map()
+    payload.forEach((entry: any) => {
+      if (entry.name && !uniqueEntries.has(entry.name)) {
+        uniqueEntries.set(entry.name, entry)
+      }
+    })
+    const deduplicatedPayload = Array.from(uniqueEntries.values())
+    const yearLabel = typeof label === 'number' ? label : parseInt(label)
+
+    const rows: ChartTooltipRow[] = deduplicatedPayload.map((entry: any) => {
+      const dataType = entry.payload?.[`${entry.name}_data_type`] || 'actual'
+      const txCount = entry.payload?.[`${entry.name}_transaction_count`]
+      return {
+        label: entry.name,
+        value: (
+          <span>
+            {formatTooltipCurrency(entry.value, chartIsExpanded)}
+            {txCount ? <span className="text-helper text-muted-foreground ml-1 font-normal">({txCount} txns)</span> : null}
+          </span>
+        ),
+        color: entry.color,
+        extra: (
+          <Badge
+            variant="outline"
+            className="text-helper"
+            style={{
+              borderColor: getDataTypeColor(dataType),
+              color: getDataTypeColor(dataType)
+            }}
+          >
+            {getDataTypeLabel(dataType)}
+          </Badge>
+        ),
+      }
+    })
+
+    const footer = yearLabel < currentYear
+      ? 'Source: Activity transactions (disbursements + expenditures)'
+      : yearLabel === currentYear
+        ? 'Source: Activity transactions (year-to-date)'
+        : 'Source: Organisation indicative budgets'
+
+    return (
+      <ChartTooltipCard
+        title={label}
+        rows={rows}
+        footer={footer}
+        minWidth={320}
+      />
+    )
   }
 
   // Handle CSV export with metadata columns
@@ -345,22 +327,6 @@ export function FundingOverTimeAnalytics() {
     toast.success('CSV exported successfully')
   }
 
-  // Handle JPG export
-  const handleExportJPG = async () => {
-    if (!chartRef.current) {
-      toast.error('Chart element not found')
-      return
-    }
-
-    try {
-      await exportChartToJPG(chartRef.current, 'funding-over-time')
-      toast.success('Image exported successfully')
-    } catch (error) {
-      console.error('Error exporting JPG:', error)
-      toast.error('Failed to export image')
-    }
-  }
-
   // Organization options for multi-select
   const organizationOptions: MultiSelectOption[] = organizations.map(org => ({
     label: org.acronym ? `${org.name} (${org.acronym})` : org.name,
@@ -382,7 +348,7 @@ export function FundingOverTimeAnalytics() {
                   Funding Over Time
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Compare funding across multiple donors over time
+                  Compare funding across multiple development partners over time
                 </CardDescription>
               </div>
               {/* Info tooltip explaining data sources */}
@@ -425,7 +391,7 @@ export function FundingOverTimeAnalytics() {
             <div className="space-y-2">
               <label className="text-body font-medium flex items-center gap-2" style={{ color: COLORS.blueSlate }}>
                 <Building2 className="h-4 w-4" />
-                Select Donors
+                Select Development Partners
               </label>
               <MultiSelect
                 options={organizationOptions}
@@ -434,7 +400,7 @@ export function FundingOverTimeAnalytics() {
                 placeholder="Select organizations to compare..."
                 disabled={loadingOrgs}
                 showSelectAll={true}
-                selectedLabel={`donor${selectedDonors.length !== 1 ? 's' : ''} selected`}
+                selectedLabel={`development partner${selectedDonors.length !== 1 ? 's' : ''} selected`}
               />
             </div>
 
@@ -490,15 +456,6 @@ export function FundingOverTimeAnalytics() {
                     <Download className="h-4 w-4 mr-2" />
                     CSV
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportJPG}
-                    disabled={loading || chartData.length === 0}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    JPG
-                  </Button>
                 </div>
               </div>
             )}
@@ -525,7 +482,7 @@ export function FundingOverTimeAnalytics() {
           <CardContent className="py-12">
             <div className="text-center" style={{ color: COLORS.blueSlate }}>
               <Building2 className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
-              <p className="font-medium mb-1">No donors selected</p>
+              <p className="font-medium mb-1">No development partners selected</p>
               <p className="text-body">Select one or more organizations to compare funding over time</p>
             </div>
           </CardContent>
@@ -547,7 +504,7 @@ export function FundingOverTimeAnalytics() {
           </CardContent>
         </Card>
       ) : (
-        <Card ref={chartRef}>
+        <Card>
           <CardContent className="pt-6">
             {chartView === 'line' && (
               <ResponsiveContainer width="100%" height={500}>

@@ -49,14 +49,15 @@ import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
-// Color palette for modalities (matching project palette)
+// Color palette for modalities — slate-only for dashboard consistency.
 const MODALITY_COLORS: Record<string, string> = {
-  'Grant': '#dc2625',              // Primary Scarlet
+  'Grant': '#334155',              // slate-700
   'Loan': '#4c5568',               // Blue Slate
   'Technical Assistance': '#7b95a7', // Cool Steel
   'Reimbursable Grant': '#cfd0d5',   // Pale Slate
-  'Investment/Guarantee': '#f1f4f8', // Platinum
+  'Investment/Guarantee': '#a3b5c2', // light steel
   'Unspecified': '#94a3b8',        // Fallback Slate
 };
 
@@ -176,39 +177,17 @@ export function FundingByModalityChart() {
       // Filter out zero values
       const nonZeroPayload = payload.filter((entry: any) => entry.value > 0);
       if (nonZeroPayload.length === 0) return null;
-      
-      // Calculate total for this year
+
       const yearTotal = nonZeroPayload.reduce((sum: number, entry: any) => sum + entry.value, 0);
-      
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-2">Year {label}</p>
-          <div className="border-t pt-2 space-y-1">
-            {nonZeroPayload.map((entry: any, index: number) => (
-              <div key={index} className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-sm" 
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-body text-foreground">{entry.name}</span>
-                </div>
-                <span className="text-body font-medium text-foreground">
-                  {formatTooltipCurrency(entry.value, isExpanded)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="border-t mt-2 pt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-body font-semibold text-foreground">Total</span>
-              <span className="text-body font-bold text-foreground">
-                {formatTooltipCurrency(yearTotal, isExpanded)}
-              </span>
-            </div>
-          </div>
-        </div>
-      );
+      const rows: any[] = nonZeroPayload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipCurrency(entry.value, isExpanded),
+        color: entry.color,
+      }));
+      rows[rows.length - 1].bordered = true;
+      rows.push({ label: 'Total', value: formatTooltipCurrency(yearTotal, isExpanded) });
+
+      return <ChartTooltipCard title={`Year ${label}`} rows={rows} />;
     }
     return null;
   };
@@ -355,10 +334,10 @@ export function FundingByModalityChart() {
     <div className="overflow-auto flex-1 min-h-[180px]">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
             <TableHead>Year</TableHead>
             {ALL_MODALITIES.map((modality) => (
-              <TableHead key={modality} className="text-right">{modality}</TableHead>
+              <TableHead key={modality} className="text-right whitespace-normal">{modality}</TableHead>
             ))}
             <TableHead className="text-right">Total</TableHead>
           </TableRow>
@@ -446,7 +425,7 @@ export function FundingByModalityChart() {
       <div className="flex items-center gap-2">
         {/* Transaction type dropdown */}
         <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-          <SelectTrigger className="w-[160px] h-8 text-helper">
+          <SelectTrigger className="min-w-[280px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -473,31 +452,34 @@ export function FundingByModalityChart() {
       <div className="flex items-center gap-1">
         {/* Chart type toggle - only show when in chart view */}
         {(!expanded || viewMode === 'chart') && (
-          <div className="flex items-center border rounded-md">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartType('bar')}
               title="Bar Chart"
+              aria-label="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'line' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartType === 'line' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartType('line')}
               title="Line Chart"
+              aria-label="Line Chart"
             >
               <LineChartIcon className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'area' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartType === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartType('area')}
               title="Area Chart"
+              aria-label="Area Chart"
             >
               <TrendingUp className="h-4 w-4" />
             </Button>
@@ -506,22 +488,24 @@ export function FundingByModalityChart() {
 
         {/* Chart mode toggle - only show when in bar chart view */}
         {(!expanded || viewMode === 'chart') && chartType === 'bar' && (
-          <div className="flex items-center border rounded-md">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartMode === 'stacked' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartMode === 'stacked' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartMode('stacked')}
               title="Stacked"
+              aria-label="Stacked"
             >
               <Layers className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", chartMode === 'grouped' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", chartMode === 'grouped' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setChartMode('grouped')}
               title="Grouped"
+              aria-label="Grouped"
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -530,22 +514,24 @@ export function FundingByModalityChart() {
 
         {/* View mode toggle - only in expanded view */}
         {expanded && (
-          <div className="flex items-center border rounded-md">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setViewMode('chart')}
               title="Chart"
+              aria-label="Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setViewMode('table')}
-              title="Table"
+              title="Table View"
+              aria-label="Table View"
             >
               <TableIcon className="h-4 w-4" />
             </Button>
@@ -554,15 +540,18 @@ export function FundingByModalityChart() {
 
         {/* Export button - only in expanded view */}
         {expanded && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleExport}
-            title="Export CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
     </div>

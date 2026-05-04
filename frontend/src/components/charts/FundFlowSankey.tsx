@@ -62,7 +62,7 @@ export function FundFlowSankey({
     topDonors.forEach((d) => {
       list.push({
         type: 'donor-to-fund',
-        sourceName: d.acronym || d.name || 'Donor',
+        sourceName: d.acronym || d.name || 'Development Partner',
         targetName: fundTitle,
         value: d.total,
       })
@@ -104,7 +104,7 @@ export function FundFlowSankey({
     let nodeIndex = 0
     const donorIndices: number[] = []
     topDonors.forEach((d, i) => {
-      const donorLabel = d.acronym ? `${d.name} (${d.acronym})` : (d.name || 'Donor')
+      const donorLabel = d.acronym ? `${d.name} (${d.acronym})` : (d.name || 'Development Partner')
       nodes.push({ id: `donor-${i}`, name: donorLabel })
       donorIndices.push(nodeIndex++)
     })

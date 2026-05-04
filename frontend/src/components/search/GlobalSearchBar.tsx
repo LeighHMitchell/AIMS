@@ -60,7 +60,7 @@ interface GlobalSearchBarProps {
 
 export function GlobalSearchBar({
   className,
-  placeholder = "Search projects, donors, tags...",
+  placeholder = "Search projects, development partners, tags...",
   isExpanded: controlledExpanded,
   onExpandedChange,
   variant = "nav",

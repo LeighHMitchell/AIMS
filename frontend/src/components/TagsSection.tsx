@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Hash, AlertCircle, Info, FileCode, CheckSquare, Square } from 'lucide-react';
+import { X, Hash, AlertCircle, Info, FileCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -39,19 +39,6 @@ interface TagsSectionProps {
   onChange: (tags: Tag[]) => void;
 }
 
-// High contrast color variants for tags
-const TAG_COLOR_VARIANTS = [
-  'blue', 'purple', 'green', 'cyan', 'indigo', 'pink', 'rose', 'orange', 
-  'amber', 'lime', 'emerald', 'teal', 'sky', 'violet', 'fuchsia'
-] as const;
-
-// Function to get tag color variant based on hash
-const getTagColorVariant = (tag: Tag, index: number) => {
-  // Use hash-based color assignment for consistent coloring
-  const hash = tag.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return TAG_COLOR_VARIANTS[hash % TAG_COLOR_VARIANTS.length];
-};
-
 // Function to check if tag was imported from IATI XML
 const isIatiImportedTag = (tag: Tag) => {
   // Only IATI standard vocabulary tags (not custom '99') are considered imported
@@ -82,71 +69,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [apiAvailable, setApiAvailable] = useState(true);
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { confirm, ConfirmDialog } = useConfirmDialog();
-
-  const toggleSelected = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const exitSelectMode = () => {
-    setSelectMode(false);
-    setSelectedIds(new Set());
-  };
-
-  // Remove multiple tags at once
-  const removeSelectedTags = async () => {
-    if (selectedIds.size === 0) return;
-    const ok = await confirm({
-      title: `Remove ${selectedIds.size} tag${selectedIds.size === 1 ? '' : 's'}?`,
-      description: `The selected tag${selectedIds.size === 1 ? '' : 's'} will be removed from this activity. You can add them again anytime.`,
-      confirmLabel: `Remove ${selectedIds.size}`,
-      cancelLabel: 'Keep all',
-      destructive: true,
-    });
-    if (!ok) return;
-
-    const tagsToRemove = tags.filter(t => selectedIds.has(t.id));
-    const remaining = tags.filter(t => !selectedIds.has(t.id));
-
-    // Fire delete requests in parallel for API-backed tags
-    if (apiAvailable && activityId) {
-      await Promise.allSettled(
-        tagsToRemove
-          .filter(t => !t.id.startsWith('local-'))
-          .map(t => apiFetch(`/api/activities/${activityId}/tags/${t.id}`, { method: 'DELETE' }))
-      );
-    }
-
-    onChange(remaining);
-    exitSelectMode();
-    toast(`Removed ${tagsToRemove.length} tag${tagsToRemove.length === 1 ? '' : 's'}`, {
-      action: {
-        label: 'Undo',
-        onClick: async () => {
-          // Re-link each removed tag
-          if (apiAvailable && activityId) {
-            await Promise.allSettled(
-              tagsToRemove
-                .filter(t => !t.id.startsWith('local-'))
-                .map(t => apiFetch(`/api/activities/${activityId}/tags`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ tag_id: t.id }),
-                }))
-            );
-          }
-          onChange([...remaining, ...tagsToRemove]);
-          toast.success('Tags restored');
-        },
-      },
-    });
-  };
 
   // Fetch available tags with debounce
   const fetchTags = useCallback(async (query: string) => {
@@ -450,81 +373,34 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
           </Button>
         </div>
 
-        {/* Selection toolbar */}
-        {tags.length > 0 && (
-          <div className="flex items-center justify-between">
-            {selectMode ? (
-              <div className="flex items-center gap-3">
-                <span className="text-body text-muted-foreground">
-                  {selectedIds.size} selected
-                </span>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={removeSelectedTags}
-                  disabled={selectedIds.size === 0}
-                >
-                  Remove selected
-                </Button>
-                <Button size="sm" variant="ghost" onClick={exitSelectMode}>
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectMode(true)}
-                className="gap-1.5"
-              >
-                <CheckSquare className="h-4 w-4" />
-                Select
-              </Button>
-            )}
-          </div>
-        )}
-
         {/* Selected Tags */}
         <div className="space-y-4">
           {tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag, index) => {
-                const isChecked = selectedIds.has(tag.id);
-                return (
+              {tags.map((tag) => (
                 <div key={tag.id} className="relative">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge
-                        variant={getTagColorVariant(tag, index)}
-                        onClick={selectMode ? () => toggleSelected(tag.id) : undefined}
-                        className={cn(
-                          "pl-2 pr-1 py-1 flex items-center gap-1 hover:shadow-md transition-all group",
-                          selectMode && "cursor-pointer",
-                          selectMode && isChecked && "ring-2 ring-primary ring-offset-1"
-                        )}
+                        variant="light-blue"
+                        className="pl-2 pr-1 py-1 gap-1 font-medium hover:bg-blue-100 group"
                       >
-                        {selectMode ? (
-                          isChecked
-                            ? <CheckSquare className="w-3 h-3" />
-                            : <Square className="w-3 h-3" />
-                        ) : isIatiImportedTag(tag) ? (
+                        {isIatiImportedTag(tag) ? (
                           <FileCode className="w-3 h-3" />
                         ) : (
                           <Hash className="w-3 h-3" />
                         )}
                         {tag.name}
-                        {!selectMode && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeTag(tag.id);
-                            }}
-                            className="hover:bg-foreground/10 rounded-full p-0.5 transition-colors ml-1"
-                            aria-label={`Remove ${tag.name} tag`}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeTag(tag.id);
+                          }}
+                          className="hover:bg-blue-700/15 rounded-full p-0.5 transition-colors ml-0.5"
+                          aria-label={`Remove ${tag.name} tag`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -558,7 +434,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                     </TooltipContent>
                   </Tooltip>
                 </div>
-              );})}
+              ))}
             </div>
           ) : (
             <div className="text-center py-12">

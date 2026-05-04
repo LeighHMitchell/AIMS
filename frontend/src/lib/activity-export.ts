@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api-fetch';
+import { supabase } from '@/lib/supabase';
 import {
   XlsxWorkbookBuilder,
   buildExportFilename,
@@ -31,6 +32,16 @@ interface ActivityExportData {
   humanitarian_scopes: any[];
   policy_markers: any[];
   tags: any[];
+  // Sections added for "Export for Review"
+  sdg_mappings: any[];
+  working_groups: any[];
+  conditions: any[];
+  loan_terms: any | null;
+  loan_statuses: any[];
+  subnational_allocations: any[];
+  recipient_countries_regions: any[];
+  focal_points: any[];
+  government_endorsement: any | null;
 }
 
 /**
@@ -45,15 +56,72 @@ async function fetchActivityExportData(activityId: string): Promise<ActivityExpo
 
   // Helper that always resolves — never rejects — so one failure doesn't kill
   // the whole export. unwrap() understands the shape variations our APIs use.
+  // Per-section failures are logged so the developer console can show which
+  // endpoints came back empty (the export itself stays silent for the user).
   const safeJson = async <T>(path: string, unwrap?: (json: any) => T, fallback?: T): Promise<T> => {
     try {
       const res = await apiFetch(endpointFor(path));
-      if (!res.ok) return (fallback as T);
+      if (!res.ok) {
+        console.warn(`[activity-export] ${path} returned ${res.status} — section will be empty in export`);
+        return (fallback as T);
+      }
       const json = await res.json().catch(() => undefined);
       if (unwrap) return unwrap(json);
       return Array.isArray(json) ? (json as unknown as T) : ((fallback ?? ([] as unknown)) as T);
-    } catch {
+    } catch (e: any) {
+      console.warn(`[activity-export] ${path} threw — section will be empty in export:`, e?.message ?? e);
       return (fallback as T);
+    }
+  };
+
+  // Helper for tables fetched directly via the Supabase client (used for
+  // sections that don't have a per-activity REST endpoint).
+  const safeSupabaseList = async (table: string, selectExpr: string = '*'): Promise<any[]> => {
+    try {
+      const { data, error } = await supabase.from(table).select(selectExpr).eq('activity_id', activityId);
+      if (error) {
+        console.warn(`[activity-export] supabase ${table} error:`, error.message);
+        return [];
+      }
+      return Array.isArray(data) ? data : [];
+    } catch (e: any) {
+      console.warn(`[activity-export] supabase ${table} threw:`, e?.message ?? e);
+      return [];
+    }
+  };
+  const safeSupabaseSingle = async (table: string): Promise<any | null> => {
+    try {
+      const { data, error } = await supabase.from(table).select('*').eq('activity_id', activityId).maybeSingle();
+      if (error) {
+        console.warn(`[activity-export] supabase ${table} (single) error:`, error.message);
+        return null;
+      }
+      return data ?? null;
+    } catch (e: any) {
+      console.warn(`[activity-export] supabase ${table} (single) threw:`, e?.message ?? e);
+      return null;
+    }
+  };
+
+  // Direct-from-supabase fallback for the activity row itself. Some auth /
+  // edge-runtime / network conditions cause the REST `basic` endpoint to come
+  // back blank; in that case we fall back to a raw activity SELECT so the
+  // Overview sheet still populates.
+  const fetchActivityRowDirect = async (): Promise<Record<string, any>> => {
+    try {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('id', activityId)
+        .maybeSingle();
+      if (error) {
+        console.warn('[activity-export] direct activity SELECT error:', error.message);
+        return {};
+      }
+      return data ?? {};
+    } catch (e: any) {
+      console.warn('[activity-export] direct activity SELECT threw:', e?.message ?? e);
+      return {};
     }
   };
 
@@ -73,6 +141,15 @@ async function fetchActivityExportData(activityId: string): Promise<ActivityExpo
     humanitarianScopes,
     policyMarkers,
     tags,
+    sdgMappings,
+    workingGroups,
+    conditions,
+    loanTerms,
+    loanStatuses,
+    subnationalAllocations,
+    recipientCountriesRegions,
+    focalPoints,
+    governmentEndorsement,
   ] = await Promise.all([
     safeJson<any>('basic', (j) => j ?? {}, {}),
     safeJson<any[]>('transactions', undefined, []),
@@ -89,10 +166,40 @@ async function fetchActivityExportData(activityId: string): Promise<ActivityExpo
     safeJson<any[]>('humanitarian', (j) => j?.scopes ?? j?.humanitarian_scopes ?? (Array.isArray(j) ? j : []), []),
     safeJson<any[]>('policy-markers', (j) => j?.policy_markers ?? (Array.isArray(j) ? j : []), []),
     safeJson<any[]>('tags', (j) => j?.tags ?? (Array.isArray(j) ? j : []), []),
+    safeSupabaseList('activity_sdg_mappings'),
+    // Join the parent working_groups row so we get code/label/description for
+    // the export, not just the FK on the join table.
+    safeSupabaseList('activity_working_groups', '*, working_groups(id, code, label, description)'),
+    safeSupabaseList('activity_conditions'),
+    safeSupabaseSingle('activity_financing_terms'),
+    safeSupabaseList('activity_loan_status'),
+    safeJson<any[]>('subnational-breakdown', (j) => j?.allocations ?? j?.subnational_breakdown ?? (Array.isArray(j) ? j : []), []),
+    safeJson<any[]>('countries-regions', (j) => j?.allocations ?? j?.countries_regions ?? (Array.isArray(j) ? j : []), []),
+    // The focal-points endpoint returns
+    //   { government_focal_points: [...], development_partner_focal_points: [...] }
+    // — combine both and tag rows with their type so the export sheet stays flat.
+    safeJson<any[]>('focal-points', (j) => {
+      if (Array.isArray(j)) return j;
+      const gov = (j?.government_focal_points ?? []).map((r: any) => ({ ...r, focal_point_type: 'government_focal_point' }));
+      const dp = (j?.development_partner_focal_points ?? []).map((r: any) => ({ ...r, focal_point_type: 'development_partner_focal_point' }));
+      return [...gov, ...dp];
+    }, []),
+    safeJson<any>('government-endorsement', (j) => j?.endorsement ?? j ?? null, null),
   ]);
 
+  // If the REST `basic` endpoint came back empty (auth/edge issues, blank
+  // shell, etc.), merge in a direct supabase SELECT of the activity row so
+  // the Overview sheet still has the raw fields. The basic API's transformed
+  // camelCase keys take precedence; the raw snake_case row fills the gaps.
+  let basicMerged = basic ?? {};
+  const basicLooksEmpty = !basic || Object.keys(basic).filter(k => basic[k] !== null && basic[k] !== undefined && basic[k] !== '').length < 3;
+  if (basicLooksEmpty) {
+    const direct = await fetchActivityRowDirect();
+    basicMerged = { ...direct, ...basicMerged };
+  }
+
   return {
-    basic,
+    basic: basicMerged,
     transactions: Array.isArray(transactions) ? transactions : [],
     budgets: Array.isArray(budgets) ? budgets : [],
     planned_disbursements: Array.isArray(plannedDisbursements) ? plannedDisbursements : [],
@@ -107,6 +214,15 @@ async function fetchActivityExportData(activityId: string): Promise<ActivityExpo
     humanitarian_scopes: Array.isArray(humanitarianScopes) ? humanitarianScopes : [],
     policy_markers: Array.isArray(policyMarkers) ? policyMarkers : [],
     tags: Array.isArray(tags) ? tags : [],
+    sdg_mappings: Array.isArray(sdgMappings) ? sdgMappings : [],
+    working_groups: Array.isArray(workingGroups) ? workingGroups : [],
+    conditions: Array.isArray(conditions) ? conditions : [],
+    loan_terms: loanTerms ?? null,
+    loan_statuses: Array.isArray(loanStatuses) ? loanStatuses : [],
+    subnational_allocations: Array.isArray(subnationalAllocations) ? subnationalAllocations : [],
+    recipient_countries_regions: Array.isArray(recipientCountriesRegions) ? recipientCountriesRegions : [],
+    focal_points: Array.isArray(focalPoints) ? focalPoints : [],
+    government_endorsement: governmentEndorsement ?? null,
   };
 }
 
@@ -469,7 +585,56 @@ export async function exportActivityToPDF(activityId: string): Promise<void> {
  *   Sectors, Locations, Results, Indicators, Documents, PolicyMarkers,
  *   Tags, Contacts, RelatedActivities, CountryBudgetItems, HumanitarianScopes
  */
-export async function exportActivityToExcel(activityId: string): Promise<void> {
+/**
+ * Coerce any of the multilingual / structured-narrative shapes the AIMS schema
+ * stores into a flat string suitable for an Excel cell. Handles:
+ *   - plain string
+ *   - `{ narrative: '...' }`              (IATI element)
+ *   - `{ en: '...', fr: '...' }`          (language-keyed dict, e.g. conditions)
+ *   - `[{ lang: 'en', text: '...' }]`     (IATI multi-language array)
+ *   - `[{ narrative: '...' }]`
+ */
+function extractNarrativeText(val: any): string {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) {
+    if (val.length === 0) return '';
+    const parts = val
+      .map(v => extractNarrativeText(v))
+      .filter(Boolean);
+    return parts.join('; ');
+  }
+  if (typeof val === 'object') {
+    if (typeof val.narrative === 'string') return val.narrative;
+    if (val.narrative && typeof val.narrative === 'object') return extractNarrativeText(val.narrative);
+    if (typeof val.text === 'string') return val.text;
+    if (typeof val.en === 'string') return val.en;
+    // Language-keyed dict — return the first non-empty string value.
+    for (const k of Object.keys(val)) {
+      const v = (val as any)[k];
+      if (typeof v === 'string' && v) return v;
+      if (v && typeof v === 'object') {
+        const nested = extractNarrativeText(v);
+        if (nested) return nested;
+      }
+    }
+  }
+  return '';
+}
+
+export interface ActivityExportMeta {
+  /** Display name of the person triggering the export. */
+  exportedByName?: string;
+  /** Email of the person triggering the export. */
+  exportedByEmail?: string;
+  /** Page URL the export was triggered from. */
+  exportedFromUrl?: string;
+}
+
+export async function exportActivityToExcel(
+  activityId: string,
+  meta?: ActivityExportMeta
+): Promise<void> {
   const loadingToast = toast.loading('Preparing Excel export...');
 
   try {
@@ -479,64 +644,116 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
     const defaultCurrency = activity?.default_currency ?? 'USD';
 
     // ---- Overview ----
-    const aidType = coded('aid_type', activity?.default_aid_type);
-    const flowType = coded('flow_type', activity?.default_flow_type);
-    const financeType = coded('finance_type', activity?.default_finance_type);
-    const tiedStatus = coded('tied_status', activity?.default_tied_status);
-    const status = coded('activity_status', activity?.activity_status);
-    const collab = coded('collaboration_type', activity?.collaboration_type);
-    const scope = coded('activity_scope', activity?.activity_scope);
+    // The basic endpoint returns a mix of snake_case and camelCase keys
+    // (see app/api/activities/[id]/basic/route.ts). Use a small helper that
+    // tries each candidate name in order so the export still resolves a value
+    // regardless of which casing the API used.
+    const a = activity ?? {};
+    const pick = (...keys: string[]): any => {
+      for (const k of keys) {
+        const v = a[k];
+        if (v !== undefined && v !== null && v !== '') return v;
+      }
+      return '';
+    };
+
+    const aidType = coded('aid_type', pick('default_aid_type', 'defaultAidType'));
+    const flowType = coded('flow_type', pick('default_flow_type', 'defaultFlowType'));
+    const financeType = coded('finance_type', pick('default_finance_type', 'defaultFinanceType'));
+    const tiedStatus = coded('tied_status', pick('default_tied_status', 'defaultTiedStatus'));
+    const status = coded('activity_status', pick('activity_status', 'activityStatus'));
+    const collab = coded('collaboration_type', pick('collaboration_type', 'collaborationType'));
+    const scope = coded('activity_scope', pick('activity_scope', 'activityScope'));
     const currency = coded('currency', defaultCurrency);
-    const overview: Array<[string, string | number]> = [
-      ['Field', 'Value'],
-      ['uuid', activity?.id ?? activityId],
-      ['iati_identifier', activity?.iati_identifier ?? ''],
-      ['other_identifier', activity?.other_identifier ?? ''],
-      ['title', activity?.title_narrative ?? ''],
-      ['acronym', activity?.acronym ?? ''],
-      ['description_general', activity?.description_narrative ?? ''],
-      ['description_objectives', activity?.description_objectives ?? ''],
-      ['description_target_groups', activity?.description_target_groups ?? ''],
-      ['description_other', activity?.description_other ?? ''],
-      ['activity_status_code', status.code],
-      ['activity_status_name', status.name],
-      ['publication_status', activity?.publication_status ?? ''],
-      ['submission_status', activity?.submission_status ?? ''],
-      ['collaboration_type_code', collab.code],
-      ['collaboration_type_name', collab.name],
-      ['activity_scope_code', scope.code],
-      ['activity_scope_name', scope.name],
-      ['hierarchy', activity?.hierarchy ?? ''],
-      ['default_currency_code', currency.code],
-      ['default_currency_name', currency.name],
-      ['default_aid_type_code', aidType.code],
-      ['default_aid_type_name', aidType.name],
-      ['default_flow_type_code', flowType.code],
-      ['default_flow_type_name', flowType.name],
-      ['default_finance_type_code', financeType.code],
-      ['default_finance_type_name', financeType.name],
-      ['default_tied_status_code', tiedStatus.code],
-      ['default_tied_status_name', tiedStatus.name],
-      ['default_aid_modality', activity?.default_aid_modality ?? ''],
-      ['default_aid_modality_override', bool(activity?.default_aid_modality_override)],
-      ['humanitarian', bool(activity?.humanitarian)],
-      ['linked_data_uri', activity?.linked_data_uri ?? ''],
-      ['language', activity?.language ?? ''],
-      ['reporting_org_id', activity?.reporting_org_id ?? ''],
-      ['reporting_org_ref', activity?.reporting_org_ref ?? ''],
-      ['created_by_org_name', activity?.created_by_org_name ?? ''],
-      ['created_by_org_acronym', activity?.created_by_org_acronym ?? ''],
-      ['planned_start_date', dateIso(activity?.planned_start_date)],
-      ['planned_end_date', dateIso(activity?.planned_end_date)],
-      ['actual_start_date', dateIso(activity?.actual_start_date)],
-      ['actual_end_date', dateIso(activity?.actual_end_date)],
-      ['capital_spend_percentage', percentage(activity?.capital_spend_percentage)],
-      ['budget_status', activity?.budget_status ?? ''],
-      ['on_budget_percentage', percentage(activity?.on_budget_percentage)],
-      ['created_at', dateIso(activity?.created_at)],
-      ['updated_at', dateIso(activity?.updated_at)],
-      ['', ''],
-      [getExportFooter(), ''],
+
+    // Format the IATI <other-identifier> list (separate from the legacy single
+    // partner-id field in `other_identifier`).
+    const otherIdentifiers = (a.other_identifiers ?? a.otherIdentifiers ?? []) as any[];
+    const otherIdentifiersText = Array.isArray(otherIdentifiers) && otherIdentifiers.length > 0
+      ? otherIdentifiers.map((o: any) => {
+          const ref = o.ref ?? o.identifier ?? '';
+          const type = o.type ?? o.identifier_type ?? '';
+          const ownerOrg = o.owner_org_narrative ?? o.ownerOrgNarrative ?? o.owner_org_ref ?? '';
+          return [ref, type ? `(type ${type})` : '', ownerOrg ? `[${ownerOrg}]` : ''].filter(Boolean).join(' ');
+        }).join('; ')
+      : '';
+
+    // Three-column rows: [Field, Description (plain-IATI), Value].
+    const overview: Array<[string, string, string | number]> = [
+      ['Field', 'Description', 'Value'],
+
+      // ── Identification ───────────────────────────────────────────────
+      ['Activity Title', 'Free-text title of the activity (IATI <title>).', pick('title_narrative', 'title')],
+      ['Acronym', 'Short common acronym for the activity, if any.', pick('acronym')],
+      ['Activity Identifier', 'Globally unique IATI identifier for this activity (IATI <iati-identifier>). Format: XX-AAA-NNNN-Project.', pick('iati_identifier', 'iatiIdentifier', 'iatiId')],
+      ['System Generated ID', 'Internal AIMS database identifier (UUID). Not part of IATI.', pick('id', 'uuid') || activityId],
+      ['Auto-Reference', 'AIMS-internal short reference assigned at creation (e.g. PD-####). Not part of IATI.', pick('auto_ref', 'autoRef')],
+      ['Other Identifier (Partner ID)', 'Single legacy partner-assigned identifier — kept for backward compatibility.', pick('other_identifier', 'otherIdentifier', 'partnerId')],
+      ['Other Identifier Types', 'IATI <other-identifier> list — alternate identifiers from other systems, with type code and owning organisation.', otherIdentifiersText],
+
+      // ── Description ──────────────────────────────────────────────────
+      ['General Description', 'IATI <description type="1"> — main descriptive narrative.', pick('description_narrative', 'description')],
+      ['Description: Objectives', 'IATI <description type="2"> — objectives or expected outcomes.', pick('description_objectives', 'descriptionObjectives')],
+      ['Description: Target Groups', 'IATI <description type="3"> — beneficiary groups the activity targets.', pick('description_target_groups', 'descriptionTargetGroups')],
+      ['Description: Other', 'IATI <description type="4"> — any other descriptive narrative.', pick('description_other', 'descriptionOther')],
+
+      // ── Status & Lifecycle ───────────────────────────────────────────
+      ['Activity Status (code)', 'IATI <activity-status> code — lifecycle stage.', status.code],
+      ['Activity Status (name)', 'Plain-language label for the activity status.', status.name],
+      ['Publication Status', 'AIMS-only — "draft" while in editor, "published" when made public.', pick('publication_status', 'publicationStatus')],
+      ['Submission Status', 'AIMS-only — workflow state: draft / submitted / validated / rejected / published.', pick('submission_status', 'submissionStatus')],
+      ['Hierarchy', 'IATI @hierarchy — 1 = parent, 2 = child, 3 = sub-child of a parent activity.', pick('hierarchy')],
+
+      // ── Reporting Org ────────────────────────────────────────────────
+      ['Reporting Org ID', 'AIMS UUID for the organisation reporting this activity (IATI <reporting-org>).', pick('reporting_org_id', 'reportingOrgId')],
+      ['Reporting Org Ref', 'IATI @ref of the reporting organisation (e.g. GB-COH-1234567).', pick('reporting_org_ref', 'reportingOrgRef')],
+      ['Created By Organisation', 'Organisation that initially created this activity record in AIMS.', pick('created_by_org_name')],
+      ['Created By Organisation (acronym)', 'Acronym of the creating organisation.', pick('created_by_org_acronym')],
+
+      // ── Default IATI fields ──────────────────────────────────────────
+      ['Collaboration Type (code)', 'IATI <collaboration-type> — bilateral, multilateral, triangular, etc.', collab.code],
+      ['Collaboration Type (name)', 'Plain-language label for the collaboration type.', collab.name],
+      ['Activity Scope (code)', 'IATI <activity-scope> — geographic reach: global, regional, national, sub-national.', scope.code],
+      ['Activity Scope (name)', 'Plain-language label for the activity scope.', scope.name],
+      ['Default Currency (code)', 'IATI @default-currency — three-letter ISO 4217 code applied where transaction currency is unspecified.', currency.code],
+      ['Default Currency (name)', 'Plain-language name of the default currency.', currency.name],
+      ['Default Aid Type (code)', 'IATI <default-aid-type> code — modality (project-type, budget support, technical assistance, etc.).', aidType.code],
+      ['Default Aid Type (name)', 'Plain-language label for the default aid type.', aidType.name],
+      ['Default Flow Type (code)', 'IATI <default-flow-type> code — ODA, OOF, private flows, etc.', flowType.code],
+      ['Default Flow Type (name)', 'Plain-language label for the default flow type.', flowType.name],
+      ['Default Finance Type (code)', 'IATI <default-finance-type> code — standard grant, concessional loan, equity, etc.', financeType.code],
+      ['Default Finance Type (name)', 'Plain-language label for the default finance type.', financeType.name],
+      ['Default Tied Status (code)', 'IATI <default-tied-status> code — tied, partially tied, untied.', tiedStatus.code],
+      ['Default Tied Status (name)', 'Plain-language label for the default tied status.', tiedStatus.name],
+      ['Default Aid Modality', 'AIMS-only modality classification (not part of the IATI standard).', pick('default_aid_modality', 'defaultAidModality')],
+      ['Default Aid Modality Override', 'AIMS-only — whether transactions may override the activity-level modality.', bool(pick('default_aid_modality_override') as any)],
+
+      // ── Dates ────────────────────────────────────────────────────────
+      ['Planned Start Date', 'IATI <activity-date type="1"> — originally planned start date.', dateIso(pick('planned_start_date', 'plannedStartDate'))],
+      ['Planned End Date', 'IATI <activity-date type="3"> — originally planned end date.', dateIso(pick('planned_end_date', 'plannedEndDate'))],
+      ['Actual Start Date', 'IATI <activity-date type="2"> — date the activity actually started.', dateIso(pick('actual_start_date', 'actualStartDate'))],
+      ['Actual End Date', 'IATI <activity-date type="4"> — date the activity actually ended.', dateIso(pick('actual_end_date', 'actualEndDate'))],
+
+      // ── Other attributes ─────────────────────────────────────────────
+      ['Humanitarian', 'IATI @humanitarian flag — true if the activity addresses a humanitarian crisis.', bool(pick('humanitarian') as any)],
+      ['Capital Spend %', 'IATI <capital-spend> — percentage of commitment that is capital expenditure.', percentage(pick('capital_spend_percentage') as any)],
+      ['Budget Status', 'AIMS-only — whether the activity is "on-budget" in the recipient government\'s national budget.', pick('budget_status', 'budgetStatus')],
+      ['On-Budget %', 'AIMS-only — percentage of value reflected in the recipient government\'s budget.', percentage(pick('on_budget_percentage', 'onBudgetPercentage') as any)],
+      ['Linked Data URI', 'IATI @linked-data-uri — canonical URL for additional metadata about this activity.', pick('linked_data_uri', 'linkedDataUri')],
+      ['Language', 'IATI @xml:lang — default language of narrative fields (ISO 639-1).', pick('language')],
+
+      // ── System metadata ──────────────────────────────────────────────
+      ['Created At', 'When the activity record was first created in AIMS.', dateIso(pick('created_at', 'createdAt'))],
+      ['Updated At', 'When the activity record was last modified in AIMS.', dateIso(pick('updated_at', 'updatedAt'))],
+
+      // ── Export metadata ──────────────────────────────────────────────
+      ['', '', ''],
+      ['Exported By (name)', 'Person who triggered this Excel export.', meta?.exportedByName ?? ''],
+      ['Exported By (email)', 'Email of the person who triggered this export.', meta?.exportedByEmail ?? ''],
+      ['Exported At', 'Timestamp the export was generated (ISO-8601 UTC).', new Date().toISOString()],
+      ['Exported From URL', 'URL of the page the export was generated from.', meta?.exportedFromUrl ?? (typeof window !== 'undefined' ? window.location.href : '')],
+      ['', '', ''],
+      [getExportFooter(), '', ''],
     ];
     wb.addRawSheet('Overview', overview);
 
@@ -548,10 +765,29 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
         { header: 'iati_role_code', accessor: (o: any) => o.iati_role_code ?? '' },
         { header: 'organization_name', accessor: (o: any) => o.organization?.name ?? o.narrative ?? '' },
         { header: 'organization_acronym', accessor: (o: any) => o.organization?.acronym ?? '' },
-        { header: 'organization_id', accessor: (o: any) => o.organization?.id ?? o.organization_id ?? '' },
-        { header: 'iati_org_ref', accessor: (o: any) => o.organization?.iati_org_id ?? o.iati_org_ref ?? '' },
-        { header: 'org_type_code', accessor: (o: any) => coded('organization_type', o.org_type ?? o.organization?.type ?? '').code },
-        { header: 'org_type_name', accessor: (o: any) => coded('organization_type', o.org_type ?? o.organization?.type ?? '').name },
+        // AIMS internal UUID for the org (joins to other tables / activities).
+        { header: 'organization_uuid', accessor: (o: any) => o.organization?.id ?? o.organization_id ?? '' },
+        // IATI org identifier (e.g. XM-DAC-47066, GB-COH-1234567) — what IATI uses to identify the org globally.
+        { header: 'organization_iati_id', accessor: (o: any) => o.organization?.iati_org_id ?? o.iati_org_ref ?? '' },
+        {
+          header: 'organization_type_code',
+          accessor: (o: any) =>
+            coded(
+              'organization_type',
+              o.organization?.Organisation_Type_Code ?? o.org_type ?? o.organization?.type ?? '',
+            ).code,
+        },
+        {
+          header: 'organization_type_name',
+          accessor: (o: any) => {
+            const code =
+              o.organization?.Organisation_Type_Code ?? o.org_type ?? o.organization?.type ?? '';
+            // Prefer the codelist-resolved label, but fall back to the joined
+            // Organisation_Type_Name if the codelist doesn't recognise the code.
+            return coded('organization_type', code).name || o.organization?.Organisation_Type_Name || '';
+          },
+        },
+        { header: 'organization_country', accessor: (o: any) => o.organization?.country ?? '' },
         { header: 'narrative', accessor: (o: any) => o.narrative ?? '' },
         { header: 'secondary_reporter', accessor: (o: any) => bool(o.secondary_reporter) },
       ], data.organizations);
@@ -621,6 +857,8 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
 
     // ---- Planned Disbursements ----
     if (data.planned_disbursements.length > 0) {
+      // The /planned-disbursements endpoint enriches each row with the joined
+      // organisation's iati_org_id, acronym, type, country (see provider_org_iati_id etc.).
       wb.addSheet('PlannedDisbursements', [
         { header: 'planned_disbursement_id', accessor: (p: any) => p.id ?? '' },
         { header: 'period_start', accessor: (p: any) => dateIso(p.period_start) },
@@ -629,11 +867,19 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
         { header: 'currency_code', accessor: (p: any) => coded('currency', p.currency).code },
         { header: 'currency_name', accessor: (p: any) => coded('currency', p.currency).name },
         { header: 'value_date', accessor: (p: any) => dateIso(p.value_date) },
-        { header: 'usd_value', accessor: (p: any) => p.usd_amount ?? p.amount_usd ?? '' },
-        { header: 'provider_org_ref', accessor: (p: any) => p.provider_org_ref ?? '' },
+        { header: 'usd_value', accessor: (p: any) => p.usd_amount ?? p.amount_usd ?? p.usd_value ?? '' },
+        { header: 'provider_org_uuid', accessor: (p: any) => p.provider_org_id ?? '' },
+        { header: 'provider_org_iati_id', accessor: (p: any) => p.provider_org_iati_id ?? p.provider_org_ref ?? '' },
         { header: 'provider_org_name', accessor: (p: any) => p.provider_org_name ?? '' },
-        { header: 'receiver_org_ref', accessor: (p: any) => p.receiver_org_ref ?? '' },
+        { header: 'provider_org_acronym', accessor: (p: any) => p.provider_org_acronym ?? '' },
+        { header: 'provider_org_type_code', accessor: (p: any) => coded('organization_type', p.provider_org_type ?? '').code },
+        { header: 'provider_org_type_name', accessor: (p: any) => coded('organization_type', p.provider_org_type ?? '').name },
+        { header: 'receiver_org_uuid', accessor: (p: any) => p.receiver_org_id ?? '' },
+        { header: 'receiver_org_iati_id', accessor: (p: any) => p.receiver_org_iati_id ?? p.receiver_org_ref ?? '' },
         { header: 'receiver_org_name', accessor: (p: any) => p.receiver_org_name ?? '' },
+        { header: 'receiver_org_acronym', accessor: (p: any) => p.receiver_org_acronym ?? '' },
+        { header: 'receiver_org_type_code', accessor: (p: any) => coded('organization_type', p.receiver_org_type ?? '').code },
+        { header: 'receiver_org_type_name', accessor: (p: any) => coded('organization_type', p.receiver_org_type ?? '').name },
       ], data.planned_disbursements);
     }
 
@@ -676,20 +922,32 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
 
     // ---- Results + Indicators ----
     if (data.results.length > 0) {
+      // Result type codes follow the IATI codelist (1 = Output, 2 = Outcome,
+      // 3 = Impact, 9 = Other). The AIMS schema also stores these as text
+      // labels (`output`/`outcome`/`impact`/`other`), so handle both.
+      const resultTypeName = (val: any): string => {
+        const v = String(val ?? '').toLowerCase();
+        if (v === '1' || v === 'output') return 'Output';
+        if (v === '2' || v === 'outcome') return 'Outcome';
+        if (v === '3' || v === 'impact') return 'Impact';
+        if (v === '9' || v === 'other') return 'Other';
+        return '';
+      };
+      const resultTypeCode = (val: any): string => {
+        const v = String(val ?? '').toLowerCase();
+        if (v === 'output') return '1';
+        if (v === 'outcome') return '2';
+        if (v === 'impact') return '3';
+        if (v === 'other') return '9';
+        return v;
+      };
       wb.addSheet('Results', [
         { header: 'result_id', accessor: (r: any) => r.id ?? '' },
-        { header: 'result_type_code', accessor: (r: any) => coded('transaction_status', r.type ?? '').code || String(r.type ?? '') },
-        { header: 'result_type_name', accessor: (r: any) => {
-          const t = String(r.type ?? r.result_type ?? '');
-          if (t === '1') return 'Output';
-          if (t === '2') return 'Outcome';
-          if (t === '3') return 'Impact';
-          if (t === '9') return 'Other';
-          return '';
-        } },
+        { header: 'result_type_code', accessor: (r: any) => resultTypeCode(r.type ?? r.result_type) },
+        { header: 'result_type_name', accessor: (r: any) => resultTypeName(r.type ?? r.result_type) },
         { header: 'aggregation_status', accessor: (r: any) => bool(r.aggregation_status) },
-        { header: 'title', accessor: (r: any) => r.title?.narrative ?? r.title ?? r.title_narrative ?? '' },
-        { header: 'description', accessor: (r: any) => r.description?.narrative ?? r.description ?? r.description_narrative ?? '' },
+        { header: 'title', accessor: (r: any) => extractNarrativeText(r.title ?? r.title_narrative) },
+        { header: 'description', accessor: (r: any) => extractNarrativeText(r.description ?? r.description_narrative) },
       ], data.results);
 
       const indicatorRows: any[] = [];
@@ -699,23 +957,33 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
         }
       }
       if (indicatorRows.length > 0) {
+        const measureName = (val: any): string => {
+          const m = String(val ?? '').toLowerCase();
+          if (m === '1' || m === 'unit') return 'Unit';
+          if (m === '2' || m === 'percentage') return 'Percentage';
+          if (m === '3' || m === 'nominal') return 'Nominal';
+          if (m === '4' || m === 'ordinal') return 'Ordinal';
+          if (m === '5' || m === 'qualitative') return 'Qualitative';
+          return '';
+        };
+        const measureCode = (val: any): string => {
+          const m = String(val ?? '').toLowerCase();
+          if (m === 'unit') return '1';
+          if (m === 'percentage') return '2';
+          if (m === 'nominal') return '3';
+          if (m === 'ordinal') return '4';
+          if (m === 'qualitative') return '5';
+          return m;
+        };
         wb.addSheet('Indicators', [
           { header: 'result_id', accessor: 'result_id' as any },
           { header: 'indicator_id', accessor: (i: any) => i.id ?? '' },
-          { header: 'measure_code', accessor: (i: any) => String(i.measure ?? i.indicator_type ?? '') },
-          { header: 'measure_name', accessor: (i: any) => {
-            const m = String(i.measure ?? i.indicator_type ?? '');
-            if (m === '1') return 'Unit';
-            if (m === '2') return 'Percentage';
-            if (m === '3') return 'Nominal';
-            if (m === '4') return 'Ordinal';
-            if (m === '5') return 'Qualitative';
-            return '';
-          } },
+          { header: 'measure_code', accessor: (i: any) => measureCode(i.measure ?? i.indicator_type) },
+          { header: 'measure_name', accessor: (i: any) => measureName(i.measure ?? i.indicator_type) },
           { header: 'ascending', accessor: (i: any) => bool(i.ascending) },
           { header: 'aggregation_status', accessor: (i: any) => bool(i.aggregation_status) },
-          { header: 'title', accessor: (i: any) => i.title?.narrative ?? i.title ?? i.title_narrative ?? '' },
-          { header: 'description', accessor: (i: any) => i.description?.narrative ?? i.description ?? '' },
+          { header: 'title', accessor: (i: any) => extractNarrativeText(i.title ?? i.title_narrative) },
+          { header: 'description', accessor: (i: any) => extractNarrativeText(i.description) },
           { header: 'baseline_year', accessor: (i: any) => i.baseline?.[0]?.year ?? '' },
           { header: 'baseline_value', accessor: (i: any) => i.baseline?.[0]?.value ?? '' },
           { header: 'target_value', accessor: (i: any) => i.periods?.[0]?.target?.value ?? '' },
@@ -743,12 +1011,18 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
 
     // ---- Policy Markers ----
     if (data.policy_markers.length > 0) {
+      // The /policy-markers endpoint exposes the joined codelist row at
+      // `policy_marker_details` (uuid, code, iati_code, name, vocabulary).
+      // Fall back to top-level fields for older shapes / direct supabase.
+      const pmCode = (p: any) => p.policy_marker_details?.iati_code ?? p.policy_marker_details?.code ?? p.iati_code ?? p.code ?? '';
+      const pmName = (p: any) => p.policy_marker_details?.name ?? p.name ?? coded('policy_marker', pmCode(p)).name ?? '';
+      const pmVocab = (p: any) => p.policy_marker_details?.vocabulary ?? p.vocabulary ?? '1';
       wb.addSheet('PolicyMarkers', [
-        { header: 'policy_marker_vocabulary_code', accessor: (p: any) => coded('policy_marker_vocabulary', p.vocabulary ?? '1').code },
-        { header: 'policy_marker_vocabulary_name', accessor: (p: any) => coded('policy_marker_vocabulary', p.vocabulary ?? '1').name },
-        { header: 'policy_marker_code', accessor: (p: any) => coded('policy_marker', p.iati_code ?? p.code).code },
-        { header: 'policy_marker_name', accessor: (p: any) => coded('policy_marker', p.iati_code ?? p.code).name || (p.name ?? '') },
-        { header: 'significance_code', accessor: (p: any) => coded('policy_significance', p.significance).code },
+        { header: 'policy_marker_vocabulary_code', accessor: (p: any) => coded('policy_marker_vocabulary', pmVocab(p)).code },
+        { header: 'policy_marker_vocabulary_name', accessor: (p: any) => coded('policy_marker_vocabulary', pmVocab(p)).name },
+        { header: 'policy_marker_code', accessor: (p: any) => pmCode(p) },
+        { header: 'policy_marker_name', accessor: (p: any) => pmName(p) },
+        { header: 'significance_code', accessor: (p: any) => coded('policy_significance', p.significance).code || String(p.significance ?? '') },
         { header: 'significance_name', accessor: (p: any) => coded('policy_significance', p.significance).name },
         { header: 'rationale', accessor: (p: any) => p.rationale ?? '' },
       ], data.policy_markers);
@@ -767,37 +1041,61 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
 
     // ---- Contacts ----
     if (data.contacts.length > 0) {
+      // The contacts endpoint joins to a `contacts` row (note the alias) that
+      // holds first_name / last_name etc. Compose a full name from those
+      // pieces, falling back through every observed shape.
+      const composeName = (c: any): string => {
+        const inner = c.contacts ?? c.contact ?? {};
+        const first = c.first_name ?? inner.first_name ?? '';
+        const middle = c.middle_name ?? inner.middle_name ?? '';
+        const last = c.last_name ?? inner.last_name ?? '';
+        const composed = [first, middle, last].filter(Boolean).join(' ').trim();
+        return composed || c.name || c.full_name || inner.name || c.email || inner.email || '';
+      };
       wb.addSheet('Contacts', [
         { header: 'contact_id', accessor: (c: any) => c.id ?? '' },
         { header: 'contact_type', accessor: (c: any) => c.type ?? '' },
         { header: 'contact_role', accessor: (c: any) => c.contact_role ?? '' },
-        { header: 'name', accessor: (c: any) => c.name ?? c.full_name ?? '' },
-        { header: 'organisation', accessor: (c: any) => c.organisation_name ?? c.organization_name ?? '' },
-        { header: 'department', accessor: (c: any) => c.department ?? '' },
-        { header: 'job_title', accessor: (c: any) => c.job_title ?? c.position ?? '' },
-        { header: 'telephone', accessor: (c: any) => c.telephone ?? c.phone ?? '' },
-        { header: 'email', accessor: (c: any) => c.email ?? '' },
-        { header: 'website', accessor: (c: any) => c.website ?? '' },
-        { header: 'mailing_address', accessor: (c: any) => c.mailing_address ?? c.address ?? '' },
+        { header: 'name', accessor: composeName },
+        {
+          header: 'organisation',
+          accessor: (c: any) =>
+            c.organizations?.name ?? c.contacts?.organizations?.name ?? c.organisation_name ?? c.organization_name ?? c.contacts?.organisation ?? c.organisation ?? '',
+        },
+        { header: 'department', accessor: (c: any) => c.department ?? c.contacts?.department ?? '' },
+        { header: 'job_title', accessor: (c: any) => c.job_title ?? c.contacts?.job_title ?? c.position ?? c.contacts?.position ?? '' },
+        { header: 'telephone', accessor: (c: any) => c.telephone ?? c.phone ?? c.phone_number ?? c.contacts?.phone ?? c.contacts?.phone_number ?? '' },
+        { header: 'email', accessor: (c: any) => c.email ?? c.contacts?.email ?? '' },
+        { header: 'website', accessor: (c: any) => c.website ?? c.contacts?.website ?? '' },
+        { header: 'mailing_address', accessor: (c: any) => c.mailing_address ?? c.contacts?.mailing_address ?? c.address ?? '' },
       ], data.contacts);
     }
 
     // ---- Related Activities ----
-    if (data.related_activities.length > 0) {
-      wb.addSheet('RelatedActivities', [
-        { header: 'related_activity_id', accessor: (r: any) => r.related_activity_id ?? '' },
-        { header: 'iati_identifier', accessor: (r: any) => r.external_iati_identifier ?? r.iati_identifier ?? '' },
-        { header: 'relationship_type_code', accessor: (r: any) => String(r.relationship_type ?? '') },
-        { header: 'relationship_type_name', accessor: (r: any) => {
-          const t = String(r.relationship_type ?? '');
-          const map: Record<string, string> = {
-            '1': 'Parent', '2': 'Child', '3': 'Sibling', '4': 'Co-funded',
-            '5': 'Third-party report',
-          };
-          return map[t] ?? '';
-        } },
-        { header: 'narrative', accessor: (r: any) => r.narrative ?? '' },
-      ], data.related_activities);
+    // Filter out totally empty rows that come from the join table when nothing
+    // else is populated (no related_activity_id, no IATI ref, no relationship).
+    {
+      const meaningful = (data.related_activities ?? []).filter((r: any) =>
+        (r.related_activity_id ?? r.related_activity_uuid ?? '') ||
+        (r.external_iati_identifier ?? r.iati_identifier ?? r.related_iati_identifier ?? '') ||
+        (r.relationship_type ?? r.relationship_type_code ?? '')
+      );
+      if (meaningful.length > 0) {
+        wb.addSheet('RelatedActivities', [
+          { header: 'related_activity_id', accessor: (r: any) => r.related_activity_id ?? r.related_activity_uuid ?? '' },
+          { header: 'iati_identifier', accessor: (r: any) => r.external_iati_identifier ?? r.iati_identifier ?? r.related_iati_identifier ?? '' },
+          { header: 'relationship_type_code', accessor: (r: any) => String(r.relationship_type ?? r.relationship_type_code ?? '') },
+          { header: 'relationship_type_name', accessor: (r: any) => {
+            const t = String(r.relationship_type ?? r.relationship_type_code ?? '');
+            const map: Record<string, string> = {
+              '1': 'Parent', '2': 'Child', '3': 'Sibling', '4': 'Co-funded',
+              '5': 'Third-party report',
+            };
+            return map[t] ?? '';
+          } },
+          { header: 'narrative', accessor: (r: any) => extractNarrativeText(r.narrative) },
+        ], meaningful);
+      }
     }
 
     // ---- Country Budget Items ----
@@ -812,14 +1110,206 @@ export async function exportActivityToExcel(activityId: string): Promise<void> {
 
     // ---- Humanitarian Scopes ----
     if (data.humanitarian_scopes.length > 0) {
+      // Vocabulary code 98/99 fall outside the IATI codelist — surface a
+      // sensible label so the reviewer doesn't see a blank cell.
+      const vocabName = (h: any) => {
+        const code = String(h.vocabulary ?? '');
+        const fromCodelist = coded('humanitarian_scope_vocabulary', code).name;
+        if (fromCodelist) return fromCodelist;
+        if (code === '98') return 'Reporting Organisation';
+        if (code === '99') return 'Reporting Organisation (custom)';
+        return '';
+      };
       wb.addSheet('HumanitarianScopes', [
         { header: 'type_code', accessor: (h: any) => coded('humanitarian_scope_type', h.humanitarian_scope_type ?? h.type).code },
-        { header: 'type_name', accessor: (h: any) => coded('humanitarian_scope_type', h.humanitarian_scope_type ?? h.type).name },
-        { header: 'vocabulary_code', accessor: (h: any) => coded('humanitarian_scope_vocabulary', h.vocabulary).code },
-        { header: 'vocabulary_name', accessor: (h: any) => coded('humanitarian_scope_vocabulary', h.vocabulary).name },
+        { header: 'type_name', accessor: (h: any) => {
+          const code = h.humanitarian_scope_type ?? h.type;
+          return coded('humanitarian_scope_type', code).name || (String(code) === '1' ? 'Emergency' : String(code) === '2' ? 'Appeal' : '');
+        } },
+        { header: 'vocabulary_code', accessor: (h: any) => String(h.vocabulary ?? '') },
+        { header: 'vocabulary_name', accessor: vocabName },
         { header: 'scope_code', accessor: (h: any) => h.humanitarian_scope_code ?? h.code ?? '' },
-        { header: 'narrative', accessor: (h: any) => h.narrative ?? '' },
+        { header: 'narrative', accessor: (h: any) => extractNarrativeText(h.narrative) },
       ], data.humanitarian_scopes);
+    }
+
+    // ---- SDGs ----
+    if (data.sdg_mappings.length > 0) {
+      const SDG_GOAL_NAMES: Record<string, string> = {
+        '1': 'No Poverty', '2': 'Zero Hunger', '3': 'Good Health and Well-being',
+        '4': 'Quality Education', '5': 'Gender Equality', '6': 'Clean Water and Sanitation',
+        '7': 'Affordable and Clean Energy', '8': 'Decent Work and Economic Growth',
+        '9': 'Industry, Innovation and Infrastructure', '10': 'Reduced Inequalities',
+        '11': 'Sustainable Cities and Communities', '12': 'Responsible Consumption and Production',
+        '13': 'Climate Action', '14': 'Life Below Water', '15': 'Life on Land',
+        '16': 'Peace, Justice and Strong Institutions', '17': 'Partnerships for the Goals',
+      };
+      const ALIGNMENT_NAMES: Record<string, string> = {
+        primary: 'Primary', secondary: 'Secondary', indirect: 'Indirect',
+      };
+      wb.addSheet('SDGs', [
+        { header: 'sdg_goal_code', accessor: (s: any) => String(s.sdg_goal ?? '') },
+        { header: 'sdg_goal_name', accessor: (s: any) => SDG_GOAL_NAMES[String(s.sdg_goal ?? '')] ?? '' },
+        { header: 'sdg_target_code', accessor: (s: any) => s.sdg_target ?? '' },
+        { header: 'alignment_strength_code', accessor: (s: any) => s.alignment_strength ?? '' },
+        { header: 'alignment_strength_name', accessor: (s: any) => ALIGNMENT_NAMES[String(s.alignment_strength ?? '').toLowerCase()] ?? '' },
+        { header: 'notes', accessor: (s: any) => s.notes ?? '' },
+      ], data.sdg_mappings);
+    }
+
+    // ---- Working Groups ----
+    if (data.working_groups.length > 0) {
+      wb.addSheet('WorkingGroups', [
+        // Joined parent row lives at .working_groups (singular FK alias) per the supabase select
+        { header: 'working_group_code', accessor: (w: any) => w.working_groups?.code ?? w.code ?? '' },
+        { header: 'working_group_name', accessor: (w: any) => w.working_groups?.label ?? w.label ?? w.name ?? '' },
+        { header: 'description', accessor: (w: any) => w.working_groups?.description ?? w.description ?? '' },
+        { header: 'vocabulary', accessor: (w: any) => w.vocabulary ?? '' },
+      ], data.working_groups);
+    }
+
+    // ---- Conditions ----
+    if (data.conditions.length > 0) {
+      const CONDITION_TYPE_NAMES: Record<string, string> = {
+        '1': 'Policy', '2': 'Performance', '3': 'Fiduciary',
+      };
+      // Conditions narrative is `Record<string, string>` keyed by language code
+      // (see types/conditions.ts: `narrative: Record<string, string>`).
+      // Extract the English narrative if present, otherwise the first available language.
+      const extractNarrative = (n: any): string => {
+        if (!n) return '';
+        if (typeof n === 'string') return n;
+        if (typeof n === 'object') {
+          if (n.en) return String(n.en);
+          const firstKey = Object.keys(n)[0];
+          return firstKey ? String(n[firstKey] ?? '') : '';
+        }
+        return String(n);
+      };
+      wb.addSheet('Conditions', [
+        { header: 'condition_type_code', accessor: (c: any) => String(c.condition_type ?? c.type ?? '') },
+        { header: 'condition_type_name', accessor: (c: any) => CONDITION_TYPE_NAMES[String(c.condition_type ?? c.type ?? '')] ?? '' },
+        { header: 'narrative', accessor: (c: any) => extractNarrative(c.narrative) },
+        { header: 'attached', accessor: (c: any) => bool(c.attached) },
+      ], data.conditions);
+    }
+
+    // ---- Subnational Allocations ----
+    // Many activities have an entry per administrative region with 0% so the
+    // editor can show a complete list — we only export rows with a non-zero
+    // allocation to keep the sheet useful for reviewers.
+    {
+      const allocated = (data.subnational_allocations ?? []).filter((a: any) => {
+        const p = Number(a.percentage ?? a.allocation_percentage ?? 0);
+        return Number.isFinite(p) && p > 0;
+      });
+      if (allocated.length > 0) {
+        wb.addSheet('SubnationalAllocations', [
+          { header: 'region_code', accessor: (a: any) => a.region_code ?? a.code ?? a.iso_code ?? a.region_id ?? '' },
+          { header: 'region_name', accessor: (a: any) => a.region_name ?? a.name ?? a.label ?? a.region?.name ?? '' },
+          { header: 'admin_level', accessor: (a: any) => a.admin_level ?? a.adm_level ?? '' },
+          { header: 'percentage', accessor: (a: any) => percentage(a.percentage ?? a.allocation_percentage) },
+        ], allocated);
+      }
+    }
+
+    // ---- Recipient Countries / Regions ----
+    if (data.recipient_countries_regions.length > 0) {
+      wb.addSheet('RecipientCountriesRegions', [
+        { header: 'kind', accessor: (r: any) => r.kind ?? r.type ?? r.entity_type ?? '' },
+        { header: 'vocabulary_code', accessor: (r: any) => r.vocabulary ?? '' },
+        { header: 'code', accessor: (r: any) => r.code ?? r.country_code ?? r.region_code ?? '' },
+        { header: 'name', accessor: (r: any) => r.name ?? r.country_name ?? r.region_name ?? r.label ?? '' },
+        { header: 'percentage', accessor: (r: any) => percentage(r.percentage) },
+      ], data.recipient_countries_regions);
+    }
+
+    // ---- Focal Points ----
+    if (data.focal_points.length > 0) {
+      wb.addSheet('FocalPoints', [
+        { header: 'focal_point_id', accessor: (f: any) => f.id ?? '' },
+        {
+          header: 'focal_point_type',
+          accessor: (f: any) =>
+            f.focal_point_type === 'government_focal_point' ? 'Government' :
+            f.focal_point_type === 'development_partner_focal_point' ? 'Development Partner' :
+            f.focal_point_type ?? f.type ?? '',
+        },
+        {
+          header: 'name',
+          accessor: (f: any) => {
+            if (f.name) return f.name;
+            const composed = [f.first_name, f.last_name].filter(Boolean).join(' ').trim();
+            return composed || f.email || '';
+          },
+        },
+        { header: 'role', accessor: (f: any) => f.role ?? f.job_title ?? f.position ?? '' },
+        {
+          header: 'organization_name',
+          accessor: (f: any) => f.users?.organizations?.name ?? f.organization_name ?? f.organisation_name ?? f.organisation ?? '',
+        },
+        { header: 'email', accessor: (f: any) => f.email ?? '' },
+        { header: 'status', accessor: (f: any) => f.status ?? f.focal_point_status ?? '' },
+        { header: 'assigned_at', accessor: (f: any) => dateIso(f.assigned_at) },
+      ], data.focal_points);
+    }
+
+    // ---- Government Endorsement / Readiness ----
+    if (data.government_endorsement) {
+      const g = data.government_endorsement;
+      const rows: Array<[string, string | number]> = [
+        ['Field', 'Value'],
+        ['validating_authority', g.validating_authority ?? ''],
+        ['effective_date', dateIso(g.effective_date)],
+        ['agreement_number', g.agreement_number ?? ''],
+        ['agreement_url', g.agreement_url ?? ''],
+        ['notes', g.notes ?? ''],
+        ['readiness_stage', g.readiness_stage ?? ''],
+        ['endorsed_by', g.endorsed_by_name ?? g.endorsed_by ?? ''],
+        ['endorsed_at', dateIso(g.endorsed_at)],
+      ];
+      wb.addRawSheet('GovernmentEndorsement', rows);
+    }
+
+    // ---- Loan Terms (single key/value sheet) ----
+    if (data.loan_terms) {
+      const lt = data.loan_terms;
+      const REPAYMENT_TYPE_NAMES: Record<string, string> = {
+        '1': 'Equal principal payments', '2': 'Annuity', '3': 'Lump sum', '5': 'Other',
+      };
+      const REPAYMENT_PLAN_NAMES: Record<string, string> = {
+        '1': 'Annual', '2': 'Semi-annual', '4': 'Quarterly', '12': 'Monthly', '5': 'Other',
+      };
+      const rtCode = String(lt.repayment_type_code ?? '');
+      const rpCode = String(lt.repayment_plan_code ?? '');
+      const rows: Array<[string, string | number]> = [
+        ['Field', 'Value'],
+        ['rate_1', lt.rate_1 ?? ''],
+        ['rate_2', lt.rate_2 ?? ''],
+        ['repayment_type_code', rtCode],
+        ['repayment_type_name', REPAYMENT_TYPE_NAMES[rtCode] ?? ''],
+        ['repayment_plan_code', rpCode],
+        ['repayment_plan_name', REPAYMENT_PLAN_NAMES[rpCode] ?? ''],
+        ['commitment_date', dateIso(lt.commitment_date)],
+        ['repayment_first_date', dateIso(lt.repayment_first_date)],
+        ['repayment_final_date', dateIso(lt.repayment_final_date)],
+        ['other_flags', Array.isArray(lt.other_flags) ? lt.other_flags.join('; ') : (lt.other_flags ?? '')],
+      ];
+      wb.addRawSheet('LoanTerms', rows);
+    }
+
+    // ---- Loan Status (year-by-year rows) ----
+    if (data.loan_statuses.length > 0) {
+      wb.addSheet('LoanStatus', [
+        { header: 'year', accessor: (s: any) => s.year ?? '' },
+        { header: 'currency_code', accessor: (s: any) => coded('currency', s.currency).code },
+        { header: 'currency_name', accessor: (s: any) => coded('currency', s.currency).name },
+        { header: 'value_date', accessor: (s: any) => dateIso(s.value_date) },
+        { header: 'interest_received', accessor: (s: any) => s.interest_received ?? '' },
+        { header: 'principal_outstanding', accessor: (s: any) => s.principal_outstanding ?? '' },
+        { header: 'principal_arrears', accessor: (s: any) => s.principal_arrears ?? '' },
+        { header: 'interest_arrears', accessor: (s: any) => s.interest_arrears ?? '' },
+      ], data.loan_statuses);
     }
 
     const identifier = activity?.iati_identifier || activityId.substring(0, 8);

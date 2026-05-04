@@ -22,6 +22,8 @@ import {
   Trash2,
   Download,
   Save,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,11 +70,59 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
 import { apiFetch } from '@/lib/api-fetch';
+
+/**
+ * Pull a short, human-friendly file-extension label (e.g. "PDF", "JPG", "DOCX")
+ * from either the document URL or its mime/format. Falls back to "FILE".
+ */
+const MIME_TO_EXT: Record<string, string> = {
+  'application/pdf': 'PDF',
+  'application/msword': 'DOC',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+  'application/vnd.ms-excel': 'XLS',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+  'application/vnd.ms-powerpoint': 'PPT',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+  'text/plain': 'TXT',
+  'text/csv': 'CSV',
+  'application/json': 'JSON',
+  'application/xml': 'XML',
+  'text/xml': 'XML',
+  'application/zip': 'ZIP',
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'image/gif': 'GIF',
+  'image/webp': 'WEBP',
+  'image/svg+xml': 'SVG',
+  'image/heic': 'HEIC',
+};
+
+function getDocumentExtension(doc: { url?: string; format?: string }): string {
+  // Prefer the URL's extension if present (most reliable)
+  if (doc.url) {
+    try {
+      const path = new URL(doc.url, 'http://x').pathname;
+      const m = path.match(/\.([a-zA-Z0-9]{1,5})$/);
+      if (m) return m[1].toUpperCase();
+    } catch {
+      const m = doc.url.match(/\.([a-zA-Z0-9]{1,5})(?:[?#]|$)/);
+      if (m) return m[1].toUpperCase();
+    }
+  }
+  // Fall back to mime type lookup
+  if (doc.format) {
+    if (MIME_TO_EXT[doc.format]) return MIME_TO_EXT[doc.format];
+    const sub = doc.format.split('/')[1];
+    if (sub) return sub.replace(/^x-/, '').split(';')[0].toUpperCase().slice(0, 5);
+  }
+  return 'FILE';
+}
 
 // Document Type Filter Component
 interface DocumentTypeFilterProps {
@@ -293,7 +343,18 @@ export function DocumentsAndImagesTabInline({
   const [pendingUploadedDocument, setPendingUploadedDocument] = React.useState<IatiDocumentLink | null>(null);
   const [showMetadataModal, setShowMetadataModal] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
+  const [sortField, setSortField] = React.useState<'type' | 'title' | 'category' | 'date'>('title');
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  const handleSort = (field: 'type' | 'title' | 'category' | 'date') => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -772,7 +833,7 @@ export function DocumentsAndImagesTabInline({
 
           {/* Search and Filter Section */}
           {documents.length > 0 && (
-            <div className="bg-white border rounded-lg p-4 mb-6">
+            <div className="bg-card border rounded-xl p-4 mb-6">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="w-[640px]">
                   <div className="relative">
@@ -811,9 +872,42 @@ export function DocumentsAndImagesTabInline({
                 <>
                   {/* Separate uploaded files and linked documents */}
                   {(() => {
-                    const uploadedDocs = filteredDocuments.filter(doc => isDocumentUploaded(doc));
+                    const uploadedDocsRaw = filteredDocuments.filter(doc => isDocumentUploaded(doc));
                     const linkedDocs = filteredDocuments.filter(doc => !isDocumentUploaded(doc));
-                    
+
+                    // Sort uploaded files by the active column.
+                    const dir = sortDirection === 'asc' ? 1 : -1;
+                    const uploadedDocs = [...uploadedDocsRaw].sort((a, b) => {
+                      let av: string | number = '';
+                      let bv: string | number = '';
+                      switch (sortField) {
+                        case 'type':
+                          av = getDocumentExtension(a);
+                          bv = getDocumentExtension(b);
+                          break;
+                        case 'title':
+                          av = (a.title?.[0]?.text || '').toLowerCase();
+                          bv = (b.title?.[0]?.text || '').toLowerCase();
+                          break;
+                        case 'category':
+                          av = a.categoryCode || '';
+                          bv = b.categoryCode || '';
+                          break;
+                        case 'date':
+                          av = a.documentDate ? new Date(a.documentDate).getTime() : 0;
+                          bv = b.documentDate ? new Date(b.documentDate).getTime() : 0;
+                          break;
+                      }
+                      if (av < bv) return -1 * dir;
+                      if (av > bv) return 1 * dir;
+                      return 0;
+                    });
+
+                    const sortIndicator = (field: typeof sortField) =>
+                      sortField === field ? (
+                        sortDirection === 'asc' ? <ChevronUp className="inline h-3.5 w-3.5 ml-1" /> : <ChevronDown className="inline h-3.5 w-3.5 ml-1" />
+                      ) : null;
+
                     return (
                       <>
                         {uploadedDocs.length > 0 && (
@@ -823,15 +917,23 @@ export function DocumentsAndImagesTabInline({
                             </div>
                             
                             {/* Uploaded Files Table */}
-                            <div className="bg-white border rounded-lg overflow-hidden">
+                            <TableContainer>
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead className="w-12">Type</TableHead>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Category</TableHead>
+                                    <TableHead className="w-20 cursor-pointer select-none" onClick={() => handleSort('type')}>
+                                      Type{sortIndicator('type')}
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('title')}>
+                                      Title{sortIndicator('title')}
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('category')}>
+                                      Category{sortIndicator('category')}
+                                    </TableHead>
                                     <TableHead>Languages</TableHead>
-                                    <TableHead>Date</TableHead>
+                                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('date')}>
+                                      Date{sortIndicator('date')}
+                                    </TableHead>
                                     <TableHead className="w-40" />
                                   </TableRow>
                                 </TableHeader>
@@ -839,13 +941,9 @@ export function DocumentsAndImagesTabInline({
                                   {uploadedDocs.slice(startIndex, endIndex).map((doc) => (
                                     <TableRow key={doc.url}>
                                       <TableCell className="align-top text-left">
-                                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                                          {isImageMime(doc.format) ? (
-                                            <FileImage className="w-4 h-4 text-muted-foreground" />
-                                          ) : (
-                                            <FileText className="w-4 h-4 text-muted-foreground" />
-                                          )}
-                                        </div>
+                                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                          {getDocumentExtension(doc)}
+                                        </span>
                                       </TableCell>
                                       <TableCell className="align-top text-left">
                                         <div className="max-w-xs">
@@ -925,7 +1023,7 @@ export function DocumentsAndImagesTabInline({
                                   ))}
                                 </TableBody>
                               </Table>
-                            </div>
+                            </TableContainer>
 
                             {/* Pagination for Uploaded Files */}
                             {uploadedDocs.length > itemsPerPage && (
@@ -1166,7 +1264,7 @@ function DocumentMetadataModal({
           </Button>
           <Button onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
-            {isEditing ? 'Update Document' : 'Save Document Information'}
+            {isEditing ? 'Update Document' : 'Add Document'}
           </Button>
         </DialogFooter>
       </DialogContent>

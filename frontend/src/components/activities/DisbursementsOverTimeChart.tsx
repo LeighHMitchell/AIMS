@@ -23,6 +23,8 @@ import {
 import { TrendingUp, TableIcon, AreaChartIcon } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { formatAxisCurrency } from '@/lib/format'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 
 interface YearData {
   year: number;
@@ -47,8 +49,21 @@ type ViewMode = 'area' | 'line' | 'table';
 type DataMode = 'planned' | 'actual';
 
 export function DisbursementsOverTimeChart({ data, loading = false }: DisbursementsOverTimeChartProps) {
+  const isExpanded = useChartExpansion();
   const [viewMode, setViewMode] = useState<ViewMode>('area');
   const [dataMode, setDataMode] = useState<DataMode>('actual');
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
+
+  // Available years across all sectors (used by the YearRangeChip)
+  const availableYearsForChip = useMemo(() => {
+    const yearsSet = new Set<number>();
+    data.sectors.forEach(sector => {
+      sector.years.forEach(yearData => {
+        yearsSet.add(yearData.year);
+      });
+    });
+    return Array.from(yearsSet).sort((a, b) => a - b);
+  }, [data.sectors]);
 
   // Prepare time series data
   const timeSeriesData = useMemo(() => {
@@ -114,7 +129,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Disbursements Over Time by Sector</CardTitle>
+          <CardTitle className="text-base font-medium text-foreground">Disbursements Over Time by Sector</CardTitle>
         </CardHeader>
         <CardContent className="h-96">
           <ChartLoadingPlaceholder />
@@ -127,8 +142,8 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Disbursements Over Time by Sector</CardTitle>
-          <CardDescription>No data available</CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">Disbursements Over Time by Sector</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">No data available</CardDescription>
         </CardHeader>
         <CardContent className="h-96 flex items-center justify-center">
           <div className="text-muted-foreground">No disbursement data to display</div>
@@ -141,11 +156,28 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <CardTitle>Disbursements Over Time by Sector</CardTitle>
-            <CardDescription>
-              Track {dataMode === 'planned' ? 'planned' : 'actual'} disbursements across sectors over time
-            </CardDescription>
+          <div className="flex items-start gap-3">
+            {isExpanded && availableYearsForChip.length > 0 && (
+              <YearRangeChip
+                selectedYears={selectedYears}
+                onYearsChange={setSelectedYears}
+                availableYears={availableYearsForChip}
+                actualDataRange={
+                  availableYearsForChip.length > 0
+                    ? {
+                        minYear: availableYearsForChip[0],
+                        maxYear: availableYearsForChip[availableYearsForChip.length - 1],
+                      }
+                    : null
+                }
+              />
+            )}
+            <div>
+              <CardTitle className="text-base font-medium text-foreground">Disbursements Over Time by Sector</CardTitle>
+              <CardDescription className="text-helper text-muted-foreground mt-0.5">
+                Track {dataMode === 'planned' ? 'planned' : 'actual'} disbursements across sectors over time
+              </CardDescription>
+            </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="flex items-center gap-2 border rounded-lg px-3 py-2">

@@ -19,6 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 import Link from "next/link";
 
 interface StatusData {
@@ -47,6 +49,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   onDataChange,
   compact = false,
 }) => {
+  const isExpanded = useChartExpansion();
   const [data, setData] = useState<{
     activityStatus: StatusData[];
     publicationStatus: StatusData[];
@@ -142,25 +145,15 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const color = payload[0].color || payload[0].payload?.fill;
       return (
-        <div className="bg-white p-3 border border-[#cfd0d5] rounded-lg shadow-lg min-w-[180px]">
-          <table className="w-full text-body">
-            <tbody>
-              <tr className="border-b border-[#f1f4f8]">
-                <td className="py-1.5 text-[#7b95a7] font-medium">Status</td>
-                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{formatStatusName(data.status)}</td>
-              </tr>
-              <tr className="border-b border-[#f1f4f8]">
-                <td className="py-1.5 text-[#7b95a7] font-medium">Count</td>
-                <td className="py-1.5 text-[#dc2625] font-semibold text-right">{data.count.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td className="py-1.5 text-[#7b95a7] font-medium">Percentage</td>
-                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{data.percentage.toFixed(1)}%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ChartTooltipCard
+          title={formatStatusName(data.status)}
+          rows={[
+            { label: 'Count', value: data.count.toLocaleString(), color },
+            { label: 'Percentage', value: `${data.percentage.toFixed(1)}%` },
+          ]}
+        />
       );
     }
     return null;
@@ -235,59 +228,61 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
 
   return (
     <div className="w-full">
-      {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {[
-              { key: 'activity', label: 'Activity Status' },
-              { key: 'publication', label: 'Publication Status' },
-              { key: 'submission', label: 'Submission Status' }
-            ].map(({ key, label }) => (
+      {/* Controls — only in expanded view */}
+      {!compact && isExpanded && (
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {[
+                { key: 'activity', label: 'Activity Status' },
+                { key: 'publication', label: 'Publication Status' },
+                { key: 'submission', label: 'Submission Status' }
+              ].map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={statusType === key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusType(key as any)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
               <Button
-                key={key}
-                variant={statusType === key ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusType(key as any)}
+                variant={chartType === 'pie' ? "default" : "outline"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setChartType('pie')}
+                title="Donut Chart"
               >
-                {label}
+                <PieChartIcon className="h-4 w-4" />
               </Button>
-            ))}
+              <Button
+                variant={chartType === 'bar' ? "default" : "outline"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setChartType('bar')}
+                title="Bar Chart"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={chartType === 'table' ? "default" : "outline"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setChartType('table')}
+                title="Table View"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <Button
-              variant={chartType === 'pie' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('pie')}
-              title="Donut Chart"
-            >
-              <PieChartIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={chartType === 'bar' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('bar')}
-              title="Bar Chart"
-            >
-              <BarChart3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={chartType === 'table' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('table')}
-              title="Table View"
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Chart or Table */}
       {chartType === 'table' ? (

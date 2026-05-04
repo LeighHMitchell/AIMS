@@ -14,9 +14,10 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { BarChart3, DollarSign } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, OTHERS_COLOR } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface Top10TotalFinancialValueChartProps {
   dateRange: {
@@ -123,41 +124,24 @@ export function Top10TotalFinancialValueChart({
     }
   }
 
-  // Single bar colour — the bar length already encodes "more vs less", so
-  // a varying ramp would just add noise. Use the darkest slate from the
-  // shared ranked palette; "Others" stays a lighter shade for contrast.
-  const BAR_COLOR = CHART_RANKED_PALETTE[0]
+  // Single Blue Slate fill for all bars — bar length already encodes
+  // "more vs less", so a varying ramp would just add noise. "Others"
+  // stays a lighter shade for contrast.
+  const BAR_COLOR = '#4c5568'
 
-  // Tooltip styled to match the Financial Totals chart (light card, header
-  // strip, table body) so hover UI is consistent across the dashboard.
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null
     const item = payload[0].payload
     const fullName = item.acronym ? `${item.name} (${item.acronym})` : item.name
     return (
-      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-        <div className="bg-surface-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground">{fullName}</p>
-        </div>
-        <div className="p-3">
-          <table className="w-full text-body">
-            <tbody>
-              <tr>
-                <td className="py-1 pr-3 flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-sm flex-shrink-0"
-                    style={{ backgroundColor: item.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR }}
-                  />
-                  <span className="text-foreground">Total Disbursements</span>
-                </td>
-                <td className="py-1 text-right font-semibold text-foreground">
-                  {formatTooltipCurrency(item.totalValue, isExpanded)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ChartTooltipCard
+        title={fullName}
+        rows={[{
+          label: 'Commitments + Disbursements',
+          value: formatTooltipCurrency(item.totalValue, isExpanded),
+          color: item.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR,
+        }]}
+      />
     )
   }
 
@@ -220,10 +204,12 @@ export function Top10TotalFinancialValueChart({
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed mt-4">
-        This chart ranks the top 10 organisations by total financial value, combining all transaction types within the selected date range. The horizontal bars make it easy to compare relative scale across organisations. Hover over any bar to see the exact USD amount.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This chart ranks the top external development partners by the sum of their outgoing commitments and disbursements within the selected date range. Myanmar government ministries (recipient-country entities) are excluded so domestic budget transfers do not appear as donor flows. The horizontal bars make it easy to compare relative scale across organisations — if fewer than 10 partners have qualifying transactions in the period, the chart shows only the available rows. Hover over any bar to see the exact USD amount.
+        </p>
+      )}
     </div>
   )
 }

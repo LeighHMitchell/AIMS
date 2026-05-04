@@ -25,9 +25,9 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
           className="h-full w-full flex-1 transition-all"
           style={{
             transform: `translateX(-${100 - percentage}%)`,
-            backgroundColor: style && '--progress-foreground' in style 
-              ? (style as any)['--progress-foreground'] 
-              : '#135667'
+            backgroundColor: style && '--progress-foreground' in style
+              ? (style as any)['--progress-foreground']
+              : '#4c5568'
           }}
         />
       </div>

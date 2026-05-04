@@ -21,6 +21,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface ODAByFlowTypeChartProps {
   dateRange: {
@@ -112,13 +113,13 @@ export function ODAByFlowTypeChart({
     }
   }
 
-  // Generate colors by category
+  // Generate colors by category — slate-only ramp for dashboard consistency.
   const getColorForCategory = (category: string, index: number): string => {
     const colors: Record<string, string[]> = {
-      'ODA': ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'], // Blue shades
-      'OOF': ['#d97706', '#f59e0b', '#fbbf24', '#fcd34d'], // Amber shades
-      'Other': ['#64748b', '#94a3b8', '#cbd5e1'], // Slate shades
-      'Unknown': ['#6b7280']
+      'ODA': ['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'],
+      'OOF': ['#4c5568', '#5d6b7a', '#6b7789', '#7b95a7'],
+      'Other': ['#94a3b8', '#a3b5c2', '#cbd5e1'],
+      'Unknown': ['#8a9199']
     };
 
     const categoryColors = colors[category] || colors['Unknown'];
@@ -129,43 +130,23 @@ export function ODAByFlowTypeChart({
     if (active && payload && payload.length) {
       const datum = payload[0]?.payload
       const color = payload[0]?.color || payload[0]?.payload?.fill
+      const rows: any[] = [{
+        label: 'Total Value',
+        value: formatTooltipCurrency(Number(payload[0].value) || 0, isExpanded),
+        color,
+      }]
+      if (datum?.code) {
+        rows.push({
+          label: 'Code',
+          value: <span className="font-mono">{datum.code}</span>,
+        })
+      }
       return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{label}</p>
-            {datum?.category && (
-              <p className="text-helper text-muted-foreground mt-0.5">{datum.category}</p>
-            )}
-          </div>
-          <div className="p-3">
-            <table className="w-full text-body">
-              <tbody>
-                <tr>
-                  <td className="py-1 pr-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span className="text-foreground">Total Value</span>
-                    </div>
-                  </td>
-                  <td className="py-1 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(Number(payload[0].value) || 0, isExpanded)}
-                  </td>
-                </tr>
-                {datum?.code && (
-                  <tr>
-                    <td className="py-1 pr-3 text-muted-foreground">Code</td>
-                    <td className="py-1 text-right font-mono text-foreground">
-                      {datum.code}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={label}
+          subtitle={datum?.category}
+          rows={rows}
+        />
       )
     }
     return null
@@ -191,17 +172,19 @@ export function ODAByFlowTypeChart({
 
   return (
     <div className="space-y-4">
-      {/* Toggle for non-ODA flows */}
-      <div className="flex items-center space-x-2 pb-2">
-        <Switch
-          id="include-non-oda"
-          checked={includeNonODA}
-          onCheckedChange={setIncludeNonODA}
-        />
-        <Label htmlFor="include-non-oda" className="text-body font-medium cursor-pointer">
-          Include Non-ODA Flows (OOF, Private, etc.)
-        </Label>
-      </div>
+      {/* Toggle for non-ODA flows — only in expanded view */}
+      {isExpanded && (
+        <div className="flex items-center space-x-2 pb-2">
+          <Switch
+            id="include-non-oda"
+            checked={includeNonODA}
+            onCheckedChange={setIncludeNonODA}
+          />
+          <Label htmlFor="include-non-oda" className="text-body font-medium cursor-pointer">
+            Include Non-ODA Flows (OOF, Private, etc.)
+          </Label>
+        </div>
+      )}
 
       <ResponsiveContainer width="100%" height={400}>
         <BarChart 
@@ -238,40 +221,44 @@ export function ODAByFlowTypeChart({
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Summary stats */}
-      <div className="mt-4 grid grid-cols-3 gap-4 text-body">
-        {data.length > 0 && (
-          <>
-            <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="font-semibold text-blue-900">
-                {formatCurrency(data.filter(f => f.category === 'ODA').reduce((sum, f) => sum + f.totalValue, 0))}
+      {/* Summary stats — only in expanded view */}
+      {isExpanded && (
+        <div className="mt-4 grid grid-cols-3 gap-4 text-body">
+          {data.length > 0 && (
+            <>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="font-semibold text-foreground">
+                  {formatCurrency(data.filter(f => f.category === 'ODA').reduce((sum, f) => sum + f.totalValue, 0))}
+                </div>
+                <div className="text-muted-foreground text-helper">Total ODA</div>
               </div>
-              <div className="text-blue-600 text-helper">Total ODA</div>
-            </div>
-            {includeNonODA && (
-              <>
-                <div className="text-center p-3 bg-amber-50 rounded-lg">
-                  <div className="font-semibold text-amber-900">
-                    {formatCurrency(data.filter(f => f.category === 'OOF').reduce((sum, f) => sum + f.totalValue, 0))}
+              {includeNonODA && (
+                <>
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="font-semibold text-foreground">
+                      {formatCurrency(data.filter(f => f.category === 'OOF').reduce((sum, f) => sum + f.totalValue, 0))}
+                    </div>
+                    <div className="text-muted-foreground text-helper">Total OOF</div>
                   </div>
-                  <div className="text-amber-600 text-helper">Total OOF</div>
-                </div>
-                <div className="text-center p-3 bg-muted rounded-lg">
-                  <div className="font-semibold text-foreground">
-                    {formatCurrency(data.filter(f => f.category === 'Other').reduce((sum, f) => sum + f.totalValue, 0))}
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="font-semibold text-foreground">
+                      {formatCurrency(data.filter(f => f.category === 'Other').reduce((sum, f) => sum + f.totalValue, 0))}
+                    </div>
+                    <div className="text-muted-foreground text-helper">Total Other</div>
                   </div>
-                  <div className="text-muted-foreground text-helper">Total Other</div>
-                </div>
-              </>
-            )}
-          </>
-        )}
-      </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart breaks down Official Development Assistance by IATI flow type classification, showing how aid is categorised across grants, loans, equity, and other instruments. Toggle the non-ODA switch to include Other Official Flows and private flows for a broader picture. The summary cards below the chart show aggregate totals by category.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart breaks down Official Development Assistance by IATI flow type classification, showing how aid is categorised across grants, loans, equity, and other instruments. Toggle the non-ODA switch to include Other Official Flows and private flows for a broader picture. The summary cards below the chart show aggregate totals by category.
+        </p>
+      )}
     </div>
   )
 }

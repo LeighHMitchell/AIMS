@@ -3285,7 +3285,7 @@ const router = useRouter();
                             </Badge>
                           ) : (
                             <Badge variant="blue">
-                              Donor Reported
+                              Development Partner Reported
                             </Badge>
                           )}
                         </td>

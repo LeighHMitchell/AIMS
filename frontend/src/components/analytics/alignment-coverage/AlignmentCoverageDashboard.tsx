@@ -467,13 +467,13 @@ export function AlignmentCoverageDashboard() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-helper text-muted-foreground">Donor</Label>
+          <Label className="text-helper text-muted-foreground">Development Partner</Label>
           <Select value={selectedDonorId} onValueChange={setSelectedDonorId} open={openFilter === 'donor'} onOpenChange={filterOpenHandler('donor')}>
             <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="All donors" />
+              <SelectValue placeholder="All development partners" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All donors</SelectItem>
+              <SelectItem value="all">All development partners</SelectItem>
               {donorOptions.map((o) => (
                 <SelectItem key={o.id} value={o.id}>
                   {o.acronym ? `${o.acronym} — ${o.name}` : o.name}

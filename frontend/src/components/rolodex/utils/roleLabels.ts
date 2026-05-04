@@ -96,7 +96,7 @@ export function getAllRoles(): Array<{ key: string; label: string; color: string
 // Organization type labels for filtering (IATI Standard codes)
 export const ORG_TYPE_LABELS: Record<string, { label: string; description: string }> = {
   '10': { label: 'Government', description: '' },
-  '11': { label: 'Local Government', description: 'Any local (sub national) government organisation in either donor or recipient country.' },
+  '11': { label: 'Local Government', description: 'Any local (sub national) government organisation in either development partner or recipient country.' },
   '15': { label: 'Other Public Sector', description: '' },
   '21': { label: 'International NGO', description: '' },
   '22': { label: 'National NGO', description: '' },
@@ -106,9 +106,9 @@ export const ORG_TYPE_LABELS: Record<string, { label: string; description: strin
   '40': { label: 'Multilateral', description: '' },
   '60': { label: 'Foundation', description: '' },
   '70': { label: 'Private Sector', description: '' },
-  '71': { label: 'Private Sector in Provider Country', description: 'Is in provider / donor country.' },
+  '71': { label: 'Private Sector in Provider Country', description: 'Is in provider / development partner country.' },
   '72': { label: 'Private Sector in Aid Recipient Country', description: 'Is in aid recipient country.' },
-  '73': { label: 'Private Sector in Third Country', description: 'Is not in either a donor or aid recipient country.' },
+  '73': { label: 'Private Sector in Third Country', description: 'Is not in either a development partner or aid recipient country.' },
   '80': { label: 'Academic, Training and Research', description: '' },
   '90': { label: 'Other', description: '' },
 };

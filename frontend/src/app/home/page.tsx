@@ -58,7 +58,7 @@ export default function HomePage() {
       label: "DFMIS",
       href: "/dashboard",
       image: "/images/module-aims.png",
-      description: "Track commitments, disbursements, expenditure, and compliance. All ODA activities — donor-reported and projects routed from the Project Bank — published in IATI 2.03 format.",
+      description: "Track commitments, disbursements, expenditure, and compliance. All ODA activities — development partner-reported and projects routed from the Project Bank — published in IATI 2.03 format.",
       stats: stats ? [
         `${stats.aims.activities} activities`,
         `${stats.aims.donors} organizations`,

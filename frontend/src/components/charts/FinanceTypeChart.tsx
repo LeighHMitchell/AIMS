@@ -14,6 +14,7 @@ import { formatAxisCurrency } from "@/lib/format";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 
 interface AnalyticsFilters {
   donor: string;
@@ -117,30 +118,22 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0]?.payload;
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatCurrencyShort(entry.value),
+        color: entry.color,
+      }));
+      if (payload.length >= 3 && data?.budget > 0) {
+        rows.push({
+          label: 'Execution Rate',
+          value: `${((data.totalSpending / data.budget) * 100).toFixed(1)}%`,
+        });
+      }
       return (
-        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
-          {data?.financeTypeName && (
-            <p className="font-semibold text-foreground mb-1">{data.financeTypeName}</p>
-          )}
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-body"
-              style={{ color: entry.color }}
-            >
-              {`${entry.name}: ${formatCurrencyShort(entry.value)}`}
-            </p>
-          ))}
-          {payload.length >= 3 && (
-            <div className="border-t pt-2 mt-2">
-              <p className="text-body font-medium text-foreground">
-                Execution Rate: {payload[0]?.payload?.budget > 0 
-                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
-                  : 0}%
-              </p>
-            </div>
-          )}
-        </div>
+        <ChartTooltipCard
+          title={data?.financeTypeName || data?.financeTypeDisplay || ''}
+          rows={rows}
+        />
       );
     }
     return null;

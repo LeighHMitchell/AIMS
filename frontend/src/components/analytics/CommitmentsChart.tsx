@@ -19,6 +19,8 @@ import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 
 interface CommitmentsChartProps {
   dateRange: {
@@ -42,6 +44,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
   const isExpanded = useChartExpansion()
 
   useEffect(() => {
@@ -194,38 +197,12 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{label}</p>
-            {periodTypeLabel && (
-              <p className="text-helper text-muted-foreground mt-0.5">{periodTypeLabel}</p>
-            )}
-          </div>
-          <div className="p-3">
-            <table className="w-full text-body">
-              <tbody>
-                {payload.map((entry: any, index: number) => (
-                  <tr key={index}>
-                    <td className="py-1 pr-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: entry.color || entry.stroke }}
-                        />
-                        <span className="text-foreground">{entry.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-1 text-right font-semibold text-foreground">
-                      {formatTooltipCurrency(Number(entry.value) || 0, isExpanded)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipCurrency(Number(entry.value) || 0, isExpanded),
+        color: entry.color || entry.stroke,
+      }))
+      return <ChartTooltipCard title={label} subtitle={periodTypeLabel || undefined} rows={rows} />
     }
     return null
   }
@@ -238,40 +215,16 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
 
   return (
     <div className="space-y-4">
-      {/* Aggregation Mode Selector */}
-      <div className="flex items-center justify-between">
-        <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="w-48 h-9 bg-white border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="calendar">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3" />
-                Calendar Year
-              </div>
-            </SelectItem>
-            <SelectItem value="fiscal">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-3 w-3" />
-                Financial Year
-              </div>
-            </SelectItem>
-            <SelectItem value="quarter">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-3 w-3" />
-                Quarterly
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        {groupBy === 'fiscal' && (
-          <div className="text-helper text-muted-foreground">
-            Financial Year: July–June
-          </div>
-        )}
-      </div>
+      {/* Aggregation Mode Selector — only shown in expanded view */}
+      {isExpanded && (
+        <div className="flex items-center gap-2">
+          <YearRangeChip
+            selectedYears={selectedYears}
+            onYearsChange={setSelectedYears}
+            initialDateRange={dateRange}
+          />
+        </div>
+      )}
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={400}>
@@ -325,10 +278,12 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
         </LineChart>
       </ResponsiveContainer>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart plots commitments and disbursements over time, making it easy to compare funding promises against actual spending. Use the period selector to group by calendar year, financial year, or quarter. A growing gap between the two lines may indicate delivery bottlenecks or pipeline delays worth investigating.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart plots commitments and disbursements over time, making it easy to compare funding promises against actual spending. Use the period selector to group by calendar year, financial year, or quarter. A growing gap between the two lines may indicate delivery bottlenecks or pipeline delays worth investigating.
+        </p>
+      )}
     </div>
   )
 } 

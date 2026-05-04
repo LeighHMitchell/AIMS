@@ -38,7 +38,7 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard, Download } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -873,7 +873,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-12">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
       {/* Section Heading */}
       <div className="flex items-center gap-3">
         <h2 className="text-3xl font-semibold text-foreground">Overview</h2>
@@ -3151,7 +3151,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   switch (section) {
     case "metadata":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Metadata</h2>
             <HelpTextTooltip content="View and manage administrative details about this activity record, including creation and modification history, reporting organisation, status, and technical identifiers.">
@@ -3165,7 +3165,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     // are now handled by ActivityOverviewGroup above
     case "iati":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">IATI Link</h2>
             <HelpTextTooltip content="Synchronise this activity with the IATI Registry and Datastore. Enabling sync ensures updates here are reflected in your published IATI file, keeping internal records and the official public dataset consistent.">
@@ -3191,7 +3191,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     case "excel-import":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Excel Import</h2>
             <HelpTextTooltip content="Import activity data from an Excel spreadsheet. Download the template, fill it out, then drop it back in to review and apply the values.">
@@ -3205,7 +3205,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     case "xml-import":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">XML Import</h2>
             <HelpTextTooltip content="Import activity data from an IATI-compliant XML file. Search the registry, upload a file, or paste a URL. You'll review every field before anything is applied.">
@@ -3226,7 +3226,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     // Note: finances, budgets, planned-disbursements, forward-spending-survey, results, capital-spend, financing-terms, conditions are now handled by FundingDeliveryGroup above
     case "government-budget-classification":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Government Budget Classification</h2>
             <HelpTextTooltip content="Assess how this activity aligns with government budget systems: on plan, on budget, on treasury, on parliament, on procurement, and on audit.">
@@ -3246,7 +3246,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     case "government-financial-inputs":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Government Financial Inputs</h2>
             <HelpTextTooltip content="Track government co-financing and in-kind resource commitments for this activity, including annual breakdowns.">
@@ -3266,7 +3266,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     case "government-risk-assessment":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Government Risk Assessment</h2>
             <HelpTextTooltip content="Assess risks across governance, financial, operational, and other dimensions from the government's perspective.">
@@ -3286,7 +3286,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     case "government-evaluation":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Government Evaluation</h2>
             <HelpTextTooltip content="Link this activity to national monitoring and evaluation systems and results frameworks.">
@@ -3306,7 +3306,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     case "readiness_checklist":
       return (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-foreground">Government Readiness Checklist</h2>
             <HelpTextTooltip content="Track preparatory milestones and ensure project readiness before validation. Complete each checklist item by uploading supporting documents and marking the status. All required items must be completed before signing off each stage.">
@@ -4247,6 +4247,7 @@ function NewActivityPageContent() {
   const [saving, setSaving] = useState(false);
   const [savingAndNext, setSavingAndNext] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
   
   // Set loading to false immediately for new activities (no API fetch needed)
@@ -4572,8 +4573,7 @@ function NewActivityPageContent() {
             geographyLevel: data.geography_level || data.geographyLevel || "activity",
             // Sector export level (for IATI export)
             sectorExportLevel: data.sector_export_level || data.sectorExportLevel || "activity",
-            // Aid Effectiveness data (loaded separately to avoid re-render loops)
-            // aidEffectiveness is loaded via general_info in the AidEffectivenessForm component
+            aidEffectiveness: data.aidEffectiveness || {},
           });
 
           // Mark fields with existing data as "saved" in localStorage so green ticks show
@@ -6174,6 +6174,45 @@ function NewActivityPageContent() {
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
+
+                {/* Export for Review Button - Only show for existing activities */}
+                {general.id && (
+                  <Button
+                    variant="outline"
+                    className="px-6 py-3 text-base font-semibold"
+                    onClick={async () => {
+                      if (exporting || !general.id) return;
+                      setExporting(true);
+                      try {
+                        const { exportActivityToExcel } = await import("@/lib/activity-export");
+                        await exportActivityToExcel(general.id, {
+                          exportedByName: user?.name,
+                          exportedByEmail: user?.email,
+                          exportedFromUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+                        });
+                      } catch (e) {
+                        console.error('[ActivityEditor] Export for Review failed:', e);
+                        toast.error('Failed to generate Excel export');
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    disabled={exporting || saving || tabLoading}
+                    title="Download a complete Excel snapshot of this activity to share with a reviewer"
+                  >
+                    {exporting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Export for Review
+                      </>
+                    )}
+                  </Button>
+                )}
 
                 {/* Save Button - Only show for existing activities */}
                 {general.id && (

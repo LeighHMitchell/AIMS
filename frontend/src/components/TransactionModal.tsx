@@ -2,7 +2,7 @@
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, HelpCircle, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag, X } from "lucide-react";
+import { Calendar, Info, HelpCircle, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag, X, Save } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { toast } from "sonner";
 import { 
@@ -1478,89 +1478,103 @@ export default function TransactionModal({
   const providerAutoDefaulted = useRef(true);   // true on open because Disbursement default sets provider
   const receiverAutoDefaulted = useRef(false);   // false on open — first switch to incoming type will set receiver
 
-  // Debounced autosave for creating transaction - WITH REQUEST DEDUPLICATION
-  const debouncedCreateTransaction = React.useCallback(async (data: Partial<Transaction>) => {
-    // Clear any existing timeout
+  // Core draft-creation routine. Used both by the (currently disabled) debounced
+  // autosave and by the explicit "click the documents area to enable uploads"
+  // CTA for new transactions.
+  const createDraftTransaction = React.useCallback(async (data: Partial<Transaction>) => {
+    if (isCreatingRef.current) return null;
+
+    if (!hasAllRequiredFields(data)) {
+      const missingFields = getMissingRequiredFields(data);
+      showValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+      return null;
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    isCreatingRef.current = true;
+
+    try {
+      const payload = getTransactionPayload({ ...data, activity_id: activityId });
+      const response = await apiFetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        setCreationError(error.error || 'Failed to create transaction');
+        return null;
+      }
+
+      const saved = await response.json();
+      setCreatedTransactionId(saved.id || saved.uuid);
+      setCreationError(null);
+
+      if (saved.transaction_reference) {
+        setFormData(prev => ({
+          ...prev,
+          transaction_reference: saved.transaction_reference
+        }));
+      }
+
+      showAutoCreateSuccess('Transaction saved! You can now upload documents.');
+
+      if (saved.autoLinked && saved.autoLinked.length > 0) {
+        const count = saved.autoLinked.length;
+        toast.info(`Auto-linked ${count} child ${count === 1 ? 'activity' : 'activities'} to this fund`);
+      }
+
+      if (Object.keys(pendingFields).length > 0) {
+        await apiFetch('/api/transactions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...pendingFields, id: saved.id || saved.uuid }),
+          signal: abortControllerRef.current.signal
+        });
+        setPendingFields({});
+      }
+
+      return saved;
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        setCreationError(e.message || 'Failed to create transaction');
+      }
+      return null;
+    } finally {
+      isCreatingRef.current = false;
+    }
+  }, [activityId, pendingFields]);
+
+  // Debounced wrapper kept for any future autosave-on-typing flow.
+  const debouncedCreateTransaction = React.useCallback((data: Partial<Transaction>) => {
     if (createTransactionTimeoutRef.current) {
       clearTimeout(createTransactionTimeoutRef.current);
     }
-    
-    // Set new timeout
-    createTransactionTimeoutRef.current = setTimeout(async () => {
-      // Prevent concurrent requests
-      if (isCreatingRef.current) {
-        return;
-      }
-      
-      if (!hasAllRequiredFields(data)) {
-        const missingFields = getMissingRequiredFields(data);
-        showValidationError(`Missing required fields: ${missingFields.join(', ')}`);
-        return;
-      }
-      
-      // Cancel any previous request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      
-      // Create new abort controller
-      abortControllerRef.current = new AbortController();
-      isCreatingRef.current = true;
-      
-      try {
-        const payload = getTransactionPayload({ ...data, activity_id: activityId });
-        const response = await apiFetch('/api/transactions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: abortControllerRef.current.signal
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          setCreationError(error.error || 'Failed to create transaction');
-          return;
-        }
-        
-        const saved = await response.json();
-        setCreatedTransactionId(saved.id || saved.uuid);
-        setCreationError(null);
-        
-        // Update form data with the auto-generated transaction reference
-        if (saved.transaction_reference) {
-          setFormData(prev => ({ 
-            ...prev, 
-            transaction_reference: saved.transaction_reference 
-          }));
-        }
-        
-        showAutoCreateSuccess('Transaction saved! You can now upload documents.');
-
-        // Notify user if auto-linking occurred on a pooled fund
-        if (saved.autoLinked && saved.autoLinked.length > 0) {
-          const count = saved.autoLinked.length;
-          toast.info(`Auto-linked ${count} child ${count === 1 ? 'activity' : 'activities'} to this fund`);
-        }
-
-        // Save any pending fields (with same abort controller)
-        if (Object.keys(pendingFields).length > 0) {
-          await apiFetch('/api/transactions', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...pendingFields, id: saved.id || saved.uuid }),
-            signal: abortControllerRef.current.signal
-          });
-          setPendingFields({});
-        }
-      } catch (e: any) {
-        if (e.name !== 'AbortError') {
-          setCreationError(e.message || 'Failed to create transaction');
-        }
-      } finally {
-        isCreatingRef.current = false;
-      }
+    createTransactionTimeoutRef.current = setTimeout(() => {
+      createDraftTransaction(data);
     }, 500);
-  }, [activityId, pendingFields]);
+  }, [createDraftTransaction]);
+
+  // True while we're actively creating the draft for the documents CTA.
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+
+  // Triggered when the user interacts with the disabled documents zone in the
+  // create flow. Saves the transaction so a UUID exists, then the live upload
+  // component renders in its place.
+  const handleEnableDocumentUploads = React.useCallback(async () => {
+    if (createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) return;
+    setIsCreatingDraft(true);
+    try {
+      await createDraftTransaction(formData);
+    } finally {
+      setIsCreatingDraft(false);
+    }
+  }, [createDraftTransaction, createdTransactionId, formData, isEditing, transaction]);
 
   // Cleanup on unmount to prevent crashes
   useEffect(() => {
@@ -2754,30 +2768,52 @@ export default function TransactionModal({
 
             {/* Supporting Documents Section */}
             <div className="space-y-4">
-              <SectionHeader title="Supporting Documents" helpText="Upload receipts, invoices, contracts, or other evidence to support this transaction. You can also add links to documents hosted elsewhere. You must complete the required fields before uploading documents." />
+              <SectionHeader title="Supporting Documents" helpText="Upload receipts, invoices, contracts, or other evidence to support this transaction. You can also add links to documents hosted elsewhere." />
               {!(createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) ? (
-                <div className="opacity-40 pointer-events-none select-none">
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                    <div className="text-center space-y-4">
-                      <div className="rounded-full bg-muted p-4 w-fit mx-auto">
-                        <Upload className="h-8 w-8 text-muted-foreground" />
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleEnableDocumentUploads}
+                    disabled={isCreatingDraft}
+                    className={cn(
+                      "w-full bg-muted rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[280px] flex items-center justify-center text-left",
+                      "border-input hover:border-slate-400",
+                      isCreatingDraft && "opacity-60 cursor-wait"
+                    )}
+                  >
+                    <div className="text-center max-w-md mx-auto">
+                      <div className="mb-4">
+                        {isCreatingDraft ? (
+                          <Loader2 className="w-12 h-12 mx-auto text-muted-foreground animate-spin" />
+                        ) : (
+                          <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
+                        )}
                       </div>
-                      <div>
-                        <h3 className="font-semibold">Upload Transaction Evidence</h3>
-                        <p className="text-body text-muted-foreground mt-1">
-                          Drag and drop documents here, or click to browse
-                        </p>
-                      </div>
-                      <div className="text-helper text-muted-foreground">
-                        <p>Supported: PDF, Images, Excel, Word, CSV (Max 50MB each)</p>
-                        <p>Maximum 10 documents per transaction</p>
-                      </div>
-                      <Button variant="outline" disabled>
-                        Browse Files
-                      </Button>
+                      <h4 className="text-xl font-medium text-foreground mb-2">
+                        Upload Transaction Evidence
+                      </h4>
+                      <p className="text-muted-foreground mb-4">
+                        Save the transaction first to attach documents and external links.
+                      </p>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-2 px-4 py-2 rounded-md text-body font-medium",
+                          "bg-primary text-primary-foreground"
+                        )}
+                      >
+                        {isCreatingDraft ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        {isCreatingDraft ? "Saving…" : "Save & enable uploads"}
+                      </span>
+                      <p className="text-helper text-muted-foreground mt-4">
+                        Supports: PDF, Images, Excel, Word, CSV (max 50MB each, up to 10 documents)
+                      </p>
                     </div>
-                  </div>
-                  {creationError && <p className="text-destructive text-body text-center mt-2">{creationError}</p>}
+                  </button>
+                  {creationError && <p className="text-destructive text-body text-center">{creationError}</p>}
                 </div>
               ) : (
                 <TransactionDocumentUpload
@@ -3357,6 +3393,11 @@ export default function TransactionModal({
               className="min-w-[100px]"
               disabled={isSubmitting || isInternallySubmitting}
             >
+              {isSubmitting || isInternallySubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
               Save as Draft
             </Button>
           )}
@@ -3365,6 +3406,11 @@ export default function TransactionModal({
             className="min-w-[100px]"
             disabled={isSubmitting || isInternallySubmitting}
           >
+            {isSubmitting || isInternallySubmitting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
             {isEditing ? "Update" : "Add"} Transaction
           </Button>
         </DialogFooter>

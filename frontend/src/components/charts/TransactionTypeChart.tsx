@@ -19,6 +19,7 @@ import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
 interface TransactionTypeData {
   transactionType: string;
@@ -101,33 +102,17 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const color = payload[0].color || payload[0].payload?.fill;
       return (
-        <div className="bg-white p-3 border border-[#cfd0d5] rounded-lg shadow-lg min-w-[220px]">
-          <div className="mb-2 pb-2 border-b border-[#f1f4f8]">
-            <span className="font-semibold text-[#4c5568]">{data.typeName}</span>
-            <span className="ml-2 px-1.5 py-0.5 bg-[#f1f4f8] text-[#7b95a7] text-xs font-mono rounded">{data.transactionType}</span>
-          </div>
-          <table className="w-full text-body">
-            <tbody>
-              <tr className="border-b border-[#f1f4f8]">
-                <td className="py-1.5 text-[#7b95a7] font-medium">Count</td>
-                <td className="py-1.5 text-[#dc2625] font-semibold text-right">{data.count.toLocaleString()}</td>
-              </tr>
-              <tr className="border-b border-[#f1f4f8]">
-                <td className="py-1.5 text-[#7b95a7] font-medium">Total Value</td>
-                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{currency} {data.totalValue.toLocaleString()}</td>
-              </tr>
-              <tr className="border-b border-[#f1f4f8]">
-                <td className="py-1.5 text-[#7b95a7] font-medium">Average</td>
-                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{currency} {data.averageValue.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td className="py-1.5 text-[#7b95a7] font-medium">Percentage</td>
-                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{data.percentage.toFixed(1)}%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ChartTooltipCard
+          title={data.typeName}
+          rows={[
+            { label: 'Count', value: data.count.toLocaleString(), color, code: data.transactionType },
+            { label: 'Total Value', value: `${currency} ${data.totalValue.toLocaleString()}` },
+            { label: 'Average', value: `${currency} ${data.averageValue.toLocaleString()}` },
+            { label: 'Percentage', value: `${data.percentage.toFixed(1)}%` },
+          ]}
+        />
       );
     }
     return null;

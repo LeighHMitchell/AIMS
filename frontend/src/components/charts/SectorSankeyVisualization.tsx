@@ -6,7 +6,7 @@ import { sankey, sankeyLinkHorizontal, SankeyNode, SankeyLink } from 'd3-sankey'
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json';
 import { Button } from '@/components/ui/button';
-import { Download, GitBranch, Table as TableIcon, PieChart, BarChart3 } from 'lucide-react';
+import { Download, GitBranch, Table as TableIcon, PieChart, BarChart3, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { exportToCSV } from '@/lib/exports';
-import { exportChartToJPG } from '@/lib/chart-export';
 import { cn } from '@/lib/utils';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 import { formatTooltipCurrency as libFormatTooltipCurrency } from '@/lib/format';
@@ -182,11 +181,30 @@ export default function SectorSankeyVisualization({
 }: Props) {
   const isExpanded = useChartExpansion();
   const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
   const [metricMode, setMetricMode] = useState<MetricMode>('percentage');
   const [internalBarGroupingMode, setBarGroupingMode] = useState<BarGroupingMode>('group');
+  // Sortable headers for the table view. Null field = fall back to metricMode-driven order.
+  type SortField = 'category' | 'sector' | 'subsector' | 'percentage' | 'budget' | 'plannedDisbursement'
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const handleTableSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDirection(field === 'category' || field === 'sector' || field === 'subsector' ? 'asc' : 'desc')
+    }
+  }
+  const sortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+    }
+    return sortDirection === 'asc'
+      ? <ChevronUp className="h-3.5 w-3.5 text-foreground" />
+      : <ChevronDown className="h-3.5 w-3.5 text-foreground" />
+  }
   
   // Use external bar grouping mode if provided, otherwise use internal state
   const barGroupingMode = externalBarGroupingMode ?? internalBarGroupingMode;
@@ -1286,12 +1304,6 @@ export default function SectorSankeyVisualization({
     exportToCSV(csvData, 'sector-allocations');
   }, [allocations, financialData]);
 
-  const handleExportJPG = useCallback(() => {
-    if (containerRef.current) {
-      exportChartToJPG(containerRef.current, 'sector-visualization');
-    }
-  }, []);
-
   const renderTable = () => {
     const formatPercentage = (v: number) => v.toFixed(0) + '%';
     
@@ -1368,12 +1380,54 @@ export default function SectorSankeyVisualization({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Sector Category</TableHead>
-              <TableHead>Sector</TableHead>
-              <TableHead>Sub-sector</TableHead>
-              <TableHead className="text-right">%</TableHead>
-              <TableHead className="text-right">Budget</TableHead>
-              <TableHead className="text-right">Planned Disbursement</TableHead>
+              <TableHead
+                onClick={() => handleTableSort('category')}
+                className="cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              >
+                <div className="inline-flex items-center gap-1">
+                  Sector Category {sortIcon('category')}
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => handleTableSort('sector')}
+                className="cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              >
+                <div className="inline-flex items-center gap-1">
+                  Sector {sortIcon('sector')}
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => handleTableSort('subsector')}
+                className="cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              >
+                <div className="inline-flex items-center gap-1">
+                  Sub-sector {sortIcon('subsector')}
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => handleTableSort('percentage')}
+                className="text-right cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              >
+                <div className="inline-flex items-center gap-1 justify-end">
+                  % {sortIcon('percentage')}
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => handleTableSort('budget')}
+                className="text-right cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              >
+                <div className="inline-flex items-center gap-1 justify-end">
+                  Budget {sortIcon('budget')}
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => handleTableSort('plannedDisbursement')}
+                className="text-right cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              >
+                <div className="inline-flex items-center gap-1 justify-end">
+                  Planned Disbursement {sortIcon('plannedDisbursement')}
+                </div>
+              </TableHead>
               {transactionTypeArray.map(type => (
                 <TableHead key={type} className="text-right">
                   {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
@@ -1384,7 +1438,25 @@ export default function SectorSankeyVisualization({
           <TableBody>
             {tableData
               .sort((a, b) => {
-                // Sort by the selected metric mode
+                // User-controlled sort takes precedence over metricMode-driven default.
+                if (sortField) {
+                  const dir = sortDirection === 'asc' ? 1 : -1
+                  switch (sortField) {
+                    case 'category':
+                      return a.category.localeCompare(b.category) * dir
+                    case 'sector':
+                      return a.sector.localeCompare(b.sector) * dir
+                    case 'subsector':
+                      return a.subsector.localeCompare(b.subsector) * dir
+                    case 'percentage':
+                      return (a.allocation.percentage - b.allocation.percentage) * dir
+                    case 'budget':
+                      return ((a.financial.budget || 0) - (b.financial.budget || 0)) * dir
+                    case 'plannedDisbursement':
+                      return ((a.financial.plannedDisbursement || 0) - (b.financial.plannedDisbursement || 0)) * dir
+                  }
+                }
+                // Default: sort by the selected metric mode
                 if (metricMode === 'budget') {
                   return (b.financial.budget || 0) - (a.financial.budget || 0);
                 } else if (metricMode === 'planned') {
@@ -1497,7 +1569,7 @@ export default function SectorSankeyVisualization({
   };
 
   return (
-    <div ref={containerRef} className={`w-full ${className}`}>
+    <div className={`w-full ${className}`}>
       {/* Controls - only shown if showControls is true */}
       {showControls && (
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -1556,19 +1628,12 @@ export default function SectorSankeyVisualization({
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={handleExportCSV}
+              title="Export CSV"
+              aria-label="Export CSV"
             >
-              <Download className="h-4 w-4 mr-1" />
-              CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportJPG}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              JPG
+              <Download className="h-4 w-4" />
             </Button>
           </div>
         </div>

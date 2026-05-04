@@ -14,6 +14,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -1133,7 +1134,7 @@ function ImprovedSectorAllocationFormInner({
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="rounded-lg border overflow-hidden">
+              <TableContainer>
                 <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow className="bg-muted">
@@ -1168,6 +1169,9 @@ function ImprovedSectorAllocationFormInner({
                         >
                           {/* Sector Category Code and Name */}
                           <TableCell className="py-2 text-body">
+                            {shouldShowGreenTick(allocation) && (
+                              <CheckCircle className="inline-block h-4 w-4 mr-1.5 align-[-3px] text-[hsl(var(--success-icon))]" />
+                            )}
                             <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>{' '}
                             {categoryGroupName}
                           </TableCell>
@@ -1204,9 +1208,6 @@ function ImprovedSectorAllocationFormInner({
                               {/* Save Status Icon */}
                               {allocationStatus[allocation.id] === 'saving' && (
                                 <Loader2 className="h-3 w-3 animate-spin text-orange-500" />
-                              )}
-                              {shouldShowGreenTick(allocation) && (
-                                <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                               )}
                               {allocationStatus[allocation.id] === 'error' && (
                                 <AlertCircle className="h-3 w-3 text-[#DC2625]" />
@@ -1245,7 +1246,7 @@ function ImprovedSectorAllocationFormInner({
                     )}
                   </TableBody>
                 </Table>
-              </div>
+              </TableContainer>
             </CardContent>
           </Card>
         )}

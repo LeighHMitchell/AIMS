@@ -28,6 +28,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 // Generate list of available years
 const AVAILABLE_YEARS = Array.from(
@@ -281,29 +282,12 @@ export function SDGConcentrationChart({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-border rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-foreground mb-2">Year: {getYearLabel(label)}</p>
-          <div className="space-y-1 text-body">
-            {payload.map((entry: any, index: number) => (
-              <div key={index} className="flex justify-between gap-4">
-                <span className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-muted-foreground">{entry.name}</span>
-                </span>
-                <span className="font-medium">
-                  {metric === 'activities'
-                    ? entry.value.toFixed(0)
-                    : formatCurrency(entry.value)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: metric === 'activities' ? entry.value.toFixed(0) : formatCurrency(entry.value),
+        color: entry.color || entry.stroke || entry.fill,
+      }))
+      return <ChartTooltipCard title={`Year: ${getYearLabel(label)}`} rows={rows} />
     }
     return null
   }
@@ -351,8 +335,8 @@ export function SDGConcentrationChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>SDG Concentration Over Time</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">SDG Concentration Over Time</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">
             Assess whether activities are becoming more concentrated or dispersed across SDGs over time
           </CardDescription>
         </CardHeader>
@@ -367,8 +351,8 @@ export function SDGConcentrationChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>SDG Concentration Over Time</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">SDG Concentration Over Time</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">
             Assess whether activities are becoming more concentrated or dispersed across SDGs over time
           </CardDescription>
         </CardHeader>
@@ -388,8 +372,8 @@ export function SDGConcentrationChart({
   return (
     <Card className="border-0 bg-white shadow-none">
       <CardHeader className="pb-2">
-        <CardTitle>SDG Concentration Over Time</CardTitle>
-        <CardDescription className="mt-1">
+        <CardTitle className="text-base font-medium text-foreground">SDG Concentration Over Time</CardTitle>
+        <CardDescription className="text-helper text-muted-foreground mt-0.5">
           {getMetricLabel()} grouped by number of SDGs mapped to each activity
         </CardDescription>
       </CardHeader>
@@ -434,7 +418,14 @@ export function SDGConcentrationChart({
               <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1"
+                      title={localDateRange?.from && localDateRange?.to
+                        ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                        : undefined}
+                    >
                       <CalendarIcon className="h-4 w-4" />
                       {selectedYears.length === 0
                         ? 'Select years'
@@ -494,12 +485,6 @@ export function SDGConcentrationChart({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              {/* Date Range Indicator */}
-              {localDateRange?.from && localDateRange?.to && (
-                <span className="text-helper text-muted-foreground text-center">
-                  {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
-                </span>
-              )}
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,10 +27,10 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
+import { CalendarIcon, RotateCcw, BarChart3, Table as TableIcon } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { format } from 'date-fns'
-import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
@@ -184,7 +184,6 @@ export function ProjectOrgCountsBySector({
   const [customYearsLoading, setCustomYearsLoading] = useState(true)
   const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
 
-  const chartRef = useRef<HTMLDivElement>(null)
 
   // Fetch custom years on mount and set system default
   useEffect(() => {
@@ -446,59 +445,45 @@ export function ProjectOrgCountsBySector({
     if (!active || !payload || !payload.length) return null
 
     const sectorData = chartData.find(s => s.displayName === label)
-    const fullName = sectorData?.sectorName || label
+    const fullName = sectorData?.sectorName || label || ''
     const sectorCode = sectorData?.sectorCode || ''
 
-    // Get parent sector info for hierarchical display
     const parentInfo = sectorCode && sectorCode !== 'OTHER' ? getParentSectorInfo(sectorCode) : null
 
+    const breadcrumb = parentInfo && groupByLevel !== '1' ? (
+      <span>
+        <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground mr-1.5">{parentInfo.categoryCode}</code>
+        <span>{parentInfo.categoryName}</span>
+        {groupByLevel === '5' && (
+          <>
+            <span className="mx-1">›</span>
+            <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground mr-1.5">{parentInfo.sectorCodePrefix}</code>
+            <span>{parentInfo.sectorName}</span>
+          </>
+        )}
+      </span>
+    ) : null
+
+    const rows: ChartTooltipRow[] = payload.map((entry) => ({
+      label: entry.name,
+      value: entry.value?.toLocaleString(),
+      color: entry.color,
+    }))
+
     return (
-      <div className="bg-card border rounded-lg shadow-lg min-w-[320px] overflow-hidden">
-        <div className="bg-surface-muted px-4 py-3 border-b border-border">
-          {/* Hierarchical sector info */}
-          {parentInfo && groupByLevel !== '1' && (
-            <div className="mb-2 text-helper text-muted-foreground">
-              <span className="font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground mr-1.5">{parentInfo.categoryCode}</span>
-              <span>{parentInfo.categoryName}</span>
-              {groupByLevel === '5' && (
-                <>
-                  <span className="mx-1">›</span>
-                  <span className="font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground mr-1.5">{parentInfo.sectorCodePrefix}</span>
-                  <span>{parentInfo.sectorName}</span>
-                </>
-              )}
-            </div>
-          )}
-          <div>
-            <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
-              {sectorCode}
-            </span>
-            <span className="font-semibold text-body">{fullName}</span>
-          </div>
-        </div>
-        <div className="p-4">
-        <table className="w-full text-body">
-          <tbody>
-            {payload.map((entry, index) => (
-              <tr key={index} className="border-b last:border-b-0">
-                <td className="py-1.5 pr-4">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="text-foreground">{entry.name}</span>
-                  </div>
-                </td>
-                <td className="py-1.5 text-right font-medium">
-                  {entry.value?.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-      </div>
+      <ChartTooltipCard
+        title={
+          <span>
+            {sectorCode && (
+              <code className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">{sectorCode}</code>
+            )}
+            {fullName}
+          </span>
+        }
+        subtitle={breadcrumb}
+        rows={rows}
+        minWidth={320}
+      />
     )
   }
 
@@ -537,23 +522,6 @@ export function ProjectOrgCountsBySector({
     )
   }
 
-  const handleSaveChart = async () => {
-    if (chartRef.current && localDateRange?.from && localDateRange?.to) {
-      try {
-        const canvas = await html2canvas(chartRef.current, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-        })
-        const link = document.createElement('a')
-        link.download = `project-org-counts-by-sector-${format(localDateRange.from, 'yyyy-MM-dd')}-to-${format(localDateRange.to, 'yyyy-MM-dd')}.png`
-        link.href = canvas.toDataURL('image/png')
-        link.click()
-      } catch (error) {
-        console.error('Error saving chart:', error)
-      }
-    }
-  }
-
   const chartHeight = compact ? 200 : 350
 
   // Compact mode
@@ -566,7 +534,7 @@ export function ProjectOrgCountsBySector({
       return <div className="h-full flex items-center justify-center text-destructive"><p className="text-body">{error}</p></div>
     }
     return (
-      <div ref={chartRef} className="bg-card h-full">
+      <div className="bg-card h-full">
         {chartData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-muted-foreground">
             No data available
@@ -694,7 +662,14 @@ export function ProjectOrgCountsBySector({
                   <div className="flex gap-1 border rounded-lg p-1 bg-card">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1"
+                          title={localDateRange?.from && localDateRange?.to
+                            ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                            : undefined}
+                        >
                           <CalendarIcon className="h-4 w-4" />
                           {selectedYears.length === 0
                             ? 'Select years'
@@ -756,12 +731,6 @@ export function ProjectOrgCountsBySector({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  {/* Date Range Indicator */}
-                  {localDateRange?.from && localDateRange?.to && (
-                    <span className="text-helper text-muted-foreground text-center">
-                      {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
-                    </span>
-                  )}
                 </div>
               </>
             )}
@@ -798,22 +767,26 @@ export function ProjectOrgCountsBySector({
             </div>
 
             {/* Chart/Table Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
               <Button
                 variant="ghost"
-                size="sm"
-                className={cn("h-8", viewMode === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                size="icon"
                 onClick={() => setViewMode('chart')}
+                className={cn("h-8 w-8", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Chart View"
+                aria-label="Chart View"
               >
-                Chart
+                <BarChart3 className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className={cn("h-8", viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                size="icon"
                 onClick={() => setViewMode('table')}
+                className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Table View"
+                aria-label="Table View"
               >
-                Table
+                <TableIcon className="h-4 w-4" />
               </Button>
             </div>
 
@@ -830,24 +803,12 @@ export function ProjectOrgCountsBySector({
               </Button>
             </div>
 
-            {/* Save Button */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-card">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2"
-                onClick={handleSaveChart}
-                title="Save chart as image"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-6 pb-4">
-        <div ref={chartRef} className="bg-card" style={{ minHeight: chartHeight + 60 }}>
+        <div className="bg-card" style={{ minHeight: chartHeight + 60 }}>
           {viewMode === 'chart' ? (
             <>
               {/* Legend */}
@@ -931,7 +892,7 @@ export function ProjectOrgCountsBySector({
             <div className="overflow-auto" style={{ height: chartHeight }}>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted">
+                  <TableRow className="sticky top-0 bg-muted z-10 [&>th]:align-bottom">
                     <TableHead className="font-medium text-foreground sticky left-0 bg-muted">Sector</TableHead>
                     <TableHead className="text-right font-medium text-foreground">Projects</TableHead>
                     <TableHead className="text-right font-medium text-foreground">Orgs</TableHead>

@@ -14,6 +14,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -368,7 +369,7 @@ export default function BudgetMappingTab({
                   <Skeleton className="h-9 w-10" />
                 </div>
               </div>
-              <div className="rounded-md">
+              <TableContainer>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -395,7 +396,7 @@ export default function BudgetMappingTab({
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </TableContainer>
             </div>
           </div>
         </CardContent>
@@ -485,7 +486,7 @@ export default function BudgetMappingTab({
               {hasSuggestions ? (
                 <>
                   {/* Suggestions table */}
-                  <div className="border rounded-lg overflow-hidden">
+                  <TableContainer>
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50">
@@ -537,7 +538,7 @@ export default function BudgetMappingTab({
                         })}
                       </TableBody>
                     </Table>
-                  </div>
+                  </TableContainer>
 
                   {/* Unmapped sectors warning */}
                   {suggestions.unmappedSectors.length > 0 && (
@@ -674,7 +675,7 @@ export default function BudgetMappingTab({
               <p className="text-muted-foreground mb-4">Map activity sectors to government budget classifications.</p>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
+            <TableContainer>
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
@@ -776,7 +777,7 @@ export default function BudgetMappingTab({
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </TableContainer>
           )}
         </CardContent>
       </Card>

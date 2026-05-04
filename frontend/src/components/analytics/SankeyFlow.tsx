@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ArrowRight, Download, BarChart3, LineChart as LineChartIcon, Table as TableIcon } from 'lucide-react'
@@ -21,7 +21,6 @@ import {
 } from 'recharts'
 import { ExpandableCard } from '@/components/ui/expandable-card'
 import { exportToCSV } from '@/lib/exports'
-import { exportChartToJPG } from '@/lib/chart-export'
 import { CHART_COLORS, CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
@@ -68,7 +67,6 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
   const [viewMode, setViewMode] = useState<ViewMode>('periodic')
   const [chartType, setChartType] = useState<ChartType>('sankey')
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
-  const chartRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchData()
@@ -281,7 +279,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
     if (chartType === 'sankey') {
       // Export flow data
       const csvData = data.map(flow => ({
-        'Donor': flow.donor,
+        'Development Partner': flow.donor,
         'Sector': flow.sector,
         'Amount (USD)': flow.amount
       }))
@@ -299,12 +297,6 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
     }
   }, [chartType, data, chartData, sectors])
 
-  const handleExportJPG = useCallback(() => {
-    if (chartRef.current) {
-      exportChartToJPG(chartRef.current, 'sector-flow-visualization')
-    }
-  }, [])
-
   if (loading) {
     return (
       <ChartLoadingPlaceholder />
@@ -318,7 +310,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       <div className="grid grid-cols-5 gap-4 h-full">
         {/* Donors Column */}
         <div className="col-span-2">
-          <h4 className="text-body font-medium text-muted-foreground mb-3">Top Donors</h4>
+          <h4 className="text-body font-medium text-muted-foreground mb-3">Top Development Partners</h4>
           <div className="space-y-3">
             {donors.map(donor => (
               <div key={donor.name}>
@@ -441,10 +433,10 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
             <TableHead>Period</TableHead>
             {sectors.map(sector => (
-              <TableHead key={sector.name} className="text-right">
+              <TableHead key={sector.name} className="text-right whitespace-normal">
                 {sector.name}
               </TableHead>
             ))}
@@ -496,10 +488,10 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
           <span>Sector Flow Visualization</span>
         </div>
       }
-      description="Flow of disbursements from donors to sectors"
+      description="Flow of disbursements from development partners to sectors"
       exportData={chartType === 'sankey' ? data : chartData}
     >
-      <div ref={chartRef} className="space-y-4">
+      <div className="space-y-4">
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
           <div className="flex items-center gap-2">
@@ -567,14 +559,6 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
             >
               <Download className="h-4 w-4 mr-1" />
               CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportJPG}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              JPG
             </Button>
           </div>
         </div>

@@ -16,6 +16,24 @@ const Table = React.forwardRef<
 ))
 Table.displayName = "Table"
 
+/**
+ * Standard wrapper for bordered tables — gives the table a single, consistent
+ * rounded-lg border that clips the header background corners cleanly. Use this
+ * around <Table> instead of hand-rolled `<div className="rounded-md border">`
+ * or `<div className="border-2 border-gray-300 rounded-lg">` wrappers.
+ */
+const TableContainer = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("rounded-lg border overflow-hidden w-full", className)}
+    {...props}
+  />
+))
+TableContainer.displayName = "TableContainer"
+
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -125,6 +143,7 @@ const sortableHeaderClasses = "cursor-pointer hover:bg-muted/80 transition-color
 
 export {
   Table,
+  TableContainer,
   TableHeader,
   TableBody,
   TableFooter,
@@ -134,4 +153,4 @@ export {
   TableCaption,
   getSortIcon,
   sortableHeaderClasses,
-} 
+}

@@ -299,7 +299,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Humanitarian Donor Consortium"
+              placeholder="e.g., Humanitarian Development Partner Consortium"
               required
             />
           </div>

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
 // Colour palette as specified
 const COLOURS = {
@@ -259,7 +260,6 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     return new Date(timestamp).getFullYear().toString()
   }
 
-  // Custom tooltip matching Financial Overview style
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0]?.payload
@@ -269,61 +269,26 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         month: 'short',
         year: 'numeric'
       }) : ''
-      
+
       const perfectSpend = dataPoint?.perfectSpend || 0
       const cumulative = dataPoint?.cumulativeDisbursements || 0
       const variance = cumulative - perfectSpend
-      
+      const varianceColor = variance >= 0 ? '#16a34a' : '#dc2626'
+      const varianceValue = (
+        <span style={{ color: varianceColor }}>
+          {Math.abs(variance) < 1 ? '—' : formatTooltipCurrency(Math.abs(variance))}
+        </span>
+      )
+
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
-          </div>
-          <div className="p-2">
-            <table className="w-full text-body">
-              <tbody>
-                <tr className="border-b border-border">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: COLOURS.coolSteel }}
-                    />
-                    <span className="text-foreground font-medium">Perfect spend</span>
-                  </td>
-                  <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(perfectSpend)}
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: COLOURS.primaryScarlet }}
-                    />
-                    <span className="text-foreground font-medium">Actual spend</span>
-                  </td>
-                  <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(cumulative)}
-                  </td>
-                </tr>
-                <tr className="border-b border-border last:border-b-0">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
-                    <div className="w-3 h-3 flex-shrink-0" />
-                    <span className="text-foreground font-medium">
-                      {variance >= 0 ? 'Ahead' : 'Behind'}
-                    </span>
-                  </td>
-                  <td 
-                    className="py-1.5 text-right font-semibold"
-                    style={{ color: variance >= 0 ? '#16a34a' : '#dc2626' }}
-                  >
-                    {Math.abs(variance) < 1 ? '—' : formatTooltipCurrency(Math.abs(variance))}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={formattedDate}
+          rows={[
+            { label: 'Perfect spend', value: formatTooltipCurrency(perfectSpend), color: COLOURS.coolSteel },
+            { label: 'Actual spend', value: formatTooltipCurrency(cumulative), color: COLOURS.primaryScarlet },
+            { label: variance >= 0 ? 'Ahead' : 'Behind', value: varianceValue },
+          ]}
+        />
       )
     }
     return null

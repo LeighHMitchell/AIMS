@@ -11,9 +11,9 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, SlidersHorizontal, Check, Search } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { DollarSign, Wallet, Calendar, Download, Table as TableIcon, AlertCircle, CalendarIcon, SlidersHorizontal, Check, Search, ChevronDown, AlignLeft, Layers } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import {
@@ -24,11 +24,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { format } from 'date-fns'
 import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName, getOrganizationTypeCode } from '@/data/iati-organization-types'
+import { SectorHierarchyFilter, SectorFilterSelection } from '@/components/maps/SectorHierarchyFilter'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
-import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -56,38 +58,61 @@ const AVAILABLE_YEARS = Array.from(
   (_, i) => 2010 + i
 )
 
-// Organization type colors for stacked bars
+// Organization type colors for stacked bars — slate-only for dashboard consistency.
 const ORG_TYPE_COLORS: Record<string, string> = {
-  '10': '#1e40af', // Government - blue-800
-  '15': '#3b82f6', // Other Public Sector - blue-500
-  '21': '#059669', // International NGO - emerald-600
-  '22': '#10b981', // National NGO - emerald-500
-  '23': '#34d399', // Regional NGO - emerald-400
-  '24': '#6ee7b7', // Partner Country NGO - emerald-300
-  '30': '#7c3aed', // Public Private Partnership - violet-600
-  '40': '#dc2626', // Multilateral - red-600
-  '60': '#f59e0b', // Foundation - amber-500
-  '70': '#64748b', // Private Sector - slate-500
-  '71': '#475569', // Private Sector Provider - slate-600
-  '72': '#94a3b8', // Private Sector Recipient - slate-400
-  '73': '#cbd5e1', // Private Sector Third - slate-300
-  '80': '#8b5cf6', // Academic - violet-500
-  '90': '#6b7280', // Other - gray-500
+  '10': '#1e293b', // Government — slate-800
+  '15': '#334155', // Other Public Sector — slate-700
+  '21': '#475569', // International NGO — slate-600
+  '22': '#4c5568', // National NGO — Blue Slate
+  '23': '#5d6b7a', // Regional NGO — medium slate
+  '24': '#64748b', // Partner Country NGO — slate-500
+  '30': '#6b7789', // Public Private Partnership — Blue Slate light
+  '40': '#7b95a7', // Multilateral — Cool Steel
+  '60': '#5f7a8c', // Foundation — Cool Steel dark
+  '70': '#94a3b8', // Private Sector — slate-400
+  '71': '#9bb0bf', // Private Sector Provider — Cool Steel light
+  '72': '#a3b5c2', // Private Sector Recipient — light steel
+  '73': '#cbd5e1', // Private Sector Third — slate-300
+  '80': '#cfd0d5', // Academic — Pale Slate
+  '90': '#8a9199', // Other — neutral accent
 }
 
-type ViewMode = 'budgets' | 'planned' | 'commitments' | 'disbursements'
+// `Metric` enumerates every selectable metric in the chart's metric
+// multi-select. `tx_<code>` keys map 1:1 to IATI transaction type codes 1–13;
+// `budgets` and `planned` are the non-transaction metrics.
+type Metric =
+  | 'budgets'
+  | 'planned'
+  | 'tx_1' | 'tx_2' | 'tx_3' | 'tx_4' | 'tx_5' | 'tx_6' | 'tx_7'
+  | 'tx_8' | 'tx_9' | 'tx_10' | 'tx_11' | 'tx_12' | 'tx_13'
 type ChartViewMode = 'bar' | 'stacked' | 'table'
-type SectorAggregationLevel = 'group' | 'category' | 'sector'
 type OpenFilter = 'calendar' | 'year' | 'orgType' | 'sector' | 'metric' | null
 
-interface SectorHierarchyItem {
-  code: string
-  name: string
-  groupCode?: string
-  groupName?: string
-  categoryCode?: string
-  categoryName?: string
-}
+// Ordered metric definitions. `code` is rendered as the badge in the
+// dropdown for the 13 IATI transaction types. `budgets` and `planned`
+// have no code badge.
+const METRIC_DEFS: Array<{ key: Metric; label: string; code?: string }> = [
+  { key: 'budgets', label: 'Total Budgets' },
+  { key: 'planned', label: 'Total Planned Disbursements' },
+  { key: 'tx_1', label: 'Incoming Funds', code: '1' },
+  { key: 'tx_2', label: 'Outgoing Commitments', code: '2' },
+  { key: 'tx_3', label: 'Disbursements', code: '3' },
+  { key: 'tx_4', label: 'Expenditures', code: '4' },
+  { key: 'tx_5', label: 'Interest Payments', code: '5' },
+  { key: 'tx_6', label: 'Loan Repayments', code: '6' },
+  { key: 'tx_7', label: 'Reimbursements', code: '7' },
+  { key: 'tx_8', label: 'Purchases of Equity', code: '8' },
+  { key: 'tx_9', label: 'Sales of Equity', code: '9' },
+  { key: 'tx_10', label: 'Credit Guarantees', code: '10' },
+  { key: 'tx_11', label: 'Incoming Commitments', code: '11' },
+  { key: 'tx_12', label: 'Outgoing Pledges', code: '12' },
+  { key: 'tx_13', label: 'Incoming Pledges', code: '13' },
+]
+const METRIC_LABEL: Record<Metric, string> = METRIC_DEFS.reduce((acc, m) => {
+  acc[m.key] = m.label
+  return acc
+}, {} as Record<Metric, string>)
+const ALL_METRIC_KEYS: Metric[] = METRIC_DEFS.map(m => m.key)
 
 interface AllDonorsChartProps {
   dateRange?: {
@@ -108,16 +133,51 @@ interface DonorData {
   totalPlannedDisbursement: number
   totalCommitment: number
   totalActualDisbursement: number
+  // Per-transaction-type aggregate keyed by IATI code ('1'..'13').
+  // Optional for back-compat with any caller that constructs DonorData
+  // without it (older API responses).
+  byTxType?: Record<string, number>
 }
 
 export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChange, compact = false }: AllDonorsChartProps) {
   const isExpanded = useChartExpansion()
   const [allData, setAllData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('disbursements')
+  // Multi-select metrics. Default is Disbursements only so the initial
+  // chart matches the previous default behavior. Users can layer in any
+  // combination of Budgets, Planned Disbursements, and the 13 IATI
+  // transaction types — values are summed across the selection.
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>(['tx_3'])
+  const toggleMetric = (m: Metric) => {
+    setSelectedMetrics(prev =>
+      prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]
+    )
+  }
+  const clearMetrics = () => setSelectedMetrics([])
+  const selectAllMetrics = () => setSelectedMetrics([...ALL_METRIC_KEYS])
+  const metricsLabel = selectedMetrics.length === 0
+    ? 'No metric selected'
+    : selectedMetrics.length === 1
+      ? METRIC_LABEL[selectedMetrics[0]]
+      : `${selectedMetrics.length} metrics selected`
+  // Primary metric is used for sort tie-breaks and any single-icon UI.
+  const primaryMetric: Metric | null = selectedMetrics[0] ?? null
   const [chartViewMode, setChartViewMode] = useState<ChartViewMode>('bar')
   const [showPercentage, setShowPercentage] = useState(false)
-  const [orgTypeFilter, setOrgTypeFilter] = useState<string>('all')
+  // Empty array = "All organization types"; any non-empty selection narrows the chart.
+  const [orgTypeFilter, setOrgTypeFilter] = useState<string[]>([])
+  const toggleOrgType = (code: string) => {
+    setOrgTypeFilter(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    )
+  }
+  const clearOrgTypes = () => setOrgTypeFilter([])
+  const selectAllOrgTypes = () => setOrgTypeFilter(IATI_ORGANIZATION_TYPES.map(t => t.code))
+  const orgTypeFilterLabel = orgTypeFilter.length === 0
+    ? 'All organization types'
+    : orgTypeFilter.length === 1
+      ? IATI_ORGANIZATION_TYPES.find(t => t.code === orgTypeFilter[0])?.name || orgTypeFilter[0]
+      : `${orgTypeFilter.length} types selected`
 
   // Calendar and year selection state (like other charts)
   const [calendarType, setCalendarType] = useState<string>('')
@@ -128,11 +188,17 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const [localDateRange, setLocalDateRange] = useState<{ from: Date; to: Date } | null>(null)
   const [hoveredDonorKey, setHoveredDonorKey] = useState<string | null>(null)
 
-  // Sector filter state
-  const [sectorAggregationLevel, setSectorAggregationLevel] = useState<SectorAggregationLevel>('group')
-  const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set())
-  const [sectorData, setSectorData] = useState<SectorHierarchyItem[]>([])
-  const [sectorFilterSearch, setSectorFilterSearch] = useState('')
+  // Sector filter state — uses the same multi-level shape as the Atlas
+  // SectorHierarchyFilter: groups (1-digit), categories (3-digit), sub-sectors (5-digit).
+  const [sectorFilter, setSectorFilter] = useState<SectorFilterSelection>({
+    sectorCategories: [],
+    sectors: [],
+    subSectors: [],
+  })
+  // Sector dropdown open state is mirrored into `openFilter` so only ONE
+  // top-row dropdown can be open at a time (matches the year/calendar/
+  // org-type dropdowns).
+  const [showOnlyActiveSectors, setShowOnlyActiveSectors] = useState(false)
 
   // Coordinate which filter dropdown is open (only one at a time)
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
@@ -233,110 +299,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     }
   }, [calendarType, selectedYears, customYears])
 
-  // Fetch sector hierarchy data for filtering
-  useEffect(() => {
-    const fetchSectorData = async () => {
-      try {
-        const response = await apiFetch('/api/analytics/disbursements-by-sector?dateFrom=2000-01-01T00:00:00.000Z&dateTo=2050-12-31T23:59:59.999Z')
-        if (response.ok) {
-          const result = await response.json()
-          const sectors = result.sectors || []
-          // Transform to hierarchy items
-          const items: SectorHierarchyItem[] = sectors.map((s: any) => ({
-            code: s.sectorCode,
-            name: s.sectorName,
-            groupCode: s.groupCode,
-            groupName: s.groupName,
-            categoryCode: s.categoryCode,
-            categoryName: s.categoryName
-          }))
-          setSectorData(items)
-        }
-      } catch (err) {
-        console.error('Failed to fetch sector data:', err)
-      }
-    }
-    fetchSectorData()
-  }, [])
-
-  // Aggregate sector data based on aggregation level
-  const aggregatedSectorData = useMemo(() => {
-    if (sectorAggregationLevel === 'sector') {
-      return sectorData.map(s => ({
-        code: s.code,
-        name: s.name,
-        groupCode: s.groupCode,
-        groupName: s.groupName
-      }))
-    } else if (sectorAggregationLevel === 'category') {
-      const categoryMap = new Map<string, { code: string; name: string; groupCode: string; groupName: string }>()
-      sectorData.forEach(s => {
-        const key = s.categoryCode || '998'
-        if (!categoryMap.has(key)) {
-          categoryMap.set(key, {
-            code: s.categoryCode || '998',
-            name: s.categoryName || 'Unallocated',
-            groupCode: s.groupCode || '998',
-            groupName: s.groupName || 'Other'
-          })
-        }
-      })
-      return Array.from(categoryMap.values())
-    } else {
-      // group level
-      const groupMap = new Map<string, { code: string; name: string; groupCode: string; groupName: string }>()
-      sectorData.forEach(s => {
-        const key = s.groupCode || '998'
-        if (!groupMap.has(key)) {
-          groupMap.set(key, {
-            code: s.groupCode || '998',
-            name: s.groupName || 'Other',
-            groupCode: s.groupCode || '998',
-            groupName: s.groupName || 'Other'
-          })
-        }
-      })
-      return Array.from(groupMap.values())
-    }
-  }, [sectorData, sectorAggregationLevel])
-
-  // Filter sectors based on search text
-  const filteredSectorItems = useMemo(() => {
-    if (!sectorFilterSearch.trim()) return aggregatedSectorData
-    const search = sectorFilterSearch.toLowerCase()
-    return aggregatedSectorData.filter(item =>
-      item.code.toLowerCase().includes(search) ||
-      item.name.toLowerCase().includes(search)
-    )
-  }, [aggregatedSectorData, sectorFilterSearch])
-
-  // Sector filter helper functions
-  const toggleSectorVisibility = (code: string) => {
-    setSelectedSectors(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(code)) {
-        newSet.delete(code)
-      } else {
-        newSet.add(code)
-      }
-      return newSet
-    })
-  }
-
-  const selectAllSectors = () => {
-    setSelectedSectors(new Set(aggregatedSectorData.map(item => item.code)))
-  }
-
-  const clearAllSectors = () => {
-    setSelectedSectors(new Set())
-  }
-
-  // Reset sector filter when aggregation level changes
-  useEffect(() => {
-    setSelectedSectors(new Set())
-    setSectorFilterSearch('')
-  }, [sectorAggregationLevel])
-
   // Handle year click - select start and end of range
   const handleYearClick = (year: number, shiftKey: boolean) => {
     if (shiftKey && selectedYears.length === 1) {
@@ -398,12 +360,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       const currentYr = new Date().getFullYear()
       setSelectedYears([currentYr - 5, currentYr])
     }
-    setOrgTypeFilter('all')
-    setViewMode('disbursements')
+    setOrgTypeFilter([])
+    setSelectedMetrics(['tx_3'])
     setChartViewMode('bar')
-    setSectorAggregationLevel('group')
-    setSelectedSectors(new Set())
-    setSectorFilterSearch('')
+    setSectorFilter({ sectorCategories: [], sectors: [], subSectors: [] })
     const calendarYear = customYears.find(cy =>
       cy.name.toLowerCase().includes('calendar') ||
       cy.name.toLowerCase().includes('gregorian')
@@ -416,12 +376,18 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   // Use date strings for dependency array stability
   const dateFromStr = effectiveDateRange.from.toISOString()
   const dateToStr = effectiveDateRange.to.toISOString()
-  const selectedSectorsStr = Array.from(selectedSectors).sort().join(',')
+  const sectorFilterKey = useMemo(() => (
+    [
+      sectorFilter.sectorCategories.slice().sort().join(','),
+      sectorFilter.sectors.slice().sort().join(','),
+      sectorFilter.subSectors.slice().sort().join(','),
+    ].join('|')
+  ), [sectorFilter])
 
   useEffect(() => {
     fetchData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter, selectedSectorsStr, sectorAggregationLevel, calendarType])
+  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter.join(','), sectorFilterKey, calendarType])
 
   const fetchData = async () => {
     try {
@@ -430,19 +396,30 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       const queryParams = new URLSearchParams({
         dateFrom: effectiveDateRange.from.toISOString(),
         dateTo: effectiveDateRange.to.toISOString(),
-        orgType: orgTypeFilter
+        orgType: orgTypeFilter.length > 0 ? orgTypeFilter.join(',') : 'all',
       })
 
       if (calendarType) {
         queryParams.set('customYearId', calendarType)
       }
 
-      // Add sector filter if any sectors are selected
-      if (selectedSectors.size > 0) {
-        queryParams.set('sectorCodes', Array.from(selectedSectors).join(','))
-        queryParams.set('sectorLevel', sectorAggregationLevel)
+      // Multi-level sector filter (groups + categories + sub-sectors).
+      if (sectorFilter.sectorCategories.length > 0) {
+        queryParams.set('sectorGroups', sectorFilter.sectorCategories.join(','))
+      }
+      if (sectorFilter.sectors.length > 0) {
+        queryParams.set('sectorCategories', sectorFilter.sectors.join(','))
+      }
+      if (sectorFilter.subSectors.length > 0) {
+        queryParams.set('sectorSubSectors', sectorFilter.subSectors.join(','))
       }
 
+      console.log('[AllDonors] fetching with sector filter:', {
+        groups: sectorFilter.sectorCategories,
+        categories: sectorFilter.sectors,
+        subSectors: sectorFilter.subSectors,
+        url: `/api/analytics/all-donors?${queryParams}`,
+      })
       const response = await apiFetch(`/api/analytics/all-donors?${queryParams}`)
       const result = await response.json()
 
@@ -459,39 +436,40 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     }
   }
 
-  // Filter and sort data based on view mode
+  // Resolve a single metric's value off a donor record. Transaction-type
+  // keys (`tx_<code>`) read from `byTxType[<code>]`; the API guarantees
+  // those entries exist for every donor it returns, but we tolerate older
+  // payloads (no `byTxType`) by defaulting to 0.
+  const getMetricValue = (donor: DonorData, m: Metric): number => {
+    if (m === 'budgets') return donor.totalBudget || 0
+    if (m === 'planned') return donor.totalPlannedDisbursement || 0
+    const code = m.slice(3) // 'tx_3' -> '3'
+    return donor.byTxType?.[code] || 0
+  }
+
+  // Sum every selected metric for a single donor — this is the displayed
+  // value across the whole UI (bar length, tooltips, table totals, CSV).
+  const sumForDonor = (d: DonorData): number =>
+    selectedMetrics.reduce((s, m) => s + getMetricValue(d, m), 0)
+
+  // Filter and sort data by the summed value across selected metrics.
+  // Donors whose sum is 0 fall out of the chart entirely.
   const displayData = useMemo(() => {
-    // Sort by selected metric
-    const sorted = [...allData].sort((a, b) => {
-      if (viewMode === 'budgets') {
-        return b.totalBudget - a.totalBudget
-      } else if (viewMode === 'planned') {
-        return b.totalPlannedDisbursement - a.totalPlannedDisbursement
-      } else if (viewMode === 'commitments') {
-        return (b.totalCommitment || 0) - (a.totalCommitment || 0)
-      } else {
-        return b.totalActualDisbursement - a.totalActualDisbursement
-      }
-    })
+    if (selectedMetrics.length === 0) return []
+    return [...allData]
+      .map(d => ({ donor: d, sum: sumForDonor(d) }))
+      .filter(({ sum }) => sum > 0)
+      .sort((a, b) => b.sum - a.sum)
+      .map(({ donor }) => donor)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allData, selectedMetrics])
 
-    // Filter out orgs with zero value for selected metric
-    return sorted.filter(d => {
-      if (viewMode === 'budgets') return d.totalBudget > 0
-      if (viewMode === 'planned') return d.totalPlannedDisbursement > 0
-      if (viewMode === 'commitments') return (d.totalCommitment || 0) > 0
-      return d.totalActualDisbursement > 0
-    })
-  }, [allData, viewMode])
-
-  // Calculate total for percentage display
+  // Grand total of the selected-metric sum across all visible donors —
+  // used for the percentage column in tooltips/CSV.
   const total = useMemo(() => {
-    return displayData.reduce((sum, d) => {
-      if (viewMode === 'budgets') return sum + d.totalBudget
-      if (viewMode === 'planned') return sum + d.totalPlannedDisbursement
-      if (viewMode === 'commitments') return sum + (d.totalCommitment || 0)
-      return sum + d.totalActualDisbursement
-    }, 0)
-  }, [displayData, viewMode])
+    return displayData.reduce((sum, d) => sum + sumForDonor(d), 0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayData, selectedMetrics])
 
   const formatCurrency = (value: number) => {
     try {
@@ -510,19 +488,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     return `${((value / total) * 100).toFixed(1)}%`
   }
 
-  // Prepare data for chart based on view mode
+  // Prepare data for chart. `value` is the sum across all selected metrics.
   const chartData = useMemo(() => {
     return displayData.map(donor => {
-      let value = 0
-      if (viewMode === 'budgets') {
-        value = donor.totalBudget
-      } else if (viewMode === 'planned') {
-        value = donor.totalPlannedDisbursement
-      } else if (viewMode === 'commitments') {
-        value = donor.totalCommitment || 0
-      } else {
-        value = donor.totalActualDisbursement
-      }
+      const value = sumForDonor(donor)
 
       // Use acronym if available, otherwise use truncated name
       const displayName = donor.acronym || (donor.name.length > 30 ? donor.name.substring(0, 30) + '...' : donor.name)
@@ -536,12 +505,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         totalPlannedDisbursement: donor.totalPlannedDisbursement,
         totalCommitment: donor.totalCommitment || 0,
         totalActualDisbursement: donor.totalActualDisbursement,
+        byTxType: donor.byTxType,
         percentage: total > 0 ? ((value / total) * 100) : 0,
         type: donor.type,
         typeName: donor.type ? getOrganizationTypeName(donor.type) : null
       }
     })
-  }, [displayData, viewMode, total])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayData, selectedMetrics, total])
 
   // Prepare stacked data by org type - with individual donors as stacked segments
   const stackedData = useMemo(() => {
@@ -629,68 +600,60 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     )
   }
 
-  // Single color for non-stacked bar chart (all bars same color)
-  // Use the darkest shade from the shared ranked palette so this chart stays
-  // visually consistent with other ranked breakdown charts on the dashboard.
-  const barColor = CHART_RANKED_PALETTE[0] // slate-700
+  // Single Blue Slate fill for all bars in the non-stacked view —
+  // keeps this chart visually consistent with other ranked breakdown
+  // charts on the dashboard.
+  const barColor = '#4c5568'
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
 
-      // Get the selected metric based on viewMode
-      const getSelectedMetric = () => {
-        switch (viewMode) {
-          case 'budgets':
-            return { name: 'Total Budgets', value: data.totalBudget, color: '#334155' }
-          case 'planned':
-            return { name: 'Planned Disbursements', value: data.totalPlannedDisbursement, color: '#475569' }
-          case 'commitments':
-            return { name: 'Total Commitments', value: data.totalCommitment, color: '#64748b' }
-          case 'disbursements':
-            return { name: 'Total Disbursements', value: data.totalActualDisbursement, color: '#94a3b8' }
-        }
-      }
-
-      const selectedMetric = getSelectedMetric()
+      // Single label that always reflects the current metric selection.
+      // For one selected metric we use that metric's name; for two or more
+      // we use a generic "Selected Total" so the per-metric breakdown
+      // doesn't bloat the tooltip (out of scope per spec).
+      const tooltipLabel = selectedMetrics.length === 1
+        ? METRIC_LABEL[selectedMetrics[0]]
+        : 'Selected Total'
 
       // Format org name with acronym
       const orgDisplay = data.acronym
         ? `${data.fullName} (${data.acronym})`
         : data.fullName
 
+      const subtitle = data.type ? (
+        <span className="flex items-center gap-1.5">
+          {getOrganizationTypeCode(data.type) && (
+            <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
+              {getOrganizationTypeCode(data.type)}
+            </code>
+          )}
+          <span>{getOrganizationTypeName(data.type)}</span>
+        </span>
+      ) : undefined
+
+      const rows: any[] = [
+        {
+          label: tooltipLabel,
+          value: formatTooltipCurrency(data.value, isExpanded),
+          color: '#4c5568',
+        },
+      ]
+      if (showPercentage) {
+        rows[0].bordered = true
+        rows.push({
+          label: '% of Total',
+          value: formatPercentage(data.value),
+        })
+      }
+
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body max-w-[280px] break-words">{orgDisplay}</p>
-            {data.type && (
-              <div className="flex items-center gap-1.5 mt-1">
-                {getOrganizationTypeCode(data.type) && (
-                  <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
-                    {getOrganizationTypeCode(data.type)}
-                  </code>
-                )}
-                <span className="text-helper text-muted-foreground">{getOrganizationTypeName(data.type)}</span>
-              </div>
-            )}
-          </div>
-          <div className="p-3">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-muted-foreground text-body">{selectedMetric.name}</span>
-              <span className="text-lg font-bold text-foreground">
-                {formatTooltipCurrency(selectedMetric.value, isExpanded)}
-              </span>
-            </div>
-            {showPercentage && (
-              <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-border">
-                <span className="text-muted-foreground text-helper">% of Total</span>
-                <span className="text-body font-medium text-foreground">
-                  {formatPercentage(data.value)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={orgDisplay}
+          subtitle={subtitle}
+          rows={rows}
+        />
       )
     }
     return null
@@ -705,7 +668,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     let rows: string[]
 
     if (chartViewMode === 'stacked') {
-      headers = ['Organization Type', 'Type Code', 'Total Value', 'Number of Donors']
+      headers = ['Organization Type', 'Type Code', 'Total Value', 'Number of Development Partners']
       rows = stackedData.rows.map((d: any) => {
         return [
           d.name,
@@ -724,9 +687,11 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         'Planned Disbursements',
         'Commitments',
         'Actual Disbursements',
-        'Selected Metric Value',
+        'Selected Metrics',
+        'Selected Total',
         'Percentage of Total'
       ]
+      const selectedLabel = selectedMetrics.map(m => METRIC_LABEL[m]).join('; ')
       rows = chartData.map(d => {
         const selectedValue = d.value.toFixed(2)
         const percentage = total > 0 ? `${((d.value / total) * 100).toFixed(2)}%` : '0%'
@@ -740,6 +705,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           d.totalPlannedDisbursement.toFixed(2),
           d.totalCommitment.toFixed(2),
           d.totalActualDisbursement.toFixed(2),
+          selectedLabel,
           selectedValue,
           percentage
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
@@ -758,40 +724,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }
-
-  // Export to JPG
-  const handleExportJPG = () => {
-    const chartElement = document.querySelector('#all-donors-chart') as HTMLElement
-    if (!chartElement) return
-
-    import('html2canvas').then(({ default: html2canvas }) => {
-      html2canvas(chartElement, {
-        backgroundColor: '#ffffff',
-        scale: 2
-      }).then(canvas => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.download = `all-donors-financial-overview-${new Date().getTime()}.jpg`
-            link.href = url
-            link.click()
-            URL.revokeObjectURL(url)
-          }
-        }, 'image/jpeg', 0.95)
-      })
-    })
-  }
-
-  // Get view mode label
-  const getViewModeLabel = () => {
-    switch (viewMode) {
-      case 'budgets': return 'Total Budgets'
-      case 'planned': return 'Planned Disbursements'
-      case 'commitments': return 'Commitments'
-      case 'disbursements': return 'Actual Disbursements'
-    }
   }
 
   // Compact mode renders just the chart without Card wrapper and filters
@@ -891,7 +823,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                   <div className="flex gap-1 border rounded-lg p-1 bg-white">
                     <DropdownMenu open={openFilter === 'year'} onOpenChange={filterOpenHandler('year')}>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1"
+                          title={localDateRange?.from && localDateRange?.to
+                            ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                            : undefined}
+                        >
                           <CalendarIcon className="h-4 w-4" />
                           {selectedYears.length === 0
                             ? 'Select years'
@@ -953,34 +892,134 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  {localDateRange?.from && localDateRange?.to && (
-                    <span className="text-[10px] text-muted-foreground">
-                      {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
-                    </span>
-                  )}
                 </div>
               </>
             )}
           </div>
 
-          {/* Right Side - Org Type Filter */}
-          <div className="flex items-center gap-2">
-            <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter} open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All organization types</SelectItem>
-                {IATI_ORGANIZATION_TYPES.map(type => (
-                  <SelectItem key={type.code} value={type.code}>
-                    <span className="flex items-center gap-2">
-                      <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">{type.code}</code>
-                      {type.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Right Side - Org Type Filter + Metric multi-select */}
+          <div className="flex items-center gap-3">
+            <DropdownMenu open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+                  <span className="truncate text-body">{orgTypeFilterLabel}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-[360px] max-h-[400px] overflow-y-auto p-1"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
+                <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
+                  <span className="text-helper font-semibold text-foreground">Organization Types</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={selectAllOrgTypes}
+                      disabled={orgTypeFilter.length === IATI_ORGANIZATION_TYPES.length}
+                      className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button
+                      type="button"
+                      onClick={clearOrgTypes}
+                      disabled={orgTypeFilter.length === 0}
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                {IATI_ORGANIZATION_TYPES.map(type => {
+                  const checked = orgTypeFilter.includes(type.code)
+                  return (
+                    <button
+                      key={type.code}
+                      type="button"
+                      onClick={() => toggleOrgType(type.code)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 text-left hover:bg-muted rounded text-body"
+                    >
+                      <Checkbox checked={checked} className="pointer-events-none flex-shrink-0" />
+                      <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">{type.code}</code>
+                      <span className="text-foreground truncate">{type.name}</span>
+                    </button>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Metric multi-select — same shape as the main controls bar so
+                the user can re-add a metric while seeing the empty state. */}
+            <DropdownMenu open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+                  <span className="flex items-center gap-2 truncate text-body">
+                    {selectedMetrics.length === 1 && primaryMetric === 'budgets' && (
+                      <Wallet className="h-4 w-4 flex-shrink-0" />
+                    )}
+                    {selectedMetrics.length === 1 && primaryMetric === 'planned' && (
+                      <Calendar className="h-4 w-4 flex-shrink-0" />
+                    )}
+                    {selectedMetrics.length === 1 && primaryMetric && primaryMetric.startsWith('tx_') && (
+                      <DollarSign className="h-4 w-4 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{metricsLabel}</span>
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-[320px] max-h-[400px] overflow-y-auto p-1"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
+                <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
+                  <span className="text-helper font-semibold text-foreground">Metrics</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={selectAllMetrics}
+                      disabled={selectedMetrics.length === ALL_METRIC_KEYS.length}
+                      className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button
+                      type="button"
+                      onClick={clearMetrics}
+                      disabled={selectedMetrics.length === 0}
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                {METRIC_DEFS.map((def, idx) => {
+                  const checked = selectedMetrics.includes(def.key)
+                  const showSeparator = idx === 2
+                  return (
+                    <React.Fragment key={def.key}>
+                      {showSeparator && <div className="my-1 border-t border-border" />}
+                      <button
+                        type="button"
+                        onClick={() => toggleMetric(def.key)}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 text-left hover:bg-muted rounded text-body"
+                      >
+                        <Checkbox checked={checked} className="pointer-events-none flex-shrink-0" />
+                        {def.code && (
+                          <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">{def.code}</code>
+                        )}
+                        <span className="text-foreground truncate">{def.label}</span>
+                      </button>
+                    </React.Fragment>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -988,8 +1027,17 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
-            <p className="text-muted-foreground font-medium">No donor data available</p>
-            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+            {selectedMetrics.length === 0 ? (
+              <>
+                <p className="text-muted-foreground font-medium">Select at least one metric</p>
+                <p className="text-body text-muted-foreground mt-2">Choose Total Budgets, Planned Disbursements, or any IATI transaction type from the metrics dropdown</p>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground font-medium">No development partner data available</p>
+                <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1041,7 +1089,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 <div className="flex gap-1 border rounded-lg p-1 bg-white">
                   <DropdownMenu open={openFilter === 'year'} onOpenChange={filterOpenHandler('year')}>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1"
+                        title={localDateRange?.from && localDateRange?.to
+                          ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                          : undefined}
+                      >
                         <CalendarIcon className="h-4 w-4" />
                         {selectedYears.length === 0
                           ? 'Select years'
@@ -1103,258 +1158,199 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                {/* Date Range Indicator */}
-                {localDateRange?.from && localDateRange?.to && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
-                  </span>
-                )}
               </div>
             </>
           )}
         </div>
 
         {/* Right Side - Org Type Filter, Sector Filter, Metric Selector, View Mode and Export Controls */}
-        <div className="flex items-center gap-2">
-          <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter} open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All organization types</SelectItem>
-              {IATI_ORGANIZATION_TYPES.map(type => (
-                <SelectItem key={type.code} value={type.code}>
-                  <span className="flex items-center gap-2">
-                    <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">{type.code}</code>
-                    {type.name}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-3">
+          <DropdownMenu open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+                <span className="truncate text-body">{orgTypeFilterLabel}</span>
+                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-[360px] max-h-[400px] overflow-y-auto p-1"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
+                <span className="text-helper font-semibold text-foreground">Organization Types</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={selectAllOrgTypes}
+                    disabled={orgTypeFilter.length === IATI_ORGANIZATION_TYPES.length}
+                    className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Select all
+                  </button>
+                  <span className="text-muted-foreground/40">·</span>
+                  <button
+                    type="button"
+                    onClick={clearOrgTypes}
+                    disabled={orgTypeFilter.length === 0}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              {IATI_ORGANIZATION_TYPES.map(type => {
+                const checked = orgTypeFilter.includes(type.code)
+                return (
+                  <button
+                    key={type.code}
+                    type="button"
+                    onClick={() => toggleOrgType(type.code)}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-left hover:bg-muted rounded text-body"
+                  >
+                    <Checkbox checked={checked} className="pointer-events-none flex-shrink-0" />
+                    <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">{type.code}</code>
+                    <span className="text-foreground truncate">{type.name}</span>
+                  </button>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          {/* Sector Filter */}
-          <div className="flex gap-1 rounded-lg p-1 bg-muted">
-            {/* Sector Aggregation Level Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-8 text-helper", sectorAggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setSectorAggregationLevel('group')}
-            >
-              Category
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-8 text-helper", sectorAggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setSectorAggregationLevel('category')}
-            >
-              Sector
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-8 text-helper", sectorAggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setSectorAggregationLevel('sector')}
-            >
-              Sub-sector
-            </Button>
+          {/* Sector Filter — same hierarchical picker used in the Atlas tab.
+              `showOnlyActiveSectors` toggle is local-only (no activityCounts
+              wired since the chart aggregates server-side). Open-state is
+              coordinated through `openFilter` so only one top-row dropdown
+              can be open at a time. */}
+          <SectorHierarchyFilter
+            selected={sectorFilter}
+            onChange={setSectorFilter}
+            open={openFilter === 'sector'}
+            onOpenChange={filterOpenHandler('sector')}
+            showOnlyActiveSectors={showOnlyActiveSectors}
+            onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
+            className="min-w-[280px] h-9"
+          />
 
-            {/* Sector Filter Dropdown */}
-            <DropdownMenu open={openFilter === 'sector'} onOpenChange={filterOpenHandler('sector')}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1"
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  {selectedSectors.size > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-muted text-foreground rounded-full">
-                      {selectedSectors.size}
-                    </span>
+          {/* Metric multi-select. Mirrors the Organization Types dropdown
+              pattern in this same file. The trigger only shows a leading
+              icon when EXACTLY ONE metric is selected (Wallet for budgets,
+              Calendar for planned, DollarSign for any tx type); otherwise
+              the trigger label is the count summary. */}
+          <DropdownMenu open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+                <span className="flex items-center gap-2 truncate text-body">
+                  {selectedMetrics.length === 1 && primaryMetric === 'budgets' && (
+                    <Wallet className="h-4 w-4 flex-shrink-0" />
                   )}
-                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="p-3 w-[340px]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-helper font-medium text-foreground">
-                    Filter by {sectorAggregationLevel === 'group' ? 'Sector Category' : sectorAggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={selectAllSectors}
-                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={clearAllSectors}
-                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-
-                {/* Search box */}
-                <div className="relative mb-2">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search by code or name..."
-                    value={sectorFilterSearch}
-                    onChange={(e) => setSectorFilterSearch(e.target.value)}
-                    className="w-full pl-7 pr-3 py-1.5 text-helper border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                {/* Sector list */}
-                <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
-                  {filteredSectorItems.length === 0 ? (
-                    <div className="text-center text-helper text-muted-foreground py-4">
-                      No matching items found
-                    </div>
-                  ) : (
-                    filteredSectorItems.map((item) => {
-                      const isSelected = selectedSectors.has(item.code)
-
-                      return (
-                        <button
-                          key={item.code}
-                          onClick={() => toggleSectorVisibility(item.code)}
-                          className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-muted"
-                        >
-                          <div className={`
-                            w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
-                            ${isSelected ? 'bg-primary border-primary' : 'border-input'}
-                          `}>
-                            {isSelected && <Check className="h-3 w-3 text-white" />}
-                          </div>
-                          <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
-                            {item.code}
-                          </span>
-                          <span className="text-body text-foreground leading-tight">
-                            {item.name}
-                          </span>
-                        </button>
-                      )
-                    })
+                  {selectedMetrics.length === 1 && primaryMetric === 'planned' && (
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
                   )}
+                  {selectedMetrics.length === 1 && primaryMetric && primaryMetric.startsWith('tx_') && (
+                    <DollarSign className="h-4 w-4 flex-shrink-0" />
+                  )}
+                  <span className="truncate">{metricsLabel}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-[320px] max-h-[400px] overflow-y-auto p-1"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
+                <span className="text-helper font-semibold text-foreground">Metrics</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={selectAllMetrics}
+                    disabled={selectedMetrics.length === ALL_METRIC_KEYS.length}
+                    className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Select all
+                  </button>
+                  <span className="text-muted-foreground/40">·</span>
+                  <button
+                    type="button"
+                    onClick={clearMetrics}
+                    disabled={selectedMetrics.length === 0}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Clear
+                  </button>
                 </div>
-
-                <p className="text-[10px] text-muted-foreground mt-2 pt-2 border-t text-center">
-                  {selectedSectors.size} of {aggregatedSectorData.length} {sectorAggregationLevel === 'group' ? 'categories' : sectorAggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
-                  {selectedSectors.size === 0 && ' (showing all)'}
-                </p>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="budgets">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  <span>Total Budgets</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="planned">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>Total Planned Disbursements</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="commitments">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span>Total Commitments</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="disbursements">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span>Total Disbursements</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              </div>
+              {METRIC_DEFS.map((def, idx) => {
+                const checked = selectedMetrics.includes(def.key)
+                // Insert a visual separator between the two non-transaction
+                // metrics (budgets, planned) and the 13 IATI transaction types.
+                const showSeparator = idx === 2
+                return (
+                  <React.Fragment key={def.key}>
+                    {showSeparator && <div className="my-1 border-t border-border" />}
+                    <button
+                      type="button"
+                      onClick={() => toggleMetric(def.key)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 text-left hover:bg-muted rounded text-body"
+                    >
+                      <Checkbox checked={checked} className="pointer-events-none flex-shrink-0" />
+                      {def.code && (
+                        <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">{def.code}</code>
+                      )}
+                      <span className="text-foreground truncate">{def.label}</span>
+                    </button>
+                  </React.Fragment>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartViewMode('bar')}
-              className={cn("h-8", chartViewMode === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartViewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Horizontal Bar Chart"
+              aria-label="Horizontal Bar Chart"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="4" rx="1" />
-                <rect x="3" y="10" width="13" height="4" rx="1" />
-                <rect x="3" y="16" width="8" height="4" rx="1" />
-              </svg>
+              <AlignLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartViewMode('stacked')}
-              className={cn("h-8", chartViewMode === 'stacked' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartViewMode === 'stacked' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Stacked by Org Type"
+              aria-label="Stacked Horizontal Bar Chart"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="8" height="4" rx="1" />
-                <rect x="11" y="4" width="6" height="4" rx="1" fill="currentColor" fillOpacity="0.3" />
-                <rect x="17" y="4" width="4" height="4" rx="1" fill="currentColor" fillOpacity="0.5" />
-                <rect x="3" y="10" width="10" height="4" rx="1" />
-                <rect x="13" y="10" width="5" height="4" rx="1" fill="currentColor" fillOpacity="0.3" />
-                <rect x="3" y="16" width="6" height="4" rx="1" />
-                <rect x="9" y="16" width="4" height="4" rx="1" fill="currentColor" fillOpacity="0.3" />
-              </svg>
+              <Layers className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartViewMode('table')}
-              className={cn("h-8", chartViewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartViewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
+              aria-label="Table View"
             >
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex gap-1">
+          {/* CSV export — wrapped in a matching bordered container so it
+              reads as a peer of the chart-type toggle group at the same
+              visual scale. */}
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={handleExportCSV}
-              className="h-8 px-2"
-              title="Export to CSV"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
             >
               <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportJPG}
-              className="h-8 px-2"
-              title="Export to JPG"
-              disabled={chartViewMode === 'table'}
-            >
-              <FileImage className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="h-8 px-2"
-              title="Reset to defaults"
-            >
-              <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -1366,13 +1362,30 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           <div className="rounded-md border overflow-auto max-h-[600px]">
             <Table>
               <TableHeader>
-                <TableRow className="sticky top-0 bg-white z-10">
+                <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
                   <TableHead>Organization</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Total Budgets</TableHead>
-                  <TableHead className="text-right">Planned Disbursements</TableHead>
-                  <TableHead className="text-right">Commitments</TableHead>
-                  <TableHead className="text-right">Actual Disbursements</TableHead>
+                  {/* One column per selected metric — column headers reflect
+                      the user's current selection in the metric multi-select.
+                      A trailing "Total" column shows the sum across all
+                      selected metrics (only when 2+ are selected, otherwise
+                      it's redundant with the single metric column). */}
+                  {selectedMetrics.map((m) => {
+                    const code = METRIC_DEFS.find(d => d.key === m)?.code
+                    return (
+                      <TableHead key={m} className="text-right whitespace-normal">
+                        {code && (
+                          <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
+                            {code}
+                          </code>
+                        )}
+                        {METRIC_LABEL[m]}
+                      </TableHead>
+                    )
+                  })}
+                  {selectedMetrics.length > 1 && (
+                    <TableHead className="text-right">Total</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1389,17 +1402,23 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrencyAbbreviated(item.totalBudget)}</TableCell>
-                    <TableCell className="text-right">{formatCurrencyAbbreviated(item.totalPlannedDisbursement)}</TableCell>
-                    <TableCell className="text-right">{formatCurrencyAbbreviated(item.totalCommitment)}</TableCell>
-                    <TableCell className="text-right">{formatCurrencyAbbreviated(item.totalActualDisbursement)}</TableCell>
+                    {selectedMetrics.map((m) => (
+                      <TableCell key={m} className="text-right">
+                        {formatCurrencyAbbreviated(getMetricValue(item as unknown as DonorData, m))}
+                      </TableCell>
+                    ))}
+                    {selectedMetrics.length > 1 && (
+                      <TableCell className="text-right font-medium">
+                        {formatCurrencyAbbreviated(item.value)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
         ) : chartViewMode === 'stacked' ? (
-          <div className="bg-white rounded-lg border border-border p-4">
+          <div className="p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, stackedData.rows.length * 60)}>
               <BarChart
                 data={stackedData.rows}
@@ -1484,7 +1503,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-border p-4">
+          <div className="p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, chartData.length * 35)}>
               <BarChart
                 data={chartData}
@@ -1519,8 +1538,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
       {/* Explanatory text */}
       <p className="text-body text-muted-foreground leading-relaxed">
-        This chart ranks funding organizations by their financial contributions, helping stakeholders understand the development assistance landscape. Compare organizations by total budgets, planned disbursements, commitments, or actual disbursements.
-        The stacked view groups donors by organization type, showing individual organizations as segments within each bar for quick identification of major contributors.
+        This chart ranks funding organizations by their financial contributions, helping stakeholders understand the development assistance landscape. Pick any combination of metrics — Total Budgets, Total Planned Disbursements, and the 13 IATI transaction types — from the metrics dropdown; bars show the sum across every metric you select.
+        The stacked view groups development partners by organization type, showing individual organizations as segments within each bar for quick identification of major contributors.
       </p>
     </div>
   )

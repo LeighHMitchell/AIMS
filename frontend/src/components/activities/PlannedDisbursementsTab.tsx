@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { ModalFooter } from '@/components/ui/modal-footer';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,6 +27,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -110,7 +112,7 @@ interface SimpleHeroCardProps {
 
 function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
   return (
-    <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
+    <Card className="p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-body text-muted-foreground">{title}</div>
@@ -119,7 +121,7 @@ function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -240,6 +242,7 @@ export default function PlannedDisbursementsTab({
   const [isFormDirty, setIsFormDirty] = useState(false);
   // isCalculatingUSD removed - USD conversion now happens server-side
   const [typePopoverOpen, setTypePopoverOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
   const [amountInputValue, setAmountInputValue] = useState<string>('');
   const [isAmountFocused, setIsAmountFocused] = useState(false);
@@ -383,6 +386,7 @@ export default function PlannedDisbursementsTab({
         setIsFormDirty(false);
         setAmountInputValue('');
         setIsAmountFocused(false);
+        setActiveDropdown(null);
       }
     } else {
       setShowModal(false);
@@ -391,6 +395,7 @@ export default function PlannedDisbursementsTab({
       setIsFormDirty(false);
       setAmountInputValue('');
       setIsAmountFocused(false);
+      setActiveDropdown(null);
     }
   };
 
@@ -1513,11 +1518,11 @@ export default function PlannedDisbursementsTab({
         {/* Financial Summary Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="p-4 border rounded-xl bg-card shadow-sm">
+            <Card key={i} className="p-4">
               <Skeleton className="h-4 w-24 mb-2" />
               <Skeleton className="h-8 w-20 mb-2" />
               <Skeleton className="h-3 w-32" />
-            </div>
+            </Card>
           ))}
         </div>
 
@@ -1724,7 +1729,10 @@ export default function PlannedDisbursementsTab({
             </div>
           ) : (
             <>
-              <div className={hideSummaryCards ? "w-full" : "rounded-md border w-full"}>
+              {(() => {
+                const TableWrapper: React.ElementType = hideSummaryCards ? React.Fragment : TableContainer;
+                return (
+              <TableWrapper>
                 <Table aria-label="Planned disbursements table" className="w-full">
                   <TableHeader>
                     <TableRow>
@@ -2053,8 +2061,10 @@ export default function PlannedDisbursementsTab({
                     })}
                   </TableBody>
                 </Table>
-              </div>
-              
+              </TableWrapper>
+                );
+              })()}
+
               {/* Pagination Controls */}
               {disbursements.length > itemsPerPage && (
                 <div className="flex items-center justify-between mt-4 px-2">
@@ -2149,7 +2159,7 @@ export default function PlannedDisbursementsTab({
 
       {/* Enhanced Modal for Add/Edit Planned Disbursement */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between gap-4 pr-8">
               <div>
@@ -2200,7 +2210,10 @@ export default function PlannedDisbursementsTab({
               >
                 Type
               </LabelWithInfoAndSave>
-              <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
+              <Popover
+                open={activeDropdown === 'type'}
+                onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'type' : null)}
+              >
                 <PopoverTrigger
                   className={cn(
                     "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
@@ -2231,7 +2244,7 @@ export default function PlannedDisbursementsTab({
                         onClick={(e) => {
                           e.stopPropagation();
                           updateFormField('type', '1');
-                          setTypePopoverOpen(false);
+                          setActiveDropdown(null);
                         }}
                         className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                         aria-label="Clear selection"
@@ -2254,7 +2267,7 @@ export default function PlannedDisbursementsTab({
                         )}
                         onClick={() => {
                           updateFormField('type', type.code as '1' | '2');
-                          setTypePopoverOpen(false);
+                          setActiveDropdown(null);
                         }}
                       >
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{type.code}</span>
@@ -2381,6 +2394,8 @@ export default function PlannedDisbursementsTab({
                   onValueChange={(value) => updateFormField('currency', value || 'USD')}
                   disabled={savingId === modalDisbursement?.id}
                   placeholder="Select currency"
+                  open={activeDropdown === 'currency'}
+                  onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'currency' : null)}
                 />
                 {fieldErrors.currency && (
                   <p className="text-helper text-destructive">{fieldErrors.currency}</p>
@@ -2547,6 +2562,8 @@ export default function PlannedDisbursementsTab({
                 placeholder="Search for provider organisation..."
                 organizations={organizations}
                 onLegacyTypeDetected={orgTypeMappingModal.openModal}
+                open={activeDropdown === 'provider-org'}
+                onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'provider-org' : null)}
               />
             </div>
 
@@ -2582,6 +2599,8 @@ export default function PlannedDisbursementsTab({
                 placeholder="Search for provider activity..."
                 fallbackIatiId={modalDisbursement?.provider_activity_id}
                 disabled={savingId === modalDisbursement?.id}
+                open={activeDropdown === 'provider-activity'}
+                onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'provider-activity' : null)}
               />
             </div>
 
@@ -2617,6 +2636,8 @@ export default function PlannedDisbursementsTab({
                 placeholder="Search for receiver organisation..."
                 organizations={organizations}
                 onLegacyTypeDetected={orgTypeMappingModal.openModal}
+                open={activeDropdown === 'receiver-org'}
+                onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'receiver-org' : null)}
               />
             </div>
 
@@ -2652,6 +2673,8 @@ export default function PlannedDisbursementsTab({
                 placeholder="Search for receiver activity..."
                 fallbackIatiId={modalDisbursement?.receiver_activity_id}
                 disabled={savingId === modalDisbursement?.id}
+                open={activeDropdown === 'receiver-activity'}
+                onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'receiver-activity' : null)}
               />
             </div>
 
@@ -2676,27 +2699,15 @@ export default function PlannedDisbursementsTab({
             </div>
           </div>
 
-          <DialogFooter className="pt-4">
-            <Button 
-              onClick={handleModalSave}
-              disabled={savingId !== null || Object.keys(fieldErrors).length > 0}
-            >
-              {savingId !== null ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Planned Disbursement
-                </>
-              )}
-            </Button>
-            <Button variant="outline" onClick={closeModal} disabled={savingId !== null}>
-              Cancel
-            </Button>
-          </DialogFooter>
+          <ModalFooter
+            className="pt-4"
+            onCancel={closeModal}
+            onSubmit={handleModalSave}
+            submitText={modalDisbursement?.id ? 'Update Planned Disbursement' : 'Add Planned Disbursement'}
+            loadingText="Saving..."
+            isLoading={savingId !== null}
+            isDisabled={Object.keys(fieldErrors).length > 0}
+          />
         </DialogContent>
       </Dialog>
 

@@ -184,7 +184,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
       // Convert to array and sort by value
       const sortedDonors = Array.from(donorTotals.entries())
         .map(([id, value]) => {
-          const orgName = orgMap.get(id) as string || 'Unknown Donor'
+          const orgName = orgMap.get(id) as string || 'Unknown Development Partner'
           return {
             id,
             name: orgName,
@@ -306,7 +306,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
         <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
           <div className="text-center">
             <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No donor {getViewLabel()} available</p>
+            <p className="text-muted-foreground">No development partner {getViewLabel()} available</p>
             <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>

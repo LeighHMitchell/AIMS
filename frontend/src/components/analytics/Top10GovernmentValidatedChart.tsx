@@ -14,10 +14,12 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { BarChart3, CheckCircle2, Table as TableIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface Top10GovernmentValidatedChartProps {
   dateRange: {
@@ -140,48 +142,28 @@ export function Top10GovernmentValidatedChart({
     )
   }
 
-  // Tooltip styled to match the Financial Totals chart (light card, header
-  // strip, table body with colour swatch) so hover UI is consistent across
-  // the dashboard.
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const item = payload[0].payload
       const orgDisplay = item.acronym ? `${item.name} (${item.acronym})` : item.name
-      const swatchColor = item.orgId === 'others' ? OTHERS_COLOR : (item.fill || CHART_RANKED_PALETTE[0])
+      const swatchColor = item.orgId === 'others' ? OTHERS_COLOR : '#4c5568'
       return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{orgDisplay}</p>
-          </div>
-          <div className="p-3">
-            <table className="w-full text-body">
-              <tbody>
-                <tr>
-                  <td className="py-1 pr-3 flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: swatchColor }}
-                    />
-                    <span className="text-foreground">Total Value</span>
-                  </td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(item.totalValue, isExpanded)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-3 pl-5 text-foreground">Projects</td>
-                  <td className="py-1 text-right font-semibold text-foreground">{item.projectCount}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={orgDisplay}
+          rows={[
+            { label: 'Total Value', value: formatTooltipCurrency(item.totalValue, isExpanded), color: swatchColor },
+            { label: 'Projects', value: item.projectCount },
+          ]}
+        />
       )
     }
     return null
   }
 
-  // Shared monochromatic slate ramp — keeps ranked Top N charts visually
-  // consistent across the dashboard. Darker shades = higher rank.
-  const barColors = CHART_RANKED_PALETTE
+  // Single Blue Slate fill for all bars — bar length already encodes
+  // ranking, so a varying ramp would just add noise. "Others" stays a
+  // lighter shade for contrast.
+  const BAR_COLOR = '#4c5568'
 
   // Compact mode renders just the chart
   if (compact) {
@@ -205,7 +187,7 @@ export function Top10GovernmentValidatedChart({
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]} />
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR} />
               ))}
             </Bar>
           </BarChart>
@@ -236,22 +218,24 @@ export function Top10GovernmentValidatedChart({
     <div className="space-y-4">
       {/* View Mode Toggle */}
       <div className="flex justify-end">
-        <div className="flex">
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
           <Button
-            variant={viewMode === 'bar' ? 'default' : 'outline'}
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={() => setViewMode('bar')}
-            className="h-8 rounded-r-none"
+            className={cn("h-8 w-8", viewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             title="Bar Chart"
+            aria-label="Bar Chart"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'table' ? 'default' : 'outline'}
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={() => setViewMode('table')}
-            className="h-8 rounded-l-none"
-            title="Table"
+            className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+            title="Table View"
+            aria-label="Table View"
           >
             <TableIcon className="h-4 w-4" />
           </Button>
@@ -289,7 +273,7 @@ export function Top10GovernmentValidatedChart({
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.orgId === 'others' ? OTHERS_COLOR : barColors[index % barColors.length]}
+                  fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
                 />
               ))}
             </Bar>

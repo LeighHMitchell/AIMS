@@ -622,7 +622,7 @@ function MapTooltip({
     }
 
     setTooltipData({
-      name: viewLevel === 'township' ? `${props.TS}, ${props.ST}` : name,
+      name: viewLevel === 'township' ? (props.TS as string) : name,
       percentage,
       value,
       activityCount,
@@ -639,52 +639,50 @@ function MapTooltip({
       style={{
         left: position.x + 15,
         top: position.y - 10,
-        maxWidth: 280,
+        maxWidth: 320,
+        minWidth: 240,
       }}
     >
-      <h4 className="font-semibold text-foreground text-body mb-2">{tooltipData.name}</h4>
-      <table className="w-full text-helper">
-        <tbody>
-          <tr className="border-b border-border">
-            <td className="py-1 text-muted-foreground">Allocation</td>
-            <td className="py-1 text-right font-medium text-foreground">
-              {tooltipData.percentage.toFixed(1)}%
-            </td>
-          </tr>
-          {tooltipData.value !== undefined && (
-            <tr className="border-b border-border">
-              <td className="py-1 text-muted-foreground">Value</td>
-              <td className="py-1 text-right font-medium text-foreground">
-                {formatCurrency(tooltipData.value)}
-              </td>
-            </tr>
-          )}
-          {tooltipData.activityCount !== undefined && (
+      <h4 className="font-semibold text-foreground text-body leading-tight">{tooltipData.name}</h4>
+      {tooltipData.regionName && (
+        <div className="text-helper text-muted-foreground mt-0.5">{tooltipData.regionName}</div>
+      )}
+      <div className="border-t border-border mt-2 pt-2">
+        <table className="w-full text-helper">
+          <tbody>
             <tr>
-              <td className="py-1 text-muted-foreground">Activities</td>
+              <td className="py-1 text-muted-foreground">Allocation</td>
               <td className="py-1 text-right font-medium text-foreground">
-                {tooltipData.activityCount}
+                {tooltipData.percentage.toFixed(1)}%
               </td>
             </tr>
-          )}
-          {tooltipData.regionName !== undefined && (
-            <tr className="border-t border-border">
-              <td className="pt-2 pb-1 text-muted-foreground">Region</td>
-              <td className="pt-2 pb-1 text-right font-medium text-foreground">
-                {tooltipData.regionName}
-              </td>
-            </tr>
-          )}
-          {tooltipData.regionPercentage !== undefined && (
-            <tr>
-              <td className="py-1 text-muted-foreground">Region total</td>
-              <td className="py-1 text-right font-medium text-foreground">
-                {tooltipData.regionPercentage.toFixed(1)}%
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            {tooltipData.value !== undefined && (
+              <tr>
+                <td className="py-1 text-muted-foreground">Value</td>
+                <td className="py-1 text-right font-medium text-foreground">
+                  {formatCurrency(tooltipData.value)}
+                </td>
+              </tr>
+            )}
+            {tooltipData.activityCount !== undefined && (
+              <tr>
+                <td className="py-1 text-muted-foreground">Activities</td>
+                <td className="py-1 text-right font-medium text-foreground">
+                  {tooltipData.activityCount}
+                </td>
+              </tr>
+            )}
+            {tooltipData.regionPercentage !== undefined && (
+              <tr>
+                <td className="py-1 text-muted-foreground">Region Total</td>
+                <td className="py-1 text-right font-medium text-foreground">
+                  {tooltipData.regionPercentage.toFixed(1)}%
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -693,11 +691,15 @@ function MapTooltip({
 function Map3DController({
   onModeChange,
   portalTarget,
+  statsTarget,
 }: {
   onModeChange: (is3D: boolean) => void;
   // When provided, renders the toolbar UI into this element (e.g. a strip above
   // the map) instead of absolute-positioned over the map.
   portalTarget?: HTMLElement | null;
+  // When provided AND in 3D mode, renders the Zoom/Pitch/Bearing stats into
+  // this element so it can be overlaid on the map separately from the buttons.
+  statsTarget?: HTMLElement | null;
 }) {
   const { map, isLoaded } = useMap();
   const [pitch, setPitch] = useState(0);
@@ -761,7 +763,7 @@ function Map3DController({
     <div
       className={
         portalTarget
-          ? 'flex items-center gap-2'
+          ? 'flex flex-wrap items-center gap-2 min-w-0'
           // When rendered directly over the map (no portal), anchor top-left
           // so the top-right overlay can own ADM1/ADM3 + Expand.
           : 'absolute top-4 left-4 z-10 flex items-center gap-2'
@@ -803,22 +805,43 @@ function Map3DController({
         <RotateCcw className="h-4 w-4" />
       </Button>
 
-      {/* Stats Display */}
-      <div className="rounded-md bg-card/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-border shadow-md flex items-center gap-3 whitespace-nowrap">
-        <span className="text-muted-foreground">Zoom: {zoom}</span>
-        {is3DMode && (
-          <>
-            <span className="text-muted-foreground">|</span>
-            <span className="text-muted-foreground">Pitch: {pitch}°</span>
-            <span className="text-muted-foreground">|</span>
-            <span className="text-muted-foreground">Bearing: {bearing}°</span>
-          </>
-        )}
-      </div>
+      {/*
+        Inline stats — only used when there's no separate statsTarget.
+        When statsTarget is provided (card view), the stats are portalled
+        onto the map as an overlay instead.
+      */}
+      {!statsTarget && (
+        <div className="rounded-md bg-card/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-border shadow-md flex items-center gap-3 whitespace-nowrap">
+          <span className="text-muted-foreground">Zoom: {zoom}</span>
+          {is3DMode && (
+            <>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-muted-foreground">Pitch: {pitch}°</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-muted-foreground">Bearing: {bearing}°</span>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 
-  return portalTarget ? createPortal(toolbar, portalTarget) : toolbar;
+  const statsOverlay = is3DMode ? (
+    <div className="rounded-md bg-card/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-border shadow-md flex items-center gap-3 whitespace-nowrap">
+      <span className="text-muted-foreground">Zoom: {zoom}</span>
+      <span className="text-muted-foreground">|</span>
+      <span className="text-muted-foreground">Pitch: {pitch}°</span>
+      <span className="text-muted-foreground">|</span>
+      <span className="text-muted-foreground">Bearing: {bearing}°</span>
+    </div>
+  ) : null;
+
+  return (
+    <>
+      {portalTarget ? createPortal(toolbar, portalTarget) : toolbar}
+      {statsTarget && statsOverlay && createPortal(statsOverlay, statsTarget)}
+    </>
+  );
 }
 
 // Main component
@@ -834,10 +857,9 @@ function SubnationalChoroplethMapComponent({
   const [isExporting, setIsExporting] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState<Feature<Geometry> | null>(null);
   const [is3DMode, setIs3DMode] = useState(false);
-  // The card view no longer portals the 3D toolbar — it renders the
-  // controls as an absolute overlay directly over the map. The dialog view
-  // still uses a portal strip above the map for the expanded layout.
   const [dialogToolbarEl, setDialogToolbarEl] = useState<HTMLDivElement | null>(null);
+  const [cardToolbarEl, setCardToolbarEl] = useState<HTMLDivElement | null>(null);
+  const [cardStatsEl, setCardStatsEl] = useState<HTMLDivElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   // Pre-load GeoJSON files in background when component mounts
@@ -898,7 +920,7 @@ function SubnationalChoroplethMapComponent({
     }
   };
 
-  const renderMap = (toolbarTarget: HTMLDivElement | null) => (
+  const renderMap = (toolbarTarget: HTMLDivElement | null, statsTarget: HTMLDivElement | null = null) => (
     <div className="relative w-full h-full">
       <Map
         center={MYANMAR_CENTER}
@@ -945,7 +967,7 @@ function SubnationalChoroplethMapComponent({
         />
 
         {/* 3D Controller — UI is portalled into the toolbar strip above the map */}
-        <Map3DController onModeChange={handle3DModeChange} portalTarget={toolbarTarget} />
+        <Map3DController onModeChange={handle3DModeChange} portalTarget={toolbarTarget} statsTarget={statsTarget} />
       </Map>
     </div>
   );
@@ -977,14 +999,16 @@ function SubnationalChoroplethMapComponent({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 flex-1 h-[calc(100%-4rem)] flex flex-col">
-        <div ref={mapContainerRef} className="relative w-full flex-1 min-h-[500px]">
-          {/*
-            ADM1/ADM3 view-level toggle + Expand button, anchored top-right
-            over the map. The 3D/Reset/Zoom controls render themselves at
-            top-left (when portalTarget is null — the default).
-          */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-            <div className="flex items-center border rounded-md bg-card shadow-md">
+        {/*
+          Toolbar strip above the map. Left side hosts the 3D/Reset/Zoom
+          controls (portalled in by Map3DController); right side hosts the
+          ADM1/ADM3 view-level toggle and Expand button. Keeping these
+          inline above the map prevents them from obscuring map content.
+        */}
+        <div className="flex items-start justify-between gap-2 mb-2 min-h-9">
+          <div ref={setCardToolbarEl} className="flex flex-wrap items-center gap-2 min-w-0 flex-1" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center border rounded-md bg-card">
               <Button
                 variant={viewLevel === 'region' ? 'default' : 'ghost'}
                 size="sm"
@@ -1009,14 +1033,18 @@ function SubnationalChoroplethMapComponent({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 w-9 p-0 bg-card shadow-md"
+              className="h-9 w-9 p-0 bg-card"
               onClick={() => setIsExpanded(true)}
               title="Expand"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </Button>
           </div>
-          {!isExpanded && renderMap(null)}
+        </div>
+        <div ref={mapContainerRef} className="relative w-full flex-1 min-h-[500px] border-2 border-gray-300 rounded-lg overflow-hidden">
+          {!isExpanded && renderMap(cardToolbarEl, cardStatsEl)}
+          {/* 3D stats overlay — populated by Map3DController only when in 3D mode */}
+          <div ref={setCardStatsEl} className="absolute bottom-3 left-3 z-10 pointer-events-none" />
         </div>
       </CardContent>
 

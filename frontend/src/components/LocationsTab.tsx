@@ -22,6 +22,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -446,7 +447,7 @@ export default function LocationsTab({
         </div>
       ) : (
         <TooltipProvider>
-        <div className="border rounded-lg overflow-x-auto">
+        <TableContainer className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -476,11 +477,11 @@ export default function LocationsTab({
                 return (
                   <TableRow key={location.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="text-body">{location.location_name || 'Unnamed Location'}</span>
+                      <div className="text-body">
                         {location.id && (
-                          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                          <CheckCircle2 className="inline-block h-4 w-4 mr-1.5 align-[-3px] text-[hsl(var(--success-icon))]" />
                         )}
+                        {location.location_name || 'Unnamed Location'}
                       </div>
                       {location.latitude && location.longitude && (
                         <div className="group/coords flex items-center gap-1 text-helper text-muted-foreground mt-0.5 w-fit">
@@ -562,7 +563,7 @@ export default function LocationsTab({
               })}
             </TableBody>
           </Table>
-        </div>
+        </TableContainer>
         </TooltipProvider>
       )}
 

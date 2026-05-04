@@ -14,6 +14,7 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { CHART_RANKED_PALETTE } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface SectorPieChartProps {
   dateRange: {
@@ -205,8 +206,6 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
     )
   }
 
-  // Tooltip styled to match the Financial Totals chart (light card, header
-  // strip, table body) so hover UI is consistent across the dashboard.
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null
     const item = payload[0]
@@ -214,39 +213,18 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
     const value = item.value
     const percentage = item.payload?.percentage
     const swatch = item.payload?.fill || item.color
-    return (
-      <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-        <div className="bg-surface-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground">{sectorName}</p>
-        </div>
-        <div className="p-3">
-          <table className="w-full text-body">
-            <tbody>
-              <tr>
-                <td className="py-1 pr-3 flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-sm flex-shrink-0"
-                    style={{ backgroundColor: swatch }}
-                  />
-                  <span className="text-foreground">Disbursements</span>
-                </td>
-                <td className="py-1 text-right font-semibold text-foreground">
-                  {formatTooltipCurrency(value, isExpanded)}
-                </td>
-              </tr>
-              {typeof percentage === 'number' && !isNaN(percentage) && (
-                <tr>
-                  <td className="py-1 pr-3 text-muted-foreground">Share of total</td>
-                  <td className="py-1 text-right font-semibold text-foreground">
-                    {percentage.toFixed(1)}%
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
+    const rows: any[] = [{
+      label: 'Disbursements',
+      value: formatTooltipCurrency(value, isExpanded),
+      color: swatch,
+    }]
+    if (typeof percentage === 'number' && !isNaN(percentage)) {
+      rows.push({
+        label: 'Share of total',
+        value: `${percentage.toFixed(1)}%`,
+      })
+    }
+    return <ChartTooltipCard title={sectorName} rows={rows} />
   }
 
   if (loading) {
@@ -298,10 +276,12 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
         </PieChart>
       </ResponsiveContainer>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed mt-4">
-        This pie chart shows the distribution of disbursement spending across DAC sectors. Each slice represents a sector weighted by actual disbursement value, with the top seven sectors shown individually and smaller sectors grouped under Others. Hover over any slice to see the exact amount in USD.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This pie chart shows the distribution of disbursement spending across DAC sectors. Each slice represents a sector weighted by actual disbursement value, with the top seven sectors shown individually and smaller sectors grouped under Others. Hover over any slice to see the exact amount in USD.
+        </p>
+      )}
     </div>
   )
 } 

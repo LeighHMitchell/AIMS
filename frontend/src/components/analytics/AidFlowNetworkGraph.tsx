@@ -418,7 +418,7 @@ export default function AidFlowNetworkGraph({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4c5568' }}></div>
-            <span className="text-helper">Donor</span>
+            <span className="text-helper">Development Partner</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7b95a7' }}></div>

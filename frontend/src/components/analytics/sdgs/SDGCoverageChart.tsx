@@ -18,6 +18,7 @@ import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface SDGCoverageChartProps {
   organizationId: string
@@ -122,31 +123,22 @@ export function SDGCoverageChart({
     if (active && payload && payload.length) {
       const data = payload[0].payload
       const goal = SDG_GOALS.find(g => g.id === data.sdgGoal)
-
+      const title = (
+        <span>
+          <code className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</code>
+          <span className="ml-2">{goal?.name || data.sdgName}</span>
+        </span>
+      )
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-foreground mb-2">
-            <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</span>
-            <span className="ml-2">{goal?.name || data.sdgName}</span>
-          </p>
-          <div className="space-y-1 text-body">
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Activities:</span>
-              <span className="font-medium">{data.activityCount.toFixed(1)}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Total Budget:</span>
-              <span className="font-medium">{formatCurrency(data.totalBudget)}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Planned Disbursements:</span>
-              <span className="font-medium">{formatCurrency(data.totalPlannedDisbursements)}</span>
-            </div>
-            <div className="pt-2 mt-2 border-t border-border text-helper text-muted-foreground italic">
-              Values are equally split when activities map to multiple SDGs
-            </div>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={title}
+          subtitle="Values are equally split when activities map to multiple SDGs"
+          rows={[
+            { label: 'Activities', value: data.activityCount.toFixed(1), color: data.fill || data.color },
+            { label: 'Total Budget', value: formatCurrency(data.totalBudget) },
+            { label: 'Planned Disbursements', value: formatCurrency(data.totalPlannedDisbursements) },
+          ]}
+        />
       )
     }
     return null
@@ -334,8 +326,8 @@ export function SDGCoverageChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>SDG Coverage by Activities</CardTitle>
-          <CardDescription>Number of activities and financial weight mapped to each SDG</CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">SDG Coverage by Activities</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">Number of activities and financial weight mapped to each SDG</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartLoadingPlaceholder />
@@ -348,8 +340,8 @@ export function SDGCoverageChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>SDG Coverage by Activities</CardTitle>
-          <CardDescription>Number of activities and financial weight mapped to each SDG</CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">SDG Coverage by Activities</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">Number of activities and financial weight mapped to each SDG</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
@@ -367,8 +359,8 @@ export function SDGCoverageChart({
   return (
     <Card className="border-0 bg-white shadow-none">
       <CardHeader className="pb-2">
-        <CardTitle>SDG Coverage</CardTitle>
-        <CardDescription className="mt-1">
+        <CardTitle className="text-base font-medium text-foreground">SDG Coverage</CardTitle>
+        <CardDescription className="text-helper text-muted-foreground mt-0.5">
           Activity distribution across Sustainable Development Goals
         </CardDescription>
       </CardHeader>

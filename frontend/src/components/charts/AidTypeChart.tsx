@@ -15,6 +15,7 @@ import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 
 interface AnalyticsFilters {
   donor: string;
@@ -112,29 +113,24 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0]?.payload;
+      const rows: any[] = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipValue(entry.value),
+        color: entry.color || entry.fill,
+      }));
+      if (payload.length >= 3) {
+        const rate = data?.budget > 0
+          ? ((data.totalSpending / data.budget) * 100).toFixed(1)
+          : '0';
+        rows[rows.length - 1].bordered = true;
+        rows.push({ label: 'Execution Rate', value: `${rate}%` });
+      }
       return (
-        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-1">{data?.aidTypeName || label}</p>
-          <p className="text-helper text-muted-foreground mb-2">Code: {data?.aidType}</p>
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-body"
-              style={{ color: entry.color }}
-            >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
-            </p>
-          ))}
-          {payload.length >= 3 && (
-            <div className="border-t pt-2 mt-2">
-              <p className="text-body font-medium text-foreground">
-                Execution Rate: {payload[0]?.payload?.budget > 0 
-                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
-                  : 0}%
-              </p>
-            </div>
-          )}
-        </div>
+        <ChartTooltipCard
+          title={data?.aidTypeName || label}
+          subtitle={data?.aidType ? `Code: ${data.aidType}` : undefined}
+          rows={rows}
+        />
       );
     }
     return null;

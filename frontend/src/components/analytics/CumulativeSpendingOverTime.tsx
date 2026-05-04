@@ -12,12 +12,23 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, BarChart3, Table as TableIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { cn } from '@/lib/utils'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -50,17 +61,21 @@ interface CumulativeSpendingOverTimeProps {
     sector?: string
   }
   refreshKey?: number
+  onDataChange?: (data: Array<{ Date: string; "Cumulative Spending (USD)": number }>) => void
 }
 
 export function CumulativeSpendingOverTime({
   dateRange,
   filters,
-  refreshKey
+  refreshKey,
+  onDataChange
 }: CumulativeSpendingOverTimeProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('all')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
   const isExpanded = useChartExpansion()
 
   useEffect(() => {
@@ -186,6 +201,16 @@ export function CumulativeSpendingOverTime({
     })
   }, [cumulativeData, timePeriod])
 
+  // Emit a clean tabular representation of what the user currently sees.
+  useEffect(() => {
+    onDataChange?.(
+      filteredData.map((item: any) => ({
+        Date: item.displayDate,
+        "Cumulative Spending (USD)": Math.round(item.cumulative || 0),
+      }))
+    )
+  }, [filteredData, onDataChange])
+
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
       return `$${(value / 1000000).toFixed(1)}m`
@@ -200,25 +225,12 @@ export function CumulativeSpendingOverTime({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{label}</p>
-            <p className="text-helper text-muted-foreground mt-0.5">Gregorian Calendar Year</p>
-          </div>
-          <div className="p-3">
-            {payload.map((entry: any, index: number) => (
-              <p
-                key={index}
-                className="text-body"
-                style={{ color: entry.color }}
-              >
-                {`${entry.name}: ${formatTooltipValue(entry.value)}`}
-              </p>
-            ))}
-          </div>
-        </div>
-      )
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipValue(entry.value),
+        color: entry.color || entry.stroke || entry.fill,
+      }))
+      return <ChartTooltipCard title={label} subtitle="Gregorian Calendar Year" rows={rows} />
     }
     return null
   }
@@ -258,10 +270,10 @@ export function CumulativeSpendingOverTime({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
+          <CardTitle className="text-base font-medium text-foreground">
             Cumulative Spending Over Time
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">
             Track accumulated spending progression across all activities
           </CardDescription>
         </CardHeader>
@@ -276,10 +288,10 @@ export function CumulativeSpendingOverTime({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
+          <CardTitle className="text-base font-medium text-foreground">
             Cumulative Spending Over Time
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">
             Track accumulated spending progression across all activities
           </CardDescription>
         </CardHeader>
@@ -300,18 +312,79 @@ export function CumulativeSpendingOverTime({
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-lg font-semibold text-foreground">
+            <CardTitle className="text-base font-medium text-foreground">
               Cumulative Spending Over Time
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-helper text-muted-foreground mt-0.5">
               Track accumulated spending progression across all activities
             </CardDescription>
           </div>
-          <TimePeriodFilter />
+          <div className="flex items-center gap-2 flex-wrap">
+            {isExpanded && (
+              <>
+                <YearRangeChip
+                  selectedYears={selectedYears}
+                  onYearsChange={setSelectedYears}
+                  initialDateRange={dateRange ?? null}
+                />
+                <TimePeriodFilter />
+              </>
+            )}
+            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-8 w-8",
+                  viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setViewMode('chart')}
+                title="Chart View"
+                aria-label="Chart View"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-8 w-8",
+                  viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setViewMode('table')}
+                title="Table View"
+                aria-label="Table View"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         {filteredData.length > 0 ? (
+          viewMode === 'table' ? (
+            <div className="overflow-auto max-h-[480px]">
+              <Table>
+                <TableHeader>
+                  <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right whitespace-normal">Cumulative Spending (USD)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((item: any, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{item.displayDate}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatCurrency(item.cumulative || 0)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={400}>
             <AreaChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <defs>
@@ -334,6 +407,7 @@ export function CumulativeSpendingOverTime({
               />
             </AreaChart>
           </ResponsiveContainer>
+          )
         ) : (
           <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
@@ -344,10 +418,12 @@ export function CumulativeSpendingOverTime({
           </div>
         )}
 
-        {/* Explanatory text */}
-        <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart tracks the running total of all disbursement and expenditure transactions over time. The upward slope indicates the rate of spending, with steeper sections representing periods of higher activity. Use the time period filter to focus on recent trends or zoom out to see the full spending trajectory.
-        </p>
+        {/* Explanatory text — only in expanded view */}
+        {isExpanded && (
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This chart tracks the running total of all disbursement and expenditure transactions over time. The upward slope indicates the rate of spending, with steeper sections representing periods of higher activity. Use the time period filter to focus on recent trends or zoom out to see the full spending trajectory.
+          </p>
+        )}
       </CardContent>
     </Card>
   )

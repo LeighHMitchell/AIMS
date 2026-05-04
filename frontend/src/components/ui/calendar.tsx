@@ -131,9 +131,12 @@ function Calendar({
         weekday: "text-muted-foreground rounded-md w-9 h-9 font-normal text-[0.8rem] flex items-center justify-center",
         week: "flex w-full mt-2",
         day: "h-9 w-9 text-center text-body p-0 relative flex items-center justify-center",
-        day_button: "h-9 w-9 p-0 font-normal rounded-full inline-flex items-center justify-center whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground aria-selected:!bg-gunmetal aria-selected:!text-white aria-selected:hover:!bg-gunmetal/80 aria-selected:hover:!text-white aria-selected:opacity-100",
+        day_button: "h-9 w-9 p-0 font-normal rounded-full inline-flex items-center justify-center whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground",
         range_end: "day-range-end",
-        selected: "bg-gunmetal text-white hover:bg-gunmetal hover:text-white focus:bg-gunmetal focus:text-white rounded-full",
+        // rdp v9 puts `today` and `selected` on the same TD; force selected to win the cascade,
+        // and target the inner button so it keeps the dark fill on hover/focus instead of
+        // falling back to day_button's hover:bg-accent.
+        selected: "!bg-gunmetal !text-white !rounded-full [&_button]:!bg-gunmetal [&_button]:!text-white [&_button:hover]:!bg-gunmetal/90 [&_button:hover]:!text-white [&_button:focus]:!bg-gunmetal",
         today: "bg-muted text-foreground font-semibold rounded-full",
         outside: "text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         disabled: "text-muted-foreground opacity-50",

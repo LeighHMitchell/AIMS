@@ -13,7 +13,6 @@ import {
   Pie,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import {
@@ -23,13 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -42,8 +34,10 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Table as TableIcon,
-  Maximize2,
   Download,
+  Wallet,
+  Calendar,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -51,6 +45,8 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -85,10 +81,10 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
   if (timeRange === "all") {
     return { from: undefined, to: undefined };
   }
-  
+
   const now = new Date();
   const from = new Date();
-  
+
   switch (timeRange) {
     case "3m":
       from.setMonth(now.getMonth() - 3);
@@ -106,7 +102,7 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
       from.setFullYear(now.getFullYear() - 5);
       break;
   }
-  
+
   return { from, to: now };
 }
 
@@ -148,16 +144,17 @@ function getMetricLabel(metric: MetricType, count: number): string {
 
 interface TopDonorAgenciesChartProps {
   refreshKey?: number;
+  compact?: boolean;
 }
 
 type OpenFilter = 'metric' | 'timeRange' | null;
 
-export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartProps) {
+export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDonorAgenciesChartProps) {
+  const isExpanded = useChartExpansion();
   const [data, setData] = useState<DonorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [metric, setMetric] = useState<MetricType>("budgets");
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
-  const [isExpanded, setIsExpanded] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
   const [grandTotal, setGrandTotal] = useState(0);
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
@@ -189,7 +186,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
       setGrandTotal(result.grandTotal || 0);
     } catch (error: any) {
       console.error("[TopDonorAgenciesChart] Error:", error);
-      toast.error("Failed to load donor agencies data");
+      toast.error("Failed to load development partner agencies data");
     } finally {
       setLoading(false);
     }
@@ -216,37 +213,36 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const item = payload[0].payload as DonorData;
-    return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-1">{item.name}</p>
-          {item.acronym !== item.name && (
-            <p className="text-helper text-muted-foreground mb-1">{item.acronym}</p>
-          )}
-          <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-body font-medium text-foreground">
-              {formatTooltipCurrency(item.value, isExpanded)}
-            </p>
-            {item.activityCount > 0 && (
-              <p className="text-helper text-muted-foreground">
-                {item.activityCount} {getMetricLabel(metric, item.activityCount)}
-              </p>
-            )}
-          </div>
-      </div>
-    );
-  }
+      const item = payload[0].payload as DonorData & { fill?: string; barFill?: string };
+      const rows: any[] = [{
+        label: 'Value',
+        value: formatTooltipCurrency(item.value, isExpanded),
+        color: item.barFill || item.fill,
+      }];
+      if (item.activityCount > 0) {
+        rows.push({
+          label: getMetricLabel(metric, item.activityCount),
+          value: item.activityCount,
+        });
+      }
+      const subtitle = item.acronym !== item.name ? item.acronym : undefined;
+      return <ChartTooltipCard title={item.name} subtitle={subtitle} rows={rows} />;
+    }
     return null;
   };
 
   // Prepare chart data with colors
+  // `fill` drives the pie chart (distinct slice colours). `barFill` drives
+  // the bar chart (single Blue Slate so all bars share one colour, with
+  // OTHERS distinct for contrast).
   const chartData = data.map((item, index) => ({
     ...item,
     fill: item.id === "others" ? OTHERS_COLOR : CHART_RANKED_PALETTE[index % CHART_RANKED_PALETTE.length],
+    barFill: item.id === "others" ? OTHERS_COLOR : '#4c5568',
   }));
 
-  const renderBarChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderBarChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
@@ -263,15 +259,15 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60}>
             {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+            <Cell key={`cell-${index}`} fill={entry.barFill} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
   );
 
-  const renderPieChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderPieChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={chartData}
@@ -294,12 +290,12 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
   );
 
   const renderTable = () => (
-    <div className="overflow-auto max-h-[400px]">
+    <div className="overflow-auto h-full">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
             <TableHead>Organization</TableHead>
-            <TableHead className="text-right">Value (USD)</TableHead>
+            <TableHead className="text-right whitespace-normal">Value (USD)</TableHead>
             <TableHead className="text-right">%</TableHead>
           </TableRow>
         </TableHeader>
@@ -341,16 +337,14 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
     </div>
   );
 
-  const renderContent = (expanded: boolean = false) => {
-    const chartHeight = expanded ? 300 : "100%";
-
+  const renderContent = () => {
     if (loading) {
       return <ChartLoadingPlaceholder />;
     }
 
     if (!data || data.length === 0) {
       return (
-        <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
           No data available
         </div>
       );
@@ -358,74 +352,110 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
 
     return (
       <div className="flex flex-col flex-1 min-h-0">
-        {expanded && renderLegend()}
-        <div className="h-[280px]">
-          {viewMode === "bar" && renderBarChart(chartHeight)}
-          {viewMode === "pie" && renderPieChart(chartHeight)}
+        {!compact && renderLegend()}
+        <div className="flex-1 min-h-0">
+          {viewMode === "bar" && renderBarChart()}
+          {viewMode === "pie" && renderPieChart()}
           {viewMode === "table" && renderTable()}
         </div>
       </div>
     );
   };
 
-  const renderControls = (expanded: boolean = false) => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
+  const renderControls = () => (
+    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)} open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
-        <SelectTrigger className="w-[160px] h-8 text-helper">
-          <SelectValue />
+        <SelectTrigger className="min-w-[280px]">
+          <span className="flex items-center gap-2 truncate">
+            {metric === 'budgets' && <Wallet className="h-4 w-4 flex-shrink-0" />}
+            {metric === 'planned' && <Calendar className="h-4 w-4 flex-shrink-0" />}
+            {metric === 'commitments' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
+            {metric === 'disbursements' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
+            <span className="truncate">
+              {metric === 'budgets' && 'Total Budgets'}
+              {metric === 'planned' && 'Total Planned Disbursements'}
+              {metric === 'commitments' && 'Total Commitments'}
+              {metric === 'disbursements' && 'Total Disbursements'}
+            </span>
+          </span>
         </SelectTrigger>
         <SelectContent>
-          {METRIC_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
+          <SelectItem value="budgets">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              <span>Total Budgets</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="planned">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Total Planned Disbursements</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="commitments">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Total Commitments</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="disbursements">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Total Disbursements</span>
+            </div>
+          </SelectItem>
         </SelectContent>
       </Select>
 
       <div className="flex items-center gap-1">
         {/* View mode toggles */}
-        <div className="flex items-center border rounded-md">
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
+            aria-label="Bar Chart"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
+            aria-label="Pie Chart"
           >
             <PieChartIcon className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setViewMode("table")}
-            title="Table"
+            title="Table View"
+            aria-label="Table View"
           >
             <TableIcon className="h-4 w-4" />
           </Button>
             </div>
 
         {/* Export button - only in expanded view */}
-        {expanded && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleExport}
-            title="Export CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+        {!compact && (
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         )}
             </div>
           </div>
@@ -449,66 +479,15 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
   );
 
   return (
-    <>
-      {/* Compact Card View */}
-      <Card className="bg-white border-border h-full flex flex-col">
-        <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-foreground truncate">
-                Funding by Donor
-              </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
-                Top 5 development partners by contribution
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
-              title="Expand to full screen"
-            >
-              <Maximize2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
-          {renderContent(false)}
-        </CardContent>
-      </Card>
-
-      {/* Expanded Dialog View */}
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-semibold text-foreground">
-                  Funding by Donor
-                </DialogTitle>
-                <DialogDescription className="text-base mt-2">
-                  Top 5 development partners ranked by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}, with remaining organizations aggregated.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Time range filter - only shown when expanded */}
-          {renderTimeRangeFilter()}
-
-          {/* Chart content */}
-          <div className="mt-4">{renderContent(true)}</div>
-
-          {/* Controls */}
-          {renderControls(true)}
-
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed mt-4">
-            This chart shows the top 5 individual development partner organizations by financial contribution, with remaining donors aggregated. Use the metric and time range selectors to analyze funding patterns across different measures and periods.
-          </p>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="h-full flex flex-col">
+      {!compact && renderTimeRangeFilter()}
+      {renderContent()}
+      {!compact && renderControls()}
+      {!compact && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This chart shows the top 5 individual development partner organizations by financial contribution, with remaining donors aggregated. Use the metric and time range selectors to analyze funding patterns across different measures and periods.
+        </p>
+      )}
+    </div>
   );
 }

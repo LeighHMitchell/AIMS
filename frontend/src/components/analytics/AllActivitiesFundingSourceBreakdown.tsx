@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Download, Camera } from 'lucide-react'
+import { AlertCircle, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { FundingSourceSankey } from '@/components/activities/FinancialAnalyticsTab'
 import { MultiSelect } from '@/components/ui/multi-select'
@@ -155,58 +155,6 @@ export function AllActivitiesFundingSourceBreakdown({
     toast.success('Data exported to CSV')
   }
 
-  const exportFundingSourceToJPG = () => {
-    if (fundingChartType === 'table') {
-      toast.error('JPG export is only available for chart view')
-      return
-    }
-
-    const chartContainer = document.querySelector('.funding-source-chart') as HTMLElement
-    if (!chartContainer) {
-      toast.error('Chart not found')
-      return
-    }
-
-    import('html2canvas').then((html2canvas) => {
-      html2canvas.default(chartContainer, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        onclone: (clonedDoc) => {
-          const clonedContainer = clonedDoc.querySelector('.funding-source-chart') as HTMLElement
-          if (clonedContainer) {
-            clonedContainer.style.fontFamily = 'system-ui, -apple-system, sans-serif'
-            clonedContainer.style.width = chartContainer.scrollWidth + 'px'
-            clonedContainer.style.overflow = 'visible'
-          }
-        }
-      }).then((canvas) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            const sourceLabel = fundingSourceType === 'planned' ? 'planned_disbursements' : 'transactions'
-            const typeLabel = fundingTransactionTypes.length > 0 
-              ? `types_${fundingTransactionTypes.join('-')}` 
-              : 'all_types'
-            link.download = `all_activities_funding_source_${sourceLabel}_${typeLabel}_${new Date().toISOString().split('T')[0]}.jpg`
-            link.click()
-            URL.revokeObjectURL(url)
-            toast.success('Chart exported to JPG')
-          }
-        }, 'image/jpeg', 0.95)
-      }).catch((error) => {
-        console.error('Error exporting chart:', error)
-        toast.error('Failed to export chart')
-      })
-    }).catch((error) => {
-      console.error('Error loading html2canvas:', error)
-      toast.error('Failed to load export library')
-    })
-  }
-
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
@@ -232,53 +180,29 @@ export function AllActivitiesFundingSourceBreakdown({
 
   if (loading) {
     return (
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
-            Funding Source Breakdown
-          </CardTitle>
-          <CardDescription>
-            Distribution of funding by donor/provider across all activities
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
+      <div className="border-border">
+        <ChartLoadingPlaceholder />
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
-            Funding Source Breakdown
-          </CardTitle>
-          <CardDescription>
-            Distribution of funding by donor/provider across all activities
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-96 text-muted-foreground">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p className="font-medium">{error}</p>
-            </div>
+      <div className="border-border">
+        <div className="flex items-center justify-center h-96 text-muted-foreground">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p className="font-medium">{error}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <CardTitle className="text-lg font-semibold text-foreground">Funding Source Breakdown</CardTitle>
-            <CardDescription>Distribution of funding by donor/provider across all activities</CardDescription>
-          </div>
+    <div className="border-border">
+      <div className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Source Type Toggle */}
             <div className="flex gap-1 rounded-lg p-1 bg-muted">
@@ -352,32 +276,21 @@ export function AllActivitiesFundingSourceBreakdown({
               </Button>
             </div>
 
-            {/* Export Buttons */}
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportFundingSourceToCSV}
-                className="h-8 px-2"
-                title="Export to CSV"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportFundingSourceToJPG}
-                className="h-8 px-2"
-                title="Export to JPG"
-                disabled={fundingChartType === 'table'}
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Export Button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={exportFundingSourceToCSV}
+              className="h-9 w-9"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div>
         {fundingSourceData.providers && fundingSourceData.providers.length > 0 ? (
           fundingChartType === 'table' ? (
             <div className="overflow-auto h-[500px] border border-border rounded-lg">
@@ -437,10 +350,10 @@ export function AllActivitiesFundingSourceBreakdown({
         {/* Explanatory text */}
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This Sankey diagram maps financial flows from funding providers to receiving organisations across all activities. Toggle between transaction-based and planned disbursement views, and filter by transaction type to focus on specific flow categories.
-          Use this to understand which donors are channelling funds to which implementing partners and to identify the largest funding relationships in your portfolio.
+          Use this to understand which development partners are channelling funds to which implementing partners and to identify the largest funding relationships in your portfolio.
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

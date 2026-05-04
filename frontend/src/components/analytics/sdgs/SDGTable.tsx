@@ -181,8 +181,8 @@ export function SDGTable({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>SDG Analytics Table</CardTitle>
-          <CardDescription>Detailed view of SDG coverage data</CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">SDG Analytics Table</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">Detailed view of SDG coverage data</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartLoadingPlaceholder />
@@ -195,8 +195,8 @@ export function SDGTable({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>SDG Analytics Table</CardTitle>
-          <CardDescription>Detailed view of SDG coverage data</CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">SDG Analytics Table</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">Detailed view of SDG coverage data</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
@@ -216,12 +216,12 @@ export function SDGTable({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>SDG Analytics Table</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base font-medium text-foreground">SDG Analytics Table</CardTitle>
+            <CardDescription className="text-helper text-muted-foreground mt-0.5">
               Detailed view of SDG coverage. Values are equally split when activities map to multiple SDGs.
             </CardDescription>
           </div>
-          <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export CSV" aria-label="Export CSV">
+          <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleExportCSV} title="Export CSV" aria-label="Export CSV">
             <Download className="h-4 w-4" />
           </Button>
         </div>

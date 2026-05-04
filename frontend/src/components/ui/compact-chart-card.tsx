@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Maximize2, Download, Table as TableIcon, BarChart3 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -30,6 +31,19 @@ interface CompactChartCardProps {
   className?: string
   hideViewToggle?: boolean
   compactHeight?: number // Height for compact view, defaults to 250
+  /**
+   * Optional rich custom table to render when the user toggles to table view in
+   * the expanded dialog. When provided, the table-view button shows even without
+   * `exportData`, and clicking it renders this node instead of the generic
+   * `exportData` table.
+   */
+  tableView?: React.ReactNode
+  /**
+   * Optional explanation of the math/calculations behind this chart. When
+   * provided, a small Σ icon renders next to the title; hovering it shows
+   * the explanation in a tooltip.
+   */
+  mathTooltip?: React.ReactNode
 }
 
 /**
@@ -50,7 +64,9 @@ export function CompactChartCard({
   onExport,
   className = "",
   hideViewToggle = false,
-  compactHeight = 250
+  compactHeight = 250,
+  tableView,
+  mathTooltip,
 }: CompactChartCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
@@ -152,15 +168,36 @@ export function CompactChartCard({
                 {shortDescription}
               </CardDescription>
             </div>
+            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+              {mathTooltip && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Calculation details"
+                        className="h-7 w-7 inline-flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors font-serif text-helper leading-none"
+                      >
+                        <span className="italic">ƒ</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-sm whitespace-normal text-body">
+                      {mathTooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="icon"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
+              className="h-7 w-7 flex-shrink-0"
               title="Expand to full screen"
+              aria-label="Expand to full screen"
             >
               <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-1">
@@ -177,7 +214,10 @@ export function CompactChartCard({
 
       {/* Expanded Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-visible">
+        <DialogContent
+          className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-visible"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
@@ -189,12 +229,31 @@ export function CompactChartCard({
                 </DialogDescription>
               </div>
               <div className="flex items-center gap-2">
-                {!hideViewToggle && exportData && exportData.length > 0 && (
+                {mathTooltip && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Calculation details"
+                          className="h-9 w-9 inline-flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors font-serif text-base leading-none"
+                        >
+                          <span className="italic">ƒ</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-md whitespace-normal text-body">
+                        {mathTooltip}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {!hideViewToggle && (tableView || (exportData && exportData.length > 0)) && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
                     className="h-9"
+                    title={viewMode === 'chart' ? 'View as table' : 'View as chart'}
                   >
                     {viewMode === 'chart' ? (
                       <TableIcon className="h-4 w-4" />
@@ -229,7 +288,9 @@ export function CompactChartCard({
           {/* Chart content */}
           <div className="mt-6">
             <ChartExpansionProvider isExpanded={true}>
-              {viewMode === 'chart' ? renderChart(false) : renderTableView()}
+              {viewMode === 'chart'
+                ? renderChart(false)
+                : tableView ?? renderTableView()}
             </ChartExpansionProvider>
           </div>
         </DialogContent>

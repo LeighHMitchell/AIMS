@@ -24,6 +24,9 @@ import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 
 interface YearData {
   year: number;
@@ -45,8 +48,11 @@ interface DisbursementsBySectorChartProps {
 }
 
 export function DisbursementsBySectorChart({ data, loading = false }: DisbursementsBySectorChartProps) {
+  const isExpanded = useChartExpansion();
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
   const [isYearSelectorOpen, setIsYearSelectorOpen] = useState(false);
+  // Range state used only by the YearRangeChip — does NOT replace the existing per-year checkbox selection.
+  const [chipSelectedYears, setChipSelectedYears] = useState<number[]>([]);
 
   // Extract all available years
   const availableYears = useMemo(() => {
@@ -104,10 +110,10 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
     });
   }, [data.sectors, selectedYears]);
 
-  // Colors for different years
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-  const plannedColors = colors.map(c => c + 'CC'); // Add transparency
-  const actualColors = colors;
+  // Slate-only palette for dashboard consistency. Per-year actual stays darker;
+  // planned uses a lighter slate variant so each year's pair reads as related.
+  const actualColors = ['#334155', '#4c5568', '#475569', '#5d6b7a', '#7b95a7', '#94a3b8'];
+  const plannedColors = ['#94a3b8', '#a3b5c2', '#cbd5e1', '#cfd0d5', '#cbd5e1', '#cfd0d5'];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -122,7 +128,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Disbursements by Sector</CardTitle>
+          <CardTitle className="text-base font-medium text-foreground">Disbursements by Sector</CardTitle>
         </CardHeader>
         <CardContent className="h-96">
           <ChartLoadingPlaceholder />
@@ -135,8 +141,8 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Disbursements by Sector</CardTitle>
-          <CardDescription>No sector data available</CardDescription>
+          <CardTitle className="text-base font-medium text-foreground">Disbursements by Sector</CardTitle>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">No sector data available</CardDescription>
         </CardHeader>
         <CardContent className="h-96 flex items-center justify-center">
           <div className="text-muted-foreground">No disbursement data to display</div>
@@ -149,11 +155,25 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Planned and Actual Disbursements by Sector</CardTitle>
-            <CardDescription>
-              Compare planned vs actual disbursements across sectors
-            </CardDescription>
+          <div className="flex items-start gap-3">
+            {isExpanded && availableYears.length > 0 && (
+              <YearRangeChip
+                selectedYears={chipSelectedYears}
+                onYearsChange={setChipSelectedYears}
+                availableYears={availableYears}
+                actualDataRange={
+                  availableYears.length > 0
+                    ? { minYear: availableYears[0], maxYear: availableYears[availableYears.length - 1] }
+                    : null
+                }
+              />
+            )}
+            <div>
+              <CardTitle className="text-base font-medium text-foreground">Planned and Actual Disbursements by Sector</CardTitle>
+              <CardDescription className="text-helper text-muted-foreground mt-0.5">
+                Compare planned vs actual disbursements across sectors
+              </CardDescription>
+            </div>
           </div>
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
@@ -261,9 +281,24 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               <YAxis
                 tickFormatter={formatAxisCurrency}
               />
-              <Tooltip 
-                formatter={(value: number) => formatCurrency(value)}
-                labelStyle={{ color: '#000' }}
+              <Tooltip
+                content={({ active, payload, label }: any) => {
+                  if (!active || !payload || !payload.length) return null
+                  const datum = payload[0]?.payload
+                  const filtered = payload.filter((e: any) => e.value)
+                  const rows: ChartTooltipRow[] = filtered.map((entry: any) => ({
+                    label: entry.name,
+                    value: formatCurrency(entry.value),
+                    color: entry.color || entry.fill,
+                  }))
+                  return (
+                    <ChartTooltipCard
+                      title={label || datum?.sectorName || ''}
+                      subtitle={datum?.sectorCode ? `Code: ${datum.sectorCode}` : undefined}
+                      rows={rows}
+                    />
+                  )
+                }}
               />
               <Legend 
                 wrapperStyle={{ paddingTop: '20px' }}

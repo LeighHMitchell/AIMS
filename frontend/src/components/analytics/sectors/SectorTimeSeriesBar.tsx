@@ -8,6 +8,7 @@ import { formatAxisCurrency } from '@/lib/format';
 import { generateSectorColorMap } from './sectorColorMap';
 import { TimeSeriesDataType } from '@/types/sector-analytics';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
 interface SectorTimeSeriesBarProps {
   data: ChartDataPoint[];
@@ -23,51 +24,31 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const yearTotal = getYearTotal(payload[0].payload, sectorNames);
-      // Filter out zero/null values and sort by value descending
       const filteredPayload = payload
         .filter((entry: any) => entry.value && entry.value > 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
-      
+
       if (filteredPayload.length === 0) return null;
-      
+
+      const subtitle = (
+        <span>
+          Total {dataType === 'planned' ? 'Planned' : 'Actual'}:{' '}
+          <span className="font-bold text-foreground">{formatTooltipCurrency(yearTotal)}</span>
+        </span>
+      );
+      const rows = filteredPayload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipCurrency(entry.value),
+        color: entry.color,
+        code: sectorCodes[entry.name] || undefined,
+      }));
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg text-body max-h-[400px] overflow-hidden">
-          <div className="bg-surface-muted px-4 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">Year: {label}</p>
-            <p className="text-muted-foreground">
-              Total {dataType === 'planned' ? 'Planned' : 'Actual'}: <span className="font-bold text-foreground">{formatTooltipCurrency(yearTotal)}</span>
-            </p>
-          </div>
-          <div className="overflow-y-auto max-h-[300px]">
-            <table className="w-full">
-              <tbody>
-                {filteredPayload.map((entry: any, index: number) => {
-                  const code = sectorCodes[entry.name] || '';
-                  return (
-                    <tr key={`item-${index}`} className="border-b border-border last:border-b-0">
-                      <td className="py-2 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: entry.color }} />
-                          <span className="text-foreground">
-                            {code && (
-                              <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
-                                {code}
-                              </code>
-                            )}
-                            {entry.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2 px-4 text-right font-medium text-foreground whitespace-nowrap">
-                        {formatTooltipCurrency(entry.value)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={`Year: ${label}`}
+          subtitle={subtitle}
+          rows={rows}
+          maxWidth={460}
+        />
       );
     }
     return null;

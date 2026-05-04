@@ -345,8 +345,8 @@ export function AddIndicatorForm({
             onClick={handleSubmit}
             disabled={loading || !formData.title[defaultLanguage]?.trim()}
           >
-            <Save className="h-3 w-3 mr-2" />
-            {loading ? 'Creating...' : 'Create Indicator'}
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Saving...' : 'Add Indicator'}
           </Button>
         </DialogFooter>
       </DialogContent>

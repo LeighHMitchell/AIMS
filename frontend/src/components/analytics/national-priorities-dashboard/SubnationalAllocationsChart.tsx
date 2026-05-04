@@ -13,7 +13,7 @@ import {
   PieChart,
   Pie,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,6 +45,10 @@ import {
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
+  Wallet,
+  Calendar,
+  DollarSign,
+  Table as TableIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
@@ -54,8 +58,10 @@ import { RankedItem } from "@/types/national-priorities";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 
-type ViewMode = "bar" | "pie";
+type ViewMode = "bar" | "pie" | "table";
 type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
 type SortField = "name" | "value" | "percentage" | "activityCount";
 type SortDirection = "asc" | "desc";
@@ -63,6 +69,7 @@ type SortDirection = "asc" | "desc";
 interface SubnationalAllocationsChartProps {
   refreshKey?: number;
   organizationId?: string;
+  compact?: boolean;
 }
 
 const METRIC_OPTIONS = [
@@ -87,13 +94,13 @@ function formatCurrencyFull(value: number): string {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
-export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: SubnationalAllocationsChartProps) {
+export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, compact = false }: SubnationalAllocationsChartProps) {
+  const isExpanded = useChartExpansion();
   const [data, setData] = useState<RankedItem[]>([]);
   const [grandTotal, setGrandTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [metric, setMetric] = useState<MetricType>("disbursements");
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isTableExpanded, setIsTableExpanded] = useState(false);
   const [sortField, setSortField] = useState<SortField>("value");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -127,9 +134,13 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     fetchData();
   }, [fetchData, refreshKey]);
 
+  // `color` drives the pie chart and legend swatches (distinct slice
+  // colours). `barColor` drives the bar chart (single Blue Slate so all
+  // bars share one colour, with OTHERS distinct for contrast).
   const chartData = data.map((item, index) => ({
     ...item,
     color: item.id === "others" ? OTHERS_COLOR : CHART_RANKED_PALETTE[index % CHART_RANKED_PALETTE.length],
+    barColor: item.id === "others" ? OTHERS_COLOR : '#4c5568',
     percentage: grandTotal > 0 ? (item.value / grandTotal) * 100 : 0,
   }));
 
@@ -188,33 +199,14 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       const percentage = grandTotal > 0 ? ((item.value / grandTotal) * 100).toFixed(1) : "0";
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-2">{item.name}</p>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-body text-foreground">Value</span>
-              <span className="text-body font-medium text-foreground">
-                {formatTooltipCurrency(item.value, isExpanded)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-body text-foreground">Percentage</span>
-              <span className="text-body font-medium text-foreground">
-                {percentage}%
-              </span>
-            </div>
-            {item.activityCount > 0 && (
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-body text-foreground">Activities</span>
-                <span className="text-body font-medium text-foreground">
-                  {item.activityCount}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      );
+      const rows: any[] = [
+        { label: 'Value', value: formatTooltipCurrency(item.value, isExpanded), color: item.color },
+        { label: 'Percentage', value: `${percentage}%` },
+      ];
+      if (item.activityCount > 0) {
+        rows.push({ label: 'Activities', value: item.activityCount });
+      }
+      return <ChartTooltipCard title={item.name} rows={rows} />;
     }
     return null;
   };
@@ -240,11 +232,11 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     const text = payload.value;
     const maxWidth = 60;
     const lineHeight = 12;
-    
+
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';
-    
+
     words.forEach((word: string) => {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
       if (testLine.length * 5.5 > maxWidth && currentLine) {
@@ -255,7 +247,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
       }
     });
     if (currentLine) lines.push(currentLine);
-    
+
     return (
       <g transform={`translate(${x},${y})`}>
         {lines.map((line, index) => (
@@ -274,8 +266,8 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     );
   };
 
-  const renderBarChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderBarChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={chartData}
         margin={{ top: 20, right: 20, left: 20, bottom: 50 }}
@@ -299,7 +291,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50}>
           {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+            <Cell key={`cell-${index}`} fill={entry.barColor} />
           ))}
         </Bar>
       </BarChart>
@@ -342,8 +334,8 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     );
   };
 
-  const renderPieChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderPieChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={chartData}
@@ -369,8 +361,8 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     <div className="overflow-auto h-full">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>
+          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
+            <TableHead className="whitespace-normal">
               <button
                 className="flex items-center hover:text-foreground transition-colors"
                 onClick={() => handleSort("name")}
@@ -379,7 +371,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
                 <SortIcon field="name" />
               </button>
             </TableHead>
-            <TableHead className="text-right">
+            <TableHead className="text-right whitespace-normal">
               <button
                 className="flex items-center justify-end w-full hover:text-foreground transition-colors"
                 onClick={() => handleSort("value")}
@@ -430,9 +422,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     </div>
   );
 
-  const renderContent = (expanded: boolean = false) => {
-    const chartHeight = expanded ? 400 : "100%";
-
+  const renderContent = () => {
     if (loading) {
       return <ChartLoadingPlaceholder />;
     }
@@ -447,240 +437,191 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
 
     return (
       <div className="flex flex-col flex-1 min-h-0">
-        {expanded && renderLegend()}
-        <div className={expanded ? "h-[400px] mb-4" : "flex-1 min-h-0"}>
-          {viewMode === "bar" && renderBarChart(chartHeight)}
-          {viewMode === "pie" && renderPieChart(chartHeight)}
+        {!compact && viewMode !== "table" && renderLegend()}
+        <div className="flex-1 min-h-0">
+          {viewMode === "bar" && renderBarChart()}
+          {viewMode === "pie" && renderPieChart()}
+          {viewMode === "table" && renderTable()}
         </div>
       </div>
     );
   };
 
-  const renderControls = (expanded: boolean = false) => (
+  const renderControls = () => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-helper">
-          <SelectValue />
+        <SelectTrigger className="min-w-[280px]">
+          <span className="flex items-center gap-2 truncate">
+            {metric === 'budgets' && <Wallet className="h-4 w-4 flex-shrink-0" />}
+            {metric === 'plannedDisbursements' && <Calendar className="h-4 w-4 flex-shrink-0" />}
+            {metric === 'commitments' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
+            {metric === 'disbursements' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
+            <span className="truncate">
+              {metric === 'budgets' && 'Total Budgets'}
+              {metric === 'plannedDisbursements' && 'Total Planned Disbursements'}
+              {metric === 'commitments' && 'Total Commitments'}
+              {metric === 'disbursements' && 'Total Disbursements'}
+            </span>
+          </span>
         </SelectTrigger>
         <SelectContent>
-          {METRIC_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
+          <SelectItem value="budgets">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              <span>Total Budgets</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="plannedDisbursements">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Total Planned Disbursements</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="commitments">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Total Commitments</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="disbursements">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Total Disbursements</span>
+            </div>
+          </SelectItem>
         </SelectContent>
       </Select>
 
       <div className="flex items-center gap-1">
         {/* View mode toggles */}
-        <div className="flex items-center border rounded-md">
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
+            aria-label="Bar Chart"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
+            aria-label="Pie Chart"
           >
             <PieChartIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-8 w-8", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+            onClick={() => setViewMode("table")}
+            title="Table View"
+            aria-label="Table View"
+          >
+            <TableIcon className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Export button - only in expanded view */}
-        {expanded && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleExport}
-            title="Export CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+        {!compact && (
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col h-[700px] gap-4">
-      {/* Chart Card - takes remaining space */}
-      <Card className="bg-white border-border flex-1 flex flex-col min-h-0">
-        <CardHeader className="pb-1 pt-4 px-4 flex-shrink-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-foreground truncate">
-                Subnational Allocations
-              </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
-                States and regions by financial allocation
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
-              title="Expand to full screen"
-            >
-              <Maximize2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col min-h-0">
-          {renderContent(false)}
-        </CardContent>
-      </Card>
+    <div className="h-full flex flex-col">
+      {renderContent()}
+      {!compact && renderControls()}
 
-      {/* Table Card Below - fixed height */}
-      {!loading && data && data.length > 0 && (
-        <Card className="bg-white border-border h-[240px] flex-shrink-0 flex flex-col">
-          <CardHeader className="pb-2 flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                Allocation Details
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setIsTableExpanded(true)}
-                title="Expand"
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0 px-4 pb-3 flex-1 overflow-hidden">
-            {renderTable()}
-          </CardContent>
-        </Card>
-      )}
+      {!compact && (
+        <>
+          {/* Allocation Details Table - only shown in expanded view */}
+          {!loading && data && data.length > 0 && (
+            <Card className="bg-white border-border mt-4 flex flex-col">
+              <CardHeader className="pb-2 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    Allocation Details
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setIsTableExpanded(true)}
+                    title="Expand"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 px-4 pb-3 flex-1 overflow-hidden max-h-[300px]">
+                {renderTable()}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Expanded Chart Dialog View */}
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-semibold text-foreground">
-                  Subnational Allocations
-                </DialogTitle>
-                <DialogDescription className="text-base mt-2">
-                  Myanmar States & Regions by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}.
-                </DialogDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={handleExport}
-                title="Export CSV"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-
-          {/* Filter and view controls above chart */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
-                onClick={() => setViewMode("bar")}
-                title="Bar Chart"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
-                onClick={() => setViewMode("pie")}
-                title="Pie Chart"
-              >
-                <PieChartIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-              <SelectTrigger className="w-[180px] h-8 text-helper">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {METRIC_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Chart */}
-          <div className="mt-4">{renderContent(true)}</div>
-
-          {/* Description below chart */}
-          <p className="text-body text-muted-foreground mt-4">
-            This chart visualizes how development assistance is distributed across Myanmar's states and regions.
-            Understanding subnational allocation patterns helps identify geographic priorities, reveals potential
-            gaps in coverage, and supports more equitable distribution of aid resources. Use the metric selector
-            to compare budgets, planned disbursements, commitments, or actual disbursements across regions.
-          </p>
-
-          {/* Explanatory text */}
           <p className="text-body text-muted-foreground leading-relaxed mt-4">
             This chart shows how development funding is distributed across subnational states and regions. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and switch between bar and pie chart views.
           </p>
-        </DialogContent>
-      </Dialog>
 
-      {/* Expanded Table Dialog View */}
-      <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-bold">
-                  Allocation Details
-                </DialogTitle>
-                <DialogDescription className="text-base mt-1">
-                  Detailed breakdown by State/Region
-                </DialogDescription>
+          {/* Expanded Table Dialog View */}
+          <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
+            <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <DialogTitle className="text-2xl font-bold">
+                      Allocation Details
+                    </DialogTitle>
+                    <DialogDescription className="text-base mt-1">
+                      Detailed breakdown by State/Region
+                    </DialogDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={handleExport}
+                    title="Export CSV"
+                    aria-label="Export CSV"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </DialogHeader>
+
+              <p className="text-body text-muted-foreground mt-2">
+                This table provides precise figures for aid allocations across Myanmar&apos;s states and regions.
+                The data shows the exact USD value, percentage share, and number of activities for each location.
+                Use this detailed breakdown to analyze funding concentration, compare regional investments,
+                and identify areas that may be underserved relative to their needs.
+              </p>
+
+              <div className="mt-4 max-h-[60vh] overflow-auto">
+                {renderTable()}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={handleExport}
-                title="Export CSV"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-
-          <p className="text-body text-muted-foreground mt-2">
-            This table provides precise figures for aid allocations across Myanmar's states and regions.
-            The data shows the exact USD value, percentage share, and number of activities for each location.
-            Use this detailed breakdown to analyze funding concentration, compare regional investments,
-            and identify areas that may be underserved relative to their needs.
-          </p>
-
-          <div className="mt-4 max-h-[60vh] overflow-auto">
-            {renderTable()}
-          </div>
-        </DialogContent>
-      </Dialog>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }

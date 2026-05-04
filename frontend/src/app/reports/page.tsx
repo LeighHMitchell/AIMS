@@ -149,13 +149,13 @@ const fundReports: ReportConfig[] = [
     ],
   },
   {
-    title: "Donor Contribution Summary",
-    description: "All contributions across all pooled funds, grouped by donor organisation with pledged, committed, and received breakdowns.",
+    title: "Development Partner Contribution Summary",
+    description: "All contributions across all pooled funds, grouped by development partner organisation with pledged, committed, and received breakdowns.",
     icon: Users,
     apiEndpoint: "/api/reports/fund-donor-contributions",
     filename: "fund_donor_contributions",
     headers: [
-      { key: "donor_name", label: "Donor Name" },
+      { key: "donor_name", label: "Development Partner Name" },
       { key: "fund_name", label: "Fund Name" },
       { key: "pledged", label: "Pledged (USD)" },
       { key: "committed", label: "Committed (USD)" },

@@ -27,6 +27,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -706,7 +707,7 @@ export default function ForwardSpendingSurveyTab({
                 )}
               </div>
             ) : (
-              <div className="rounded-md border">
+              <TableContainer>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -790,7 +791,7 @@ export default function ForwardSpendingSurveyTab({
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </TableContainer>
             )}
           </CardContent>
         </Card>

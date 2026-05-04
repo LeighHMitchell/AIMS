@@ -221,6 +221,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
               <Button
                 variant="outline"
                 size="icon"
+                className="h-9 w-9"
                 onClick={handleExportCSV}
                 title="Export CSV"
                 aria-label="Export CSV"

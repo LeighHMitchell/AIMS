@@ -210,7 +210,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
           <thead className="bg-surface-muted">
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Project Name</th>
-              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Donor</th>
+              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Development Partner</th>
               <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Sector</th>
               <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground">Budget</th>
               <th className="text-right py-3 px-4 text-body font-medium text-muted-foreground">Disbursed</th>

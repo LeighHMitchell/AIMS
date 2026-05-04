@@ -14,6 +14,7 @@ import { formatAxisCurrency } from "@/lib/format";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 import { apiFetch } from '@/lib/api-fetch';
 
 interface AnalyticsFilters {
@@ -106,28 +107,24 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const data = payload[0]?.payload;
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipValue(entry.value),
+        color: entry.color,
+      }));
+      if (payload.length >= 3 && data?.budget > 0) {
+        rows.push({
+          label: 'Execution Rate',
+          value: `${((data.totalSpending / data.budget) * 100).toFixed(1)}%`,
+        });
+      }
       return (
-        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-2">{`Organization Type: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-body"
-              style={{ color: entry.color }}
-            >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
-            </p>
-          ))}
-          {payload.length >= 3 && (
-            <div className="border-t pt-2 mt-2">
-              <p className="text-body font-medium text-foreground">
-                Execution Rate: {payload[0]?.payload?.budget > 0 
-                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
-                  : 0}%
-              </p>
-            </div>
-          )}
-        </div>
+        <ChartTooltipCard
+          title={label}
+          subtitle="Organization Type"
+          rows={rows}
+        />
       );
     }
     return null;

@@ -15,9 +15,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
+import { ChartTooltipCard, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import {
   Select,
   SelectContent,
@@ -25,13 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -45,10 +38,12 @@ import {
   Layers,
   LayoutGrid,
   Table as TableIcon,
-  Maximize2,
   Download,
   TrendingUp,
   Activity,
+  Wallet,
+  Calendar,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -58,6 +53,7 @@ import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ChartType = "bar" | "line" | "area" | "table";
@@ -70,9 +66,9 @@ interface YearlyCapitalSpend {
   total: number;
 }
 
-// Custom palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
+// Slate-only palette aligned with the rest of the analytics dashboard.
 const CAPITAL_COLORS = {
-  capital: "#dc2626",     // Primary Scarlet - Capital spend
+  capital: "#334155",     // slate-700 - Capital spend
   nonCapital: "#cfd0d5",  // Pale Slate - Non-capital
   accent1: "#4c5568",     // Blue Slate
   accent2: "#7b95a7",     // Cool Steel
@@ -102,10 +98,10 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
   if (timeRange === "all") {
     return { from: undefined, to: undefined };
   }
-  
+
   const now = new Date();
   const from = new Date();
-  
+
   switch (timeRange) {
     case "3y":
       from.setFullYear(now.getFullYear() - 3);
@@ -117,7 +113,7 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
       from.setFullYear(now.getFullYear() - 10);
       break;
   }
-  
+
   return { from, to: now };
 }
 
@@ -149,15 +145,16 @@ function formatCurrencyFull(value: number): string {
 
 interface CapitalSpendOverTimeChartProps {
   refreshKey?: number;
+  compact?: boolean;
 }
 
-export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTimeChartProps) {
+export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: CapitalSpendOverTimeChartProps) {
+  const isExpanded = useChartExpansion();
   const [data, setData] = useState<YearlyCapitalSpend[]>([]);
   const [loading, setLoading] = useState(true);
   const [metric, setMetric] = useState<MetricType>("budgets");
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [stackMode, setStackMode] = useState<StackMode>("stacked");
-  const [isExpanded, setIsExpanded] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRangeType>("5y");
   const [totals, setTotals] = useState({ capitalSpend: 0, nonCapitalSpend: 0 });
   // Animation key to trigger re-render with animation
@@ -227,61 +224,43 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const capitalItem = payload.find((p: any) => p.dataKey === "capitalSpend");
-      const nonCapitalItem = payload.find((p: any) => p.dataKey === "nonCapitalSpend");
-      const capitalValue = capitalItem?.value || 0;
-      const nonCapitalValue = nonCapitalItem?.value || 0;
-      const total = capitalValue + nonCapitalValue;
-      const capitalPct = total > 0 ? ((capitalValue / total) * 100).toFixed(1) : "0";
-      const nonCapitalPct = total > 0 ? ((nonCapitalValue / total) * 100).toFixed(1) : "0";
-      // Line and area charts use accent1 for non-capital
-      const nonCapitalColor = chartType === "bar" ? CAPITAL_COLORS.nonCapital : CAPITAL_COLORS.accent1;
+    if (!active || !payload || !payload.length) return null
 
-      return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">{label}</p>
-          </div>
-          <div className="p-2">
-            <table className="w-full text-body">
-              <tbody>
-                <tr className="border-b border-border">
-                  <td className="py-1 pr-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: CAPITAL_COLORS.capital }} />
-                      <span className="text-foreground font-medium">Capital</span>
-                    </div>
-                  </td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(capitalValue, isExpanded)}</td>
-                  <td className="py-1 text-right text-helper text-muted-foreground pl-2">{capitalPct}%</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-1 pr-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: nonCapitalColor }} />
-                      <span className="text-foreground font-medium">Non-Capital</span>
-                    </div>
-                  </td>
-                  <td className="py-1 text-right font-semibold text-foreground">{formatTooltipCurrency(nonCapitalValue, isExpanded)}</td>
-                  <td className="py-1 text-right text-helper text-muted-foreground pl-2">{nonCapitalPct}%</td>
-                </tr>
-                <tr>
-                  <td className="py-1 pr-3 text-foreground font-medium">Total</td>
-                  <td className="py-1 text-right font-bold text-foreground">{formatTooltipCurrency(total, isExpanded)}</td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      );
-    }
-    return null;
+    const capitalItem = payload.find((p: any) => p.dataKey === "capitalSpend");
+    const nonCapitalItem = payload.find((p: any) => p.dataKey === "nonCapitalSpend");
+    const capitalValue = capitalItem?.value || 0;
+    const nonCapitalValue = nonCapitalItem?.value || 0;
+    const total = capitalValue + nonCapitalValue;
+    const capitalPct = total > 0 ? ((capitalValue / total) * 100).toFixed(1) : "0";
+    const nonCapitalPct = total > 0 ? ((nonCapitalValue / total) * 100).toFixed(1) : "0";
+    const nonCapitalColor = chartType === "bar" ? CAPITAL_COLORS.nonCapital : CAPITAL_COLORS.accent1;
+
+    const rows: ChartTooltipRow[] = [
+      {
+        label: 'Capital',
+        value: formatTooltipCurrency(capitalValue, isExpanded),
+        color: CAPITAL_COLORS.capital,
+        extra: `${capitalPct}%`,
+      },
+      {
+        label: 'Non-Capital',
+        value: formatTooltipCurrency(nonCapitalValue, isExpanded),
+        color: nonCapitalColor,
+        extra: `${nonCapitalPct}%`,
+        bordered: true,
+      },
+      {
+        label: 'Total',
+        value: formatTooltipCurrency(total, isExpanded),
+        extra: '',
+      },
+    ];
+
+    return <ChartTooltipCard title={label} rows={rows} />;
   };
 
-  const renderBarChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height} key={`bar-${animationKey}`}>
+  const renderBarChart = () => (
+    <ResponsiveContainer width="100%" height="100%" key={`bar-${animationKey}`}>
       <BarChart
         data={data}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
@@ -336,8 +315,8 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
     </ResponsiveContainer>
   );
 
-  const renderLineChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderLineChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={data}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
@@ -394,8 +373,8 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
     </ResponsiveContainer>
   );
 
-  const renderAreaChart = (height: number | string = "100%") => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderAreaChart = () => (
+    <ResponsiveContainer width="100%" height="100%">
       <AreaChart
         data={data}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
@@ -461,13 +440,13 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   );
 
   const renderTable = () => (
-    <div className="overflow-auto max-h-[400px]">
+    <div className="overflow-auto h-full">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
             <TableHead>Year</TableHead>
             <TableHead className="text-right">Capital</TableHead>
-            <TableHead className="text-right">Non-Capital</TableHead>
+            <TableHead className="text-right whitespace-normal">Non-Capital</TableHead>
             <TableHead className="text-right">Total</TableHead>
             <TableHead className="text-right">Capital %</TableHead>
           </TableRow>
@@ -498,7 +477,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   const renderLegend = () => {
     // Line and area charts use accent1 for non-capital
     const nonCapitalColor = chartType === "bar" ? CAPITAL_COLORS.nonCapital : CAPITAL_COLORS.accent1;
-    
+
     return (
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center gap-1.5">
@@ -519,16 +498,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
     );
   };
 
-  const renderContent = (expanded: boolean = false) => {
-    const chartHeight = expanded ? 350 : "100%";
-
+  const renderContent = () => {
     if (loading) {
       return <ChartLoadingPlaceholder />;
     }
 
     if (!data || data.length === 0) {
       return (
-        <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
           No data available
         </div>
       );
@@ -536,36 +513,66 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
 
     return (
       <div className="flex flex-col flex-1 min-h-0">
-        {expanded && renderLegend()}
-        <div className={expanded ? "h-[400px] mb-4" : "h-[280px]"}>
-          {chartType === "bar" && renderBarChart(chartHeight)}
-          {chartType === "line" && renderLineChart(chartHeight)}
-          {chartType === "area" && renderAreaChart(chartHeight)}
+        {!compact && renderLegend()}
+        <div className="flex-1 min-h-0">
+          {chartType === "bar" && renderBarChart()}
+          {chartType === "line" && renderLineChart()}
+          {chartType === "area" && renderAreaChart()}
           {chartType === "table" && renderTable()}
         </div>
       </div>
     );
   };
 
-  const renderControls = (expanded: boolean = false) => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
+  const renderControls = () => (
+    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       {/* Left side controls */}
       <div className="flex items-center gap-2">
         <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-          <SelectTrigger className="w-[160px] h-8 text-helper">
-            <SelectValue />
+          <SelectTrigger className="min-w-[280px]">
+            <span className="flex items-center gap-2 truncate">
+              {metric === 'budgets' && <Wallet className="h-4 w-4 flex-shrink-0" />}
+              {metric === 'planned' && <Calendar className="h-4 w-4 flex-shrink-0" />}
+              {metric === 'commitments' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
+              {metric === 'disbursements' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
+              <span className="truncate">
+                {metric === 'budgets' && 'Total Budgets'}
+                {metric === 'planned' && 'Total Planned Disbursements'}
+                {metric === 'commitments' && 'Total Commitments'}
+                {metric === 'disbursements' && 'Total Disbursements'}
+              </span>
+            </span>
           </SelectTrigger>
           <SelectContent>
-            {METRIC_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
+            <SelectItem value="budgets">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                <span>Total Budgets</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="planned">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>Total Planned Disbursements</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="commitments">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span>Total Commitments</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="disbursements">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span>Total Disbursements</span>
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
 
         {/* Custom Year Selector (only in expanded view) */}
-        {expanded && (
+        {!compact && (
           <CustomYearSelector
             customYears={customYears}
             selectedId={selectedCustomYearId}
@@ -579,22 +586,24 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       <div className="flex items-center gap-1">
         {/* Stack mode toggles - only show when in bar view */}
         {chartType === "bar" && (
-          <div className="flex items-center border rounded-md mr-1">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card mr-1">
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", stackMode === "stacked" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", stackMode === "stacked" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => handleStackModeChange("stacked")}
               title="Stacked"
+              aria-label="Stacked"
             >
               <Layers className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn("h-8 w-8 p-0", stackMode === "grouped" ? "bg-muted text-foreground" : "text-muted-foreground")}
+              size="icon"
+              className={cn("h-8 w-8", stackMode === "grouped" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               onClick={() => handleStackModeChange("grouped")}
               title="Grouped"
+              aria-label="Grouped"
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -602,56 +611,63 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         )}
 
         {/* Chart type toggles */}
-        <div className="flex items-center border rounded-md">
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setChartType("bar")}
             title="Bar Chart"
+            aria-label="Bar Chart"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setChartType("line")}
             title="Line Chart"
+            aria-label="Line Chart"
           >
             <TrendingUp className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setChartType("area")}
             title="Area Chart"
+            aria-label="Area Chart"
           >
             <Activity className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
+            size="icon"
+            className={cn("h-8 w-8", chartType === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
             onClick={() => setChartType("table")}
-            title="Table"
+            title="Table View"
+            aria-label="Table View"
           >
             <TableIcon className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Export button - only in expanded view */}
-        {expanded && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleExport}
-            title="Export CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+        {!compact && (
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
     </div>
@@ -674,69 +690,16 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
     </div>
   );
 
-  const grandTotal = totals.capitalSpend + totals.nonCapitalSpend;
-
   return (
-    <>
-      {/* Compact Card View */}
-      <Card className="bg-white border-border h-full flex flex-col">
-        <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-foreground truncate">
-                Capital vs Non-Capital Spend
-              </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
-                Yearly breakdown of spending types
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
-              title="Expand to full screen"
-            >
-              <Maximize2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
-          {renderContent(false)}
-        </CardContent>
-      </Card>
-
-      {/* Expanded Dialog View */}
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-semibold text-foreground">
-                  Capital vs Non-Capital Spend Over Time
-                </DialogTitle>
-                <DialogDescription className="text-base mt-2">
-                  Yearly breakdown by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Time range filter - only shown when expanded */}
-          {renderTimeRangeFilter()}
-
-          {/* Chart content */}
-          <div className="mt-4">{renderContent(true)}</div>
-
-          {/* Controls */}
-          {renderControls(true)}
-
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed mt-4">
-            This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.
-          </p>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="h-full flex flex-col">
+      {!compact && renderTimeRangeFilter()}
+      {renderContent()}
+      {!compact && renderControls()}
+      {!compact && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.
+        </p>
+      )}
+    </div>
   );
 }

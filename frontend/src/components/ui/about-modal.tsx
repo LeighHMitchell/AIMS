@@ -135,7 +135,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                   <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
                     <li>Sectoral and geographic distribution of development finance</li>
                     <li>Trends over time across commitments and disbursements</li>
-                    <li>Portfolio composition by donor, modality, or implementing partner</li>
+                    <li>Portfolio composition by development partner, modality, or implementing partner</li>
                     <li>Gaps between planned and actual financing</li>
                   </ul>
                   <p className="leading-relaxed mt-3">

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Plus, Pencil, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
@@ -232,7 +232,7 @@ export default function OrganisationsSection({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg overflow-hidden">
+          <TableContainer>
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted">
@@ -278,7 +278,7 @@ export default function OrganisationsSection({
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
         </CardContent>
       </Card>
     );
@@ -319,7 +319,7 @@ export default function OrganisationsSection({
             </div>
           ) : (
             <>
-              <div className="border rounded-lg overflow-hidden">
+              <TableContainer>
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted">
@@ -411,16 +411,35 @@ export default function OrganisationsSection({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-body">
-                            {getOrganizationRoleName(participatingOrg.iati_role_code)}
+                          <span className="inline-flex items-center gap-2 text-body">
+                            {participatingOrg.iati_role_code && (
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                {participatingOrg.iati_role_code}
+                              </span>
+                            )}
+                            <span>{getOrganizationRoleName(participatingOrg.iati_role_code)}</span>
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-body">
-                            {participatingOrg.organization?.Organisation_Type_Name || 
-                             (participatingOrg.organization?.Organisation_Type_Code ? getOrganizationTypeName(participatingOrg.organization.Organisation_Type_Code) : null) || 
-                             <span className="text-muted-foreground">Not set</span>}
-                          </span>
+                          {(() => {
+                            const code = participatingOrg.organization?.Organisation_Type_Code;
+                            const name =
+                              participatingOrg.organization?.Organisation_Type_Name ||
+                              (code ? getOrganizationTypeName(code) : null);
+                            if (!code && !name) {
+                              return <span className="text-body text-muted-foreground">Not set</span>;
+                            }
+                            return (
+                              <span className="inline-flex items-center gap-2 text-body">
+                                {code && (
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                    {code}
+                                  </span>
+                                )}
+                                {name && <span>{name}</span>}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -446,7 +465,7 @@ export default function OrganisationsSection({
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </TableContainer>
             </>
           )}
         </CardContent>

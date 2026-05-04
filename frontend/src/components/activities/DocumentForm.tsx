@@ -593,7 +593,7 @@ export function DocumentForm({
           </Button>
           <Button onClick={handleSave} disabled={showValidation && !validation.ok}>
             <Save className="h-4 w-4 mr-2" />
-            Save Document Link
+            {document ? 'Update Document Link' : 'Add Document Link'}
           </Button>
         </div>
       </DialogContent>

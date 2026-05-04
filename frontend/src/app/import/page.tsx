@@ -21,7 +21,7 @@ const importOptions = [
     description: 'Import activity data including titles, descriptions, dates, budgets, and implementing organizations',
     icon: Activity,
     href: '/import/activities',
-    fields: ['Activity Title', 'Start Date', 'End Date', 'Total Budget', 'Donor Organization'],
+    fields: ['Activity Title', 'Start Date', 'End Date', 'Total Budget', 'Development Partner Organization'],
     color: 'bg-blue-50 text-blue-700 border-blue-200',
   },
   {

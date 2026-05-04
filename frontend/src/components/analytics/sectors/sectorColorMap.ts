@@ -38,99 +38,104 @@ const PALETTE_VARIATIONS = {
   neutralAccent: '#8a9199',
 } as const
 
-// Main sector color palette - 12 distinct colors for 1-digit DAC groups
+// Main sector color palette — slate-only mapping for 1-digit DAC groups
+// (kept for backward-compatibility; chart fills cycle through
+// EXTENDED_COLOR_PALETTE for sub-sectors that don't match here).
 export const SECTOR_GROUP_COLORS: Record<string, string> = {
   // Social Infrastructure & Services (1xx)
-  'Social Infrastructure & Services': BRAND_COLORS.primaryScarlet,
-  'Education': PALETTE_VARIATIONS.scarletLight,
+  'Social Infrastructure & Services': '#334155',
+  'Education': '#475569',
   'Health': BRAND_COLORS.coolSteel,
   'Population Policies/Programmes & Reproductive Health': PALETTE_VARIATIONS.coolSteelLight,
   'Water Supply & Sanitation': BRAND_COLORS.blueSlate,
   'Government & Civil Society': PALETTE_VARIATIONS.blueSlateDark,
   'Other Social Infrastructure & Services': PALETTE_VARIATIONS.blueSlateLight,
-  
+
   // Economic Infrastructure & Services (2xx)
   'Economic Infrastructure & Services': BRAND_COLORS.blueSlate,
   'Transport & Storage': PALETTE_VARIATIONS.blueSlateDark,
   'Communications': PALETTE_VARIATIONS.blueSlateLight,
-  'Energy': BRAND_COLORS.primaryScarlet,
+  'Energy': '#3a4050',
   'Banking & Financial Services': BRAND_COLORS.coolSteel,
   'Business & Other Services': PALETTE_VARIATIONS.coolSteelDark,
-  
+
   // Production Sectors (3xx)
-  'Production Sectors': PALETTE_VARIATIONS.warmAccent,
-  'Agriculture': BRAND_COLORS.primaryScarlet,
+  'Production Sectors': '#5d6b7a',
+  'Agriculture': '#475569',
   'Forestry': BRAND_COLORS.coolSteel,
   'Fishing': PALETTE_VARIATIONS.coolSteelLight,
   'Industry, Mining, Construction': BRAND_COLORS.blueSlate,
   'Trade Policies & Regulations': PALETTE_VARIATIONS.blueSlateLight,
-  'Tourism': PALETTE_VARIATIONS.scarletLight,
-  
+  'Tourism': '#6b7789',
+
   // Multi-Sector (4xx)
   'Multi-Sector / Cross-Cutting': BRAND_COLORS.coolSteel,
   'General Environment Protection': PALETTE_VARIATIONS.coolSteelDark,
   'Other Multisector': PALETTE_VARIATIONS.coolSteelLight,
-  
+
   // Commodity Aid (5xx)
   'Commodity Aid / General Programme Assistance': BRAND_COLORS.blueSlate,
   'General Budget Support': PALETTE_VARIATIONS.blueSlateDark,
-  'Food Aid/Food Security Programmes': BRAND_COLORS.primaryScarlet,
-  
+  'Food Aid/Food Security Programmes': '#334155',
+
   // Debt (6xx)
   'Debt-Related Actions': BRAND_COLORS.paleSlate,
   'Action Relating to Debt': PALETTE_VARIATIONS.neutralAccent,
-  
+
   // Humanitarian (7xx)
-  'Humanitarian Aid': BRAND_COLORS.primaryScarlet,
-  'Emergency Response': PALETTE_VARIATIONS.scarletDark,
-  'Reconstruction Relief & Rehabilitation': PALETTE_VARIATIONS.scarletLight,
-  'Disaster Prevention & Preparedness': PALETTE_VARIATIONS.warmAccent,
-  
+  'Humanitarian Aid': '#334155',
+  'Emergency Response': '#475569',
+  'Reconstruction Relief & Rehabilitation': '#5d6b7a',
+  'Disaster Prevention & Preparedness': '#6b7789',
+
   // Admin Costs (9xx)
   'Administrative Costs of Donors': BRAND_COLORS.blueSlate,
   'Refugees in Donor Countries': PALETTE_VARIATIONS.blueSlateLight,
-  
+
   // Fallback colors for other sectors
   'Unallocated / Unspecified': BRAND_COLORS.paleSlate,
   'Other': PALETTE_VARIATIONS.neutralAccent,
 }
 
-// 1-digit group colors (primary classification)
+// 1-digit group colors (primary classification) — slate-only ramp for
+// dashboard consistency.
 export const DAC_GROUP_COLORS: Record<string, string> = {
-  '1': BRAND_COLORS.primaryScarlet,   // Social Infrastructure & Services
-  '2': BRAND_COLORS.blueSlate,        // Economic Infrastructure & Services
-  '3': PALETTE_VARIATIONS.warmAccent,  // Production Sectors
-  '4': BRAND_COLORS.coolSteel,        // Multi-Sector
-  '5': PALETTE_VARIATIONS.blueSlateDark, // Commodity Aid
-  '6': BRAND_COLORS.paleSlate,        // Debt-Related
-  '7': PALETTE_VARIATIONS.scarletDark, // Humanitarian
-  '8': PALETTE_VARIATIONS.blueSlateLight, // Admin Costs
-  '9': PALETTE_VARIATIONS.neutralAccent, // Refugees
+  '1': '#334155',                          // slate-700 — Social Infrastructure & Services
+  '2': BRAND_COLORS.blueSlate,             // Economic Infrastructure & Services
+  '3': PALETTE_VARIATIONS.blueSlateDark,   // Production Sectors
+  '4': BRAND_COLORS.coolSteel,             // Multi-Sector
+  '5': PALETTE_VARIATIONS.coolSteelDark,   // Commodity Aid
+  '6': BRAND_COLORS.paleSlate,             // Debt-Related
+  '7': '#5d6b7a',                          // medium slate — Humanitarian
+  '8': PALETTE_VARIATIONS.blueSlateLight,  // Admin Costs
+  '9': PALETTE_VARIATIONS.neutralAccent,   // Refugees
 }
 
-// Extended palette for when more colors are needed (up to 20+ sectors)
-// Uses brand colors with varying opacity/shade levels for distinction
+// Extended palette for when more colors are needed (up to 20+ sectors).
+// Slate-only ramp aligned with the dashboard's CHART_RANKED_PALETTE so
+// stacked area / bar / line charts read consistently with the rest of the
+// analytics dashboard.
 export const EXTENDED_COLOR_PALETTE = [
-  BRAND_COLORS.primaryScarlet,       // Primary Scarlet
-  BRAND_COLORS.blueSlate,            // Blue Slate
-  BRAND_COLORS.coolSteel,            // Cool Steel
-  PALETTE_VARIATIONS.scarletDark,    // Darker Scarlet
-  PALETTE_VARIATIONS.blueSlateDark,  // Darker Blue Slate
-  PALETTE_VARIATIONS.coolSteelDark,  // Darker Cool Steel
-  PALETTE_VARIATIONS.scarletLight,   // Lighter Scarlet
-  PALETTE_VARIATIONS.blueSlateLight, // Lighter Blue Slate
-  PALETTE_VARIATIONS.coolSteelLight, // Lighter Cool Steel
-  PALETTE_VARIATIONS.warmAccent,     // Warm Accent
-  PALETTE_VARIATIONS.neutralAccent,  // Neutral Accent
-  BRAND_COLORS.paleSlate,            // Pale Slate (for contrast)
-  '#8c4642',                          // Muted scarlet
-  '#5d6b7a',                          // Medium slate
-  '#6a8494',                          // Steel blue
-  '#9a7570',                          // Dusty rose
-  '#7d8891',                          // Cool gray
-  '#b8a5a2',                          // Warm gray
-  '#4a5966',                          // Deep slate
-  '#a3b5c2',                          // Light steel
+  '#1e293b', // slate-800
+  '#334155', // slate-700
+  '#475569', // slate-600
+  '#4c5568', // brand Blue Slate
+  '#3a4050', // Blue Slate dark
+  '#5d6b7a', // medium slate
+  '#64748b', // slate-500
+  '#6b7789', // Blue Slate light
+  '#5f7a8c', // Cool Steel dark
+  '#7b95a7', // brand Cool Steel
+  '#6a8494', // steel blue
+  '#7d8891', // cool gray
+  '#94a3b8', // slate-400
+  '#9bb0bf', // Cool Steel light
+  '#a3b5c2', // light steel
+  '#cbd5e1', // slate-300
+  '#cfd0d5', // brand Pale Slate
+  '#e2e8f0', // slate-200
+  '#8a9199', // neutral accent
+  '#4a5966', // deep slate
 ]
 
 /**
@@ -168,19 +173,18 @@ export function generateSectorColorMap(sectorNames: string[]): Record<string, st
 }
 
 /**
- * Default colors for common sector categories (3-digit)
- * Using brand color palette for consistent styling
+ * Default colors for common sector categories (3-digit) — slate-only.
  */
 export const DEFAULT_SECTOR_COLORS: Record<string, string> = {
-  'Agriculture': BRAND_COLORS.primaryScarlet,
-  'Education': PALETTE_VARIATIONS.scarletLight, 
+  'Agriculture': '#475569',
+  'Education': '#334155',
   'Energy and Environment': BRAND_COLORS.blueSlate,
   'Health': BRAND_COLORS.coolSteel,
   'Industry and Commerce': PALETTE_VARIATIONS.blueSlateDark,
   'Infrastructure and Basic Services': PALETTE_VARIATIONS.blueSlateLight,
   'Municipal Government': PALETTE_VARIATIONS.coolSteelDark,
   'Public Administration': BRAND_COLORS.blueSlate,
-  'Security and Rule of Law': PALETTE_VARIATIONS.warmAccent,
+  'Security and Rule of Law': '#5d6b7a',
   'Social Development Services': BRAND_COLORS.coolSteel,
   'Transparency and Accountability': PALETTE_VARIATIONS.coolSteelLight,
 }

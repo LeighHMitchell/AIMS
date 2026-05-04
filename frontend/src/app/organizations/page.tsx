@@ -529,7 +529,7 @@ const COOPERATION_MODALITY_OPTIONS = [
 
 // Default organization types (will be fetched from API)
 const DEFAULT_ORGANIZATION_TYPES: OrganizationType[] = [
-  { code: '10', label: 'Government', description: 'National governments (donor or recipient), including central aid coordination bodies', is_active: true, sort_order: 1 },
+  { code: '10', label: 'Government', description: 'National governments (development partner or recipient), including central aid coordination bodies', is_active: true, sort_order: 1 },
   { code: '11', label: 'Local Government', description: 'Sub-national public authorities such as provincial or municipal governments', is_active: true, sort_order: 2 },
   { code: '15', label: 'Other Public Sector', description: 'Government-linked bodies that are neither central nor local government', is_active: true, sort_order: 3 },
   { code: '21', label: 'International NGO', description: 'NGOs operating across countries or internationally affiliated', is_active: true, sort_order: 4 },
@@ -539,9 +539,9 @@ const DEFAULT_ORGANIZATION_TYPES: OrganizationType[] = [
   { code: '31', label: 'Public Private Partnership', description: 'Hybrid organisations involving both government and private sector', is_active: true, sort_order: 8 },
   { code: '40', label: 'Multilateral', description: 'Organisations with multiple member states (e.g., UN agencies, MDBs)', is_active: true, sort_order: 9 },
   { code: '60', label: 'Foundation', description: 'Philanthropic or grant-making organisations', is_active: true, sort_order: 10 },
-  { code: '71', label: 'Private Sector in Provider Country', description: 'Private companies from a donor/provider country', is_active: true, sort_order: 11 },
+  { code: '71', label: 'Private Sector in Provider Country', description: 'Private companies from a development partner/provider country', is_active: true, sort_order: 11 },
   { code: '72', label: 'Private Sector in Aid Recipient Country', description: 'Private companies operating in a recipient country', is_active: true, sort_order: 12 },
-  { code: '73', label: 'Private Sector in Third Country', description: 'Private companies from outside both donor and recipient countries', is_active: true, sort_order: 13 },
+  { code: '73', label: 'Private Sector in Third Country', description: 'Private companies from outside both development partner and recipient countries', is_active: true, sort_order: 13 },
   { code: '80', label: 'Academic, Training and Research', description: 'Universities, training centres, or research institutions', is_active: true, sort_order: 14 },
   { code: '90', label: 'Other', description: 'Catch-all for organisations not listed above', is_active: true, sort_order: 15 }
 ]
@@ -1227,7 +1227,7 @@ function OrganizationsPageContent() {
   // IATI-aligned tab definitions
   const IATI_TABS = [
     { label: "All", value: "all" },
-    { label: "Bilateral Donors", value: "bilateral" },
+    { label: "Bilateral Development Partners", value: "bilateral" },
     { label: "Multilaterals", value: "multilateral" },
     { label: "Government Partners", value: "partner_gov" },
     { label: "Private Sector", value: "private_sector" },

@@ -79,7 +79,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
         <Label className="text-body font-medium text-foreground">Development Partner</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-helper text-muted-foreground">Donor Type <HelpTooltip text="Type of development partner providing funding." /></label>
+            <label className="text-helper text-muted-foreground">Development Partner Type <HelpTooltip text="Type of development partner providing funding." /></label>
             <Select value={formData.oda_donor_type || ''} onValueChange={v => updateField('oda_donor_type', v)}>
               <SelectTrigger className="h-8 text-body"><SelectValue placeholder="Select type..." /></SelectTrigger>
               <SelectContent>
@@ -95,7 +95,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
             </Select>
           </div>
           <div>
-            <label className="text-helper text-muted-foreground">Donor Name <HelpTooltip text="Name of the development partner or funding agency." /></label>
+            <label className="text-helper text-muted-foreground">Development Partner Name <HelpTooltip text="Name of the development partner or funding agency." /></label>
             <Input
               value={formData.oda_donor_name || ''}
               onChange={e => updateField('oda_donor_name', e.target.value)}
@@ -212,7 +212,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
             <span className="font-medium">{formData.sector || '—'}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Donor:</span>{' '}
+            <span className="text-muted-foreground">Development Partner:</span>{' '}
             <span className="font-medium">{formData.oda_donor_name || '—'}</span>
           </div>
           <div>
@@ -256,7 +256,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
               Transfer to AIMS
             </Button>
             {!formData.oda_donor_name && (
-              <p className="text-helper text-muted-foreground">Enter a donor name to enable transfer.</p>
+              <p className="text-helper text-muted-foreground">Enter a development partner name to enable transfer.</p>
             )}
             {transferError && (
               <p className="text-helper text-destructive">{transferError}</p>

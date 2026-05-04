@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useDropdownState } from '@/contexts/DropdownContext';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Plus,
   Save,
@@ -1371,7 +1371,7 @@ export default function CountriesRegionsTab({
                   }
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {editingId ? 'Update' : 'Add'}
+                  {editingId ? 'Update Allocation' : 'Add Allocation'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1406,6 +1406,7 @@ export default function CountriesRegionsTab({
                   </p>
                 </div>
               ) : (
+                <TableContainer>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1429,13 +1430,13 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
-                            {countryAllocation.country?.code}
-                          </Badge>
-                            <span className="text-body font-medium text-foreground">{countryAllocation.country?.name}</span>
                             {countryAllocation.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
+                              {countryAllocation.country?.code}
+                            </Badge>
+                            <span className="text-body font-medium text-foreground">{countryAllocation.country?.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1493,13 +1494,13 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
-                            {regionAllocation.region?.code}
-                          </Badge>
-                            <span className="text-body font-medium text-foreground">{regionAllocation.region?.name}</span>
                             {regionAllocation.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
+                              {regionAllocation.region?.code}
+                            </Badge>
+                            <span className="text-body font-medium text-foreground">{regionAllocation.region?.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1619,6 +1620,7 @@ export default function CountriesRegionsTab({
                     ))}
                   </TableBody>
                 </Table>
+                </TableContainer>
               )}
           </div>
         </div>

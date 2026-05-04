@@ -92,9 +92,9 @@ import { apiFetch } from '@/lib/api-fetch';
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
-  '1': 'A firm written obligation from a donor to provide a specified amount of funds, under particular terms and conditions.',
+  '1': 'A firm written obligation from a development partner to provide a specified amount of funds, under particular terms and conditions.',
   '2': 'A firm written obligation to provide a specified amount of funds under particular financial terms and conditions.',
-  '3': 'Money moved from the donor to an implementing organization.',
+  '3': 'Money moved from the development partner to an implementing organization.',
   '4': 'Outgoing funds that are spent on goods and services for the activity.',
   '5': 'The actual payment of interest on a loan.',
   '6': 'The actual repayment of the principal of a loan.',
@@ -1195,7 +1195,7 @@ export default function TransactionList({
 
   return (
     <>
-      <Card className="border-0 shadow-none">
+      <Card className={hideSummaryCards ? "border-0 shadow-none" : ""}>
         <CardHeader className={hideSummaryCards ? "hidden" : ""}>
           <div className="flex items-center justify-between gap-4">
             {/* Left side: Title and Description */}
@@ -1299,7 +1299,7 @@ export default function TransactionList({
               
               {/* Export Button - always visible */}
               {transactions.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+                <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                   <Download className="h-4 w-4" />
                 </Button>
               )}
@@ -1414,7 +1414,7 @@ export default function TransactionList({
             })()}
             
             {/* Export Button - always visible */}
-            <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+            <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
               <Download className="h-4 w-4" />
             </Button>
           </div>

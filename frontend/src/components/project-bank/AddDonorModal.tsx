@@ -57,17 +57,17 @@ export function AddDonorModal({ open, onOpenChange, projectId, onSaved }: AddDon
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Donor Commitment</DialogTitle>
-          <DialogDescription>Record a new donor commitment with funding details and status.</DialogDescription>
+          <DialogTitle>Add Development Partner Commitment</DialogTitle>
+          <DialogDescription>Record a new development partner commitment with funding details and status.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Donor Name *</Label>
+            <Label>Development Partner Name *</Label>
             <Input value={form.donor_name} onChange={e => set("donor_name", e.target.value)} placeholder="e.g. World Bank" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Donor Type</Label>
+              <Label>Development Partner Type</Label>
               <Select value={form.donor_type} onValueChange={v => set("donor_type", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
@@ -114,7 +114,7 @@ export function AddDonorModal({ open, onOpenChange, projectId, onSaved }: AddDon
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving || !form.donor_name.trim()}>
-            {saving ? "Saving..." : "Add Donor"}
+            {saving ? "Saving..." : "Add Development Partner"}
           </Button>
         </DialogFooter>
       </DialogContent>

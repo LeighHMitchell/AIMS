@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
 
 interface TransactionActivityCalendarProps {
   dateRange?: {
@@ -26,11 +27,12 @@ interface Transaction {
   value: number
 }
 
-export function TransactionActivityCalendar({ 
-  dateRange, 
-  filters, 
-  refreshKey 
+export function TransactionActivityCalendar({
+  dateRange,
+  filters,
+  refreshKey
 }: TransactionActivityCalendarProps) {
+  const isExpanded = useChartExpansion()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -170,10 +172,10 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
+          <CardTitle className="text-base font-medium text-foreground">
             Transaction Activity Calendar
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">
             Daily transaction activity colored by transaction type
           </CardDescription>
         </CardHeader>
@@ -188,10 +190,10 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
+          <CardTitle className="text-base font-medium text-foreground">
             Transaction Activity Calendar
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-helper text-muted-foreground mt-0.5">
             Daily transaction activity colored by transaction type
           </CardDescription>
         </CardHeader>
@@ -210,20 +212,22 @@ export function TransactionActivityCalendar({
   return (
     <Card className="bg-white border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="text-base font-medium text-foreground">
           Transaction Activity Calendar
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-helper text-muted-foreground mt-0.5">
           Daily transaction activity colored by transaction type. Hover over days for details.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <TransactionCalendarHeatmap transactions={transactions} stats={stats} />
 
-        {/* Explanatory text */}
-        <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This calendar heatmap displays daily transaction activity across the selected time period. Each cell represents a single day, with colour intensity indicating transaction volume. Hover over individual days to see the number of transactions and total value, helping you identify seasonal patterns, reporting cycles, and periods of unusual activity.
-        </p>
+        {/* Explanatory text — only in expanded view */}
+        {isExpanded && (
+          <p className="text-body text-muted-foreground leading-relaxed mt-4">
+            This calendar heatmap displays daily transaction activity across the selected time period. Each cell represents a single day, with colour intensity indicating transaction volume. Hover over individual days to see the number of transactions and total value, helping you identify seasonal patterns, reporting cycles, and periods of unusual activity.
+          </p>
+        )}
       </CardContent>
     </Card>
   )

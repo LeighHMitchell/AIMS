@@ -19,7 +19,7 @@ export const ORGANIZATION_FIELD_HELP = {
 
 // Organization type options with descriptions
 export const ORGANIZATION_TYPES = [
-  { value: "10", label: "Government", description: "National governments (donor or recipient), including central aid coordination bodies." },
+  { value: "10", label: "Government", description: "National governments (development partner or recipient), including central aid coordination bodies." },
   { value: "11", label: "Local Government", description: "Sub-national public authorities such as provincial or municipal governments." },
   { value: "12", label: "Other Public Sector", description: "Government-linked bodies that are neither central nor local government." },
   { value: "21", label: "International NGO", description: "NGOs operating across countries or internationally affiliated." },
@@ -27,9 +27,9 @@ export const ORGANIZATION_TYPES = [
   { value: "23", label: "Partner Country based NGO", description: "Local CSOs and NGOs operating in the aid recipient country." },
   { value: "31", label: "Public Private Partnership", description: "Hybrid organisations involving both government and private sector." },
   { value: "60", label: "Foundation", description: "Philanthropic or grant-making organisations." },
-  { value: "71", label: "Private Sector in Provider Country", description: "Private companies from a donor/provider country." },
+  { value: "71", label: "Private Sector in Provider Country", description: "Private companies from a development partner/provider country." },
   { value: "72", label: "Private Sector in Aid Recipient Country", description: "Private companies operating in a recipient country." },
-  { value: "73", label: "Private Sector in Third Country", description: "Private companies from outside both donor and recipient countries." },
+  { value: "73", label: "Private Sector in Third Country", description: "Private companies from outside both development partner and recipient countries." },
   { value: "80", label: "Academic, Training and Research", description: "Universities, training centres, or research institutions." },
   { value: "40", label: "Multilateral", description: "Organisations with multiple member states (e.g., UN agencies, MDBs)." },
   { value: "30", label: "Regional Organisation", description: "Organisations representing a defined group of countries." },

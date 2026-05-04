@@ -1870,7 +1870,7 @@ export default function OrganizationProfilePage() {
                     </p>
                   </div>
                   <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-                    <p className="text-helper font-medium text-muted-foreground truncate">Donors</p>
+                    <p className="text-helper font-medium text-muted-foreground truncate">Development Partners</p>
                     <p className="text-3xl font-bold text-foreground">
                       {roleMetrics.uniqueDonors || 0}
                     </p>

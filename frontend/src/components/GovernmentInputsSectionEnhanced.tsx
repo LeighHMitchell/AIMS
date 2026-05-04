@@ -282,15 +282,15 @@ function getDimensionDetail(key: string): string {
     onPlan:
       "Select ‘Yes’ if this activity appears by name or reference code in the country’s national development plan, sector strategy, or multi-year investment plan. Select ‘Partial’ where the sector is reflected but the specific activity is not named. Select ‘No’ if the activity falls outside current national planning instruments.",
     onBudget:
-      "Select ‘Yes’ if the activity’s funds — whether contributed by the donor or the government — appear as a line item or identifiable reporting category in the formal national budget book approved by the legislature. ‘Partial’ applies where only a portion of the funds is reflected. ‘No’ means the funds are entirely off-budget.",
+      "Select ‘Yes’ if the activity’s funds — whether contributed by the development partner or the government — appear as a line item or identifiable reporting category in the formal national budget book approved by the legislature. ‘Partial’ applies where only a portion of the funds is reflected. ‘No’ means the funds are entirely off-budget.",
     onTreasury:
-      "Select ‘Yes’ if activity funds flow through the government’s Treasury Single Account (TSA) or equivalent central treasury system, meaning the government executes payments. ‘Partial’ if some funds move through the TSA while others use parallel accounts. ‘No’ if all funds are disbursed directly by the donor to implementers.",
+      "Select ‘Yes’ if activity funds flow through the government’s Treasury Single Account (TSA) or equivalent central treasury system, meaning the government executes payments. ‘Partial’ if some funds move through the TSA while others use parallel accounts. ‘No’ if all funds are disbursed directly by the development partner to implementers.",
     onParliament:
       "Select ‘Yes’ if the activity is specifically appropriated by the national parliament and reported in the end-of-year financial statements submitted to parliament. ‘Partial’ where only the sector-level appropriation is visible or reporting is incomplete. ‘No’ if the activity sits entirely outside parliamentary appropriation and reporting.",
     onProcurement:
-      "Select ‘Yes’ if goods, works, and services for the activity are procured through the country’s national procurement system, following national procurement laws, thresholds, and regulations. ‘Partial’ if a subset of procurement uses national systems. ‘No’ if all procurement is conducted using donor or agency procurement rules.",
+      "Select ‘Yes’ if goods, works, and services for the activity are procured through the country’s national procurement system, following national procurement laws, thresholds, and regulations. ‘Partial’ if a subset of procurement uses national systems. ‘No’ if all procurement is conducted using development partner or agency procurement rules.",
     onAudit:
-      "Select ‘Yes’ if activity expenditure is recorded in the government’s integrated financial management information system and audited by the Supreme Audit Institution under national audit standards. ‘Partial’ if only some financial flows are captured or audited by national systems. ‘No’ if accounting and audit are conducted entirely through donor or parallel systems.",
+      "Select ‘Yes’ if activity expenditure is recorded in the government’s integrated financial management information system and audited by the Supreme Audit Institution under national audit standards. ‘Partial’ if only some financial flows are captured or audited by national systems. ‘No’ if accounting and audit are conducted entirely through development partner or parallel systems.",
   };
   return detailTexts[key] || "";
 }
@@ -701,7 +701,7 @@ export function GovernmentInputsSectionEnhanced({
         {readOnly && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-muted border border-border text-body text-muted-foreground">
             <Info className="h-4 w-4 shrink-0" />
-            <span>This section is view-only. Government staff and donor partners can edit these fields.</span>
+            <span>This section is view-only. Government staff and development partners can edit these fields.</span>
           </div>
         )}
         {(!section || section === 'budget-classification') && (

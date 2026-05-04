@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,7 @@ import { toast } from "sonner";
 import { apiFetch } from '@/lib/api-fetch';
 import SDGIconHover from "@/components/ui/SDGIconHover";
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { ModalFooter } from '@/components/ui/modal-footer';
 
 // Alignment strength types
 type AlignmentStrength = 'primary' | 'secondary' | 'indirect';
@@ -397,7 +398,7 @@ export default function SDGAlignmentSection({
           <div className="text-lg font-semibold">
             Selected SDGs
           </div>
-          <div>
+          <TableContainer className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -498,7 +499,7 @@ export default function SDGAlignmentSection({
                 })}
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
         </div>
       )}
 
@@ -750,35 +751,14 @@ export default function SDGAlignmentSection({
                 </div>
               </div>
 
-              {/* Modal footer */}
-              <div className="flex items-center justify-between pt-2">
-                {canEdit && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeGoal(goalId)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Remove SDG</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setModalGoalId(null)}
-                  className={cn(!canEdit && "ml-auto")}
-                >
-                  <Save className="h-4 w-4 mr-1.5" />
-                  Save
-                </Button>
-              </div>
+              {/* Modal footer — delete is handled by the row trash icon, not here */}
+              <ModalFooter
+                className="pt-2"
+                onCancel={() => setModalGoalId(null)}
+                onSubmit={() => setModalGoalId(null)}
+                submitText="Update SDG Mapping"
+                isDisabled={!canEdit}
+              />
             </DialogContent>
           </Dialog>
         );

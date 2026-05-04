@@ -17,12 +17,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table'
 import { SectorMetrics, SectorAnalyticsFilters, SectorSortField, SortDirection } from '@/types/sector-analytics'
-import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search, FileImage } from 'lucide-react'
+import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search } from 'lucide-react'
 import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -323,55 +324,32 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
     )
   }
 
-  // Table-based tooltip matching Financial Overview style
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload
-      
-      // Filter out zero/null values and hidden series
-      const nonZeroPayload = payload.filter((entry: any) => 
+
+      const nonZeroPayload = payload.filter((entry: any) =>
         entry.value != null && entry.value !== 0 && !hiddenSeries.has(entry.dataKey)
       )
 
       if (nonZeroPayload.length === 0) return null
 
-      return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md">
-          <div className="bg-surface-muted px-4 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">
-              <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
-                {dataPoint.code}
-              </code>
-              {dataPoint.fullName}
-            </p>
-          </div>
-          <div className="overflow-y-auto max-h-[300px]">
-            <table className="w-full text-body">
-              <tbody>
-                {nonZeroPayload.map((entry: any, index: number) => (
-                  <tr key={index} className="border-b border-border last:border-b-0">
-                    <td className="py-2 px-4">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="text-foreground font-medium">{entry.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-2 px-4 text-right font-semibold text-foreground whitespace-nowrap">
-                      {entry.dataKey === 'projects' || entry.dataKey === 'partners' 
-                        ? entry.value.toLocaleString()
-                        : formatTooltipCurrency(entry.value)
-                      }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      const title = (
+        <span>
+          <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
+            {dataPoint.code}
+          </code>
+          {dataPoint.fullName}
+        </span>
       )
+      const rows = nonZeroPayload.map((entry: any) => ({
+        label: entry.name,
+        value: entry.dataKey === 'projects' || entry.dataKey === 'partners'
+          ? entry.value.toLocaleString()
+          : formatTooltipCurrency(entry.value),
+        color: entry.color,
+      }))
+      return <ChartTooltipCard title={title} rows={rows} maxWidth={460} />
     }
     return null
   }
@@ -401,30 +379,6 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }
-
-  // Export to JPG using html2canvas
-  const handleExportJPG = () => {
-    const chartElement = document.querySelector('#sector-analysis-chart') as HTMLElement
-    if (!chartElement) return
-
-    import('html2canvas').then(({ default: html2canvas }) => {
-      html2canvas(chartElement, {
-        backgroundColor: '#ffffff',
-        scale: 2
-      }).then(canvas => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.download = `sector-analysis-${new Date().getTime()}.jpg`
-            link.href = url
-            link.click()
-            URL.revokeObjectURL(url)
-          }
-        }, 'image/jpeg', 0.95)
-      })
-    })
   }
 
   const getLevelLabel = () => {
@@ -542,22 +496,24 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               {/* View Type Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setViewType('bar')}
-                  className={cn("h-8", viewType === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Bar"
+                  className={cn("h-8 w-8", viewType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                  title="Bar Chart"
+                  aria-label="Bar Chart"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setViewType('table')}
-                  className={cn("h-8", viewType === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Table"
+                  className={cn("h-8 w-8", viewType === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                  title="Table View"
+                  aria-label="Table View"
                 >
                   <TableIcon className="h-4 w-4" />
                 </Button>
@@ -640,28 +596,17 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               )}
             </div>
 
-            {/* Export Buttons */}
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportCSV}
-                className="h-8 px-2"
-                title="Export to CSV"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportJPG}
-                className="h-8 px-2"
-                title="Export to JPG"
-                disabled={viewType === 'table'}
-              >
-                <FileImage className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Export Button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleExportCSV}
+              className="h-9 w-9"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardHeader>

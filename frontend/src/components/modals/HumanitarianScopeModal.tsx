@@ -207,7 +207,7 @@ export function HumanitarianScopeModal({
           </Button>
           <Button onClick={handleSave} disabled={saving} className="bg-gunmetal hover:bg-gunmetal/90 text-white">
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : editingScope ? 'Update Humanitarian Scope' : 'Add Humanitarian Scope'}
           </Button>
         </DialogFooter>
       </DialogContent>

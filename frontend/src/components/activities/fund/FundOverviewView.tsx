@@ -161,7 +161,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
             <div className="flex items-center gap-6 justify-center">
               <div className="text-center">
                 <p className="text-2xl font-bold text-foreground">{data.donorCount}</p>
-                <p className="text-helper text-muted-foreground">Donors</p>
+                <p className="text-helper text-muted-foreground">Development Partners</p>
               </div>
               <div className="h-8 w-px bg-border" />
               <div className="text-center">
@@ -176,7 +176,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-medium text-helper">Top Donors</TableHead>
+                <TableHead className="font-medium text-helper">Top Development Partners</TableHead>
                 <TableHead className="font-medium text-helper text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>

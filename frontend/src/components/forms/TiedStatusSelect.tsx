@@ -18,13 +18,13 @@ const TIED_STATUS_OPTIONS = [
     code: "3",
     name: "Partially tied",
     description:
-      "Official Development Assistance for which the associated goods and services must be procured from a restricted number of countries, which must however include substantially all aid recipient countries and can include the donor country.",
+      "Official Development Assistance for which the associated goods and services must be procured from a restricted number of countries, which must however include substantially all aid recipient countries and can include the development partner country.",
   },
   {
     code: "4",
     name: "Tied",
     description:
-      "Official grants or loans where procurement of the goods or services involved is limited to the donor country or to a group of countries which does not include substantially all aid recipient countries.",
+      "Official grants or loans where procurement of the goods or services involved is limited to the development partner country or to a group of countries which does not include substantially all aid recipient countries.",
   },
 ];
 

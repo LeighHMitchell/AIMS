@@ -12,7 +12,7 @@ export function DonorCommitments({ donors }: DonorCommitmentsProps) {
   if (donors.length === 0) {
     return (
       <div className="text-body text-muted-foreground text-center py-4">
-        No donor commitments yet
+        No development partner commitments yet
       </div>
     )
   }

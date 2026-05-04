@@ -419,7 +419,7 @@ export default function SDGProfilePage() {
             </MiniChartCard>
 
             {/* Top Donors */}
-            <MiniChartCard title="Top Donors">
+            <MiniChartCard title="Top Development Partners">
                 {donorRankings.length > 0 ? (
                   <div className="h-36">
                     <ResponsiveContainer width="100%" height="100%">
@@ -452,7 +452,7 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No donor data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No development partner data</div>
                 )}
             </MiniChartCard>
 
@@ -604,7 +604,7 @@ export default function SDGProfilePage() {
 
             {/* ======== Donors ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-body font-medium">Donor Landscape</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-body font-medium">Development Partner Landscape</CardTitle></CardHeader>
               <CardContent>
                 <SDGDonorRankings donors={donorRankings} sdgColor={sdg.color} />
               </CardContent>

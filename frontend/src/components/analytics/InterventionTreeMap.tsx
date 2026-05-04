@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ZoomOut, Download, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ZoomOut, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 
 // Direction-based color palette (4 colors for interventions)
 const DIRECTION_COLORS: Record<string, string> = {
@@ -199,6 +200,7 @@ function ExpandableTextarea({
 }
 
 export function InterventionTreeMap() {
+  const chartIsExpanded = useChartExpansion();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 900, height: 600 });
@@ -211,7 +213,6 @@ export function InterventionTreeMap() {
   const [currentRoot, setCurrentRoot] = useState<d3.HierarchyRectangularNode<TreeMapNode> | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<string[]>(["Interventions"]);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
   // Editable data state
   const [tableData, setTableData] = useState<InterventionRow[]>(() => generateInitialData());
@@ -293,160 +294,6 @@ export function InterventionTreeMap() {
     },
     [dimensions]
   );
-
-  // Export to JPEG
-  const handleExportJPG = useCallback(() => {
-    if (isExporting) return;
-
-    setIsExporting(true);
-    setTooltip({ show: false, x: 0, y: 0, content: null });
-
-    setTimeout(() => {
-      try {
-        const root = createTreemap(treeMapData);
-        const displayRoot = currentRoot || root;
-        const nodes = displayRoot.descendants().filter((d) => d.depth > 0);
-
-        const { width, height } = dimensions;
-        const legendHeight = 50;
-        const padding = 24;
-        const scale = 2;
-
-        const canvas = document.createElement("canvas");
-        canvas.width = (width + padding * 2) * scale;
-        canvas.height = (height + legendHeight + padding * 2) * scale;
-
-        const ctx = canvas.getContext("2d")!;
-        ctx.scale(scale, scale);
-
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
-
-        ctx.font = "600 12px Arial, sans-serif";
-        ctx.fillStyle = "#475569";
-        ctx.fillText("Direction:", padding, padding + 14);
-
-        let legendX = padding + 70;
-        DIRECTION_LEVELS.forEach((level) => {
-          ctx.fillStyle = DIRECTION_COLORS[level];
-          ctx.fillRect(legendX, padding + 2, 16, 16);
-          ctx.strokeStyle = "#e2e8f0";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(legendX, padding + 2, 16, 16);
-          ctx.fillStyle = "#475569";
-          ctx.font = "500 11px Arial, sans-serif";
-          ctx.fillText(level, legendX + 20, padding + 14);
-          legendX += ctx.measureText(level).width + 45;
-        });
-
-        const offsetY = legendHeight + padding;
-
-        const getNodeColor = (d: d3.HierarchyRectangularNode<TreeMapNode>) => {
-          if (d.data.color) return d.data.color;
-          if (d.depth === 1) return LEVEL_1_COLOR;
-          if (d.depth === 2) return LEVEL_2_COLOR;
-          return LEVEL_2_COLOR;
-        };
-
-        const getTextColor = (bgColor: string) => {
-          const darkColors = ["#dc2625", "#52796f"];
-          return darkColors.includes(bgColor) ? "#ffffff" : "#1e293b";
-        };
-
-        const sortedNodes = [...nodes].sort((a, b) => a.depth - b.depth);
-
-        sortedNodes.forEach((d) => {
-          const x = d.x0 + padding;
-          const y = d.y0 + offsetY;
-          const w = d.x1 - d.x0;
-          const h = d.y1 - d.y0;
-          const color = getNodeColor(d);
-
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          const radius = 4;
-          ctx.moveTo(x + radius, y);
-          ctx.lineTo(x + w - radius, y);
-          ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-          ctx.lineTo(x + w, y + h - radius);
-          ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-          ctx.lineTo(x + radius, y + h);
-          ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-          ctx.lineTo(x, y + radius);
-          ctx.quadraticCurveTo(x, y, x + radius, y);
-          ctx.closePath();
-          ctx.fill();
-
-          ctx.strokeStyle = BORDER_COLOR;
-          ctx.lineWidth = d.depth === 1 ? 2 : 1;
-          ctx.stroke();
-
-          const textColor = getTextColor(color);
-          ctx.fillStyle = textColor;
-
-          if (d.children) {
-            if (w > 60) {
-              ctx.font = d.depth === 1 ? "700 14px Arial, sans-serif" : "600 12px Arial, sans-serif";
-              ctx.fillText(d.data.name, x + 6, y + 18);
-            }
-          } else {
-            if (w > 40 && h > 30) {
-              ctx.font = "500 11px Arial, sans-serif";
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-
-              const text = d.data.name;
-              const maxWidth = w - 12;
-              const lineHeight = 14;
-              const words = text.split(" ");
-              const lines: string[] = [];
-              let currentLine = "";
-
-              words.forEach((word) => {
-                const testLine = currentLine ? `${currentLine} ${word}` : word;
-                const metrics = ctx.measureText(testLine);
-                if (metrics.width > maxWidth && currentLine) {
-                  lines.push(currentLine);
-                  currentLine = word;
-                } else {
-                  currentLine = testLine;
-                }
-              });
-              if (currentLine) lines.push(currentLine);
-
-              const maxLines = Math.floor((h - 8) / lineHeight);
-              const displayLines = lines.slice(0, maxLines);
-              const totalHeight = displayLines.length * lineHeight;
-              const startY = y + (h - totalHeight) / 2 + lineHeight / 2;
-
-              displayLines.forEach((line, i) => {
-                ctx.fillText(line, x + w / 2, startY + i * lineHeight);
-              });
-
-              ctx.textAlign = "left";
-              ctx.textBaseline = "alphabetic";
-            }
-          }
-        });
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const downloadUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            const timestamp = new Date().toISOString().split("T")[0];
-            link.href = downloadUrl;
-            link.download = `intervention-treemap-${timestamp}.jpg`;
-            link.click();
-            URL.revokeObjectURL(downloadUrl);
-          }
-          setIsExporting(false);
-        }, "image/jpeg", 0.95);
-      } catch (error) {
-        console.error("Export failed:", error);
-        setIsExporting(false);
-      }
-    }, 100);
-  }, [isExporting, createTreemap, treeMapData, currentRoot, dimensions]);
 
   // Draw the treemap with animations
   useEffect(() => {
@@ -708,16 +555,6 @@ export function InterventionTreeMap() {
               Zoom Out
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportJPG}
-            disabled={isExporting}
-            className="flex items-center gap-1"
-          >
-            <Download className="h-4 w-4" />
-            {isExporting ? "Exporting..." : "Export JPEG"}
-          </Button>
         </div>
       </div>
 
@@ -799,11 +636,11 @@ export function InterventionTreeMap() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted">
-                  <TableHead className="w-[130px] text-left">Violence Type</TableHead>
-                  <TableHead className="w-[140px] text-left">Intervention Type</TableHead>
-                  <TableHead className="w-[220px] text-left">Intervention Name</TableHead>
-                  <TableHead className="w-[90px]">Sample Size</TableHead>
+                <TableRow className="sticky top-0 bg-muted z-10 [&>th]:align-bottom">
+                  <TableHead className="w-[130px] text-left whitespace-normal">Violence Type</TableHead>
+                  <TableHead className="w-[140px] text-left whitespace-normal">Intervention Type</TableHead>
+                  <TableHead className="w-[220px] text-left whitespace-normal">Intervention Name</TableHead>
+                  <TableHead className="w-[90px] whitespace-normal">Sample Size</TableHead>
                   <TableHead className="w-[160px]">Direction</TableHead>
                   <TableHead className="min-w-[250px]">Description</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -938,10 +775,12 @@ export function InterventionTreeMap() {
         </p>
       </div>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This tree map visualises intervention areas as nested blocks, where the size of each block reflects the sample size or value of that intervention. Click on any parent block to zoom in and explore sub-categories, and use the breadcrumb trail to navigate back. The editable table below allows you to adjust the data directly and see changes reflected in the visualisation in real time.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {chartIsExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This tree map visualises intervention areas as nested blocks, where the size of each block reflects the sample size or value of that intervention. Click on any parent block to zoom in and explore sub-categories, and use the breadcrumb trail to navigate back. The editable table below allows you to adjust the data directly and see changes reflected in the visualisation in real time.
+        </p>
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -488,7 +489,7 @@ export function ConditionsTab({
               disabled={!newCondition.narrative.trim() || isCreating}
             >
               <Save className="h-4 w-4 mr-2" />
-              {isCreating ? 'Saving...' : 'Save Condition'}
+              {isCreating ? 'Saving...' : 'Add Condition'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -542,7 +543,7 @@ export function ConditionsTab({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
+            <TableContainer>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -644,7 +645,7 @@ export function ConditionsTab({
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </TableContainer>
           </CardContent>
         </Card>
       )}

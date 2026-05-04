@@ -840,7 +840,7 @@ export function ResultsTab({
             <TabsContent value="overview" className="space-y-6">
           {/* Simple Results List */}
               {filteredResults.map((result: ActivityResult, index: number) => (
-            <div key={result.id} className="bg-white rounded-lg border-2 border-border p-6">
+            <div key={result.id} className="bg-card rounded-xl border-2 border-border p-6">
               {/* Result Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -1853,7 +1853,7 @@ export function ResultsTab({
 
             {/* Timeline View Tab */}
             <TabsContent value="timeline" className="space-y-6">
-              <div className="bg-white rounded-lg border p-6">
+              <div className="bg-card rounded-xl border p-6">
                 <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   Results Progress Over Time
@@ -2049,7 +2049,7 @@ export function ResultsTab({
             <TabsContent value="charts" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Status Distribution */}
-                <div className="bg-white rounded-lg border p-6">
+                <div className="bg-card rounded-xl border p-6">
                   <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <PieChart className="h-5 w-5" />
                     Results Status Distribution
@@ -2083,7 +2083,7 @@ export function ResultsTab({
                 </div>
 
                 {/* Result Type Distribution */}
-                <div className="bg-white rounded-lg border p-6">
+                <div className="bg-card rounded-xl border p-6">
                   <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
                     Result Types
@@ -2111,7 +2111,7 @@ export function ResultsTab({
 
             {/* Data Table Tab */}
             <TabsContent value="table" className="space-y-6">
-              <div className="bg-white rounded-lg border">
+              <div className="bg-card rounded-xl border">
                 <div className="p-6 border-b">
                   <h4 className="text-lg font-semibold flex items-center gap-2">
                     <TableIcon className="h-5 w-5" />

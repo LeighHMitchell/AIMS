@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, PieChart, Table2, ChevronDown, ChevronRight, Download, CalendarIcon } from "lucide-react";
+import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, PieChart, Table as TableIcon, ChevronDown, ChevronRight, Download, CalendarIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1001,10 +1001,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
             <p className="text-body text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchData} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -1016,6 +1012,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   return (
     <Card className="bg-card border-border">
       <CardHeader>
+        {chartIsExpanded && (
         <div className="flex items-end justify-end gap-3">
           {/* Year Range Selector */}
           <div className="flex gap-1 border rounded-lg p-1 bg-white">
@@ -1122,30 +1119,33 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             <RefreshCw className="h-4 w-4" />
           </Button>
           {/* View Toggle */}
-          <div className="flex items-center gap-1 rounded-lg p-1 bg-muted">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setViewMode("chart")}
-              className={cn(viewMode === "chart" ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", viewMode === "chart" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Chart View"
+              aria-label="Chart View"
             >
               <PieChart className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setViewMode("table")}
-              className={cn(viewMode === "table" ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
+              aria-label="Table View"
             >
-              <Table2 className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={exportToCSV} variant="outline" size="icon" title="Export CSV" aria-label="Export CSV">
+          <Button onClick={exportToCSV} variant="outline" size="icon" className="h-9 w-9" title="Export CSV" aria-label="Export CSV">
             <Download className="h-4 w-4" />
           </Button>
         </div>
+        )}
       </CardHeader>
       <CardContent>
         {/* Summary Cards - Monochrome with white background */}
@@ -1286,15 +1286,15 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted">
+                    <TableRow className="sticky top-0 bg-muted z-10 [&>th]:align-bottom">
                       <TableHead className="w-8"></TableHead>
                       <TableHead className="font-medium">Classification</TableHead>
-                      <TableHead className="font-medium text-right">Domestic Spending</TableHead>
-                      <TableHead className="font-medium text-right">Aid on Budget</TableHead>
-                      <TableHead className="font-medium text-right">Aid off Budget</TableHead>
-                      <TableHead className="font-medium text-right">On-Budget Total</TableHead>
-                      <TableHead className="font-medium text-right">Grand Total</TableHead>
-                      <TableHead className="font-medium text-right">Aid Share</TableHead>
+                      <TableHead className="font-medium text-right whitespace-normal">Domestic Spending</TableHead>
+                      <TableHead className="font-medium text-right whitespace-normal">Aid on Budget</TableHead>
+                      <TableHead className="font-medium text-right whitespace-normal">Aid off Budget</TableHead>
+                      <TableHead className="font-medium text-right whitespace-normal">On-Budget Total</TableHead>
+                      <TableHead className="font-medium text-right whitespace-normal">Grand Total</TableHead>
+                      <TableHead className="font-medium text-right whitespace-normal">Aid Share</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1454,10 +1454,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             )}
           </div>
         )}
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart analyses how aid spending aligns with government budget classifications, distinguishing between on-budget aid that flows through national systems, off-budget aid managed outside them, and domestic expenditure. Use the classification selector to switch between COFOG, programme, and other frameworks, and expand individual rows to see which activities contribute to each category.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {chartIsExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart analyses how aid spending aligns with government budget classifications, distinguishing between on-budget aid that flows through national systems, off-budget aid managed outside them, and domestic expenditure. Use the classification selector to switch between COFOG, programme, and other frameworks, and expand individual rows to see which activities contribute to each category.
+        </p>
+      )}
       </CardContent>
     </Card>
   );

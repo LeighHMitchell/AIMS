@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -14,9 +14,8 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Info, CalendarIcon, Download, FileImage, BarChart3, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, Info, CalendarIcon, Download, BarChart3, Table as TableIcon } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import html2canvas from 'html2canvas'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -31,6 +30,7 @@ import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
 // Colour palette as specified
 const COLOURS = {
@@ -115,7 +115,6 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   const [commitments, setCommitments] = useState<Commitment[]>([])
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set(['cumulativePlannedDisbursements', 'cumulativeCommitments']))
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
-  const chartRef = useRef<HTMLDivElement>(null)
 
   // Which series to compare against perfect spend (only one at a time)
   const [comparisonSeries, setComparisonSeries] = useState<'cumulativeDisbursements' | 'cumulativePlannedDisbursements' | 'cumulativeCommitments'>('cumulativeDisbursements')
@@ -634,32 +633,6 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
     URL.revokeObjectURL(url)
   }
 
-  // Export to JPG
-  const handleExportJPG = async () => {
-    const chartElement = chartRef.current
-    if (!chartElement) return
-
-    try {
-      const canvas = await html2canvas(chartElement, {
-        backgroundColor: '#ffffff',
-        scale: 2
-      })
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.download = `portfolio-spend-trajectory-${new Date().getTime()}.jpg`
-          link.href = url
-          link.click()
-          URL.revokeObjectURL(url)
-        }
-      }, 'image/jpeg', 0.95)
-    } catch (error) {
-      console.error('Error exporting chart:', error)
-    }
-  }
-
-  // Custom tooltip matching Financial Overview style
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0]?.payload
@@ -672,56 +645,22 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       const perfectSpend = dataPoint?.perfectSpend || 0
       const comparisonValue = dataPoint?.[comparisonSeries] || 0
       const variance = comparisonValue - perfectSpend
-
-      return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
-          </div>
-          <div className="p-2">
-            <table className="w-full text-body">
-              <tbody>
-                <tr className="border-b border-border">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: COLOURS.coolSteel }}
-                    />
-                    <span className="text-foreground font-medium">Even-spend baseline</span>
-                  </td>
-                  <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(perfectSpend)}
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: getComparisonColor() }}
-                    />
-                    <span className="text-foreground font-medium capitalize">{getComparisonLabel()}</span>
-                  </td>
-                  <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(comparisonValue)}
-                  </td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
-                    <div className="w-3 h-3 flex-shrink-0" />
-                    <span className="text-foreground font-medium">Gap to baseline</span>
-                  </td>
-                  <td
-                    className="py-1.5 text-right font-semibold"
-                    style={{ color: variance >= 0 ? '#16a34a' : '#dc2626' }}
-                  >
-                    {Math.abs(variance) < 1 ? '—' : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      const varianceColor = variance >= 0 ? '#16a34a' : '#dc2626'
+      const varianceValue = (
+        <span style={{ color: varianceColor }}>
+          {Math.abs(variance) < 1
+            ? '—'
+            : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
+        </span>
       )
+
+      const rows = [
+        { label: 'Even-spend baseline', value: formatTooltipCurrency(perfectSpend), color: COLOURS.coolSteel },
+        { label: <span className="capitalize">{getComparisonLabel()}</span>, value: formatTooltipCurrency(comparisonValue), color: getComparisonColor(), bordered: true },
+        { label: 'Gap to baseline', value: varianceValue },
+      ]
+
+      return <ChartTooltipCard title={formattedDate} rows={rows} />
     }
     return null
   }
@@ -912,7 +851,14 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                 <div className="flex gap-1 border rounded-lg p-1 bg-white">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1"
+                        title={effectiveDateRange?.from && effectiveDateRange?.to
+                          ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(effectiveDateRange.to, 'MMM d, yyyy')}`
+                          : undefined}
+                      >
                         <CalendarIcon className="h-4 w-4" />
                         {selectedYears.length === 0
                           ? 'Select years'
@@ -976,12 +922,6 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                {/* Date Range Indicator */}
-                {effectiveDateRange?.from && effectiveDateRange?.to && (
-                  <span className="text-helper text-muted-foreground text-center">
-                    {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
-                  </span>
-                )}
               </div>
             </>
           )}
@@ -990,53 +930,46 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         {/* Right side - View Toggle & Export Buttons */}
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setViewMode('chart')}
-              className={cn("h-8", viewMode === 'chart' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              title="Chart view"
+              className={cn("h-8 w-8", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Chart View"
+              aria-label="Chart View"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setViewMode('table')}
-              className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              title="Table view"
+              className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Table View"
+              aria-label="Table View"
             >
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Export Buttons */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          {/* Export Button */}
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleExportCSV}
-              className="h-8 px-2"
-              title="Export to CSV"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
             >
               <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleExportJPG}
-              className="h-8 px-2"
-              title="Export to JPG"
-              disabled={viewMode === 'table'}
-            >
-              <FileImage className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div ref={chartRef}>
+      <div>
         {viewMode === 'chart' ? (
           <ResponsiveContainer width="100%" height={400}>
           <ComposedChart 

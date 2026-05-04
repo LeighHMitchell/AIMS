@@ -114,7 +114,7 @@ export default function TransparencyIndexPage() {
         }
       } catch (error) {
         console.error("Error fetching donor rankings:", error)
-        setDonorError(error instanceof Error ? error.message : 'Failed to fetch donor rankings')
+        setDonorError(error instanceof Error ? error.message : 'Failed to fetch development partner rankings')
       } finally {
         setIsLoadingDonors(false)
       }
@@ -182,7 +182,7 @@ export default function TransparencyIndexPage() {
       <Tabs defaultValue="projects" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
           <TabsTrigger value="projects">All Projects</TabsTrigger>
-          <TabsTrigger value="donors">Donor Rankings</TabsTrigger>
+          <TabsTrigger value="donors">Development Partner Rankings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="space-y-8">
@@ -339,7 +339,7 @@ export default function TransparencyIndexPage() {
           {/* Top Donors Chart */}
           {!isLoadingDonors && !donorError && donors.length > 0 && (
             <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
-              <h3 className="text-lg font-semibold mb-6">Top 10 Donors by Average Score</h3>
+              <h3 className="text-lg font-semibold mb-6">Top 10 Development Partners by Average Score</h3>
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
@@ -410,7 +410,7 @@ export default function TransparencyIndexPage() {
             ) : donorError ? (
               <div className="p-8 text-center">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-yellow-800 font-medium mb-2">Unable to load donor rankings</p>
+                  <p className="text-yellow-800 font-medium mb-2">Unable to load development partner rankings</p>
                   <p className="text-body text-yellow-700">{donorError}</p>
                   <p className="text-helper text-yellow-600 mt-2">
                     Make sure the database migrations have been run and that activities have reporting_org_id set.
@@ -420,7 +420,7 @@ export default function TransparencyIndexPage() {
             ) : donors.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                <p className="font-medium">No donor data available</p>
+                <p className="font-medium">No development partner data available</p>
                 <p className="text-body mt-1">Organizations will appear here once they have activities with transparency scores.</p>
                 <p className="text-helper mt-2 text-muted-foreground">
                   Tip: Activities need a reporting_org_id to appear in donor rankings.

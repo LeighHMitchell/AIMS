@@ -14,7 +14,7 @@ const audienceTypes = [
   {
     icon: Globe,
     label: "Development Partners",
-    description: "Bilateral and multilateral donors, implementing organisations",
+    description: "Bilateral and multilateral development partners, implementing organisations",
   },
   {
     icon: Users,

@@ -14,12 +14,12 @@ const faqs = [
   {
     question: "How does this system differ from a traditional aid database?",
     answer:
-      "Unlike traditional aid databases that primarily store historical data, this DFMIS is an active management tool. It supports real-time data entry, validation workflows, multi-stakeholder collaboration, and automated reporting. It's designed for operational use by both government and donor staff, not just for archival or retrospective analysis.",
+      "Unlike traditional aid databases that primarily store historical data, this DFMIS is an active management tool. It supports real-time data entry, validation workflows, multi-stakeholder collaboration, and automated reporting. It's designed for operational use by both government and development partner staff, not just for archival or retrospective analysis.",
   },
   {
     question: "Who can access the system?",
     answer:
-      "Access is role-based and determined by the system administrator. Typically, government officials, donor representatives, and implementing partners receive accounts with permissions appropriate to their responsibilities. Certain aggregate data and reports may also be made publicly available to support transparency objectives.",
+      "Access is role-based and determined by the system administrator. Typically, government officials, development partner representatives, and implementing partners receive accounts with permissions appropriate to their responsibilities. Certain aggregate data and reports may also be made publicly available to support transparency objectives.",
   },
   {
     question: "What data is public versus restricted?",

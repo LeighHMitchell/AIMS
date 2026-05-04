@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/format';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
@@ -474,10 +474,6 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
             <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
             <p className="text-body text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchData} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
           </div>
         </CardContent>
       </Card>

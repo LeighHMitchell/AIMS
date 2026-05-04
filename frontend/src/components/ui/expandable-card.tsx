@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Maximize2, Download, Table as TableIcon, BarChart3 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import { ChartExpansionProvider } from '@/lib/chart-expansion-context'
@@ -27,6 +28,12 @@ interface ExpandableCardProps {
   exportFilename?: string
   onExport?: () => void
   hideViewToggle?: boolean
+  /**
+   * Optional explanation of the math/calculations behind this chart. When
+   * provided, a small ƒ icon renders next to the title; hovering it shows
+   * the explanation in a tooltip.
+   */
+  mathTooltip?: React.ReactNode
 }
 
 export function ExpandableCard({
@@ -38,7 +45,8 @@ export function ExpandableCard({
   exportData,
   exportFilename,
   onExport,
-  hideViewToggle = false
+  hideViewToggle = false,
+  mathTooltip,
 }: ExpandableCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
@@ -142,39 +150,34 @@ export function ExpandableCard({
                 )
               )}
             </div>
-            <div className="flex items-center gap-1">
-              {!hideViewToggle && exportData && exportData.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
-                  className="h-8 w-8 p-0 hover:bg-muted"
-                  title={viewMode === 'chart' ? 'View as table' : 'View as chart'}
-                >
-                  {viewMode === 'chart' ? (
-                    <TableIcon className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              )}
-              {(exportData || onExport) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExport}
-                  className="h-8 w-8 p-0 hover:bg-muted"
-                  title="Export to CSV"
-                >
-                  <Download className="h-4 w-4 text-muted-foreground" />
-                </Button>
+            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+              {/* Math icon, then expand. Table-toggle / download show only
+                  in the expanded Dialog. */}
+              {mathTooltip && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Calculation details"
+                        className="h-8 w-8 inline-flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors font-serif text-helper leading-none"
+                      >
+                        <span className="italic">ƒ</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-sm whitespace-normal text-body">
+                      {mathTooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
+                size="icon"
                 onClick={() => setIsExpanded(true)}
-                className="h-8 w-8 p-0 hover:bg-muted"
+                className="h-8 w-8"
                 title="Expand to full screen"
+                aria-label="Expand to full screen"
               >
                 <Maximize2 className="h-4 w-4 text-muted-foreground" />
               </Button>
@@ -189,7 +192,10 @@ export function ExpandableCard({
       </Card>
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-7xl w-[95vw] max-h-[95vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-7xl w-[95vw] max-h-[95vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
@@ -211,6 +217,24 @@ export function ExpandableCard({
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {mathTooltip && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Calculation details"
+                          className="h-9 w-9 inline-flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors font-serif text-base leading-none"
+                        >
+                          <span className="italic">ƒ</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-md whitespace-normal text-body">
+                        {mathTooltip}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 {!hideViewToggle && exportData && exportData.length > 0 && (
                   <Button
                     variant="outline"

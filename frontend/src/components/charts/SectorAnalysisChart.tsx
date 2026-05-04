@@ -19,6 +19,7 @@ import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
 interface SectorData {
   sectorCode: string;
@@ -96,20 +97,21 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
     return `$${value.toFixed(0)}`;
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const rows = [
+        { label: 'Activities', value: String(data.activityCount), color: '#94a3b8' },
+        { label: 'Budget', value: `${formatCurrency(data.totalBudget)} (${data.budgetPercentage.toFixed(1)}%)`, color: '#4c5568' },
+        { label: 'Disbursements', value: `${formatCurrency(data.totalDisbursements)} (${data.disbursementPercentage.toFixed(1)}%)`, color: '#7b95a7' },
+        { label: 'Expenditures', value: `${formatCurrency(data.totalExpenditures)} (${data.expenditurePercentage.toFixed(1)}%)`, color: '#cfd0d5' },
+      ];
       return (
-        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground mb-2">{data.sectorName}</p>
-          <p className="text-helper text-muted-foreground mb-2">Code: {data.sectorCode}</p>
-          <p className="text-body text-muted-foreground">Activities: {data.activityCount}</p>
-          <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-body text-blue-600">Budget: {formatCurrency(data.totalBudget)} ({data.budgetPercentage.toFixed(1)}%)</p>
-            <p className="text-body text-green-600">Disbursements: {formatCurrency(data.totalDisbursements)} ({data.disbursementPercentage.toFixed(1)}%)</p>
-            <p className="text-body text-orange-600">Expenditures: {formatCurrency(data.totalExpenditures)} ({data.expenditurePercentage.toFixed(1)}%)</p>
-          </div>
-        </div>
+        <ChartTooltipCard
+          title={data.sectorName}
+          subtitle={data.sectorCode ? `Code: ${data.sectorCode}` : undefined}
+          rows={rows}
+        />
       );
     }
     return null;
@@ -285,7 +287,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
               }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="displayValue" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="displayValue" fill="#4c5568" radius={[4, 4, 0, 0]} />
           </BarChart>
         )}
       </ResponsiveContainer>

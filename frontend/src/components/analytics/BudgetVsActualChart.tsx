@@ -19,6 +19,8 @@ import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
 import {
   splitBudgetAcrossYears,
   splitTransactionAcrossYears
@@ -53,6 +55,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
   const allocationMethod: 'proportional' | 'period-start' = 'proportional' // Always use proportional
 
   useEffect(() => {
@@ -245,35 +248,12 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
-          <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground">{label}</p>
-          </div>
-          <div className="p-3">
-            <table className="w-full text-body">
-              <tbody>
-                {payload.map((entry: any, index: number) => (
-                  <tr key={index}>
-                    <td className="py-1 pr-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: entry.color || entry.fill }}
-                        />
-                        <span className="text-foreground">{entry.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-1 text-right font-semibold text-foreground">
-                      {formatTooltipCurrency(Number(entry.value) || 0, isExpanded)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipCurrency(Number(entry.value) || 0, isExpanded),
+        color: entry.color || entry.fill,
+      }))
+      return <ChartTooltipCard title={label} rows={rows} />
     }
     return null
   }
@@ -286,43 +266,49 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
 
   return (
     <div className="space-y-4">
-      {/* Aggregation Mode Selector */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-            <SelectTrigger className="w-48 h-9 bg-white border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="calendar">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Calendar Year
-                </div>
-              </SelectItem>
-              <SelectItem value="fiscal">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-3 w-3" />
-                  Financial Year
-                </div>
-              </SelectItem>
-              <SelectItem value="quarter">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-3 w-3" />
-                  Quarterly
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-        </div>
-
-        {groupBy === 'fiscal' && (
-          <div className="text-helper text-muted-foreground">
-            Financial Year: July–June
+      {/* Aggregation Mode Selector — only shown in expanded view */}
+      {isExpanded && (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <YearRangeChip
+              selectedYears={selectedYears}
+              onYearsChange={setSelectedYears}
+              initialDateRange={dateRange}
+            />
+            <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
+              <SelectTrigger className="min-w-[280px] h-9 bg-white border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="calendar">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3 w-3" />
+                    Calendar Year
+                  </div>
+                </SelectItem>
+                <SelectItem value="fiscal">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-3 w-3" />
+                    Financial Year
+                  </div>
+                </SelectItem>
+                <SelectItem value="quarter">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-3 w-3" />
+                    Quarterly
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
-      </div>
+
+          {groupBy === 'fiscal' && (
+            <div className="text-helper text-muted-foreground">
+              Financial Year: July–June
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={400}>
@@ -386,10 +372,12 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart compares planned budgets against actual disbursements and expenditures for each period. Bars that fall short of the budget indicate under-spending, while those exceeding it suggest budget overruns. Use the period selector to switch between calendar year, financial year, and quarterly views to identify trends in budget execution.
-      </p>
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart compares planned budgets against actual disbursements and expenditures for each period. Bars that fall short of the budget indicate under-spending, while those exceeding it suggest budget overruns. Use the period selector to switch between calendar year, financial year, and quarterly views to identify trends in budget execution.
+        </p>
+      )}
     </div>
   )
 } 

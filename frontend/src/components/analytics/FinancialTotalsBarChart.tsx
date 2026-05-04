@@ -16,7 +16,7 @@ import {
   Legend,
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table2 } from 'lucide-react'
+import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table as TableIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   DropdownMenu,
@@ -58,21 +58,21 @@ import {
   type FiscalYearAllocation
 } from '@/utils/year-allocation'
 
-// Transaction type mapping (IATI Standard v2.03)
+// Transaction type mapping (IATI Standard v2.03) — plural forms for chart labels.
 const TRANSACTION_TYPES: Record<string, string> = {
   '1': 'Incoming Funds',
-  '2': 'Outgoing Commitment',
-  '3': 'Disbursement',
-  '4': 'Expenditure',
-  '5': 'Interest Payment',
-  '6': 'Loan Repayment',
-  '7': 'Reimbursement',
-  '8': 'Purchase of Equity',
-  '9': 'Sale of Equity',
-  '10': 'Credit Guarantee',
-  '11': 'Incoming Commitment',
-  '12': 'Outgoing Pledge',
-  '13': 'Incoming Pledge',
+  '2': 'Outgoing Commitments',
+  '3': 'Disbursements',
+  '4': 'Expenditures',
+  '5': 'Interest Payments',
+  '6': 'Loan Repayments',
+  '7': 'Reimbursements',
+  '8': 'Purchases of Equity',
+  '9': 'Sales of Equity',
+  '10': 'Credit Guarantees',
+  '11': 'Incoming Commitments',
+  '12': 'Outgoing Pledges',
+  '13': 'Incoming Pledges',
 }
 
 // Fixed color assignments for always-visible categories
@@ -156,6 +156,15 @@ export function FinancialTotalsBarChart({
   } | null>(null)
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursements
   const [chartType, setChartType] = useState<ChartType>('bar')
+  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
+  const toggleSeries = (key: string) => {
+    setHiddenSeries(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   // Calendar type and year selection state
   const [calendarType, setCalendarType] = useState<string>('')
@@ -636,15 +645,37 @@ export function FinancialTotalsBarChart({
     const { payload } = props
     return (
       <ul className="flex flex-wrap justify-center gap-4 mt-4">
-        {payload.map((entry: any, index: number) => (
-          <li key={`item-${index}`} className="flex items-center gap-2">
-            <span
-              className="w-3 h-3 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-body text-foreground">{entry.value}</span>
-          </li>
-        ))}
+        {payload.map((entry: any, index: number) => {
+          const seriesKey = entry.dataKey || entry.value
+          const isHidden = hiddenSeries.has(seriesKey)
+          return (
+            <li
+              key={`item-${index}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleSeries(seriesKey)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  toggleSeries(seriesKey)
+                }
+              }}
+              title={isHidden ? 'Click to show' : 'Click to hide'}
+              className={cn(
+                'flex items-center gap-2 cursor-pointer select-none transition-opacity',
+                isHidden ? 'opacity-40' : 'opacity-100'
+              )}
+            >
+              <span
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className={cn('text-body text-foreground', isHidden && 'line-through')}>
+                {entry.value}
+              </span>
+            </li>
+          )
+        })}
       </ul>
     )
   }
@@ -758,6 +789,7 @@ export function FinancialTotalsBarChart({
                 strokeWidth={2}
                 dot={{ fill: colorMap[key], r: 4 }}
                 activeDot={{ r: 6 }}
+                hide={hiddenSeries.has(key)}
               />
             ))}
           </LineChart>
@@ -792,6 +824,7 @@ export function FinancialTotalsBarChart({
                 strokeWidth={2}
                 fill={`url(#color-${key.replace(/\s+/g, '')})`}
                 fillOpacity={0.6}
+                hide={hiddenSeries.has(key)}
               />
             ))}
           </AreaChart>
@@ -815,6 +848,7 @@ export function FinancialTotalsBarChart({
               name={key}
               fill={colorMap[key]}
               radius={[4, 4, 0, 0]}
+              hide={hiddenSeries.has(key)}
             />
           ))}
         </BarChart>
@@ -920,7 +954,14 @@ export function FinancialTotalsBarChart({
               <div className="flex gap-1 border rounded-lg p-1 bg-card">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1"
+                      title={effectiveDateRange?.from && effectiveDateRange?.to
+                        ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(effectiveDateRange.to, 'MMM d, yyyy')}`
+                        : undefined}
+                    >
                       <CalendarIcon className="h-4 w-4" />
                       {selectedYears.length === 0
                         ? 'Select years'
@@ -972,12 +1013,6 @@ export function FinancialTotalsBarChart({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              {/* Date Range Indicator */}
-              {effectiveDateRange?.from && effectiveDateRange?.to && (
-                <span className="text-helper text-muted-foreground text-center">
-                  {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
-                </span>
-              )}
             </div>
           </>
         )}
@@ -1027,53 +1062,58 @@ export function FinancialTotalsBarChart({
             </DropdownMenuContent>
           </DropdownMenu>
           {/* Chart Type Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-muted">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartType('bar')}
-              className={cn("h-8", chartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Bar Chart"
+              aria-label="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartType('line')}
-              className={cn("h-8", chartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartType === 'line' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Line Chart"
+              aria-label="Line Chart"
             >
               <LineChartIcon className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartType('area')}
-              className={cn("h-8", chartType === 'area' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartType === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Area Chart"
+              aria-label="Area Chart"
             >
               <TrendingUp className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChartType('table')}
-              className={cn("h-8", chartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8", chartType === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
+              aria-label="Table View"
             >
-              <Table2 className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Export Button */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-card">
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleExportCSV}
-              className="h-8 px-2"
-              title="Export to CSV"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title="Export CSV"
+              aria-label="Export CSV"
             >
               <Download className="h-4 w-4" />
             </Button>

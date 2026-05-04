@@ -1153,7 +1153,7 @@ export function EnhancedSubnationalBreakdown({
 
             {/* Percentage Allocation Table */}
             {organizedEntries.length > 0 ? (
-              <div className="rounded-lg overflow-hidden border border-input shadow-sm">
+              <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>

@@ -16,7 +16,6 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { exportChartToJPG } from '@/lib/chart-export'
 import {
   Table,
   TableBody,
@@ -66,12 +65,12 @@ interface SankeyData {
 type ViewMode = 'sankey' | 'table'
 type MetricMode = 'count' | 'value'
 
-// Role colors - custom palette
+// Role colors — slate-only ramp aligned with the rest of the dashboard.
 const ROLE_COLORS: Record<number, string> = {
-  1: '#dc2625', // Funding - Primary Scarlet
-  3: '#4c5568', // Extending - Blue Slate
-  2: '#7b95a7', // Accountable - Cool Steel
-  4: '#cfd0d5', // Implementing - Pale Slate
+  1: '#334155', // Funding — slate-700
+  3: '#4c5568', // Extending — Blue Slate
+  2: '#7b95a7', // Accountable — Cool Steel
+  4: '#cfd0d5', // Implementing — Pale Slate
 }
 
 const ROLE_LABELS: Record<number, string> = {
@@ -82,7 +81,7 @@ const ROLE_LABELS: Record<number, string> = {
 }
 
 const ROLE_DESCRIPTIONS: Record<number, string> = {
-  1: 'Donors / Financing Providers',
+  1: 'Development Partners / Financing Providers',
   3: 'Implementers',
   2: 'Contract Holders',
   4: 'Executing Partners',
@@ -95,7 +94,6 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
   const [viewMode, setViewMode] = useState<ViewMode>('sankey')
   const [metricMode, setMetricMode] = useState<MetricMode>('count')
   const [hoveredLink, setHoveredLink] = useState<string | null>(null)
-  const chartRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
   const fetchData = useCallback(async () => {
@@ -186,12 +184,6 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }, [data, viewMode])
-
-  const handleExportJPG = useCallback(() => {
-    if (chartRef.current) {
-      exportChartToJPG(chartRef.current, 'participating-orgs-sankey')
-    }
-  }, [])
 
   // Calculate Sankey layout using d3-sankey
   const sankeyLayout = useMemo(() => {
@@ -370,46 +362,13 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {roleOrder.map((role) => {
-          const count = role === 1 ? data.summary.byRole.funding
-            : role === 2 ? data.summary.byRole.accountable
-            : role === 3 ? data.summary.byRole.extending
-            : data.summary.byRole.implementing
-
-          return (
-            <Card key={role} className="bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: ROLE_COLORS[role] }}
-                  />
-                  <span className="text-body font-medium text-foreground">
-                    {ROLE_LABELS[role]}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{count}</p>
-                <p className="text-helper text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
       {/* Main Chart Card */}
       <ExpandableCard
-        title={
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            <span>Organization Role Flow</span>
-          </div>
-        }
+        title="Organization Role Flow"
         description="Flow of participating organizations across IATI roles: Funding → Extending → Accountable → Implementing"
         exportData={data.links}
       >
-        <div ref={chartRef} className="space-y-4">
+        <div className="space-y-4">
           {/* Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
             <div className="flex items-center gap-2">
@@ -459,10 +418,6 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
               <Button variant="outline" size="sm" onClick={handleExportCSV}>
                 <Download className="h-4 w-4 mr-1" />
                 CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportJPG}>
-                <Download className="h-4 w-4 mr-1" />
-                JPG
               </Button>
             </div>
           </div>
@@ -608,14 +563,14 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Source Organization</TableHead>
-                    <TableHead>Source Role</TableHead>
-                    <TableHead>Target Organization</TableHead>
-                    <TableHead>Target Role</TableHead>
+                  <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
+                    <TableHead className="whitespace-normal">Source Organization</TableHead>
+                    <TableHead className="whitespace-normal">Source Role</TableHead>
+                    <TableHead className="whitespace-normal">Target Organization</TableHead>
+                    <TableHead className="whitespace-normal">Target Role</TableHead>
                     <TableHead className="text-right">Activities</TableHead>
                     {metricMode === 'value' && (
-                      <TableHead className="text-right">Budget Value</TableHead>
+                      <TableHead className="text-right whitespace-normal">Budget Value</TableHead>
                     )}
                   </TableRow>
                 </TableHeader>
@@ -697,11 +652,6 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
           </div>
         </div>
       </ExpandableCard>
-
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This Sankey diagram visualises how organisations flow across IATI participation roles, from Funding through Extending and Accountable to Implementing. The width of each link represents the number of activities (or budget value) shared between two organisations in consecutive roles. Use the metric toggle to switch between activity count and budget value, and export the data as CSV or JPG for reporting.
-      </p>
     </div>
   )
 }

@@ -9,7 +9,8 @@ import ContactSearchBar from './ContactSearchBar';
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
@@ -388,15 +389,16 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     return (
       <div className="space-y-6">
         {/* Skeleton for search/add bar */}
-        <div className="bg-white p-6 rounded-lg border border-border">
-          <div className="space-y-4">
+        <Card>
+          <CardContent className="p-6 space-y-4">
             <div className="h-10 bg-muted rounded animate-pulse"></div>
             <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Skeleton for contacts list */}
-        <div className="bg-white p-6 rounded-lg border border-border">
+        <Card>
+          <CardContent className="p-6">
           <div className="mb-4">
             <div className="h-7 bg-muted rounded w-64 animate-pulse"></div>
           </div>
@@ -440,7 +442,8 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
               </div>
             ))}
           </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -449,16 +452,18 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     <div className="space-y-6">
       {/* Search and Add Section */}
       {!readOnly && (
-        <div className="bg-card p-6 rounded-lg border border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-xl font-semibold">Add Contact to Activity</h2>
-            <HelpTextTooltip content="Search for an existing contact across the system to link them to this activity. If they're new, click 'Create New' to add them. Contacts are general points-of-contact; the Focal Points tab manages officially-designated roles." />
-          </div>
-          <ContactSearchBar
-            onSelect={handleSearchSelect}
-            onCreateNew={handleCreateNew}
-          />
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-xl font-semibold">Add Contact to Activity</h2>
+              <HelpTextTooltip content="Search for an existing contact across the system to link them to this activity. If they're new, click 'Create New' to add them. Contacts are general points-of-contact; the Focal Points tab manages officially-designated roles." />
+            </div>
+            <ContactSearchBar
+              onSelect={handleSearchSelect}
+              onCreateNew={handleCreateNew}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Contact Form Modal */}
@@ -544,6 +549,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
             </p>
           </div>
         ) : contactsView === 'table' ? (
+          <TableContainer>
           <Table>
             <TableHeader>
               <TableRow>
@@ -665,6 +671,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
               })}
             </TableBody>
           </Table>
+          </TableContainer>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {contacts.map((contact, index) => {

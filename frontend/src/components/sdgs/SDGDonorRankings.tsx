@@ -54,13 +54,13 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
       'Total Disbursed': d.totalDisbursed,
       '% of Total': totalDisbursed > 0 ? ((d.totalDisbursed / totalDisbursed) * 100).toFixed(1) + '%' : '0%',
     }))
-    exportChartToCSV(exportData, 'SDG Donor Rankings')
+    exportChartToCSV(exportData, 'SDG Development Partner Rankings')
   }
 
   if (donors.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-muted-foreground text-helper">
-        No donor data available
+        No development partner data available
       </div>
     )
   }

@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { formatAxisCurrency } from "@/lib/format";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 import { apiFetch } from '@/lib/api-fetch';
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
@@ -123,28 +124,24 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const data = payload[0]?.payload;
+      const rows = payload.map((entry: any) => ({
+        label: entry.name,
+        value: formatTooltipValue(entry.value),
+        color: entry.color,
+      }));
+      if (payload.length >= 3 && data?.budget > 0) {
+        rows.push({
+          label: 'Execution Rate',
+          value: `${((data.totalSpending / data.budget) * 100).toFixed(1)}%`,
+        });
+      }
       return (
-        <div style={{ backgroundColor: CHART_STRUCTURE_COLORS.tooltipBg }} className="p-4 border-0 rounded-lg shadow-lg">
-          <p className="font-semibold mb-2" style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}>{`Period: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-body"
-              style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}
-            >
-              <span style={{ color: entry.color }}>■</span> {`${entry.name}: ${formatTooltipValue(entry.value)}`}
-            </p>
-          ))}
-          {payload.length >= 3 && (
-            <div className="border-t border-slate-600 pt-2 mt-2">
-              <p className="text-body font-medium" style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}>
-                Execution Rate: {payload[0]?.payload?.budget > 0
-                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1)
-                  : 0}%
-              </p>
-            </div>
-          )}
-        </div>
+        <ChartTooltipCard
+          title={label}
+          subtitle="Period"
+          rows={rows}
+        />
       );
     }
     return null;

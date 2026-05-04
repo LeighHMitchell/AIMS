@@ -174,7 +174,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="overall">Overall</SelectItem>
-            <SelectItem value="donor">By Donor</SelectItem>
+            <SelectItem value="donor">By Development Partner</SelectItem>
             <SelectItem value="sector">By Sector</SelectItem>
             <SelectItem value="country">By Country</SelectItem>
           </SelectContent>

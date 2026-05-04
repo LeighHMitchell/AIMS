@@ -46,7 +46,7 @@ const FINANCE_TYPE_DEFINITIONS = {
   // Loans
   '410': {
     label: 'Aid loan excluding debt reorganisation',
-    description: 'Loans extended by donor governments or official agencies with a grant element of at least 25%'
+    description: 'Loans extended by development partner governments or official agencies with a grant element of at least 25%'
   },
   '411': {
     label: 'Investment-related loan',

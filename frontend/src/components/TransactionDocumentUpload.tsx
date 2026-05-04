@@ -293,60 +293,66 @@ export function TransactionDocumentUpload({
 
   return (
     <div className="space-y-4">
-      {/* Upload Area */}
-      <Card
-        className={cn(
-          "border-2 border-dashed transition-colors",
-          isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25",
-          disabled && "opacity-50 pointer-events-none"
-        )}
+      {/* Upload Area — matches the activity-level dropzone style for consistency */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => !disabled && !uploading && documents.length < maxFiles && fileInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && !disabled && !uploading) {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        className={cn(
+          "w-full bg-muted rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[280px] flex items-center justify-center",
+          isDragging ? "border-primary bg-primary/10 scale-[1.01]" : "border-input hover:border-slate-400",
+          (disabled || documents.length >= maxFiles) && "opacity-50 cursor-not-allowed"
+        )}
       >
-        <CardContent className="p-6">
-          <div className="text-center space-y-4">
-            <div className="rounded-full bg-muted p-4 w-fit mx-auto">
-              {uploading ? (
-                <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-              ) : (
-                <Upload className="h-8 w-8 text-muted-foreground" />
-              )}
-            </div>
-            
-            <div>
-              <h3 className="font-semibold">Upload Transaction Evidence</h3>
-              <p className="text-body text-muted-foreground mt-1">
-                Drag and drop documents here, or click to browse
-              </p>
-            </div>
-            
-            <div className="text-helper text-muted-foreground">
-              <p>Supported: PDF, Images, Excel, Word, CSV (Max {maxFileSize}MB each)</p>
-              <p>Maximum {maxFiles} documents per transaction</p>
-            </div>
-            
-            <div className="flex gap-2 justify-center">
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                multiple
-                accept={acceptedExtensions.map(ext => `.${ext}`).join(',')}
-                onChange={handleFileInput}
-                disabled={disabled || uploading}
-              />
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || uploading || documents.length >= maxFiles}
-              >
-                Browse Files
-              </Button>
-            </div>
+        <div className="text-center max-w-md mx-auto">
+          <div className="mb-4">
+            {uploading ? (
+              <Loader2 className={cn("w-12 h-12 mx-auto", isDragging ? "text-primary" : "text-muted-foreground", "animate-spin")} />
+            ) : (
+              <Upload className={cn("w-12 h-12 mx-auto", isDragging ? "text-primary animate-pulse" : "text-muted-foreground")} />
+            )}
           </div>
-        </CardContent>
-      </Card>
+          <h4 className="text-xl font-medium text-foreground mb-2">
+            {isDragging ? "Drop your files here" : "Upload Transaction Evidence"}
+          </h4>
+          <p className="text-muted-foreground mb-4">
+            Drag and drop files anywhere in this area, or click to browse your computer
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            multiple
+            accept={acceptedExtensions.map(ext => `.${ext}`).join(',')}
+            onChange={handleFileInput}
+            disabled={disabled || uploading}
+          />
+          <Button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              fileInputRef.current?.click();
+            }}
+            disabled={disabled || uploading || documents.length >= maxFiles}
+            className="gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Choose Files
+          </Button>
+          <p className="text-helper text-muted-foreground mt-4">
+            Supports: PDF, Images, Excel, Word, CSV (max {maxFileSize}MB each, up to {maxFiles} documents)
+          </p>
+        </div>
+      </div>
 
       {/* External Document Links Section */}
       <div>
