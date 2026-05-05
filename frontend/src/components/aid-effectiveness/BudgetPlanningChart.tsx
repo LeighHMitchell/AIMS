@@ -22,6 +22,8 @@ import {
   Legend
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
 
 interface BudgetPlanningData {
   category: string
@@ -93,24 +95,21 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground">{data.category}</p>
-          <p className="text-body text-muted-foreground mb-2">Transparency Score: {data.transparency_score}%</p>
-          <div className="space-y-1 text-helper">
-            <p className="text-foreground">Both Shared: {data.both_shared}</p>
-            <p className="text-foreground">Annual Only: {data.annual_budget_shared}</p>
-            <p className="text-muted-foreground">Forward Only: {data.forward_plan_shared}</p>
-            <p className="text-muted-foreground">None Shared: {data.none_shared}</p>
-          </div>
-          <p className="text-helper text-muted-foreground mt-1">Total: {data.total_activities} activities</p>
-        </div>
-      )
-    }
-    return null
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={d.category}
+        subtitle={`${d.total_activities} activities · transparency ${d.transparency_score}%`}
+        rows={[
+          { label: 'Both shared', value: d.both_shared, color: TRANSPARENCY_COLORS.both },
+          { label: 'Annual only', value: d.annual_budget_shared, color: TRANSPARENCY_COLORS.annual },
+          { label: 'Forward only', value: d.forward_plan_shared, color: TRANSPARENCY_COLORS.forward },
+          { label: 'None shared', value: d.none_shared, color: TRANSPARENCY_COLORS.none },
+        ]}
+      />
+    )
   }
 
   // Prepare data for stacked bar chart (showing counts)
@@ -237,83 +236,82 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overall Distribution */}
-        <Card className="bg-white border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-foreground">Budget Sharing Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
+        {(() => {
+          const budgetPie = (height: number, inner: number, outer: number) => (
+            <ResponsiveContainer width="100%" height={height}>
               <PieChart>
-                <Pie
-                  data={overallPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={100}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
+                <Pie data={overallPieData} cx="50%" cy="50%" innerRadius={inner} outerRadius={outer} paddingAngle={2} dataKey="value">
                   {overallPieData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={TRANSPARENCY_COLORS[entry.name.toLowerCase().replace(' ', '_') as keyof typeof TRANSPARENCY_COLORS] || '#64748b'} 
-                    />
+                    <Cell key={`cell-${index}`} fill={TRANSPARENCY_COLORS[entry.name.toLowerCase().replace(' ', '_') as keyof typeof TRANSPARENCY_COLORS] || '#64748b'} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: any, name: any, props: any) => [
-                    `${props.payload.count} activities (${value}%)`, 
-                    name
-                  ]}
-                />
+                <Tooltip formatter={(value: any, name: any, props: any) => [`${props.payload.count} activities (${value}%)`, name]} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          )
+          return (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-medium text-foreground">Budget Sharing Distribution</CardTitle>
+                  <ChartExpandButton
+                    title="Budget Sharing Distribution"
+                    interpretation="Shows the share of activities sharing budget information with partners: both annual budgets and 3-year forward plans, only one of the two, or neither. Sharing forward plans is a core GPEDC predictability commitment (Indicator 5b) — when partners know what's coming, recipient governments can plan their own budgets and service delivery accordingly. A small 'None shared' slice is a signal that predictability is being honoured."
+                    csv={() => ({
+                      filename: 'budget-sharing-distribution.csv',
+                      headers: ['Status', 'Activities', '%'],
+                      rows: overallPieData.map((d) => [d.name, d.count, d.value]),
+                    })}
+                    render={(h) => budgetPie(h, Math.round(h * 0.2), Math.round(h * 0.4))}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>{budgetPie(250, 50, 100)}</CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Transparency Scores by Category */}
-        {groupBy !== 'overall' && data.length > 0 && (
-          <Card className="bg-white border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium text-foreground">
-                Transparency Scores by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={stackedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#64748b"
-                    fontSize={10}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
+        {groupBy !== 'overall' && data.length > 0 && (() => {
+          const transparencyBar = (height: number) => (
+            <ResponsiveContainer width="100%" height={height}>
+              <BarChart data={stackedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={80} />
+                <YAxis stroke="#64748b" fontSize={12} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="transparency_score" radius={[4, 4, 0, 0]} fill="#4f46e5" />
+              </BarChart>
+            </ResponsiveContainer>
+          )
+          const title = `Transparency Scores by ${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}`
+          return (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-medium text-foreground">{title}</CardTitle>
+                  <ChartExpandButton
+                    title={title}
+                    interpretation="Each bar is a transparency score combining annual-budget sharing, forward-plan sharing, and the share of activities doing both. The score gives a quick read on which donors, sectors, or countries are best meeting GPEDC predictability commitments and where targeted improvements would have the greatest impact on country-led planning."
+                    csv={() => ({
+                      filename: `transparency-by-${groupBy}.csv`,
+                      headers: ['Category', 'Both Shared', 'Annual Only', 'Forward Only', 'None Shared', 'Transparency %', 'Total'],
+                      rows: stackedData.map((d: any) => [d.category, d.both_shared, d.annual_budget_shared, d.forward_plan_shared, d.none_shared, d.transparency_score, d.total_activities]),
+                    })}
+                    render={(h) => transparencyBar(h)}
                   />
-                  <YAxis 
-                    stroke="#64748b"
-                    fontSize={12}
-                    domain={[0, 100]}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="transparency_score" 
-                    radius={[4, 4, 0, 0]}
-                    fill="#4f46e5"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+              </CardHeader>
+              <CardContent>{transparencyBar(250)}</CardContent>
+            </Card>
+          )
+        })()}
       </div>
 
       {/* Detailed Breakdown */}
       {groupBy !== 'overall' && data.length > 0 && (
-        <Card className="bg-white border-border">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-foreground">Detailed Breakdown</CardTitle>
           </CardHeader>

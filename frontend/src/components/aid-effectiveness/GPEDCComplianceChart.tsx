@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Shield, Target, Building2, Users, FileText, CheckCircle2, AlertCircle } from 'lucide-react'
 import {
   BarChart,
@@ -22,6 +23,8 @@ import {
   Cell
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
 
 interface GPEDCIndicator {
   indicator: string
@@ -67,6 +70,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
   const [principles, setPrinciples] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<any>(null)
+  const [sortBy, setSortBy] = useState<'compliance' | 'name'>('compliance')
 
   useEffect(() => {
     fetchData()
@@ -107,21 +111,20 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg max-w-xs">
-          <p className="font-semibold text-foreground">{data.indicatorName}</p>
-          <p className="text-helper text-muted-foreground mb-2">{data.description}</p>
-          <div className="space-y-1 text-body">
-            <p className="text-foreground">Compliant: {data.compliant_count} ({data.compliance_percentage}%)</p>
-            <p className="text-muted-foreground">Non-compliant: {data.non_compliant_count} ({100 - data.compliance_percentage}%)</p>
-          </div>
-        </div>
-      )
-    }
-    return null
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={d.indicatorName}
+        subtitle={d.description}
+        maxWidth={320}
+        rows={[
+          { label: 'Compliant', value: `${d.compliant_count} (${d.compliance_percentage}%)`, color: '#F37021' },
+          { label: 'Non-compliant', value: `${d.non_compliant_count} (${100 - d.compliance_percentage}%)` },
+        ]}
+      />
+    )
   }
 
   // Prepare data for radar chart (principles summary)
@@ -147,7 +150,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
     return (
       <div className="space-y-6">
         {/* GPEDC Principles Radar */}
-        <div className="bg-white p-6 rounded-lg border border-border">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-foreground mb-2">GPEDC Principles Compliance</h3>
             <p className="text-body text-muted-foreground">
@@ -239,7 +242,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         {summary?.principles_summary?.map((principle: any, index: number) => {
           const IconComponent = PRINCIPLE_ICONS[principle.principle as keyof typeof PRINCIPLE_ICONS] || Shield
           return (
-            <Card key={principle.principle} className="bg-white border-border">
+            <Card key={principle.principle} className="bg-card border-border">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <div 
@@ -270,48 +273,60 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
       </div>
 
       {/* Detailed Indicators Chart */}
-      <Card className="bg-white border-border">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium text-foreground">Detailed Indicator Compliance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+      {(() => {
+        const sortedData = [...data].sort((a, b) =>
+          sortBy === 'compliance' ? b.compliance_percentage - a.compliance_percentage : a.indicatorName.localeCompare(b.indicatorName)
+        )
+        const detailBar = (height: number) => (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={sortedData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="indicatorName" 
-                stroke="#64748b"
-                fontSize={10}
-                angle={-45}
-                textAnchor="end"
-                height={120}
-                interval={0}
-              />
-              <YAxis 
-                stroke="#64748b"
-                fontSize={12}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
+              <XAxis dataKey="indicatorName" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={120} interval={0} />
+              <YAxis stroke="#64748b" fontSize={12} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar 
-                dataKey="compliance_percentage" 
-                radius={[4, 4, 0, 0]}
-              >
-                {data.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={PRINCIPLE_COLORS[entry.principle as keyof typeof PRINCIPLE_COLORS] || '#64748b'} 
-                  />
+              <Bar dataKey="compliance_percentage" radius={[4, 4, 0, 0]}>
+                {sortedData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={PRINCIPLE_COLORS[entry.principle as keyof typeof PRINCIPLE_COLORS] || '#64748b'} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        )
+        return (
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
+                <CardTitle className="text-lg font-medium text-foreground">Detailed Indicator Compliance</CardTitle>
+                <ChartExpandButton
+                  title="Detailed Indicator Compliance"
+                  interpretation="Each bar maps to a specific GPEDC indicator (alignment with national plans, use of country systems, untied aid, and so on) and shows the share of activities that meet it. Bars are coloured by the GPEDC principle they belong to. Use this to drill from broad section scores into the underlying indicators that drive them — and to identify the specific commitments most in need of attention."
+                  controls={
+                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'compliance' | 'name')}>
+                      <SelectTrigger className="h-8 w-[160px] text-helper">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compliance">Sort: compliance</SelectItem>
+                        <SelectItem value="name">Sort: indicator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  }
+                  csv={() => ({
+                    filename: 'gpedc-indicator-compliance.csv',
+                    headers: ['Indicator', 'Principle', 'Compliant', 'Non-compliant', 'Compliance %'],
+                    rows: sortedData.map((d) => [d.indicatorName, d.principle, d.compliant_count, d.non_compliant_count, d.compliance_percentage]),
+                  })}
+                  render={(h) => detailBar(h)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>{detailBar(400)}</CardContent>
+          </Card>
+        )
+      })()}
 
       {/* Detailed Indicator Breakdown */}
-      <Card className="bg-white border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">Indicator Analysis</CardTitle>
         </CardHeader>
@@ -374,7 +389,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           {principles.map((principle) => {
             const IconComponent = PRINCIPLE_ICONS[principle.principleName as keyof typeof PRINCIPLE_ICONS] || Shield
             return (
-              <Card key={principle.principle} className="bg-white border-border">
+              <Card key={principle.principle} className="bg-card border-border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                     <IconComponent 
@@ -423,8 +438,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
       {/* Key Insights and Recommendations */}
       <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-            <Shield className="h-5 w-5 text-muted-foreground" />
+          <CardTitle className="text-lg font-medium text-foreground">
             GPEDC Compliance Insights
           </CardTitle>
         </CardHeader>
@@ -465,7 +479,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           </div>
 
           {summary && (
-            <div className="mt-6 p-4 bg-white/50 rounded-lg">
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
               <h4 className="font-semibold text-foreground mb-2">Overall Assessment</h4>
               <p className="text-body text-foreground">
                 {summary.overall_compliance >= 80 ? 

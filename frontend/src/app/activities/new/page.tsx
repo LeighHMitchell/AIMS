@@ -3523,7 +3523,9 @@ function NewActivityPageContent() {
       // Geography level - whether geography is published at activity or transaction level
       geographyLevel: "activity" as "activity" | "transaction",
       // Sector export level - whether sectors are exported at activity or transaction level in IATI XML
-      sectorExportLevel: "activity" as "activity" | "transaction"
+      sectorExportLevel: "activity" as "activity" | "transaction",
+      // Aid Effectiveness payload (loaded from general_info -> aidEffectiveness)
+      aidEffectiveness: {} as Record<string, any>,
     };
   });
 

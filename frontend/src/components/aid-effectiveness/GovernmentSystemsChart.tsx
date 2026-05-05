@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Building2, TrendingUp, TrendingDown } from 'lucide-react'
 import {
   BarChart,
@@ -17,6 +18,8 @@ import {
   Cell
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
 
 interface GovernmentSystemData {
   system: string
@@ -48,6 +51,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
   const [data, setData] = useState<GovernmentSystemData[]>([])
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<any>(null)
+  const [sortBy, setSortBy] = useState<'usage' | 'name'>('usage')
 
   useEffect(() => {
     fetchData()
@@ -84,19 +88,18 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground">{data.systemName}</p>
-          <p className="text-body text-muted-foreground">
-            Usage: {data.usage_count} of {data.total_activities} activities ({data.usage_percentage}%)
-          </p>
-        </div>
-      )
-    }
-    return null
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={d.systemName}
+        rows={[
+          { label: 'Usage', value: `${d.usage_count} / ${d.total_activities}`, color: '#F37021' },
+          { label: 'Share', value: `${d.usage_percentage}%` },
+        ]}
+      />
+    )
   }
 
   if (loading) {
@@ -167,51 +170,64 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       )}
 
       {/* Main Chart */}
-      <div className="bg-white p-6 rounded-lg border border-border">
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-foreground mb-2">Government Systems Usage</h3>
-          <p className="text-body text-muted-foreground">
-            Percentage of activities using each government system
-          </p>
-        </div>
-
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis 
-              dataKey="systemName" 
-              stroke="#64748b"
-              fontSize={12}
-              angle={-45}
-              textAnchor="end"
-              height={80}
-            />
-            <YAxis 
-              stroke="#64748b"
-              fontSize={12}
-              domain={[0, 100]}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar 
-              dataKey="usage_percentage" 
-              radius={[4, 4, 0, 0]}
-            >
-              {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={SYSTEM_COLORS[entry.system as keyof typeof SYSTEM_COLORS] || '#64748b'} 
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {(() => {
+        const sortedData = [...data].sort((a, b) =>
+          sortBy === 'usage' ? b.usage_percentage - a.usage_percentage : a.systemName.localeCompare(b.systemName)
+        )
+        const sysChart = (height: number) => (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={sortedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="systemName" stroke="#64748b" fontSize={12} angle={-45} textAnchor="end" height={80} />
+              <YAxis stroke="#64748b" fontSize={12} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="usage_percentage" radius={[4, 4, 0, 0]}>
+                {sortedData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={SYSTEM_COLORS[entry.system as keyof typeof SYSTEM_COLORS] || '#64748b'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )
+        return (
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <div className="mb-6 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Government Systems Usage</h3>
+                <p className="text-body text-muted-foreground">Percentage of activities using each government system</p>
+              </div>
+              <ChartExpandButton
+                title="Government Systems Usage"
+                description="Percentage of activities using each government system"
+                interpretation="Tracks the share of activities that flow through each country public financial management (PFM) system: budget execution, financial reporting, audit, and procurement. Using country systems builds capacity, reduces parallel structures, and is a core GPEDC commitment (Indicator 5a). Low usage often indicates fiduciary-risk concerns from donors — addressing those concerns is the path to deeper alignment."
+                controls={
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'usage' | 'name')}>
+                    <SelectTrigger className="h-8 w-[140px] text-helper">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="usage">Sort: usage</SelectItem>
+                      <SelectItem value="name">Sort: system</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
+                csv={() => ({
+                  filename: 'government-systems-usage.csv',
+                  headers: ['System', 'Usage Count', 'Total Activities', 'Usage %'],
+                  rows: sortedData.map((d) => [d.systemName, d.usage_count, d.total_activities, d.usage_percentage]),
+                })}
+                render={(h) => sysChart(h)}
+              />
+            </div>
+            {sysChart(400)}
+          </div>
+        )
+      })()}
 
       {/* Detailed Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {data.map((system) => (
-          <Card key={system.system} className="bg-white border-border">
+          <Card key={system.system} className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                 <Building2 className="h-4 w-4" style={{ color: SYSTEM_COLORS[system.system as keyof typeof SYSTEM_COLORS] }} />
@@ -250,8 +266,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       {/* Key Insights */}
       <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
+          <CardTitle className="text-lg font-medium text-foreground">
             Key Insights
           </CardTitle>
         </CardHeader>

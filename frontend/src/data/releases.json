@@ -1,7 +1,31 @@
 {
-  "currentVersion": "3.35.0",
-  "narrativeSummary": "Version 3.35.0 ships the Activity Profile v2 redesign as the new default and a deep Analytics Dashboard polish pass. The Activity Profile is now a layout-driven page built from a Hero, a Tabs strip, and a Rail of Identity / Key Numbers / Status Timeline / Focal Points / Participating Orgs blocks (legacy layout still available via <code>?v=1</code>). The Analytics Dashboard gains methodology tooltips on virtually every chart explaining how each value is calculated, terminology shifts from <i>donor</i> to <i>development partner</i>, the All Donors view becomes External Development Partners (excluding Myanmar government entities), and chart card layouts are unified — flattened titles (no decorative icons), consistent <code>compactHeight</code>, and removal of the duplicate <i>Additional Analytics</i> section. Three legacy chart directories (<code>analytics/dashboard</code>, <code>analytics/amp-dashboard</code>, <code>analytics/national-priorities-dashboard</code>) are removed in favour of the consolidated set, and the Activity export pipeline is reworked.",
+  "currentVersion": "3.35.1",
+  "narrativeSummary": "Version 3.35.1 is an Aid Effectiveness Dashboard polish pass. Every chart on the dashboard gains an <i>Expand</i> button that opens a full-screen view with an interpretation paragraph explaining how to read the chart and what good vs. bad looks like — covering indicator distribution, tied aid, GPEDC compliance, country systems, government systems, budget planning, and implementing partners. The custom Recharts tooltips are migrated to the shared <code>ChartTooltipCard</code> primitive for visual consistency. The Aid Effectiveness API routes also drop the <code>publication_status='published'</code> filter so AE metrics now reflect all activities with AE data, not only published ones, and a helper-label fix changes the GEN-0 negative value from <i>Not targeted (GEN-0)</i> to <i>Not targeted</i>.",
   "releases": [
+    {
+      "version": "3.35.1",
+      "date": "2026-05-05",
+      "narrativeSummary": "Aid Effectiveness Dashboard polish. New <code>ChartExpandButton</code> on every chart opens an expanded view with an interpretation paragraph, optional controls, and CSV export. Tooltips migrated to the shared <code>ChartTooltipCard</code> primitive. AE API routes drop the published-only filter so metrics include all activities with AE data. Negative-value label fix for <i>Not targeted</i>.",
+      "changes": [
+        "<b>Aid Effectiveness Dashboard &mdash; Expand button on every chart</b>",
+        "&nbsp;&nbsp;New <code>components/aid-effectiveness/ChartExpandButton.tsx</code> &mdash; small Maximize icon button that opens a 95vw / 85vh Dialog with the chart at full size, optional filter / sort controls, optional CSV export, and an <i>interpretation</i> paragraph rendered below",
+        "&nbsp;&nbsp;Wired into every chart on <code>/aid-effectiveness-dashboard</code> with chart-specific interpretation text explaining how to read it and what good vs. bad looks like",
+        "&nbsp;&nbsp;<i>Indicator distribution</i> &mdash; explains the 0 / 1&ndash;2 / 3&ndash;5 / 6&ndash;10 / 10+ bands and the under-measurement vs. reporting-burden trade-off",
+        "&nbsp;&nbsp;<i>Tied Aid</i> &mdash; framed against GPEDC Indicator 10 (untied vs. partially tied vs. tied procurement)",
+        "&nbsp;&nbsp;<i>GPEDC radar &amp; section performance</i> &mdash; how to read the seven sections (Ownership, Country Systems, Predictability, Transparency, Mutual Accountability, Civil Society, Gender) and where to prioritise capacity-building",
+        "&nbsp;&nbsp;<i>GPEDC scoreboard</i> &mdash; per-section percentage view for reporting and executive summaries",
+        "&nbsp;&nbsp;<i>Implementing Partners</i> &mdash; concentration vs. long-tail interpretation for partnership-base diversity",
+        "&nbsp;&nbsp;<i>Per-section indicator drilldown</i> &mdash; how each indicator contributes to the section's average score",
+        "<b>Aid Effectiveness charts &mdash; tooltip migration</b>",
+        "&nbsp;&nbsp;<code>BudgetPlanningChart</code>, <code>DevelopmentIndicatorsChart</code>, <code>GPEDCComplianceChart</code>, <code>GovernmentSystemsChart</code>, <code>ImplementingPartnersChart</code>, <code>TiedAidChart</code> &mdash; custom Recharts tooltip JSX replaced with the shared <code>ChartTooltipCard</code> primitive (introduced in 3.35.0) for consistent typography, padding, and color-swatch rendering",
+        "&nbsp;&nbsp;Charts refactored to support an injectable height so the expanded Dialog view can fill the available space",
+        "<b>Aid Effectiveness APIs &mdash; published filter removed</b>",
+        "&nbsp;&nbsp;<code>/api/aid-effectiveness/metrics</code>, <code>/budget-planning</code>, <code>/development-indicators</code>, <code>/export</code>, <code>/government-systems</code>, <code>/gpedc-compliance</code>, <code>/implementing-partners</code>, <code>/tied-aid</code> all drop the <code>.eq('publication_status', 'published')</code> filter",
+        "&nbsp;&nbsp;Activities with AE data now feed the dashboard regardless of publication status &mdash; previously, drafts and unpublished activities with AE answers were silently excluded",
+        "<b>Helpers</b>",
+        "&nbsp;&nbsp;<code>aid-effectiveness-helpers.ts</code>: negative-value label <i>Not targeted (GEN-0)</i> normalised to <i>Not targeted</i> so the helper recognises GEN-0 markers regardless of whether the code suffix is present"
+      ]
+    },
     {
       "version": "3.35.0",
       "date": "2026-05-05",

@@ -19,6 +19,8 @@ import {
   Cell
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
 
 interface ImplementingPartnerData {
   partner_name: string
@@ -93,25 +95,24 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg max-w-sm">
-          <p className="font-semibold text-foreground">{data.partner_name}</p>
-          <p className="text-helper text-muted-foreground mb-2">{data.partner_type}</p>
-          <div className="space-y-1 text-body">
-            <p>Activities: {data.activity_count}</p>
-            <p>Budget: ${(data.total_budget / 1000000).toFixed(1)}M</p>
-            <p>Avg Outcome Indicators: {data.avg_outcome_indicators}</p>
-            <p className="text-foreground">Gov Systems Usage: {data.gov_systems_usage_rate}%</p>
-            <p className="text-foreground">GPEDC Compliance: {data.gpedc_compliance_rate}%</p>
-            <p className="text-foreground">Untied Aid: {100 - data.tied_aid_percentage}%</p>
-          </div>
-        </div>
-      )
-    }
-    return null
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={d.partner_name}
+        subtitle={d.partner_type}
+        maxWidth={360}
+        rows={[
+          { label: 'Activities', value: d.activity_count, color: '#F37021' },
+          { label: 'Budget', value: `$${(d.total_budget / 1000000).toFixed(1)}M` },
+          { label: 'Avg outcome indicators', value: d.avg_outcome_indicators },
+          { label: 'Gov systems usage', value: `${d.gov_systems_usage_rate}%` },
+          { label: 'GPEDC compliance', value: `${d.gpedc_compliance_rate}%` },
+          { label: 'Untied aid', value: `${100 - d.tied_aid_percentage}%` },
+        ]}
+      />
+    )
   }
 
   // Sort data based on selected criteria
@@ -255,57 +256,56 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Main Performance Chart */}
-        <Card className="bg-white border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-foreground">
-              {sortBy === 'activity_count' ? 'Activity Count' :
-               sortBy === 'gpedc_compliance_rate' ? 'GPEDC Compliance' :
-               sortBy === 'gov_systems_usage_rate' ? 'Government Systems Usage' :
-               sortBy === 'total_budget' ? 'Total Budgeted' :
-               'Average Outcome Indicators'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+        {(() => {
+          const partnerTitle =
+            sortBy === 'activity_count' ? 'Activity Count' :
+            sortBy === 'gpedc_compliance_rate' ? 'GPEDC Compliance' :
+            sortBy === 'gov_systems_usage_rate' ? 'Government Systems Usage' :
+            sortBy === 'total_budget' ? 'Total Budgeted' :
+            'Average Outcome Indicators'
+          const partnerBar = (height: number) => (
+            <ResponsiveContainer width="100%" height={height}>
               <BarChart data={sortedData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="partner_name" 
-                  stroke="#64748b"
-                  fontSize={10}
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                  interval={0}
-                />
-                <YAxis 
-                  stroke="#64748b"
-                  fontSize={12}
-                  tickFormatter={(value) => 
-                    sortBy === 'total_budget' ? `$${(value / 1000000).toFixed(1)}M` :
-                    sortBy.includes('rate') || sortBy.includes('percentage') ? `${value}%` :
-                    value.toString()
-                  }
-                />
+                <XAxis dataKey="partner_name" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={100} interval={0} />
+                <YAxis stroke="#64748b" fontSize={12} tickFormatter={(value) =>
+                  sortBy === 'total_budget' ? `$${(value / 1000000).toFixed(1)}M` :
+                  sortBy.includes('rate') || sortBy.includes('percentage') ? `${value}%` :
+                  value.toString()
+                } />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar 
-                  dataKey={sortBy} 
-                  radius={[4, 4, 0, 0]}
-                >
+                <Bar dataKey={sortBy} radius={[4, 4, 0, 0]}>
                   {sortedData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={PARTNER_TYPE_COLORS[entry.partner_type as keyof typeof PARTNER_TYPE_COLORS] || '#64748b'} 
-                    />
+                    <Cell key={`cell-${index}`} fill={PARTNER_TYPE_COLORS[entry.partner_type as keyof typeof PARTNER_TYPE_COLORS] || '#64748b'} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          )
+          return (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-medium text-foreground">{partnerTitle}</CardTitle>
+                  <ChartExpandButton
+                    title={partnerTitle}
+                    interpretation="Compares implementing partners on the selected metric (activity count, GPEDC compliance rate, government-systems usage, total budget, or average outcome indicators). Use this view to identify the highest- and lowest-performing partners on each effectiveness dimension, spot capacity gaps, and prioritise dialogue with partners whose practice diverges most from country-led principles."
+                    csv={() => ({
+                      filename: `implementing-partners-${sortBy}.csv`,
+                      headers: ['Partner', 'Type', 'Activities', 'Total Budget', 'Avg Outcome Indicators', 'Gov Systems %', 'GPEDC Compliance %', 'Tied Aid %'],
+                      rows: sortedData.map((d) => [d.partner_name, d.partner_type, d.activity_count, d.total_budget, d.avg_outcome_indicators, d.gov_systems_usage_rate, d.gpedc_compliance_rate, d.tied_aid_percentage]),
+                    })}
+                    render={(h) => partnerBar(h)}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>{partnerBar(300)}</CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Compliance vs Gov Systems Scatter */}
-        <Card className="bg-white border-border">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-foreground">
               GPEDC Compliance vs Government Systems Usage
@@ -333,22 +333,22 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                   fontSize={12}
                   tickFormatter={(value) => `${value}%`}
                 />
-                <Tooltip 
+                <Tooltip
                   cursor={{ strokeDasharray: '3 3' }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload
-                      return (
-                        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-                          <p className="font-semibold text-foreground">{data.partner_name}</p>
-                          <p className="text-helper text-muted-foreground mb-1">{data.partner_type}</p>
-                          <p className="text-body text-foreground">Gov Systems: {data.x}%</p>
-                          <p className="text-body text-foreground">GPEDC Compliance: {data.y}%</p>
-                          <p className="text-helper text-muted-foreground">Activities: {data.z}</p>
-                        </div>
-                      )
-                    }
-                    return null
+                  content={({ active, payload }: any) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload
+                    return (
+                      <ChartTooltipCard
+                        title={d.partner_name}
+                        subtitle={d.partner_type}
+                        rows={[
+                          { label: 'Gov systems', value: `${d.x}%`, color: '#F37021' },
+                          { label: 'GPEDC compliance', value: `${d.y}%` },
+                          { label: 'Activities', value: d.z },
+                        ]}
+                      />
+                    )
                   }}
                 />
                 <Scatter 
@@ -370,7 +370,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       {/* Partner Type Distribution */}
       {summary && summary.partner_types && (
-        <Card className="bg-white border-border">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-foreground">Partner Types</CardTitle>
           </CardHeader>
@@ -395,7 +395,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       )}
 
       {/* Detailed Partner Performance */}
-      <Card className="bg-white border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">Partner Performance Details</CardTitle>
         </CardHeader>

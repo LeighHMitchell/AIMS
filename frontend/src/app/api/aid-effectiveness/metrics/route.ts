@@ -59,7 +59,6 @@ export async function GET(request: NextRequest) {
           transaction_date
         )
       `)
-      .eq('publication_status', 'published')
       .not('general_info->aidEffectiveness', 'is', null)
 
     // Apply date filters if provided

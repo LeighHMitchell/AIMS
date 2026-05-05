@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Target, CheckCircle2, XCircle, BarChart3 } from 'lucide-react'
 import {
   BarChart,
@@ -19,6 +20,8 @@ import {
   Legend
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
 
 interface DevelopmentIndicatorData {
   indicator: string
@@ -54,6 +57,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
   const [outcomeIndicators, setOutcomeIndicators] = useState<OutcomeIndicatorData[]>([])
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<any>(null)
+  const [sortBy, setSortBy] = useState<'pct' | 'name'>('pct')
 
   useEffect(() => {
     fetchData()
@@ -93,40 +97,33 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground">{data.indicatorName}</p>
-          <p className="text-body text-foreground">
-            Yes: {data.yes_count} ({data.yes_percentage}%)
-          </p>
-          <p className="text-body text-muted-foreground">
-            No: {data.no_count} ({100 - data.yes_percentage}%)
-          </p>
-          <p className="text-helper text-muted-foreground mt-1">
-            Total activities: {data.total_activities}
-          </p>
-        </div>
-      )
-    }
-    return null
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={d.indicatorName}
+        subtitle={`${d.total_activities} activities`}
+        rows={[
+          { label: 'Yes', value: `${d.yes_count} (${d.yes_percentage}%)`, color: '#F37021' },
+          { label: 'No', value: `${d.no_count} (${100 - d.yes_percentage}%)` },
+        ]}
+      />
+    )
   }
 
   const OutcomeTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground">{data.range} Indicators</p>
-          <p className="text-body text-muted-foreground">
-            {data.count} activities ({data.percentage}%)
-          </p>
-        </div>
-      )
-    }
-    return null
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={`${d.range} indicators`}
+        rows={[
+          { label: 'Activities', value: d.count, color: '#F37021' },
+          { label: 'Share', value: `${d.percentage}%` },
+        ]}
+      />
+    )
   }
 
   if (loading) {
@@ -189,89 +186,102 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Development Effectiveness Indicators */}
-        <Card className="bg-white border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              Development Effectiveness Indicators
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={indicators} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+        {(() => {
+          const sortedIndicators = [...indicators].sort((a, b) =>
+            sortBy === 'pct' ? b.yes_percentage - a.yes_percentage : a.indicatorName.localeCompare(b.indicatorName)
+          )
+          const devChart = (height: number) => (
+            <ResponsiveContainer width="100%" height={height}>
+              <BarChart data={sortedIndicators} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="indicatorName" 
-                  stroke="#64748b"
-                  fontSize={10}
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                  interval={0}
-                />
-                <YAxis 
-                  stroke="#64748b"
-                  fontSize={12}
-                  domain={[0, 100]}
-                  tickFormatter={(value) => `${value}%`}
-                />
+                <XAxis dataKey="indicatorName" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={100} interval={0} />
+                <YAxis stroke="#64748b" fontSize={12} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar 
-                  dataKey="yes_percentage" 
-                  radius={[4, 4, 0, 0]}
-                >
-                  {indicators.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={INDICATOR_COLORS[index % INDICATOR_COLORS.length]} 
-                    />
+                <Bar dataKey="yes_percentage" radius={[4, 4, 0, 0]}>
+                  {sortedIndicators.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={INDICATOR_COLORS[index % INDICATOR_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          )
+          return (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                    Development Effectiveness Indicators
+                  </CardTitle>
+                  <ChartExpandButton
+                    title="Development Effectiveness Indicators"
+                    interpretation="Each bar shows the share of activities meeting a specific development-effectiveness indicator: alignment with national plans, use of country indicators, support to public-sector institutions, and so on. Together they describe whether an activity is wired into the host country's own results system. Higher bars mean the portfolio is more country-led; persistently low bars mark indicators where donors can shift practice to strengthen ownership."
+                    controls={
+                      <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'pct' | 'name')}>
+                        <SelectTrigger className="h-8 w-[150px] text-helper">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pct">Sort: adoption</SelectItem>
+                          <SelectItem value="name">Sort: indicator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    }
+                    csv={() => ({
+                      filename: 'development-effectiveness-indicators.csv',
+                      headers: ['Indicator', 'Yes', 'No', 'Yes %', 'Total'],
+                      rows: sortedIndicators.map((d) => [d.indicatorName, d.yes_count, d.no_count, d.yes_percentage, d.total_activities]),
+                    })}
+                    render={(h) => devChart(h)}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>{devChart(300)}</CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Outcome Indicators Distribution */}
-        <Card className="bg-white border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-              <Target className="h-5 w-5 text-muted-foreground" />
-              Outcome Indicators Distribution
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+        {(() => {
+          const outcomePie = (height: number, inner: number, outer: number) => (
+            <ResponsiveContainer width="100%" height={height}>
               <PieChart>
-                <Pie
-                  data={outcomeIndicators}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={2}
-                  dataKey="count"
-                >
+                <Pie data={outcomeIndicators} cx="50%" cy="50%" innerRadius={inner} outerRadius={outer} paddingAngle={2} dataKey="count">
                   {outcomeIndicators.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={OUTCOME_COLORS[index % OUTCOME_COLORS.length]} 
-                    />
+                    <Cell key={`cell-${index}`} fill={OUTCOME_COLORS[index % OUTCOME_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip content={<OutcomeTooltip />} />
-                <Legend 
-                  formatter={(value: any, entry: any) => `${entry?.payload?.range || ''} (${entry?.payload?.percentage || 0}%)`}
-                  wrapperStyle={{ fontSize: '12px' }}
-                />
+                <Legend formatter={(value: any, entry: any) => `${entry?.payload?.range || ''} (${entry?.payload?.percentage || 0}%)`} wrapperStyle={{ fontSize: '12px' }} />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          )
+          return (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                    Outcome Indicators Distribution
+                  </CardTitle>
+                  <ChartExpandButton
+                    title="Outcome Indicators Distribution"
+                    interpretation="Slices show how activities are spread across outcome-indicator counts (0, 1–2, 3–5, 6–10, 10+). Activities with very few indicators may be under-monitored; those with many can be over-burdened with reporting. A balanced middle is generally most useful for measuring real development outcomes without crowding out implementation."
+                    csv={() => ({
+                      filename: 'outcome-indicators-distribution.csv',
+                      headers: ['Range', 'Activities', '%'],
+                      rows: outcomeIndicators.map((d) => [d.range, d.count, d.percentage]),
+                    })}
+                    render={(h) => outcomePie(h, Math.round(h * 0.2), Math.round(h * 0.4))}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>{outcomePie(300, 60, 120)}</CardContent>
+            </Card>
+          )
+        })()}
       </div>
 
       {/* Detailed Indicator Breakdown */}
-      <Card className="bg-white border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">Detailed Indicator Analysis</CardTitle>
         </CardHeader>

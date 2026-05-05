@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AnalyticsSkeleton } from '@/components/ui/skeleton-loader'
@@ -30,6 +30,16 @@ import {
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { SectorHierarchyFilter, SectorFilterSelection } from '@/components/maps/SectorHierarchyFilter'
 import { format } from 'date-fns'
+import { isPositiveValue } from '@/lib/aid-effectiveness-helpers'
+import { TiedAidChart } from '@/components/aid-effectiveness/TiedAidChart'
+import { BudgetPlanningChart } from '@/components/aid-effectiveness/BudgetPlanningChart'
+import { GovernmentSystemsChart } from '@/components/aid-effectiveness/GovernmentSystemsChart'
+import { DevelopmentIndicatorsChart } from '@/components/aid-effectiveness/DevelopmentIndicatorsChart'
+import { GPEDCComplianceChart } from '@/components/aid-effectiveness/GPEDCComplianceChart'
+import { ImplementingPartnersChart } from '@/components/aid-effectiveness/ImplementingPartnersChart'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 // --- Types ---
 
@@ -109,7 +119,7 @@ const GPEDC_BG = 'url(https://www.effectivecooperation.org/sites/default/files/i
 
 // --- Helpers ---
 
-const toBool = (val: any): boolean => val === true
+const toBool = (val: any): boolean => isPositiveValue(val)
 const pct = (count: number, total: number): number =>
   total === 0 ? 0 : Math.round((count / total) * 100)
 
@@ -138,6 +148,29 @@ const CHART_HELP: Record<string, string> = {
 }
 
 // All boolean indicator fields grouped by section
+// IATI Codelist 9 (OrganisationType) — labels used when disaggregating charts by org type.
+const IATI_ORG_TYPE_LABELS: Record<string, string> = {
+  '10': 'Government',
+  '11': 'Local Government',
+  '15': 'Other Public Sector',
+  '21': 'International NGO',
+  '22': 'National NGO',
+  '23': 'Regional NGO',
+  '24': 'Country-based NGO',
+  '30': 'Public-Private Partnership',
+  '40': 'Multilateral',
+  '60': 'Foundation',
+  '70': 'Private Sector',
+  '71': 'Private Sector – Provider Country',
+  '72': 'Private Sector – Aid Recipient Country',
+  '73': 'Private Sector – Third Country',
+  '80': 'Academic / Research',
+  '90': 'Other',
+}
+
+// Discrete orange/slate palette for disaggregated series (used for stacked bars by donor / org type).
+const DISAGG_COLORS = ['#F37021', '#F8A872', '#C25A10', '#1e293b', '#475569', '#94a3b8', '#fbbf24', '#0ea5e9', '#22c55e', '#8b5cf6']
+
 const SECTION_FIELDS: Record<string, { label: string; fields: { key: keyof AidEffectivenessData; label: string }[] }> = {
   ownership: {
     label: '1. Government Ownership',
@@ -235,6 +268,7 @@ export default function AidEffectivenessDashboard() {
   const [loading, setLoading] = useState(true)
   const [rawActivities, setRawActivities] = useState<ActivityRow[]>([])
   const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map())
+  const [orgTypeMap, setOrgTypeMap] = useState<Map<string, string>>(new Map())
 
   // Year / calendar state
   const [calendarType, setCalendarType] = useState<string>('')
@@ -391,10 +425,15 @@ export default function AidEffectivenessDashboard() {
       const withAE = (activities || []).filter((a: any) => a.general_info?.aidEffectiveness)
       setRawActivities(withAE)
 
-      const { data: orgs } = await supabase.from('organizations').select('id, name, acronym, logo')
+      const { data: orgs } = await supabase.from('organizations').select('id, name, acronym, logo, organisation_type')
       const map = new Map<string, string>()
-      ;(orgs || []).forEach((o: any) => map.set(o.id, o.acronym || o.name))
+      const typeMap = new Map<string, string>()
+      ;(orgs || []).forEach((o: any) => {
+        map.set(o.id, o.acronym || o.name)
+        if (o.organisation_type) typeMap.set(o.id, o.organisation_type)
+      })
       setOrgMap(map)
+      setOrgTypeMap(typeMap)
 
       // Build reporting orgs list from activities that have aid effectiveness data
       const reportingOrgIds = new Set<string>()
@@ -522,6 +561,52 @@ export default function AidEffectivenessDashboard() {
   }, [filteredActivities])
 
   const handleRefresh = () => { fetchData(); toast.success('Dashboard refreshed') }
+
+  // Per-chart filter state
+  const [outcomeDisplayMode, setOutcomeDisplayMode] = useState<'count' | 'pct'>('count')
+  const [partnerTopN, setPartnerTopN] = useState<number>(10)
+  const [sectionPerfSort, setSectionPerfSort] = useState<'value' | 'section'>('value')
+  const [allSectionsSort, setAllSectionsSort] = useState<'value' | 'section'>('section')
+  const [tiedDisplay, setTiedDisplay] = useState<'donut' | 'pie'>('donut')
+  const [radarThreshold, setRadarThreshold] = useState<'all' | 'below50' | 'below70'>('all')
+
+  // Disaggregation state — applies to charts that support per-donor or per-org-type comparison
+  type Disaggregate = 'none' | 'donor' | 'orgType'
+  const [tiedDisaggregate, setTiedDisaggregate] = useState<Disaggregate>('none')
+  const [outcomeDisaggregate, setOutcomeDisaggregate] = useState<Disaggregate>('none')
+  const [sectionPerfDisaggregate, setSectionPerfDisaggregate] = useState<Disaggregate>('none')
+
+  const groupKey = useCallback((activity: any, mode: Disaggregate): string => {
+    const orgId = activity?.reporting_org_id
+    if (!orgId) return 'Unassigned'
+    if (mode === 'donor') return orgMap.get(orgId) || orgId.substring(0, 8)
+    if (mode === 'orgType') return IATI_ORG_TYPE_LABELS[orgTypeMap.get(orgId) || ''] || 'Unknown'
+    return 'All'
+  }, [orgMap, orgTypeMap])
+
+  const sortedRadarData = useMemo(() => {
+    if (!metrics) return []
+    const copy = [...metrics.radarData]
+    if (sectionPerfSort === 'value') copy.sort((a, b) => b.value - a.value)
+    return copy
+  }, [metrics, sectionPerfSort])
+
+  // Props for the detailed-analytics chart components. They self-fetch from
+  // /api/aid-effectiveness/* routes; we pass through the active page-level
+  // filters so the numbers stay in sync with the inline panels above.
+  const detailedChartProps = useMemo(() => ({
+    dateRange: effectiveDateRange ?? {
+      from: new Date(2000, 0, 1),
+      to: new Date(2099, 11, 31),
+    },
+    filters: {
+      donor: 'all',
+      sector: 'all',
+      country: 'all',
+      implementingPartner: selectedReportingOrg,
+    },
+    refreshKey: 0,
+  }), [effectiveDateRange, selectedReportingOrg])
 
   const hasSectorFilter = sectorSelection.sectorCategories.length > 0 ||
     sectorSelection.sectors.length > 0 ||
@@ -833,18 +918,18 @@ export default function AidEffectivenessDashboard() {
 
             {/* Tabs */}
             <Tabs defaultValue="ownership" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="ownership">Ownership & Systems</TabsTrigger>
                 <TabsTrigger value="transparency">Transparency & Accountability</TabsTrigger>
                 <TabsTrigger value="engagement">Engagement & Gender</TabsTrigger>
                 <TabsTrigger value="compliance">GPEDC Compliance</TabsTrigger>
+                <TabsTrigger value="detailed">Detailed Analytics</TabsTrigger>
               </TabsList>
 
               {/* ===== Ownership & Systems Tab ===== */}
               <TabsContent value="ownership" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Government Ownership & Strategic Alignment"
-                  icon={<Building2 className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 1"
                   fields={metrics.fieldCounts.ownership}
                   total={metrics.total}
@@ -854,7 +939,6 @@ export default function AidEffectivenessDashboard() {
                 />
                 <SectionDetail
                   title="Use of Country Public Financial & Procurement Systems"
-                  icon={<Globe className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 5a"
                   fields={metrics.fieldCounts.countrySystems}
                   total={metrics.total}
@@ -865,36 +949,83 @@ export default function AidEffectivenessDashboard() {
                 <GovWhyNotSection activities={filteredActivities} />
 
                 {/* Outcome indicators */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-                      <Target className="h-5 w-5 text-muted-foreground" />
-                      Outcome Indicators Distribution
-                      <HelpTooltip helpKey="outcomeIndicators" />
-                    </CardTitle>
-                    <CardDescription>How many government-defined outcome indicators each activity tracks for results measurement.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
+                {(() => {
+                  const dataKey = outcomeDisplayMode === 'count' ? 'count' : 'pct'
+                  const outcomeChart = (height: number) => (
+                    <ResponsiveContainer width="100%" height={height}>
                       <BarChart data={metrics.outcomeDistribution}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis dataKey="range" stroke="#64748b" fontSize={12} />
-                        <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, 'Count']} />
-                        <Bar dataKey="count" fill="#F37021" radius={[4, 4, 0, 0]}>
+                        <YAxis stroke="#64748b" fontSize={12} tickFormatter={(v) => outcomeDisplayMode === 'pct' ? `${v}%` : `${v}`} />
+                        <Tooltip
+                          cursor={{ fill: '#F3702115' }}
+                          content={({ active, payload }: any) => {
+                            if (!active || !payload?.length) return null
+                            const d = payload[0].payload
+                            return (
+                              <ChartTooltipCard
+                                title={`${d.range} indicators`}
+                                rows={[
+                                  { label: 'Activities', value: d.count, color: '#F37021' },
+                                  { label: 'Share', value: `${d.pct}%` },
+                                ]}
+                              />
+                            )
+                          }}
+                        />
+                        <Bar dataKey={dataKey} fill="#F37021" radius={[4, 4, 0, 0]}>
                           {metrics.outcomeDistribution.map((_, i) => <Cell key={`o-${i}`} fill="#F37021" />)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                  )
+                  return (
+                    <Card className="bg-card border-border">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                              Outcome Indicators Distribution
+                              <HelpTooltip helpKey="outcomeIndicators" />
+                            </CardTitle>
+                            <CardDescription>How many government-defined outcome indicators each activity tracks for results measurement.</CardDescription>
+                          </div>
+                          <ChartExpandButton
+                            title="Outcome Indicators Distribution"
+                            description="How many government-defined outcome indicators each activity tracks for results measurement."
+                            interpretation="Each bar shows how many activities track a given number of outcome indicators (0, 1–2, 3–5, 6–10, 10+). A healthy portfolio sits in the middle bands — too few suggests under-measurement of results, while many indicators in the top band can signal heavy reporting burden without sharper insight. Use this to spot under-monitored activities and rebalance toward focused, government-aligned indicator sets."
+                            controls={
+                              <Select value={outcomeDisplayMode} onValueChange={(v) => setOutcomeDisplayMode(v as 'count' | 'pct')}>
+                                <SelectTrigger className="h-8 w-[140px] text-helper">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="count">Show: count</SelectItem>
+                                  <SelectItem value="pct">Show: %</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            }
+                            csv={() => ({
+                              filename: 'outcome-indicators-distribution.csv',
+                              headers: ['Range', 'Activities', '%'],
+                              rows: metrics.outcomeDistribution.map((d) => [d.range, d.count, d.pct]),
+                            })}
+                            render={(h) => outcomeChart(h)}
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {outcomeChart(250)}
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
               </TabsContent>
 
               {/* ===== Transparency & Accountability Tab ===== */}
               <TabsContent value="transparency" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Predictability & Aid Characteristics"
-                  icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicators 5b, 6, 10"
                   fields={metrics.fieldCounts.predictability}
                   total={metrics.total}
@@ -902,31 +1033,149 @@ export default function AidEffectivenessDashboard() {
                   helpKey="predictability"
                   description="Whether annual budgets, forward plans, and multi-year financing agreements are shared with partners."
                 />
-                {/* Tied Aid Pie */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-muted-foreground" />
-                      Aid Tying Status
-                      <HelpTooltip helpKey="tiedAid" />
-                    </CardTitle>
-                    <CardDescription>Aid tying status determines whether recipients can procure goods and services from any source.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie data={metrics.tiedAid} cx="50%" cy="50%" innerRadius={70} outerRadius={130} paddingAngle={2} dataKey="value" nameKey="name">
-                          {metrics.tiedAid.map((_, i) => <Cell key={`t-${i}`} fill="#F37021" />)}
-                        </Pie>
-                        <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, props.payload.name]} />
-                        <Legend formatter={(_: any, entry: any) => `${entry?.payload?.name || ''} (${entry?.payload?.pct || 0}%)`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                {(() => {
+                  // Disaggregated rows for stacked-bar variant: one row per donor / org type.
+                  const tiedDisaggregated = (() => {
+                    if (tiedDisaggregate === 'none') return [] as Array<{ group: string; untied: number; partially_tied: number; tied: number; total: number }>
+                    const groups = new Map<string, { untied: number; partially_tied: number; tied: number }>()
+                    filteredActivities.forEach((a: any) => {
+                      const key = groupKey(a, tiedDisaggregate)
+                      if (!groups.has(key)) groups.set(key, { untied: 0, partially_tied: 0, tied: 0 })
+                      const ts = a.general_info?.aidEffectiveness?.tiedStatus
+                      const g = groups.get(key)!
+                      if (ts === 'untied') g.untied++
+                      else if (ts === 'partially_tied') g.partially_tied++
+                      else if (ts === 'tied') g.tied++
+                    })
+                    return Array.from(groups.entries())
+                      .map(([group, v]) => ({ group, ...v, total: v.untied + v.partially_tied + v.tied }))
+                      .filter((d) => d.total > 0)
+                      .sort((a, b) => b.total - a.total)
+                  })()
+                  const tiedChart = (height: number, inner: number, outer: number) => {
+                    if (tiedDisaggregate !== 'none' && tiedDisaggregated.length > 0) {
+                      return (
+                        <ResponsiveContainer width="100%" height={height}>
+                          <BarChart data={tiedDisaggregated} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis type="number" stroke="#64748b" fontSize={12} />
+                            <YAxis type="category" dataKey="group" stroke="#64748b" fontSize={11} width={180} />
+                            <Tooltip
+                              cursor={{ fill: '#F3702115' }}
+                              content={({ active, payload, label }: any) => {
+                                if (!active || !payload?.length) return null
+                                const row = payload[0].payload
+                                return (
+                                  <ChartTooltipCard
+                                    title={label}
+                                    subtitle={`${row.total} activities`}
+                                    rows={[
+                                      { label: 'Untied', value: row.untied, color: '#F37021' },
+                                      { label: 'Partially Tied', value: row.partially_tied, color: '#F8A872' },
+                                      { label: 'Tied', value: row.tied, color: '#C25A10' },
+                                    ]}
+                                  />
+                                )
+                              }}
+                            />
+                            <Legend />
+                            <Bar dataKey="untied" name="Untied" stackId="t" fill="#F37021" />
+                            <Bar dataKey="partially_tied" name="Partially Tied" stackId="t" fill="#F8A872" />
+                            <Bar dataKey="tied" name="Tied" stackId="t" fill="#C25A10" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )
+                    }
+                    return (
+                      <ResponsiveContainer width="100%" height={height}>
+                        <PieChart>
+                          <Pie data={metrics.tiedAid} cx="50%" cy="50%" innerRadius={tiedDisplay === 'pie' ? 0 : inner} outerRadius={outer} paddingAngle={2} dataKey="value" nameKey="name">
+                            {metrics.tiedAid.map((_, i) => <Cell key={`t-${i}`} fill={['#F37021', '#F8A872', '#C25A10'][i]} />)}
+                          </Pie>
+                          <Tooltip
+                            content={({ active, payload }: any) => {
+                              if (!active || !payload?.length) return null
+                              const d = payload[0].payload
+                              const tiedColor = d.name === 'Untied' ? '#F37021' : d.name === 'Partially Tied' ? '#F8A872' : '#C25A10'
+                              return (
+                                <ChartTooltipCard
+                                  title={d.name}
+                                  rows={[
+                                    { label: 'Activities', value: d.value, color: tiedColor },
+                                    { label: 'Share', value: `${d.pct}%` },
+                                  ]}
+                                />
+                              )
+                            }}
+                          />
+                          <Legend formatter={(_: any, entry: any) => `${entry?.payload?.name || ''} (${entry?.payload?.pct || 0}%)`} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )
+                  }
+                  return (
+                    <Card className="bg-card border-border">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                              Aid Tying Status
+                              <HelpTooltip helpKey="tiedAid" />
+                            </CardTitle>
+                            <CardDescription>Aid tying status determines whether recipients can procure goods and services from any source.</CardDescription>
+                          </div>
+                          <ChartExpandButton
+                            title="Aid Tying Status"
+                            description="Aid tying status determines whether recipients can procure goods and services from any source."
+                            interpretation="Untied aid lets recipient countries procure goods and services from the most cost-effective source — boosting value for money, local market participation, and country ownership. Partially tied and tied aid restrict procurement to the donor country or a limited set of providers, which often raises costs and limits recipient choice. A higher untied share is a core GPEDC commitment (Indicator 10); the trend over time shows how well partners are honouring it."
+                            controls={
+                              <>
+                                <Select value={tiedDisaggregate} onValueChange={(v) => setTiedDisaggregate(v as Disaggregate)}>
+                                  <SelectTrigger className="h-8 w-[170px] text-helper">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">No disaggregation</SelectItem>
+                                    <SelectItem value="donor">By donor</SelectItem>
+                                    <SelectItem value="orgType">By org type</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {tiedDisaggregate === 'none' && (
+                                  <Select value={tiedDisplay} onValueChange={(v) => setTiedDisplay(v as 'donut' | 'pie')}>
+                                    <SelectTrigger className="h-8 w-[120px] text-helper">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="donut">Donut</SelectItem>
+                                      <SelectItem value="pie">Pie</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </>
+                            }
+                            csv={() => tiedDisaggregate !== 'none'
+                              ? {
+                                  filename: `aid-tying-by-${tiedDisaggregate === 'donor' ? 'donor' : 'org-type'}.csv`,
+                                  headers: [tiedDisaggregate === 'donor' ? 'Donor' : 'Org Type', 'Untied', 'Partially Tied', 'Tied', 'Total'],
+                                  rows: tiedDisaggregated.map((d) => [d.group, d.untied, d.partially_tied, d.tied, d.total]),
+                                }
+                              : {
+                                  filename: 'aid-tying-status.csv',
+                                  headers: ['Status', 'Activities', '%'],
+                                  rows: metrics.tiedAid.map((d) => [d.name, d.value, d.pct]),
+                                }}
+                            render={(h) => tiedChart(h, Math.round(h * 0.18), Math.round(h * 0.32))}
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {tiedChart(300, 70, 130)}
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
                 <SectionDetail
                   title="Transparency & Timely Reporting"
-                  icon={<Eye className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 4"
                   fields={metrics.fieldCounts.transparency}
                   total={metrics.total}
@@ -936,7 +1185,6 @@ export default function AidEffectivenessDashboard() {
                 />
                 <SectionDetail
                   title="Mutual Accountability"
-                  icon={<Handshake className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 7"
                   fields={metrics.fieldCounts.accountability}
                   total={metrics.total}
@@ -950,7 +1198,6 @@ export default function AidEffectivenessDashboard() {
               <TabsContent value="engagement" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Civil Society & Private Sector Engagement"
-                  icon={<Users className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicators 2 & 3"
                   fields={metrics.fieldCounts.civilSociety}
                   total={metrics.total}
@@ -960,7 +1207,6 @@ export default function AidEffectivenessDashboard() {
                 />
                 <SectionDetail
                   title="Gender Equality & Inclusion"
-                  icon={<Heart className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 8"
                   fields={metrics.fieldCounts.gender}
                   total={metrics.total}
@@ -973,65 +1219,152 @@ export default function AidEffectivenessDashboard() {
               {/* ===== GPEDC Compliance Tab ===== */}
               <TabsContent value="compliance" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Full radar */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-                      GPEDC Section Radar
-                      <HelpTooltip helpKey="complianceRadar" />
-                    </CardTitle>
-                    <CardDescription>Compliance across all 7 GPEDC indicator categories</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={450}>
-                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={metrics.radarData}>
+                {(() => {
+                  const filteredRadar = metrics.radarData.filter(d =>
+                    radarThreshold === 'all' ? true :
+                    radarThreshold === 'below50' ? d.value < 50 :
+                    d.value < 70
+                  )
+                  const radarChart = (height: number) => (
+                    <ResponsiveContainer width="100%" height={height}>
+                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={filteredRadar.length >= 3 ? filteredRadar : metrics.radarData}>
                         <PolarGrid stroke="#e2e8f0" />
                         <PolarAngleAxis dataKey="section" tick={{ fontSize: 12, fill: '#475569' }} />
                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v: number) => `${v}%`} />
                         <Radar name="Score %" dataKey="value" stroke="#C25A10" fill="#F37021" fillOpacity={0.3} strokeWidth={2} />
-                        <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
+                        <Tooltip
+                          content={({ active, payload }: any) => {
+                            if (!active || !payload?.length) return null
+                            const d = payload[0].payload
+                            return (
+                              <ChartTooltipCard
+                                title={d.section}
+                                rows={[{ label: 'Score', value: `${d.value}%`, color: '#F37021' }]}
+                              />
+                            )
+                          }}
+                        />
                         <Legend />
                       </RadarChart>
                     </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                  )
+                  return (
+                    <Card className="bg-card border-border">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                              GPEDC Section Radar
+                              <HelpTooltip helpKey="complianceRadar" />
+                            </CardTitle>
+                            <CardDescription>Compliance across all 7 GPEDC indicator categories</CardDescription>
+                          </div>
+                          <ChartExpandButton
+                            title="GPEDC Section Radar"
+                            description="Compliance across all 7 GPEDC indicator categories"
+                            interpretation="The radar plots the average positive-response rate for each of the seven GPEDC sections (Ownership, Country Systems, Predictability, Transparency, Mutual Accountability, Civil Society, Gender). Sections closer to the outer ring are areas of strength; dents inward are weaknesses. Read the shape, not just any single axis — a balanced polygon means the portfolio is broadly aligned with effectiveness principles, while a spiky shape highlights specific principles that need attention."
+                            controls={
+                              <Select value={radarThreshold} onValueChange={(v) => setRadarThreshold(v as 'all' | 'below50' | 'below70')}>
+                                <SelectTrigger className="h-8 w-[150px] text-helper">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All sections</SelectItem>
+                                  <SelectItem value="below70">Focus: &lt; 70%</SelectItem>
+                                  <SelectItem value="below50">Focus: &lt; 50%</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            }
+                            csv={() => ({
+                              filename: 'gpedc-section-radar.csv',
+                              headers: ['Section', 'Score %'],
+                              rows: metrics.radarData.map((d) => [d.section, d.value]),
+                            })}
+                            render={(h) => radarChart(h)}
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>{radarChart(450)}</CardContent>
+                    </Card>
+                  )
+                })()}
 
                 {/* Section Performance Bars */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-muted-foreground" />
-                      Section Performance
-                      <HelpTooltip helpKey="sectionBars" />
-                    </CardTitle>
-                    <CardDescription>Average compliance rates across all 7 GPEDC sections for comparative analysis.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={metrics.radarData} margin={{ bottom: 60 }}>
+                {(() => {
+                  const sectionBars = (height: number) => (
+                    <ResponsiveContainer width="100%" height={height}>
+                      <BarChart data={sortedRadarData} margin={{ bottom: 60 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis dataKey="section" stroke="#64748b" fontSize={10} angle={-25} textAnchor="end" height={80} />
                         <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
-                        <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
+                        <Tooltip
+                          cursor={{ fill: '#F3702115' }}
+                          content={({ active, payload }: any) => {
+                            if (!active || !payload?.length) return null
+                            const d = payload[0].payload
+                            return (
+                              <ChartTooltipCard
+                                title={d.section}
+                                rows={[{ label: 'Score', value: `${d.value}%`, color: '#F37021' }]}
+                              />
+                            )
+                          }}
+                        />
                         <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                          {metrics.radarData.map((_, i) => <Cell key={`s-${i}`} fill="#F37021" />)}
+                          {sortedRadarData.map((_, i) => <Cell key={`s-${i}`} fill="#F37021" />)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                  )
+                  return (
+                    <Card className="bg-card border-border">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                              Section Performance
+                              <HelpTooltip helpKey="sectionBars" />
+                            </CardTitle>
+                            <CardDescription>Average compliance rates across all 7 GPEDC sections for comparative analysis.</CardDescription>
+                          </div>
+                          <ChartExpandButton
+                            title="Section Performance"
+                            description="Average compliance rates across all 7 GPEDC sections for comparative analysis."
+                            interpretation="A side-by-side comparison of the same data shown on the radar. Use this to identify which GPEDC principle the portfolio is strongest and weakest on, prioritise capacity-building investments, and benchmark progress over time. Sections under 50% generally warrant policy or practice review; sections above 70% are areas where partners can share lessons learned."
+                            controls={
+                              <Select value={sectionPerfSort} onValueChange={(v) => setSectionPerfSort(v as 'value' | 'section')}>
+                                <SelectTrigger className="h-8 w-[140px] text-helper">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="value">Sort: score</SelectItem>
+                                  <SelectItem value="section">Sort: section</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            }
+                            csv={() => ({
+                              filename: 'section-performance.csv',
+                              headers: ['Section', 'Score %'],
+                              rows: sortedRadarData.map((d) => [d.section, d.value]),
+                            })}
+                            render={(h) => sectionBars(h)}
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>{sectionBars(300)}</CardContent>
+                    </Card>
+                  )
+                })()}
 
                 {/* All sections summary */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-                      All Sections Breakdown
-                      <HelpTooltip helpKey="allSections" />
-                    </CardTitle>
-                    <CardDescription>Progress and percentage ratings for each of the 7 GPEDC compliance sections.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                {(() => {
+                  const renderBreakdown = () => (
                     <div className="space-y-3">
-                      {Object.entries(SECTION_FIELDS).map(([key, section]) => (
+                      {Object.entries(SECTION_FIELDS)
+                        .sort((a, b) => allSectionsSort === 'value'
+                          ? metrics.sectionScores[b[0]] - metrics.sectionScores[a[0]]
+                          : 0)
+                        .map(([key, section]) => (
                         <div key={key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <span className="font-medium text-foreground">{section.label}</span>
                           <div className="flex items-center gap-3">
@@ -1047,23 +1380,109 @@ export default function AidEffectivenessDashboard() {
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  )
+                  return (
+                    <Card className="bg-card border-border">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                              All Sections Breakdown
+                              <HelpTooltip helpKey="allSections" />
+                            </CardTitle>
+                            <CardDescription>Progress and percentage ratings for each of the 7 GPEDC compliance sections.</CardDescription>
+                          </div>
+                          <ChartExpandButton
+                            title="All Sections Breakdown"
+                            description="Progress and percentage ratings for each of the 7 GPEDC compliance sections."
+                            interpretation="A scoreboard view of every GPEDC section. Use this when you want to compare exact percentages side by side rather than read a chart's visual shape — particularly useful for reporting or executive summaries."
+                            controls={
+                              <Select value={allSectionsSort} onValueChange={(v) => setAllSectionsSort(v as 'value' | 'section')}>
+                                <SelectTrigger className="h-8 w-[140px] text-helper">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="section">Sort: section</SelectItem>
+                                  <SelectItem value="value">Sort: score</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            }
+                            csv={() => ({
+                              filename: 'all-sections-breakdown.csv',
+                              headers: ['Section', 'Score %'],
+                              rows: Object.entries(SECTION_FIELDS).map(([key, section]) => [section.label, metrics.sectionScores[key]]),
+                            })}
+                            render={() => renderBreakdown()}
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>{renderBreakdown()}</CardContent>
+                    </Card>
+                  )
+                })()}
 
                 {/* Implementing Partners */}
                 <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-                      <Users className="h-5 w-5 text-muted-foreground" />
-                      Implementing Partners
-                      <HelpTooltip helpKey="partners" />
-                    </CardTitle>
-                    <CardDescription>Distribution of activities across implementing partners by volume.</CardDescription>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                          Implementing Partners
+                          <HelpTooltip helpKey="partners" />
+                        </CardTitle>
+                        <CardDescription>Distribution of activities across implementing partners by volume.</CardDescription>
+                      </div>
+                      <ChartExpandButton
+                        title="Implementing Partners"
+                        description="Distribution of activities across implementing partners by volume."
+                        interpretation="Shows which organisations are responsible for delivering activities. Concentration in a small number of partners can signal reliance on a few capable agencies; a long tail suggests broader engagement but also coordination overhead. Use this to assess the diversity of the partnership base and whether new or local partners should be brought in to strengthen country ownership."
+                        controls={
+                          <Select value={String(partnerTopN)} onValueChange={(v) => setPartnerTopN(Number(v))}>
+                            <SelectTrigger className="h-8 w-[110px] text-helper">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="5">Top 5</SelectItem>
+                              <SelectItem value="10">Top 10</SelectItem>
+                              <SelectItem value="20">Top 20</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        }
+                        csv={() => ({
+                          filename: 'implementing-partners.csv',
+                          headers: ['Partner', 'Activities', '%'],
+                          rows: Array.from(metrics.partnerCounts.entries())
+                            .map(([id, count]) => ({
+                              name: id === 'unassigned' ? 'Unassigned' : (orgMap.get(id) || id),
+                              count,
+                              pct: metrics.total > 0 ? Math.round((count / metrics.total) * 100) : 0,
+                            }))
+                            .sort((a, b) => b.count - a.count)
+                            .slice(0, partnerTopN)
+                            .map((p) => [p.name, p.count, p.pct]),
+                        })}
+                        render={(h) => <PartnerChart partnerCounts={metrics.partnerCounts} orgMap={orgMap} total={metrics.total} height={h} topN={partnerTopN} />}
+                      />
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <PartnerChart partnerCounts={metrics.partnerCounts} orgMap={orgMap} total={metrics.total} />
+                    <PartnerChart partnerCounts={metrics.partnerCounts} orgMap={orgMap} total={metrics.total} topN={partnerTopN} />
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* ===== Detailed Analytics Tab ===== */}
+              <TabsContent value="detailed" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TiedAidChart {...detailedChartProps} />
+                <BudgetPlanningChart {...detailedChartProps} />
+                <GovernmentSystemsChart {...detailedChartProps} />
+                <DevelopmentIndicatorsChart {...detailedChartProps} />
+                <div className="lg:col-span-2">
+                  <GPEDCComplianceChart {...detailedChartProps} detailed />
+                </div>
+                <div className="lg:col-span-2">
+                  <ImplementingPartnersChart {...detailedChartProps} />
+                </div>
               </TabsContent>
             </Tabs>
           </>
@@ -1083,9 +1502,8 @@ export default function AidEffectivenessDashboard() {
 
 // --- Reusable Section Detail Component ---
 
-function SectionDetail({ title, icon, badge, fields, total, score, helpKey, description }: {
+function SectionDetail({ title, badge, fields, total, score, helpKey, description }: {
   title: string
-  icon: React.ReactNode
   badge: string
   fields: { label: string; yes: number; pct: number }[]
   total: number
@@ -1093,12 +1511,46 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey, desc
   helpKey?: string
   description?: string
 }) {
+  const [sortBy, setSortBy] = useState<'pct' | 'label'>('pct')
+  const sortedFields = useMemo(() => {
+    const copy = [...fields]
+    if (sortBy === 'pct') copy.sort((a, b) => b.pct - a.pct)
+    else copy.sort((a, b) => a.label.localeCompare(b.label))
+    return copy
+  }, [fields, sortBy])
+  const renderChart = (height: number) => (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={sortedFields} layout="vertical" margin={{ left: 20, right: 30 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <XAxis type="number" domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
+        <YAxis type="category" dataKey="label" stroke="#64748b" fontSize={11} width={200} />
+        <Tooltip
+          cursor={{ fill: '#F3702115' }}
+          content={({ active, payload }: any) => {
+            if (!active || !payload?.length) return null
+            const d = payload[0].payload
+            return (
+              <ChartTooltipCard
+                title={d.label}
+                rows={[
+                  { label: 'Adoption', value: `${d.pct}%`, color: '#F37021' },
+                  { label: 'Activities', value: `${d.yes} / ${total}` },
+                ]}
+              />
+            )
+          }}
+        />
+        <Bar dataKey="pct" fill="#F37021" radius={[0, 4, 4, 0]}>
+          {sortedFields.map((_, i) => <Cell key={`f-${i}`} fill="#F37021" />)}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-            {icon}
             {title}
             {helpKey && <HelpTooltip helpKey={helpKey} />}
           </CardTitle>
@@ -1109,22 +1561,34 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey, desc
               score >= 50 ? "bg-muted text-foreground" :
               "bg-muted text-muted-foreground"
             }>{score}%</Badge>
+            <ChartExpandButton
+              title={title}
+              description={description}
+              interpretation={`Each bar shows the share of activities that answered positively for the listed indicator within the "${title}" section of GPEDC. Higher bars are areas of strength; low bars highlight where partners or activities can improve. Combined, the section's average score is the headline number used in the radar and section-performance views.`}
+              controls={
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'pct' | 'label')}>
+                  <SelectTrigger className="h-8 w-[140px] text-helper">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pct">Sort: adoption</SelectItem>
+                    <SelectItem value="label">Sort: A–Z</SelectItem>
+                  </SelectContent>
+                </Select>
+              }
+              csv={() => ({
+                filename: `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`,
+                headers: ['Indicator', 'Yes', 'Total', 'Adoption %'],
+                rows: sortedFields.map((f) => [f.label, f.yes, total, f.pct]),
+              })}
+              render={(h) => renderChart(h)}
+            />
           </div>
         </div>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(200, fields.length * 44)}>
-          <BarChart data={fields} layout="vertical" margin={{ left: 20, right: 30 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis type="number" domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
-            <YAxis type="category" dataKey="label" stroke="#64748b" fontSize={11} width={200} />
-            <Tooltip formatter={(v: any, _: any, props: any) => [`${v}% (${props.payload.yes}/${total})`, 'Adoption']} />
-            <Bar dataKey="pct" fill="#F37021" radius={[0, 4, 4, 0]}>
-              {fields.map((_, i) => <Cell key={`f-${i}`} fill="#F37021" />)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {renderChart(Math.max(200, fields.length * 44))}
       </CardContent>
     </Card>
   )
@@ -1132,8 +1596,8 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey, desc
 
 // --- Partner Distribution Chart ---
 
-function PartnerChart({ partnerCounts, orgMap, total }: {
-  partnerCounts: Map<string, number>; orgMap: Map<string, string>; total: number
+function PartnerChart({ partnerCounts, orgMap, total, height, topN = 10 }: {
+  partnerCounts: Map<string, number>; orgMap: Map<string, string>; total: number; height?: number; topN?: number
 }) {
   const data = Array.from(partnerCounts.entries())
     .map(([id, count]) => ({
@@ -1142,17 +1606,32 @@ function PartnerChart({ partnerCounts, orgMap, total }: {
       pct: total > 0 ? Math.round((count / total) * 100) : 0
     }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10)
+    .slice(0, topN)
 
   if (data.length === 0) return <p className="text-muted-foreground text-center py-8">No implementing partner data</p>
 
   return (
-    <ResponsiveContainer width="100%" height={Math.max(250, data.length * 40)}>
+    <ResponsiveContainer width="100%" height={height ?? Math.max(250, data.length * 40)}>
       <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis type="number" stroke="#64748b" fontSize={12} />
         <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={11} width={150} />
-        <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, 'Count']} />
+        <Tooltip
+          cursor={{ fill: '#F3702115' }}
+          content={({ active, payload }: any) => {
+            if (!active || !payload?.length) return null
+            const d = payload[0].payload
+            return (
+              <ChartTooltipCard
+                title={d.name}
+                rows={[
+                  { label: 'Activities', value: d.count, color: '#F37021' },
+                  { label: 'Share', value: `${d.pct}%` },
+                ]}
+              />
+            )
+          }}
+        />
         <Bar dataKey="count" radius={[0, 4, 4, 0]}>
           {data.map((_, i) => <Cell key={`p-${i}`} fill="#F37021" />)}
         </Bar>

@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
         ),
         organizations!created_by_org_id(name, acronym, type)
       `)
-      .eq('publication_status', 'published')
       .not('general_info->aidEffectiveness', 'is', null)
 
     // Apply filters

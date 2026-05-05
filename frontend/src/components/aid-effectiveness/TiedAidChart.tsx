@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Globe, Handshake, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
 import {
   BarChart,
   Bar,
@@ -92,22 +94,20 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-foreground">{data.category}</p>
-          <div className="space-y-1 text-body">
-            <p className="text-foreground">Untied: {data.untied_count} ({data.untied_percentage}%)</p>
-            <p className="text-muted-foreground">Partially Tied: {data.partially_tied_count} ({data.partially_tied_percentage}%)</p>
-            <p className="text-muted-foreground">Tied: {data.tied_count} ({data.tied_percentage}%)</p>
-          </div>
-          <p className="text-helper text-muted-foreground mt-1">Total: {data.total_activities} activities</p>
-        </div>
-      )
-    }
-    return null
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <ChartTooltipCard
+        title={d.category}
+        subtitle={`${d.total_activities} activities`}
+        rows={[
+          { label: 'Untied', value: `${d.untied_count} (${d.untied_percentage}%)`, color: TIED_COLORS.untied },
+          { label: 'Partially Tied', value: `${d.partially_tied_count} (${d.partially_tied_percentage}%)`, color: TIED_COLORS.partially_tied },
+          { label: 'Tied', value: `${d.tied_count} (${d.tied_percentage}%)`, color: TIED_COLORS.tied },
+        ]}
+      />
+    )
   }
 
   // Prepare data for stacked bar chart
@@ -203,44 +203,45 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overall Distribution */}
-        <Card className="bg-white border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-foreground">Overall Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
+        {(() => {
+          const tiedPie = (height: number, inner: number, outer: number) => (
+            <ResponsiveContainer width="100%" height={height}>
               <PieChart>
-                <Pie
-                  data={overallPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={100}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
+                <Pie data={overallPieData} cx="50%" cy="50%" innerRadius={inner} outerRadius={outer} paddingAngle={2} dataKey="value">
                   {overallPieData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={TIED_COLORS[entry.name.toLowerCase().replace(' ', '_') as keyof typeof TIED_COLORS] || '#64748b'} 
-                    />
+                    <Cell key={`cell-${index}`} fill={TIED_COLORS[entry.name.toLowerCase().replace(' ', '_') as keyof typeof TIED_COLORS] || '#64748b'} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: any, name: any, props: any) => [
-                    `${props.payload.count} activities (${value}%)`, 
-                    name
-                  ]}
-                />
+                <Tooltip formatter={(value: any, name: any, props: any) => [`${props.payload.count} activities (${value}%)`, name]} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          )
+          return (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-medium text-foreground">Overall Distribution</CardTitle>
+                  <ChartExpandButton
+                    title="Overall Distribution"
+                    interpretation="The portfolio's mix of untied, partially tied, and tied aid. Untied aid is a GPEDC commitment (Indicator 10) because it lets recipients procure from the most cost-effective source, supporting local markets and recipient ownership. Watch the share of fully tied aid over time — a falling tied share is a tangible signal that effectiveness commitments are being honoured."
+                    csv={() => ({
+                      filename: 'aid-tying-overall.csv',
+                      headers: ['Status', 'Activities', '%'],
+                      rows: overallPieData.map((d) => [d.name, d.count, d.value]),
+                    })}
+                    render={(h) => tiedPie(h, Math.round(h * 0.2), Math.round(h * 0.4))}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>{tiedPie(250, 50, 100)}</CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Breakdown by Category */}
         {groupBy !== 'overall' && (
-          <Card className="bg-white border-border">
+          <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg font-medium text-foreground">
                 Breakdown by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
@@ -267,7 +268,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="untied_percentage" stackId="tied" fill={TIED_COLORS.untied} />
                   <Bar dataKey="partially_tied_percentage" stackId="tied" fill={TIED_COLORS.partially_tied} />
-                  <Bar dataKey="tied_percentage" stackId="tied" fill={TIED_COLORS.tied} />
+                  <Bar dataKey="tied_percentage" stackId="tied" fill={TIED_COLORS.tied} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

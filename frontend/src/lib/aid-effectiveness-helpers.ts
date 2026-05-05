@@ -18,7 +18,7 @@ const NEGATIVE_VALUES = new Set([
   'Not consulted',
   'Not involved',
   'Not engaged',
-  'Not targeted (GEN-0)',
+  'Not targeted',
   'No funding to CSOs',
 ]);
 
