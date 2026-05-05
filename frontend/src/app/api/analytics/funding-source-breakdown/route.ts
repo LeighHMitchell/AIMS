@@ -58,9 +58,17 @@ export async function GET(request: NextRequest) {
     const { count: activityCount } = await supabase
       .from('activities')
       .select('id', { count: 'exact', head: true })
+      .eq('publication_status', 'published')
     if (!activityCount) {
       return NextResponse.json({ providers: [], receivers: [], flows: [] })
     }
+
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
 
     if (sourceType === 'planned') {
       // Fetch planned disbursements for all activities
@@ -78,6 +86,7 @@ export async function GET(request: NextRequest) {
           receiver_org_name,
           receiver_org_ref
         `)
+        .in('activity_id', publishedActivityIds)
 
       // Apply date range filter
       if (dateFrom) {
@@ -163,6 +172,7 @@ export async function GET(request: NextRequest) {
           receiver_organization:organizations!receiver_org_id(name, acronym)
         `)
         .eq('status', 'actual')
+        .in('activity_id', publishedActivityIds)
 
       // Filter by transaction types if specified
       if (transactionTypes.length > 0) {

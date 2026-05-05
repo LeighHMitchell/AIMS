@@ -25,11 +25,19 @@ export async function GET() {
   try {
     const supabaseAdmin = supabase;
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabaseAdmin
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+
     // Get all transactions with their types and values
     // Exclude internal transfers (pooled fund flows) to avoid double-counting
     let txQuery = supabaseAdmin
       .from('transactions')
-      .select('transaction_type, value_usd');
+      .select('transaction_type, value_usd')
+      .in('activity_id', publishedActivityIds);
     const pooledFundIds = await getPooledFundIds(supabaseAdmin);
     txQuery = excludeInternalTransfers(txQuery, pooledFundIds);
     const { data: transactions, error } = await txQuery;

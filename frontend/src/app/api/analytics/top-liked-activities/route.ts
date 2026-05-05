@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('activities')
       .select('id, iati_identifier, title_narrative, acronym, activity_status, reporting_org_id, vote_score, upvote_count, downvote_count')
+      .eq('publication_status', 'published')
 
     if (sort === 'downvotes') {
       query = query.gt('downvote_count', 0)

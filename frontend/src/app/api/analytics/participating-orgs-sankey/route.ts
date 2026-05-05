@@ -66,6 +66,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const metric = searchParams.get('metric') || 'count'; // 'count' or 'value'
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabaseAdmin
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+
     // Get all participating orgs with their activities
     const { data: participatingOrgs, error: orgError } = await supabaseAdmin
       .from('activity_participating_organizations')
@@ -80,7 +87,8 @@ export async function GET(request: Request) {
           name
         )
       `)
-      .not('organization_id', 'is', null);
+      .not('organization_id', 'is', null)
+      .in('activity_id', publishedActivityIds);
 
     if (orgError) {
       console.error('[ParticipatingOrgsSankey] Error fetching orgs:', orgError);

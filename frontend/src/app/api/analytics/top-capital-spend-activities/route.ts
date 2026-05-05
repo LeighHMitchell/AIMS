@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select('id, title_narrative, iati_identifier, capital_spend_percentage')
       .not('capital_spend_percentage', 'is', null)
-      .gt('capital_spend_percentage', 0);
+      .gt('capital_spend_percentage', 0)
+      .eq('publication_status', 'published');
 
     if (activitiesError) {
       console.error('[TopCapitalSpend] Error fetching activities:', activitiesError);

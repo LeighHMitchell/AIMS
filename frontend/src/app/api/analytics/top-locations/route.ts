@@ -54,16 +54,24 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const topN = parseInt(searchParams.get('topN') || '10');
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+
     // Map to aggregate by region
-    const locationMap = new Map<string, { 
-      value: number; 
+    const locationMap = new Map<string, {
+      value: number;
       activityIds: Set<string>;
     }>();
 
     // Get all subnational breakdowns with their percentages
     const { data: breakdowns, error: breakdownsError } = await supabase
       .from('subnational_breakdowns')
-      .select('activity_id, region_name, is_nationwide, percentage');
+      .select('activity_id, region_name, is_nationwide, percentage')
+      .in('activity_id', publishedActivityIds);
 
     if (breakdownsError) {
       console.error('[TopLocations] Error fetching subnational breakdowns:', breakdownsError);

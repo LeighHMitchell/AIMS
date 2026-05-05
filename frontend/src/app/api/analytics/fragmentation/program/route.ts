@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
           national_priorities (id, code, name, level, parent_id)
         ),
         transactions!transactions_activity_id_fkey1 (value_usd, transaction_type, transaction_date, status)
-      `);
+      `)
+      .eq('publication_status', 'published');
 
     if (error) {
       console.error('[Program Fragmentation API] Error:', error);

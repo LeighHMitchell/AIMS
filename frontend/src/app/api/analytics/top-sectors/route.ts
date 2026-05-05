@@ -53,17 +53,25 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const topN = parseInt(searchParams.get('topN') || '5');
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+
     // Map to aggregate by sector
-    const sectorMap = new Map<string, { 
+    const sectorMap = new Map<string, {
       name: string;
-      value: number; 
+      value: number;
       activityIds: Set<string>;
     }>();
 
     // Get all activity sectors with their percentages
     const { data: activitySectors, error: sectorsError } = await supabase
       .from('activity_sectors')
-      .select('activity_id, sector_code, category_code, category_name, percentage');
+      .select('activity_id, sector_code, category_code, category_name, percentage')
+      .in('activity_id', publishedActivityIds);
 
     if (sectorsError) {
       console.error('[TopSectors] Error fetching activity sectors:', sectorsError);
@@ -89,7 +97,8 @@ export async function GET(request: NextRequest) {
       // Get budgets from activity_budgets table
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
-        .select('usd_value, value, activity_id, period_start, period_end');
+        .select('usd_value, value, activity_id, period_start, period_end')
+        .in('activity_id', publishedActivityIds);
 
       if (budgetError) {
         console.error('[TopSectors] Error fetching budgets:', budgetError);
@@ -125,7 +134,8 @@ export async function GET(request: NextRequest) {
       // Get planned disbursements
       const { data: plannedData, error: plannedError } = await supabase
         .from('planned_disbursements')
-        .select('usd_amount, amount, period_start, period_end, activity_id');
+        .select('usd_amount, amount, period_start, period_end, activity_id')
+        .in('activity_id', publishedActivityIds);
 
       if (plannedError) {
         console.error('[TopSectors] Error fetching planned disbursements:', plannedError);
@@ -165,7 +175,8 @@ export async function GET(request: NextRequest) {
         .from('transactions')
         .select('value_usd, value, transaction_date, activity_id')
         .eq('transaction_type', transactionType)
-        .eq('status', 'actual');
+        .eq('status', 'actual')
+        .in('activity_id', publishedActivityIds);
       // Exclude internal transfers (pooled fund flows)
       const pooledFundIds = await getPooledFundIds(supabase);
       txQuery = excludeInternalTransfers(txQuery, pooledFundIds, [transactionType]);

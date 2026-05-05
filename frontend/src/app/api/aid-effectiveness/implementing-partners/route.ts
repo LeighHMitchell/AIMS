@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
           type
         )
       `)
+      .eq('publication_status', 'published')
       .not('general_info->aidEffectiveness', 'is', null)
       .not('created_by_org_id', 'is', null)
 

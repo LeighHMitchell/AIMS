@@ -69,18 +69,26 @@ export async function GET(request: NextRequest) {
 
     const relevantMarkerIds = relevantMarkers.map(m => m.id)
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
+
     // Step 2: Get activity-policy marker relationships with significance
     // Fetch activity_policy_markers separately from policy_markers to avoid FK hint issues
     const { data: activityMarkers, error: activityMarkersError } = await supabase
       .from('activity_policy_markers')
       .select(`
-        activity_id, 
-        policy_marker_id, 
-        score, 
+        activity_id,
+        policy_marker_id,
+        score,
         significance,
         visibility
       `)
       .in('policy_marker_id', relevantMarkerIds)
+      .in('activity_id', publishedActivityIds)
 
     if (activityMarkersError) {
       console.error('[Policy Markers Analytics] Error fetching activity markers:', activityMarkersError)

@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
     // First, get activity IDs that match country and sector filters
     let activitiesQuery = supabase
       .from('activities')
-      .select('id');
+      .select('id')
+      .eq('publication_status', 'published');
 
     if (country && country !== 'all') {
       activitiesQuery = activitiesQuery.contains('locations', [{ country_code: country }]);

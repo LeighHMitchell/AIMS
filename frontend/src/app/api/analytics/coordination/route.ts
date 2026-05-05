@@ -71,11 +71,11 @@ export async function GET(request: NextRequest) {
 
     const supabaseAdmin = supabase;
 
-    // Get activities (include all for now - can filter by publication_status if needed)
+    // Get published activities only
     const { data: publishedActivities, error: activitiesError } = await supabaseAdmin
       .from('activities')
-      .select('id');
-      // .eq('publication_status', 'published'); // Uncomment to filter to published only
+      .select('id')
+      .eq('publication_status', 'published');
 
     if (activitiesError) {
       console.error('Error fetching published activities:', activitiesError);

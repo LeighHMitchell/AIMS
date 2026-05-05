@@ -24,11 +24,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database connection not initialised' }, { status: 500 })
     }
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
+
     // Step 1: Find all activities that have budgets
     const { data: activitiesWithBudgets, error: activitiesError } = await supabase
       .from('activity_budgets')
       .select('activity_id')
       .not('value', 'is', null)
+      .in('activity_id', publishedActivityIds)
 
     if (activitiesError) {
       console.error('[PortfolioSpendTrajectory] Error fetching activities with budgets:', activitiesError)
@@ -49,6 +57,7 @@ export async function GET(request: NextRequest) {
     const { count: totalActivitiesCount } = await supabase
       .from('activities')
       .select('*', { count: 'exact', head: true })
+      .eq('publication_status', 'published')
 
     const activitiesIncluded = activityIds.length
     const activitiesExcluded = (totalActivitiesCount || 0) - activitiesIncluded

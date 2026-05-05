@@ -81,6 +81,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabaseAdmin
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
+
     // Build the query for transactions with organization details
     // We need to aggregate by both provider and receiver roles
     // Note: transactions table uses uuid, not id, and has value_usd for USD amounts
@@ -105,6 +112,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('status', 'actual')
+      .in('activity_id', publishedActivityIds)
 
     // Apply transaction type filter (default: disbursements)
     if (transactionType !== 'all') {

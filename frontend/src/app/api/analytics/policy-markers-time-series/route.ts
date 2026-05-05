@@ -107,7 +107,15 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIdSet = new Set<string>((publishedActivitiesAll || []).map((a: any) => a.id))
+
     const activityIds = [...new Set(activityMarkers.map(am => am.activity_id))]
+      .filter(id => publishedActivityIdSet.has(id))
 
     // Step 3: Get transactions (disbursements + expenditures) for these activities
     let transactionsQuery = supabase

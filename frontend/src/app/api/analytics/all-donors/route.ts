@@ -144,6 +144,13 @@ export async function GET(request: Request) {
     }
 
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
+
     // First, get all organizations for mapping.
     // We fetch `country` so we can exclude Myanmar government entities below —
     // a recipient-country government ministry (e.g. MOALI) is not a development
@@ -296,6 +303,7 @@ export async function GET(request: Request) {
       .select('activity_id, usd_value, period_start, period_end')
       .lte('period_start', dateTo)
       .gte('period_end', dateFrom)
+      .in('activity_id', publishedActivityIds)
 
     if (budgetsError) {
       console.error('[AllDonors API] Error fetching budgets:', budgetsError)
@@ -381,6 +389,7 @@ export async function GET(request: Request) {
       .select('provider_org_id, usd_amount, period_start, period_end, activity_id')
       .lte('period_start', dateTo)
       .gte('period_end', dateFrom)
+      .in('activity_id', publishedActivityIds)
 
     if (pdError) {
       console.error('[AllDonors API] Error fetching planned disbursements:', pdError)
@@ -462,6 +471,7 @@ export async function GET(request: Request) {
       .eq('status', 'actual')
       .gte('transaction_date', dateFrom)
       .lte('transaction_date', dateTo)
+      .in('activity_id', publishedActivityIds)
 
     if (txError) {
       console.error('[AllDonors API] Error fetching transactions:', txError)

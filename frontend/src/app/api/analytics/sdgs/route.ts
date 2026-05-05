@@ -60,9 +60,7 @@ export async function GET(request: NextRequest) {
         actual_end_date,
         publication_status
       `)
-    // Only filter by publication_status if it exists and is not null
-    // Some activities might not have this field set
-    // .eq('publication_status', 'published')
+      .eq('publication_status', 'published')
 
     // Apply organization filter
     if (organizationId && organizationId !== 'all') {

@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
         locations,
         transactions(provider_org_id)
       `)
+      .eq('publication_status', 'published')
       .not('general_info->aidEffectiveness', 'is', null)
 
     // Apply filters

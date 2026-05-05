@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
     // First, fetch all activities with their capital_spend_percentage
     const { data: activitiesData, error: activitiesError } = await supabase
       .from('activities')
-      .select('id, capital_spend_percentage');
+      .select('id, capital_spend_percentage')
+      .eq('publication_status', 'published');
 
     if (activitiesError) {
       console.error('[CapitalSpendOverTime] Error fetching activities:', activitiesError);
@@ -49,10 +50,12 @@ export async function GET(request: NextRequest) {
     activitiesData?.forEach((activity: any) => {
       // Default to 0 if no capital spend percentage is set
       activityCapitalMap.set(
-        activity.id, 
+        activity.id,
         parseFloat(activity.capital_spend_percentage) || 0
       );
     });
+
+    const publishedActivityIds = (activitiesData || []).map((a: any) => a.id);
 
     // Map to accumulate values by year
     const yearlyData = new Map<number, { capitalSpend: number; nonCapitalSpend: number }>();
@@ -61,7 +64,8 @@ export async function GET(request: NextRequest) {
       // Total Budgets: Sum of activity_budgets
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
-        .select('activity_id, usd_value, value, period_start');
+        .select('activity_id, usd_value, value, period_start')
+        .in('activity_id', publishedActivityIds);
 
       if (budgetError) {
         console.error('[CapitalSpendOverTime] Error fetching budgets:', budgetError);
@@ -94,7 +98,8 @@ export async function GET(request: NextRequest) {
       // Planned Disbursements
       const { data: plannedData, error: plannedError } = await supabase
         .from('planned_disbursements')
-        .select('activity_id, usd_amount, amount, period_start');
+        .select('activity_id, usd_amount, amount, period_start')
+        .in('activity_id', publishedActivityIds);
 
       if (plannedError) {
         console.error('[CapitalSpendOverTime] Error fetching planned disbursements:', plannedError);
@@ -131,7 +136,8 @@ export async function GET(request: NextRequest) {
         .from('transactions')
         .select('activity_id, value_usd, value, transaction_date')
         .eq('transaction_type', transactionType)
-        .eq('status', 'actual');
+        .eq('status', 'actual')
+        .in('activity_id', publishedActivityIds);
 
       if (txError) {
         console.error('[CapitalSpendOverTime] Error fetching transactions:', txError);

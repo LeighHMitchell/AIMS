@@ -108,7 +108,8 @@ export async function GET(request: NextRequest) {
           sector_name,
           percentage
         )
-      `);
+      `)
+      .eq('publication_status', 'published');
 
     if (activitiesError) {
       console.error('[SectorDisbursementSummary] Error fetching activities:', activitiesError);
@@ -172,7 +173,8 @@ export async function GET(request: NextRequest) {
     // Fetch all planned disbursements (with period_start and period_end for pro-rata)
     const { data: plannedDisbursements, error: plannedError } = await supabase
       .from('planned_disbursements')
-      .select('activity_id, usd_amount, period_start, period_end');
+      .select('activity_id, usd_amount, period_start, period_end')
+      .in('activity_id', activityIds);
 
     if (plannedError) {
       console.error('[SectorDisbursementSummary] Error fetching planned disbursements:', plannedError);
@@ -181,7 +183,8 @@ export async function GET(request: NextRequest) {
     // Fetch all activity budgets (with period_start and period_end for pro-rata)
     const { data: budgets, error: budgetsError } = await supabase
       .from('activity_budgets')
-      .select('activity_id, usd_value, period_start, period_end');
+      .select('activity_id, usd_value, period_start, period_end')
+      .in('activity_id', activityIds);
 
     if (budgetsError) {
       console.error('[SectorDisbursementSummary] Error fetching budgets:', budgetsError);

@@ -580,7 +580,13 @@ function renderMainSlot(args: {
         <Card className="border-border bg-card p-6">
           <h2 className="text-body font-semibold text-foreground mb-3">Activity Locations</h2>
           {validMapLocations.length > 0 ? (
-            <ActivityLocationsMapViewV2 locations={validMapLocations} />
+            <ActivityLocationsMapViewV2
+              locations={validMapLocations}
+              mapCenter={[19.0, 96.5]}
+              mapZoom={6}
+              activityTitle={activity?.title}
+              organizationId={activity?.reporting_org_id}
+            />
           ) : (
             <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
           )}

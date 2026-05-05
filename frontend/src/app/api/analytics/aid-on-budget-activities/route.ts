@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
     // 1. Fetch activities with basic info (using same pattern as enhanced API)
     const { data: activities, error: activitiesError } = await supabase
       .from("activities")
-      .select("*");
+      .select("*")
+      .eq("publication_status", "published");
 
     if (activitiesError) {
       console.error("[Aid on Budget Activities] Error fetching activities:", activitiesError);
@@ -80,6 +81,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Fetch transactions (disbursements) - filter by year range if specified
+    // Restrict to published activities only
+    const publishedActivityIds = (activities || []).map((a: any) => a.id);
     let txQuery = supabase
       .from("transactions")
       .select(`
@@ -89,7 +92,8 @@ export async function GET(request: NextRequest) {
         value_usd,
         transaction_date
       `)
-      .in("transaction_type", ["3", "4"]); // Disbursement and Expenditure
+      .in("transaction_type", ["3", "4"]) // Disbursement and Expenditure
+      .in("activity_id", publishedActivityIds);
 
     // Filter transactions by year range based on transaction_date
     if (startYear && endYear) {

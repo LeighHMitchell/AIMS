@@ -36,6 +36,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+    const publishedActivityIdSet = new Set<string>(publishedActivityIds);
+
     // Fetch the plan
     const { data: planRow, error: planError } = await supabase
       .from('national_plans')
@@ -86,7 +94,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unique activity IDs across all priorities in this plan
-    let alignedActivityIdsAll = Array.from(new Set(allocationsData.map(a => a.activity_id)));
+    let alignedActivityIdsAll = Array.from(new Set(allocationsData.map(a => a.activity_id)))
+      .filter(id => publishedActivityIdSet.has(id));
 
     // === APPLY FILTERS to narrow which activities count ===
 
@@ -297,13 +306,15 @@ export async function GET(request: NextRequest) {
     // Get totals
     const { count: totalActivities } = await supabase
       .from('activities')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('publication_status', 'published');
 
     let totalFunding = 0;
     const { data: totalTxns } = await supabase
       .from('transactions')
       .select('value_usd')
-      .eq('transaction_type_code', '3');
+      .eq('transaction_type_code', '3')
+      .in('activity_id', publishedActivityIds);
 
     if (totalTxns) {
       totalFunding = totalTxns.reduce((sum: number, t: { value_usd: number | null }) => sum + (t.value_usd || 0), 0);

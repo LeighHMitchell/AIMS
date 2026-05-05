@@ -28,12 +28,20 @@ export async function GET(request: NextRequest) {
 
     const pooledFundIds = await getPooledFundIds(supabase);
 
+    // Restrict to published activities only
+    const { data: publishedActivities } = await supabase
+      .from("activities")
+      .select("id")
+      .eq("publication_status", "published");
+    const publishedActivityIds = (publishedActivities || []).map((a: any) => a.id);
+
     // Get total aid (all disbursements)
     let totalAidQuery = supabase
       .from("transactions")
       .select("value_usd")
       .eq("transaction_type", "3") // Disbursements
-      .not("value_usd", "is", null);
+      .not("value_usd", "is", null)
+      .in("activity_id", publishedActivityIds);
     // Exclude internal transfers (pooled fund flows)
     totalAidQuery = excludeInternalTransfers(totalAidQuery, pooledFundIds, ["3"]);
 
@@ -98,7 +106,8 @@ export async function GET(request: NextRequest) {
         transaction_date
       `)
       .eq("transaction_type", "3") // Disbursements
-      .not("value_usd", "is", null);
+      .not("value_usd", "is", null)
+      .in("activity_id", publishedActivityIds);
     // Exclude internal transfers (pooled fund flows)
     disbursementsQuery = excludeInternalTransfers(disbursementsQuery, pooledFundIds, ["3"]);
 
@@ -113,7 +122,8 @@ export async function GET(request: NextRequest) {
       const { data: orgActivities } = await supabase
         .from("activities")
         .select("id")
-        .eq("reporting_org_id", organizationId);
+        .eq("reporting_org_id", organizationId)
+        .eq("publication_status", "published");
 
       if (orgActivities) {
         disbursementsQuery = disbursementsQuery.in(
@@ -138,7 +148,8 @@ export async function GET(request: NextRequest) {
         transaction_date
       `)
       .eq("transaction_type", "2") // Commitments
-      .not("value_usd", "is", null);
+      .not("value_usd", "is", null)
+      .in("activity_id", publishedActivityIds);
     // Exclude internal transfers (pooled fund flows)
     commitmentsQuery = excludeInternalTransfers(commitmentsQuery, pooledFundIds, ["2"]);
 
@@ -152,7 +163,8 @@ export async function GET(request: NextRequest) {
       const { data: orgActivities } = await supabase
         .from("activities")
         .select("id")
-        .eq("reporting_org_id", organizationId);
+        .eq("reporting_org_id", organizationId)
+        .eq("publication_status", "published");
 
       if (orgActivities) {
         commitmentsQuery = commitmentsQuery.in(
@@ -261,7 +273,8 @@ export async function GET(request: NextRequest) {
     // Get unique activity count
     const allActivitiesQuery = supabase
       .from("activities")
-      .select("id", { count: "exact" });
+      .select("id", { count: "exact" })
+      .eq("publication_status", "published");
 
     const { count: totalActivities } = await allActivitiesQuery;
 

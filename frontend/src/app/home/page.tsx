@@ -132,7 +132,7 @@ export default function HomePage() {
 
       <MainLayout>
         <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
-          <div className="max-w-4xl w-full text-center">
+          <div className="max-w-7xl w-full text-center">
             <div className="mb-12">
               <h1 className="text-4xl font-bold tracking-tight">
                 Aether
@@ -142,23 +142,25 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-left">
               {modules.map((m) => (
                 <div
                   key={m.key}
-                  className="relative flex flex-col justify-end rounded-xl shadow-md ring-1 ring-inset ring-border bg-background hover:bg-muted/50 dark:hover:bg-gray-800/50 transition-all overflow-hidden h-[360px] group hover:shadow-lg hover:-translate-y-0.5"
+                  className="relative flex flex-col rounded-xl shadow-md ring-1 ring-inset ring-border bg-background hover:bg-muted/50 dark:hover:bg-gray-800/50 transition-all overflow-hidden h-[560px] group hover:shadow-lg hover:-translate-y-0.5"
                 >
-                  {/* Background illustration */}
-                  <Image
-                    src={m.image}
-                    alt={m.label}
-                    fill
-                    className="object-contain opacity-[0.10] p-8 transition-opacity group-hover:opacity-[0.18]"
-                  />
+                  {/* Top illustration area */}
+                  <div className="relative h-[260px] w-full flex-shrink-0">
+                    <Image
+                      src={m.image}
+                      alt={m.label}
+                      fill
+                      className="object-contain opacity-60 p-6 transition-opacity group-hover:opacity-90"
+                    />
+                  </div>
 
-                  {/* Text overlay */}
-                  <div className="relative z-10 p-6">
-                    <h2 className="text-lg font-semibold">{m.label}</h2>
+                  {/* Text content */}
+                  <div className="relative z-10 flex flex-col flex-1 p-7">
+                    <h2 className="text-xl font-semibold">{m.label}</h2>
                     <p className="mt-2 text-body text-muted-foreground leading-relaxed">
                       {m.description}
                     </p>
@@ -173,7 +175,7 @@ export default function HomePage() {
                     )}
                     <GlassButton
                       asChild
-                      className="w-full mt-4 bg-gray-900 hover:bg-gray-800"
+                      className="w-full mt-auto bg-gray-900 hover:bg-gray-800"
                       size="default"
                     >
                       <Link href={m.href}>{m.action}</Link>

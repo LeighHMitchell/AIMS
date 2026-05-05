@@ -76,6 +76,13 @@ export async function GET(request: NextRequest) {
     const currentYear = new Date().getFullYear()
     const results: FundingTimeSeriesPoint[] = []
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published')
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
+
     // Track which organizations we need to fetch
     let targetOrgIds: string[] = organizationIds
 
@@ -132,6 +139,7 @@ export async function GET(request: NextRequest) {
       .in('transaction_type', ['3', '4']) // Disbursements and Expenditures only
       .not('provider_org_id', 'is', null)
       .in('provider_org_id', targetOrgIds)
+      .in('activity_id', publishedActivityIds)
     // Exclude internal transfers (pooled fund flows)
     const pooledFundIds = await getPooledFundIds(supabase);
     txQuery = excludeInternalTransfers(txQuery, pooledFundIds, ['3', '4'])

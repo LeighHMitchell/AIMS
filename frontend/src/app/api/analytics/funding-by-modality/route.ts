@@ -37,6 +37,13 @@ export async function GET(request: NextRequest) {
     // '2' = Commitment, '3' = Disbursement
     const transactionType = transactionTypeParam === 'commitments' ? '2' : '3';
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+
     // Fetch transactions with activity data to get default_modality
     // We need to join transactions with activities
     const { data: transactions, error: transactionsError } = await supabase
@@ -53,6 +60,7 @@ export async function GET(request: NextRequest) {
       `)
       .eq('transaction_type', transactionType)
       .eq('status', 'actual')
+      .in('activity_id', publishedActivityIds)
       .order('transaction_date');
 
     if (transactionsError) {

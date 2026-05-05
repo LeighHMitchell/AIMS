@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     let activitiesQuery = supabase
       .from('activities')
       .select('id, reporting_org_id')
+      .eq('publication_status', 'published')
 
     if (organizationId && organizationId !== 'all') {
       activitiesQuery = activitiesQuery.eq('reporting_org_id', organizationId)

@@ -35,6 +35,13 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
 
+    // Restrict all activity-derived data to published activities only.
+    const { data: publishedActivitiesAll } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('publication_status', 'published');
+    const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
+
     // First, fetch all organizations to build a lookup map
     const { data: orgsData, error: orgsError } = await supabase
       .from('organizations')
@@ -61,7 +68,8 @@ export async function GET(request: NextRequest) {
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
         .select('id, reporting_org_id')
-        .not('reporting_org_id', 'is', null);
+        .not('reporting_org_id', 'is', null)
+        .eq('publication_status', 'published');
 
       if (activitiesError) {
         console.error('[TopDonorAgencies] Error fetching activities:', activitiesError);
@@ -80,7 +88,8 @@ export async function GET(request: NextRequest) {
       // Get budgets (include both usd_value and original value as fallback)
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
-        .select('usd_value, value, activity_id, period_start, period_end');
+        .select('usd_value, value, activity_id, period_start, period_end')
+        .in('activity_id', publishedActivityIds);
 
       if (budgetError) {
         console.error('[TopDonorAgencies] Error fetching budgets:', budgetError);
@@ -132,7 +141,8 @@ export async function GET(request: NextRequest) {
       const { data: plannedData, error: plannedError } = await supabase
         .from('planned_disbursements')
         .select('usd_amount, amount, period_start, period_end, provider_org_id')
-        .not('provider_org_id', 'is', null);
+        .not('provider_org_id', 'is', null)
+        .in('activity_id', publishedActivityIds);
 
       if (plannedError) {
         console.error('[TopDonorAgencies] Error fetching planned disbursements:', plannedError);
@@ -174,7 +184,8 @@ export async function GET(request: NextRequest) {
         .select('value_usd, value, transaction_date, provider_org_id')
         .eq('transaction_type', transactionType)
         .eq('status', 'actual')
-        .not('provider_org_id', 'is', null);
+        .not('provider_org_id', 'is', null)
+        .in('activity_id', publishedActivityIds);
 
       if (txError) {
         console.error('[TopDonorAgencies] Error fetching transactions:', txError);

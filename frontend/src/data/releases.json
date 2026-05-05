@@ -1,7 +1,32 @@
 {
-  "currentVersion": "3.35.1",
-  "narrativeSummary": "Version 3.35.1 is an Aid Effectiveness Dashboard polish pass. Every chart on the dashboard gains an <i>Expand</i> button that opens a full-screen view with an interpretation paragraph explaining how to read the chart and what good vs. bad looks like — covering indicator distribution, tied aid, GPEDC compliance, country systems, government systems, budget planning, and implementing partners. The custom Recharts tooltips are migrated to the shared <code>ChartTooltipCard</code> primitive for visual consistency. The Aid Effectiveness API routes also drop the <code>publication_status='published'</code> filter so AE metrics now reflect all activities with AE data, not only published ones, and a helper-label fix changes the GEN-0 negative value from <i>Not targeted (GEN-0)</i> to <i>Not targeted</i>.",
+  "currentVersion": "3.35.2",
+  "narrativeSummary": "Version 3.35.2 enforces a <i>published-activities-only</i> rule across every analytics surface. Every Aid Effectiveness API route restores its <code>publication_status='published'</code> filter (which had been temporarily relaxed in 3.35.1), and the Analytics Dashboard receives the same treatment for the first time &mdash; ~30 analytics routes that previously returned data from draft, pending, and unpublished activities are now scoped to published activities only. The change applies uniformly: routes querying <code>activities</code> directly add an <code>.eq('publication_status', 'published')</code> filter, while routes that aggregate from <code>transactions</code> or activity-keyed child tables (<code>activity_participating_organizations</code>, <code>activity_policy_markers</code>, <code>activity_budgets</code>, <code>planned_disbursements</code>, <code>activity_sectors</code>, <code>subnational_breakdowns</code>) prefetch the set of published activity IDs and constrain themselves with <code>.in('activity_id', publishedActivityIds)</code>. The Activity Profile v2 Locations card also gains explicit map-center / zoom / activity-title / organization-id props.",
   "releases": [
+    {
+      "version": "3.35.2",
+      "date": "2026-05-05",
+      "narrativeSummary": "Published-only enforcement across analytics. AE API routes restore the <code>publication_status='published'</code> filter (relaxed in 3.35.1). Analytics Dashboard routes (~30) now also scope to published activities only &mdash; either via a direct <code>.eq</code> on activities queries or via a prefetched <code>publishedActivityIds</code> + <code>.in('activity_id', ...)</code> on transactions and child-table queries. Activity Profile v2 Locations card gains map-center / zoom / activityTitle / organizationId props.",
+      "changes": [
+        "<b>Aid Effectiveness API routes &mdash; published filter restored</b>",
+        "&nbsp;&nbsp;<code>/api/aid-effectiveness/metrics</code>, <code>/budget-planning</code>, <code>/development-indicators</code>, <code>/export</code>, <code>/government-systems</code>, <code>/gpedc-compliance</code>, <code>/implementing-partners</code>, <code>/tied-aid</code> all re-add <code>.eq('publication_status', 'published')</code>",
+        "&nbsp;&nbsp;Reverts the relaxation introduced in 3.35.1 &mdash; AE metrics once again reflect only published activities, matching the original product intent",
+        "<b>Analytics Dashboard &mdash; published-only filter applied for the first time</b>",
+        "&nbsp;&nbsp;Direct activities filter added: <code>top-liked-activities</code>, <code>fragmentation/program</code>, <code>fragmentation/sector</code>, <code>fragmentation/location</code>, <code>sectors-time-series</code>, <code>sector-disbursement-summary</code>, <code>top-capital-spend-activities</code>",
+        "&nbsp;&nbsp;Activities + transactions filter (defense-in-depth): <code>alignment-coverage</code>, <code>capital-spend-over-time</code>, <code>funding-source-breakdown</code>, <code>portfolio-spend-trajectory</code>, <code>top-10/disbursement-commitment-ratio</code>, <code>top-10/oda-by-flow-type</code>, <code>top-10/total-financial-value</code>, <code>top-donor-agencies</code>, <code>top-donor-groups</code>",
+        "&nbsp;&nbsp;Transactions-only filter via prefetched <code>publishedActivityIds</code>: <code>ecosystem</code>, <code>funding-by-modality</code>, <code>funding-over-time</code>, <code>policy-markers-time-series</code>, <code>top-locations</code>, <code>top-sectors</code>, <code>transaction-types</code>",
+        "&nbsp;&nbsp;Child-table filter via prefetched IDs: <code>participating-orgs-sankey</code> (filters <code>activity_participating_organizations</code>), <code>policy-markers</code> (filters <code>activity_policy_markers</code>)",
+        "&nbsp;&nbsp;Aid-on-budget family (<code>aid-on-budget</code>, <code>aid-on-budget-enhanced</code>, <code>aid-on-budget-activities</code>): prefetched IDs + transactions filter",
+        "&nbsp;&nbsp;<code>all-donors</code>, <code>coordination</code>: published-only filter added",
+        "&nbsp;&nbsp;<code>sdgs</code>: previously-commented filter re-enabled",
+        "<b>Skipped (not applicable)</b>",
+        "&nbsp;&nbsp;<code>aid-types</code>, <code>finance-types</code>, <code>flow-types</code> &mdash; static IATI codelists, no DB query",
+        "&nbsp;&nbsp;<code>donors</code> &mdash; queries the <code>organizations</code> table only",
+        "&nbsp;&nbsp;<code>funding-envelopes</code> &mdash; org-level envelope budgets, not activity-derived",
+        "&nbsp;&nbsp;<code>activity-status</code> &mdash; explicitly groups by publication_status and needs all rows",
+        "<b>Activity Profile v2 &mdash; Locations card</b>",
+        "&nbsp;&nbsp;<code>ActivityLocationsMapViewV2</code> now receives explicit <code>mapCenter</code>, <code>mapZoom</code>, <code>activityTitle</code>, and <code>organizationId</code> props in the v2 profile so the map renders centred on Myanmar and shows the correct activity context"
+      ]
+    },
     {
       "version": "3.35.1",
       "date": "2026-05-05",
