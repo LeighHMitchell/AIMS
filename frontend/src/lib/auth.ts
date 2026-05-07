@@ -124,6 +124,62 @@ export async function requireAuthOrVisitor(request: NextRequest): Promise<{
 }
 
 /**
+ * Authentication helper for super-user-only API routes (e.g. admin recycle bin).
+ *
+ * Usage:
+ * ```typescript
+ * export async function POST(request: NextRequest) {
+ *   const { supabase, user, profile, response } = await requireSuperUser()
+ *   if (response) return response
+ *   // user is authenticated AND profile.role === 'super_user'
+ * }
+ * ```
+ *
+ * Returns:
+ * - `supabase`: Authenticated Supabase client
+ * - `user`: The authenticated auth user
+ * - `profile`: The matching public.users row (id, role, organization_id)
+ * - `response`: 401 if unauthenticated, 403 if not super-user (null when allowed)
+ */
+export async function requireSuperUser(): Promise<{
+  supabase: SupabaseClient | null
+  user: User | null
+  profile: { id: string; role: string; organization_id: string | null } | null
+  response: NextResponse | null
+}> {
+  const auth = await requireAuth()
+  if (auth.response || !auth.supabase || !auth.user) {
+    return { supabase: null, user: null, profile: null, response: auth.response }
+  }
+
+  const { data: profile, error } = await auth.supabase
+    .from('users')
+    .select('id, role, organization_id')
+    .eq('id', auth.user.id)
+    .single()
+
+  if (error || !profile) {
+    return {
+      supabase: null,
+      user: null,
+      profile: null,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    }
+  }
+
+  if (profile.role !== 'super_user') {
+    return {
+      supabase: null,
+      user: null,
+      profile: null,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    }
+  }
+
+  return { supabase: auth.supabase, user: auth.user, profile, response: null }
+}
+
+/**
  * Verify cron job authentication using secret header.
  * 
  * Usage:

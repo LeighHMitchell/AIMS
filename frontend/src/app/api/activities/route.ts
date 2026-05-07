@@ -5,6 +5,8 @@ import { upsertActivitySectors, validateSectorAllocation } from '@/lib/activity-
 import { v4 as uuidv4 } from 'uuid';
 import { supabaseOptimized } from '@/lib/supabase-optimized';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
+import { cascadeSoftDelete, ACTIVITY_CHILD_TABLES } from '@/lib/soft-delete';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -2471,15 +2473,30 @@ export async function DELETE(request: NextRequest) {
         });
       });
       
-      // Soft-delete all activities (undoable via POST /api/activities/restore)
-      const { error: deleteError } = await supabase
-        .from('activities')
-        .update({ deleted_at: new Date().toISOString() })
-        .in('id', ids);
+      // Soft-delete activities AND their child rows so a restore brings them
+      // back intact. Children share the same deleted_at timestamp. We use the
+      // admin client because cascade reaches tables (transactions, etc.) whose
+      // RLS may not allow UPDATE for the current user even though they're
+      // authorized to delete the parent activity.
+      const deletedBy = user?.id ?? null;
+      const adminClient = getSupabaseAdmin();
+      if (!adminClient) {
+        return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+      }
+      const { error: deleteError } = await cascadeSoftDelete(
+        adminClient,
+        'activities',
+        ids,
+        ACTIVITY_CHILD_TABLES,
+        deletedBy
+      );
 
       if (deleteError) {
         console.error("[AIMS] Error bulk deleting activities:", deleteError);
-        return NextResponse.json({ error: "Failed to delete activities" }, { status: 500 });
+        return NextResponse.json(
+          { error: "Failed to delete activities", detail: deleteError.message },
+          { status: 500 }
+        );
       }
       
       
@@ -2563,15 +2580,28 @@ export async function DELETE(request: NextRequest) {
       updated_at: activity.updated_at
     });
     
-    // Soft-delete the activity (undoable via POST /api/activities/[id]/restore)
-    const { error: deleteError } = await supabase
-      .from('activities')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    // Soft-delete activity AND its child rows. Children share the same
+    // deleted_at timestamp so cascadeRestore brings them back together.
+    // Admin client bypasses RLS on child tables (see bulk-delete branch above).
+    const deletedBy = user?.id ?? null;
+    const adminClient = getSupabaseAdmin();
+    if (!adminClient) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+    const { error: deleteError } = await cascadeSoftDelete(
+      adminClient,
+      'activities',
+      [id],
+      ACTIVITY_CHILD_TABLES,
+      deletedBy
+    );
 
     if (deleteError) {
       console.error(`[AIMS] [${deletionTimestamp}] Error deleting activity:`, deleteError);
-      return NextResponse.json({ error: "Failed to delete activity" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to delete activity", detail: deleteError.message },
+        { status: 500 }
+      );
     }
     
     

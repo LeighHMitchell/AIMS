@@ -22,7 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { apiFetch } from '@/lib/api-fetch';
 // USD conversion now happens server-side - no client-side API needed
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-// Removed shared HeroCard import - using local simple version
 import { useUser } from '@/hooks/useUser';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
@@ -62,6 +61,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
 import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
+import { TypeFilterPopover } from '@/components/ui/type-filter-popover';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -81,28 +81,9 @@ const formatCurrencyAbbreviated = (value: number) => {
   return '$' + formattedValue;
 };
 
-// Simple Hero Card Component (matching TransactionsManager style)
-interface SimpleHeroCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon?: React.ReactNode;
-}
-
-function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
-  return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-body text-muted-foreground">{title}</div>
-          <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
-        </div>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-    </Card>
-  );
-}
+// Use the shared hero card so this section matches the Transactions hero cards.
+import { HeroCard } from '@/components/ui/hero-card';
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 
 // Types
 interface BudgetLine {
@@ -139,6 +120,7 @@ interface ActivityBudgetsTabProps {
   defaultCurrency?: string;
   onBudgetsChange?: (budgets: ActivityBudget[]) => void;
   hideSummaryCards?: boolean;
+  hideHeaderTitle?: boolean;
   readOnly?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactNode;
   onLoadingChange?: (loading: boolean) => void;
@@ -263,6 +245,7 @@ export default function ActivityBudgetsTab({
   defaultCurrency = 'USD',
   onBudgetsChange,
   hideSummaryCards = false,
+  hideHeaderTitle = false,
   readOnly = false,
   renderFilters,
   onLoadingChange
@@ -329,9 +312,11 @@ export default function ActivityBudgetsTab({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const [showUnlockConfirm, setShowUnlockConfirm] = useState(false);
 
-  // Filter state
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  // Filter state — empty arrays mean "all"; codes are IATI numeric strings ('1' = Indicative/Original, '2' = Committed/Revised)
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  // Only one filter popover open at a time
+  const [openFilter, setOpenFilter] = useState<'status' | 'type' | null>(null);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -362,14 +347,12 @@ export default function ActivityBudgetsTab({
     // Apply filters first
     let filtered = [...budgets];
     
-    if (statusFilter !== 'all') {
-      const statusValue = statusFilter === 'indicative' ? 1 : 2;
-      filtered = filtered.filter(b => b.status === statusValue);
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter(b => statusFilter.includes(String(b.status)));
     }
-    
-    if (typeFilter !== 'all') {
-      const typeValue = typeFilter === 'original' ? 1 : 2;
-      filtered = filtered.filter(b => b.type === typeValue);
+
+    if (typeFilter.length > 0) {
+      filtered = filtered.filter(b => typeFilter.includes(String(b.type)));
     }
 
     // Then apply sorting
@@ -1550,82 +1533,10 @@ export default function ActivityBudgetsTab({
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center text-muted-foreground">Loading budgets...</div>
-        {/* Financial Summary Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-8 w-8 rounded" />
-              </div>
-              <Skeleton className="h-7 w-32 mb-1" />
-              <Skeleton className="h-3 w-24" />
-            </Card>
-          ))}
-        </div>
-
-        {/* Budget Configuration Skeleton */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Skeleton className="h-6 w-6" />
-            <Skeleton className="h-6 w-48" />
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-10 w-40" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-6 w-10 rounded-full" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Budget Table Skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-10 w-full" />
-          </CardHeader>
-          <CardContent>
-            <TableContainer>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {['Period', 'Type', 'Status', 'Original Value', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
-                      <TableHead key={i} className="font-medium">
-                        <Skeleton className="h-4 w-16" />
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                {[...Array(4)].map((_, rowIndex) => (
-                    <TableRow key={rowIndex}>
-                      {[...Array(7)].map((_, colIndex) => (
-                        <TableCell key={colIndex}>
-                          <Skeleton className="h-8 w-full" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-          </TableContainer>
-          </CardContent>
-        </Card>
-
-        {/* Charts Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[...Array(2)].map((_, i) => (
-            <Card key={i} className="p-6">
-              <Skeleton className="h-5 w-40 mb-4" />
-              <Skeleton className="h-64 w-full" />
-            </Card>
-          ))}
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading budgets...</p>
         </div>
       </div>
     );
@@ -1653,74 +1564,54 @@ export default function ActivityBudgetsTab({
       )}
 
       <div className="space-y-4">
-          {/* Budget Summary Cards */}
-          {!hideSummaryCards && budgets.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
-              {/* Total Budget Value Card */}
-              <HeroCard
-                title="Total Budgets"
-                value={formatCurrencyAbbreviated(budgets.reduce((sum, budget) => sum + (budget.usd_value || (budget.currency === 'USD' ? (Number(budget.value) || 0) : 0)), 0))}
-                subtitle={`${budgets.length} budget${budgets.length !== 1 ? 's' : ''}`}
-                icon={<DollarSign className="h-5 w-5" />}
-              />
-            </div>
+          {/* Budget Summary Cards (rendered outside the table card in default layout) */}
+          {!hideSummaryCards && !hideHeaderTitle && budgets.length > 0 && (
+            <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+              <StaggerItem>
+                <HeroCard
+                  title="Total Budgets"
+                  value={`US$${budgets.reduce((sum, budget) => sum + (budget.usd_value || (budget.currency === 'USD' ? (Number(budget.value) || 0) : 0)), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+                  subtitle={`${budgets.length} budget${budgets.length !== 1 ? 's' : ''}`}
+                />
+              </StaggerItem>
+            </StaggerContainer>
           )}
-          
+
           {/* Budgets Table */}
-          <Card data-budgets-tab className={hideSummaryCards ? "border-0 shadow-none" : ""}>
-        <CardHeader className={hideSummaryCards ? "hidden" : ""}>
+          <Card data-budgets-tab className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none" : ""}>
+        <CardHeader className={hideSummaryCards ? "hidden" : (hideHeaderTitle ? "px-0 pt-0 pb-4" : "")}>
           <div className="flex items-center justify-between">
-            {!hideSummaryCards && (
+            {!hideSummaryCards && !hideHeaderTitle && (
               <div>
                 <CardTitle>Budgets</CardTitle>
                 <CardDescription>Activity budget allocations by period</CardDescription>
               </div>
             )}
             {hideSummaryCards && <div />}
-            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
+            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''} ${hideHeaderTitle ? 'ml-auto' : ''}`}>
               {!hideSummaryCards && budgets.length > 0 && !loading && (
                 <>
                   <div className="flex items-center gap-2">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-[160px] h-9">
-                        <SelectValue placeholder="All statuses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem value="indicative">
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                            <span>Indicative</span>
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="committed">
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                            <span>Committed</span>
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger className="w-[160px] h-9">
-                        <SelectValue placeholder="All types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All types</SelectItem>
-                        <SelectItem value="original">
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                            <span>Original</span>
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="revised">
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                            <span>Revised</span>
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <TypeFilterPopover
+                      options={['1', '2']}
+                      selected={statusFilter}
+                      onChange={setStatusFilter}
+                      labels={{ '1': 'Indicative', '2': 'Committed' }}
+                      placeholder="All statuses"
+                      triggerClassName="w-[160px] h-9"
+                      open={openFilter === 'status'}
+                      onOpenChange={(o) => setOpenFilter(o ? 'status' : null)}
+                    />
+                    <TypeFilterPopover
+                      options={['1', '2']}
+                      selected={typeFilter}
+                      onChange={setTypeFilter}
+                      labels={{ '1': 'Original', '2': 'Revised' }}
+                      placeholder="All types"
+                      triggerClassName="w-[160px] h-9"
+                      open={openFilter === 'type'}
+                      onOpenChange={(o) => setOpenFilter(o ? 'type' : null)}
+                    />
                   </div>
                   <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
@@ -1740,46 +1631,26 @@ export default function ActivityBudgetsTab({
             <div className="px-6 pb-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="indicative">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                          <span>Indicative</span>
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="committed">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                          <span>Committed</span>
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="All types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      <SelectItem value="original">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                          <span>Original</span>
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="revised">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                          <span>Revised</span>
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <TypeFilterPopover
+                    options={['1', '2']}
+                    selected={statusFilter}
+                    onChange={setStatusFilter}
+                    labels={{ '1': 'Indicative', '2': 'Committed' }}
+                    placeholder="All statuses"
+                    triggerClassName="w-[160px] h-9"
+                    open={openFilter === 'status'}
+                    onOpenChange={(o) => setOpenFilter(o ? 'status' : null)}
+                  />
+                  <TypeFilterPopover
+                    options={['1', '2']}
+                    selected={typeFilter}
+                    onChange={setTypeFilter}
+                    labels={{ '1': 'Original', '2': 'Revised' }}
+                    placeholder="All types"
+                    triggerClassName="w-[160px] h-9"
+                    open={openFilter === 'type'}
+                    onOpenChange={(o) => setOpenFilter(o ? 'type' : null)}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
@@ -1797,52 +1668,32 @@ export default function ActivityBudgetsTab({
                   Status
                   <HelpTextTooltip content="IATI budget status: Indicative (1) means the budget is planned but not yet formally approved; Committed (2) means it has been approved or contracted." />
                 </label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="indicative">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                        <span>Indicative</span>
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="committed">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                        <span>Committed</span>
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={['1', '2']}
+                  selected={statusFilter}
+                  onChange={setStatusFilter}
+                  labels={{ '1': 'Indicative', '2': 'Committed' }}
+                  placeholder="All statuses"
+                  triggerClassName="w-[140px] h-9"
+                  open={openFilter === 'status'}
+                  onOpenChange={(o) => setOpenFilter(o ? 'status' : null)}
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="flex items-center gap-1 text-helper font-medium text-muted-foreground">
                   Type
                   <HelpTextTooltip content="IATI budget revision type: Original (1) is the initial budget entry; Revised (2) is a subsequent update to that entry." />
                 </label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="All types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All types</SelectItem>
-                    <SelectItem value="original">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                        <span>Original</span>
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="revised">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                        <span>Revised</span>
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={['1', '2']}
+                  selected={typeFilter}
+                  onChange={setTypeFilter}
+                  labels={{ '1': 'Original', '2': 'Revised' }}
+                  placeholder="All types"
+                  triggerClassName="w-[140px] h-9"
+                  open={openFilter === 'type'}
+                  onOpenChange={(o) => setOpenFilter(o ? 'type' : null)}
+                />
               </div>
               <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                 <Download className="h-4 w-4" />
@@ -1850,7 +1701,20 @@ export default function ActivityBudgetsTab({
             </div>
           )}
         </CardHeader>
-        <CardContent className={hideSummaryCards ? "p-0" : ""}>
+        <CardContent className={(hideSummaryCards || hideHeaderTitle) ? "p-0" : ""}>
+
+          {/* Hero cards inside CardContent when hideHeaderTitle so filters appear above them (matches Transactions layout) */}
+          {hideHeaderTitle && !hideSummaryCards && budgets.length > 0 && (
+            <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+              <StaggerItem>
+                <HeroCard
+                  title="Total Budgets"
+                  value={`US$${budgets.reduce((sum, budget) => sum + (budget.usd_value || (budget.currency === 'USD' ? (Number(budget.value) || 0) : 0)), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+                  subtitle={`${budgets.length} budget${budgets.length !== 1 ? 's' : ''}`}
+                />
+              </StaggerItem>
+            </StaggerContainer>
+          )}
 
           {/* Copy Budget Dialog */}
           <Dialog open={showCopyDialog} onOpenChange={(open) => {

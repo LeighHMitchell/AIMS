@@ -634,23 +634,23 @@ export function DocumentsAndImagesTabV2({
         >
           {documents.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
-              <div className="flex justify-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                  <Cloud className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                  <ExternalLink className="w-8 h-8 text-muted-foreground" />
-                </div>
-              </div>
-              <h3 className="text-lg font-medium mb-2">No documents</h3>
+              <img
+                src="/images/empty-bookshelf.webp"
+                alt="No documents"
+                className="h-32 mx-auto mb-4 opacity-80"
+              />
+              <h3 className="text-lg font-medium text-foreground mb-2">No documents</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Upload files or add external links to attach documents to this activity.
               </p>
-
             </div>
           ) : (
             <>
-              <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <img
+                src="/images/empty-bookshelf.webp"
+                alt="No documents match"
+                className="h-24 mx-auto mb-4 opacity-60"
+              />
               <p className="text-muted-foreground">No documents match your filters</p>
             </>
           )}

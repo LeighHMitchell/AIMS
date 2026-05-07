@@ -277,7 +277,7 @@ const TOOLTIPS: Record<string, string> = {
   govEntityAccountable: "Is a government entity contractually designated as the accountable authority for this activity?",
   supportsPublicSector: "Does this project support public sector capacity and institutions?",
   capacityDevFromNationalPlan: "Is capacity development based on a nationally identified capacity plan? (GPEDC Indicator 9)",
-  numOutcomeIndicators: "How many outcome-level results indicators does this project track?",
+  numOutcomeIndicators: "How many government-defined outcome-level results indicators does this project track?",
   fundsViaNationalTreasury: "Are funds disbursed through the national treasury system?",
   govBudgetSystem: "Are disbursements made through the government's own budget execution procedures? (GPEDC Indicator 5a)",
   govFinReporting: "Does the project use the government's financial reporting system? (GPEDC Indicator 5a)",
@@ -334,7 +334,7 @@ const EXPANDED_HELP: Record<string, string> = {
   capacityDevFromNationalPlan:
     "GPEDC Indicator 9 — capacity development is most effective when it responds to a nationally identified plan (a Public Service Reform Strategy, a Sector Capacity Plan, etc.) rather than development partner-driven training menus. Yes signals demand-led capacity building.",
   numOutcomeIndicators:
-    "Count outcome-level (not output- or activity-level) indicators in your results framework. Outcome indicators measure changes in conditions or behaviour (e.g. 'maternal mortality rate'), not deliverables (e.g. 'number of training days').",
+    "Count outcome-level indicators in your results framework that are drawn from the government's own results framework, sector strategy, or national M&E system — not partner-defined indicators or output/activity-level metrics. Outcome indicators measure changes in conditions or behaviour (e.g. 'maternal mortality rate'), not deliverables (e.g. 'number of training days').",
   fundsViaNationalTreasury:
     "GPEDC Indicator 5a (PFM use). Yes means disbursements pass through the country's Treasury Single Account or budget execution system. Bypassing the treasury — paying contractors directly, or routing through development partner-managed accounts — counts as No.",
   govBudgetSystem:
@@ -1359,7 +1359,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         { Section: '1. Government Ownership',          '#': '7',  Field: 'Government Entity Contractually Designated as Accountable Authority',     Value: formatYNU(formData.govEntityAccountable),                   'Responsible Ministry': '' },
         { Section: '1. Government Ownership',          '#': '8',  Field: 'Supports Public Sector Capacity Strengthening',                           Value: formatYNU(formData.supportsPublicSector),                   'Responsible Ministry': '' },
         { Section: '1. Government Ownership',          '#': '9',  Field: 'Capacity Development Based on Nationally Identified Capacity Plan',       Value: formatYNU(formData.capacityDevFromNationalPlan),            'Responsible Ministry': '' },
-        { Section: '1. Government Ownership',          '#': '10', Field: 'Number of Outcome Indicators',                                            Value: formData.numOutcomeIndicators?.toString() || '',           'Responsible Ministry': '' },
+        { Section: '1. Government Ownership',          '#': '10', Field: 'Number of Government-Defined Outcome Indicators',                          Value: formData.numOutcomeIndicators?.toString() || '',           'Responsible Ministry': '' },
 
         { Section: '2. Country Systems',               '#': '11', Field: 'Funds Disbursed via National Treasury',                                   Value: formatYNU(formData.fundsViaNationalTreasury),               'Responsible Ministry': '' },
         { Section: '2. Country Systems',               '#': '12', Field: 'Government Budget Execution System Used',                                 Value: formatYNU(formData.govBudgetSystem),                        'Responsible Ministry': '' },
@@ -1703,7 +1703,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
             <FieldWithDescription description={TOOLTIPS.numOutcomeIndicators}>
               <Label className="text-body font-medium text-foreground flex gap-1.5">
                 <span className="w-7 shrink-0 tabular-nums">10.</span>
-                <span>Number of Outcome Indicators</span>
+                <span>Number of Government-Defined Outcome Indicators</span>
               </Label>
             </FieldWithDescription>
             <Input

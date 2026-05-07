@@ -63,6 +63,9 @@
     },
     "src/app/api/cron/backfill-planned-disbursements-usd/route.ts": {
       "maxDuration": 120
+    },
+    "src/app/api/cron/purge-recycle-bin/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -77,6 +80,10 @@
     {
       "path": "/api/cron/backfill-planned-disbursements-usd",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/purge-recycle-bin",
+      "schedule": "0 3 * * *"
     }
   ],
   "headers": [

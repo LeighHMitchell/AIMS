@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { CodedSelectItem } from '@/components/aid-effectiveness/CodedSelectItem'
 import { Target, CheckCircle2, XCircle, BarChart3 } from 'lucide-react'
 import {
   BarChart,
@@ -214,17 +216,20 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
                   </CardTitle>
                   <ChartExpandButton
                     title="Development Effectiveness Indicators"
-                    interpretation="Each bar shows the share of activities meeting a specific development-effectiveness indicator: alignment with national plans, use of country indicators, support to public-sector institutions, and so on. Together they describe whether an activity is wired into the host country's own results system. Higher bars mean the portfolio is more country-led; persistently low bars mark indicators where donors can shift practice to strengthen ownership."
+                    interpretation="Five development-effectiveness checkpoints sorted by adoption. A bar above 80% is embedded portfolio practice; 50–80% means uneven adoption with one or two donors driving the average; below 50% is a principle most donors aren't applying yet. The 'Linked to Government Framework' bar is the bellwether — when it dips below the others, country-led planning is being bypassed. The 'Final Evaluation Planned' bar tells you whether learning loops will close on these activities."
                     controls={
-                      <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'pct' | 'name')}>
-                        <SelectTrigger className="h-8 w-[150px] text-helper">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pct">Sort: adoption</SelectItem>
-                          <SelectItem value="name">Sort: indicator</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-helper text-muted-foreground">Sort by</Label>
+                        <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'pct' | 'name')}>
+                          <SelectTrigger className="h-9 w-[160px] text-helper">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <CodedSelectItem value="pct" code="1">Adoption</CodedSelectItem>
+                            <CodedSelectItem value="name" code="2">Indicator</CodedSelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     }
                     csv={() => ({
                       filename: 'development-effectiveness-indicators.csv',
@@ -264,7 +269,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
                   </CardTitle>
                   <ChartExpandButton
                     title="Outcome Indicators Distribution"
-                    interpretation="Slices show how activities are spread across outcome-indicator counts (0, 1–2, 3–5, 6–10, 10+). Activities with very few indicators may be under-monitored; those with many can be over-burdened with reporting. A balanced middle is generally most useful for measuring real development outcomes without crowding out implementation."
+                    interpretation="The '0' slice is the actionable number — those activities have no government-defined outcome indicators on their results framework at all. A 'None' slice over 25% is a serious results-measurement gap and the priority for strengthening M&E discipline. A heavy '10+' slice usually signals output counts mislabelled as outcomes, not stronger monitoring; spot-check those activities to confirm. The 3–5 indicator middle band is generally the sweet spot for measuring outcomes without overwhelming implementation teams with reporting."
                     csv={() => ({
                       filename: 'outcome-indicators-distribution.csv',
                       headers: ['Range', 'Activities', '%'],

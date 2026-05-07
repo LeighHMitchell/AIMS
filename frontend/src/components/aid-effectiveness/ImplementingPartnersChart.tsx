@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { CodedSelectItem } from '@/components/aid-effectiveness/CodedSelectItem'
 import { Users, Building2, Target, DollarSign, TrendingUp, AlertTriangle } from 'lucide-react'
 import {
   BarChart,
@@ -172,31 +174,37 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
           <h3 className="text-lg font-semibold text-foreground">Implementing Partners Analysis</h3>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Sort by..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="activity_count">Activity Count</SelectItem>
-              <SelectItem value="gpedc_compliance_rate">GPEDC Compliance</SelectItem>
-              <SelectItem value="gov_systems_usage_rate">Gov Systems Usage</SelectItem>
-              <SelectItem value="total_budget">Total Budgeted</SelectItem>
-              <SelectItem value="avg_outcome_indicators">Outcome Indicators</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={topN} onValueChange={setTopN}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Top N" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">Top 5</SelectItem>
-              <SelectItem value="10">Top 10</SelectItem>
-              <SelectItem value="20">Top 20</SelectItem>
-              <SelectItem value="all">All</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label className="text-helper text-muted-foreground">Sort by</Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-48 h-9">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <CodedSelectItem value="activity_count" code="1">Activity Count</CodedSelectItem>
+                <CodedSelectItem value="gpedc_compliance_rate" code="2">GPEDC Compliance</CodedSelectItem>
+                <CodedSelectItem value="gov_systems_usage_rate" code="3">Gov Systems Usage</CodedSelectItem>
+                <CodedSelectItem value="total_budget" code="4">Total Budgeted</CodedSelectItem>
+                <CodedSelectItem value="avg_outcome_indicators" code="5">Outcome Indicators</CodedSelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-helper text-muted-foreground">Show</Label>
+            <Select value={topN} onValueChange={setTopN}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue placeholder="Top N" />
+              </SelectTrigger>
+              <SelectContent>
+                <CodedSelectItem value="5" code="1">Top 5</CodedSelectItem>
+                <CodedSelectItem value="10" code="2">Top 10</CodedSelectItem>
+                <CodedSelectItem value="20" code="3">Top 20</CodedSelectItem>
+                <CodedSelectItem value="all" code="4">All</CodedSelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -289,7 +297,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                   <CardTitle className="text-lg font-medium text-foreground">{partnerTitle}</CardTitle>
                   <ChartExpandButton
                     title={partnerTitle}
-                    interpretation="Compares implementing partners on the selected metric (activity count, GPEDC compliance rate, government-systems usage, total budget, or average outcome indicators). Use this view to identify the highest- and lowest-performing partners on each effectiveness dimension, spot capacity gaps, and prioritise dialogue with partners whose practice diverges most from country-led principles."
+                    interpretation="Top partners ranked on whichever effectiveness metric you've picked. The gap between the top bar and the median is the practice gap — a wide gap means a few partners are dragging the portfolio average. Re-run the view with different sort metrics to triangulate: a partner with a high activity count but a low GPEDC compliance score is the most worth a focused dialogue. A partner topping 'Total Budgeted' but bottom of 'Gov Systems Usage' is moving big money outside country systems — that's a structural conversation."
                     csv={() => ({
                       filename: `implementing-partners-${sortBy}.csv`,
                       headers: ['Partner', 'Type', 'Activities', 'Total Budget', 'Avg Outcome Indicators', 'Gov Systems %', 'GPEDC Compliance %', 'Tied Aid %'],

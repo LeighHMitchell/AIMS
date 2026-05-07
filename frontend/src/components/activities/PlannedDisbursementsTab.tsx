@@ -22,7 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { apiFetch } from '@/lib/api-fetch';
 // USD conversion now happens server-side - no client-side API needed
-// Removed shared HeroCard import - using local simple version
 import {
   Table,
   TableBody,
@@ -83,6 +82,7 @@ import {
   type PlannedDisbursementRow,
 } from '@/lib/exports/entities/planned-disbursements';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
+import { TypeFilterPopover } from '@/components/ui/type-filter-popover';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -102,28 +102,9 @@ const formatCurrencyAbbreviated = (value: number) => {
   return '$' + formattedValue;
 };
 
-// Simple Hero Card Component (matching TransactionsManager style)
-interface SimpleHeroCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon?: React.ReactNode;
-}
-
-function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
-  return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-body text-muted-foreground">{title}</div>
-          <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
-        </div>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-    </Card>
-  );
-}
+// Use the shared hero card so this section matches the Transactions hero cards.
+import { HeroCard } from '@/components/ui/hero-card';
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 
 // Types
 interface PlannedDisbursement {
@@ -180,6 +161,7 @@ interface PlannedDisbursementsTabProps {
   readOnly?: boolean;
   onDisbursementsChange?: (disbursements: PlannedDisbursement[]) => void;
   hideSummaryCards?: boolean;
+  hideHeaderTitle?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactNode;
   onLoadingChange?: (loading: boolean) => void;
 }
@@ -204,6 +186,7 @@ export default function PlannedDisbursementsTab({
   readOnly = false,
   onDisbursementsChange,
   hideSummaryCards = false,
+  hideHeaderTitle = false,
   renderFilters,
   onLoadingChange
 }: PlannedDisbursementsTabProps) {
@@ -268,8 +251,8 @@ export default function PlannedDisbursementsTab({
     toast.success('Planned Disbursement ID copied');
   };
 
-  // Filter state
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  // Filter state — empty array means "all". Codes are IATI numeric strings ('1' = Original, '2' = Revised).
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   // Org type mapping modal for handling legacy organization type codes
   const orgTypeMappingModal = useOrgTypeMappingModal();
@@ -841,12 +824,12 @@ export default function PlannedDisbursementsTab({
     setUsdValues(newUsdValues);
   }, [disbursements]);
 
-  // Filter disbursements by status
+  // Filter disbursements by status (multi-select). statusFilter holds IATI codes ('1', '2'); map to stored values.
   const filteredDisbursements = useMemo(() => {
-    if (statusFilter === 'all') {
-      return disbursements;
-    }
-    return disbursements.filter(d => (d.status || 'original') === statusFilter);
+    if (statusFilter.length === 0) return disbursements;
+    const codeToStatus: Record<string, string> = { '1': 'original', '2': 'revised' };
+    const allowed = new Set(statusFilter.map(c => codeToStatus[c] || c));
+    return disbursements.filter(d => allowed.has(d.status || 'original'));
   }, [disbursements, statusFilter]);
 
   // Sorted disbursements for table display
@@ -1514,59 +1497,11 @@ export default function PlannedDisbursementsTab({
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {/* Financial Summary Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <Card key={i} className="p-4">
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-8 w-20 mb-2" />
-              <Skeleton className="h-3 w-32" />
-            </Card>
-          ))}
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading planned disbursements...</p>
         </div>
-
-        {/* Table Skeleton */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <Skeleton className="h-6 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-              <div className="flex gap-2">
-                <Skeleton className="h-10 w-32" />
-                <Skeleton className="h-10 w-24" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Chart Skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-64 w-full" />
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -1591,49 +1526,40 @@ export default function PlannedDisbursementsTab({
 
   return (
     <div className="space-y-4">
-          {/* Planned Disbursements Summary Cards */}
-          {!hideSummaryCards && disbursements.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
-              <HeroCard
-                title="Total Planned Disbursements"
-                value={formatCurrencyAbbreviated(totalPlannedDisbursementsUSD)}
-                subtitle={`${totalPlannedDisbursementsCount} disbursement${totalPlannedDisbursementsCount !== 1 ? 's' : ''}`}
-                icon={<DollarSign className="h-5 w-5" />}
-              />
-            </div>
+          {/* Planned Disbursements Summary Cards (rendered outside the table card in default layout) */}
+          {!hideSummaryCards && !hideHeaderTitle && disbursements.length > 0 && (
+            <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+              <StaggerItem>
+                <HeroCard
+                  title="Total Planned Disbursements"
+                  value={`US$${(totalPlannedDisbursementsUSD || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+                  subtitle={`${totalPlannedDisbursementsCount} disbursement${totalPlannedDisbursementsCount !== 1 ? 's' : ''}`}
+                />
+              </StaggerItem>
+            </StaggerContainer>
           )}
 
           {/* Planned Disbursements Table */}
-          <Card data-planned-tab className={hideSummaryCards ? "border-0 shadow-none" : ""}>
-        <CardHeader className={hideSummaryCards ? "hidden" : ""}>
+          <Card data-planned-tab className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none" : ""}>
+        <CardHeader className={hideSummaryCards ? "hidden" : (hideHeaderTitle ? "px-0 pt-0 pb-4" : "")}>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Planned Disbursements</CardTitle>
-              <CardDescription>Scheduled future disbursements</CardDescription>
-            </div>
-            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
+            {!hideHeaderTitle && (
+              <div>
+                <CardTitle>Planned Disbursements</CardTitle>
+                <CardDescription>Scheduled future disbursements</CardDescription>
+              </div>
+            )}
+            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''} ${hideHeaderTitle ? 'ml-auto' : ''}`}>
               {!hideSummaryCards && disbursements.length > 0 && !loading && (
                 <>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="original">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                          <span>Original</span>
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="revised">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                          <span>Revised</span>
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <TypeFilterPopover
+                    options={['1', '2']}
+                    selected={statusFilter}
+                    onChange={setStatusFilter}
+                    labels={{ '1': 'Original', '2': 'Revised' }}
+                    placeholder="All statuses"
+                    triggerClassName="w-[160px] h-9"
+                  />
                   <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
@@ -1652,26 +1578,14 @@ export default function PlannedDisbursementsTab({
             <div className="px-6 pb-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="original">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                          <span>Original</span>
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="revised">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                          <span>Revised</span>
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <TypeFilterPopover
+                    options={['1', '2']}
+                    selected={statusFilter}
+                    onChange={setStatusFilter}
+                    labels={{ '1': 'Original', '2': 'Revised' }}
+                    placeholder="All statuses"
+                    triggerClassName="w-[160px] h-9"
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
@@ -1689,26 +1603,14 @@ export default function PlannedDisbursementsTab({
                   Status
                   <HelpTextTooltip content="IATI planned-disbursement revision type: Original (1) is the initial disbursement entry; Revised (2) is a subsequent update to that entry." />
                 </label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="original">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                        <span>Original</span>
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="revised">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                        <span>Revised</span>
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={['1', '2']}
+                  selected={statusFilter}
+                  onChange={setStatusFilter}
+                  labels={{ '1': 'Original', '2': 'Revised' }}
+                  placeholder="All statuses"
+                  triggerClassName="w-[140px] h-9"
+                />
               </div>
               <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                 <Download className="h-4 w-4" />
@@ -1716,7 +1618,20 @@ export default function PlannedDisbursementsTab({
             </div>
           )}
         </CardHeader>
-        <CardContent className={hideSummaryCards ? "p-0" : ""}>
+        <CardContent className={(hideSummaryCards || hideHeaderTitle) ? "p-0" : ""}>
+
+          {/* Hero cards inside CardContent when hideHeaderTitle so filters appear above them (matches Transactions layout) */}
+          {hideHeaderTitle && !hideSummaryCards && disbursements.length > 0 && (
+            <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+              <StaggerItem>
+                <HeroCard
+                  title="Total Planned Disbursements"
+                  value={`US$${(totalPlannedDisbursementsUSD || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+                  subtitle={`${totalPlannedDisbursementsCount} disbursement${totalPlannedDisbursementsCount !== 1 ? 's' : ''}`}
+                />
+              </StaggerItem>
+            </StaggerContainer>
+          )}
 
           {/* Table */}
           {disbursements.length === 0 ? (

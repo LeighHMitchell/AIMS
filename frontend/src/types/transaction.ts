@@ -32,6 +32,23 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   '13': 'Incoming Pledge'
 };
 
+// Plural forms for use in aggregate/summary contexts (totals, group headers, hero cards).
+export const TRANSACTION_TYPE_LABELS_PLURAL: Record<TransactionType, string> = {
+  '1': 'Incoming Funds',
+  '2': 'Outgoing Commitments',
+  '3': 'Disbursements',
+  '4': 'Expenditures',
+  '5': 'Interest Payments',
+  '6': 'Loan Repayments',
+  '7': 'Reimbursements',
+  '8': 'Purchases of Equity',
+  '9': 'Sales of Equity',
+  '10': 'Credit Guarantees',
+  '11': 'Incoming Commitments',
+  '12': 'Outgoing Pledges',
+  '13': 'Incoming Pledges'
+};
+
 export type TransactionStatus = 'draft' | 'actual';
 
 export type OrganizationType = 

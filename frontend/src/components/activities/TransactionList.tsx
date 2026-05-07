@@ -55,13 +55,14 @@ import {
   Columns3,
   Heart,
   Search,
-  PenLine
+  PenLine,
+  X
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData, FLOW_TYPE_LABELS, TIED_STATUS_LABELS, FlowType, TiedStatus } from '@/types/transaction';
+import { Transaction, TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_LABELS_PLURAL, TransactionFormData, FLOW_TYPE_LABELS, TIED_STATUS_LABELS, FlowType, TiedStatus } from '@/types/transaction';
 import TransactionForm from './TransactionForm';
 import { TransactionDocumentIndicator } from '../TransactionDocumentIndicator';
 import { TransactionValueDisplay } from '@/components/currency/TransactionValueDisplay';
@@ -78,6 +79,8 @@ import {
 import { useUser } from '@/hooks/useUser';
 import { getUserPermissions } from '@/types/user';
 import financeTypesData from '@/data/finance-types.json';
+import { countries as countryList } from '@/data/countries';
+import { TypeFilterPopover } from '@/components/ui/type-filter-popover';
 import aidTypesData from '@/data/aid-types.json';
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { DISBURSEMENT_CHANNEL_TYPES } from '@/data/disbursement-channel-types';
@@ -355,6 +358,7 @@ interface TransactionListProps {
   defaultTiedStatus?: string;
   defaultFlowType?: string;
   hideSummaryCards?: boolean;
+  hideHeaderTitle?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactPortal | null;
 }
 
@@ -463,6 +467,7 @@ export default function TransactionList({
   defaultTiedStatus,
   defaultFlowType,
   hideSummaryCards = false,
+  hideHeaderTitle = false,
   renderFilters
 }: TransactionListProps) {
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -473,9 +478,11 @@ export default function TransactionList({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  // Filter state
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
-  const [financeTypeFilter, setFinanceTypeFilter] = useState<string>('all');
+  // Filter state — empty arrays mean "all"
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string[]>([]);
+  const [financeTypeFilter, setFinanceTypeFilter] = useState<string[]>([]);
+  // Only one type-filter popover may be open at a time.
+  const [openFilter, setOpenFilter] = useState<'transaction' | 'finance' | null>(null);
   
   // Grouped view state
   const [groupedView, setGroupedView] = useState(true);
@@ -623,12 +630,12 @@ export default function TransactionList({
     // Apply filters first
     let filtered = [...transactions];
 
-    if (transactionTypeFilter !== 'all') {
-      filtered = filtered.filter(t => t.transaction_type === transactionTypeFilter);
+    if (transactionTypeFilter.length > 0) {
+      filtered = filtered.filter(t => transactionTypeFilter.includes(t.transaction_type));
     }
 
-    if (financeTypeFilter !== 'all') {
-      filtered = filtered.filter(t => t.finance_type === financeTypeFilter);
+    if (financeTypeFilter.length > 0) {
+      filtered = filtered.filter(t => t.finance_type ? financeTypeFilter.includes(t.finance_type) : false);
     }
     
     // Then apply sorting
@@ -792,9 +799,10 @@ export default function TransactionList({
         const response = await apiFetch(`/api/activities/${activityId}/basic`);
         if (response.ok) {
           const data = await response.json();
+          // /basic returns camelCase keys; fall back to snake_case for safety.
           setActivityIdentifiers({
-            customId: data.other_identifier || null,
-            iatiId: data.iati_identifier || null
+            customId: data.otherIdentifier || data.partnerId || data.other_identifier || data.autoRef || data.auto_ref || null,
+            iatiId: data.iatiIdentifier || data.iatiId || data.iati_identifier || null
           });
         }
       } catch (error) {
@@ -1195,58 +1203,46 @@ export default function TransactionList({
 
   return (
     <>
-      <Card className={hideSummaryCards ? "border-0 shadow-none" : ""}>
-        <CardHeader className={hideSummaryCards ? "hidden" : ""}>
+      <Card className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none" : ""}>
+        <CardHeader className={hideSummaryCards ? "hidden" : (hideHeaderTitle ? "px-0 pt-0" : "")}>
           <div className="flex items-center justify-between gap-4">
             {/* Left side: Title and Description */}
-            <div className="flex-shrink-0">
-              <CardTitle>Transactions</CardTitle>
-              <CardDescription>
-                Commitments, disbursements, and expenditures
-              </CardDescription>
-            </div>
+            {!hideHeaderTitle && (
+              <div className="flex-shrink-0">
+                <CardTitle>Transactions</CardTitle>
+                <CardDescription>
+                  Commitments, disbursements, and expenditures
+                </CardDescription>
+              </div>
+            )}
             
             {/* Right side: Filters and Actions - All on same row (only show when hideSummaryCards is false) */}
             {!hideSummaryCards && (
             <div className="flex items-center gap-2 flex-nowrap flex-1 justify-end">
               {/* Transaction Type Filter */}
               {transactions.length > 0 && (
-                <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                  <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder="All transaction types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All transaction types</SelectItem>
-                    {uniqueTransactionTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                          <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={uniqueTransactionTypes}
+                  selected={transactionTypeFilter}
+                  onChange={setTransactionTypeFilter}
+                  labels={TRANSACTION_TYPE_LABELS as Record<string, string>}
+                  placeholder="All transaction types"
+                  open={openFilter === 'transaction'}
+                  onOpenChange={(o) => setOpenFilter(o ? 'transaction' : null)}
+                />
               )}
-              
+
               {/* Finance Type Filter */}
               {transactions.length > 0 && (
-                <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
-                  <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder="All finance types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All finance types</SelectItem>
-                    {uniqueFinanceTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                          <span>{FINANCE_TYPE_LABELS[type] || type}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={uniqueFinanceTypes}
+                  selected={financeTypeFilter}
+                  onChange={setFinanceTypeFilter}
+                  labels={FINANCE_TYPE_LABELS as Record<string, string>}
+                  placeholder="All finance types"
+                  open={openFilter === 'finance'}
+                  onOpenChange={(o) => setOpenFilter(o ? 'finance' : null)}
+                />
               )}
               
               {/* Grouped View Toggle */}
@@ -1343,45 +1339,35 @@ export default function TransactionList({
             {transactions.length > 0 && (
               <div className="flex flex-col gap-1">
                 <label className="text-helper font-medium text-muted-foreground">Transaction Type</label>
-                <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                  <SelectTrigger className="w-[280px] h-9">
-                    <SelectValue placeholder="All transaction types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All transaction types</SelectItem>
-                    {uniqueTransactionTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                          <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={uniqueTransactionTypes}
+                  selected={transactionTypeFilter}
+                  onChange={setTransactionTypeFilter}
+                  labels={TRANSACTION_TYPE_LABELS as Record<string, string>}
+                  placeholder="All transaction types"
+                  triggerClassName="w-[280px] h-9"
+                  popoverWidthClassName="w-[320px]"
+                  open={openFilter === 'transaction'}
+                  onOpenChange={(o) => setOpenFilter(o ? 'transaction' : null)}
+                />
               </div>
             )}
-            
+
             {/* Finance Type Filter - only show when transactions exist */}
             {transactions.length > 0 && (
               <div className="flex flex-col gap-1">
                 <label className="text-helper font-medium text-muted-foreground">Finance Type</label>
-                <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
-                  <SelectTrigger className="w-[280px] h-9">
-                    <SelectValue placeholder="All finance types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All finance types</SelectItem>
-                    {uniqueFinanceTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                          <span>{FINANCE_TYPE_LABELS[type] || type}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <TypeFilterPopover
+                  options={uniqueFinanceTypes}
+                  selected={financeTypeFilter}
+                  onChange={setFinanceTypeFilter}
+                  labels={FINANCE_TYPE_LABELS as Record<string, string>}
+                  placeholder="All finance types"
+                  triggerClassName="w-[280px] h-9"
+                  popoverWidthClassName="w-[320px]"
+                  open={openFilter === 'finance'}
+                  onOpenChange={(o) => setOpenFilter(o ? 'finance' : null)}
+                />
               </div>
             )}
             
@@ -1419,7 +1405,7 @@ export default function TransactionList({
             </Button>
           </div>
         )}
-        <CardContent className={hideSummaryCards ? "p-0" : ""}>
+        <CardContent className={(hideSummaryCards || hideHeaderTitle) ? "p-0" : ""}>
           {/* Transaction Type Summary Cards */}
           {!hideSummaryCards && transactions.length > 0 && (
             <div className="mb-6">
@@ -1605,10 +1591,10 @@ export default function TransactionList({
                                   {type}
                                 </Badge>
                                 <span className="font-semibold text-body">
-                                  {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
+                                  {TRANSACTION_TYPE_LABELS_PLURAL[type as keyof typeof TRANSACTION_TYPE_LABELS_PLURAL] || type}
                                 </span>
                                 <span className="text-helper text-muted-foreground">
-                                  ({groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'})
+                                  {groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -1654,9 +1640,9 @@ export default function TransactionList({
                           }}
                         >
                           {isExpanded ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
                             <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
                           )}
                         </Button>
                       </TableCell>
@@ -1689,7 +1675,7 @@ export default function TransactionList({
                       {/* Date */}
                       {isColumnVisible('transactionDate') && (
                         <TableCell className="py-3 px-4 font-medium whitespace-nowrap">
-                          {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
+                          {format(new Date(transaction.transaction_date), 'd MMM yyyy')}
                         </TableCell>
                       )}
                       
@@ -1973,9 +1959,9 @@ export default function TransactionList({
                               {!isColumnVisible('valueDate') && (
                                 <div className="text-[11px] text-muted-foreground">
                                   {transaction.value_date
-                                    ? format(new Date(transaction.value_date), 'MMM d, yyyy')
+                                    ? format(new Date(transaction.value_date), 'd MMM yyyy')
                                     : transaction.transaction_date
-                                    ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                                    ? format(new Date(transaction.transaction_date), 'd MMM yyyy')
                                     : ''}
                                 </div>
                               )}
@@ -1991,9 +1977,9 @@ export default function TransactionList({
                         <TableCell className="py-3 px-4 whitespace-nowrap">
                           <span className="text-body">
                             {transaction.value_date 
-                              ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
+                              ? format(new Date(transaction.value_date), 'd MMM yyyy') 
                               : transaction.transaction_date 
-                              ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                              ? format(new Date(transaction.transaction_date), 'd MMM yyyy')
                               : '—'}
                           </span>
                         </TableCell>
@@ -2127,15 +2113,15 @@ export default function TransactionList({
                               <div>
                                 <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Transaction Details</h4>
                                 <div className="space-y-3 ml-4">
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Transaction Type:</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-muted-foreground">Transaction Type</span>
                                   <div className="flex items-center gap-2">
                                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.transaction_type}</span>
                                     <span className="text-helper">{TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}</span>
                                   </div>
                                 </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Validation Status:</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-muted-foreground">Validation Status</span>
                                   <div className="flex items-center gap-2">
                                     {transaction.status === 'actual' ? (
                                       <>
@@ -2150,38 +2136,38 @@ export default function TransactionList({
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
-                                  <span className="font-medium"><span className="text-muted-foreground text-helper">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-muted-foreground">Original Value</span>
+                                  <span><span className="text-muted-foreground text-helper">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                 </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-muted-foreground">USD Value</span>
                                   {usdValues[transaction.uuid || transaction.id]?.usd != null ? (
-                                    <span className="font-medium"><span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                    <span><span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                   ) : (
                                     <span className="text-muted-foreground">—</span>
                                   )}
                                 </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Value Date:</span>
-                                  <span className="font-medium">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-muted-foreground">Value Date</span>
+                                  <span>
                                     {transaction.value_date 
-                                      ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
+                                      ? format(new Date(transaction.value_date), 'd MMM yyyy') 
                                       : transaction.transaction_date 
-                                      ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                                      ? format(new Date(transaction.transaction_date), 'd MMM yyyy')
                                       : '—'}
                                   </span>
                                 </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Transaction Date:</span>
-                                  <span className="font-medium">{format(new Date(transaction.transaction_date), 'MMM d, yyyy')}</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-muted-foreground">Transaction Date</span>
+                                  <span>{format(new Date(transaction.transaction_date), 'd MMM yyyy')}</span>
                                 </div>
                                 </div>
                               </div>
 
                               {/* Description */}
                               {transaction.description && (
-                                <div className="pt-4 border-t border-border">
+                                <div className="pt-4">
                                   <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Description</h4>
                                   <p className="ml-4 text-foreground text-helper leading-relaxed">{transaction.description}</p>
                                 </div>
@@ -2194,8 +2180,8 @@ export default function TransactionList({
                                 <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Parties Involved</h4>
                                 <div className="space-y-3 ml-4">
                                 {transaction.provider_org_name && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Provider Organisation:</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Provider Organisation</span>
                                     <div className="flex items-center gap-2 flex-wrap">
                                       {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
                                         <Link 
@@ -2230,18 +2216,28 @@ export default function TransactionList({
                                     </div>
                                   </div>
                                 )}
-                                {transaction.provider_org_ref && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Provider Reference:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.provider_org_ref}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.provider_org_ref!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
+                                {transaction.provider_org_ref && (() => {
+                                  const rowId = transaction.uuid || transaction.id;
+                                  const copyKey = `${rowId}:provider-ref`;
+                                  const isCopied = copiedTxnId === copyKey;
+                                  return (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-muted-foreground">Provider Reference</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); copyTransactionId(transaction.provider_org_ref!, copyKey); }}
+                                        title={isCopied ? 'Copied!' : 'Click to copy'}
+                                        className="font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer break-all"
+                                      >
+                                        {isCopied && <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />}
+                                        <span>{transaction.provider_org_ref}</span>
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
                                 {transaction.receiver_org_name && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Receiver Organisation:</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Receiver Organisation</span>
                                     <div className="flex items-center gap-2 flex-wrap">
                                       {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
                                         <Link 
@@ -2276,83 +2272,88 @@ export default function TransactionList({
                                     </div>
                                   </div>
                                 )}
-                                {transaction.receiver_org_ref && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Receiver Reference:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.receiver_org_ref}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.receiver_org_ref!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
+                                {transaction.receiver_org_ref && (() => {
+                                  const rowId = transaction.uuid || transaction.id;
+                                  const copyKey = `${rowId}:receiver-ref`;
+                                  const isCopied = copiedTxnId === copyKey;
+                                  return (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-muted-foreground">Receiver Reference</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); copyTransactionId(transaction.receiver_org_ref!, copyKey); }}
+                                        title={isCopied ? 'Copied!' : 'Click to copy'}
+                                        className="font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer break-all"
+                                      >
+                                        {isCopied && <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />}
+                                        <span>{transaction.receiver_org_ref}</span>
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
                                 </div>
                               </div>
 
-                              <div className="pt-4 border-t border-border">
+                              <div className="pt-4">
                                 <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">System Identifiers</h4>
                                 <div className="space-y-3 ml-4">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground min-w-[160px]">Activity ID:</span>
-                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{activityIdentifiers.customId || '—'}</span>
-                                  {activityIdentifiers.customId && (
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(activityIdentifiers.customId!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground min-w-[160px]">IATI Identifier:</span>
-                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{activityIdentifiers.iatiId || '—'}</span>
-                                  {activityIdentifiers.iatiId && (
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(activityIdentifiers.iatiId!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground min-w-[160px]">Activity UUID:</span>
-                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.activity_id}</span>
-                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.activity_id)}>
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground min-w-[160px]">Transaction ID:</span>
-                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.transaction_reference || '—'}</span>
-                                  {transaction.transaction_reference && (
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.transaction_reference!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground min-w-[160px]">Transaction UUID:</span>
-                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.uuid || transaction.id}</span>
-                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.uuid || transaction.id)}>
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                {transaction.sector_code && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Sector:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.sector_code}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.sector_code!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
-                                {transaction.recipient_country_code && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Recipient Country:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_country_code}</span>
-                                  </div>
-                                )}
-                                {transaction.recipient_region_code && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Recipient Region:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_region_code}</span>
-                                  </div>
-                                )}
+                                {(() => {
+                                  const rowId = transaction.uuid || transaction.id;
+                                  const txnRef = (transaction as any).auto_ref || transaction.transaction_reference || null;
+                                  const renderCopyable = (value: string | null | undefined, copyKey: string) => {
+                                    if (!value) return <span className="text-muted-foreground">—</span>;
+                                    const isCopied = copiedTxnId === copyKey;
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); copyTransactionId(value, copyKey); }}
+                                        title={isCopied ? 'Copied!' : 'Click to copy'}
+                                        className="font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer break-all"
+                                      >
+                                        {isCopied && <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />}
+                                        <span>{value}</span>
+                                      </button>
+                                    );
+                                  };
+                                  const countryName = transaction.recipient_country_code
+                                    ? countryList.find(c => c.code === transaction.recipient_country_code)?.name
+                                    : null;
+                                  return (
+                                    <>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-muted-foreground">Activity ID</span>
+                                        {renderCopyable(activityIdentifiers.customId, `${rowId}:activity-id`)}
+                                      </div>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-muted-foreground">IATI Identifier</span>
+                                        {renderCopyable(activityIdentifiers.iatiId, `${rowId}:iati-id`)}
+                                      </div>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-muted-foreground">Transaction ID</span>
+                                        {renderCopyable(txnRef, `${rowId}:txn-id`)}
+                                      </div>
+                                      {transaction.sector_code && (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-muted-foreground">Sector</span>
+                                          {renderCopyable(transaction.sector_code, `${rowId}:sector`)}
+                                        </div>
+                                      )}
+                                      {transaction.recipient_country_code && (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-muted-foreground">Recipient Country</span>
+                                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_country_code}</span>
+                                          {countryName && <span className="text-foreground">{countryName}</span>}
+                                        </div>
+                                      )}
+                                      {transaction.recipient_region_code && (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-muted-foreground">Recipient Region</span>
+                                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.recipient_region_code}</span>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 </div>
                               </div>
                             </div>
@@ -2363,87 +2364,73 @@ export default function TransactionList({
                                 <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
                                 <div className="space-y-3 ml-4">
                                 {/* Aid Type - with inheritance support */}
-                                {(transaction.aid_type || defaultAidType) && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Aid Type:</span>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className={`flex items-center gap-2 ${(transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType) ? 'text-muted-foreground opacity-70 cursor-help' : ''}`}>
-                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                                              {transaction.aid_type || defaultAidType}
-                                            </span>
-                                            <span className="text-helper">
-                                              {AID_TYPE_LABELS[transaction.aid_type || defaultAidType || ''] || (transaction.aid_type || defaultAidType)}
-                                            </span>
-                                          </div>
-                                        </TooltipTrigger>
-                                        {((transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType)) && (
-                                          <TooltipContent>
-                                            <p className="text-helper">
-                                              This aid type has been inherited from the activity's default aid type (code {defaultAidType || transaction.aid_type} – {AID_TYPE_LABELS[defaultAidType || transaction.aid_type || ''] || defaultAidType || transaction.aid_type})
-                                            </p>
-                                          </TooltipContent>
-                                        )}
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
-                                )}
+                                {(transaction.aid_type || defaultAidType) && (() => {
+                                  const code = transaction.aid_type || defaultAidType;
+                                  const label = AID_TYPE_LABELS[code || ''] || code;
+                                  const isInherited = (transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType);
+                                  return (
+                                    <div className={`flex items-baseline gap-2 ${isInherited ? 'text-muted-foreground opacity-70' : ''}`}>
+                                      <span className="text-muted-foreground shrink-0">Aid Type</span>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span className={`font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0 ${isInherited ? 'cursor-help' : ''}`}>{code}</span>
+                                          </TooltipTrigger>
+                                          {isInherited && (
+                                            <TooltipContent>
+                                              <p className="text-helper">This aid type has been inherited from the activity's default aid type (code {defaultAidType || transaction.aid_type} – {AID_TYPE_LABELS[defaultAidType || transaction.aid_type || ''] || defaultAidType || transaction.aid_type})</p>
+                                            </TooltipContent>
+                                          )}
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                      <span className="text-helper flex-1 min-w-0 break-words">{label}</span>
+                                    </div>
+                                  );
+                                })()}
                                 {/* Flow Type - with inheritance support */}
-                                {(transaction.flow_type || defaultFlowType) && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Flow Type:</span>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className={`flex items-center gap-2 ${(transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType) ? 'text-muted-foreground opacity-70 cursor-help' : ''}`}>
-                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                                              {transaction.flow_type || defaultFlowType}
-                                            </span>
-                                            <span className="text-helper">
-                                              {FLOW_TYPE_LABELS[(transaction.flow_type || defaultFlowType || '') as FlowType] || (transaction.flow_type || defaultFlowType)}
-                                            </span>
-                                          </div>
-                                        </TooltipTrigger>
-                                        {((transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType)) && (
-                                          <TooltipContent>
-                                            <p className="text-helper">
-                                              This flow type has been inherited from the activity's default flow type (code {defaultFlowType || transaction.flow_type} – {FLOW_TYPE_LABELS[(defaultFlowType || transaction.flow_type || '') as FlowType] || defaultFlowType || transaction.flow_type})
-                                            </p>
-                                          </TooltipContent>
-                                        )}
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
-                                )}
+                                {(transaction.flow_type || defaultFlowType) && (() => {
+                                  const code = transaction.flow_type || defaultFlowType;
+                                  const label = FLOW_TYPE_LABELS[(code || '') as FlowType] || code;
+                                  const isInherited = (transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType);
+                                  return (
+                                    <div className={`flex items-baseline gap-2 ${isInherited ? 'text-muted-foreground opacity-70' : ''}`}>
+                                      <span className="text-muted-foreground shrink-0">Flow Type</span>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span className={`font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0 ${isInherited ? 'cursor-help' : ''}`}>{code}</span>
+                                          </TooltipTrigger>
+                                          {isInherited && (
+                                            <TooltipContent>
+                                              <p className="text-helper">This flow type has been inherited from the activity's default flow type (code {defaultFlowType || transaction.flow_type} – {FLOW_TYPE_LABELS[(defaultFlowType || transaction.flow_type || '') as FlowType] || defaultFlowType || transaction.flow_type})</p>
+                                            </TooltipContent>
+                                          )}
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                      <span className="text-helper flex-1 min-w-0 break-words">{label}</span>
+                                    </div>
+                                  );
+                                })()}
                                 {/* Finance Type - with inheritance support */}
                                 {(() => {
                                   const displayValue = transaction.effective_finance_type || transaction.finance_type || defaultFinanceType;
                                   const isInherited = transaction.finance_type_inherited || (!transaction.finance_type && displayValue);
                                   if (!displayValue) return null;
-                                  
+                                  const label = FINANCE_TYPE_LABELS[displayValue] || displayValue;
                                   return (
-                                    <div className="flex items-start gap-2">
-                                      <span className="text-muted-foreground min-w-[160px]">Finance Type:</span>
+                                    <div className={`flex items-baseline gap-2 ${isInherited ? 'text-muted-foreground opacity-70' : ''}`}>
+                                      <span className="text-muted-foreground shrink-0">Finance Type</span>
                                       <TooltipProvider>
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className={`flex items-center gap-1.5 cursor-help ${isInherited ? 'text-muted-foreground opacity-70' : ''}`}>
-                                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                                                {displayValue}
-                                              </span>
-                                              <span className="text-helper">
-                                                {FINANCE_TYPE_LABELS[displayValue] || displayValue}
-                                              </span>
-                                            </div>
+                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded cursor-help shrink-0">{displayValue}</span>
                                           </TooltipTrigger>
                                           <TooltipContent>
-                                            <p className="text-helper">
-                                              {isInherited ? 'Inherited from activity default' : `${displayValue} — ${FINANCE_TYPE_LABELS[displayValue] || displayValue}`}
-                                            </p>
+                                            <p className="text-helper">{isInherited ? 'Inherited from activity default' : `${displayValue} — ${label}`}</p>
                                           </TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
+                                      <span className="text-helper flex-1 min-w-0 break-words">{label}</span>
                                     </div>
                                   );
                                 })()}
@@ -2452,37 +2439,30 @@ export default function TransactionList({
                                   const displayValue = transaction.effective_tied_status || transaction.tied_status || defaultTiedStatus;
                                   const isInherited = transaction.tied_status_inherited || (!transaction.tied_status && displayValue);
                                   if (!displayValue) return null;
-                                  
+                                  const label = TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue;
                                   return (
-                                    <div className="flex items-start gap-2">
-                                      <span className="text-muted-foreground min-w-[160px]">Tied Status:</span>
+                                    <div className={`flex items-baseline gap-2 ${isInherited ? 'text-muted-foreground opacity-70' : ''}`}>
+                                      <span className="text-muted-foreground shrink-0">Tied Status</span>
                                       <TooltipProvider>
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className={`flex items-center gap-2 ${isInherited ? 'text-muted-foreground opacity-70 cursor-help' : ''}`}>
-                                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                                                {displayValue}
-                                              </span>
-                                              <span className="text-helper">
-                                                {TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue}
-                                              </span>
-                                            </div>
+                                            <span className={`font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0 ${isInherited ? 'cursor-help' : ''}`}>{displayValue}</span>
                                           </TooltipTrigger>
                                           {isInherited && (
                                             <TooltipContent>
-                                              <p className="text-helper">
-                                                Inherited from activity's default tied status (code {displayValue} – {TIED_STATUS_LABELS[displayValue as TiedStatus] || displayValue})
+                                              <p className="text-helper">Inherited from activity's default tied status (code {displayValue} – {label})
                                               </p>
                                             </TooltipContent>
                                           )}
                                         </Tooltip>
                                       </TooltipProvider>
+                                      <span className="text-helper flex-1 min-w-0 break-words">{label}</span>
                                     </div>
                                   );
                                 })()}
                                 {transaction.disbursement_channel && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Disbursement Channel:</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Disbursement Channel</span>
                                     <div className="text-helper">
                                       <span className="font-mono bg-muted px-1.5 py-0.5 rounded mr-2">{transaction.disbursement_channel}</span>
                                       <span>{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}</span>
@@ -2490,8 +2470,8 @@ export default function TransactionList({
                                   </div>
                                 )}
                                 {transaction.is_humanitarian && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Humanitarian:</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Humanitarian</span>
                                     <Badge variant="destructive" className="text-helper">
                                       Yes
                                     </Badge>
@@ -2500,56 +2480,48 @@ export default function TransactionList({
                                 </div>
                               </div>
 
-                              <div className="pt-4 border-t border-border">
+                              <div className="pt-4">
                                 <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Metadata & History</h4>
                                 <div className="space-y-3 ml-4">
                                 {transaction.created_at && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Created:</span>
-                                    <span className="font-medium">{format(new Date(transaction.created_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Created</span>
+                                    <span>{format(new Date(transaction.created_at), 'd MMM yyyy \'at\' h:mm a')}</span>
                                   </div>
                                 )}
                                 {transaction.created_by && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Created By:</span>
-                                    <span className="font-medium">User ID: {transaction.created_by}</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Created By</span>
+                                    <span>User ID: {transaction.created_by}</span>
                                   </div>
                                 )}
                                 {transaction.updated_at && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Last Modified:</span>
-                                    <span className="font-medium">{format(new Date(transaction.updated_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Last Modified</span>
+                                    <span>{format(new Date(transaction.updated_at), 'd MMM yyyy \'at\' h:mm a')}</span>
                                   </div>
                                 )}
                                 {transaction.updated_by && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Last Modified By:</span>
-                                    <span className="font-medium">User ID: {transaction.updated_by}</span>
-                                  </div>
-                                )}
-                                {!transaction.created_by && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Source:</span>
-                                    <Badge className="w-fit text-helper bg-[#124e5f] text-white">
-                                      Imported from IATI
-                                    </Badge>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Last Modified By</span>
+                                    <span>User ID: {transaction.updated_by}</span>
                                   </div>
                                 )}
                                 {transaction.validated_at && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Validated:</span>
-                                    <span className="font-medium text-green-700">{format(new Date(transaction.validated_at), 'MMM d, yyyy \'at\' h:mm a')}</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Validated</span>
+                                    <span className="text-green-700">{format(new Date(transaction.validated_at), 'd MMM yyyy \'at\' h:mm a')}</span>
                                   </div>
                                 )}
                                 {transaction.validated_by && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Validated By:</span>
-                                    <span className="font-medium text-green-700">User ID: {transaction.validated_by}</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Validated By</span>
+                                    <span className="text-green-700">User ID: {transaction.validated_by}</span>
                                   </div>
                                 )}
                                 {transaction.validation_comments && (
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[160px]">Validation Notes:</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Validation Notes</span>
                                     <span className="text-helper text-foreground italic">{transaction.validation_comments}</span>
                                   </div>
                                 )}

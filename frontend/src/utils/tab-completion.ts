@@ -714,128 +714,25 @@ export function checkGovernmentEndorsementTabCompletion(endorsement: any): TabCo
 }
 
 /**
- * Check if the Aid Effectiveness tab is complete based on required fields
+ * Check if the Aid Effectiveness tab is complete.
+ * Mirrors the "at least one entry" pattern used by Contacts/Documents/etc.:
+ * any answered question marks the tab as complete.
  */
 export function checkAidEffectivenessTabCompletion(data: any): TabCompletionStatus {
-  const completedFields: string[] = []
-  const missingFields: string[] = []
-  
   const aidEffectiveness = data?.aidEffectiveness || {}
-  
-  // Output 1 fields
-  if (aidEffectiveness.implementingPartner) {
-    completedFields.push('implementingPartner')
-  } else {
-    missingFields.push('implementingPartner')
-  }
-  
-  if (aidEffectiveness.linkedToGovFramework) {
-    completedFields.push('linkedToGovFramework')
-  } else {
-    missingFields.push('linkedToGovFramework')
-  }
-  
-  if (aidEffectiveness.supportsPublicSector) {
-    completedFields.push('supportsPublicSector')
-  } else {
-    missingFields.push('supportsPublicSector')
-  }
-  
-  if (aidEffectiveness.numOutcomeIndicators !== undefined && aidEffectiveness.numOutcomeIndicators !== null) {
-    completedFields.push('numOutcomeIndicators')
-  } else {
-    missingFields.push('numOutcomeIndicators')
-  }
-  
-  if (aidEffectiveness.indicatorsFromGov) {
-    completedFields.push('indicatorsFromGov')
-  } else {
-    missingFields.push('indicatorsFromGov')
-  }
-  
-  if (aidEffectiveness.indicatorsViaGovData) {
-    completedFields.push('indicatorsViaGovData')
-  } else {
-    missingFields.push('indicatorsViaGovData')
-  }
-  
-  if (aidEffectiveness.finalEvalPlanned) {
-    completedFields.push('finalEvalPlanned')
-    if (aidEffectiveness.finalEvalPlanned === 'yes' && !aidEffectiveness.finalEvalDate) {
-      missingFields.push('finalEvalDate')
-    } else if (aidEffectiveness.finalEvalPlanned === 'yes' && aidEffectiveness.finalEvalDate) {
-      completedFields.push('finalEvalDate')
-    }
-  } else {
-    missingFields.push('finalEvalPlanned')
-  }
-  
-  // Output 2 fields
-  if (aidEffectiveness.govBudgetSystem) {
-    completedFields.push('govBudgetSystem')
-  } else {
-    missingFields.push('govBudgetSystem')
-  }
-  
-  if (aidEffectiveness.govFinReporting) {
-    completedFields.push('govFinReporting')
-  } else {
-    missingFields.push('govFinReporting')
-  }
-  
-  if (aidEffectiveness.govAudit) {
-    completedFields.push('govAudit')
-  } else {
-    missingFields.push('govAudit')
-  }
-  
-  if (aidEffectiveness.govProcurement) {
-    completedFields.push('govProcurement')
-  } else {
-    missingFields.push('govProcurement')
-  }
-  
-  // Output 3 fields
-  if (aidEffectiveness.annualBudgetShared) {
-    completedFields.push('annualBudgetShared')
-  } else {
-    missingFields.push('annualBudgetShared')
-  }
-  
-  if (aidEffectiveness.forwardPlanShared) {
-    completedFields.push('forwardPlanShared')
-  } else {
-    missingFields.push('forwardPlanShared')
-  }
-  
-  if (aidEffectiveness.tiedStatus) {
-    completedFields.push('tiedStatus')
-  } else {
-    missingFields.push('tiedStatus')
-  }
-  
-  // Contact fields - check for new contacts array or legacy fields
-  if (aidEffectiveness.contacts && aidEffectiveness.contacts.length > 0) {
-    completedFields.push('contactName')
-    completedFields.push('contactOrg')
-    completedFields.push('contactEmail')
-  } else if (aidEffectiveness.contactName && aidEffectiveness.contactOrg && aidEffectiveness.contactEmail) {
-    completedFields.push('contactName')
-    completedFields.push('contactOrg')
-    completedFields.push('contactEmail')
-  } else {
-    missingFields.push('contactName')
-    missingFields.push('contactOrg')
-    missingFields.push('contactEmail')
-  }
-  
-  const isComplete = missingFields.length === 0
+
+  const hasAnyAnswer = Object.entries(aidEffectiveness).some(([key, value]) => {
+    if (value == null || value === '') return false
+    if (Array.isArray(value)) return value.length > 0
+    if (typeof value === 'object') return Object.keys(value).length > 0
+    return true
+  })
 
   return {
-    isComplete,
-    isInProgress: false, // Don't show in-progress spinner for aid effectiveness
-    completedFields,
-    missingFields
+    isComplete: hasAnyAnswer,
+    isInProgress: false,
+    completedFields: hasAnyAnswer ? ['aidEffectiveness'] : [],
+    missingFields: hasAnyAnswer ? [] : ['aidEffectiveness']
   }
 }
 

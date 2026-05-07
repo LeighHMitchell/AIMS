@@ -347,13 +347,15 @@ export function ResultsReadOnlyView({
     };
   }, [summary]);
 
-  // Compute chart data for visualization view
+  // Compute chart data for visualization view.
+  // Palette mirrors the analytics dashboard: deep slate -> cool steel -> pale slate,
+  // with primary scarlet reserved for the lowest achievement bucket as a warning cue.
   const chartData = useMemo(() => {
     // Achievement status pie chart data
     const achievementData = [
-      { name: '≥80%', value: summary.high, color: '#6b9080' },
-      { name: '40-80%', value: summary.medium, color: '#c4a35a' },
-      { name: '<40%', value: summary.low, color: '#b87070' },
+      { name: '≥80%', value: summary.high, color: '#4c5568' },
+      { name: '40-80%', value: summary.medium, color: '#7b95a7' },
+      { name: '<40%', value: summary.low, color: '#dc2625' },
     ].filter(d => d.value > 0);
 
     // Results by type pie chart data
@@ -366,9 +368,9 @@ export function ResultsReadOnlyView({
       });
     }
     const typeData = [
-      { name: 'Output', value: typeCount.output, color: '#6b8cae' },
-      { name: 'Outcome', value: typeCount.outcome, color: '#8b7eae' },
-      { name: 'Impact', value: typeCount.impact, color: '#ae7e8b' },
+      { name: 'Output', value: typeCount.output, color: '#4c5568' },
+      { name: 'Outcome', value: typeCount.outcome, color: '#7b95a7' },
+      { name: 'Impact', value: typeCount.impact, color: '#cfd0d5' },
     ].filter(d => d.value > 0);
 
     return { achievementData, typeData };
@@ -492,60 +494,6 @@ export function ResultsReadOnlyView({
         </div>
       </div>
 
-      {/* Summary Card - Always visible */}
-      <Card className="border-border">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold text-foreground">
-            Summary of indicator progress to date
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Progress Bar with Tooltip */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="h-3 rounded-full overflow-hidden bg-muted flex cursor-pointer">
-                  {progressPercentages.high > 0 && (
-                    <div 
-                      className="bg-[#6b9080] h-full transition-all duration-500"
-                      style={{ width: `${progressPercentages.high}%` }}
-                    />
-                  )}
-                  {progressPercentages.medium > 0 && (
-                    <div 
-                      className="bg-[#c4a35a] h-full transition-all duration-500"
-                      style={{ width: `${progressPercentages.medium}%` }}
-                    />
-                  )}
-                  {progressPercentages.low > 0 && (
-                    <div 
-                      className="bg-[#b87070] h-full transition-all duration-500"
-                      style={{ width: `${progressPercentages.low}%` }}
-                    />
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="p-3">
-                <div className="flex flex-col gap-2 text-body">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#6b9080]" />
-                    <span>≥80% ({summary.high})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#c4a35a]" />
-                    <span>40-80% ({summary.medium})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#b87070]" />
-                    <span>&lt;40% ({summary.low})</span>
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </CardContent>
-      </Card>
-
       {/* Top-Level Tabs */}
       <Tabs value={activeTopTab} onValueChange={(v) => setActiveTopTab(v as any)}>
         <TabsList className="grid w-full grid-cols-2">
@@ -571,21 +519,23 @@ export function ResultsReadOnlyView({
             <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setViewMode('visualization')}
-                className={cn(viewMode === 'visualization' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                title="Charts"
+                aria-label="Charts"
+                className={cn("h-8 w-8", viewMode === 'visualization' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Charts
+                <BarChart3 className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setViewMode('table')}
-                className={cn(viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                title="Table"
+                aria-label="Table"
+                className={cn("h-8 w-8", viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
-                <Table2 className="h-4 w-4 mr-2" />
-                Table
+                <Table2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -689,13 +639,13 @@ export function ResultsReadOnlyView({
                           <CardTitle className="text-base font-semibold text-foreground">
                             {result.title}
                           </CardTitle>
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={cn(
                               "text-helper",
-                              result.type === 'output' && "bg-[#e8f0f5] text-[#4a6a7a] border-[#c5d9e5]",
-                              result.type === 'outcome' && "bg-[#f0e8f5] text-[#6a4a7a] border-[#d9c5e5]",
-                              result.type === 'impact' && "bg-[#f5e8f0] text-[#7a4a6a] border-[#e5c5d9]"
+                              result.type === 'output' && "bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]",
+                              result.type === 'outcome' && "bg-[#e8ecf1] text-[#4c5568] border-[#7b95a7]",
+                              result.type === 'impact' && "bg-[#cfd0d5] text-[#4c5568] border-[#7b95a7]"
                             )}
                           >
                             {RESULT_TYPE_LABELS[result.type] || result.type}
@@ -766,10 +716,10 @@ export function ResultsReadOnlyView({
                       <TableRow className="border-b border-border">
                         <TableHead className="font-medium text-foreground py-4 px-4 w-10"></TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Title</TableHead>
-                        <TableHead className="font-medium text-foreground py-4 px-4 w-24">Trend</TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Baseline</TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Target</TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Actual</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4 w-24">Trend</TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Comment</TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Location References</TableHead>
                         <TableHead className="font-medium text-foreground py-4 px-4">Disaggregation Dimensions</TableHead>
@@ -814,16 +764,6 @@ export function ResultsReadOnlyView({
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="py-4 px-4">
-                              {row.indicator && (
-                                <IndicatorSparkline
-                                  baseline={row.indicator.baseline}
-                                  periods={row.indicator.periods}
-                                  width={80}
-                                  height={28}
-                                />
-                              )}
-                            </TableCell>
                             <TableCell className="py-4 px-4 text-foreground">
                               {row.baseline !== undefined ? (
                                 <div>
@@ -846,6 +786,16 @@ export function ResultsReadOnlyView({
                                   <span className="text-muted-foreground text-helper ml-1">{row.achievementPercentage}%</span>
                                 )}
                               </div>
+                            </TableCell>
+                            <TableCell className="py-4 px-4">
+                              {row.indicator && (
+                                <IndicatorSparkline
+                                  baseline={row.indicator.baseline}
+                                  periods={row.indicator.periods}
+                                  width={80}
+                                  height={28}
+                                />
+                              )}
                             </TableCell>
                             <TableCell className="py-4 px-4">
                               {row.comment ? (

@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { RoleBadge } from "@/components/ui/role-badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CornerDownRight,
@@ -21,6 +21,8 @@ import {
   Send,
   Trash2,
   Loader2,
+  Clock,
+  Flame,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@/hooks/useUser";
@@ -145,7 +147,7 @@ function CommentInput({
             disabled={!content.trim() || isSubmitting}
             size="sm"
             type="button"
-            className="gap-2 transition-all h-8 text-helper"
+            className="gap-2 transition-all h-8 text-sm"
           >
             {isSubmitting ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -277,9 +279,7 @@ function CommentItem({
                 {comment.user.name}
               </span>
               {comment.user.role && (
-                <Badge variant={getRoleBadgeVariant(comment.user.role)} className="text-helper">
-                  {getRoleDisplayLabel(comment.user.role)}
-                </Badge>
+                <RoleBadge role={comment.user.role} />
               )}
               <time className="text-helper text-muted-foreground">
                 {formatCommentTimestamp(comment.timestamp)}
@@ -605,21 +605,30 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
       id: `delete-public-comment-${commentId}`,
       source: `public-comments-${activityId}`,
       commit: async () => {
-        const url = new URL(
-          `/api/activities/${activityId}/public-comments`,
-          window.location.origin
+        const params = new URLSearchParams({
+          commentId,
+          userId: currentUser.id,
+        });
+        // Use apiFetch so the auth header is attached — the route is requireAuth().
+        const response = await apiFetch(
+          `/api/activities/${activityId}/public-comments?${params.toString()}`,
+          { method: "DELETE" }
         );
-        url.searchParams.set("commentId", commentId);
-        url.searchParams.set("userId", currentUser.id);
-        const response = await fetch(url.toString(), { method: "DELETE" });
-        if (!response.ok) throw new Error("Failed to delete comment");
+        if (!response.ok) {
+          let message = "Failed to delete comment";
+          try {
+            const data = await response.json();
+            if (data?.error) message = data.error;
+          } catch {}
+          throw new Error(message);
+        }
         await fetchComments();
       },
       onUndo: () => setComments(snapshot),
       onCommitError: (err) => {
         console.error("Error deleting comment:", err);
         setComments(snapshot);
-        toast.error("Failed to delete comment");
+        toast.error(err instanceof Error ? err.message : "Failed to delete comment");
       },
     });
   };
@@ -654,28 +663,32 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
         </h2>
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="icon"
             type="button"
             onClick={() => setSortBy("newest")}
+            title="Sort by newest"
+            aria-label="Sort by newest"
             className={cn(
-              "text-helper",
-              sortBy === "newest" ? "text-foreground" : "text-muted-foreground"
+              "h-8 w-8",
+              sortBy === "newest" ? "text-foreground bg-muted" : "text-muted-foreground"
             )}
           >
-            Newest
+            <Clock className="h-4 w-4" />
           </Button>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="icon"
             type="button"
             onClick={() => setSortBy("top")}
+            title="Sort by top"
+            aria-label="Sort by top"
             className={cn(
-              "text-helper",
-              sortBy === "top" ? "text-foreground" : "text-muted-foreground"
+              "h-8 w-8",
+              sortBy === "top" ? "text-foreground bg-muted" : "text-muted-foreground"
             )}
           >
-            Top
+            <Flame className="h-4 w-4" />
           </Button>
         </div>
       </header>

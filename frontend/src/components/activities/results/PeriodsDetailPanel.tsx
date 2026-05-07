@@ -33,8 +33,8 @@ interface PeriodsDetailPanelProps {
 }
 
 // Format value based on measure type
-const formatValue = (value: number | undefined, measure?: MeasureType): string => {
-  if (value === undefined) return '—';
+const formatValue = (value: number | null | undefined, measure?: MeasureType): string => {
+  if (value == null || Number.isNaN(value)) return '—';
   switch (measure) {
     case 'percentage':
       return `${value}%`;

@@ -30,8 +30,7 @@ import {
   FileSpreadsheet, 
   FileImage, 
   File,
-  SlidersHorizontal,
-  FolderOpen
+  SlidersHorizontal
 } from 'lucide-react';
 
 interface DocumentsGalleryTableProps {
@@ -352,10 +351,16 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
 
   if (flattenedDocuments.length === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center py-12 text-muted-foreground", className)}>
-        <FolderOpen className="h-12 w-12 mb-4" />
-        <p className="text-lg font-medium">No documents attached</p>
-        <p className="text-body">Results have no linked documents</p>
+      <div className={cn("text-center py-16 text-muted-foreground", className)}>
+        <img
+          src="/images/empty-bookshelf.webp"
+          alt="Empty library"
+          className="h-40 mx-auto mb-6 opacity-80"
+        />
+        <h3 className="text-xl font-medium mb-2 text-foreground">No documents attached</h3>
+        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+          Results have no linked documents.
+        </p>
       </div>
     );
   }

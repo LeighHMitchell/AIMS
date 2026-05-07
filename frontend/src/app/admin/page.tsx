@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, BookOpen, FileCode2, Calendar, Activity, Target, AlertTriangle, Scale, Layers, Gauge } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, BookOpen, FileCode2, Calendar, Activity, Target, AlertTriangle, Scale, Layers, Gauge, Trash2 } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -27,6 +27,7 @@ import { CountryEmergenciesManagement } from "@/components/admin/CountryEmergenc
 // NationalDevelopmentGoals consolidated into NationalPlansManagement
 import { ComplianceRulesManagement } from "@/components/admin/ComplianceRulesManagement"
 import { ScoringRubricManagement } from "@/components/admin/ScoringRubricManagement"
+import { RecycleBinManagement } from "@/components/admin/RecycleBinManagement"
 import { PBSectorsManagement } from "@/components/admin/PBSectorsManagement"
 import { LoadingText } from "@/components/ui/loading-text"
 function AdminPageContent() {
@@ -37,7 +38,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "page-help", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "page-help", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric", "recycle-bin"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "pb-sectors"]
 
   useEffect(() => {
@@ -191,6 +192,10 @@ function AdminPageContent() {
               <Gauge className="h-4 w-4" />
               Scoring Rubric
             </TabsTrigger>
+            <TabsTrigger value="recycle-bin" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <Trash2 className="h-4 w-4" />
+              Recycle Bin
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
@@ -295,6 +300,10 @@ function AdminPageContent() {
 
           <TabsContent value="scoring-rubric" className="space-y-6">
             <ScoringRubricManagement />
+          </TabsContent>
+
+          <TabsContent value="recycle-bin" className="space-y-6">
+            <RecycleBinManagement />
           </TabsContent>
         </Tabs>
       </div>

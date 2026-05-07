@@ -6,6 +6,8 @@ import { AlertTriangle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { CodedSelectItem } from '@/components/aid-effectiveness/CodedSelectItem'
 import { Progress } from '@/components/ui/progress'
 import { BarChart3, FileText, Calendar, TrendingUp, Eye } from 'lucide-react'
 import {
@@ -167,17 +169,20 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           <h3 className="text-lg font-semibold text-foreground">Budget Planning & Transparency</h3>
         </div>
         
-        <Select value={groupBy} onValueChange={setGroupBy}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Group by..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="overall">Overall</SelectItem>
-            <SelectItem value="donor">By Development Partner</SelectItem>
-            <SelectItem value="sector">By Sector</SelectItem>
-            <SelectItem value="country">By Country</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-helper text-muted-foreground">Group by</Label>
+          <Select value={groupBy} onValueChange={setGroupBy}>
+            <SelectTrigger className="w-48 h-9">
+              <SelectValue placeholder="Group by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <CodedSelectItem value="overall" code="1">Overall</CodedSelectItem>
+              <CodedSelectItem value="donor" code="2">By Development Partner</CodedSelectItem>
+              <CodedSelectItem value="sector" code="3">By Sector</CodedSelectItem>
+              <CodedSelectItem value="country" code="4">By Country</CodedSelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Summary Statistics */}
@@ -257,7 +262,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
                   <CardTitle className="text-lg font-medium text-foreground">Budget Sharing Distribution</CardTitle>
                   <ChartExpandButton
                     title="Budget Sharing Distribution"
-                    interpretation="Shows the share of activities sharing budget information with partners: both annual budgets and 3-year forward plans, only one of the two, or neither. Sharing forward plans is a core GPEDC predictability commitment (Indicator 5b) — when partners know what's coming, recipient governments can plan their own budgets and service delivery accordingly. A small 'None shared' slice is a signal that predictability is being honoured."
+                    interpretation="Two GPEDC commitments hide in this pie: annual budget sharing (Indicator 5b) and forward-plan sharing (Indicator 6). Activities in the 'Both shared' slice meet both fully — that's the target. The 'None shared' slice is the highest-priority issue: recipient governments can't plan against funding they don't know is coming. If 'None' is larger than 'Both', predictability is the principle to tackle first. The two single-slice categories ('Annual only', 'Forward only') usually shrink as donors mature their reporting practice."
                     csv={() => ({
                       filename: 'budget-sharing-distribution.csv',
                       headers: ['Status', 'Activities', '%'],
@@ -293,7 +298,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
                   <CardTitle className="text-lg font-medium text-foreground">{title}</CardTitle>
                   <ChartExpandButton
                     title={title}
-                    interpretation="Each bar is a transparency score combining annual-budget sharing, forward-plan sharing, and the share of activities doing both. The score gives a quick read on which donors, sectors, or countries are best meeting GPEDC predictability commitments and where targeted improvements would have the greatest impact on country-led planning."
+                    interpretation="Each row's bar is a composite transparency score (0–100) for one donor, sector, or country, blending annual budget sharing, forward-plan sharing, and the 'both' overlap. Bars below 40 are predictability black holes — the recipient government can't plan against that funding. The top bars are partners or sectors already honouring 5b/6 commitments fully, useful as practice exemplars. The biggest gains come from moving the bottom third of bars from 'Annual only' to 'Both shared'."
                     csv={() => ({
                       filename: `transparency-by-${groupBy}.csv`,
                       headers: ['Category', 'Both Shared', 'Annual Only', 'Forward Only', 'None Shared', 'Transparency %', 'Total'],

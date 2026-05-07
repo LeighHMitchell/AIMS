@@ -17,12 +17,13 @@ interface TransactionTabProps {
   defaultFlowType?: string;
   onTransactionsChange?: (transactions: Transaction[]) => void;
   hideSummaryCards?: boolean;
+  hideHeaderTitle?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactPortal | null;
   onLoadingChange?: (loading: boolean) => void;
 }
 
-export default function TransactionTab({ 
-  activityId, 
+export default function TransactionTab({
+  activityId,
   readOnly = false,
   defaultFinanceType,
   defaultAidType,
@@ -31,6 +32,7 @@ export default function TransactionTab({
   defaultFlowType,
   onTransactionsChange,
   hideSummaryCards = false,
+  hideHeaderTitle = false,
   renderFilters,
   onLoadingChange
 }: TransactionTabProps) {
@@ -281,6 +283,7 @@ export default function TransactionTab({
       defaultTiedStatus={defaultTiedStatus}
       defaultFlowType={defaultFlowType}
       hideSummaryCards={hideSummaryCards}
+      hideHeaderTitle={hideHeaderTitle}
       renderFilters={renderFilters}
     />
   );

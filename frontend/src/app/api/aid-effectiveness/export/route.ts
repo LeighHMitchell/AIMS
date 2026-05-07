@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
       'Implementing Partner Field',
       'Linked to Gov Framework',
       'Supports Public Sector',
-      'Number of Outcome Indicators',
+      'Number of Government-Defined Outcome Indicators',
       'Indicators from Government',
       'Indicators via Gov Data',
       'Final Evaluation Planned',

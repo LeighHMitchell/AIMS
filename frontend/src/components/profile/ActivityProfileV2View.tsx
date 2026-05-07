@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -8,12 +8,10 @@ import {
   Bookmark,
   BookmarkCheck,
   Pencil,
-  MoreHorizontal,
   Eye,
   Printer,
   Download,
   FileCode,
-  MessageSquare,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -41,7 +39,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Card } from "@/components/ui/card"
-import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { ActivityVote } from "@/components/ui/activity-vote"
 import { SafeHtml } from "@/components/ui/safe-html"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
@@ -69,7 +66,7 @@ const V2_TABS: ProfileTabSpec[] = [
   { value: "finances", label: "Finances" },
   { value: "results", label: "Results" },
   { value: "library", label: "Documents" },
-  { value: "discussion", label: "History" },
+  { value: "discussion", label: "Comments" },
 ]
 
 function deriveAccent(activity: any): HeroAccent {
@@ -130,6 +127,61 @@ export function ActivityProfileV2View({
 }: Props) {
   const router = useRouter()
   const accent = deriveAccent(activity)
+
+  // Once a tab is visited, keep its content mounted (hidden via CSS) so revisiting
+  // it doesn't trigger a refetch / loading state.
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([activeTab]))
+  useEffect(() => {
+    setVisitedTabs((prev) => (prev.has(activeTab) ? prev : new Set(prev).add(activeTab)))
+  }, [activeTab])
+
+  // Locations come from the dedicated /locations endpoint — the activity payload's
+  // embedded `locations.specificLocations` is often empty. Match the v1 page so the
+  // map has data to render.
+  const [activityLocations, setActivityLocations] = useState<any[]>([])
+  useEffect(() => {
+    if (!activity?.id) return
+    let cancelled = false
+    apiFetch(`/api/activities/${activity.id}/locations`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        if (data.success && Array.isArray(data.locations)) {
+          setActivityLocations(data.locations)
+        } else {
+          setActivityLocations([])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setActivityLocations([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activity?.id])
+
+  // Stabilise the map-ready location list so passing it into the map component does
+  // not cause AutoFitBounds (which depends on the array identity) to re-fire every
+  // render and trigger a re-render loop with the parent.
+  const validMapLocations = useMemo(() => {
+    const embeddedLocations = activity?.locations?.specificLocations || []
+    const sourceLocations = activityLocations.length > 0 ? activityLocations : embeddedLocations
+    return sourceLocations
+      .filter((l: any) => l.latitude != null && l.longitude != null)
+      .map((l: any) => ({
+        id: l.id,
+        location_name: l.location_name || l.name,
+        latitude: Number(l.latitude),
+        longitude: Number(l.longitude),
+        site_type: l.site_type || l.type || "project_site",
+        state_region_name: l.state_region_name || l.stateRegionName,
+        township_name: l.township_name || l.townshipName,
+        district_name: l.district_name,
+        village_name: l.village_name,
+        description: l.description,
+        location_description: l.location_description,
+      }))
+  }, [activityLocations, activity?.locations?.specificLocations])
 
   // Fetch focal points (government + development partner) for the rail block.
   const [focalPoints, setFocalPoints] = useState<FocalPoint[]>([])
@@ -252,17 +304,6 @@ export function ActivityProfileV2View({
       <span className="inline-flex items-center h-9 px-1.5 rounded-md bg-slate-200">
         <ActivityVote activityId={activity.id} userId={user?.id} size="sm" variant="horizontal" />
       </span>
-      <CommentsDrawer activityId={activity.id}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-slate-900 bg-slate-200 hover:bg-slate-300 hover:text-slate-900"
-          aria-label="Comments"
-          title="Comments"
-        >
-          <MessageSquare className="w-4 h-4" />
-        </Button>
-      </CommentsDrawer>
       <Button
         variant="ghost"
         size="icon"
@@ -280,10 +321,10 @@ export function ActivityProfileV2View({
             variant="ghost"
             size="icon"
             className="h-9 w-9 text-slate-900 bg-slate-200 hover:bg-slate-300 hover:text-slate-900"
-            title="More actions"
-            aria-label="More actions"
+            title="Export"
+            aria-label="Export"
           >
-            <MoreHorizontal className="w-4 h-4" />
+            <Download className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
@@ -434,6 +475,8 @@ export function ActivityProfileV2View({
   const main = renderMainSlot({
     activity,
     activeTab,
+    visitedTabs,
+    validMapLocations,
     financials,
     totalBudgeted,
     totalPlannedDisbursements,
@@ -529,6 +572,8 @@ function OverviewAboutSection({ activity }: { activity: any }) {
 function renderMainSlot(args: {
   activity: any
   activeTab: string
+  visitedTabs: Set<string>
+  validMapLocations: any[]
   financials: any
   totalBudgeted: number
   totalPlannedDisbursements: number
@@ -539,143 +584,20 @@ function renderMainSlot(args: {
   onTabChange: (tab: string) => void
   user: any
 }) {
-  const { activeTab, activity, user } = args
-  if (activeTab === "overview") {
-    return <OverviewAboutSection activity={activity} />
-  }
+  const { activeTab, activity, visitedTabs, validMapLocations } = args
+  const startDate = activity?.actualStartDate || activity?.plannedStartDate || ""
+  const endDate = activity?.actualEndDate || activity?.plannedEndDate || ""
 
-  if (activeTab === "sectors") {
-    const sectorAllocations = activity?.sectorAllocations || activity?.sectors || []
-    if (!sectorAllocations.length) {
-      return (
-        <Card className="border-border bg-card p-8 text-center">
-          <p className="text-helper text-muted-foreground">No sectors allocated for this activity.</p>
-        </Card>
-      )
-    }
-    return (
-      <Card className="border-border bg-card p-6">
-        <SectorSankeyVisualization
-          allocations={sectorAllocations}
-          showControls
-        />
-      </Card>
-    )
-  }
+  const sectorAllocations = activity?.sectorAllocations || activity?.sectors || []
 
-  if (activeTab === "geography") {
-    const specificLocations = activity?.locations?.specificLocations || []
-    const validMapLocations = specificLocations
-      .filter((l: any) => l.latitude != null && l.longitude != null)
-      .map((l: any) => ({
-        location_name: l.name,
-        latitude: l.latitude,
-        longitude: l.longitude,
-        site_type: l.type || "project_site",
-        state_region_name: l.stateRegionName,
-        township_name: l.townshipName,
-      }))
-    return (
-      <div className="space-y-6">
-        <Card className="border-border bg-card p-6">
-          <h2 className="text-body font-semibold text-foreground mb-3">Activity Locations</h2>
-          {validMapLocations.length > 0 ? (
-            <ActivityLocationsMapViewV2
-              locations={validMapLocations}
-              mapCenter={[19.0, 96.5]}
-              mapZoom={6}
-              activityTitle={activity?.title}
-              organizationId={activity?.reporting_org_id}
-            />
-          ) : (
-            <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
-          )}
-        </Card>
-      </div>
-    )
-  }
+  // Each tab is mounted on first visit and kept in the DOM thereafter, hidden via
+  // CSS when not active. This preserves data and scroll state across tab switches.
+  const Pane = ({ tab, children }: { tab: string; children: React.ReactNode }) =>
+    visitedTabs.has(tab) ? (
+      <div className={activeTab === tab ? "" : "hidden"}>{children}</div>
+    ) : null
 
-  if (activeTab === "finances") {
-    const startDate =
-      activity?.actualStartDate || activity?.plannedStartDate || ""
-    const endDate = activity?.actualEndDate || activity?.plannedEndDate || ""
-    return (
-      <div className="space-y-6">
-        <Card className="border-border bg-card p-6">
-          <div className="mb-4">
-            <h2 className="text-body font-semibold text-foreground">Transactions</h2>
-            <p className="text-helper text-muted-foreground mt-1">
-              Recorded financial transactions for this activity.
-            </p>
-          </div>
-          <TransactionTab activityId={activity.id} readOnly={true} />
-        </Card>
-
-        <Card className="border-border bg-card p-6">
-          <div className="mb-4">
-            <h2 className="text-body font-semibold text-foreground">Budgets</h2>
-            <p className="text-helper text-muted-foreground mt-1">
-              Activity budget allocations by period.
-            </p>
-          </div>
-          <ActivityBudgetsTab
-            activityId={activity.id}
-            startDate={startDate}
-            endDate={endDate}
-            defaultCurrency="USD"
-            readOnly={true}
-          />
-        </Card>
-
-        <Card className="border-border bg-card p-6">
-          <div className="mb-4">
-            <h2 className="text-body font-semibold text-foreground">Planned Disbursements</h2>
-            <p className="text-helper text-muted-foreground mt-1">
-              Forward-looking planned disbursements.
-            </p>
-          </div>
-          <PlannedDisbursementsTab
-            activityId={activity.id}
-            startDate={startDate}
-            endDate={endDate}
-            defaultCurrency="USD"
-            readOnly={true}
-          />
-        </Card>
-      </div>
-    )
-  }
-
-  if (activeTab === "results") {
-    return (
-      <Card className="border-border bg-card p-6">
-        <ResultsReadOnlyView activityId={activity.id} />
-      </Card>
-    )
-  }
-
-  if (activeTab === "library") {
-    return (
-      <Card className="border-border bg-card p-6">
-        <DocumentsAndImagesTabV2
-          activityId={activity.id}
-          documents={[]}
-          onChange={() => {}}
-          readOnly={true}
-        />
-      </Card>
-    )
-  }
-
-  if (activeTab === "discussion") {
-    return (
-      <Card className="border-border bg-card p-6">
-        <PublicCommentsThread activityId={activity.id} />
-      </Card>
-    )
-  }
-
-  return (
+  const fallback = (
     <Card className="border-border bg-card p-8">
       <div className="text-center max-w-md mx-auto">
         <h2 className="text-body font-semibold text-foreground mb-2">
@@ -687,5 +609,126 @@ function renderMainSlot(args: {
         </p>
       </div>
     </Card>
+  )
+
+  const knownTabs = new Set(["overview", "sectors", "geography", "finances", "results", "library", "discussion"])
+
+  return (
+    <>
+      <Pane tab="overview">
+        <OverviewAboutSection activity={activity} />
+      </Pane>
+
+      <Pane tab="sectors">
+        {sectorAllocations.length ? (
+          <Card className="border-border bg-card p-6">
+            <SectorSankeyVisualization allocations={sectorAllocations} showControls />
+          </Card>
+        ) : (
+          <Card className="border-border bg-card p-8 text-center">
+            <p className="text-helper text-muted-foreground">No sectors allocated for this activity.</p>
+          </Card>
+        )}
+      </Pane>
+
+      <Pane tab="geography">
+        <div className="space-y-6">
+          <Card className="border-border bg-card p-6">
+            <div className="mb-4 flex flex-col space-y-1.5">
+              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activity Locations</h2>
+              <p className="text-body text-muted-foreground">
+                {validMapLocations.length} mapped {validMapLocations.length === 1 ? 'location' : 'locations'} for this activity
+              </p>
+            </div>
+            {validMapLocations.length > 0 ? (
+              <div className="h-[480px] rounded-md overflow-hidden border border-border">
+                <ActivityLocationsMapViewV2
+                  locations={validMapLocations}
+                  mapCenter={[19.0, 96.5]}
+                  mapZoom={6}
+                  activityTitle={activity?.title}
+                  organizationId={activity?.reporting_org_id}
+                />
+              </div>
+            ) : (
+              <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
+            )}
+          </Card>
+        </div>
+      </Pane>
+
+      <Pane tab="finances">
+        <div className="space-y-6">
+          <Card className="border-border bg-card p-6">
+            <div className="mb-4 flex flex-col space-y-1.5">
+              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Transactions</h2>
+              <p className="text-body text-muted-foreground">
+                Incoming and outgoing financial transactions for this activity
+              </p>
+            </div>
+            <TransactionTab activityId={activity.id} readOnly={true} hideHeaderTitle={true} />
+          </Card>
+
+          <Card className="border-border bg-card p-6">
+            <div className="mb-4 flex flex-col space-y-1.5">
+              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Planned Disbursements</h2>
+              <p className="text-body text-muted-foreground">
+                Scheduled future disbursements
+              </p>
+            </div>
+            <PlannedDisbursementsTab
+              activityId={activity.id}
+              startDate={startDate}
+              endDate={endDate}
+              defaultCurrency="USD"
+              readOnly={true}
+              hideHeaderTitle={true}
+            />
+          </Card>
+
+          <Card className="border-border bg-card p-6">
+            <div className="mb-4 flex flex-col space-y-1.5">
+              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Budgets</h2>
+              <p className="text-body text-muted-foreground">
+                Activity budget allocations by period
+              </p>
+            </div>
+            <ActivityBudgetsTab
+              activityId={activity.id}
+              startDate={startDate}
+              endDate={endDate}
+              defaultCurrency="USD"
+              readOnly={true}
+              hideHeaderTitle={true}
+            />
+          </Card>
+        </div>
+      </Pane>
+
+      <Pane tab="results">
+        <Card className="border-border bg-card p-6">
+          <ResultsReadOnlyView activityId={activity.id} />
+        </Card>
+      </Pane>
+
+      <Pane tab="library">
+        <Card className="border-border bg-card p-6">
+          <DocumentsAndImagesTabV2
+            activityId={activity.id}
+            documents={[]}
+            onChange={() => {}}
+            readOnly={true}
+          />
+        </Card>
+      </Pane>
+
+      <Pane tab="discussion">
+        <Card className="border-border bg-card p-6">
+          <PublicCommentsThread activityId={activity.id} />
+        </Card>
+      </Pane>
+
+      {!knownTabs.has(activeTab) && fallback}
+    </>
   )
 }

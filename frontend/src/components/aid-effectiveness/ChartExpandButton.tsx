@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, ReactNode } from 'react'
+import React, { useState, useEffect, useRef, ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -51,16 +51,19 @@ function downloadCsv({ headers, rows, filename = 'chart-export.csv' }: CsvExport
 
 export function ChartExpandButton({ title, description, interpretation, controls, render, csv }: ChartExpandButtonProps) {
   const [open, setOpen] = useState(false)
+  const [chartHeight, setChartHeight] = useState(600)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const chartHeight = typeof window === 'undefined'
-    ? 600
-    : Math.max(
-        360,
-        Math.floor(window.innerHeight * 0.85)
-          - 140
-          - (interpretation ? 80 : 0)
-          - ((controls || csv) ? 50 : 0)
-      )
+  useEffect(() => {
+    if (!open) return
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => setChartHeight(Math.max(200, el.clientHeight))
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [open])
 
   return (
     <>
@@ -81,13 +84,13 @@ export function ChartExpandButton({ title, description, interpretation, controls
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
           {(controls || csv) && (
-            <div className="flex-shrink-0 mt-3 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap">{controls}</div>
+            <div className="flex-shrink-0 mt-3 flex items-end justify-between gap-2">
+              <div className="flex items-end gap-2 flex-wrap">{controls}</div>
               {csv && (
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 flex-shrink-0"
+                  className="h-9 w-9 flex-shrink-0"
                   onClick={() => downloadCsv(csv())}
                   title="Export CSV"
                   aria-label="Export CSV"
@@ -97,7 +100,7 @@ export function ChartExpandButton({ title, description, interpretation, controls
               )}
             </div>
           )}
-          <div className="flex-1 mt-4 min-h-0 overflow-auto">
+          <div ref={containerRef} className="flex-1 mt-4 min-h-0 overflow-hidden">
             {open && render(chartHeight)}
           </div>
           {interpretation && (

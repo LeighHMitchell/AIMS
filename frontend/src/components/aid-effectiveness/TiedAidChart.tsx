@@ -6,9 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
 import { Globe, Handshake, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { ChartExpandButton } from '@/components/aid-effectiveness/ChartExpandButton'
+import { CodedSelectItem } from '@/components/aid-effectiveness/CodedSelectItem'
 import {
   BarChart,
   Bar,
@@ -144,17 +146,20 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
           <h3 className="text-lg font-semibold text-foreground">Aid Tying Analysis</h3>
         </div>
         
-        <Select value={groupBy} onValueChange={setGroupBy}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Group by..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="overall">Overall</SelectItem>
-            <SelectItem value="donor">By Development Partner</SelectItem>
-            <SelectItem value="sector">By Sector</SelectItem>
-            <SelectItem value="country">By Country</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-helper text-muted-foreground">Group by</Label>
+          <Select value={groupBy} onValueChange={setGroupBy}>
+            <SelectTrigger className="w-48 h-9">
+              <SelectValue placeholder="Group by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <CodedSelectItem value="overall" code="1">Overall</CodedSelectItem>
+              <CodedSelectItem value="donor" code="2">By Development Partner</CodedSelectItem>
+              <CodedSelectItem value="sector" code="3">By Sector</CodedSelectItem>
+              <CodedSelectItem value="country" code="4">By Country</CodedSelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -224,7 +229,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
                   <CardTitle className="text-lg font-medium text-foreground">Overall Distribution</CardTitle>
                   <ChartExpandButton
                     title="Overall Distribution"
-                    interpretation="The portfolio's mix of untied, partially tied, and tied aid. Untied aid is a GPEDC commitment (Indicator 10) because it lets recipients procure from the most cost-effective source, supporting local markets and recipient ownership. Watch the share of fully tied aid over time — a falling tied share is a tangible signal that effectiveness commitments are being honoured."
+                    interpretation="Untied aid dominance is GPEDC Indicator 10. The DAC global benchmark is around 80% untied — anything materially below is worth probing. Group by donor to identify partners pulling the average down (often historic bilateral donors with national procurement constraints); group by sector to see whether tied aid clusters in goods-heavy areas like infrastructure or commodities. The tied slice is the single number to track quarter-over-quarter — falling = commitments being honoured."
                     csv={() => ({
                       filename: 'aid-tying-overall.csv',
                       headers: ['Status', 'Activities', '%'],

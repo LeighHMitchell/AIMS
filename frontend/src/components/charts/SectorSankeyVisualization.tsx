@@ -6,7 +6,7 @@ import { sankey, sankeyLinkHorizontal, SankeyNode, SankeyLink } from 'd3-sankey'
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json';
 import { Button } from '@/components/ui/button';
-import { Download, GitBranch, Table as TableIcon, PieChart, BarChart3, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, GitBranch, Table as TableIcon, PieChart, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -198,12 +198,10 @@ export default function SectorSankeyVisualization({
     }
   }
   const sortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-    }
+    if (sortField !== field) return null
     return sortDirection === 'asc'
-      ? <ChevronUp className="h-3.5 w-3.5 text-foreground" />
-      : <ChevronDown className="h-3.5 w-3.5 text-foreground" />
+      ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+      : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
   }
   
   // Use external bar grouping mode if provided, otherwise use internal state
@@ -647,7 +645,8 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-body pointer-events-none z-50')
+      .attr('class', 'absolute bg-card text-foreground border border-border rounded-lg shadow-lg text-body pointer-events-none z-50 overflow-hidden')
+      .style('min-width', '200px')
       .style('opacity', 0);
 
     const format = d3.format('.1f');
@@ -740,14 +739,21 @@ export default function SectorSankeyVisualization({
             });
           }
           if (details.length > 0) {
-            financialHtml = `<div class="mt-2 pt-2 border-t border-border text-helper space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
+            financialHtml = `<div class="text-helper space-y-1 text-muted-foreground">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
           }
         }
-        
+
+        const titleHtml = `${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}`;
+        const bodyHtml = `
+          <div class="text-lg font-bold text-foreground">${format(d.value)}%</div>
+          ${financialHtml ? `<div class="mt-2 pt-2 border-t border-border">${financialHtml}</div>` : ''}
+        `;
+
         tooltip.html(`
-          <div class="font-semibold">${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}</div>
-          <div class="text-lg font-bold mt-1 text-muted-foreground">${format(d.value)}%</div>
-          ${financialHtml}
+          <div class="bg-surface-muted px-3 py-2 border-b border-border">
+            <p class="font-semibold text-foreground">${titleHtml}</p>
+          </div>
+          <div class="p-3">${bodyHtml}</div>
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px');
@@ -1016,7 +1022,8 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-body pointer-events-none z-50')
+      .attr('class', 'absolute bg-card text-foreground border border-border rounded-lg shadow-lg text-body pointer-events-none z-50 overflow-hidden')
+      .style('min-width', '200px')
       .style('opacity', 0);
 
     const format = metricMode === 'percentage' ? d3.format('.1f') : d3.format(',.0f');
@@ -1065,10 +1072,15 @@ export default function SectorSankeyVisualization({
         tooltip.style('opacity', 1);
 
         const percentage = ((d.value || 0) / (root.value || 1) * 100).toFixed(1);
+        const codeHtml = d.data.code ? `<span class="font-mono">${d.data.code}</span> - ` : '';
 
         tooltip.html(`
-          <div class="font-semibold">${d.data.code || ''} - ${d.data.name}</div>
-          <div class="text-lg font-bold mt-1">${percentage}%</div>
+          <div class="bg-surface-muted px-3 py-2 border-b border-border">
+            <p class="font-semibold text-foreground">${codeHtml}${d.data.name}</p>
+          </div>
+          <div class="p-3">
+            <div class="text-lg font-bold text-foreground">${percentage}%</div>
+          </div>
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px');
@@ -1128,7 +1140,8 @@ export default function SectorSankeyVisualization({
 
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-body pointer-events-none z-50')
+      .attr('class', 'absolute bg-card text-foreground border border-border rounded-lg shadow-lg text-body pointer-events-none z-50 overflow-hidden')
+      .style('min-width', '200px')
       .style('opacity', 0);
 
     const format = d3.format(',.0f');
@@ -1153,13 +1166,17 @@ export default function SectorSankeyVisualization({
         tooltip.style('opacity', 1);
         const percentage = (d.value / total * 100).toFixed(1);
         const sectors = 'sectors' in d ? (d.sectors as { code: string; name: string; value: number }[] | undefined) : undefined;
-        const sectorsInfo = sectors && sectors.length > 0 ? 
+        const sectorsInfo = sectors && sectors.length > 0 ?
           `<div class="text-helper text-muted-foreground mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
         tooltip.html(`
-          <div class="font-semibold">${d.code} - ${d.name}</div>
-          <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : libFormatTooltipCurrency(d.value, isExpanded)}</div>
-          <div class="text-helper text-muted-foreground">${percentage}% of total</div>
-          ${sectorsInfo}
+          <div class="bg-surface-muted px-3 py-2 border-b border-border">
+            <p class="font-semibold text-foreground"><span class="font-mono">${d.code}</span> - ${d.name}</p>
+          </div>
+          <div class="p-3">
+            <div class="text-lg font-bold text-foreground">${isPercentage ? format(d.value) + '%' : libFormatTooltipCurrency(d.value, isExpanded)}</div>
+            <div class="text-helper text-muted-foreground">${percentage}% of total</div>
+            ${sectorsInfo}
+          </div>
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px');

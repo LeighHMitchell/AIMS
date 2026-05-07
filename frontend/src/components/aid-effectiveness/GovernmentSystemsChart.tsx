@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { CodedSelectItem } from '@/components/aid-effectiveness/CodedSelectItem'
 import { Building2, TrendingUp, TrendingDown } from 'lucide-react'
 import {
   BarChart,
@@ -199,17 +201,20 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
               <ChartExpandButton
                 title="Government Systems Usage"
                 description="Percentage of activities using each government system"
-                interpretation="Tracks the share of activities that flow through each country public financial management (PFM) system: budget execution, financial reporting, audit, and procurement. Using country systems builds capacity, reduces parallel structures, and is a core GPEDC commitment (Indicator 5a). Low usage often indicates fiduciary-risk concerns from donors — addressing those concerns is the path to deeper alignment."
+                interpretation="Four bars, four GPEDC 5a sub-commitments: budget execution, financial reporting, audit, and procurement. The lowest bar is the country PFM system donors trust least — usually procurement or audit. That's the area where strengthening country-system credibility (or addressing specific fiduciary-risk findings head-on) unlocks the biggest jump in alignment. Bars above 60% indicate working systems donors will route funds through; below 30% means parallel donor systems are still the default and country capacity isn't being built."
                 controls={
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'usage' | 'name')}>
-                    <SelectTrigger className="h-8 w-[140px] text-helper">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="usage">Sort: usage</SelectItem>
-                      <SelectItem value="name">Sort: system</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-helper text-muted-foreground">Sort by</Label>
+                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'usage' | 'name')}>
+                      <SelectTrigger className="h-9 w-[150px] text-helper">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <CodedSelectItem value="usage" code="1">Usage</CodedSelectItem>
+                        <CodedSelectItem value="name" code="2">System</CodedSelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 }
                 csv={() => ({
                   filename: 'government-systems-usage.csv',

@@ -103,7 +103,7 @@ export function IndicatorSparkline({
                 return (
                   <div className="bg-slate-800 text-white text-helper px-2 py-1 rounded shadow-lg">
                     <div className="font-medium">{data.label}</div>
-                    <div>{data.value.toLocaleString()}</div>
+                    <div>{data.value == null || Number.isNaN(data.value) ? '—' : data.value.toLocaleString()}</div>
                   </div>
                 );
               }

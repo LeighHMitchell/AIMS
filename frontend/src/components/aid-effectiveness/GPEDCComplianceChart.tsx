@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { CodedSelectItem } from '@/components/aid-effectiveness/CodedSelectItem'
 import { Shield, Target, Building2, Users, FileText, CheckCircle2, AlertCircle } from 'lucide-react'
 import {
   BarChart,
@@ -299,17 +301,20 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                 <CardTitle className="text-lg font-medium text-foreground">Detailed Indicator Compliance</CardTitle>
                 <ChartExpandButton
                   title="Detailed Indicator Compliance"
-                  interpretation="Each bar maps to a specific GPEDC indicator (alignment with national plans, use of country systems, untied aid, and so on) and shows the share of activities that meet it. Bars are coloured by the GPEDC principle they belong to. Use this to drill from broad section scores into the underlying indicators that drive them — and to identify the specific commitments most in need of attention."
+                  interpretation="Every GPEDC sub-indicator in one view, colour-coded by the seven principle groupings. The bottom bars are the specific GPEDC paragraphs your activities aren't meeting yet — start there. Look for clusters: if multiple bars from the same colour appear at the bottom, it's a section-level weakness, not a one-off, and warrants a structural fix rather than per-activity follow-up. Sort by Compliance to read priorities top-down; sort by Indicator to compare against the GPEDC indicator framework directly."
                   controls={
-                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'compliance' | 'name')}>
-                      <SelectTrigger className="h-8 w-[160px] text-helper">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="compliance">Sort: compliance</SelectItem>
-                        <SelectItem value="name">Sort: indicator</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-helper text-muted-foreground">Sort by</Label>
+                      <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'compliance' | 'name')}>
+                        <SelectTrigger className="h-9 w-[170px] text-helper">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <CodedSelectItem value="compliance" code="1">Compliance</CodedSelectItem>
+                          <CodedSelectItem value="name" code="2">Indicator</CodedSelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   }
                   csv={() => ({
                     filename: 'gpedc-indicator-compliance.csv',
