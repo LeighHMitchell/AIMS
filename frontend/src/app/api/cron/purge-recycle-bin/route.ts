@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
       .from(entity)
       .select('id')
       .lt('deleted_at', cutoff)
-      .not('deleted_at', 'is', null);
+      .not('deleted_at', 'is', null)
+      .eq('purge_paused', false);
 
     if (fetchError) {
       stat.error = fetchError.message;
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
       user_id: null,
       activity_id: null,
       details: { cutoff, retentionDays: RETENTION_DAYS, summary },
-    }).then(({ error }) => {
+    }).then(({ error }: { error: { message: string } | null }) => {
       if (error) console.warn('[purge-recycle-bin] audit log failed:', error.message);
     });
   }

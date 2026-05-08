@@ -28,10 +28,10 @@ import {
   PieChart, Pie, Cell, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
-import { SectorHierarchyFilter, SectorFilterSelection } from '@/components/maps/SectorHierarchyFilter'
+import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter'
+import { OrganizationCombobox } from '@/components/ui/organization-combobox'
 import { format } from 'date-fns'
 import { isPositiveValue } from '@/lib/aid-effectiveness-helpers'
-import { getSectorInfoFlexible } from '@/lib/dac-sector-utils'
 import { TiedAidChart } from '@/components/aid-effectiveness/TiedAidChart'
 import { BudgetPlanningChart } from '@/components/aid-effectiveness/BudgetPlanningChart'
 import { GovernmentSystemsChart } from '@/components/aid-effectiveness/GovernmentSystemsChart'
@@ -127,28 +127,76 @@ const toBool = (val: any): boolean => isPositiveValue(val)
 const pct = (count: number, total: number): number =>
   total === 0 ? 0 : Math.round((count / total) * 100)
 
-// Help tooltip descriptions for each chart
+// Help tooltip descriptions for each chart. Each entry explains why this slice
+// of data matters for assessing aid effectiveness in country, what "good" and
+// "concerning" look like in practice, and what the user should do about it.
 const CHART_HELP: Record<string, string> = {
-  overallScore: 'The overall aid effectiveness score is the average percentage of "Yes" answers across all GPEDC boolean indicators. A higher score indicates stronger alignment with the Global Partnership for Effective Development Co-operation (GPEDC) principles.',
-  gpedcCompliant: 'Activities scoring 60% or above on all GPEDC boolean indicators are considered "GPEDC Compliant." This threshold reflects the minimum level of alignment with internationally agreed development effectiveness standards.',
-  govOwnership: 'Measures alignment with GPEDC Indicator 1 — the extent to which development co-operation is aligned with national priorities, uses government frameworks, and supports national institutions and capacity development.',
-  untiedAid: 'Reflects GPEDC Indicator 10 — aid tying status. Untied aid allows recipient countries to procure goods and services from any source, improving value for money and local ownership.',
-  avgOutcomes: 'The average number of government-defined outcome indicators per activity. More outcome indicators suggest stronger results measurement and alignment with national monitoring frameworks.',
-  sectionRadar: 'A radar/spider chart showing compliance scores across all 7 GPEDC sections. Each axis represents a section; the shaded area shows the portfolio\'s current compliance profile. Larger area = better overall compliance.',
-  tiedAid: 'Distribution of activities by aid tying status (GPEDC Indicator 10). Untied aid is preferred as it gives partner countries freedom to procure from any source, promoting local markets and competitive pricing.',
-  sectionBars: 'Bar chart comparing average compliance rates across all 7 GPEDC sections. Identifies which dimensions of development effectiveness are strongest and which need improvement.',
-  partners: 'Distribution of activities by implementing partner. Shows which organizations are responsible for delivery, important for understanding capacity and coordination.',
-  ownership: 'Government Ownership & Strategic Alignment (GPEDC Indicator 1): Measures whether activities are approved by government, included in national plans, linked to results frameworks, implemented by national institutions, and support public sector capacity.',
-  countrySystems: 'Use of Country Public Financial & Procurement Systems (GPEDC Indicator 5a): Tracks whether development funds flow through national treasury, use government budget execution, financial reporting, audit procedures, and procurement systems.',
-  govWhyNot: 'When development partners do not use government systems, this chart shows the stated reasons. Understanding these barriers is key to the GPEDC agenda of strengthening and using country systems.',
-  outcomeIndicators: 'Distribution of the number of government-defined outcome indicators per activity. Activities with more indicators typically have stronger results frameworks aligned with national M&E systems.',
-  predictability: 'Predictability & Aid Characteristics (GPEDC Indicators 5b, 6, 10): Measures whether annual budgets and forward plans are shared, whether multi-year financing agreements exist, and aid tying status.',
-  transparency: 'Transparency & Timely Reporting (GPEDC Indicator 4): Tracks whether annual financial reports, evaluation reports, and performance data are publicly available and regularly updated.',
-  accountability: 'Mutual Accountability (GPEDC Indicator 7): Assesses whether joint annual reviews occur, mutual accountability frameworks are in place, and corrective actions are documented.',
-  civilSociety: 'Civil Society & Private Sector Engagement (GPEDC Indicators 2 & 3): Measures consultation with civil society, CSO involvement in implementation, core funding to CSOs, and public-private dialogue.',
-  gender: 'Gender Equality & Inclusion (GPEDC Indicator 8): Tracks whether gender objectives are integrated into activities, gender-specific budget allocations exist, and gender-disaggregated indicators are used.',
-  complianceRadar: 'Full GPEDC compliance radar showing scores across all 7 indicator categories. This provides a comprehensive view of the portfolio\'s alignment with GPEDC monitoring indicators.',
-  allSections: 'Breakdown of compliance scores for all 7 GPEDC sections with progress bars and percentage ratings. Sections scoring 70%+ are rated "Excellent", 50-69% "Good", and below 50% "Needs Improvement".',
+  overallScore: 'The single headline number for how country-led, transparent and accountable the development cooperation in this portfolio is. It averages the share of "Yes" responses across every GPEDC monitoring question. Above 70% means most activities are honouring the international effectiveness commitments; below 50% means at least half the portfolio is bypassing one or more core principles. Use this to track progress year-on-year and to anchor donor dialogue at portfolio level.',
+
+  gpedcCompliant: 'The number and share of activities meeting at least 60% of the GPEDC monitoring criteria. 60% is the working threshold used to flag activities that are broadly aligned with the principles versus those that need a structured improvement plan. A rising compliance rate is direct evidence that effectiveness commitments are translating into practice — a falling rate signals new activities entering the portfolio without effectiveness safeguards built in.',
+
+  govOwnership: 'GPEDC Indicator 1: the extent to which development partners use the country\'s own priorities, plans, results frameworks and institutions. High ownership means the activity is co-owned by government and embedded in national delivery structures; low ownership means parallel donor systems are duplicating what government already has. This is the bedrock of country-led development — every other indicator depends on it.',
+
+  untiedAid: 'GPEDC Indicator 10: the share of aid that is fully untied, meaning recipients can procure goods and services from any source rather than only from the donor country. Untied aid produces better value for money, supports local markets, and respects country sovereignty over procurement. The DAC global benchmark is around 80%; a tied share above 25% in country warrants direct engagement on procurement rules.',
+
+  avgOutcomes: 'The average number of government-defined outcome indicators on each activity\'s results framework. Outcome indicators (changes in conditions or behaviour) signal whether monitoring is built into activities — and using government-defined ones means partners are aligning to the country\'s own M&E system rather than parallel donor frameworks. 3–5 indicators per activity is the healthy range; 0 means flying blind on results, 10+ often signals output counts mislabelled as outcomes.',
+
+  sectionRadar: 'A bird\'s-eye view of the portfolio across all seven GPEDC principles. Each axis is one principle; the further the polygon reaches towards the outer edge, the better the portfolio honours that principle. A round shape means broad effectiveness; sharp inward dents identify the specific principles needing attention. Most portfolios show predictable weak points around country systems and mutual accountability — those are the structural conversations to prioritise.',
+
+  tiedAid: 'GPEDC Indicator 10 in detail: the split between untied, partially tied, and tied aid. Tied aid restricts procurement to the donor country or a limited set of providers, which inflates costs and crowds out local suppliers. Aid that flows untied produces better value for the recipient and recycles through local markets. Watch the tied share over time — falling = effectiveness commitments being honoured.',
+
+  sectionBars: 'Side-by-side comparison of the seven GPEDC principles with exact percentages, easier than the radar for reading numbers and prioritising. The lowest bar is the principle most worth addressing across the portfolio; the highest bar identifies an area where partners can share practice with peers. Anything below 50% means a principle is being met in fewer than half of activities — that\'s a structural issue, not a coverage gap.',
+
+  partners: 'How activity delivery is distributed across implementing partners. Concentration in 2–3 large agencies is a delivery-risk signal — losing one disrupts the portfolio. A long tail of single-activity partners adds coordination cost without much depth. The healthy pattern is 5–10 substantial partners; review the mix against ownership commitments — are national or local partners under-represented?',
+
+  ownership: 'GPEDC Indicator 1 — Government Ownership and Strategic Alignment. This block asks whether each activity is formally approved by government, sits inside the national plan, draws indicators from the government\'s results framework, is implemented through a national institution, holds a government entity accountable, and supports public-sector capacity. It is the most concrete test of whether development cooperation is country-led rather than donor-driven.',
+
+  countrySystems: 'GPEDC Indicator 5a — Use of Country Public Financial Management and Procurement Systems. The four sub-questions ask whether funds flow through the national treasury, the government\'s budget execution system, government financial reporting, government audit, and national procurement law. Using country systems builds capacity and reduces parallel structures; bypassing them means donors are signalling fiduciary doubt — a finding that needs an explicit response.',
+
+  govWhyNot: 'When development partners bypass government PFM, audit, or procurement systems, this captures the reason given. The pattern of justifications is itself diagnostic — repeated "fiduciary risk" or "donor procurement rules" answers point to specific reforms (audit credibility, procurement law alignment) that would unlock deeper alignment. This is where the country systems agenda gets practical.',
+
+  outcomeIndicators: 'Distribution of activities by how many government-defined outcome indicators they track. The "0" slice is the highest-priority gap — those activities have no government-aligned results monitoring at all and can\'t be held to account against country development plans. A bell shape centred on 3–5 indicators is healthy; heavy 10+ tail usually signals padded output counts rather than rigorous M&E.',
+
+  predictability: 'GPEDC Indicators 5b, 6 and 10 combined. Are annual budgets shared with government before the fiscal year? Are 3-year forward plans shared? Are multi-year financing agreements in place? Predictability is what allows recipient governments to plan their own budgets and service delivery. Activities that fail this block create planning black holes — government can\'t budget against money it doesn\'t know is coming.',
+
+  transparency: 'GPEDC Indicator 4 — Transparency and Timely Reporting. Whether annual financial reports, evaluation reports, performance data and disbursement updates are publicly available and regularly refreshed. Transparency is the precondition for citizen accountability and for parliaments to scrutinise external assistance. Low scores here usually mean the IATI publishing pipeline isn\'t in place or hasn\'t been resourced.',
+
+  accountability: 'GPEDC Indicator 7 — Mutual Accountability. Are joint government-partner reviews happening? Is there a mutual accountability framework in place? Are corrective actions documented and followed up? This block tests whether the partnership has feedback loops and consequences, or whether reporting is one-way (recipient to donor) without ever reversing direction.',
+
+  civilSociety: 'GPEDC Indicators 2 and 3 — engagement with civil society and the private sector. Are CSOs consulted on activity design? Do they help implement? Is there core flexible funding for the CSO sector or only short-term project grants? Is there structured public-private dialogue? Inclusive partnerships are correlated with longer-term sustainability and stronger local accountability.',
+
+  gender: 'GPEDC Indicator 8 — Gender Equality and Women\'s Empowerment. Are gender objectives integrated into the activity design? Is there a budget line specifically allocated to gender equality? Are indicators disaggregated by sex? Activities scoring zero across this block aren\'t gender-blind by accident — they\'re evidence the gender mainstreaming policy isn\'t reaching implementation.',
+
+  complianceRadar: 'The full GPEDC monitoring framework as a compliance radar — every principle visible at once. Use this for board reports and for spotting the difference between portfolios that are evenly aligned versus portfolios that score well overall but with one or two principles dragging the rest down. The shape tells the story.',
+
+  allSections: 'Numeric scoreboard of all seven GPEDC sections with badges colour-coded by tier: above 70% (consistent practice), 50–70% (uneven adoption, partner-driven), below 50% (structural weakness). Designed to be lifted directly into status reports and effectiveness dialogues.',
+}
+
+// Substantive interpretation paragraphs shown beneath each section's chart.
+// Each one explains what the GPEDC principle actually means, what each
+// indicator (row) captures, and what understanding this picture tells the user
+// about aid effectiveness in country.
+const SECTION_INTERPRETATIONS: Record<string, string> = {
+  ownership:
+    "Government ownership in GPEDC means the country's own development priorities, plans and institutions drive how external assistance is used — not the development partner's own programming. Each row here captures a different operational test of that ownership: whether the activity has a formal government agreement, whether it appears inside the national development plan, whether its results framework draws on the government's own goals and indicators, whether monitoring data flows through government M&E systems, whether implementation sits with a national institution and a government entity is contractually accountable, and whether the activity strengthens public-sector capacity. Together, these tell you whether external assistance in country is genuinely co-owned with government, or whether donors are running parallel programmes that happen to take place in the country.",
+
+  countrySystems:
+    "GPEDC Indicator 5a asks whether external assistance flows through the country's own public financial management (PFM) systems — the same treasury, budget execution, financial reporting, audit and procurement systems that manage domestic public spending — or through parallel donor processes. Each row here tracks one specific PFM channel: whether funds actually pass through the national treasury before disbursement, whether spending uses the country's budget execution and chart of accounts, whether expenditure is recorded in the government's financial reporting system, whether activities are subject to country audit institutions, and whether procurement follows national law. When activities use these systems, country PFM capacity is exercised and strengthened; when they don't, donors are signalling fiduciary doubt — a finding that warrants a specific reform response rather than indefinite parallel structures.",
+
+  predictability:
+    "Predictability means the recipient government knows what funding to expect, when, and on what terms — so it can build external assistance into its own budget cycle and medium-term plans. Without it, country-led planning collapses into reactive scrambling. The rows here capture three distinct predictability commitments: whether the development partner shares its annual disbursement plan with government before the fiscal year starts (GPEDC Indicator 5b), whether it shares a 3-year forward plan so the recipient can plan beyond the immediate year (Indicator 6), and whether a multi-year financing agreement formalises the commitment beyond a single fiscal cycle. The picture here tells you whether the country can actually plan around its external assistance, or whether it has to treat each year as a fresh negotiation.",
+
+  transparency:
+    "Transparency in GPEDC means the public, parliament, civil society and other partners can see what's being spent in the country, on what, and with what results. The rows here cover the full transparency lifecycle of an activity: whether annual financial reports are publicly available, whether activity and disbursement data are refreshed regularly (typically via IATI publishing), whether a final evaluation is planned at the start, whether the evaluation report is then published rather than buried, and whether performance against indicators is reported openly. Strong scores here mean external scrutiny is enabled — citizens, oversight bodies and other partners can independently assess how external assistance is being used. Low scores mean reporting is happening privately or not at all, breaking the accountability chain.",
+
+  accountability:
+    "Mutual accountability is the commitment that the development partnership has feedback loops in both directions — government and partners review each other's performance, agree on what needs to change, and document what they'll do about it. The rows here check whether these loops actually exist in practice: whether a joint annual review is held where government and partners assess effectiveness together, whether there's a documented mutual accountability framework defining how that review happens, and whether corrective actions identified during the review are written down and tracked through to follow-up. Without these, 'partnership' becomes a one-way street — donors hold recipients to account, but face no equivalent reciprocal scrutiny themselves. Strong scores here are evidence that the country has genuine governance over how its external assistance evolves.",
+
+  civilSociety:
+    "Effective development cooperation isn't only government-to-government — it depends on the citizens, civil society organisations and private-sector actors who shape, deliver and benefit from activities. GPEDC Indicators 2 and 3 measure how genuinely inclusive activities are. The rows here capture five engagement points: whether civil society is consulted in activity design, whether CSOs are involved in implementation rather than just consultation, whether they receive core flexible funding (rather than only short-term project grants), whether structured public-private dialogue exists, and whether the private sector is engaged as a partner. Together they tell you whether external assistance in country is genuinely co-produced with local actors, or imposed on them — a strong predictor of whether outcomes will outlast donor presence.",
+
+  gender:
+    "GPEDC Indicator 8 asks whether gender mainstreaming actually reaches activity-level practice in country, rather than living only in policy documents. The rows here are the specific operational tests: whether gender objectives are integrated into the activity's results framework, whether budget is specifically allocated to gender equality outcomes, and whether performance indicators are reported disaggregated by sex. Activities scoring zero across this section aren't gender-blind by accident — they're evidence that the country's gender mainstreaming policy isn't translating into design and reporting practice, and they're the precise activities to focus gender-targeted technical assistance on.",
 }
 
 // All boolean indicator fields grouped by section
@@ -181,23 +229,23 @@ const SECTION_FIELDS: Record<string, { label: string; fields: { key: keyof AidEf
     fields: [
       { key: 'formallyApprovedByGov', label: 'Formally Approved by Government' },
       { key: 'includedInNationalPlan', label: 'Included in National Plan' },
-      { key: 'linkedToGovFramework', label: 'Linked to Gov Results Framework' },
-      { key: 'indicatorsFromGov', label: 'Indicators from Gov Frameworks' },
-      { key: 'indicatorsViaGovData', label: 'Monitored via Gov M&E' },
+      { key: 'linkedToGovFramework', label: 'Linked to Government Results Framework' },
+      { key: 'indicatorsFromGov', label: 'Indicators from Government Frameworks' },
+      { key: 'indicatorsViaGovData', label: 'Monitored via Government M&E' },
       { key: 'implementedByNationalInstitution', label: 'Implemented by National Institution' },
-      { key: 'govEntityAccountable', label: 'Gov Entity Accountable' },
+      { key: 'govEntityAccountable', label: 'Government Entity Accountable' },
       { key: 'supportsPublicSector', label: 'Supports Public Sector' },
-      { key: 'capacityDevFromNationalPlan', label: 'Capacity Dev from National Plan' },
+      { key: 'capacityDevFromNationalPlan', label: 'Capacity Development from National Plan' },
     ]
   },
   countrySystems: {
     label: '2. Country Systems',
     fields: [
       { key: 'fundsViaNationalTreasury', label: 'Funds via National Treasury' },
-      { key: 'govBudgetSystem', label: 'Gov Budget Execution' },
-      { key: 'govFinReporting', label: 'Gov Financial Reporting' },
-      { key: 'finReportingIntegratedPFM', label: 'Integrated into PFM' },
-      { key: 'govAudit', label: 'Gov Audit Procedures' },
+      { key: 'govBudgetSystem', label: 'Government Budget Execution' },
+      { key: 'govFinReporting', label: 'Government Financial Reporting' },
+      { key: 'finReportingIntegratedPFM', label: 'Integrated into Public Financial Management' },
+      { key: 'govAudit', label: 'Government Audit Procedures' },
       { key: 'govProcurement', label: 'National Procurement Systems' },
     ]
   },
@@ -288,10 +336,16 @@ export default function AidEffectivenessDashboard() {
   const [reportingOrgs, setReportingOrgs] = useState<ReportingOrg[]>([])
   const [selectedReportingOrg, setSelectedReportingOrg] = useState<string>('all')
 
-  // Sector filter — flat single-select (was hierarchical, simplified for per-chart UI)
-  const [chartSectorFilter, setChartSectorFilter] = useState<string>('all')
+  // Sector filter — uses the same hierarchical selector as the Atlas page.
+  const [chartSectorSelection, setChartSectorSelection] = useState<SectorFilterSelection>({
+    sectorCategories: [],
+    sectors: [],
+    subSectors: [],
+  })
+  const [chartSectorFilterOpen, setChartSectorFilterOpen] = useState(false)
   const [activitySectors, setActivitySectors] = useState<Map<string, Set<string>>>(new Map())
-  const [sectorOptions, setSectorOptions] = useState<{ code: string; label: string }[]>([])
+  const [sectorActivityCounts, setSectorActivityCounts] = useState<Record<string, number>>({})
+  const [chartSectorShowOnlyActive, setChartSectorShowOnlyActive] = useState(true)
 
   // Org-type filter (IATI organisation type code on the reporting org)
   const [chartOrgTypeFilter, setChartOrgTypeFilter] = useState<string>('all')
@@ -401,20 +455,27 @@ export default function AidEffectivenessDashboard() {
           if (from > 200_000) break
         }
         const map = new Map<string, Set<string>>()
-        const codes = new Set<string>()
+        // Activity counts per sector code, with category/group rollups so the
+        // hierarchical SectorHierarchyFilter can show counts at every level.
+        const counts: Record<string, number> = {}
+        const seen = new Map<string, Set<string>>() // code -> set of activity ids (de-dupe)
+        const bumpCount = (code: string, activityId: string) => {
+          if (!seen.has(code)) seen.set(code, new Set())
+          const set = seen.get(code)!
+          if (set.has(activityId)) return
+          set.add(activityId)
+          counts[code] = (counts[code] || 0) + 1
+        }
         all.forEach((row: any) => {
           const code = row.sector_code
           if (!code) return
           if (!map.has(row.activity_id)) map.set(row.activity_id, new Set())
           map.get(row.activity_id)!.add(code)
-          codes.add(code)
+          bumpCount(code, row.activity_id)
+          if (code.length >= 3) bumpCount(code.substring(0, 3), row.activity_id)
         })
         setActivitySectors(map)
-        setSectorOptions(
-          Array.from(codes)
-            .map((code) => ({ code, label: getSectorInfoFlexible(code)?.name || `Sector ${code}` }))
-            .sort((a, b) => a.code.localeCompare(b.code))
-        )
+        setSectorActivityCounts(counts)
       } catch (err) {
         console.warn('[Aid Effectiveness] Sector lookup error:', err)
       }
@@ -556,20 +617,25 @@ export default function AidEffectivenessDashboard() {
         const t = orgTypeMap.get(a.reporting_org_id || '')
         if (t !== chartOrgTypeFilter) return false
       }
-      // Sector filter
-      if (chartSectorFilter !== 'all') {
+      // Sector filter (hierarchical, matching the Atlas selector behaviour)
+      const hasSectorFilter =
+        chartSectorSelection.sectorCategories.length > 0 ||
+        chartSectorSelection.sectors.length > 0 ||
+        chartSectorSelection.subSectors.length > 0
+      if (hasSectorFilter) {
         const codes = activitySectors.get(a.id)
-        if (!codes || !codes.has(chartSectorFilter)) return false
+        if (!codes || !matchesSectorFilter(Array.from(codes), chartSectorSelection)) return false
       }
       return true
     })
-  }, [rawActivities, effectiveDateRange, selectedReportingOrg, chartOrgTypeFilter, chartSectorFilter, orgTypeMap, activitySectors])
+  }, [rawActivities, effectiveDateRange, selectedReportingOrg, chartOrgTypeFilter, chartSectorSelection, orgTypeMap, activitySectors])
 
-  // Compute all metrics
+  // Compute all metrics. We always return a non-null shape — even when zero
+  // activities match the current filter — so individual charts can render their
+  // own inline empty state without unmounting the whole dashboard (or kicking
+  // the user out of an expanded-chart dialog).
   const metrics = useMemo(() => {
     const total = filteredActivities.length
-    if (total === 0) return null
-
     const aeList = filteredActivities.map(a => a.general_info.aidEffectiveness as AidEffectivenessData)
     const count = (field: keyof AidEffectivenessData) => aeList.filter(ae => toBool(ae[field])).length
 
@@ -700,17 +766,40 @@ export default function AidEffectivenessDashboard() {
       .sort((a, b) => a.code.localeCompare(b.code))
   }, [rawActivities, orgTypeMap])
 
+  // The Development Partner picker (searchable combobox like the rest of the app).
+  // We translate between '' (combobox cleared) and 'all' (filter token).
+  const donorPicker = (
+    <OrganizationCombobox
+      organizations={reportingOrgs.map((r) => ({ id: r.id, name: r.name, acronym: r.acronym ?? undefined }))}
+      value={selectedReportingOrg === 'all' ? '' : selectedReportingOrg}
+      onValueChange={(v) => setSelectedReportingOrg(v ? v : 'all')}
+      placeholder="All development partners"
+      searchPlaceholder="Search by name or acronym..."
+      className="h-9 w-[340px]"
+    />
+  )
+
+  // The Sector picker — same SectorHierarchyFilter the Atlas uses, with counts.
+  const sectorPicker = (
+    <SectorHierarchyFilter
+      selected={chartSectorSelection}
+      onChange={setChartSectorSelection}
+      open={chartSectorFilterOpen}
+      onOpenChange={setChartSectorFilterOpen}
+      activityCounts={sectorActivityCounts}
+      showOnlyActiveSectors={chartSectorShowOnlyActive}
+      onShowOnlyActiveSectorsChange={setChartSectorShowOnlyActive}
+      className="w-[260px] h-9 text-helper"
+    />
+  )
+
   // Single shared dashboard-level filter set, rendered inside every chart's
   // ChartExpandButton controls. State is shared across charts so the filter
   // applied in one chart's expand dialog persists across the whole dashboard.
   const dashboardFilters = (
     <DashboardFilters
-      donor={selectedReportingOrg}
-      onDonorChange={setSelectedReportingOrg}
-      donorOptions={reportingOrgs}
-      sector={chartSectorFilter}
-      onSectorChange={setChartSectorFilter}
-      sectorOptions={sectorOptions}
+      donorPicker={donorPicker}
+      sectorPicker={sectorPicker}
       orgType={chartOrgTypeFilter}
       onOrgTypeChange={setChartOrgTypeFilter}
       orgTypeOptions={orgTypeOptions}
@@ -754,7 +843,12 @@ export default function AidEffectivenessDashboard() {
         </div>
 
 
-        {metrics ? (
+        {metrics.total === 0 && (
+          <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-body text-muted-foreground">
+            No activities match the current filters. Charts below render empty until you adjust your selection.
+          </div>
+        )}
+        {(
           <>
             {/* KPI Cards — each uses a different crop of the GPEDC banner */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -986,7 +1080,7 @@ export default function AidEffectivenessDashboard() {
                           <ChartExpandButton
                             title="Outcome Indicators Distribution"
                             description="How many government-defined outcome indicators each activity tracks for results measurement."
-                            interpretation="Look at the '0' bar first — those activities are running with no government-defined outcome indicators on their results framework, the highest-priority gap on this dashboard. A bell-shaped distribution centred on 3–5 indicators is the healthy zone. A heavy left tail (0 / 1–2 dominant) means partners aren't aligning with national M&E systems — switch Group by → Donor to identify who. A heavy right tail (10+) usually signals reporting burden rather than rigour: those entries are often output counts mislabelled as outcomes, not stronger monitoring."
+                            interpretation="A government-defined outcome indicator is a measurable result that the country itself uses to track its national development goals (for example, 'maternal mortality rate' or 'primary completion rate' as defined in the country's own results framework). When a development partner adopts these indicators in an activity's logframe, it ties the activity directly to the country's own measurement of progress, rather than reporting against a parallel donor-defined metric. This chart distributes activities by how many such government-defined indicators each one carries — from zero to ten or more. Together, the picture tells you how seriously development partners in country are aligning their results monitoring with what the government itself is measuring: a heavy share of activities with zero indicators means most external assistance is reporting on its own terms, while a healthy spread across the middle bands means activities are wired into the country's national M&E system."
                             controls={
                               <>
                                 {dashboardFilters}
@@ -998,7 +1092,7 @@ export default function AidEffectivenessDashboard() {
                                     </SelectTrigger>
                                     <SelectContent>
                                       <CodedSelectItem value="none" code="1">No disaggregation</CodedSelectItem>
-                                      <CodedSelectItem value="donor" code="2">By donor</CodedSelectItem>
+                                      <CodedSelectItem value="donor" code="2">By development partner</CodedSelectItem>
                                       <CodedSelectItem value="orgType" code="3">By org type</CodedSelectItem>
                                     </SelectContent>
                                   </Select>
@@ -1149,7 +1243,7 @@ export default function AidEffectivenessDashboard() {
                           <ChartExpandButton
                             title="Aid Tying Status"
                             description="Aid tying status determines whether recipients can procure goods and services from any source."
-                            interpretation="GPEDC Indicator 10 expects untied aid to dominate; the DAC global benchmark is around 80%. Read the slices in increasing order of concern: a >75% untied share is solid, 50–75% is the typical bilateral mix and worth a conversation, and a tied slice above 25% warrants direct engagement on procurement rules. Group by donor to spot which partners are dragging the portfolio's tied share up — those are your targeted dialogue conversations. Group by sector to see whether tied aid concentrates in goods-heavy areas like infrastructure."
+                            interpretation="Aid tying is a condition placed on development assistance that requires the recipient to procure goods, services or works from the donor country (tied), from the donor country plus a defined group of others (partially tied), or from any source worldwide (untied). GPEDC Indicator 10 commits partners to untying their aid because tying inflates costs (donor-country suppliers face no competition), reduces value for money for the recipient, and bypasses local markets that would otherwise build domestic capacity. This chart shows the share of activities in country falling into each of those three categories. Together, the picture tells you how much of the external assistance flowing into the country is genuinely available to be spent through competitive local procurement, and how much is contractually pre-allocated back to donor-country firms before it ever reaches the country."
                             controls={
                               <>
                                 {dashboardFilters}
@@ -1161,7 +1255,7 @@ export default function AidEffectivenessDashboard() {
                                     </SelectTrigger>
                                     <SelectContent>
                                       <CodedSelectItem value="none" code="1">No disaggregation</CodedSelectItem>
-                                      <CodedSelectItem value="donor" code="2">By donor</CodedSelectItem>
+                                      <CodedSelectItem value="donor" code="2">By development partner</CodedSelectItem>
                                       <CodedSelectItem value="orgType" code="3">By org type</CodedSelectItem>
                                     </SelectContent>
                                   </Select>
@@ -1291,7 +1385,7 @@ export default function AidEffectivenessDashboard() {
                           <ChartExpandButton
                             title="GPEDC Section Radar"
                             description="Compliance across all 7 GPEDC indicator categories"
-                            interpretation="Read the shape, not the axes. A round polygon hugging the outer ring means broad effectiveness across all seven GPEDC principles; sharp inward dents are the specific principles that need fixing. In most portfolios, Country Systems (5a) and Mutual Accountability (7) sit lowest — those are the structural commitments donors find hardest to honour. Use the Show control to focus on sections under 50% or 70% to filter out the noise and see only the gaps that matter for next-quarter dialogue."
+                            interpretation="The Global Partnership for Effective Development Co-operation (GPEDC) organises its monitoring framework around seven principles that together define what effective development cooperation looks like in country. Each axis on this radar is one of those principles: Government Ownership (whether external assistance follows the country's own priorities and plans), Country Systems (whether it flows through the country's PFM, audit and procurement institutions), Predictability (whether the recipient government knows what's coming and when), Transparency (whether spending and results are visible to the public and parliament), Mutual Accountability (whether partners review each other's performance), Civil Society & Private Sector (whether non-government actors are genuinely included), and Gender Equality (whether activities advance equality outcomes in design and reporting). Together, the shape of the polygon tells you which of these principles the country's external assistance honours fully, which it honours partially, and which it largely doesn't honour at all — providing a single visual summary of where the country sits against the international effectiveness commitments."
                             controls={
                               <>
                                 {dashboardFilters}
@@ -1365,7 +1459,7 @@ export default function AidEffectivenessDashboard() {
                           <ChartExpandButton
                             title="Section Performance"
                             description="Average compliance rates across all 7 GPEDC sections for comparative analysis."
-                            interpretation="The same data as the radar, easier for reading exact percentages. Sort by Score to read the priority list directly: the lowest bar is your top-priority section to address. Anything under 50% is a structural weakness — it's not just a few activities falling short but a principle being met in fewer than half of all activities. Bars above 70% are strengths; the partners delivering well in those areas are candidates for sharing practice with peers."
+                            interpretation="This is a numeric companion to the radar — the same seven GPEDC principles laid out side-by-side for direct comparison. Each bar represents one principle: Government Ownership, Country Systems, Predictability, Transparency, Mutual Accountability, Civil Society & Private Sector, and Gender Equality. The percentage is the share of 'Yes' answers given across all the indicators that make up that principle, averaged across all activities in the portfolio — so it represents how broadly that principle is being honoured across the country's external assistance. Together, the bars tell you which of the seven effectiveness principles the country's portfolio is delivering on as a matter of routine, and which are being applied only partially or by exception."
                             controls={
                               <>
                                 {dashboardFilters}
@@ -1436,7 +1530,7 @@ export default function AidEffectivenessDashboard() {
                           <ChartExpandButton
                             title="All Sections Breakdown"
                             description="Progress and percentage ratings for each of the 7 GPEDC compliance sections."
-                            interpretation="The numeric scoreboard for board reports and executive summaries. Each section's percentage is the average positive-response rate across its underlying GPEDC indicators. Above 70% (highlighted) signals consistent practice; below 50% means the principle is being met in fewer than half the activities and warrants direct intervention. The colour-coded badges let you read the tier at a glance — copy the section / score pairs straight into a status report."
+                            interpretation="This is the headline scoreboard of the country's aid effectiveness picture — one row for each of the seven GPEDC principles (Government Ownership, Country Systems, Predictability, Transparency, Mutual Accountability, Civil Society & Private Sector, and Gender Equality), with the percentage representing how broadly each principle is being honoured across the portfolio. The percentage is the share of 'Yes' responses across every indicator inside that principle, across every activity. Together, the seven scores describe whether external assistance in country reflects the international development effectiveness commitments — the principles agreed under the Paris Declaration, Accra Agenda, Busan Partnership, and Global Partnership compacts — that countries and partners signed up to deliver."
                             controls={
                               <>
                                 {dashboardFilters}
@@ -1482,7 +1576,7 @@ export default function AidEffectivenessDashboard() {
                       <ChartExpandButton
                         title="Implementing Partners"
                         description="Distribution of activities across implementing partners by volume."
-                        interpretation="Top partners by activity count. If the top 3 hold most of the portfolio you have concentration risk — losing one disrupts delivery. Conversely, dozens of partners each holding 1–2 activities means coordination overhead and likely fragmented capacity. The healthy zone is 5–10 substantial partners with a moderate long tail. Check the mix against GPEDC ownership commitments: are national / local partners over- or under-represented relative to internationals?"
+                        interpretation="An implementing partner is the organisation contractually responsible for delivering an activity on the ground — distinct from the donor that funds it or the government that owns the broader programme. Implementing partners can be UN agencies, international or national NGOs, government ministries, private contractors, or research institutions, and they shape both how an activity is run and whose capacity is built in the process. This chart ranks the partners delivering activities in country by the number of activities each one carries. Together, the picture tells you who actually delivers the country's external assistance — whether delivery is concentrated in a handful of large international agencies, distributed across many smaller specialists, or anchored in national institutions — which in turn shapes the capacity, accountability and sustainability of the cooperation."
                         controls={
                           <>
                             {dashboardFilters}
@@ -1539,14 +1633,6 @@ export default function AidEffectivenessDashboard() {
               </TabsContent>
             </Tabs>
           </>
-        ) : (
-          <Card className="bg-card border-border">
-            <CardContent className="p-12 text-center">
-              <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground">No Aid Effectiveness Data</h3>
-              <p className="text-muted-foreground mt-1">No activities match the selected filters or have aid effectiveness data.</p>
-            </CardContent>
-          </Card>
         )}
       </div>
       </DashboardFiltersContext.Provider>
@@ -1573,12 +1659,26 @@ function SectionDetail({ title, badge, fields, total, score, helpKey, descriptio
     else copy.sort((a, b) => a.label.localeCompare(b.label))
     return copy
   }, [fields, sortBy])
+  // Auto-scale the axis to the data so the longest bar reaches the right edge
+  // and the chart visually uses the full card width. We round up to the next
+  // 10% step so axis ticks stay clean.
+  const xAxisMax = useMemo(() => {
+    const max = sortedFields.reduce((m, f) => Math.max(m, f.pct), 0)
+    return Math.min(100, Math.max(20, Math.ceil(max / 10) * 10 + 5))
+  }, [sortedFields])
+  // Size the Y-axis to fit the longest label without leaving a wide empty band
+  // when labels are short (e.g. Mutual Accountability) or clipping when they're
+  // long (e.g. Government Ownership).
+  const yAxisWidth = useMemo(() => {
+    const longest = sortedFields.reduce((m, f) => Math.max(m, (f.label || '').length), 0)
+    return Math.max(120, Math.min(290, Math.round(longest * 6.5) + 12))
+  }, [sortedFields])
   const renderChart = (height: number) => (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={sortedFields} layout="vertical" margin={{ left: 20, right: 30 }}>
+      <BarChart data={sortedFields} layout="vertical" margin={{ left: 8, right: 16 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis type="number" domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
-        <YAxis type="category" dataKey="label" stroke="#64748b" fontSize={11} width={200} />
+        <XAxis type="number" domain={[0, xAxisMax]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
+        <YAxis type="category" dataKey="label" stroke="#64748b" fontSize={11} width={yAxisWidth} />
         <Tooltip
           cursor={{ fill: '#F3702115' }}
           content={({ active, payload }: any) => {
@@ -1619,7 +1719,8 @@ function SectionDetail({ title, badge, fields, total, score, helpKey, descriptio
             <ChartExpandButton
               title={title}
               description={description}
-              interpretation={`Each bar is one specific GPEDC commitment within the ${title} principle, showing the share of activities meeting it. The lowest bars are the precise commitments to raise with partners — they're the levers you can move to lift this section's overall score. Bars above 80% are genuinely embedded practice; bars below 30% suggest a structural gap that needs more than a partner reminder. Sort by Adoption to read the priority list top-down.`}
+              interpretation={(helpKey && SECTION_INTERPRETATIONS[helpKey]) ||
+                `Each row is one specific commitment that makes up the ${title} principle of GPEDC, with the bar showing the share of activities in the portfolio that meet it.`}
               controls={
                 <>
                   {extraControls}

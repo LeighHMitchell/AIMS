@@ -1093,8 +1093,10 @@ export function EnhancedSubnationalBreakdown({
               disabled={!canEdit}
             />
 
-            {/* Action Buttons */}
-            {entries.length > 0 && canEdit && (
+            {/* Action Buttons. Expand/Collapse stays visible in read-only mode
+                (it just toggles row visibility, doesn't mutate data); Distribute
+                Equally and Clear All require edit permission. */}
+            {entries.length > 0 && (viewLevel === 'township' || canEdit) && (
               <div className="flex justify-end gap-2">
                 {/*
                   Expand All / Collapse All — only meaningful in ADM3
@@ -1121,33 +1123,37 @@ export function EnhancedSubnationalBreakdown({
                     )}
                   </Button>
                 )}
-                {/*
-                  Distribute Equally — uses the default outline variant.
-                  The previous `bg-foreground text-white` override inverted
-                  the button's color scheme, which didn't match any other
-                  secondary action in the editor.
-                */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={distributeEqually}
-                >
-                  Distribute Equally
-                </Button>
-                {/*
-                  Clear All is destructive. Red text/icon use the
-                  `destructive` token, and the button now opens a
-                  confirmation instead of wiping immediately.
-                */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPendingDelete({ kind: 'clearAll' })}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
+                {canEdit && (
+                  <>
+                    {/*
+                      Distribute Equally — uses the default outline variant.
+                      The previous `bg-foreground text-white` override inverted
+                      the button's color scheme, which didn't match any other
+                      secondary action in the editor.
+                    */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={distributeEqually}
+                    >
+                      Distribute Equally
+                    </Button>
+                    {/*
+                      Clear All is destructive. Red text/icon use the
+                      `destructive` token, and the button now opens a
+                      confirmation instead of wiping immediately.
+                    */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPendingDelete({ kind: 'clearAll' })}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear All
+                    </Button>
+                  </>
+                )}
               </div>
             )}
 

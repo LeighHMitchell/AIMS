@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle, ArrowLeft, Eye, Lock, LockOpen, Save } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAppraisalWizard } from '@/hooks/use-appraisal-wizard';
 import { AppraisalProgressRail } from './AppraisalProgressRail';
 import { StageIntake } from './StageIntake';
@@ -97,8 +98,24 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-md" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-2/5" />
+          <Skeleton className="h-4 w-3/5" />
+          <div className="space-y-3 pt-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

@@ -6147,7 +6147,7 @@ function NewActivityPageContent() {
                 {/* Back Button */}
                 <Button
                   variant="outline"
-                  className="px-6 py-3 text-base font-semibold"
+                  className="px-6 py-3 text-base font-semibold min-w-[140px]"
                   onClick={() => previousSection && handleTabChange(previousSection.id)}
                   disabled={!previousSection || tabLoading || isAnyAutosaveInProgress}
                   title={isAnyAutosaveInProgress ? "Still saving\u2014wait for it to finish" : undefined}
@@ -6168,7 +6168,7 @@ function NewActivityPageContent() {
                 {/* Next Button (no save) */}
                 <Button
                   variant="outline"
-                  className="px-6 py-3 text-base font-semibold"
+                  className="px-6 py-3 text-base font-semibold min-w-[120px]"
                   onClick={() => nextSection && handleTabChange(nextSection.id)}
                   disabled={!nextSection || isLastSection || tabLoading || isAnyAutosaveInProgress}
                   title={isAnyAutosaveInProgress ? "Still saving\u2014wait for it to finish" : undefined}
@@ -6181,7 +6181,7 @@ function NewActivityPageContent() {
                 {general.id && (
                   <Button
                     variant="outline"
-                    className="px-6 py-3 text-base font-semibold"
+                    className="px-6 py-3 text-base font-semibold min-w-[200px]"
                     onClick={async () => {
                       if (exporting || !general.id) return;
                       setExporting(true);
@@ -6220,7 +6220,7 @@ function NewActivityPageContent() {
                 {general.id && (
                   <Button
                     variant="outline"
-                    className="px-6 py-3 text-base font-semibold"
+                    className="px-6 py-3 text-base font-semibold min-w-[140px]"
                     onClick={() => saveActivity({})}
                     disabled={saving || tabLoading}
                   >
@@ -6241,7 +6241,7 @@ function NewActivityPageContent() {
                 {/* Save & Next Button */}
                 <Button
                   variant="default"
-                  className="px-6 py-3 text-base font-semibold min-w-[160px]"
+                  className="px-6 py-3 text-base font-semibold min-w-[200px]"
                   onClick={() => {
                     if (nextSection) {
                       saveActivity({ goToNext: true });

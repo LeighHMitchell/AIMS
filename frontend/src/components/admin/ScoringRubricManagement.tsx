@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Plus, Trash2, Loader2, CheckCircle, Copy, Zap, Pencil, RefreshCw,
 } from "lucide-react"
@@ -185,8 +186,25 @@ export function ScoringRubricManagement() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <div className="rounded-lg border border-border p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-56" />
+              <Skeleton className="h-3 w-80" />
+            </div>
+            <Skeleton className="h-9 w-32 rounded-md" />
+          </div>
+          <div className="space-y-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex gap-3 px-3 py-2">
+                {[...Array(4)].map((_, j) => (
+                  <Skeleton key={j} className="h-4 flex-1" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }

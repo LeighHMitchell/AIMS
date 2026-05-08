@@ -232,7 +232,13 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
           <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
+      <PopoverContent
+        className="w-80 p-0 z-[100]"
+        side="bottom"
+        align="end"
+        sideOffset={4}
+        collisionPadding={16}
+      >
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-body">Visible Columns</h4>
@@ -1203,7 +1209,7 @@ export default function TransactionList({
 
   return (
     <>
-      <Card className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none" : ""}>
+      <Card className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none ring-0" : ""}>
         <CardHeader className={hideSummaryCards ? "hidden" : (hideHeaderTitle ? "px-0 pt-0" : "")}>
           <div className="flex items-center justify-between gap-4">
             {/* Left side: Title and Description */}

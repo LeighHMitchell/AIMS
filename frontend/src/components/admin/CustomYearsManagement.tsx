@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   MoreHorizontal,
@@ -288,9 +289,19 @@ export function CustomYearsManagement() {
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        <span className="ml-2 text-muted-foreground">Loading custom years...</span>
+      <div className="space-y-3 py-2">
+        <div className="flex gap-3 px-3 py-2 border-b border-border">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-4 flex-1" />
+          ))}
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex gap-3 px-3 py-3">
+            {[...Array(4)].map((_, j) => (
+              <Skeleton key={j} className="h-4 flex-1" />
+            ))}
+          </div>
+        ))}
       </div>
     );
   }

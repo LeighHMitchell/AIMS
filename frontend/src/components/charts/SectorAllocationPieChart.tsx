@@ -211,10 +211,11 @@ export default function SectorAllocationPieChart({
       const g = svg.append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
-      // Create tooltip with enhanced styling
+      // Tooltip styled to match canonical ChartTooltipCard (shaded header + card body)
       const tooltip = d3.select('body').append('div')
-        .attr('class', 'absolute invisible bg-gray-900/95 backdrop-blur-sm text-white text-body rounded-lg px-4 py-3 pointer-events-none z-50 shadow-2xl border border-gray-700')
-        .style('opacity', 0);
+        .attr('class', 'absolute invisible bg-card border border-border rounded-lg shadow-lg overflow-hidden pointer-events-none z-50')
+        .style('opacity', 0)
+        .style('min-width', '220px');
 
       // Color scale
       const colorScale = d3.scaleOrdinal(SECTOR_COLORS);
@@ -249,10 +250,22 @@ export default function SectorAllocationPieChart({
             .attr('transform', 'scale(1.02)');
           
           tooltip.transition().duration(200).style('opacity', 1);
+          const categoryIndex = root.children?.findIndex((cat: any) => cat.data.code === d.data.category) || 0;
+          const swatchColor = colorScale(categoryIndex.toString());
           tooltip.html(`
-            <div class="font-semibold text-base mb-1">${d.data.code} - ${d.data.name}</div>
-            <div class="text-body opacity-75 mb-1">Category: ${d.parent?.data.name}</div>
-            <div class="text-lg font-bold">${d.data.value.toFixed(1)}%</div>
+            <div class="bg-surface-muted px-3 py-2 border-b border-border">
+              <p class="font-semibold text-foreground">${d.data.name}</p>
+              <div class="text-helper text-muted-foreground mt-0.5">${d.data.code} · ${d.parent?.data.name ?? ''}</div>
+            </div>
+            <div class="p-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-sm flex-shrink-0" style="background-color:${swatchColor}"></span>
+                  <span class="text-foreground text-body">Allocation</span>
+                </div>
+                <span class="font-semibold text-foreground whitespace-nowrap">${d.data.value.toFixed(1)}%</span>
+              </div>
+            </div>
           `)
             .style('left', `${event.pageX + 15}px`)
             .style('top', `${event.pageY - 10}px`)

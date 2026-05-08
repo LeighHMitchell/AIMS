@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -411,9 +412,19 @@ export function AidEffectivenessOptionsManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        <span className="ml-2 text-muted-foreground">Loading options...</span>
+      <div className="space-y-3 py-2">
+        <div className="flex gap-3 px-3 py-2 border-b border-border">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-4 flex-1" />
+          ))}
+        </div>
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex gap-3 px-3 py-3">
+            {[...Array(4)].map((_, j) => (
+              <Skeleton key={j} className="h-4 flex-1" />
+            ))}
+          </div>
+        ))}
       </div>
     );
   }

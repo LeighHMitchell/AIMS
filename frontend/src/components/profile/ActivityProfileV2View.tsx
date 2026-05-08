@@ -54,7 +54,14 @@ const ActivityLocationsMapViewV2 = dynamic(
   () => import("@/components/maps/ActivityLocationsMapViewV2"),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-96 text-muted-foreground">Loading map…</div> },
 )
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { MapPin, BarChart3 } from "lucide-react"
+import { EnhancedSubnationalBreakdown } from "@/components/activities/EnhancedSubnationalBreakdown"
+import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
+import { ActivityLocationsTable } from "@/components/locations/ActivityLocationsTable"
+import { Table2 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
+import { XlsxWorkbookBuilder } from "@/lib/exports/xlsx-workbook"
 import { getOrganizationRoleName, getRoleCodeFromType } from "@/data/iati-organization-roles"
 import { formatCurrencyShort } from "@/lib/format"
 import { getActivityStatusLabel } from "@/lib/activity-status-utils"
@@ -130,10 +137,12 @@ export function ActivityProfileV2View({
 
   // Once a tab is visited, keep its content mounted (hidden via CSS) so revisiting
   // it doesn't trigger a refetch / loading state.
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([activeTab]))
-  useEffect(() => {
-    setVisitedTabs((prev) => (prev.has(activeTab) ? prev : new Set(prev).add(activeTab)))
-  }, [activeTab])
+  // Pre-mount every tab from the first render so each child component fires its
+  // data fetches immediately in the background. Hidden tabs sit under
+  // `display: none` (see Pane below) but their effects still run, so by the time
+  // the user clicks Finances / Results / Locations the data is already cached.
+  const ALL_TABS = ["overview", "sectors", "geography", "finances", "results", "library", "discussion"]
+  const [visitedTabs] = useState<Set<string>>(() => new Set(ALL_TABS))
 
   // Locations come from the dedicated /locations endpoint — the activity payload's
   // embedded `locations.specificLocations` is often empty. Match the v1 page so the
@@ -183,6 +192,46 @@ export function ActivityProfileV2View({
       }))
   }, [activityLocations, activity?.locations?.specificLocations])
 
+  // Sub-national breakdowns recorded against this activity. Used by the
+  // Locations tab's "Sub-national Breakdown" sub-view (mirrors the Atlas).
+  const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<any[]>([])
+  useEffect(() => {
+    if (!activity?.id) return
+    let cancelled = false
+    apiFetch(`/api/activities/${activity.id}/subnational-breakdown`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        setSubnationalBreakdowns(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!cancelled) setSubnationalBreakdowns([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activity?.id])
+
+  // Reshape the breakdowns into the MapBreakdowns shape used by the choropleth.
+  const regionBreakdownsWithDetails = useMemo(() => {
+    const result: Record<string, { percentage: number; activityCount: number; activities: Array<{ id: string; title: string }> }> = {}
+    subnationalBreakdowns.forEach((b: any) => {
+      const region = b.region_name
+      if (!region) return
+      result[region] = {
+        percentage: Number(b.percentage) || 0,
+        activityCount: 1,
+        activities: [
+          {
+            id: activity?.id ?? "",
+            title: activity?.title ?? activity?.title_narrative ?? "This activity",
+          },
+        ],
+      }
+    })
+    return result
+  }, [subnationalBreakdowns, activity?.id, activity?.title, activity?.title_narrative])
+
   // Fetch focal points (government + development partner) for the rail block.
   const [focalPoints, setFocalPoints] = useState<FocalPoint[]>([])
   useEffect(() => {
@@ -192,20 +241,34 @@ export function ActivityProfileV2View({
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return
+        // Compose "Full Name (Acronym)" so the rail shows both. Falls back to
+        // whichever piece is present.
+        const formatOrg = (fp: any): string | undefined => {
+          const name = fp.organization?.name?.trim()
+          const acronym = fp.organization?.acronym?.trim()
+          if (name && acronym && name !== acronym) return `${name} (${acronym})`
+          return name || acronym || fp.organisation || undefined
+        }
         const govt = (data.government_focal_points ?? []).map((fp: any) => ({
           id: fp.id,
+          title: fp.title || undefined,
           name: fp.name,
           role: "Government Focal Point",
-          organisation: fp.organization?.acronym || fp.organisation,
+          jobTitle: fp.job_title || undefined,
+          department: fp.department || undefined,
+          organisation: formatOrg(fp),
           photoUrl: fp.avatar_url,
           contactEmail: fp.email,
           isPrimary: true,
         }))
         const dp = (data.development_partner_focal_points ?? []).map((fp: any) => ({
           id: fp.id,
+          title: fp.title || undefined,
           name: fp.name,
           role: "Development Partner Focal Point",
-          organisation: fp.organization?.acronym || fp.organisation,
+          jobTitle: fp.job_title || undefined,
+          department: fp.department || undefined,
+          organisation: formatOrg(fp),
           photoUrl: fp.avatar_url,
           contactEmail: fp.email,
         }))
@@ -476,7 +539,9 @@ export function ActivityProfileV2View({
     activity,
     activeTab,
     visitedTabs,
+    activityLocations,
     validMapLocations,
+    regionBreakdownsWithDetails,
     financials,
     totalBudgeted,
     totalPlannedDisbursements,
@@ -573,7 +638,9 @@ function renderMainSlot(args: {
   activity: any
   activeTab: string
   visitedTabs: Set<string>
+  activityLocations: any[]
   validMapLocations: any[]
+  regionBreakdownsWithDetails: Record<string, { percentage: number; activityCount: number; activities: Array<{ id: string; title: string }> }>
   financials: any
   totalBudgeted: number
   totalPlannedDisbursements: number
@@ -584,11 +651,22 @@ function renderMainSlot(args: {
   onTabChange: (tab: string) => void
   user: any
 }) {
-  const { activeTab, activity, visitedTabs, validMapLocations } = args
+  const { activeTab, activity, visitedTabs, activityLocations, validMapLocations, regionBreakdownsWithDetails, totalBudgeted, totalPlannedDisbursements } = args
   const startDate = activity?.actualStartDate || activity?.plannedStartDate || ""
   const endDate = activity?.actualEndDate || activity?.plannedEndDate || ""
 
   const sectorAllocations = activity?.sectorAllocations || activity?.sectors || []
+  // Pre-compute sector financial breakdown so the Sectors tab's chart can show
+  // budget / planned-disbursement totals per sector rather than always 0.
+  const sectorFinancialData = sectorAllocations.map((s: any) => {
+    const pct = (s.percentage || 0) / 100
+    return {
+      code: s.sector_code || s.code,
+      budget: (totalBudgeted || 0) * pct,
+      plannedDisbursement: (totalPlannedDisbursements || 0) * pct,
+      transactionTypes: {},
+    }
+  })
 
   // Each tab is mounted on first visit and kept in the DOM thereafter, hidden via
   // CSS when not active. This preserves data and scroll state across tab switches.
@@ -622,7 +700,13 @@ function renderMainSlot(args: {
       <Pane tab="sectors">
         {sectorAllocations.length ? (
           <Card className="border-border bg-card p-6">
-            <SectorSankeyVisualization allocations={sectorAllocations} showControls />
+            <SectorSankeyVisualization
+              allocations={sectorAllocations}
+              financialData={sectorFinancialData}
+              defaultView="bar"
+              defaultBarGroupingMode="sector"
+              showControls
+            />
           </Card>
         ) : (
           <Card className="border-border bg-card p-8 text-center">
@@ -632,77 +716,20 @@ function renderMainSlot(args: {
       </Pane>
 
       <Pane tab="geography">
-        <div className="space-y-6">
-          <Card className="border-border bg-card p-6">
-            <div className="mb-4 flex flex-col space-y-1.5">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activity Locations</h2>
-              <p className="text-body text-muted-foreground">
-                {validMapLocations.length} mapped {validMapLocations.length === 1 ? 'location' : 'locations'} for this activity
-              </p>
-            </div>
-            {validMapLocations.length > 0 ? (
-              <div className="h-[480px] rounded-md overflow-hidden border border-border">
-                <ActivityLocationsMapViewV2
-                  locations={validMapLocations}
-                  mapCenter={[19.0, 96.5]}
-                  mapZoom={6}
-                  activityTitle={activity?.title}
-                  organizationId={activity?.reporting_org_id}
-                />
-              </div>
-            ) : (
-              <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
-            )}
-          </Card>
-        </div>
+        <ActivityLocationsSection
+          activity={activity}
+          activityLocations={activityLocations}
+          validMapLocations={validMapLocations}
+          regionBreakdownsWithDetails={regionBreakdownsWithDetails}
+        />
       </Pane>
 
       <Pane tab="finances">
-        <div className="space-y-6">
-          <Card className="border-border bg-card p-6">
-            <div className="mb-4 flex flex-col space-y-1.5">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Transactions</h2>
-              <p className="text-body text-muted-foreground">
-                Incoming and outgoing financial transactions for this activity
-              </p>
-            </div>
-            <TransactionTab activityId={activity.id} readOnly={true} hideHeaderTitle={true} />
-          </Card>
-
-          <Card className="border-border bg-card p-6">
-            <div className="mb-4 flex flex-col space-y-1.5">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Planned Disbursements</h2>
-              <p className="text-body text-muted-foreground">
-                Scheduled future disbursements
-              </p>
-            </div>
-            <PlannedDisbursementsTab
-              activityId={activity.id}
-              startDate={startDate}
-              endDate={endDate}
-              defaultCurrency="USD"
-              readOnly={true}
-              hideHeaderTitle={true}
-            />
-          </Card>
-
-          <Card className="border-border bg-card p-6">
-            <div className="mb-4 flex flex-col space-y-1.5">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Budgets</h2>
-              <p className="text-body text-muted-foreground">
-                Activity budget allocations by period
-              </p>
-            </div>
-            <ActivityBudgetsTab
-              activityId={activity.id}
-              startDate={startDate}
-              endDate={endDate}
-              defaultCurrency="USD"
-              readOnly={true}
-              hideHeaderTitle={true}
-            />
-          </Card>
-        </div>
+        <FinancesPane
+          activityId={activity.id}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </Pane>
 
       <Pane tab="results">
@@ -730,5 +757,249 @@ function renderMainSlot(args: {
 
       {!knownTabs.has(activeTab) && fallback}
     </>
+  )
+}
+
+interface RegionEntry {
+  percentage: number
+  activityCount: number
+  activities: Array<{ id: string; title: string }>
+}
+
+function ActivityLocationsSection({
+  activity,
+  activityLocations,
+  validMapLocations,
+  regionBreakdownsWithDetails,
+}: {
+  activity: any
+  activityLocations: any[]
+  validMapLocations: any[]
+  regionBreakdownsWithDetails: Record<string, RegionEntry>
+}) {
+  const [view, setView] = useState<"map" | "subnational">("map")
+
+  // Pre-computed breakdown rows for the Excel export — not used for display
+  // (the editor component renders its own table).
+  const breakdownRows = useMemo(() => {
+    return Object.entries(regionBreakdownsWithDetails)
+      .map(([region, data]) => ({ region, percentage: data.percentage }))
+      .sort((a, b) => b.percentage - a.percentage)
+  }, [regionBreakdownsWithDetails])
+
+  return (
+    <Card className="border-border bg-card p-6">
+      <div className="mb-4 flex flex-col space-y-1.5">
+        <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activity Locations</h2>
+        <p className="text-body text-muted-foreground">
+          Mapped locations and sub-national breakdown for this activity
+        </p>
+      </div>
+
+      <Tabs value={view} onValueChange={(v) => setView(v as "map" | "subnational")} className="space-y-4">
+        <div className="flex items-center justify-end gap-2">
+          <TabsList>
+            <TabsTrigger value="map" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Map View
+            </TabsTrigger>
+            <TabsTrigger value="subnational" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Sub-national Breakdown
+            </TabsTrigger>
+          </TabsList>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => exportLocationsXlsx({ activity, validMapLocations, breakdownRows })}
+            title="Export to Excel"
+            aria-label="Export to Excel"
+            disabled={validMapLocations.length === 0 && breakdownRows.length === 0}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <TabsContent value="map" className="m-0 space-y-6">
+          {validMapLocations.length > 0 ? (
+            <div className="h-[640px] rounded-md overflow-hidden border border-border">
+              <ActivityLocationsMapViewV2
+                locations={validMapLocations}
+                mapCenter={[19.0, 96.5]}
+                mapZoom={6}
+                activityTitle={activity?.title}
+                organizationId={activity?.reporting_org_id}
+              />
+            </div>
+          ) : (
+            <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
+          )}
+          {activityLocations.length > 0 && (
+            <ActivityLocationsTable locations={activityLocations} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="subnational" className="m-0">
+          {/* Read-only render of the same component used in the Activity Editor:
+              two-column layout with Sub-national Map on the left and the
+              Sub-national Allocation table on the right. canEdit=false hides
+              the dropdown / Distribute / Clear All / per-row delete controls
+              and disables the percentage inputs. */}
+          <EnhancedSubnationalBreakdown activityId={activity.id} canEdit={false} />
+        </TabsContent>
+      </Tabs>
+    </Card>
+  )
+}
+
+function exportLocationsXlsx({
+  activity,
+  validMapLocations,
+  breakdownRows,
+}: {
+  activity: any
+  validMapLocations: any[]
+  breakdownRows: Array<{ region: string; percentage: number }>
+}) {
+  const wb = new XlsxWorkbookBuilder()
+
+  wb.addSheet(
+    "Locations",
+    [
+      { header: "Name", accessor: "name" as const },
+      { header: "Latitude", accessor: "latitude" as const },
+      { header: "Longitude", accessor: "longitude" as const },
+      { header: "Site Type", accessor: "site_type" as const },
+      { header: "State / Region", accessor: "state_region_name" as const },
+      { header: "District", accessor: "district_name" as const },
+      { header: "Township", accessor: "township_name" as const },
+      { header: "Village", accessor: "village_name" as const },
+      { header: "Description", accessor: "description" as const },
+    ],
+    validMapLocations.map((l) => ({
+      name: l.location_name ?? "",
+      latitude: l.latitude ?? "",
+      longitude: l.longitude ?? "",
+      site_type: l.site_type ?? "",
+      state_region_name: l.state_region_name ?? "",
+      district_name: l.district_name ?? "",
+      township_name: l.township_name ?? "",
+      village_name: l.village_name ?? "",
+      description: l.description ?? l.location_description ?? "",
+    })),
+  )
+
+  wb.addSheet(
+    "Sub-national Breakdown",
+    [
+      { header: "Region", accessor: "region" as const },
+      { header: "Allocation %", accessor: "percentage" as const },
+    ],
+    breakdownRows.map((r) => ({ region: r.region, percentage: r.percentage })),
+  )
+
+  const slug = (activity?.iati_identifier || activity?.iatiIdentifier || activity?.id || "activity")
+    .toString()
+    .replace(/[^a-z0-9_-]+/gi, "_")
+  wb.download(`${slug}-locations.xlsx`)
+}
+
+function FinanceSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: React.ReactNode
+}) {
+  return (
+    <Card className="border-border bg-card p-6">
+      <div className="mb-4 flex flex-col space-y-1.5">
+        <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">{title}</h2>
+        <p className="text-body text-muted-foreground">{description}</p>
+      </div>
+      {children}
+    </Card>
+  )
+}
+
+function FinancesPane({
+  activityId,
+  startDate,
+  endDate,
+}: {
+  activityId: string
+  startDate: string
+  endDate: string
+}) {
+  // One toggle for the whole Finances tab: Tables view stacks the three section
+  // cards (Transactions, Planned Disbursements, Budgets); Charts view renders a
+  // single combined analytics view (FinancialAnalyticsTab) instead of per-card
+  // mini charts.
+  const [view, setView] = useState<"tables" | "charts">("tables")
+
+  return (
+    <Tabs value={view} onValueChange={(v) => setView(v as "tables" | "charts")} className="space-y-6">
+      <div className="flex justify-end">
+        <TabsList>
+          <TabsTrigger value="tables" className="flex items-center gap-2">
+            <Table2 className="h-4 w-4" />
+            Tables
+          </TabsTrigger>
+          <TabsTrigger value="charts" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Charts
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="tables" className="m-0 space-y-6">
+        <FinanceSection
+          title="Transactions"
+          description="Incoming and outgoing financial transactions for this activity"
+        >
+          <TransactionTab activityId={activityId} readOnly={true} hideHeaderTitle={true} />
+        </FinanceSection>
+        <FinanceSection
+          title="Planned Disbursements"
+          description="Scheduled future disbursements"
+        >
+          <PlannedDisbursementsTab
+            activityId={activityId}
+            startDate={startDate}
+            endDate={endDate}
+            defaultCurrency="USD"
+            readOnly={true}
+            hideHeaderTitle={true}
+          />
+        </FinanceSection>
+        <FinanceSection
+          title="Budgets"
+          description="Activity budget allocations by period"
+        >
+          <ActivityBudgetsTab
+            activityId={activityId}
+            startDate={startDate}
+            endDate={endDate}
+            defaultCurrency="USD"
+            readOnly={true}
+            hideHeaderTitle={true}
+          />
+        </FinanceSection>
+      </TabsContent>
+
+      <TabsContent value="charts" className="m-0">
+        <Card className="border-border bg-card p-6">
+          <div className="mb-4 flex flex-col space-y-1.5">
+            <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Financial Analytics</h2>
+            <p className="text-body text-muted-foreground">
+              Spend trajectory, budget vs actual, transaction breakdown and calendar heatmap
+            </p>
+          </div>
+          <FinancialAnalyticsTab activityId={activityId} />
+        </Card>
+      </TabsContent>
+    </Tabs>
   )
 }

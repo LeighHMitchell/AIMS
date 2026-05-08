@@ -6,6 +6,7 @@ import TransactionList from './TransactionList';
 import { toast } from 'sonner';
 import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager';
 import { apiFetch } from '@/lib/api-fetch';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TransactionTabProps {
   activityId: string;
@@ -258,10 +259,31 @@ export default function TransactionTab({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading transactions...</p>
+      <div className="space-y-6">
+        {/* Hero card placeholders */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-border/60 bg-card p-6 space-y-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-7 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
+        {/* Table placeholder */}
+        <div className="rounded-md border">
+          <div className="border-b border-border/40 px-4 py-3 flex gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-4 w-20" />
+            ))}
+          </div>
+          {[1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="border-b border-border/40 px-4 py-4 flex items-center gap-6">
+              {[1, 2, 3, 4, 5, 6].map((c) => (
+                <Skeleton key={c} className="h-4 w-20" />
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     );

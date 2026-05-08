@@ -14,13 +14,22 @@ interface RailKeyNumbersProps {
   label?: string
   items: KeyNumber[]
   progress?: { label: string; percent: number }
+  helpText?: React.ReactNode
 }
 
-export function RailKeyNumbers({ label = "Key Numbers", items, progress }: RailKeyNumbersProps) {
+const DEFAULT_KEY_NUMBERS_HELP =
+  "Headline financials for this activity — total budget, planned disbursements, and the share already disbursed against the budget."
+
+export function RailKeyNumbers({
+  label = "Key Numbers",
+  items,
+  progress,
+  helpText = DEFAULT_KEY_NUMBERS_HELP,
+}: RailKeyNumbersProps) {
   if (items.length === 0 && !progress) return null
 
   return (
-    <RailBlock label={label}>
+    <RailBlock label={label} helpText={helpText}>
       {progress && (
         <div className="mb-3">
           <div className="flex items-baseline gap-1.5">

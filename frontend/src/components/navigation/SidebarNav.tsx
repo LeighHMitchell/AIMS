@@ -122,7 +122,7 @@ export function SidebarNav({
       icon: ListTodo,
       defaultOpen: true,
       items: [
-        { name: "Activity List", href: "/activities", show: true },
+        { name: "Activities", href: "/activities", show: true },
         { name: "Pooled Funds", href: "/funds", show: true },
       ]
     },

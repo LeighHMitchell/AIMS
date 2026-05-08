@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Table,
   TableBody,
@@ -130,9 +131,19 @@ export default function TransactionSectorsTab({
   if (isLoading) {
     return (
       <Card className={className}>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
-          <span>Loading sector allocations...</span>
+        <CardContent className="space-y-3 py-4">
+          <div className="flex gap-3 px-3 py-2 border-b border-border">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-4 flex-1" />
+            ))}
+          </div>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex gap-3 px-3 py-2 items-center">
+              {[...Array(4)].map((_, j) => (
+                <Skeleton key={j} className="h-4 flex-1" />
+              ))}
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

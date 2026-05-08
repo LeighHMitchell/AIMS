@@ -1533,10 +1533,29 @@ export default function ActivityBudgetsTab({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading budgets...</p>
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-border/60 bg-card p-6 space-y-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-7 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
+        <div className="rounded-md border">
+          <div className="border-b border-border/40 px-4 py-3 flex gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-4 w-20" />
+            ))}
+          </div>
+          {[1, 2, 3, 4].map((row) => (
+            <div key={row} className="border-b border-border/40 px-4 py-4 flex items-center gap-6">
+              {[1, 2, 3, 4, 5, 6].map((c) => (
+                <Skeleton key={c} className="h-4 w-20" />
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -1578,7 +1597,7 @@ export default function ActivityBudgetsTab({
           )}
 
           {/* Budgets Table */}
-          <Card data-budgets-tab className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none" : ""}>
+          <Card data-budgets-tab className={(hideSummaryCards || hideHeaderTitle) ? "border-0 shadow-none ring-0" : ""}>
         <CardHeader className={hideSummaryCards ? "hidden" : (hideHeaderTitle ? "px-0 pt-0 pb-4" : "")}>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && !hideHeaderTitle && (

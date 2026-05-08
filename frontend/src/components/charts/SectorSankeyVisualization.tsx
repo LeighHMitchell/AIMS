@@ -50,6 +50,7 @@ interface Props {
   showControls?: boolean; // Whether to show view mode and metric controls
   defaultView?: ViewMode; // Default view mode
   defaultMetric?: MetricMode; // Default metric mode
+  defaultBarGroupingMode?: BarGroupingMode; // Initial bar grouping when uncontrolled
   barGroupingMode?: BarGroupingMode; // Bar chart grouping mode (controlled from outside)
 }
 
@@ -177,6 +178,7 @@ export default function SectorSankeyVisualization({
   showControls = true,
   defaultView = 'sankey',
   defaultMetric = 'percentage',
+  defaultBarGroupingMode = 'group',
   barGroupingMode: externalBarGroupingMode
 }: Props) {
   const isExpanded = useChartExpansion();
@@ -184,7 +186,7 @@ export default function SectorSankeyVisualization({
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
   const [metricMode, setMetricMode] = useState<MetricMode>('percentage');
-  const [internalBarGroupingMode, setBarGroupingMode] = useState<BarGroupingMode>('group');
+  const [internalBarGroupingMode, setBarGroupingMode] = useState<BarGroupingMode>(defaultBarGroupingMode);
   // Sortable headers for the table view. Null field = fall back to metricMode-driven order.
   type SortField = 'category' | 'sector' | 'subsector' | 'percentage' | 'budget' | 'plannedDisbursement'
   const [sortField, setSortField] = useState<SortField | null>(null)
@@ -439,18 +441,43 @@ export default function SectorSankeyVisualization({
   // Get stacked bar data based on grouping mode
   const stackedBarData = useMemo(() => {
     if (barGroupingMode === 'sector') {
-      // Return 5-digit subsectors with their colors
-      return displayData.map((d, i) => {
+      // Sub-sector view — colour each sub-sector by its parent category so the
+      // palette matches the Sunburst (same base colour family per category, with
+      // shade variations for individual sub-sectors).
+      const annotated = displayData.map((d) => {
         const sectorData = sectorGroupData.data.find((s: any) => s.code === d.code);
-        const categoryCode = sectorData?.['codeforiati:category-code'] || d.code.substring(0, 3);
+        const groupCode = sectorData?.['codeforiati:group-code'] || d.code.substring(0, 2) + '0';
         return {
           code: d.code,
           name: d.name,
           value: d.displayValue,
-          categoryCode,
-          color: BASE_COLORS[i % BASE_COLORS.length]
+          categoryCode: sectorData?.['codeforiati:category-code'] || d.code.substring(0, 3),
+          groupCode,
         };
-      }).sort((a, b) => b.value - a.value);
+      });
+
+      const groupOrder: string[] = [];
+      const groupBuckets = new Map<string, typeof annotated>();
+      annotated.forEach((row) => {
+        if (!groupBuckets.has(row.groupCode)) {
+          groupBuckets.set(row.groupCode, []);
+          groupOrder.push(row.groupCode);
+        }
+        groupBuckets.get(row.groupCode)!.push(row);
+      });
+
+      const colourByCode = new Map<string, string>();
+      groupOrder.forEach((groupCode, gIdx) => {
+        const baseColor = BASE_COLORS[gIdx % BASE_COLORS.length];
+        const bucket = groupBuckets.get(groupCode)!;
+        bucket.forEach((row, sIdx) => {
+          colourByCode.set(row.code, generateVariedShades(baseColor, sIdx, bucket.length, 'subsector'));
+        });
+      });
+
+      return annotated
+        .map((row) => ({ ...row, color: colourByCode.get(row.code) || BASE_COLORS[0] }))
+        .sort((a, b) => b.value - a.value);
     } else if (barGroupingMode === 'category') {
       // Group by 3-digit sector
       const categoryMap = new Map<string, {
@@ -551,24 +578,52 @@ export default function SectorSankeyVisualization({
     }
   }, [metricMode, allocations, financialTotals]);
 
-  // Calculate container size
+  // Track container size via ResizeObserver + IntersectionObserver so the chart
+  // re-measures when its wrapper becomes visible (e.g. when a tab pre-mounted
+  // under `display: none` is revealed). Skip 0×0 reads so we keep the last
+  // good size.
   useEffect(() => {
-    const updateSize = () => {
-      if (svgRef.current) {
-        const container = svgRef.current.parentElement;
-        if (container) {
-          setContainerSize({
-            width: container.clientWidth,
-            height: container.clientHeight
-          });
-        }
+    const container = svgRef.current?.parentElement;
+    if (!container) return;
+    const apply = () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width > 0 && height > 0) {
+        setContainerSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
       }
     };
-
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(container);
+    // IntersectionObserver fires reliably when display: none -> block transitions
+    // bring the element into the layout; ResizeObserver alone can miss this.
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) apply();
+    });
+    io.observe(container);
+    window.addEventListener('resize', apply);
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+      window.removeEventListener('resize', apply);
+    };
   }, []);
+
+  // Whenever the active view mode changes, re-measure on the next frame so a
+  // freshly mounted SVG (e.g. switching Sankey -> Sunburst) picks up the real
+  // wrapper size right away.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const container = svgRef.current?.parentElement;
+      if (!container) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width > 0 && height > 0) {
+        setContainerSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [viewMode]);
 
   // Render Sankey diagram
   useEffect(() => {
@@ -1264,9 +1319,9 @@ export default function SectorSankeyVisualization({
       if (isPercentage) {
         return value.toFixed(0) + '%';
       } else {
-        if (value >= 1000000) return '$' + (value / 1000000).toFixed(0) + 'm';
-        if (value >= 1000) return '$' + (value / 1000).toFixed(0) + 'k';
-        return '$' + value.toFixed(0);
+        if (value >= 1000000) return 'USD ' + (value / 1000000).toFixed(0) + 'm';
+        if (value >= 1000) return 'USD ' + (value / 1000).toFixed(0) + 'k';
+        return 'USD ' + value.toFixed(0);
       }
     };
 
@@ -1323,12 +1378,20 @@ export default function SectorSankeyVisualization({
 
   const renderTable = () => {
     const formatPercentage = (v: number) => v.toFixed(0) + '%';
-    
+
+    // Returns JSX so the "USD" prefix can render small + muted, matching the
+    // convention used elsewhere (e.g. transaction value cells).
     const formatCurrency = (v: number) => {
-      if (v === 0) return '$0';
-      if (v >= 1000000) return '$' + (v / 1000000).toFixed(2) + 'm';
-      if (v >= 1000) return '$' + (v / 1000).toFixed(2) + 'k';
-      return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      let amount: string;
+      if (v >= 1_000_000) amount = (v / 1_000_000).toFixed(2) + 'm';
+      else if (v >= 1_000) amount = (v / 1_000).toFixed(2) + 'k';
+      else amount = v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      return (
+        <span className="whitespace-nowrap">
+          <span className="text-helper text-muted-foreground font-normal mr-1">USD</span>
+          {amount}
+        </span>
+      );
     };
 
     // Get all unique transaction types across all sectors
@@ -1582,7 +1645,7 @@ export default function SectorSankeyVisualization({
     if (metricMode === 'percentage') {
       return value.toFixed(1) + '%';
     }
-    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return 'USD ' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
   return (
@@ -1590,28 +1653,8 @@ export default function SectorSankeyVisualization({
       {/* Controls - only shown if showControls is true */}
       {showControls && (
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          {/* Left side: bar grouping pills only when bar view is active */}
           <div className="flex flex-wrap items-center gap-4">
-            {/* View Mode Tabs */}
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
-              <TabsList className="h-9">
-                <TabsTrigger value="sankey" className="text-helper px-3">
-                  <GitBranch className="h-3.5 w-3.5 mr-1.5" />
-                  Sankey
-                </TabsTrigger>
-                <TabsTrigger value="pie" className="text-helper px-3">
-                  <PieChart className="h-3.5 w-3.5 mr-1.5" />
-                  Sunburst
-                </TabsTrigger>
-                <TabsTrigger value="bar" className="text-helper px-3">
-                  <BarChart3 className="h-3.5 w-3.5" />
-                </TabsTrigger>
-                <TabsTrigger value="table" className="text-helper px-3">
-                  <TableIcon className="h-3.5 w-3.5" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            {/* Bar grouping buttons - only show when bar view is active */}
             {viewMode === 'bar' && (
               <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
@@ -1642,7 +1685,24 @@ export default function SectorSankeyVisualization({
             )}
           </div>
 
+          {/* Right side: view-mode toggle (icons only) + CSV download */}
           <div className="flex items-center gap-2">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
+              <TabsList className="h-9">
+                <TabsTrigger value="sankey" className="px-2.5" aria-label="Sankey" title="Sankey">
+                  <GitBranch className="h-3.5 w-3.5" />
+                </TabsTrigger>
+                <TabsTrigger value="pie" className="px-2.5" aria-label="Sunburst" title="Sunburst">
+                  <PieChart className="h-3.5 w-3.5" />
+                </TabsTrigger>
+                <TabsTrigger value="bar" className="px-2.5" aria-label="Bar chart" title="Bar chart">
+                  <BarChart3 className="h-3.5 w-3.5" />
+                </TabsTrigger>
+                <TabsTrigger value="table" className="px-2.5" aria-label="Table" title="Table">
+                  <TableIcon className="h-3.5 w-3.5" />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Button
               variant="outline"
               size="icon"
@@ -1660,17 +1720,32 @@ export default function SectorSankeyVisualization({
 
       {/* View - always render based on viewMode */}
       {viewMode === 'sankey' ? (
-        <div className="w-full" style={{ height: '600px' }}>
-          <svg ref={svgRef} className="w-full h-full" />
+        <div className="w-full" style={{ height: '720px' }}>
+          <svg
+            ref={svgRef}
+            className="w-full h-full"
+            viewBox={`0 0 ${containerSize.width || 800} ${containerSize.height || 600}`}
+            preserveAspectRatio="xMidYMid meet"
+          />
         </div>
       ) : viewMode === 'pie' ? (
-        <div className="w-full" style={{ height: '600px' }}>
-          <svg ref={svgRef} className="w-full h-full" />
+        <div className="w-full" style={{ height: '720px' }}>
+          <svg
+            ref={svgRef}
+            className="w-full h-full"
+            viewBox={`0 0 ${containerSize.width || 800} ${containerSize.height || 600}`}
+            preserveAspectRatio="xMidYMid meet"
+          />
         </div>
       ) : viewMode === 'bar' ? (
         <div className="w-full">
           <div style={{ height: '180px' }}>
-            <svg ref={svgRef} className="w-full h-full" />
+            <svg
+              ref={svgRef}
+              className="w-full h-full"
+              viewBox={`0 0 ${containerSize.width || 800} 180`}
+              preserveAspectRatio="xMidYMid meet"
+            />
           </div>
         </div>
       ) : (

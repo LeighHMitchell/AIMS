@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Map as MapIcon,
-  RotateCcw,
   MapPin,
   Flame,
   BarChart3,
@@ -19,7 +18,6 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronRight,
-  Mountain,
   X,
   Cross,
   Layers,
@@ -41,7 +39,6 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
 import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
-import { MapSearch } from '@/components/maps/MapSearch';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
@@ -50,6 +47,7 @@ import { useLoadingBar } from '@/hooks/useLoadingBar';
 // mapcn map components
 import { Map, MapPopup, useMap } from '@/components/ui/map';
 import type { Map as MapLibreMap } from 'maplibre-gl';
+import { MapBridge, MapZoomRotateOverlay } from '@/components/maps/MapOverlayControls';
 
 // Dynamic import for SubnationalChoroplethMap (MapLibre-based with township support)
 const SubnationalChoroplethMap = dynamic(() => import('@/components/maps/SubnationalChoroplethMap'), { ssr: false });
@@ -57,7 +55,6 @@ const SubnationalChoroplethMap = dynamic(() => import('@/components/maps/Subnati
 // Dynamic import for MapLibre-based layers
 const MarkersLayer = dynamic(() => import('./maps-v2/MarkersLayer'), { ssr: false });
 const HeatmapLayer = dynamic(() => import('./maps-v2/HeatmapLayer'), { ssr: false });
-const MapFlyTo = dynamic(() => import('./maps-v2/MapFlyTo'), { ssr: false });
 const HealthFacilitiesLayer = dynamic(() => import('./maps-v2/HealthFacilitiesLayer'), { ssr: false });
 const PowerGridLayer = dynamic(() => import('./maps-v2/PowerGridLayer'), { ssr: false });
 const FloodRiskLayer = dynamic(() => import('./maps-v2/FloodRiskLayer'), { ssr: false });
@@ -263,132 +260,6 @@ function MapPositionTracker({
   return null;
 }
 
-// Bridge component to expose map instance from Map context to parent
-function MapBridge({ onMap }: { onMap: (map: MapLibreMap | null) => void }) {
-  const { map, isLoaded } = useMap();
-  useEffect(() => {
-    onMap(isLoaded ? map : null);
-  }, [map, isLoaded, onMap]);
-  return null;
-}
-
-// Map 3D Controller Component (accepts map instance via prop)
-function Map3DController({
-  map,
-  homeCountryCenter,
-  homeCountryZoom
-}: {
-  map: MapLibreMap | null;
-  homeCountryCenter: [number, number];
-  homeCountryZoom: number;
-}) {
-  const [pitch, setPitch] = useState(0);
-  const [bearing, setBearing] = useState(0);
-  const [zoom, setZoom] = useState(homeCountryZoom);
-
-  useEffect(() => {
-    if (!map) return;
-
-    const handleMove = () => {
-      setPitch(Math.round(map.getPitch()));
-      setBearing(Math.round(map.getBearing()));
-      setZoom(Math.round(map.getZoom() * 10) / 10); // Round to 1 decimal place
-    };
-
-    map.on('move', handleMove);
-    // Set initial zoom
-    setZoom(Math.round(map.getZoom() * 10) / 10);
-    return () => {
-      map.off('move', handleMove);
-    };
-  }, [map]);
-
-  const handle3DView = useCallback(() => {
-    map?.easeTo({
-      pitch: 60,
-      bearing: -20,
-      duration: 1000,
-    });
-  }, [map]);
-
-  const handle2DView = useCallback(() => {
-    map?.easeTo({
-      pitch: 0,
-      bearing: 0,
-      duration: 1000,
-    });
-  }, [map]);
-
-  const handleReset = useCallback(() => {
-    if (map) {
-      map.flyTo({
-        center: [homeCountryCenter[1], homeCountryCenter[0]], // MapLibre uses [lng, lat]
-        zoom: homeCountryZoom,
-        pitch: 0,
-        bearing: 0,
-        duration: 1500,
-      });
-    }
-  }, [map, homeCountryCenter, homeCountryZoom]);
-
-  const is3DMode = pitch !== 0 || bearing !== 0;
-
-  if (!map) return null;
-
-  return (
-    <div className="flex items-center gap-2">
-      {/* 2D/3D Toggle */}
-      {is3DMode ? (
-        <Button
-          onClick={handle2DView}
-          variant="outline"
-          size="sm"
-          title="2D View"
-          className="h-9 px-2.5"
-        >
-          <MapIcon className="h-4 w-4 mr-1.5" />
-          <span className="text-helper">2D</span>
-        </Button>
-      ) : (
-        <Button
-          onClick={handle3DView}
-          variant="outline"
-          size="sm"
-          title="3D View"
-          className="h-9 px-2.5"
-        >
-          <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-helper">3D</span>
-        </Button>
-      )}
-
-      {/* Reset Button */}
-      <Button
-        onClick={handleReset}
-        variant="outline"
-        size="sm"
-        title="Reset view"
-        className="h-9 w-9 p-0"
-      >
-        <RotateCcw className="h-4 w-4" />
-      </Button>
-
-      {/* Stats Display */}
-      <div className="rounded-md px-2.5 py-1.5 text-[10px] font-mono border flex items-center gap-3 whitespace-nowrap">
-        <span className="text-muted-foreground">Zoom: {zoom}</span>
-        {is3DMode && (
-          <>
-            <span className="text-muted-foreground/50">|</span>
-            <span className="text-muted-foreground">Pitch: {pitch}°</span>
-            <span className="text-muted-foreground/50">|</span>
-            <span className="text-muted-foreground">Bearing: {bearing}°</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function Atlas() {
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
   const handleMapReady = useCallback((map: MapLibreMap | null) => {
@@ -524,9 +395,6 @@ export default function Atlas() {
   const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
   const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM);
 
-  // State for fly-to target
-  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
-
   // Fetch home country from system settings
   useEffect(() => {
     const fetchHomeCountry = async () => {
@@ -546,22 +414,6 @@ export default function Atlas() {
       }
     }
     fetchHomeCountry()
-  }, []);
-
-  // Handler for location search
-  const handleLocationSearch = useCallback((lat: number, lng: number, name: string, type: string) => {
-
-    // Determine zoom level based on location type
-    let zoomLevel = 10;
-    if (type === 'city' || type === 'town' || type === 'village' || type === 'hamlet') {
-      zoomLevel = 12;
-    } else if (type === 'administrative' || type === 'state' || type === 'region' || type === 'province') {
-      zoomLevel = 9;
-    } else if (type === 'country') {
-      zoomLevel = 6;
-    }
-
-    setFlyToTarget({ lat, lng, zoom: zoomLevel });
   }, []);
 
   // State for locations data
@@ -824,27 +676,10 @@ export default function Atlas() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MapIcon className="h-5 w-5" />
-              Map & Analysis
-            </CardTitle>
-            
-            <div className="flex justify-end">
-              <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
-                <TabsList>
-                  <TabsTrigger value="map" className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Map View
-                  </TabsTrigger>
-                  <TabsTrigger value="subnational" className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    Sub-national Breakdown
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <MapIcon className="h-5 w-5" />
+            Map & Analysis
+          </CardTitle>
         </CardHeader>
         
         <CardContent>
@@ -861,7 +696,7 @@ export default function Atlas() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={statusFilterOpen}
-                        className="w-[140px] justify-between text-helper h-9 font-normal"
+                        className="w-[220px] justify-between text-helper h-9 font-normal"
                       >
                       <span className="truncate">
                         {statusFilter.length === 0
@@ -920,7 +755,7 @@ export default function Atlas() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={orgFilterOpen}
-                        className="w-[180px] justify-between text-helper h-9 font-normal"
+                        className="w-[280px] justify-between text-helper h-9 font-normal"
                       >
                         <span className="truncate">
                           {orgFilter.length === 0
@@ -1004,37 +839,28 @@ export default function Atlas() {
                     activityCounts={sectorActivityCounts}
                     showOnlyActiveSectors={showOnlyActiveSectors}
                     onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                    className="w-[160px] h-9 text-helper"
+                    className="w-[240px] h-9 text-helper"
                   />
                 </div>
 
-                {/* Search */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-helper font-medium text-muted-foreground">Search</label>
-                  <MapSearch
-                    onLocationSelect={handleLocationSearch}
-                    className="w-[130px]"
-                    placeholder="Search..."
-                  />
+                <div className="ml-auto">
+                  <TabsList>
+                    <TabsTrigger value="map" className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Map View
+                    </TabsTrigger>
+                    <TabsTrigger value="subnational" className="flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      Sub-national Breakdown
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
               </div>
 
-              {/* Map Controls Row - how the map itself behaves */}
-              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border/50">
-                {/* 3D / View Controls */}
-                <div className="flex items-center gap-2">
-                  <Map3DController
-                    map={mapInstance}
-                    homeCountryCenter={homeCountryCenter}
-                    homeCountryZoom={homeCountryZoom}
-                  />
-                </div>
-
-                <div className="flex-1" />
-
-                {/* Map Style & Controls */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[170px] h-9" />
+              {/* Map + overlaid controls */}
+              <div className="relative">
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+                  <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[180px] h-11 text-sm shadow-md" />
 
                   {/* Layers Popover */}
                   <Popover open={layersPopoverOpen} onOpenChange={handleLayersPopoverOpen}>
@@ -1042,16 +868,16 @@ export default function Atlas() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className={`h-9 px-3 gap-2 ${(showHealthFacilities || showPowerGrid || showFloodRisk) ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
+                        className={`h-11 px-4 gap-2 text-sm shadow-md bg-white ${(showHealthFacilities || showPowerGrid || showFloodRisk) ? 'bg-muted border-border text-foreground' : ''}`}
                       >
-                        <Layers className="h-4 w-4" />
-                        <span className="text-helper">Layers</span>
+                        <Layers className="h-5 w-5" />
+                        <span>Layers</span>
                         {(showHealthFacilities || showPowerGrid || showFloodRisk) && (
-                          <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                          <span className="bg-foreground text-background text-[11px] rounded-full h-5 w-5 flex items-center justify-center">
                             {[showHealthFacilities, showPowerGrid, showFloodRisk].filter(Boolean).length}
                           </span>
                         )}
-                        <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0" align="end">
@@ -1061,7 +887,7 @@ export default function Atlas() {
                           </div>
                           <div className="p-2">
                             {/* OSM Health Facilities Layer */}
-                            <div className={`rounded-md ${showHealthFacilities ? 'bg-blue-50' : ''}`}>
+                            <div className={`rounded-md ${showHealthFacilities ? 'bg-muted' : ''}`}>
                               <div
                                 className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 rounded-md"
                                 onClick={() => {
@@ -1072,8 +898,8 @@ export default function Atlas() {
                                   }
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-input'}`}>
-                                  {showHealthFacilities && <Check className="h-3 w-3 text-white" />}
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-foreground border-foreground' : 'border-input'}`}>
+                                  {showHealthFacilities && <Check className="h-3 w-3 text-background" />}
                                 </div>
                                 <Cross className="h-4 w-4 text-destructive" />
                                 <div className="flex-1">
@@ -1160,7 +986,7 @@ export default function Atlas() {
                             </div>
 
                             {/* Power Grid Layer */}
-                            <div className={`rounded-md mt-1 ${showPowerGrid ? 'bg-amber-50' : ''}`}>
+                            <div className={`rounded-md mt-1 ${showPowerGrid ? 'bg-muted' : ''}`}>
                               <div
                                 className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 rounded-md"
                                 onClick={() => {
@@ -1171,8 +997,8 @@ export default function Atlas() {
                                   }
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showPowerGrid ? 'bg-amber-500 border-amber-500' : 'border-input'}`}>
-                                  {showPowerGrid && <Check className="h-3 w-3 text-white" />}
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showPowerGrid ? 'bg-foreground border-foreground' : 'border-input'}`}>
+                                  {showPowerGrid && <Check className="h-3 w-3 text-background" />}
                                 </div>
                                 <Zap className="h-4 w-4 text-amber-600" />
                                 <div className="flex-1">
@@ -1245,7 +1071,7 @@ export default function Atlas() {
                             </div>
 
                             {/* Flood Risk Layer */}
-                            <div className={`rounded-md mt-1 ${showFloodRisk ? 'bg-cyan-50' : ''}`}>
+                            <div className={`rounded-md mt-1 ${showFloodRisk ? 'bg-muted' : ''}`}>
                               <div
                                 className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 rounded-md"
                                 onClick={() => {
@@ -1256,8 +1082,8 @@ export default function Atlas() {
                                   }
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showFloodRisk ? 'bg-cyan-500 border-cyan-500' : 'border-input'}`}>
-                                  {showFloodRisk && <Check className="h-3 w-3 text-white" />}
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showFloodRisk ? 'bg-foreground border-foreground' : 'border-input'}`}>
+                                  {showFloodRisk && <Check className="h-3 w-3 text-background" />}
                                 </div>
                                 <Waves className="h-4 w-4 text-cyan-600" />
                                 <div className="flex-1">
@@ -1333,7 +1159,7 @@ export default function Atlas() {
                       </Popover>
 
                       {/* View Mode Toggle */}
-                      <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
+                      <div className="inline-flex items-center gap-0.5 rounded-md bg-muted p-1 shadow-md border border-border">
                         <Button
                           onClick={() => setViewMode('markers')}
                           variant="ghost"
@@ -1346,7 +1172,7 @@ export default function Atlas() {
                               : "text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          <CircleDot className="h-4 w-4" />
+                          <CircleDot className="h-5 w-5" />
                         </Button>
                         <Button
                           onClick={() => setViewMode('heatmap')}
@@ -1360,11 +1186,10 @@ export default function Atlas() {
                               : "text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          <Flame className="h-4 w-4" />
+                          <Flame className="h-5 w-5" />
                         </Button>
                       </div>
                 </div>
-              </div>
 
               {/* Map Container */}
               <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-border">
@@ -1529,13 +1354,11 @@ export default function Atlas() {
                     onPositionChange={setSavedMapPosition}
                   />
 
-                  {/* Fly To Handler */}
-                  <MapFlyTo
-                    target={flyToTarget}
-                    onComplete={() => setFlyToTarget(null)}
-                  />
                 </Map>
-                
+
+                {/* Zoom + Compass overlay (uses public map API only) */}
+                <MapZoomRotateOverlay map={mapInstance} />
+
                 {filteredLocations.length === 0 && !loading && (
                   <div className="absolute inset-0 bg-muted/90 flex items-center justify-center pointer-events-none">
                     <div className="text-center">
@@ -1548,9 +1371,23 @@ export default function Atlas() {
                   </div>
                 )}
               </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="subnational" className="space-y-4">
+              <div className="flex justify-end">
+                <TabsList>
+                  <TabsTrigger value="map" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Map View
+                  </TabsTrigger>
+                  <TabsTrigger value="subnational" className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Sub-national Breakdown
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
               <div className="space-y-6">
                 <div className="text-body text-muted-foreground">
                   Sub-national breakdown showing activity distribution across Myanmar&apos;s states and regions from activity breakdown data.

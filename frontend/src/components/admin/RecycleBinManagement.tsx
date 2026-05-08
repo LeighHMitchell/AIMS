@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Loader2, RotateCcw, Trash2, Activity, Building2, ArrowLeftRight, UserSquare2, ListChecks, Trash } from "lucide-react"
+import { Loader2, RotateCcw, ArchiveRestore, Trash2, Activity, Building2, ArrowLeftRight, UserSquare2, ListChecks, Trash, Hand, Play } from "lucide-react"
 import { toast } from "sonner"
 
 const ENTITY_TYPES = ["activities", "transactions", "organizations", "contacts", "tasks"] as const
@@ -41,6 +41,7 @@ type RecycleItem = {
   title: string
   deletedAt: string
   daysRemaining: number
+  purgePaused: boolean
   deletedBy: { id: string; name: string; email: string | null } | null
 }
 
@@ -98,13 +99,17 @@ export function RecycleBinManagement() {
     setLoading(prev => ({ ...prev, [entity]: true }))
     try {
       const res = await fetch(`/api/admin/recycle-bin/${entity}`, { cache: "no-store" })
-      if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}))
+        throw new Error(errBody.error || `Fetch failed: ${res.status}`)
+      }
       const data = await res.json()
       setItems(prev => ({ ...prev, [entity]: data.items ?? [] }))
       if (typeof data.retentionDays === "number") setRetentionDays(data.retentionDays)
     } catch (err) {
       console.error(err)
-      toast.error(`Failed to load deleted ${entity}`)
+      const msg = err instanceof Error ? err.message : `Failed to load deleted ${entity}`
+      toast.error(`Failed to load deleted ${entity}: ${msg}`)
     } finally {
       setLoading(prev => ({ ...prev, [entity]: false }))
     }
@@ -117,6 +122,28 @@ export function RecycleBinManagement() {
   useEffect(() => {
     fetchItems(activeEntity)
   }, [activeEntity, fetchItems])
+
+  const handlePause = useCallback(async (entity: EntityType, ids: string[], paused: boolean) => {
+    if (ids.length === 0) return
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/admin/recycle-bin/${entity}/pause`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, paused }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `${paused ? "Pause" : "Unpause"} failed: ${res.status}`)
+      }
+      toast.success(paused ? `Paused ${ids.length} ${entity}` : `Resumed ${ids.length} ${entity}`)
+      await fetchItems(entity)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Pause failed")
+    } finally {
+      setBusy(false)
+    }
+  }, [fetchItems])
 
   const handleRestore = useCallback(async (entity: EntityType, ids: string[]) => {
     if (ids.length === 0) return
@@ -240,6 +267,7 @@ export function RecycleBinManagement() {
                   setPurgeTarget({ ids: [id], titles: [title] })
                   setPurgeConfirm("")
                 }}
+                onPauseOne={(id, paused) => handlePause(et, [id], paused)}
                 onRestoreSelected={() => handleRestore(et, Array.from(selected[et]))}
                 onPurgeSelected={() => {
                   const ids = Array.from(selected[et])
@@ -306,6 +334,7 @@ type TableProps = {
   onToggleAll: () => void
   onRestoreOne: (id: string) => void
   onPurgeOne: (id: string, title: string) => void
+  onPauseOne: (id: string, paused: boolean) => void
   onRestoreSelected: () => void
   onPurgeSelected: () => void
   busy: boolean
@@ -320,6 +349,7 @@ function RecycleBinTable({
   onToggleAll,
   onRestoreOne,
   onPurgeOne,
+  onPauseOne,
   onRestoreSelected,
   onPurgeSelected,
   busy,
@@ -374,7 +404,7 @@ function RecycleBinTable({
               <TableHead className="w-48">Deleted by</TableHead>
               <TableHead className="w-32">Deleted</TableHead>
               <TableHead className="w-32">Auto-purge</TableHead>
-              <TableHead className="w-48 text-right">Actions</TableHead>
+              <TableHead className="w-40 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -397,27 +427,51 @@ function RecycleBinTable({
                   <TableCell className="text-sm text-muted-foreground">
                     {formatRelativeTime(item.deletedAt)}
                   </TableCell>
-                  <TableCell className={isWarning ? "text-sm text-destructive font-medium" : "text-sm text-muted-foreground"}>
-                    in {item.daysRemaining}d
+                  <TableCell className="text-sm">
+                    {item.purgePaused ? (
+                      <Badge variant="secondary" className="font-medium">Paused</Badge>
+                    ) : (
+                      <span className={isWarning ? "text-destructive font-medium" : "text-muted-foreground"}>
+                        in {item.daysRemaining}d
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
                       <Button
-                        size="sm"
+                        size="icon"
+                        variant="outline"
+                        onClick={() => onPauseOne(item.id, !item.purgePaused)}
+                        disabled={busy}
+                        title={item.purgePaused ? "Resume auto-purge" : "Pause auto-purge"}
+                        aria-label={item.purgePaused ? "Resume auto-purge" : "Pause auto-purge"}
+                      >
+                        {item.purgePaused ? (
+                          <Play size={18} strokeWidth={2} />
+                        ) : (
+                          <Hand size={18} strokeWidth={2} />
+                        )}
+                      </Button>
+                      <Button
+                        size="icon"
                         variant="outline"
                         onClick={() => onRestoreOne(item.id)}
                         disabled={busy}
+                        title="Restore"
+                        aria-label="Restore"
                       >
-                        <RotateCcw className="h-4 w-4 mr-1.5" /> Restore
+                        <RotateCcw size={18} strokeWidth={2} />
                       </Button>
                       <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        size="icon"
+                        variant="outline"
+                        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
                         onClick={() => onPurgeOne(item.id, item.title)}
                         disabled={busy}
+                        title="Delete permanently"
+                        aria-label="Delete permanently"
                       >
-                        <Trash2 className="h-4 w-4 mr-1.5" /> Delete now
+                        <Trash2 size={18} strokeWidth={2} />
                       </Button>
                     </div>
                   </TableCell>

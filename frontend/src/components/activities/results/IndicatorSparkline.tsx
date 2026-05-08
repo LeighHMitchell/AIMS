@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { IndicatorBaseline, IndicatorPeriod } from '@/types/results';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
 interface IndicatorSparklineProps {
   baseline?: IndicatorBaseline;
@@ -100,11 +101,22 @@ export function IndicatorSparkline({
             content={({ active, payload }) => {
               if (active && payload && payload.length > 0) {
                 const data = payload[0].payload as SparklineDataPoint;
+                const formatted =
+                  data.value == null || Number.isNaN(data.value)
+                    ? '—'
+                    : data.value.toLocaleString();
                 return (
-                  <div className="bg-slate-800 text-white text-helper px-2 py-1 rounded shadow-lg">
-                    <div className="font-medium">{data.label}</div>
-                    <div>{data.value == null || Number.isNaN(data.value) ? '—' : data.value.toLocaleString()}</div>
-                  </div>
+                  <ChartTooltipCard
+                    title={data.label}
+                    minWidth={160}
+                    rows={[
+                      {
+                        label: 'Value',
+                        value: formatted,
+                        color: isPositive ? '#6b9080' : '#b87070',
+                      },
+                    ]}
+                  />
                 );
               }
               return null;

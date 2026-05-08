@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Loader2, MapPin } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { TITLE_STATUS_OPTIONS, TITLE_STATUS_LABELS, STATE_ID_TO_REGION, REGION_TO_STATE_ID } from "@/lib/land-bank-utils"
 import { StateRegionSelect } from "@/components/forms/StateRegionSelect"
 import { TownshipSelect } from "@/components/forms/TownshipSelect"
@@ -78,8 +79,24 @@ export function ParcelWizard({ parcelId }: ParcelWizardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-md" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-2/5" />
+          <Skeleton className="h-4 w-3/5" />
+          <div className="space-y-3 pt-2">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }

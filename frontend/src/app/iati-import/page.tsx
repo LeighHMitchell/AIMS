@@ -47,6 +47,7 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { IATIImportSkeleton } from '@/components/skeletons'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-fetch';
@@ -1500,11 +1501,24 @@ export default function IATIImportPage() {
             {/* Parse Step */}
             {step === 'parse' && (
               <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-12">
-                    <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                    <h3 className="text-lg font-medium">Parsing IATI File...</h3>
-                    <p className="text-muted-foreground mt-2">Analyzing data and checking for existing records</p>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-64" />
+                    <Skeleton className="h-4 w-96" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 pt-2">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="rounded-lg border border-border p-6 space-y-3">
+                        <Skeleton className="h-8 w-8 mx-auto rounded-full" />
+                        <Skeleton className="h-8 w-20 mx-auto" />
+                        <Skeleton className="h-3 w-24 mx-auto" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    {[...Array(4)].map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -1738,9 +1752,18 @@ export default function IATIImportPage() {
                   )}
 
                   {importState.organizations.phase === 'importing' && (
-                    <div className="text-center py-8">
-                      <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                      <p className="text-lg font-medium">Importing Organizations...</p>
+                    <div className="space-y-3 py-2">
+                      <Skeleton className="h-5 w-56" />
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                          <Skeleton className="h-9 w-9 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-3/5" />
+                            <Skeleton className="h-3 w-2/5" />
+                          </div>
+                          <Skeleton className="h-6 w-16 rounded-full" />
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -1864,9 +1887,22 @@ export default function IATIImportPage() {
                   )}
 
                   {importState.activities.phase === 'importing' && (
-                    <div className="text-center py-8">
-                      <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                      <p className="text-lg font-medium">Importing Activities...</p>
+                    <div className="space-y-3 py-2">
+                      <Skeleton className="h-5 w-56" />
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border">
+                          <Skeleton className="h-4 w-4 mt-1" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/2" />
+                            <div className="flex gap-2 pt-1">
+                              <Skeleton className="h-5 w-16 rounded-full" />
+                              <Skeleton className="h-5 w-20 rounded-full" />
+                            </div>
+                          </div>
+                          <Skeleton className="h-6 w-12 rounded-full" />
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -1970,9 +2006,18 @@ export default function IATIImportPage() {
                   )}
 
                   {importState.transactions.phase === 'importing' && (
-                    <div className="text-center py-8">
-                      <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                      <p className="text-lg font-medium">Importing Transactions...</p>
+                    <div className="space-y-3 py-2">
+                      <Skeleton className="h-5 w-56" />
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border">
+                          <Skeleton className="h-4 w-4 mt-1" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-2/3" />
+                            <Skeleton className="h-3 w-3/5" />
+                            <Skeleton className="h-3 w-1/3" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
 

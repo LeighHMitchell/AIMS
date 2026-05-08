@@ -26,12 +26,17 @@ interface RailParticipatingOrgsProps {
   orgs: ParticipatingOrg[]
   maxVisible?: number
   onViewAll?: () => void
+  helpText?: React.ReactNode
 }
+
+const DEFAULT_PARTICIPATING_ORGS_HELP =
+  "Organisations that are involved in this activity, with their IATI role: Funding (provides resources), Accountable (oversees outcomes), Extending (channels funds onward) or Implementing (delivers the work on the ground)."
 
 export function RailParticipatingOrgs({
   orgs,
   maxVisible = 5,
   onViewAll,
+  helpText = DEFAULT_PARTICIPATING_ORGS_HELP,
 }: RailParticipatingOrgsProps) {
   if (orgs.length === 0) return null
 
@@ -41,6 +46,7 @@ export function RailParticipatingOrgs({
   return (
     <RailBlock
       label="Participating Organisations"
+      helpText={helpText}
       action={
         overflow > 0 && onViewAll ? (
           <button

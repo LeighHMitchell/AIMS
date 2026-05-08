@@ -93,7 +93,10 @@ export async function GET(
         email: a.email,
         organisation: a.organisation,
         role: user?.role || a.position || 'Focal Point',
-        job_title: user?.job_title,
+        // Prefer the user's stored job title; fall back to the position recorded on
+        // the activity_contacts assignment (e.g. "Director General") so it surfaces
+        // even when the linked user record has no job_title set.
+        job_title: user?.job_title || a.position || null,
         department: user?.department,
         title: user?.title || a.title,
         type: a.type,

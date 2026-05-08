@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { differenceInDays } from 'date-fns'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface TimelinessChartProps {
   dateRange: {
@@ -214,17 +215,22 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
             axisLine={{ stroke: '#cbd5e1' }}
             width={90}
           />
-          <Tooltip 
+          <Tooltip
             content={({ active, payload }) => {
               if (active && payload && payload[0]) {
-                const data = payload[0].payload as TimelinessData
+                const d = payload[0].payload as TimelinessData
+                const onTime = Number.isFinite(d.onTimePercentage) ? d.onTimePercentage : 0
+                const avgDelay = Number.isFinite(d.averageDelay) ? d.averageDelay : 0
+                const total = Number.isFinite(d.totalTransactions) ? d.totalTransactions : 0
                 return (
-                  <div className="bg-slate-800 text-white p-3 rounded-lg shadow-lg">
-                    <p className="font-medium">{data.donor}</p>
-                    <p className="text-body">On-time: {Number.isFinite(data.onTimePercentage) ? data.onTimePercentage : 0}%</p>
-                    <p className="text-body">Avg delay: {Number.isFinite(data.averageDelay) ? data.averageDelay : 0} days</p>
-                    <p className="text-body">Total: {Number.isFinite(data.totalTransactions) ? data.totalTransactions : 0} transactions</p>
-                  </div>
+                  <ChartTooltipCard
+                    title={d.donor}
+                    rows={[
+                      { label: 'On-time', value: `${onTime}%`, color: getBarColor(onTime) },
+                      { label: 'Avg delay', value: `${avgDelay} days` },
+                      { label: 'Transactions', value: total },
+                    ]}
+                  />
                 )
               }
               return null

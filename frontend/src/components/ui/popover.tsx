@@ -269,7 +269,16 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
           )}
           style={{
             top: coords.top,
-            left: align === "center" ? coords.left : align === "end" ? coords.left - (contentRef.current?.offsetWidth || 0) + coords.width : coords.left,
+            // For align="end": coords.left is the trigger's right edge (set in
+            // updatePosition), so the popover's left edge should be
+            // `triggerRight - contentWidth`. The previous formula added
+            // `coords.width` on top, pushing the popover one trigger-width to
+            // the right of the trigger and clipping it off the viewport.
+            left: align === "center"
+              ? coords.left
+              : align === "end"
+                ? coords.left - (contentRef.current?.offsetWidth || 0)
+                : coords.left,
             transform: align === "center" ? 'translateX(-50%)' : undefined,
             '--radix-popover-trigger-width': `${coords.width}px`,
             ...(!hasAutoWidth && { minWidth: coords.width }),

@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X, RefreshCw } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
+import { Skeleton } from '@/components/ui/skeleton'
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -585,8 +586,19 @@ export default function OrganizationFundingEnvelopeTab({
               )}
 
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <div className="space-y-2 py-2">
+                  <div className="flex gap-3 px-3 py-2 border-b border-border">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-4 flex-1" />
+                    ))}
+                  </div>
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex gap-3 px-3 py-3">
+                      {[...Array(5)].map((_, j) => (
+                        <Skeleton key={j} className="h-4 flex-1" />
+                      ))}
+                    </div>
+                  ))}
                 </div>
               ) : sortedEnvelopes.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">

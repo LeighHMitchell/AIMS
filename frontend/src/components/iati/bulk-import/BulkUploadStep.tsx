@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FileCode, Upload, AlertCircle, AlertTriangle, FileText, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { XMLParser } from 'fast-xml-parser'
 import { useUser } from '@/hooks/useUser'
@@ -232,11 +233,20 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
         >
           <input {...getInputProps()} />
           {processing ? (
-            <>
-              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-lg font-medium text-foreground">Processing file...</p>
-              <p className="text-body text-muted-foreground mt-2">Extracting metadata and computing file hash</p>
-            </>
+            <div className="text-left max-w-md mx-auto space-y-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </div>
           ) : isDragActive ? (
             <>
               <Upload className="h-12 w-12 mx-auto mb-4 text-blue-500" />

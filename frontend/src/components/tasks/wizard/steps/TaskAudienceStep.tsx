@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { WizardFormData } from '../useTaskWizard';
 import type { TaskUser, TaskOrganization } from '@/types/task';
@@ -278,8 +279,17 @@ export function TaskAudienceStep({
 
           {/* Users List */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="border rounded-lg divide-y max-h-[300px] overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-2/5" />
+                    <Skeleton className="h-3 w-3/5" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
@@ -344,8 +354,18 @@ export function TaskAudienceStep({
 
           {/* Organizations List */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="border rounded-lg divide-y max-h-[300px] overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="border rounded-lg max-h-[300px] overflow-y-auto">

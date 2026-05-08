@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface SubSectorItem {
   code: string
@@ -70,11 +70,18 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                   if (active && payload && payload.length) {
                     const d = payload[0]?.payload
                     return (
-                      <div className={TOOLTIP_CLASSES}>
-                        <p className="font-medium text-helper text-foreground">{d?.code}: {d?.fullName}</p>
-                        <p className="text-helper text-muted-foreground">{formatCurrencyShort(d?.value)}</p>
-                        <p className="text-helper text-muted-foreground">{d?.activityCount} activities</p>
-                      </div>
+                      <ChartTooltipCard
+                        title={d?.fullName}
+                        subtitle={d?.code}
+                        rows={[
+                          {
+                            label: 'Total value',
+                            value: formatCurrencyShort(d?.value),
+                            color: themeColor,
+                          },
+                          { label: 'Activities', value: d?.activityCount },
+                        ]}
+                      />
                     )
                   }
                   return null

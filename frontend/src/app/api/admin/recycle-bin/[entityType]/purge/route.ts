@@ -126,7 +126,7 @@ export async function POST(
     user_id: user?.id ?? null,
     activity_id: entityType === 'activities' ? targetIds[0] : null,
     details: { entityType, ids: targetIds, count },
-  }).then(({ error }) => {
+  }).then(({ error }: { error: { message: string } | null }) => {
     if (error) console.warn('[recycle-bin] Failed to write audit log:', error.message);
   });
 

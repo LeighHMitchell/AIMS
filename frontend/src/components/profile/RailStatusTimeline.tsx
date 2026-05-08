@@ -33,7 +33,11 @@ interface RailStatusTimelineProps {
   endDate?: string | null
   description?: React.ReactNode
   onOpenHistory?: () => void
+  helpText?: React.ReactNode
 }
+
+const DEFAULT_STATUS_HELP =
+  "Where this activity sits in its lifecycle (e.g. Implementation, Closed) and the time elapsed between the start and end dates."
 
 export function RailStatusTimeline({
   status,
@@ -41,6 +45,7 @@ export function RailStatusTimeline({
   endDate,
   description,
   onOpenHistory,
+  helpText = DEFAULT_STATUS_HELP,
 }: RailStatusTimelineProps) {
   const start = tryParse(startDate)
   const end = tryParse(endDate)
@@ -59,6 +64,7 @@ export function RailStatusTimeline({
   return (
     <RailBlock
       label="Status & Timeline"
+      helpText={helpText}
       action={
         onOpenHistory ? (
           <button

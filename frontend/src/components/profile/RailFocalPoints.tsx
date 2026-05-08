@@ -8,8 +8,12 @@ import { cn } from "@/lib/utils"
 
 export interface FocalPoint {
   id: string
+  /** Honorific (e.g. "U", "Ms.", "Dr.") shown before the name on the same line. */
+  title?: string
   name: string
   role: string
+  jobTitle?: string
+  department?: string
   organisation?: string
   photoUrl?: string | null
   contactEmail?: string | null
@@ -21,12 +25,17 @@ interface RailFocalPointsProps {
   focalPoints: FocalPoint[]
   maxVisible?: number
   emptyState?: React.ReactNode
+  helpText?: React.ReactNode
 }
+
+const DEFAULT_FOCAL_POINTS_HELP =
+  "Government and development partner contacts who are responsible for managing this activity. They are the primary points of contact for questions, validation, and coordination."
 
 export function RailFocalPoints({
   focalPoints,
   maxVisible = 3,
   emptyState,
+  helpText = DEFAULT_FOCAL_POINTS_HELP,
 }: RailFocalPointsProps) {
   const [showAll, setShowAll] = useState(false)
   const visible = showAll ? focalPoints : focalPoints.slice(0, maxVisible)
@@ -34,7 +43,7 @@ export function RailFocalPoints({
 
   if (focalPoints.length === 0) {
     return (
-      <RailBlock label="Focal Points">
+      <RailBlock label="Focal Points" helpText={helpText}>
         <div className="text-muted-foreground">
           {emptyState ?? "No focal points assigned yet."}
         </div>
@@ -45,6 +54,7 @@ export function RailFocalPoints({
   return (
     <RailBlock
       label="Focal Points"
+      helpText={helpText}
       action={
         overflow > 0 && !showAll ? (
           <button
@@ -65,19 +75,26 @@ export function RailFocalPoints({
     >
       <ul className="space-y-2">
         {visible.map((fp) => (
-          <li key={fp.id} className="flex items-center gap-2 min-w-0">
+          <li key={fp.id} className="flex items-start gap-2 min-w-0">
             <FocalPointAvatar name={fp.name} photoUrl={fp.photoUrl} size="md" />
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-foreground truncate">
-                {fp.name}
-                {fp.isPrimary && (
-                  <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-foreground/60" aria-label="Primary" />
-                )}
+              <div className="font-medium text-foreground break-words">
+                {fp.title ? `${fp.title} ` : ''}{fp.name}
               </div>
-              <div className="text-muted-foreground truncate">
-                {fp.role}
-                {fp.organisation && <> · {fp.organisation}</>}
+              <div className="mt-0.5">
+                <span className="inline-flex items-center align-baseline px-2 h-5 text-caption font-medium rounded bg-muted text-foreground border border-border">
+                  {fp.role}
+                </span>
               </div>
+              {fp.jobTitle && (
+                <div className="text-muted-foreground break-words">{fp.jobTitle}</div>
+              )}
+              {fp.department && (
+                <div className="text-muted-foreground break-words">{fp.department}</div>
+              )}
+              {fp.organisation && (
+                <div className="text-muted-foreground break-words">{fp.organisation}</div>
+              )}
             </div>
             {fp.contactEmail ? (
               <a

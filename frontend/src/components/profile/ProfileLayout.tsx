@@ -31,7 +31,7 @@ export function ProfileLayout({ hero, tabs, main, rail, className }: ProfileLayo
             <aside className="lg:col-span-1 min-w-0">
               <div
                 className="lg:sticky"
-                style={{ top: TAB_ROW_HEIGHT + 16, maxHeight: `calc(100vh - ${TAB_ROW_HEIGHT + 32}px)`, overflowY: "auto" }}
+                style={{ top: TAB_ROW_HEIGHT + 16 }}
               >
                 <div className="space-y-5">{rail}</div>
               </div>

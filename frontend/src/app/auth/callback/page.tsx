@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getHomeRouteFromApiData } from '@/lib/navigation-utils';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -248,11 +249,20 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted">
-      <div className="text-center">
-        <Loader2 className="w-12 h-12 animate-spin text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground">Completing sign in...</p>
-        <p className="text-body text-muted-foreground mt-2">Please wait while we set up your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-muted p-6">
+      <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+          <Skeleton className="h-3 w-3/4" />
+        </div>
       </div>
     </div>
   );

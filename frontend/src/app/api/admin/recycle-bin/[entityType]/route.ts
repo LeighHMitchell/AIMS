@@ -16,11 +16,11 @@ type EntityConfig = {
 
 const ENTITY_CONFIG: Record<RecycleBinEntityType, EntityConfig> = {
   activities: {
-    columns: 'id, title_narrative, iati_identifier, deleted_at, deleted_by',
+    columns: 'id, title_narrative, iati_identifier, deleted_at, deleted_by, purge_paused',
     formatTitle: (r) => (r.title_narrative as string | null) || (r.iati_identifier as string | null) || 'Untitled activity',
   },
   transactions: {
-    columns: 'id, transaction_type, value, currency, transaction_date, deleted_at, deleted_by',
+    columns: 'id, transaction_type, value, currency, transaction_date, deleted_at, deleted_by, purge_paused',
     formatTitle: (r) => {
       const type = (r.transaction_type as string | null) ?? 'Transaction';
       const amount = r.value != null ? `${r.value} ${r.currency ?? ''}`.trim() : '';
@@ -28,11 +28,11 @@ const ENTITY_CONFIG: Record<RecycleBinEntityType, EntityConfig> = {
     },
   },
   organizations: {
-    columns: 'id, name, acronym, deleted_at, deleted_by',
+    columns: 'id, name, acronym, deleted_at, deleted_by, purge_paused',
     formatTitle: (r) => (r.name as string | null) || (r.acronym as string | null) || 'Unnamed organization',
   },
   contacts: {
-    columns: 'id, first_name, last_name, email, deleted_at, deleted_by',
+    columns: 'id, first_name, last_name, email, deleted_at, deleted_by, purge_paused',
     formatTitle: (r) => {
       const first = (r.first_name as string | null) ?? '';
       const last = (r.last_name as string | null) ?? '';
@@ -41,7 +41,7 @@ const ENTITY_CONFIG: Record<RecycleBinEntityType, EntityConfig> = {
     },
   },
   tasks: {
-    columns: 'id, title, deleted_at, deleted_by',
+    columns: 'id, title, deleted_at, deleted_by, purge_paused',
     formatTitle: (r) => (r.title as string | null) || 'Untitled task',
   },
 };
@@ -117,6 +117,7 @@ export async function GET(
       title: ENTITY_CONFIG[entityType].formatTitle(r),
       deletedAt: r.deleted_at,
       daysRemaining,
+      purgePaused: !!r.purge_paused,
       deletedBy: deleter ? { id: r.deleted_by, name: deleter.name, email: deleter.email } : null,
     };
   });

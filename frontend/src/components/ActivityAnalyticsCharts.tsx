@@ -19,6 +19,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parseISO, getYear, startOfYear, endOfYear } from "date-fns";
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 
 interface Transaction {
   transaction_type: string;
@@ -290,6 +291,23 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
     return `$${value.toFixed(0)}`;
   };
 
+  const renderSeriesTooltip = (
+    valueFormatter: (v: number) => string
+  ) => (props: any) => {
+    const { active, payload, label } = props;
+    if (!active || !payload?.length) return null;
+    return (
+      <ChartTooltipCard
+        title={label}
+        rows={payload.map((p: any) => ({
+          label: p.name,
+          value: valueFormatter(p.value),
+          color: p.color || p.stroke || p.fill,
+        }))}
+      />
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Financial Breakdown Charts */}
@@ -311,7 +329,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="fiscalYear" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={false} />
+                  <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
                   <Legend />
                   <Bar dataKey="plannedBudget" fill="#8884d8" name="Planned Budget" />
                   <Bar dataKey="commitments" fill="#82ca9d" name="Commitments" />
@@ -334,7 +352,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={false} />
+                  <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
                   <Legend />
                   <Bar dataKey="plannedBudget" fill="#8884d8" name="Planned Budget" />
                   <Bar dataKey="commitments" fill="#82ca9d" name="Commitments" />
@@ -375,7 +393,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip content={renderSeriesTooltip(formatCurrency)} />
                   <Legend />
                   <Area
                     type="monotone"
@@ -429,9 +447,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis domain={[0, 100]} />
-                <Tooltip 
-                  formatter={(value: number) => `${value.toFixed(1)}%`}
-                  labelFormatter={(label) => `Date: ${label}`}
+                <Tooltip
+                  content={renderSeriesTooltip((v: number) => `${v.toFixed(1)}%`)}
                 />
                 <Legend />
                 <Line 
@@ -473,7 +490,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="category" />
                 <YAxis tickFormatter={formatCurrency} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={false} />
+                <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
                 <Legend />
                 <Bar dataKey="budget" fill="#8884d8" name="Planned Budget" />
                 <Bar dataKey="actual" fill="#82ca9d" name="Actual Spending" />
