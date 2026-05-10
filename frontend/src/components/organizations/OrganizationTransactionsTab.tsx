@@ -51,11 +51,14 @@ interface HeroCardProps {
 }
 
 function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
+  // Fixed width keeps every hero card identical regardless of how many sit
+  // in the row, so the Transactions cards line up with the single Planned
+  // Disbursements card on the same finances page.
   return (
-    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className="w-56 p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
-        <div>
-          <div className="text-body text-muted-foreground">{title}</div>
+        <div className="min-w-0">
+          <div className="text-body text-muted-foreground truncate">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
           <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>
@@ -152,6 +155,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
 
   // Grouped view
   const [groupedView, setGroupedView] = useState(false);
+  const [groupedByType, setGroupedByType] = useState(false);
 
   // Fetch transactions and organizations
   useEffect(() => {
@@ -286,6 +290,38 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
     return Object.values(groups).sort((a, b) => b.total - a.total);
   }, [sortedTransactions]);
 
+  // Group transactions by transaction type for grouped-by-type view
+  const groupedByTypeTransactions = useMemo(() => {
+    const groups: Record<string, { type: string; transactions: OrganizationTransaction[]; total: number }> = {};
+    sortedTransactions.forEach(t => {
+      const type = t.transaction_type ?? '';
+      if (!groups[type]) {
+        groups[type] = { type, transactions: [], total: 0 };
+      }
+      groups[type].transactions.push(t);
+      groups[type].total += t.value_usd || 0;
+    });
+    return Object.values(groups).sort((a, b) => (a.type || '').localeCompare(b.type || ''));
+  }, [sortedTransactions]);
+
+  // Combined: nested groups — outer by activity, inner by transaction type.
+  const combinedGroups = useMemo(() => {
+    return groupedTransactions.map((g) => {
+      const inner: Record<string, { type: string; transactions: OrganizationTransaction[]; total: number }> = {};
+      g.transactions.forEach((t) => {
+        const type = t.transaction_type ?? '';
+        if (!inner[type]) inner[type] = { type, transactions: [], total: 0 };
+        inner[type].transactions.push(t);
+        inner[type].total += t.value_usd || 0;
+      });
+      return {
+        activity: g.activity,
+        total: g.total,
+        types: Object.values(inner).sort((a, b) => (a.type || '').localeCompare(b.type || '')),
+      };
+    });
+  }, [groupedTransactions]);
+
   // Pagination calculations
   const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -370,13 +406,12 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-4">
         <div className="flex gap-4 flex-wrap">
           <HeroCard
             title="Total Transactions"
             value={formatCurrencyAbbreviated(totalUSD)}
             subtitle={`${filteredTransactions.length} transaction${filteredTransactions.length !== 1 ? 's' : ''}`}
-            icon={<DollarSign className="h-5 w-5" />}
           />
           {/* Show top transaction types */}
           {Object.entries(summaryByType)
@@ -388,25 +423,9 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                 title={getTransactionTypeLabelPlural(type)}
                 value={formatCurrencyAbbreviated(data.total)}
                 subtitle={`${data.count} transaction${data.count !== 1 ? 's' : ''}`}
-                icon={<DollarSign className="h-5 w-5" />}
               />
             ))}
-          <HeroCard
-            title="Active Days"
-            value={activeDays.toString()}
-            subtitle="unique transaction dates"
-            icon={<Calendar className="h-5 w-5" />}
-          />
-          <HeroCard
-            title="Avg/Day"
-            value={avgPerDay.toFixed(1)}
-            subtitle="transactions per active day"
-            icon={<TrendingUp className="h-5 w-5" />}
-          />
         </div>
-        <Button variant="outline" size="icon" onClick={handleExport} title="Export CSV" aria-label="Export CSV">
-          <Download className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Filters and Export */}
@@ -492,6 +511,33 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
               </Label>
             </div>
           )}
+
+          {/* Group by Transaction Type Toggle */}
+          {filteredTransactions.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+              <Switch
+                id="grouped-view-type"
+                checked={groupedByType}
+                onCheckedChange={setGroupedByType}
+              />
+              <Label htmlFor="grouped-view-type" className="text-body cursor-pointer whitespace-nowrap">
+                Group by Transaction Type
+              </Label>
+            </div>
+          )}
+
+          {/* CSV Export Button — sits with the group toggles for easy access */}
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleExport}
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
       </div>
 
       {/* Table */}
@@ -607,6 +653,109 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     No transactions found for activities this organization participates in.
                   </TableCell>
                 </TableRow>
+              ) : groupedView && groupedByType ? (
+                // Combined view — outer Activity / inner Transaction Type
+                combinedGroups.map((group) => (
+                  <React.Fragment key={`combo-${group.activity.id}`}>
+                    {/* Activity header */}
+                    <TableRow className="bg-muted/60 border-b border-border/70">
+                      <TableCell colSpan={6} className="py-2 px-4">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/activities/${group.activity.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {group.activity.title}
+                            {group.activity.acronym && (
+                              <span className="ml-1">({group.activity.acronym})</span>
+                            )}
+                          </Link>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-4 text-right">
+                        <span className="font-medium">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
+                          {group.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                    {group.types.map((typeGroup) => (
+                      <React.Fragment key={`combo-${group.activity.id}-${typeGroup.type}`}>
+                        {/* Type sub-header */}
+                        <TableRow className="bg-muted/30 border-b border-border/50">
+                          <TableCell colSpan={6} className="py-1.5 px-4 pl-8">
+                            <div className="flex items-center gap-2">
+                              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{typeGroup.type || '—'}</code>
+                              <span className="text-body">{getTransactionTypeLabel(typeGroup.type)}</span>
+                              <span className="text-muted-foreground text-helper">
+                                ({typeGroup.transactions.length} transaction{typeGroup.transactions.length !== 1 ? 's' : ''})
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-1.5 px-4 text-right">
+                            <span className="text-body">
+                              <span className="text-helper text-muted-foreground">USD</span>{' '}
+                              {typeGroup.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                        {typeGroup.transactions.map((transaction) => (
+                          <TableRow key={transaction.uuid} className="border-b border-border/40 hover:bg-muted/30">
+                            <TableCell className="py-3 px-4 pl-12" style={{ width: '180px' }}></TableCell>
+                            <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
+                              {safeFormatDate(transaction.transaction_date, 'MMM d, yyyy', '-')}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '160px' }}></TableCell>
+                            <TableCell className="py-3 px-4" style={{ width: '280px' }}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                                  <OrganizationLogo
+                                    logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
+                                    name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
+                                    size="sm"
+                                  />
+                                  <span className="text-body">
+                                    {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
+                                  </span>
+                                </div>
+                                <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                                  <OrganizationLogo
+                                    logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
+                                    name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
+                                    size="sm"
+                                  />
+                                  <span className="text-body">
+                                    {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
+                                  </span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
+                              <span className="font-medium">
+                                <span className="text-muted-foreground text-helper">{transaction.currency}</span>{' '}
+                                {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
+                              {safeFormatDate(transaction.value_date, 'MMM d, yyyy', '-')}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
+                              {transaction.value_usd != null ? (
+                                <span className="font-medium">
+                                  <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
+                                  {transaction.value_usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                ))
               ) : groupedView ? (
                 // Grouped view - group by activity
                 groupedTransactions.map((group) => (
@@ -664,6 +813,96 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                             </div>
                             <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                             {/* Receiver */}
+                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                              <OrganizationLogo
+                                logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
+                                name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
+                                size="sm"
+                              />
+                              <span className="text-body">
+                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
+                          <span className="font-medium">
+                            <span className="text-muted-foreground text-helper">{transaction.currency}</span>{' '}
+                            {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
+                          {safeFormatDate(transaction.value_date, 'MMM d, yyyy', '-')}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
+                          {transaction.value_usd != null ? (
+                            <span className="font-medium">
+                              <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
+                              {transaction.value_usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
+                ))
+              ) : groupedByType ? (
+                // Grouped view - group by transaction type
+                groupedByTypeTransactions.map((group) => (
+                  <React.Fragment key={group.type || 'unknown'}>
+                    {/* Group Header Row */}
+                    <TableRow className="bg-muted/50 border-b border-border/70">
+                      <TableCell colSpan={6} className="py-2 px-4">
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{group.type || '—'}</code>
+                          <span className="font-medium">{getTransactionTypeLabel(group.type)}</span>
+                          <span className="text-muted-foreground text-body">
+                            ({group.transactions.length} transaction{group.transactions.length !== 1 ? 's' : ''})
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-4 text-right">
+                        <span className="font-medium">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
+                          {group.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                    {/* Transaction rows for this group */}
+                    {group.transactions.map((transaction) => (
+                      <TableRow key={transaction.uuid} className="border-b border-border/40 hover:bg-muted/30">
+                        <TableCell className="py-3 px-4 pl-8" style={{ width: '180px' }}>
+                          <Link
+                            href={`/activities/${transaction.activity_id}`}
+                            className="hover:underline"
+                          >
+                            {transaction.activity_title}
+                            {transaction.activity_acronym && (
+                              <span className="ml-1">({transaction.activity_acronym})</span>
+                            )}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
+                          {safeFormatDate(transaction.transaction_date, 'MMM d, yyyy', '-')}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '160px' }}>
+                          {/* Type column intentionally blank — header has it */}
+                        </TableCell>
+                        <TableCell className="py-3 px-4" style={{ width: '280px' }}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                              <OrganizationLogo
+                                logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
+                                name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
+                                size="sm"
+                              />
+                              <span className="text-body">
+                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
+                              </span>
+                            </div>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
                                 logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
@@ -775,8 +1014,8 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
         </CardContent>
       </Card>
 
-      {/* Pagination - Hide in grouped view */}
-      {sortedTransactions.length > 0 && !groupedView && (
+      {/* Pagination - Hide in grouped views */}
+      {sortedTransactions.length > 0 && !groupedView && !groupedByType && (
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">

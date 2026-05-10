@@ -58,7 +58,7 @@ export function PageHelpBubble({ pageSlug, pageTitle }: PageHelpBubbleProps) {
           ref={cardRef}
           role="dialog"
           aria-label={`Help — ${pageTitle}`}
-          className="fixed bottom-24 right-6 z-[10004] bg-background border rounded-md shadow-xl overflow-hidden"
+          className="fixed bottom-40 right-6 z-[10004] bg-background border rounded-md shadow-xl overflow-hidden"
         >
           <PageHelpCard
             pageSlug={pageSlug}
@@ -77,7 +77,7 @@ export function PageHelpBubble({ pageSlug, pageTitle }: PageHelpBubbleProps) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'fixed bottom-6 right-6 z-[10003] h-12 w-12 rounded-full text-white shadow-lg transition-colors flex items-center justify-center',
+          'fixed bottom-24 right-6 z-[10003] h-12 w-12 rounded-full text-white shadow-lg transition-colors flex items-center justify-center',
           open ? 'bg-gunmetal/80 hover:bg-gunmetal/70' : 'bg-gunmetal hover:bg-gunmetal/90'
         )}
         aria-label={open ? 'Close help' : 'Open help'}

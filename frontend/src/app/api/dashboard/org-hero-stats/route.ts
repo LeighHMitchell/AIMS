@@ -229,7 +229,9 @@ export async function GET(request: NextRequest) {
         }
         const existing = transactionsByYear.get(year)!;
         existing.count += 1;
-        const txAmount = tx.value_usd || tx.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        const txAmount = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+          : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
         existing.amount += txAmount;
 
         // Count and sum by transaction type
@@ -268,7 +270,9 @@ export async function GET(request: NextRequest) {
     allTransactions.forEach((tx: any) => {
       // Only count disbursements (type 3) and expenditures (type 4)
       if (tx.transaction_type === '3' || tx.transaction_type === '4') {
-        const amount = tx.value_usd || tx.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        const amount = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+          : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
         disbursementsByActivity.set(tx.activity_id, (disbursementsByActivity.get(tx.activity_id) || 0) + amount);
       }
     });

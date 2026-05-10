@@ -122,7 +122,9 @@ export async function GET(
     transactions.forEach(tx => {
       const sectorPct = activityPercentMap.get(tx.activity_id) || 100;
       const allocationMultiplier = sectorPct / 100;
-      const baseValue = tx.value_usd || tx.value || 0;
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const baseValue = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
       const allocatedValue = baseValue * allocationMultiplier;
       const year = tx.transaction_date ? new Date(tx.transaction_date).getFullYear() : null;
 
@@ -195,7 +197,10 @@ export async function GET(
     const actFinancials = new Map<string, { totalValue: number; committed: number; disbursed: number }>();
     transactions.forEach(tx => {
       const mult = (activityPercentMap.get(tx.activity_id) || 100) / 100;
-      const v = (tx.value_usd || tx.value || 0) * mult;
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const baseV = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
+      const v = baseV * mult;
       if (!actFinancials.has(tx.activity_id)) {
         actFinancials.set(tx.activity_id, { totalValue: 0, committed: 0, disbursed: 0 });
       }
@@ -324,7 +329,10 @@ export async function GET(
       let actValue = 0, actCommitments = 0, actDisbursements = 0;
 
       actTx.forEach(tx => {
-        const v = (tx.value_usd || tx.value || 0) * mult;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const baseV = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
+      const v = baseV * mult;
         actValue += v;
         if (tx.transaction_type === '2' || tx.transaction_type === '11') actCommitments += v;
         else if (tx.transaction_type === '3') actDisbursements += v;

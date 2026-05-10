@@ -13,7 +13,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import { LayoutDashboard, GanttChartSquare, LineChart as LineChartIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -827,17 +828,25 @@ export function ResultsTab({
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Enhanced Tabs for Different Views */}
-          <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="timeline">Timeline View</TabsTrigger>
-              <TabsTrigger value="charts">Progress Charts</TabsTrigger>
-              <TabsTrigger value="table">Data Table</TabsTrigger>
-            </TabsList>
+          {/* Enhanced view switcher for results */}
+          <div className="flex justify-end">
+            <SegmentedControl
+              ariaLabel="Results view"
+              variant="icon"
+              value={activeSubTab}
+              onValueChange={setActiveSubTab}
+              options={[
+                { value: "overview", label: "Overview", icon: LayoutDashboard },
+                { value: "timeline", label: "Timeline View", icon: GanttChartSquare },
+                { value: "charts", label: "Progress Charts", icon: LineChartIcon },
+                { value: "table", label: "Data Table", icon: TableIcon },
+              ]}
+            />
+          </div>
 
-            {/* Overview Tab - Default View */}
-            <TabsContent value="overview" className="space-y-6">
+          {/* Overview Tab - Default View */}
+          {activeSubTab === "overview" && (
+          <div className="space-y-6">
           {/* Simple Results List */}
               {filteredResults.map((result: ActivityResult, index: number) => (
             <div key={result.id} className="bg-card rounded-xl border-2 border-border p-6">
@@ -1849,10 +1858,12 @@ export function ResultsTab({
               </div>
             </div>
           ))}
-            </TabsContent>
+          </div>
+          )}
 
-            {/* Timeline View Tab */}
-            <TabsContent value="timeline" className="space-y-6">
+          {/* Timeline View Tab */}
+          {activeSubTab === "timeline" && (
+          <div className="space-y-6">
               <div className="bg-card rounded-xl border p-6">
                 <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Clock className="h-5 w-5" />
@@ -2043,10 +2054,12 @@ export function ResultsTab({
                   </div>
                 )}
               </div>
-            </TabsContent>
+          </div>
+          )}
 
-            {/* Charts Tab */}
-            <TabsContent value="charts" className="space-y-6">
+          {/* Charts Tab */}
+          {activeSubTab === "charts" && (
+          <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Status Distribution */}
                 <div className="bg-card rounded-xl border p-6">
@@ -2107,10 +2120,12 @@ export function ResultsTab({
                   )}
                 </div>
               </div>
-            </TabsContent>
+          </div>
+          )}
 
-            {/* Data Table Tab */}
-            <TabsContent value="table" className="space-y-6">
+          {/* Data Table Tab */}
+          {activeSubTab === "table" && (
+          <div className="space-y-6">
               <div className="bg-card rounded-xl border">
                 <div className="p-6 border-b">
                   <h4 className="text-lg font-semibold flex items-center gap-2">
@@ -2177,8 +2192,8 @@ export function ResultsTab({
                   </Table>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+          </div>
+          )}
         </div>
       )}
 

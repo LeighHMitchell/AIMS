@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { CheckCircle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckCircle, MapPin, Map as MapIcon } from 'lucide-react';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 // Using the new LocationsTab component instead of LocationEditor
 // import LocationEditor, { IATILocation } from './LocationEditor';
 import { EnhancedSubnationalBreakdown } from './activities/EnhancedSubnationalBreakdown';
@@ -149,19 +149,30 @@ export default function CombinedLocationsTab({
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="p-1 h-auto bg-background gap-1 border mb-4 flex flex-wrap">
-          <TabsTrigger value="activity-locations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-            Activity Sites
-            {hasValidLocations && <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="subnational-breakdown" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-            Subnational Allocation
-            {hasSubnationalData && <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] ml-1" />}
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="activity-locations" className="mt-6">
+      <SegmentedControl
+        ariaLabel="Locations view"
+        variant="icon-text"
+        value={activeSubTab}
+        onValueChange={setActiveSubTab}
+        className="mb-4"
+        options={[
+          {
+            value: 'activity-locations',
+            label: 'Activity Sites',
+            icon: MapPin,
+            badge: hasValidLocations ? <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" /> : undefined,
+          },
+          {
+            value: 'subnational-breakdown',
+            label: 'Subnational Allocation',
+            icon: MapIcon,
+            badge: hasSubnationalData ? <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" /> : undefined,
+          },
+        ]}
+      />
+
+      {activeSubTab === 'activity-locations' && (
+        <div className="mt-6">
           <LocationsTab
             activityId={activityId}
             activityTitle={activityTitle}
@@ -169,17 +180,19 @@ export default function CombinedLocationsTab({
             canEdit={canEdit}
             onLocationsChange={handleLocationsChange}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="subnational-breakdown" className="mt-6">
+      {activeSubTab === 'subnational-breakdown' && (
+        <div className="mt-6">
           <EnhancedSubnationalBreakdown
             activityId={activityId}
             canEdit={canEdit}
             onDataChange={handleSubnationalDataChange}
             suggestedRegions={suggestedRegions}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }

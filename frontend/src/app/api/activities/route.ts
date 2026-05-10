@@ -2052,10 +2052,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch budget summaries for all activities
+    // Fetch budget summaries for all activities. We pull `value` + `currency`
+    // alongside `usd_value` so we can fall back to the raw value when the USD
+    // conversion column hasn't been populated for a row but the row IS in USD
+    // — this keeps activities whose budgets were never run through the
+    // currency converter from disappearing from portfolio rankings.
     const { data: budgetSummaries, error: budgetError } = await supabase
       .from('activity_budgets')
-      .select('activity_id, usd_value')
+      .select('activity_id, value, currency, usd_value')
       .in('activity_id', activities?.map((a: any) => a.id) || []);
 
     if (budgetError) {
@@ -2064,7 +2068,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate total planned budget USD for each activity
     const activityBudgetMap = new Map();
-    
+
     if (budgetSummaries) {
       budgetSummaries.forEach((budget: any) => {
         if (!activityBudgetMap.has(budget.activity_id)) {
@@ -2072,17 +2076,23 @@ export async function GET(request: NextRequest) {
             totalPlannedBudgetUSD: 0
           });
         }
-        
+
         const summary = activityBudgetMap.get(budget.activity_id);
-        // Sum up all USD budget values
-        summary.totalPlannedBudgetUSD += budget.usd_value || 0;
+        // Prefer the converted USD value; fall back to the raw value when
+        // the currency is USD (or unset, treated as already-in-USD), so
+        // unconverted-but-USD-native rows still contribute.
+        const usd = Number(budget.usd_value) || 0;
+        const native = Number(budget.value) || 0;
+        const isUsdCurrency = !budget.currency || String(budget.currency).toUpperCase() === 'USD';
+        summary.totalPlannedBudgetUSD += usd > 0 ? usd : (isUsdCurrency ? native : 0);
       });
     }
 
-    // Fetch planned disbursements summaries for all activities
+    // Fetch planned disbursements summaries for all activities (same
+    // value/currency fallback as the budget summaries above).
     const { data: plannedDisbursementSummaries, error: plannedDisbursementError } = await supabase
       .from('planned_disbursements')
-      .select('activity_id, usd_amount')
+      .select('activity_id, amount, currency, usd_amount')
       .in('activity_id', activities?.map((a: any) => a.id) || []);
 
     if (plannedDisbursementError) {
@@ -2091,7 +2101,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate total planned disbursements USD for each activity
     const activityPlannedDisbursementMap = new Map();
-    
+
     if (plannedDisbursementSummaries) {
       plannedDisbursementSummaries.forEach((pd: any) => {
         if (!activityPlannedDisbursementMap.has(pd.activity_id)) {
@@ -2099,10 +2109,12 @@ export async function GET(request: NextRequest) {
             totalPlannedDisbursementsUSD: 0
           });
         }
-        
+
         const summary = activityPlannedDisbursementMap.get(pd.activity_id);
-        // Sum up all USD planned disbursement values
-        summary.totalPlannedDisbursementsUSD += pd.usd_amount || 0;
+        const usd = Number(pd.usd_amount) || 0;
+        const native = Number(pd.amount) || 0;
+        const isUsdCurrency = !pd.currency || String(pd.currency).toUpperCase() === 'USD';
+        summary.totalPlannedDisbursementsUSD += usd > 0 ? usd : (isUsdCurrency ? native : 0);
       });
     }
 

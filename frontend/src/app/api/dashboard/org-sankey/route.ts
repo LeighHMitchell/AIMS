@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       .select(`
         value,
         value_usd,
+        currency,
         transaction_type,
         receiver_org_id,
         receiver_org_name
@@ -90,6 +91,7 @@ export async function GET(request: NextRequest) {
       .select(`
         value,
         value_usd,
+        currency,
         transaction_type,
         provider_org_id,
         provider_org_name
@@ -117,7 +119,9 @@ export async function GET(request: NextRequest) {
       for (const t of outgoingTransactions) {
         const receiverId = t.receiver_org_id || 'unknown-receiver';
         const receiverName = t.receiver_org_name || 'Unknown Receiver';
-        const value = t.value_usd || t.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        const value = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
+          : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0);
 
         totalOutgoing += value;
 
@@ -152,7 +156,9 @@ export async function GET(request: NextRequest) {
       for (const t of incomingTransactions) {
         const providerId = t.provider_org_id || 'unknown-provider';
         const providerName = t.provider_org_name || 'Unknown Provider';
-        const value = t.value_usd || t.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        const value = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
+          : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0);
 
         totalIncoming += value;
 

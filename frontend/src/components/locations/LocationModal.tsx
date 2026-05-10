@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import { Settings as SettingsIcon, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -581,6 +582,7 @@ export default function LocationModal({
   // Form state
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationFormSection, setLocationFormSection] = useState<'general' | 'advanced'>('general');
   const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
@@ -1289,13 +1291,19 @@ const autoPopulateIatiFields = useCallback((params: {
 
           {/* Form Section */}
           <div className="space-y-4">
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              </TabsList>
+            <SegmentedControl
+              ariaLabel="Location form section"
+              variant="icon-text"
+              value={locationFormSection}
+              onValueChange={setLocationFormSection}
+              options={[
+                { value: 'general', label: 'General', icon: SettingsIcon },
+                { value: 'advanced', label: 'Advanced', icon: SlidersHorizontal },
+              ]}
+            />
 
-              <TabsContent value="general" className="space-y-4 mt-4">
+            {locationFormSection === 'general' && (
+            <div className="space-y-4 mt-4">
 
                   {/* Location Name */}
                   <div className="space-y-2">
@@ -1577,9 +1585,11 @@ const autoPopulateIatiFields = useCallback((params: {
                       </AlertDescription>
                     </Alert>
                   )}
-              </TabsContent>
+            </div>
+            )}
 
-              <TabsContent value="advanced" className="space-y-4 mt-4">
+            {locationFormSection === 'advanced' && (
+            <div className="space-y-4 mt-4">
                 {/* Feature Designation */}
                 <div className="space-y-2">
                   <Label htmlFor="feature_designation" className="flex items-center gap-2">
@@ -1774,8 +1784,8 @@ const autoPopulateIatiFields = useCallback((params: {
                   </div>
 
                 </div>
-              </TabsContent>
-            </Tabs>
+            </div>
+            )}
 
           </div>
         </div>

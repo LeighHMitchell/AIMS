@@ -1159,18 +1159,22 @@ export function EnhancedSubnationalBreakdown({
 
             {/* Percentage Allocation Table */}
             {organizedEntries.length > 0 ? (
-              <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+              // Two wrappers: outer carries the border (no `overflow-` class
+              // so the global `[class*=overflow-] { border: none }` rule in
+              // globals.css can't strip it), inner clips children into the
+              // rounded corners.
+              <div className="border rounded-lg">
+                <div className="overflow-hidden rounded-lg">
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium text-body text-foreground">Administrative Unit</th>
                       <th className="px-3 py-2">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end">
                           <span className="w-20 text-right font-medium text-body text-foreground">%</span>
-                          <span className="w-8"></span>
                         </div>
                       </th>
-                      {canEdit && <th className="w-10 px-3 py-2"></th>}
+                      {canEdit && <th className="w-10 pl-0 pr-2 py-2"></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -1226,7 +1230,7 @@ export function EnhancedSubnationalBreakdown({
                               </div>
                             </td>
                             {canEdit && (
-                              <td className="px-3 py-2 text-center">
+                              <td className="pl-0 pr-2 py-2 text-left">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -1322,7 +1326,7 @@ export function EnhancedSubnationalBreakdown({
                             </div>
                           </td>
                           {canEdit && (
-                            <td className="px-3 py-2 text-center">
+                            <td className="pl-0 pr-2 py-2 text-left">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1357,11 +1361,12 @@ export function EnhancedSubnationalBreakdown({
                             <span className="text-helper text-foreground font-semibold w-8 text-left">%</span>
                           </div>
                         </td>
-                        {canEdit && <td className="px-3 py-2"></td>}
+                        {canEdit && <td className="pl-0 pr-2 py-2"></td>}
                       </tr>
                     </tfoot>
                   )}
                 </table>
+                </div>
               </div>
             ) : (
               <div className="text-center py-12 border rounded-lg">

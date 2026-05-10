@@ -27,8 +27,18 @@ import {
   Loader2,
   Save,
   Wand2,
-  Calendar
+  Calendar,
+  ArrowRight,
+  ArrowLeft,
+  CircleDashed,
+  MessageSquare,
+  Download,
+  Info,
+  Tag,
+  DollarSign,
+  FileText
 } from 'lucide-react'
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { toast } from 'sonner'
 import {
   Select,
@@ -43,7 +53,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Flag from 'react-world-flags'
@@ -79,6 +88,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { LabelSaveIndicator } from '@/components/ui/save-indicator'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { SubSection } from '@/components/activities/SubSection'
+import { OrganizationComments } from './OrganizationComments'
+import { exportOrganizationToExcel } from '@/lib/organization-export'
 import { useOrganizationAutosave } from '@/hooks/use-organization-autosave'
 import { apiFetch } from '@/lib/api-fetch';
 import { CustomYear, sortCustomYearsCalendarFirst } from '@/types/custom-years';
@@ -220,6 +233,7 @@ export interface Organization {
   Organisation_Type_Code?: string
   organisation_type?: string
   description?: string
+  mission?: string
   website?: string
   email?: string
   phone?: string
@@ -271,6 +285,12 @@ export interface OrganizationFormContentProps {
   externalSaving?: boolean
   /** Called to navigate to next section (for Save and Next) */
   onNextSection?: () => void
+  /** Called to navigate to previous section (for Back button) */
+  onPreviousSection?: () => void
+  /** Whether there is a previous section available */
+  hasPreviousSection?: boolean
+  /** Whether there is a next section available */
+  hasNextSection?: boolean
 }
 
 export function OrganizationFormContent({
@@ -283,7 +303,10 @@ export function OrganizationFormContent({
   initialTab,
   onCancel,
   externalSaving,
-  onNextSection
+  onNextSection,
+  onPreviousSection,
+  hasPreviousSection = false,
+  hasNextSection = false
 }: OrganizationFormContentProps) {
   const [formData, setFormData] = useState<Partial<Organization>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
@@ -300,6 +323,8 @@ export function OrganizationFormContent({
   const [orgTypeSelectOpen, setOrgTypeSelectOpen] = useState(false)
   const [customYears, setCustomYears] = useState<CustomYear[]>([])
   const [loadingCustomYears, setLoadingCustomYears] = useState(false)
+  const [showCommentsModal, setShowCommentsModal] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // Merge organization state
   const [allOrganizations, setAllOrganizations] = useState<ComboboxOrganization[]>([])
@@ -341,10 +366,15 @@ export function OrganizationFormContent({
     debounceMs: 1000,
     enabled: !!organizationId 
   })
-  const descriptionAutosave = useOrganizationAutosave('description', { 
-    organizationId, 
+  const descriptionAutosave = useOrganizationAutosave('description', {
+    organizationId,
     debounceMs: 2000,
-    enabled: !!organizationId 
+    enabled: !!organizationId
+  })
+  const missionAutosave = useOrganizationAutosave('mission', {
+    organizationId,
+    debounceMs: 2000,
+    enabled: !!organizationId
   })
   const orgTypeAutosave = useOrganizationAutosave('organisation_type', {
     organizationId,
@@ -434,10 +464,35 @@ export function OrganizationFormContent({
     debounceMs: 1500,
     enabled: !!organizationId 
   })
-  const youtubeAutosave = useOrganizationAutosave('youtube', { 
-    organizationId, 
+  const youtubeAutosave = useOrganizationAutosave('youtube', {
+    organizationId,
     debounceMs: 1500,
-    enabled: !!organizationId 
+    enabled: !!organizationId
+  })
+  // Branding autosave hooks
+  const bannerAutosave = useOrganizationAutosave('banner', {
+    organizationId,
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true,
+    displayName: 'Banner'
+  })
+  const bannerPositionAutosave = useOrganizationAutosave('banner_position', {
+    organizationId,
+    debounceMs: 500,
+    enabled: !!organizationId
+  })
+  const logoAutosave = useOrganizationAutosave('logo', {
+    organizationId,
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true,
+    displayName: 'Logo'
+  })
+  const logoScaleAutosave = useOrganizationAutosave('logo_scale', {
+    organizationId,
+    debounceMs: 500,
+    enabled: !!organizationId
   })
 
   const isSaving = saving || externalSaving
@@ -496,6 +551,7 @@ export function OrganizationFormContent({
         cooperation_modality: organization.cooperation_modality || '',
         residency_status: organization.residency_status || '',
         description: organization.description || '',
+        mission: organization.mission || '',
         logo: organization.logo || '',
         logo_scale: organization.logo_scale ?? 100,
         banner: organization.banner || '',
@@ -534,6 +590,7 @@ export function OrganizationFormContent({
         cooperation_modality: '',
         residency_status: '',
         description: '',
+        mission: '',
         logo: '',
         logo_scale: 100,
         banner: '',
@@ -586,6 +643,7 @@ export function OrganizationFormContent({
         name: nameAutosave,
         acronym: acronymAutosave,
         description: descriptionAutosave,
+        mission: missionAutosave,
         Organisation_Type_Code: orgTypeAutosave,
         country_represented: countryAutosave,
         iati_org_id: iatiOrgIdAutosave,
@@ -602,6 +660,10 @@ export function OrganizationFormContent({
         linkedin: linkedinAutosave,
         instagram: instagramAutosave,
         youtube: youtubeAutosave,
+        banner: bannerAutosave,
+        banner_position: bannerPositionAutosave,
+        logo: logoAutosave,
+        logo_scale: logoScaleAutosave,
       }
       
       // Map form field names to database field names for autosave
@@ -846,132 +908,164 @@ export function OrganizationFormContent({
 
   // Render the form tabs content
   const renderTabsContent = () => (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
       {/* Only show tab list in modal mode - inline mode uses sidebar navigation */}
       {renderMode === 'modal' && (
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="basic">General</TabsTrigger>
-          <TabsTrigger value="contact">Contact</TabsTrigger>
-          <TabsTrigger value="aliases">Aliases</TabsTrigger>
-          <TabsTrigger value="budgets">IATI Budgets</TabsTrigger>
-          <TabsTrigger value="documents">IATI Documents</TabsTrigger>
-          <TabsTrigger value="iati-prefs">IATI Import</TabsTrigger>
-        </TabsList>
+        <SegmentedControl
+          ariaLabel="Organization form sections"
+          variant="icon-text"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            { value: 'basic', label: 'General', icon: Info },
+            { value: 'contact', label: 'Contact', icon: Mail },
+            { value: 'aliases', label: 'Aliases', icon: Tag },
+            { value: 'budgets', label: 'IATI Budgets', icon: DollarSign },
+            { value: 'documents', label: 'IATI Documents', icon: FileText },
+            { value: 'iati-prefs', label: 'IATI Import', icon: Download },
+          ]}
+        />
       )}
 
       {/* General Tab */}
-      <TabsContent value="basic" className="h-full overflow-y-auto px-2 mt-4 space-y-4">
-        {/* Branding - Logo & Banner at top like Activity Editor */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">General</h3>
-          <p className="text-body text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Banner */}
-            <div>
-              <OrganizationBannerUpload
-                value={formData.banner || ''}
-                onChange={(value) => handleInputChange('banner', value)}
-                position={formData.banner_position ?? 50}
-                onPositionChange={(position) => handleInputChange('banner_position', position)}
-                disabled={saving || externalSaving}
-              />
-            </div>
-
-            {/* Logo */}
-            <div>
-              <OrganizationLogoUpload
-                value={formData.logo || ''}
-                onChange={(value) => handleInputChange('logo', value)}
-                scale={formData.logo_scale ?? 100}
-                onScaleChange={(scale) => handleInputChange('logo_scale', scale)}
-                disabled={saving || externalSaving}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Name (Required) */}
-          <div className="space-y-2">
-            <LabelSaveIndicator
-              isSaving={nameAutosave.state.isSaving}
-              isSaved={!!nameAutosave.state.lastSaved}
-              hasValue={!!formData.name}
-            >
-              Name <RequiredDot />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p>The official full name of the organisation</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </LabelSaveIndicator>
-            <Input
-              id="name"
-              value={formData.name || ''}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Danish International Development Agency"
-              className={validationErrors.some(e => e.includes('Name')) ? 'border-destructive' : ''}
-            />
+      {activeTab === 'basic' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
+          {/* Page Heading */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-semibold text-foreground">General</h2>
+            <HelpTextTooltip content="This tab brings together the core details that define the organisation, including its name, acronym, branding imagery, classification, and reporting defaults. Completing this section establishes the basic profile of the organisation and provides a clear reference point for all other information entered elsewhere.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
           </div>
 
-          {/* Acronym / Short Name (Required) */}
-          <div className="space-y-2">
-            <LabelSaveIndicator
-              isSaving={acronymAutosave.state.isSaving}
-              isSaved={!!acronymAutosave.state.lastSaved}
-              hasValue={!!formData.acronym}
-            >
-              Acronym/Short Name <RequiredDot />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p>A shortened version of the organisation name, often used for display</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </LabelSaveIndicator>
-            <div className="relative">
-              <Input
-                id="acronym"
-                value={formData.acronym || ''}
-                onChange={(e) => handleInputChange('acronym', e.target.value)}
-                placeholder="DANIDA"
-                className={`${validationErrors.some(e => e.includes('Acronym')) ? 'border-destructive' : ''} pr-10`}
-              />
-              {formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 && (
-                <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          onClick={() => {
-                            const acronym = generateAcronym(formData.name || '');
-                            handleInputChange('acronym', acronym);
-                          }}
-                        >
-                          <Wand2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Generate from name</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+          {/* Identity Section: Name + Acronym above Banner + Logo */}
+          <SubSection
+            title="Identity"
+            intro="The core handles that identify this organisation across reports, lists, and profiles."
+          >
+            {/* Name and Acronym — the primary handles, placed before Banner/Logo */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+              {/* Name - takes up 2 columns, enlarged for prominence */}
+              <div className="lg:col-span-2 space-y-2">
+                <LabelSaveIndicator
+                  isSaving={nameAutosave.state.isSaving}
+                  isSaved={!!nameAutosave.state.lastSaved}
+                  hasValue={!!formData.name}
+                  className="text-base font-semibold text-foreground"
+                >
+                  <div className="flex items-center gap-2">
+                    Name <RequiredDot />
+                    <HelpTextTooltip>
+                      The official full name of the organisation, as used in reports and on its website.
+                    </HelpTextTooltip>
+                  </div>
+                </LabelSaveIndicator>
+                <Input
+                  id="name"
+                  value={formData.name || ''}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Danish International Development Agency"
+                  className={`w-full h-12 !text-lg ${validationErrors.some(e => e.includes('Name')) ? 'border-destructive' : ''}`}
+                />
+              </div>
+
+              {/* Acronym - takes up 1 column */}
+              <div className="lg:col-span-1 space-y-2">
+                <LabelSaveIndicator
+                  isSaving={acronymAutosave.state.isSaving}
+                  isSaved={!!acronymAutosave.state.lastSaved}
+                  hasValue={!!formData.acronym}
+                  className="text-base font-semibold text-foreground"
+                >
+                  <div className="flex items-center gap-2">
+                    Acronym/Short Name <RequiredDot />
+                    <HelpTextTooltip>
+                      A shortened version of the organisation name, often used for display in lists, cards, and summaries.
+                    </HelpTextTooltip>
+                  </div>
+                </LabelSaveIndicator>
+                <div className="relative">
+                  <Input
+                    id="acronym"
+                    value={formData.acronym || ''}
+                    onChange={(e) => handleInputChange('acronym', e.target.value)}
+                    placeholder="DANIDA"
+                    className={`w-full h-12 !text-lg ${validationErrors.some(e => e.includes('Acronym')) ? 'border-destructive' : ''} ${formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 ? 'pr-10' : ''}`}
+                  />
+                  {formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 && (
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-muted hover:bg-muted"
+                              onClick={() => {
+                                const acronym = generateAcronym(formData.name || '');
+                                handleInputChange('acronym', acronym);
+                              }}
+                            >
+                              <Wand2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent align="end">Generate from name</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
 
+            {/* Banner and Logo Upload */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+              <div className="lg:col-span-3 flex flex-col">
+                <OrganizationBannerUpload
+                  value={formData.banner || ''}
+                  onChange={(value) => handleInputChange('banner', value)}
+                  position={formData.banner_position ?? 50}
+                  onPositionChange={(position) => handleInputChange('banner_position', position)}
+                  disabled={saving || externalSaving}
+                  autosaveState={{
+                    // Combine the banner + banner-position autosave hooks so
+                    // the green tick reflects either field having just saved.
+                    isSaving:
+                      bannerAutosave.state.isSaving ||
+                      bannerPositionAutosave.state.isSaving,
+                    isSaved:
+                      !!bannerAutosave.state.lastSaved ||
+                      !!bannerPositionAutosave.state.lastSaved,
+                  }}
+                />
+              </div>
+              <div className="lg:col-span-1 flex flex-col">
+                <OrganizationLogoUpload
+                  value={formData.logo || ''}
+                  onChange={(value) => handleInputChange('logo', value)}
+                  scale={formData.logo_scale ?? 100}
+                  onScaleChange={(scale) => handleInputChange('logo_scale', scale)}
+                  disabled={saving || externalSaving}
+                  autosaveState={{
+                    isSaving:
+                      logoAutosave.state.isSaving ||
+                      logoScaleAutosave.state.isSaving,
+                    isSaved:
+                      !!logoAutosave.state.lastSaved ||
+                      !!logoScaleAutosave.state.lastSaved,
+                  }}
+                />
+              </div>
+            </div>
+          </SubSection>
+
+        <SubSection
+          title="Classification"
+          intro="Identifiers, organisation type, and residency that classify this organisation in IATI."
+        >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Location Represented */}
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -1334,25 +1428,24 @@ export function OrganizationFormContent({
             </Select>
           </div>
         </div>
+        </SubSection>
 
-        {/* Description */}
+        <SubSection
+          title="Description"
+          intro="A brief overview of the organisation's mandate and activities."
+        >
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={descriptionAutosave.state.isSaving}
             isSaved={!!descriptionAutosave.state.lastSaved}
             hasValue={!!formData.description}
           >
-            Description
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p>A brief overview of the organisation's mandate and activities. Supports rich text formatting.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex items-center gap-2">
+              Description
+              <HelpTextTooltip>
+                A brief overview of the organisation's mandate and activities. Supports rich text formatting.
+              </HelpTextTooltip>
+            </div>
           </LabelSaveIndicator>
           <RichTextEditor
             content={formData.description || ''}
@@ -1361,8 +1454,40 @@ export function OrganizationFormContent({
             rows={6}
           />
         </div>
+        </SubSection>
 
-        {/* IATI Classification Fields */}
+        <SubSection
+          title="Mission"
+          intro="A short mission statement displayed beside the description on the organisation profile."
+        >
+        <div className="space-y-2">
+          <LabelSaveIndicator
+            isSaving={missionAutosave.state.isSaving}
+            isSaved={!!missionAutosave.state.lastSaved}
+            hasValue={!!formData.mission}
+          >
+            <div className="flex items-center gap-2">
+              Mission
+              <HelpTextTooltip>
+                A one- or two-sentence statement of the organisation's purpose. Shown under "Mission" on the public profile.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <Textarea
+            id="mission"
+            value={formData.mission || ''}
+            onChange={(e) => handleInputChange('mission', e.target.value)}
+            placeholder="e.g. Delivering a world where every pregnancy is wanted, every childbirth is safe and every young person's potential is fulfilled."
+            rows={3}
+            className="resize-none"
+          />
+        </div>
+        </SubSection>
+
+        <SubSection
+          title="Reporting Defaults"
+          intro="The default currency, language, and financial year used when this organisation reports."
+        >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Default Currency */}
           <div className="space-y-2">
@@ -1569,15 +1694,28 @@ export function OrganizationFormContent({
             </Select>
           </div>
         </div>
+        </SubSection>
+        </div>
 
-      </TabsContent>
+      </div>
+      )}
 
       {/* Social & Web Tab */}
-      <TabsContent value="contact" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
-        {/* Contact Information Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Contact Information</h3>
+      {activeTab === 'contact' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
+          {/* Page Heading */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-semibold text-foreground">Contact</h2>
+            <HelpTextTooltip content="Contact details and social media presence used to reach this organisation and link to its public profiles.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
 
+          <SubSection
+            title="Contact Information"
+            intro="The primary email, phone, website, and mailing address for this organisation."
+          >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <LabelSaveIndicator
@@ -1651,13 +1789,12 @@ export function OrganizationFormContent({
               />
             </div>
           </div>
-        </div>
+          </SubSection>
 
-        {/* Social Media Section */}
-        <div className="space-y-4">
-          <h3 className="text-body font-semibold text-foreground border-b pb-2">Social Media</h3>
-          <p className="text-body text-muted-foreground">Add social media profiles for your organization</p>
-
+          <SubSection
+            title="Social Media"
+            intro="Public social media profiles where stakeholders can follow this organisation."
+          >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <LabelSaveIndicator
@@ -1744,11 +1881,14 @@ export function OrganizationFormContent({
               />
             </div>
           </div>
+          </SubSection>
         </div>
-      </TabsContent>
+      </div>
+      )}
 
       {/* IATI Budgets Tab */}
-      <TabsContent value="budgets" className="h-full overflow-y-auto px-2 mt-4">
+      {activeTab === 'budgets' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
         <IATIBudgetManager
           organizationId={organization?.id}
           budgets={iatiBudgets}
@@ -1756,78 +1896,101 @@ export function OrganizationFormContent({
           defaultCurrency={formData.default_currency || 'USD'}
           readOnly={false}
         />
-      </TabsContent>
+      </div>
+      )}
 
       {/* IATI Documents Tab */}
-      <TabsContent value="documents" className="h-full overflow-y-auto px-2 mt-4">
+      {activeTab === 'documents' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
         <IATIDocumentManager
           organizationId={organization?.id}
           documents={iatiDocuments}
           onChange={setIatiDocuments}
           readOnly={false}
         />
-      </TabsContent>
+      </div>
+      )}
 
       {/* Aliases Tab */}
-      <TabsContent value="aliases" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
-          <HelpCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-body font-medium text-blue-800 mb-1">About Aliases</p>
-            <p className="text-body text-blue-700">
-              Aliases help AIMS automatically recognize this organization when importing IATI data, 
-              even if the source uses legacy codes or alternate names. This ensures consistent data 
-              linking across different reporting sources.
-            </p>
+      {activeTab === 'aliases' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
+          {/* Page Heading */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-semibold text-foreground">Aliases</h2>
+            <HelpTextTooltip content="Aliases help AIMS automatically recognise this organisation when importing IATI data, even if the source uses legacy codes or alternate names.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
+            <HelpCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-body font-medium text-blue-800 mb-1">About Aliases</p>
+              <p className="text-body text-blue-700">
+                Aliases help AIMS automatically recognize this organization when importing IATI data,
+                even if the source uses legacy codes or alternate names. This ensures consistent data
+                linking across different reporting sources.
+              </p>
+            </div>
+          </div>
+
+          <SubSection
+            title="Identifiers and Names"
+            intro="Alternative IATI references and names used by this organisation across reporting sources."
+          >
+            {/* Legacy or Internal Codes */}
+            <StringArrayInput
+              label="Legacy or Internal Codes"
+              description="Alternative organization identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
+              placeholder="e.g., 010712, KR-MOFA-OLD"
+              value={formData.alias_refs || []}
+              onChange={(value) => handleInputChange('alias_refs', value)}
+              id="alias_refs"
+            />
+
+            {/* Alternate Names */}
+            <StringArrayInput
+              label="Alternate Names"
+              description="Other names this organization is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
+              placeholder="e.g., KOICA, Korea Intern. Cooperation Agency"
+              value={formData.name_aliases || []}
+              onChange={(value) => handleInputChange('name_aliases', value)}
+              id="name_aliases"
+            />
+          </SubSection>
+
+          <div className="text-body text-muted-foreground border-t pt-4">
+            <p className="font-medium mb-2">How Aliases Work:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
+              <li>If a match is found, the transaction or activity is automatically linked to this organization</li>
+              <li>You can add new aliases anytime you encounter variations in imported data</li>
+              <li>Aliases are case-insensitive and whitespace is trimmed automatically</li>
+            </ul>
           </div>
         </div>
-
-        <div className="space-y-6">
-          {/* Legacy or Internal Codes */}
-          <StringArrayInput
-            label="Legacy or Internal Codes"
-            description="Alternative organization identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
-            placeholder="e.g., 010712, KR-MOFA-OLD"
-            value={formData.alias_refs || []}
-            onChange={(value) => handleInputChange('alias_refs', value)}
-            id="alias_refs"
-          />
-
-          {/* Alternate Names */}
-          <StringArrayInput
-            label="Alternate Names"
-            description="Other names this organization is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
-            placeholder="e.g., KOICA, Korea Intern. Cooperation Agency"
-            value={formData.name_aliases || []}
-            onChange={(value) => handleInputChange('name_aliases', value)}
-            id="name_aliases"
-          />
-        </div>
-
-        <div className="text-body text-muted-foreground border-t pt-4">
-          <p className="font-medium mb-2">How Aliases Work:</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
-            <li>If a match is found, the transaction or activity is automatically linked to this organization</li>
-            <li>You can add new aliases anytime you encounter variations in imported data</li>
-            <li>Aliases are case-insensitive and whitespace is trimmed automatically</li>
-          </ul>
-        </div>
-      </TabsContent>
+      </div>
+      )}
 
       {/* Merge Organizations Tab */}
-      <TabsContent value="merge" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
+      {activeTab === 'merge' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
+          {/* Page Heading */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-semibold text-foreground">Merge</h2>
+            <HelpTextTooltip content="Merge a duplicate organisation into this one. All activities, transactions, and references will be transferred, and the duplicate will be deleted.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
+
         {!isCreating ? (
           <>
-            <div className="flex items-center gap-2">
-              <Merge className="h-5 w-5 text-muted-foreground" />
-              <h3 className="text-base font-semibold text-foreground">Merge Another Organization</h3>
-            </div>
-            
-            <p className="text-body text-muted-foreground">
-              Merge a duplicate organization into this one. All activities, transactions, and references 
-              will be transferred to this organization, and the duplicate will be deleted.
-            </p>
+            <SubSection
+              title="Merge Another Organization"
+              intro="Merge a duplicate organisation into this one. All activities, transactions, and references will be transferred, and the duplicate will be deleted."
+            >
 
             <div className="space-y-2">
               <Label className="text-body font-medium">Search for organization to merge</Label>
@@ -1921,22 +2084,27 @@ export function OrganizationFormContent({
             <div className="bg-muted border border-border rounded-md p-3 text-body text-muted-foreground">
               <p className="font-medium text-foreground mb-1">Note:</p>
               <p>
-                Merging is permanent and cannot be undone. The source organization will be deleted 
+                Merging is permanent and cannot be undone. The source organization will be deleted
                 after all its references are transferred to this organization.
               </p>
             </div>
+            </SubSection>
           </>
         ) : (
           <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">Save the organization first to access merge functionality</p>
           </div>
         )}
-      </TabsContent>
+        </div>
+      </div>
+      )}
 
-      <TabsContent value="iati-prefs" className="h-full overflow-y-auto px-2 mt-4">
+      {activeTab === 'iati-prefs' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
         <IATIImportPreferences organizationId={organization?.id} />
-      </TabsContent>
-    </Tabs>
+      </div>
+      )}
+    </div>
   )
 
   // Render validation errors banner
@@ -1960,46 +2128,132 @@ export function OrganizationFormContent({
 
   // Render save/cancel buttons
   const renderButtons = () => (
-    <div className="flex justify-end gap-3">
+    <div className="max-w-full flex items-center justify-end gap-3">
       {onCancel && (
         <Button
           variant="outline"
           onClick={onCancel}
           disabled={isSaving}
+          className="px-6 py-3 text-base font-semibold"
         >
           Cancel
         </Button>
       )}
+
+      {/* Comments Button */}
+      {organization?.id ? (
+        <Button
+          variant="outline"
+          className="px-4 py-3 text-base font-semibold relative"
+          onClick={() => setShowCommentsModal(true)}
+        >
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Comments
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          className="px-4 py-3 text-base font-semibold opacity-50 cursor-not-allowed"
+          disabled
+          title="Save the organization first to enable comments"
+        >
+          <MessageSquare className="mr-2 h-4 w-4" />
+          <span>Comments</span>
+        </Button>
+      )}
+
+      {/* Back Button */}
       <Button
+        variant="outline"
+        className="px-6 py-3 text-base font-semibold min-w-[140px]"
+        onClick={onPreviousSection}
+        disabled={!hasPreviousSection || !onPreviousSection || isSaving}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
+
+      {/* Next Button (no save) */}
+      <Button
+        variant="outline"
+        className="px-6 py-3 text-base font-semibold min-w-[120px]"
+        onClick={onNextSection}
+        disabled={!hasNextSection || !onNextSection || isSaving}
+      >
+        Next
+        <ArrowRight className="ml-2 h-4 w-4" />
+      </Button>
+
+      {/* Export for Review Button */}
+      {organization?.id && (
+        <Button
+          variant="outline"
+          className="px-6 py-3 text-base font-semibold min-w-[200px]"
+          onClick={async () => {
+            if (exporting || !organization?.id) return
+            setExporting(true)
+            try {
+              await exportOrganizationToExcel(organization.id)
+            } catch (e) {
+              console.error('[OrgEditor] Export for Review failed:', e)
+              toast.error('Failed to generate Excel export')
+            } finally {
+              setExporting(false)
+            }
+          }}
+          disabled={exporting || isSaving}
+          title="Download a complete Excel snapshot of this organization to share with a reviewer"
+        >
+          {exporting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Exporting...
+            </>
+          ) : (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              Export for Review
+            </>
+          )}
+        </Button>
+      )}
+
+      {/* Save Button */}
+      <Button
+        variant="outline"
+        className="px-6 py-3 text-base font-semibold min-w-[140px]"
         onClick={handleSave}
         disabled={isSaving}
-        variant="outline"
-        className="px-6 py-3 text-base font-semibold"
       >
         {isSaving ? (
           <>
-            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
+            <CircleDashed className="mr-2 h-4 w-4 animate-spin" />
             Saving...
           </>
         ) : (
-          <><Save className="mr-2 h-4 w-4" />Save</>
+          <>
+            <Save className="mr-2 h-4 w-4" />
+            Save
+          </>
         )}
       </Button>
+
+      {/* Save & Next Button */}
       {onNextSection && (
         <Button
           variant="default"
+          className="px-6 py-3 text-base font-semibold min-w-[200px]"
           onClick={handleSaveAndNext}
-          disabled={isSaving}
-          className="px-6 py-3 text-base font-semibold min-w-[160px]"
+          disabled={isSaving || !hasNextSection}
         >
-          {isSaving ? (
-            <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Saving...
-            </>
-          ) : (
-            <><Save className="mr-2 h-4 w-4" />Save &amp; Next</>
-          )}
+          <>
+            Save &amp; Next
+            {isSaving ? (
+              <CircleDashed className="ml-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRight className="ml-2 h-4 w-4" />
+            )}
+          </>
         </Button>
       )}
     </div>
@@ -2143,18 +2397,35 @@ export function OrganizationFormContent({
           )}
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 pt-4 pb-20">
+          <div className="organization-editor flex-1 flex flex-col min-h-0 overflow-hidden pl-0 pr-6 md:pr-8 py-6 pb-24">
             {renderTabsContent()}
           </div>
 
           {/* Footer with Save Button - Fixed at bottom */}
-          <footer className="fixed bottom-0 right-0 left-64 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md py-3 px-6 z-50">
+          <footer className="fixed bottom-0 right-0 left-72 bg-card/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 z-[60]">
             {renderButtons()}
           </footer>
         </div>
 
         {renderMergeConfirmDialog()}
         {renderIatiImportDialog()}
+        {organization?.id && (
+          <Dialog open={showCommentsModal} onOpenChange={setShowCommentsModal}>
+            <DialogContent className="max-w-3xl min-h-[60vh] max-h-[95vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Comments</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <OrganizationComments
+                  organizationId={organization.id}
+                  contextSection={activeTab}
+                  allowContextSwitch
+                  showInline
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </>
     )
   }

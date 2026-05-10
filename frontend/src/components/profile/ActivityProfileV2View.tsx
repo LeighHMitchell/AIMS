@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import {
   ProfileLayout,
   ProfileHero,
+  ProfileHeroCompactStrip,
   ProfileTabs,
   type ProfileTabSpec,
   type HeroAccent,
@@ -25,6 +26,7 @@ import {
   RailStatusTimeline,
   RailKeyNumbers,
   RailIdentity,
+  useShrinkOnScroll,
   type ParticipatingOrg,
   type IdentityRow,
   type KeyNumber,
@@ -54,7 +56,7 @@ const ActivityLocationsMapViewV2 = dynamic(
   () => import("@/components/maps/ActivityLocationsMapViewV2"),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-96 text-muted-foreground">Loading map…</div> },
 )
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { MapPin, BarChart3 } from "lucide-react"
 import { EnhancedSubnationalBreakdown } from "@/components/activities/EnhancedSubnationalBreakdown"
 import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
@@ -72,6 +74,7 @@ const V2_TABS: ProfileTabSpec[] = [
   { value: "geography", label: "Locations" },
   { value: "finances", label: "Finances" },
   { value: "results", label: "Results" },
+  { value: "people", label: "People" },
   { value: "library", label: "Documents" },
   { value: "discussion", label: "Comments" },
 ]
@@ -90,6 +93,29 @@ function compact(n: number | undefined | null): string {
   if (!n || n === 0) return "$0"
   return formatCurrencyShort(n)
 }
+
+// Pane wrapper hoisted to module scope. Its component identity therefore
+// stays stable across parent re-renders, so the inner subtree (TransactionTab,
+// ActivityBudgetsTab, PlannedDisbursementsTab, etc.) is mounted once and
+// re-used. Defining this inside the parent's render function would create a
+// new function reference on every render, which React treats as a new type and
+// remounts the entire subtree — re-firing every child fetch and resetting any
+// loaded data. Each tab is mounted on first visit and kept in the DOM
+// thereafter, hidden via the `hidden` Tailwind class when not active.
+const ProfilePane = React.memo(function ProfilePane({
+  tab,
+  activeTab,
+  visitedTabs,
+  children,
+}: {
+  tab: string
+  activeTab: string
+  visitedTabs: Set<string>
+  children: React.ReactNode
+}) {
+  if (!visitedTabs.has(tab)) return null
+  return <div className={activeTab === tab ? "" : "hidden"}>{children}</div>
+})
 
 interface Props {
   activity: any
@@ -134,6 +160,11 @@ export function ActivityProfileV2View({
 }: Props) {
   const router = useRouter()
   const accent = deriveAccent(activity)
+  // Drives the shrink-on-scroll hero animation. 0 at page top → 1 once the
+  // user has scrolled past the first ~200px. Passed to both the hero (for the
+  // fade/translate) and the layout (so the rail's sticky offset accounts for
+  // the compact strip's height).
+  const shrinkProgress = useShrinkOnScroll(200)
 
   // Once a tab is visited, keep its content mounted (hidden via CSS) so revisiting
   // it doesn't trigger a refetch / loading state.
@@ -141,7 +172,7 @@ export function ActivityProfileV2View({
   // data fetches immediately in the background. Hidden tabs sit under
   // `display: none` (see Pane below) but their effects still run, so by the time
   // the user clicks Finances / Results / Locations the data is already cached.
-  const ALL_TABS = ["overview", "sectors", "geography", "finances", "results", "library", "discussion"]
+  const ALL_TABS = ["overview", "sectors", "geography", "finances", "results", "people", "library", "discussion"]
   const [visitedTabs] = useState<Set<string>>(() => new Set(ALL_TABS))
 
   // Locations come from the dedicated /locations endpoint — the activity payload's
@@ -333,16 +364,32 @@ export function ActivityProfileV2View({
   })()
 
   const heroSubtitle = reportingOrgDisplay ? (
-    <span className="inline-flex items-center gap-2.5 font-bold">
-      {reportingOrg?.logo && (
-        <img
-          src={reportingOrg.logo}
-          alt=""
-          className="w-5 h-5 rounded object-cover"
-        />
-      )}
-      {reportingOrgDisplay}
-    </span>
+    reportingOrg?.id ? (
+      <Link
+        href={`/organizations/${reportingOrg.id}`}
+        className="inline-flex items-center gap-2.5 font-bold hover:underline"
+      >
+        {reportingOrg?.logo && (
+          <img
+            src={reportingOrg.logo}
+            alt=""
+            className="w-5 h-5 rounded object-cover"
+          />
+        )}
+        {reportingOrgDisplay}
+      </Link>
+    ) : (
+      <span className="inline-flex items-center gap-2.5 font-bold">
+        {reportingOrg?.logo && (
+          <img
+            src={reportingOrg.logo}
+            alt=""
+            className="w-5 h-5 rounded object-cover"
+          />
+        )}
+        {reportingOrgDisplay}
+      </span>
+    )
   ) : null
 
   const breadcrumb = (
@@ -354,6 +401,103 @@ export function ActivityProfileV2View({
       <ArrowLeft className="w-3.5 h-3.5" />
       Activities
     </button>
+  )
+
+  // ── Compact strip pieces (shown sticky-pinned once the user scrolls).
+  // Re-uses the same identity values the full hero builds from so there's a
+  // single source of truth for "what represents this activity".
+  const heroTitle =
+    activity?.acronym && activity.acronym !== activity?.title
+      ? `${activity.title} (${activity.acronym})`
+      : activity?.title ?? "Untitled activity"
+  const compactBreadcrumb = (
+    <button
+      type="button"
+      onClick={() => router.push("/activities")}
+      className="inline-flex items-center justify-center h-8 w-8 text-foreground rounded-md hover:bg-muted transition-colors"
+      title="All activities"
+      aria-label="All activities"
+    >
+      <ArrowLeft className="w-4 h-4" />
+    </button>
+  )
+  const compactIds = internalId ? (
+    <button
+      type="button"
+      onClick={() => copyId("ID", internalId)}
+      title={`Click to copy ID`}
+      className="inline-flex items-center h-7 rounded bg-muted px-2 text-[11px] text-foreground hover:bg-muted/80 transition-colors"
+    >
+      <code className="font-mono">{internalId}</code>
+    </button>
+  ) : null
+  const compactActions = (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={onToggleBookmark}
+        disabled={isToggling}
+        title={isBookmarked ? "Saved" : "Save"}
+        aria-label={isBookmarked ? "Saved" : "Save"}
+      >
+        {isBookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Export"
+            aria-label="Export"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem onClick={onPrintPDF}>
+            <Printer className="w-4 h-4 mr-2" />
+            Print as PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onExportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export as CSV
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={async () => {
+              try {
+                toast.info("Generating IATI XML...")
+                const response = await apiFetch(`/api/activities/${activity.id}/export-iati`)
+                if (!response.ok) throw new Error("Export failed")
+                const blob = await response.blob()
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = url
+                a.download = `${activity?.iati_id || activity?.id}.xml`
+                a.click()
+                window.URL.revokeObjectURL(url)
+                toast.success("IATI XML exported successfully")
+              } catch {
+                toast.error("Failed to export IATI XML")
+              }
+            }}
+          >
+            <FileCode className="w-4 h-4 mr-2" />
+            Export IATI XML
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Link
+        href={`/activities/new?id=${activity.id}`}
+        className="ml-1 inline-flex items-center h-8 rounded-md bg-primary text-primary-foreground px-3 text-[12px] font-medium hover:bg-primary/90 transition-colors"
+      >
+        <Pencil className="w-3.5 h-3.5 mr-1.5" />
+        Edit
+      </Link>
+    </>
   )
 
   const heroActions = (
@@ -558,11 +702,7 @@ export function ActivityProfileV2View({
       hero={
         <ProfileHero
           prefix={heroPrefix}
-          title={
-            activity?.acronym && activity.acronym !== activity?.title
-              ? `${activity.title} (${activity.acronym})`
-              : activity?.title ?? "Untitled activity"
-          }
+          title={heroTitle}
           subtitle={heroSubtitle}
           badges={heroBadges}
           accent={accent}
@@ -570,8 +710,34 @@ export function ActivityProfileV2View({
           imagePosition={activity?.bannerPosition ?? 50}
           actions={heroActions}
           breadcrumb={breadcrumb}
+          shrinkProgress={shrinkProgress}
         />
       }
+      compactStrip={
+        <ProfileHeroCompactStrip
+          title={heroTitle}
+          subtitle={
+            reportingOrgDisplay
+              ? reportingOrg?.id
+                ? (
+                    <Link
+                      href={`/organizations/${reportingOrg.id}`}
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      {reportingOrgDisplay}
+                    </Link>
+                  )
+                : reportingOrgDisplay
+              : null
+          }
+          ids={compactIds}
+          actions={compactActions}
+          breadcrumb={compactBreadcrumb}
+          accent={accent}
+          progress={shrinkProgress}
+        />
+      }
+      shrinkProgress={shrinkProgress}
       tabs={tabs}
       main={main}
       rail={activeTab === "overview" ? rail : undefined}
@@ -668,12 +834,12 @@ function renderMainSlot(args: {
     }
   })
 
-  // Each tab is mounted on first visit and kept in the DOM thereafter, hidden via
-  // CSS when not active. This preserves data and scroll state across tab switches.
-  const Pane = ({ tab, children }: { tab: string; children: React.ReactNode }) =>
-    visitedTabs.has(tab) ? (
-      <div className={activeTab === tab ? "" : "hidden"}>{children}</div>
-    ) : null
+  // Pane usage is `<ProfilePane tab="..." activeTab={activeTab} visitedTabs={visitedTabs}>`
+  // (see definition at module scope). Inlining a wrapper here would give it a
+  // new function reference on every render, which React treats as a new
+  // component type and remounts the entire subtree on every render, re-firing
+  // every child fetch — that was the cause of the loading skeleton on every
+  // tab click.
 
   const fallback = (
     <Card className="border-border bg-card p-8">
@@ -689,15 +855,15 @@ function renderMainSlot(args: {
     </Card>
   )
 
-  const knownTabs = new Set(["overview", "sectors", "geography", "finances", "results", "library", "discussion"])
+  const knownTabs = new Set(["overview", "sectors", "geography", "finances", "results", "people", "library", "discussion"])
 
   return (
     <>
-      <Pane tab="overview">
+      <ProfilePane tab="overview" activeTab={activeTab} visitedTabs={visitedTabs}>
         <OverviewAboutSection activity={activity} />
-      </Pane>
+      </ProfilePane>
 
-      <Pane tab="sectors">
+      <ProfilePane tab="sectors" activeTab={activeTab} visitedTabs={visitedTabs}>
         {sectorAllocations.length ? (
           <Card className="border-border bg-card p-6">
             <SectorSankeyVisualization
@@ -713,32 +879,36 @@ function renderMainSlot(args: {
             <p className="text-helper text-muted-foreground">No sectors allocated for this activity.</p>
           </Card>
         )}
-      </Pane>
+      </ProfilePane>
 
-      <Pane tab="geography">
+      <ProfilePane tab="geography" activeTab={activeTab} visitedTabs={visitedTabs}>
         <ActivityLocationsSection
           activity={activity}
           activityLocations={activityLocations}
           validMapLocations={validMapLocations}
           regionBreakdownsWithDetails={regionBreakdownsWithDetails}
         />
-      </Pane>
+      </ProfilePane>
 
-      <Pane tab="finances">
+      <ProfilePane tab="finances" activeTab={activeTab} visitedTabs={visitedTabs}>
         <FinancesPane
           activityId={activity.id}
           startDate={startDate}
           endDate={endDate}
         />
-      </Pane>
+      </ProfilePane>
 
-      <Pane tab="results">
+      <ProfilePane tab="results" activeTab={activeTab} visitedTabs={visitedTabs}>
         <Card className="border-border bg-card p-6">
           <ResultsReadOnlyView activityId={activity.id} />
         </Card>
-      </Pane>
+      </ProfilePane>
 
-      <Pane tab="library">
+      <ProfilePane tab="people" activeTab={activeTab} visitedTabs={visitedTabs}>
+        <ActivityPeoplePane activityId={activity.id} />
+      </ProfilePane>
+
+      <ProfilePane tab="library" activeTab={activeTab} visitedTabs={visitedTabs}>
         <Card className="border-border bg-card p-6">
           <DocumentsAndImagesTabV2
             activityId={activity.id}
@@ -747,13 +917,13 @@ function renderMainSlot(args: {
             readOnly={true}
           />
         </Card>
-      </Pane>
+      </ProfilePane>
 
-      <Pane tab="discussion">
+      <ProfilePane tab="discussion" activeTab={activeTab} visitedTabs={visitedTabs}>
         <Card className="border-border bg-card p-6">
           <PublicCommentsThread activityId={activity.id} />
         </Card>
-      </Pane>
+      </ProfilePane>
 
       {!knownTabs.has(activeTab) && fallback}
     </>
@@ -796,18 +966,18 @@ function ActivityLocationsSection({
         </p>
       </div>
 
-      <Tabs value={view} onValueChange={(v) => setView(v as "map" | "subnational")} className="space-y-4">
+      <div className="space-y-4">
         <div className="flex items-center justify-end gap-2">
-          <TabsList>
-            <TabsTrigger value="map" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Map View
-            </TabsTrigger>
-            <TabsTrigger value="subnational" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Sub-national Breakdown
-            </TabsTrigger>
-          </TabsList>
+          <SegmentedControl
+            ariaLabel="Switch between map view and sub-national breakdown"
+            variant="icon"
+            value={view}
+            onValueChange={setView}
+            options={[
+              { value: "map", label: "Map View", icon: MapPin },
+              { value: "subnational", label: "Sub-national Breakdown", icon: BarChart3 },
+            ]}
+          />
           <Button
             variant="outline"
             size="icon"
@@ -820,7 +990,8 @@ function ActivityLocationsSection({
           </Button>
         </div>
 
-        <TabsContent value="map" className="m-0 space-y-6">
+        {view === "map" && (
+        <div className="m-0 space-y-6">
           {validMapLocations.length > 0 ? (
             <div className="h-[640px] rounded-md overflow-hidden border border-border">
               <ActivityLocationsMapViewV2
@@ -837,17 +1008,20 @@ function ActivityLocationsSection({
           {activityLocations.length > 0 && (
             <ActivityLocationsTable locations={activityLocations} />
           )}
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="subnational" className="m-0">
+        {view === "subnational" && (
+        <div className="m-0">
           {/* Read-only render of the same component used in the Activity Editor:
               two-column layout with Sub-national Map on the left and the
               Sub-national Allocation table on the right. canEdit=false hides
               the dropdown / Distribute / Clear All / per-row delete controls
               and disables the percentage inputs. */}
           <EnhancedSubnationalBreakdown activityId={activity.id} canEdit={false} />
-        </TabsContent>
-      </Tabs>
+        </div>
+        )}
+      </div>
     </Card>
   )
 }
@@ -936,25 +1110,54 @@ function FinancesPane({
   // One toggle for the whole Finances tab: Tables view stacks the three section
   // cards (Transactions, Planned Disbursements, Budgets); Charts view renders a
   // single combined analytics view (FinancialAnalyticsTab) instead of per-card
-  // mini charts.
-  const [view, setView] = useState<"tables" | "charts">("tables")
+  // mini charts. Default to Charts — the visual summary is the more useful
+  // first impression, and users can toggle to Tables for the row-level data.
+  const [view, setView] = useState<"tables" | "charts">("charts")
+
+  // FinancialAnalyticsTab derives the Period-by-Period Budget vs Actual chart
+  // and the Funding Source Breakdown from props (transactions / budgets /
+  // planned disbursements). Without these the charts render "No data
+  // available" even when the API has rows. Fetch them once at the pane level.
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [budgets, setBudgets] = useState<any[]>([])
+  const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([])
+  useEffect(() => {
+    if (!activityId) return
+    let cancelled = false
+    const safe = (p: Promise<Response>) =>
+      p.then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    Promise.all([
+      safe(apiFetch(`/api/activities/${activityId}/transactions`)),
+      safe(apiFetch(`/api/activities/${activityId}/budgets`)),
+      safe(apiFetch(`/api/activities/${activityId}/planned-disbursements`)),
+    ]).then(([txns, bdgs, pds]) => {
+      if (cancelled) return
+      setTransactions(Array.isArray(txns) ? txns : txns?.transactions || [])
+      setBudgets(Array.isArray(bdgs) ? bdgs : bdgs?.budgets || [])
+      setPlannedDisbursements(Array.isArray(pds) ? pds : pds?.disbursements || pds?.plannedDisbursements || [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [activityId])
 
   return (
-    <Tabs value={view} onValueChange={(v) => setView(v as "tables" | "charts")} className="space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-end">
-        <TabsList>
-          <TabsTrigger value="tables" className="flex items-center gap-2">
-            <Table2 className="h-4 w-4" />
-            Tables
-          </TabsTrigger>
-          <TabsTrigger value="charts" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Charts
-          </TabsTrigger>
-        </TabsList>
+        <SegmentedControl
+          ariaLabel="Switch between tables and charts"
+          variant="icon"
+          value={view}
+          onValueChange={setView}
+          options={[
+            { value: "tables", label: "Tables", icon: Table2 },
+            { value: "charts", label: "Charts", icon: BarChart3 },
+          ]}
+        />
       </div>
 
-      <TabsContent value="tables" className="m-0 space-y-6">
+      {view === "tables" && (
+      <div className="m-0 space-y-6">
         <FinanceSection
           title="Transactions"
           description="Incoming and outgoing financial transactions for this activity"
@@ -987,19 +1190,161 @@ function FinancesPane({
             hideHeaderTitle={true}
           />
         </FinanceSection>
-      </TabsContent>
+      </div>
+      )}
 
-      <TabsContent value="charts" className="m-0">
-        <Card className="border-border bg-card p-6">
-          <div className="mb-4 flex flex-col space-y-1.5">
-            <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Financial Analytics</h2>
-            <p className="text-body text-muted-foreground">
-              Spend trajectory, budget vs actual, transaction breakdown and calendar heatmap
-            </p>
-          </div>
-          <FinancialAnalyticsTab activityId={activityId} />
-        </Card>
-      </TabsContent>
-    </Tabs>
+      {view === "charts" && (
+      <div className="m-0">
+        <FinancialAnalyticsTab
+          activityId={activityId}
+          transactions={transactions}
+          budgets={budgets}
+          plannedDisbursements={plannedDisbursements}
+        />
+      </div>
+      )}
+    </div>
+  )
+}
+
+function ActivityPeoplePane({ activityId }: { activityId: string }) {
+  // Pulls focal points (government + development partner) and other contacts
+  // associated with this activity, then renders them as a read-only people
+  // directory. The /focal-points endpoint already groups by type, so we just
+  // re-shape it for the section list.
+  const [govt, setGovt] = useState<any[]>([])
+  const [dp, setDp] = useState<any[]>([])
+  const [contacts, setContacts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!activityId) return
+    let cancelled = false
+    setLoading(true)
+    const safe = (p: Promise<Response>) =>
+      p.then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    Promise.all([
+      safe(apiFetch(`/api/activities/${activityId}/focal-points`)),
+      safe(apiFetch(`/api/activities/${activityId}/contacts`)),
+    ]).then(([fp, cs]) => {
+      if (cancelled) return
+      setGovt(Array.isArray(fp?.government_focal_points) ? fp.government_focal_points : [])
+      setDp(Array.isArray(fp?.development_partner_focal_points) ? fp.development_partner_focal_points : [])
+      const list = Array.isArray(cs)
+        ? cs
+        : Array.isArray(cs?.contacts)
+          ? cs.contacts
+          : []
+      setContacts(list)
+    }).finally(() => {
+      if (!cancelled) setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [activityId])
+
+  const total = govt.length + dp.length + contacts.length
+
+  return (
+    <Card className="border-border bg-card p-6">
+      <div className="mb-4 flex flex-col space-y-1.5">
+        <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">People</h2>
+        <p className="text-body text-muted-foreground">
+          Focal points and other contacts associated with this activity
+        </p>
+      </div>
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 bg-muted/40 rounded animate-pulse" />
+          ))}
+        </div>
+      ) : total === 0 ? (
+        <p className="text-helper text-muted-foreground">No people recorded for this activity yet.</p>
+      ) : (
+        <div className="space-y-6">
+          <PeopleSection title="Government Focal Points" people={govt} emptyHint="No government focal point assigned." />
+          <PeopleSection title="Development Partner Focal Points" people={dp} emptyHint="No development partner focal point assigned." />
+          <PeopleSection title="Other Contacts" people={contacts} emptyHint="No other contacts recorded." showRoleBadge />
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function PeopleSection({
+  title,
+  people,
+  emptyHint,
+  showRoleBadge = false,
+}: {
+  title: string
+  people: any[]
+  emptyHint: string
+  showRoleBadge?: boolean
+}) {
+  return (
+    <section>
+      <h3 className="text-section-label uppercase text-muted-foreground mb-3 tracking-wide">
+        {title}
+        <span className="ml-2 text-muted-foreground/70 lowercase tracking-normal">
+          ({people.length})
+        </span>
+      </h3>
+      {people.length === 0 ? (
+        <p className="text-helper text-muted-foreground">{emptyHint}</p>
+      ) : (
+        <div className="rounded-md border divide-y">
+          {people.map((p: any, i: number) => (
+            <div key={p.id ?? `${p.name}-${i}`} className="flex items-start gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-helper font-medium text-muted-foreground shrink-0">
+                {(p.first_name || p.name || "?").charAt(0).toUpperCase()}
+                {(p.last_name || "").charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-foreground break-words">
+                  {p.title ? `${p.title} ` : ""}
+                  {p.name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "—"}
+                </div>
+                {(p.job_title || p.position) && (
+                  <div className="text-helper text-muted-foreground break-words">
+                    {p.job_title || p.position}
+                  </div>
+                )}
+                {p.department && (
+                  <div className="text-helper text-muted-foreground break-words">
+                    {p.department}
+                  </div>
+                )}
+                {(p.organisation || p.organization?.name) && (
+                  <div className="text-helper text-muted-foreground break-words">
+                    {p.organization?.name && p.organization?.acronym && p.organization.name !== p.organization.acronym
+                      ? `${p.organization.name} (${p.organization.acronym})`
+                      : p.organization?.name || p.organization?.acronym || p.organisation}
+                  </div>
+                )}
+                {showRoleBadge && p.type && (
+                  <div className="mt-1">
+                    <span className="inline-flex items-center align-baseline px-2 h-5 text-caption font-medium rounded bg-muted text-foreground border border-border">
+                      {String(p.type).replace(/_/g, " ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {p.email && (
+                <a
+                  href={`mailto:${p.email}`}
+                  className="text-muted-foreground hover:text-foreground transition-colors text-helper shrink-0 mt-1 break-all"
+                  title={p.email}
+                >
+                  {p.email}
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

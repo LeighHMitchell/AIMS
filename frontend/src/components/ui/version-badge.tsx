@@ -24,10 +24,11 @@ export function VersionBadge() {
   })
 
   return (
+    <div className="flex items-center gap-1.5 mt-0.5">
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
         <button
-          className="text-[10px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer text-left mt-0.5"
+          className="text-[10px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer text-left"
           aria-label={`Version ${currentVersion}`}
           onClick={(e) => e.preventDefault()}
         >
@@ -100,5 +101,12 @@ export function VersionBadge() {
         </div>
       </HoverCardContent>
     </HoverCard>
+      <span
+        className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide rounded bg-muted text-muted-foreground/80 select-none"
+        aria-label="Beta"
+      >
+        beta
+      </span>
+    </div>
   )
 }

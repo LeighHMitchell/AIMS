@@ -134,13 +134,6 @@ export default function EditOrganizationPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto p-6">
-        <Breadcrumbs items={[
-          { label: "Organizations", href: "/organizations" },
-          { label: organization.name, href: `/organizations/${organizationId}` },
-          { label: "Edit" },
-        ]} />
-      </div>
       <OrganizationEditor
         organizationId={organizationId}
         initialData={organization}

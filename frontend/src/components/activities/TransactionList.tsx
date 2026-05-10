@@ -710,10 +710,14 @@ export default function TransactionList({
     return sortedTransactions.slice(startIndex, endIndex);
   }, [sortedTransactions, currentPage, itemsPerPage]);
 
-  // Group transactions by type for grouped view
+  // Group transactions by type for grouped view. When in grouped view we still
+  // paginate at the flat level — i.e. each page slices the sorted list and we
+  // re-group whatever lands inside that window. This keeps the "Page N of M"
+  // controls meaningful even when the user has the Grouped toggle on.
   const groupedTransactions = React.useMemo(() => {
+    const source = groupedView ? paginatedTransactions : sortedTransactions;
     const groups: Record<string, Transaction[]> = {};
-    sortedTransactions.forEach(transaction => {
+    source.forEach(transaction => {
       const type = transaction.transaction_type || 'Unspecified';
       if (!groups[type]) {
         groups[type] = [];
@@ -721,7 +725,7 @@ export default function TransactionList({
       groups[type].push(transaction);
     });
     return groups;
-  }, [sortedTransactions]);
+  }, [groupedView, paginatedTransactions, sortedTransactions]);
 
   // Calculate totals per group
   const groupTotals = React.useMemo(() => {
@@ -2581,8 +2585,8 @@ export default function TransactionList({
               </div>
             </div>
 
-            {/* Pagination Controls - Hide in grouped view */}
-            {!groupedView && transactions.length > 0 && (
+            {/* Pagination Controls — show in both grouped and flat views. */}
+            {transactions.length > 0 && (
               <div className="flex items-center justify-between mt-4 px-2">
                 <div className="flex items-center gap-4">
                   <div className="text-body text-muted-foreground">

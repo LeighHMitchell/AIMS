@@ -14,12 +14,15 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Info } from 'lucide-react'
+import { AlertCircle, Info, CalendarIcon, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/ChartFullscreen';
+import { cn } from '@/lib/utils';
+import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector';
 
 // Colour palette as specified
 const COLOURS = {
@@ -90,6 +93,14 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   const [noDisbursements, setNoDisbursements] = useState(false)
   const [timeRange, setTimeRange] = useState<TimeRangeKey>('all')
 
+  // Calendar / year selectors — shared component used by every finance chart.
+  const calendarYearDates = useMemo(
+    () => (data?.disbursements ?? []).map((d) => new Date(d.date)),
+    [data],
+  )
+  const calendarYearState = useCalendarYearSelector(calendarYearDates)
+  const { effectiveDateRange } = calendarYearState
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -133,37 +144,31 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     if (!data) return { chartData: [], yearTicks: [] }
 
     const { totalBudget, startDate, endDate, disbursements } = data
-    
-    // Full activity date range
+
+    // Activity's planned date range — used to compute the perfect-spend
+    // baseline regardless of what data has actually been reported.
     const fullStart = new Date(startDate)
     const fullEnd = new Date(endDate)
-    
-    // Calculate view window based on time range filter
-    const today = new Date()
+
+    // The view window comes from the calendar / year picker when available;
+    // otherwise fall back to the years that actually have reported
+    // disbursements (rounded to whole-year boundaries). If there's nothing
+    // reported yet, fall further back to the activity's planned date range.
     let viewStart: Date
-    let viewEnd: Date = new Date(Math.min(fullEnd.getTime(), today.getTime()))
-    
-    switch (timeRange) {
-      case '1y':
-        viewStart = new Date(today)
-        viewStart.setFullYear(viewStart.getFullYear() - 1)
-        break
-      case '5y':
-        viewStart = new Date(today)
-        viewStart.setFullYear(viewStart.getFullYear() - 5)
-        break
-      case '10y':
-        viewStart = new Date(today)
-        viewStart.setFullYear(viewStart.getFullYear() - 10)
-        break
-      default:
-        viewStart = fullStart
-        viewEnd = fullEnd
+    let viewEnd: Date
+    if (effectiveDateRange) {
+      viewStart = effectiveDateRange.from
+      viewEnd = effectiveDateRange.to
+    } else if (disbursements.length > 0) {
+      const disbTimestamps = disbursements.map(d => new Date(d.date).getTime())
+      const earliestYear = new Date(Math.min(...disbTimestamps)).getFullYear()
+      const latestYear = new Date(Math.max(...disbTimestamps)).getFullYear()
+      viewStart = new Date(earliestYear, 0, 1)
+      viewEnd = new Date(latestYear, 11, 31)
+    } else {
+      viewStart = fullStart
+      viewEnd = fullEnd
     }
-    
-    // Clamp view to activity bounds
-    if (viewStart < fullStart) viewStart = fullStart
-    if (viewEnd > fullEnd) viewEnd = fullEnd
     
     // Calculate full-life perfect spend trajectory
     const fullTotalMs = fullEnd.getTime() - fullStart.getTime()
@@ -254,7 +259,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     }
 
     return { chartData: points, yearTicks: ticks }
-  }, [data, timeRange])
+  }, [data, timeRange, effectiveDateRange])
 
   const formatXAxisTick = (timestamp: number) => {
     return new Date(timestamp).getFullYear().toString()
@@ -325,7 +330,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
             Spend Trajectory
           </CardTitle>
           <CardDescription>
-            Actual cumulative disbursements compared against a perfect spend trajectory
+            Actual vs perfect cumulative disbursement
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -361,33 +366,32 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   const yAxisMax = Math.max(data?.totalBudget || 0, maxDisbursement) * 1.1
 
   return (
-    <Card className="bg-white border-border">
-      <CardHeader>
+    <ChartFullscreen>
+      {({ isFullscreen, toggle }) => (
+    <Card className={cn("bg-white border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+      <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <CardTitle className="text-lg font-semibold text-foreground">
               Spend Trajectory
             </CardTitle>
             <CardDescription>
-              Actual cumulative disbursements compared against a perfect spend trajectory
+              Actual vs perfect cumulative disbursement
             </CardDescription>
           </div>
-          <div className="flex gap-1">
-            {TIME_RANGES.map(range => (
-              <Button
-                key={range.key}
-                variant={timeRange === range.key ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTimeRange(range.key)}
-                className="text-helper px-2 py-1 h-7"
-              >
-                {range.label}
-              </Button>
-            ))}
-          </div>
+          {!isFullscreen && (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
+            </div>
+          )}
         </div>
       </CardHeader>
-      <CardContent>
+      {isFullscreen && (
+        <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
+          <CalendarYearSelector {...calendarYearState} />
+        </div>
+      )}
+      <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col")}>
         {noDisbursements && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-body text-amber-700">
@@ -396,9 +400,11 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
           </div>
         )}
         
-        <ResponsiveContainer width="100%" height={400}>
-          <ComposedChart 
-            data={chartData} 
+        <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
+          <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
             <defs>
@@ -442,10 +448,12 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
               tick={{ fill: COLOURS.blueSlate }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              wrapperStyle={{ paddingTop: '20px' }}
-            />
-            
+            {isFullscreen && (
+              <Legend
+                wrapperStyle={{ paddingTop: '20px' }}
+              />
+            )}
+
             {/* Gap area with diagonal stripes - use linear to follow the diagonal perfect spend line */}
             <Area
               type="linear"
@@ -484,8 +492,17 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
             />
           </ComposedChart>
         </ResponsiveContainer>
+          </div>
+        </div>
+        {isFullscreen && (
+          <p className="text-body text-muted-foreground leading-relaxed mt-auto pt-6 shrink-0">
+            <strong>What this shows:</strong> the dashed line is the activity's <strong>perfect spend trajectory</strong> — what cumulative disbursements would look like if the full budget were spent evenly across the activity's planned start and end dates. The solid stepped line is the <strong>actual cumulative disbursements</strong> reported to date. <strong>How to read it:</strong> when the solid line tracks below the dashed line the activity is behind on disbursing funds; above it, ahead. The diagonal-striped band measures the variance. <strong>How to use it:</strong> a persistent gap below the line is an early signal that planned activities aren't being funded on time — investigate whether procurement, partner readiness, or reporting lag is driving the under-disbursement.
+          </p>
+        )}
       </CardContent>
     </Card>
+      )}
+    </ChartFullscreen>
   )
 }
 

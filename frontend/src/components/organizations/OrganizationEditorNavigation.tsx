@@ -89,9 +89,7 @@ export default function OrganizationEditorNavigation({
       title: "Contact",
       sections: [
         { id: "contact", label: "Contact Information" },
-        { id: "contacts", label: "People" },
-        { id: "aliases", label: "Aliases" },
-        { id: "merge", label: "Merge" }
+        { id: "contacts", label: "People" }
       ]
     },
     {
@@ -108,6 +106,13 @@ export default function OrganizationEditorNavigation({
         { id: "documents", label: "IATI Documents" },
         { id: "iati-prefs", label: "IATI Import" }
       ]
+    },
+    {
+      title: "Advanced",
+      sections: [
+        { id: "aliases", label: "Aliases" },
+        { id: "merge", label: "Merge" }
+      ]
     }
   ]
 
@@ -116,40 +121,35 @@ export default function OrganizationEditorNavigation({
       <nav className="w-64 bg-white border-r border-border border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Organization Header */}
         {organization && organization.name && (
-          <div className="pb-4 border-b border-border">
-            <h2 className="text-lg font-bold text-foreground group leading-tight">
+          <div className="pb-4">
+            <div className="space-y-2 text-body">
               {organization.id ? (
                 <Link
                   href={`/organizations/${organization.id}`}
-                  className="hover:text-blue-700 hover:underline transition-colors"
+                  className="text-2xl font-semibold text-foreground leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
+                  title={`View organization profile: ${organization.name}${organization.acronym ? ` (${organization.acronym})` : ''}`}
                 >
                   {organization.name}
-                  {organization.acronym && <span className="text-muted-foreground"> ({organization.acronym})</span>}
+                  {organization.acronym && <span> ({organization.acronym})</span>}
                 </Link>
               ) : (
-                <>
+                <span className="text-2xl font-semibold text-foreground leading-tight inline">
                   {organization.name}
-                  {organization.acronym && <span className="text-muted-foreground"> ({organization.acronym})</span>}
-                </>
-              )}{' '}
-              <button
-                onClick={() => copyToClipboard(organization.name || '', 'orgName')}
-                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
-                title="Copy Organization Name"
-              >
-                <Copy className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </h2>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {organization.acronym && <span> ({organization.acronym})</span>}
+                </span>
+              )}
               {organization.iati_org_id && (
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
-                  title="Click to copy"
-                  className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono cursor-pointer"
-                >
-                  {organization.iati_org_id}
-                </button>
+                <div className="flex flex-wrap items-center gap-1.5 text-helper">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
+                    title="Click to copy"
+                    className="inline-flex items-center px-1.5 py-0.5 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors rounded font-mono break-all cursor-pointer"
+                    style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}
+                  >
+                    {organization.iati_org_id}
+                  </button>
+                </div>
               )}
             </div>
           </div>

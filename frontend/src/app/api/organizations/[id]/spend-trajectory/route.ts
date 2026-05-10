@@ -230,11 +230,15 @@ export async function GET(
       monthlyDisbursements,
       plannedDisbursements: (plannedDisbursements || []).map(pd => ({
         ...pd,
-        usd_amount: pd.usd_amount || pd.amount || 0
+        // Currency-safe: only fall back to raw amount when currency === 'USD'.
+        usd_amount: (pd.usd_amount != null && Number.isFinite(Number(pd.usd_amount))) ? Number(pd.usd_amount)
+          : ((pd.currency ?? '').toString().toUpperCase() === 'USD' ? Number(pd.amount) || 0 : 0)
       })),
       commitments: (commitments || []).map(c => ({
         ...c,
-        value_usd: c.value_usd || c.value || 0
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        value_usd: (c.value_usd != null && Number.isFinite(Number(c.value_usd))) ? Number(c.value_usd)
+          : ((c.currency ?? '').toString().toUpperCase() === 'USD' ? Number(c.value) || 0 : 0)
       })),
     })
 

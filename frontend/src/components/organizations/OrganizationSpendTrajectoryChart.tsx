@@ -25,6 +25,7 @@ import { useCustomYears } from '@/hooks/useCustomYears'
 import { getCustomYearLabel } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { formatAxisCurrency } from '@/lib/format';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 
 const COLOURS = {
   primaryScarlet: '#dc2625',
@@ -89,6 +90,11 @@ export function OrganizationSpendTrajectoryChart({
   organizationName,
   compact = false
 }: OrganizationSpendTrajectoryChartProps) {
+  // Compact mode is used inside a ChartCard wrapper that toggles between
+  // collapsed (in-grid) and expanded (full-screen dialog). Read the shared
+  // expansion context so the chart fills the dialog when expanded instead
+  // of staying at the collapsed 300px.
+  const isCardExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<SpendData | null>(null)
@@ -433,12 +439,17 @@ export function OrganizationSpendTrajectoryChart({
 
   // Compact mode - render just the chart without card wrapper
   if (compact) {
+    // When the surrounding ChartCard is expanded (full-screen dialog) the
+    // wrapper is given an explicit height by the dialog flex layout, so we
+    // use h-full to fill it. Collapsed in-grid we keep the legacy 300px so
+    // existing layouts don't change.
+    const heightClass = isCardExpanded ? "h-full w-full" : "h-[300px] w-full"
     if (loading) {
-      return <Skeleton className="h-[300px] w-full" />
+      return <Skeleton className={heightClass} />
     }
     if (error || !data || displayData.length === 0) {
       return (
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+        <div className={cn(heightClass, "flex items-center justify-center text-muted-foreground")}>
           <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
@@ -453,7 +464,8 @@ export function OrganizationSpendTrajectoryChart({
     const compactYAxisMax = Math.max(data.totalBudget, compactMaxDisbursement) * 1.1
 
     return (
-      <ResponsiveContainer width="100%" height={300}>
+      <div className={heightClass}>
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={displayData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
           <defs>
             <pattern
@@ -518,6 +530,7 @@ export function OrganizationSpendTrajectoryChart({
           />
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
     )
   }
 

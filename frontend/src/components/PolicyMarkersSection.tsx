@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { HelpCircle, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { PolicyMarkerScoreSelect } from '@/components/forms/PolicyMarkerScoreSelect';
@@ -212,36 +212,36 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       <TooltipProvider>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="environmental" className="flex items-center gap-2">
-              {MARKER_TYPE_ICONS.environmental}
-              <span className="hidden sm:inline">Environmental (Rio Markers)</span>
-              <span className="sm:hidden">Environmental</span>
-              <Badge variant="secondary" className="ml-auto">
-                {markersByType.environmental?.length || 0}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="social_governance" className="flex items-center gap-2">
-              {MARKER_TYPE_ICONS.social_governance}
-              <span className="hidden sm:inline">Social & Governance</span>
-              <span className="sm:hidden">Social</span>
-              <Badge variant="secondary" className="ml-auto">
-                {markersByType.social_governance?.length || 0}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="other" className="flex items-center gap-2">
-              {MARKER_TYPE_ICONS.other}
-              <span className="hidden sm:inline">Other Cross-Cutting Issues</span>
-              <span className="sm:hidden">Other</span>
-              <Badge variant="secondary" className="ml-auto">
-                {markersByType.other?.length || 0}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
+        <SegmentedControl
+          ariaLabel="Policy marker category"
+          variant="icon-text"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            {
+              value: 'environmental',
+              label: 'Environmental',
+              icon: Leaf,
+              badge: <Badge variant="secondary">{markersByType.environmental?.length || 0}</Badge>,
+            },
+            {
+              value: 'social_governance',
+              label: 'Social & Governance',
+              icon: Users,
+              badge: <Badge variant="secondary">{markersByType.social_governance?.length || 0}</Badge>,
+            },
+            {
+              value: 'other',
+              label: 'Other',
+              icon: Wrench,
+              badge: <Badge variant="secondary">{markersByType.other?.length || 0}</Badge>,
+            },
+          ]}
+        />
 
-          {/* Environmental (Rio Markers) Tab */}
-          <TabsContent value="environmental" className="mt-6 space-y-4">
+        {/* Environmental (Rio Markers) Tab */}
+        {activeTab === 'environmental' && (
+        <div className="mt-6 space-y-4">
             <div className="space-y-4">
               {markersByType.environmental?.map((marker) => {
                 const selected = selectedMarkers.get(marker.id);
@@ -322,10 +322,12 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                 );
               })}
             </div>
-          </TabsContent>
+        </div>
+        )}
 
-          {/* Social & Governance Tab */}
-          <TabsContent value="social_governance" className="mt-6 space-y-4">
+        {/* Social & Governance Tab */}
+        {activeTab === 'social_governance' && (
+        <div className="mt-6 space-y-4">
             <div className="space-y-4">
               {markersByType.social_governance?.map((marker) => {
                 const selected = selectedMarkers.get(marker.id);
@@ -406,10 +408,12 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                 );
               })}
             </div>
-          </TabsContent>
+        </div>
+        )}
 
-          {/* Other Cross-Cutting Issues Tab */}
-          <TabsContent value="other" className="mt-6 space-y-4">
+        {/* Other Cross-Cutting Issues Tab */}
+        {activeTab === 'other' && (
+        <div className="mt-6 space-y-4">
             <div className="space-y-4">
               {markersByType.other?.map((marker) => {
                 const selected = selectedMarkers.get(marker.id);
@@ -490,8 +494,8 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                 );
               })}
             </div>
-          </TabsContent>
-        </Tabs>
+        </div>
+        )}
       </TooltipProvider>
     </div>
   );

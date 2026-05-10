@@ -130,7 +130,9 @@ export async function GET(
     let totalValue = 0, totalCommitments = 0, totalDisbursements = 0, totalExpenditures = 0, totalInflows = 0;
 
     transactions.forEach(tx => {
-      const baseValue = tx.value_usd || tx.value || 0;
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const baseValue = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
       const year = tx.transaction_date ? new Date(tx.transaction_date).getFullYear() : null;
 
       const isCommitment = tx.transaction_type === '2' || tx.transaction_type === '11';
@@ -189,7 +191,9 @@ export async function GET(
     // Build per-activity financial totals for attribution to contributor orgs
     const actFinancials = new Map<string, { totalValue: number; committed: number; disbursed: number }>();
     transactions.forEach(tx => {
-      const v = tx.value_usd || tx.value || 0;
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const v = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
       if (!actFinancials.has(tx.activity_id)) {
         actFinancials.set(tx.activity_id, { totalValue: 0, committed: 0, disbursed: 0 });
       }
@@ -266,7 +270,12 @@ export async function GET(
       const sig = am.significance ?? 0;
       const actTx = transactions.filter(tx => tx.activity_id === am.activity_id);
       let actValue = 0;
-      actTx.forEach(tx => { actValue += tx.value_usd || tx.value || 0; });
+      actTx.forEach((tx: any) => {
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        const usd = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+          : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
+        actValue += usd;
+      });
       if (sigMap.has(sig)) sigMap.get(sig)!.totalValue += actValue;
     });
 
@@ -307,7 +316,9 @@ export async function GET(
 
       let actValue = 0, actCommitments = 0, actDisbursements = 0;
       actTx.forEach(tx => {
-        const v = tx.value_usd || tx.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const v = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
         actValue += v;
         if (tx.transaction_type === '2' || tx.transaction_type === '11') actCommitments += v;
         else if (tx.transaction_type === '3') actDisbursements += v;

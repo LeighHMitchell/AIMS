@@ -5,6 +5,17 @@ import { cn } from "@/lib/utils"
 
 interface ProfileLayoutProps {
   hero: React.ReactNode
+  /** Optional thin sticky strip rendered above the tab bar — typically the
+   *  compact identity row that fades in as the user scrolls past the hero.
+   *  Owns its own height/opacity transitions; can be 0px-tall when inactive. */
+  compactStrip?: React.ReactNode
+  /** Approximate compact-strip height in pixels at full visibility — used so
+   *  the rail's sticky offset accounts for the extra band above the tabs.
+   *  Defaults to 60. */
+  compactStripHeight?: number
+  /** Current shrink-on-scroll progress in `[0, 1]`. Used to compute the
+   *  rail's effective sticky offset so it doesn't slip under the strip. */
+  shrinkProgress?: number
   tabs: React.ReactNode
   main: React.ReactNode
   rail?: React.ReactNode
@@ -13,16 +24,32 @@ interface ProfileLayoutProps {
 
 const TAB_ROW_HEIGHT = 56
 
-export function ProfileLayout({ hero, tabs, main, rail, className }: ProfileLayoutProps) {
+export function ProfileLayout({
+  hero,
+  compactStrip,
+  compactStripHeight = 60,
+  shrinkProgress = 0,
+  tabs,
+  main,
+  rail,
+  className,
+}: ProfileLayoutProps) {
   const hasRail = !!rail
+  // The MainLayout's TopNav is itself `sticky top-0 z-[9999] h-16` inside the
+  // same scroll container, so we offset our sticky bar by its height to
+  // avoid overlap. Rail offset compensates for both — TopNav + tab bar +
+  // visible compact-strip portion.
+  const TOP_NAV_HEIGHT = 64
+  const railTop = TOP_NAV_HEIGHT + TAB_ROW_HEIGHT + 16 + Math.round(compactStripHeight * shrinkProgress)
   return (
     <div className={cn("min-h-screen", className)}>
       {hero}
       <div
         className="sticky z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border"
-        style={{ top: 0, height: TAB_ROW_HEIGHT }}
+        style={{ top: TOP_NAV_HEIGHT }}
       >
-        {tabs}
+        {compactStrip}
+        <div style={{ height: TAB_ROW_HEIGHT }}>{tabs}</div>
       </div>
       <div className="w-full px-6 py-8">
         {hasRail ? (
@@ -31,7 +58,7 @@ export function ProfileLayout({ hero, tabs, main, rail, className }: ProfileLayo
             <aside className="lg:col-span-1 min-w-0">
               <div
                 className="lg:sticky"
-                style={{ top: TAB_ROW_HEIGHT + 16 }}
+                style={{ top: railTop }}
               >
                 <div className="space-y-5">{rail}</div>
               </div>

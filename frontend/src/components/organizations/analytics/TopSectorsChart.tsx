@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import {
   BarChart,
   Bar,
@@ -112,22 +112,22 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="bar" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="donut" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-              <PieChart className="h-4 w-4 mr-2" />
-              Sunburst
-            </TabsTrigger>
-            <TabsTrigger value="sankey" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-              <GitBranch className="h-4 w-4 mr-2" />
-              Sankey
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex justify-end mb-6">
+          <SegmentedControl
+            ariaLabel="Sector visualization type"
+            variant="icon"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            options={[
+              { value: 'bar', label: 'Bar chart', icon: BarChart3 },
+              { value: 'donut', label: 'Sunburst', icon: PieChart },
+              { value: 'sankey', label: 'Sankey', icon: GitBranch },
+            ]}
+          />
+        </div>
 
-          <TabsContent value="bar">
+        {activeTab === 'bar' && (
+          <div>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart
                 data={barChartData}
@@ -160,9 +160,11 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                 <Bar yAxisId="left" dataKey="Disbursements" fill="#f59e0b" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="donut">
+        {activeTab === 'donut' && (
+          <div>
             <div className="h-[500px]">
               {sectorAllocations.length > 0 ? (
                 <SectorSunburstVisualization
@@ -175,9 +177,11 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                 </div>
               )}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="sankey">
+        {activeTab === 'sankey' && (
+          <div>
             <div className="h-[500px]">
               {sectorAllocations.length > 0 ? (
                 <SectorSankeyVisualization
@@ -190,8 +194,8 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                 </div>
               )}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

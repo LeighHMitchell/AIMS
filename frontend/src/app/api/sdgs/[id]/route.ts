@@ -217,7 +217,9 @@ export async function GET(
       const mapping = sdgMappings?.find((m: any) => m.activity_id === tx.activity_id);
       const contributionPercent = mapping?.contribution_percent || 100;
       const allocationMultiplier = contributionPercent / 100;
-      const baseValue = tx.value_usd || tx.value || 0;
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const baseValue = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
       const allocatedValue = baseValue * allocationMultiplier;
 
       const year = tx.transaction_date ? new Date(tx.transaction_date).getFullYear() : null;
@@ -299,7 +301,10 @@ export async function GET(
     (transactions || []).forEach(tx => {
       const mapping = sdgMappings?.find((m: any) => m.activity_id === tx.activity_id);
       const mult = (mapping?.contribution_percent || 100) / 100;
-      const v = (tx.value_usd || tx.value || 0) * mult;
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const sdgBaseV = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
+      const v = sdgBaseV * mult;
       if (!activityFinancials.has(tx.activity_id)) {
         activityFinancials.set(tx.activity_id, { totalValue: 0, committed: 0, disbursed: 0 });
       }
@@ -383,7 +388,10 @@ export async function GET(
       (transactions || []).forEach(tx => {
         const mapping = sdgMappings?.find((m: any) => m.activity_id === tx.activity_id);
         const mult = (mapping?.contribution_percent || 100) / 100;
-        const v = (tx.value_usd || tx.value || 0) * mult;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const sdgBaseV = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
+      const v = sdgBaseV * mult;
         if (!actValueMap.has(tx.activity_id)) {
           actValueMap.set(tx.activity_id, { totalValue: 0, commitments: 0, disbursements: 0 });
         }
@@ -446,7 +454,9 @@ export async function GET(
         const mapping = actMappings.find((m: any) => m.activity_id === tx.activity_id);
         const contributionPercent = mapping?.contribution_percent || 100;
         const allocationMultiplier = contributionPercent / 100;
-        const baseValue = tx.value_usd || tx.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const baseValue = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
         const allocatedValue = baseValue * allocationMultiplier;
 
         actValue += allocatedValue;

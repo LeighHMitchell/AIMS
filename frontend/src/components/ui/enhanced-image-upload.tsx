@@ -5,6 +5,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, X, Image as ImageIcon, Move, Check, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { toast } from 'sonner';
 import { LoadingText } from '@/components/ui/loading-text';
 import imageCompression from 'browser-image-compression';
@@ -21,6 +22,13 @@ interface EnhancedImageUploadProps {
   variant: 'banner' | 'logo';
   disabled?: boolean;
   maxSize?: number; // in bytes
+  // Optional: when provided, the label renders a green tick once the
+  // upload (and any associated position/scale changes) have been auto-saved.
+  // Pass the merged saving / saved state from the parent's autosave hooks.
+  autosaveState?: {
+    isSaving: boolean;
+    isSaved: boolean;
+  };
 }
 
 export function EnhancedImageUpload({
@@ -34,7 +42,8 @@ export function EnhancedImageUpload({
   recommendedSize,
   variant,
   disabled = false,
-  maxSize = 5 * 1024 * 1024
+  maxSize = 5 * 1024 * 1024,
+  autosaveState,
 }: EnhancedImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(value || null);
   const [currentPosition, setCurrentPosition] = useState(position);
@@ -87,8 +96,9 @@ export function EnhancedImageUpload({
       try {
         // Compress the image before converting to base64
         const compressionOptions = {
-          maxSizeMB: variant === 'banner' ? 0.3 : 0.15, // 300KB for banners, 150KB for logos
-          maxWidthOrHeight: variant === 'banner' ? 1920 : 512,
+          maxSizeMB: variant === 'banner' ? 2 : 1, // 2MB for banners, 1MB for logos
+          maxWidthOrHeight: variant === 'banner' ? 2400 : 1024,
+          initialQuality: 0.92,
           useWebWorker: false, // Disabled: web worker loads from cdn.jsdelivr.net which is blocked by CSP
         };
 
@@ -259,7 +269,18 @@ export function EnhancedImageUpload({
 
   return (
     <div className="space-y-2">
-      <Label className="text-body font-medium">{label}</Label>
+      {autosaveState ? (
+        <LabelSaveIndicator
+          isSaving={autosaveState.isSaving}
+          isSaved={autosaveState.isSaved}
+          hasValue={!!preview}
+          className="text-body font-medium"
+        >
+          {label}
+        </LabelSaveIndicator>
+      ) : (
+        <Label className="text-body font-medium">{label}</Label>
+      )}
 
       {preview ? (
         <div className="space-y-3">
@@ -482,3 +503,5 @@ export function OrganizationLogoUpload(props: Omit<EnhancedImageUploadProps, 'va
     />
   );
 }
+
+

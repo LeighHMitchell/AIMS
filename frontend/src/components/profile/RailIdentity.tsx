@@ -13,6 +13,10 @@ export interface IdentityRow {
 interface RailIdentityProps {
   rows: IdentityRow[]
   helpText?: React.ReactNode
+  /** Optional className passed through to the underlying RailBlock — useful
+   * when a profile needs to bump padding or shadow to align with adjacent
+   * main-column cards (e.g. matching About card's p-6). */
+  className?: string
 }
 
 const DEFAULT_IDENTITY_HELP =
@@ -21,11 +25,12 @@ const DEFAULT_IDENTITY_HELP =
 export function RailIdentity({
   rows,
   helpText = DEFAULT_IDENTITY_HELP,
+  className,
 }: RailIdentityProps) {
   const visible = rows.filter((r) => r.value !== null && r.value !== undefined && r.value !== "")
   if (visible.length === 0) return null
   return (
-    <RailBlock label="Identity" helpText={helpText}>
+    <RailBlock label="Identity" helpText={helpText} className={className}>
       <dl className="space-y-2.5">
         {visible.map((r, i) => (
           <div key={i} className="grid grid-cols-[100px_1fr] gap-2">

@@ -198,6 +198,7 @@ interface Organization {
   Organisation_Type_Code?: string
   organisation_type?: string
   description?: string
+  mission?: string
   website?: string
   email?: string
   phone?: string
@@ -332,6 +333,7 @@ export function EditOrganizationModal({
         cooperation_modality: organization.cooperation_modality || '',
         residency_status: organization.residency_status || '',
         description: organization.description || '',
+        mission: organization.mission || '',
         logo: organization.logo || '',
         logo_scale: organization.logo_scale ?? 100,
         banner: organization.banner || '',
@@ -370,6 +372,7 @@ export function EditOrganizationModal({
         cooperation_modality: '',
         residency_status: '',
         description: '',
+        mission: '',
         logo: '',
         logo_scale: 100,
         banner: '',
@@ -1008,6 +1011,19 @@ export function EditOrganizationModal({
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Brief description of the organization"
                 rows={6}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Mission */}
+            <div className="space-y-2">
+              <Label htmlFor="mission" className="text-body font-medium">Mission</Label>
+              <Textarea
+                id="mission"
+                value={formData.mission || ''}
+                onChange={(e) => handleInputChange('mission', e.target.value)}
+                placeholder="One-line mission statement (e.g. &quot;Delivering a world where every pregnancy is wanted…&quot;)"
+                rows={3}
                 className="resize-none"
               />
             </div>

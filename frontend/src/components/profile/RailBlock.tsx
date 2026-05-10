@@ -28,7 +28,10 @@ export function RailBlock({ label, helpText, action, children, className }: Rail
       )}
     >
       <header className="flex items-center justify-between mb-3">
-        <h3 className="text-body font-semibold text-foreground inline-flex items-center gap-1.5">
+        {/* leading-none keeps the letter top edge flush with the card's
+            padding-top, so a RailBlock can vertically align with adjacent
+            cards that also use leading-none (e.g. the About card). */}
+        <h3 className="text-body font-semibold text-foreground inline-flex items-center gap-1.5 leading-none">
           {label}
           {helpText && (
             <TooltipProvider>

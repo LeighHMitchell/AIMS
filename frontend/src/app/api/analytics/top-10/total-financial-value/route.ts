@@ -15,6 +15,14 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country');
     const sector = searchParams.get('sector');
     const limit = parseInt(searchParams.get('limit') || '10');
+    // Basis: which transaction types feed the totals.
+    //   "total"        → commitments (2) + disbursements (3) (default, original)
+    //   "commitment"   → only commitments (2)
+    //   "disbursement" → only disbursements (3)
+    const basis = (searchParams.get('basis') || 'total') as 'total' | 'commitment' | 'disbursement';
+    const transactionTypes = basis === 'commitment' ? ['2']
+      : basis === 'disbursement' ? ['3']
+      : ['2', '3'];
 
     // First, get activity IDs that match country and sector filters
     let activitiesQuery = supabase
@@ -57,12 +65,12 @@ export async function GET(request: NextRequest) {
         transaction_type,
         activity_id
       `)
-      .in('transaction_type', ['2', '3']) // Commitment (2) or Disbursement (3)
+      .in('transaction_type', transactionTypes)
       .eq('status', 'actual')
       .not('provider_org_id', 'is', null);
     // Exclude internal transfers (pooled fund flows)
     const pooledFundIds = await getPooledFundIds(supabase);
-    transactionsQuery = excludeInternalTransfers(transactionsQuery, pooledFundIds, ['2', '3']);
+    transactionsQuery = excludeInternalTransfers(transactionsQuery, pooledFundIds, transactionTypes);
 
     if (filteredActivityIds.length > 0) {
       transactionsQuery = transactionsQuery.in('activity_id', filteredActivityIds);

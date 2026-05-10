@@ -111,9 +111,13 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
         t.provider_organization.id === node.id
       ))
     )
-    const orgTotal = orgTransactions.reduce((sum: number, t: any) => 
-      sum + (t.value_usd || t.usd_value || t.value || 0), 0
-    )
+    const orgTotal = orgTransactions.reduce((sum: number, t: any) => {
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const usd = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
+        : (t.usd_value != null && Number.isFinite(Number(t.usd_value))) ? Number(t.usd_value)
+        : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0)
+      return sum + usd
+    }, 0)
     acc[role].total += orgTotal
     
     return acc

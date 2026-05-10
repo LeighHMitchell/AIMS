@@ -52,7 +52,9 @@ export async function GET(request: NextRequest) {
         if (!txByActivity.has(tx.activity_id)) {
           txByActivity.set(tx.activity_id, { commitments: 0, disbursements: 0, total: 0 });
         }
-        const v = tx.value_usd || tx.value || 0;
+        // Currency-safe: only fall back to raw value when currency === 'USD'.
+        const v = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
+          : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
         const d = txByActivity.get(tx.activity_id)!;
         d.total += v;
         if (tx.transaction_type === '2' || tx.transaction_type === '11') d.commitments += v;

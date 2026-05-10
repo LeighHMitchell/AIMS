@@ -283,7 +283,11 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
 
 
   return (
-    <StaggerContainer className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-4", className)}>
+    // USD-equivalent disclaimer — see FinancesSection for the same note.
+    // Totals use stored conversions where available; rows missing a
+    // conversion are summed at face value and treated as USD.
+    <div className={cn("space-y-2", className)}>
+      <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {!hideTotalBudgeted && (
         <StaggerItem>
         <HeroCard
@@ -317,5 +321,9 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
       />
       </StaggerItem>
     </StaggerContainer>
+      <p className="text-helper text-muted-foreground italic">
+        USD-equivalent. Rows without a stored exchange rate are included at face value, so totals may slightly distort when non-USD currencies are missing conversions.
+      </p>
+    </div>
   );
 }

@@ -319,10 +319,13 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
             console.error('[PortfolioSpendTrajectoryChart] Commitments error:', commitError)
           }
           if (commitmentData) {
-            // Use value_usd if available, otherwise use value (assuming USD)
-            const processedCommitments = commitmentData.map(c => ({
+            // Currency-safe: only fall back to raw value when currency === 'USD'.
+            // A non-USD commitment without a stored conversion contributes 0
+            // rather than being silently treated as USD.
+            const processedCommitments = commitmentData.map((c: any) => ({
               ...c,
-              value_usd: c.value_usd || c.value || 0
+              value_usd: (c.value_usd != null && Number.isFinite(Number(c.value_usd))) ? Number(c.value_usd)
+                : ((c.currency ?? '').toString().toUpperCase() === 'USD' ? Number(c.value) || 0 : 0)
             }))
             setCommitments(processedCommitments)
           }

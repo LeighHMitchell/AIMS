@@ -69,14 +69,17 @@ export async function GET(request: NextRequest) {
     // Get disbursements for child activities
     const { data: childTxns } = await supabase
       .from('transactions')
-      .select('activity_id, value, value_usd')
+      .select('activity_id, value, value_usd, usd_value, currency')
       .in('activity_id', allChildIds)
       .in('transaction_type', ['3'])
 
     // Build disbursement totals per child
     const childDisbursements: Record<string, number> = {}
     childTxns?.forEach(t => {
-      const usd = t.value_usd || t.usd_value || t.value || 0
+      // Currency-safe: only fall back to raw value when currency === 'USD'.
+      const usd = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
+        : (t.usd_value != null && Number.isFinite(Number(t.usd_value))) ? Number(t.usd_value)
+        : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0)
       childDisbursements[t.activity_id] = (childDisbursements[t.activity_id] || 0) + usd
     })
 

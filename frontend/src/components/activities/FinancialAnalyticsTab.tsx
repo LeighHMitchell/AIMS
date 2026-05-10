@@ -24,6 +24,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AlertCircle, TrendingUp, DollarSign, BarChart3, TrendingUpIcon, LineChart as LineChartIcon, Table as TableIcon, ChevronDown, Download, FileImage, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TransactionCalendarHeatmap } from './TransactionCalendarHeatmap'
@@ -45,6 +51,10 @@ import {
 } from '@/utils/year-allocation'
 import { useOrganizations } from '@/hooks/use-organizations'
 import { ActivitySpendTrajectoryChart } from '@/components/charts/ActivitySpendTrajectoryChart'
+import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/ChartFullscreen'
+import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { formatAxisCurrency } from '@/lib/format'
@@ -656,12 +666,6 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
   return (
     <div className="w-full funding-source-chart py-4">
       <svg ref={svgRef} className="w-full" style={{ height: `${containerSize.height}px`, display: 'block' }} />
-      <div className="border-t border-border pt-4 mt-4">
-        <p className="text-helper text-muted-foreground text-center">
-          Flow width represents the funding amount from each provider to each receiver
-          {data.providers.length > 8 && ` (showing top 8 of ${data.providers.length} providers)`}
-        </p>
-      </div>
     </div>
   )
 }
@@ -701,9 +705,39 @@ export default function FinancialAnalyticsTab({
   // Cumulative toggles
   const [isDisbursementCumulative, setIsDisbursementCumulative] = useState(false)
   const [isCumulative, setIsCumulative] = useState<boolean>(true)
+  // Granularity for the Financial Overview chart. Inline view is always
+  // yearly; this toggle is only meaningful when the chart is expanded.
+  const [overviewGranularity, setOverviewGranularity] = useState<'year' | 'month'>('year')
   const [isBudgetCumulative, setIsBudgetCumulative] = useState<boolean>(false)
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
   const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState<Set<string>>(new Set())
+
+  // ── Calendar / year-range selectors (one per chart so each can be filtered
+  //    independently in its expanded modal). All read from the same
+  //    `transactions` array for the "Data Range" shortcut.
+  const transactionDates = useMemo(
+    () => (transactions ?? [])
+      .map((t: any) => t.transaction_date || t.value_date)
+      .filter(Boolean)
+      .map((d: string) => new Date(d))
+      .filter((d: Date) => !Number.isNaN(d.getTime())),
+    [transactions],
+  )
+  const budgetVsActualCal = useCalendarYearSelector(transactionDates)
+  const fundingSourceCal = useCalendarYearSelector(transactionDates)
+  const aidModalityCal = useCalendarYearSelector(transactionDates)
+  const topProvidersCal = useCalendarYearSelector(transactionDates)
+  const topReceiversCal = useCalendarYearSelector(transactionDates)
+
+  // Helper: gate a transaction by a CalendarYearSelector's effectiveDateRange.
+  const withinRange = (t: any, range: { from: Date; to: Date } | null): boolean => {
+    if (!range) return true
+    const dStr = t.transaction_date || t.value_date
+    if (!dStr) return true
+    const d = new Date(dStr)
+    if (Number.isNaN(d.getTime())) return true
+    return d >= range.from && d <= range.to
+  }
   const [hiddenDisbursementSeries, setHiddenDisbursementSeries] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
   
@@ -1089,11 +1123,24 @@ export default function FinancialAnalyticsTab({
     })
   }, [groupedDisbursementData])
 
-  // Filtered data using useMemo for performance
-  const filteredBudgetVsActual = useMemo(
-    () => filterDataByYear(isBudgetCumulative ? cumulativeBudgetData : groupedBudgetVsActualData, budgetTimePeriod),
-    [groupedBudgetVsActualData, cumulativeBudgetData, budgetTimePeriod, isBudgetCumulative]
-  )
+  // Filtered data using useMemo for performance. The CalendarYearSelector's
+  // effectiveDateRange (when set) further constrains the rows to the selected
+  // year window, so the chart honours the user's calendar picker.
+  const filteredBudgetVsActual = useMemo(() => {
+    const base = filterDataByYear(
+      isBudgetCumulative ? cumulativeBudgetData : groupedBudgetVsActualData,
+      budgetTimePeriod,
+    )
+    const range = budgetVsActualCal.effectiveDateRange
+    if (!range) return base
+    const fromYear = range.from.getFullYear()
+    const toYear = range.to.getFullYear()
+    return base.filter((row: any) => {
+      const y = Number(row.year)
+      if (!Number.isFinite(y)) return true
+      return y >= fromYear && y <= toYear
+    })
+  }, [groupedBudgetVsActualData, cumulativeBudgetData, budgetTimePeriod, isBudgetCumulative, budgetVsActualCal.effectiveDateRange])
 
   // Process budget data for continuous time scale with timestamps
   const processedBudgetVsActual = useMemo(() => {
@@ -2057,6 +2104,55 @@ export default function FinancialAnalyticsTab({
     }))
   }, [filteredCumulativeOverviewData, isCumulative])
 
+  // Yearly-aggregated overview used in the inline (non-fullscreen) view so the
+  // chart reads at a glance. Cumulative mode keeps the LAST data point of each
+  // calendar year (the running total to date); periodic mode SUMS each year's
+  // periods so the bar/line shows annual flow.
+  const processedCumulativeOverviewDataYearly = useMemo(() => {
+    if (filteredCumulativeOverviewData.length === 0) return []
+    const filled = fillMissingMonths(filteredCumulativeOverviewData, 'date', isCumulative)
+    const numericKeys = [
+      'Incoming Funds',
+      'Incoming Commitments',
+      'Outgoing Commitments',
+      'Disbursements',
+      'Expenditures',
+      'Planned Disbursements',
+      'Budgets',
+    ]
+    const byYear = new Map<number, any>()
+    if (isCumulative) {
+      for (const item of filled) {
+        const year = new Date(item.date).getFullYear()
+        const existing = byYear.get(year)
+        if (!existing || new Date(item.date) > new Date(existing.date)) {
+          byYear.set(year, item)
+        }
+      }
+    } else {
+      for (const item of filled) {
+        const year = new Date(item.date).getFullYear()
+        const existing = byYear.get(year) || { date: `${year}-12-31` }
+        for (const k of numericKeys) {
+          existing[k] = (existing[k] || 0) + (Number(item[k]) || 0)
+        }
+        byYear.set(year, existing)
+      }
+    }
+    return Array.from(byYear.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([year, item]) => {
+        const anchor = `${year}-12-31`
+        return {
+          ...item,
+          date: anchor,
+          timestamp: new Date(anchor).getTime(),
+          fullDate: String(year),
+          displayDate: String(year),
+        }
+      })
+  }, [filteredCumulativeOverviewData, isCumulative])
+
   // Determine which series have actual source data to show in legend
   const activeSeries = useMemo(() => {
     const series = new Set<string>()
@@ -2222,12 +2318,22 @@ export default function FinancialAnalyticsTab({
       const flows: Array<{ provider: string; providerDisplay: string; receiver: string; receiverDisplay: string; value: number }> = []
 
       plannedDisbursements?.forEach((pd: any) => {
+        // Calendar / year-range filter — clip planned disbursements whose
+        // period_start/period_end fall outside the selected window.
+        const range = fundingSourceCal.effectiveDateRange
+        if (range) {
+          const startStr = pd.period_start || pd.start_date || pd.value_date
+          if (startStr) {
+            const d = new Date(startStr)
+            if (!Number.isNaN(d.getTime()) && (d < range.from || d > range.to)) return
+          }
+        }
         const providerInfo = resolveOrgInfo(pd.provider_org_id, pd.provider_org_name, pd.provider_org_ref, pd.provider_org_acronym)
         const receiverInfo = resolveOrgInfo(pd.receiver_org_id, pd.receiver_org_name, pd.receiver_org_ref, pd.receiver_org_acronym)
-        
+
         const provider = providerInfo.name || 'Unknown Provider'
         const receiver = receiverInfo.name || 'Unknown Receiver'
-        
+
         // Store org info for later lookup
         orgInfoMap.set(provider, providerInfo)
         orgInfoMap.set(receiver, receiverInfo)
@@ -2279,6 +2385,7 @@ export default function FinancialAnalyticsTab({
         if (t.transaction_type !== fundingTransactionType) {
           return
         }
+        if (!withinRange(t, fundingSourceCal.effectiveDateRange)) return
 
         const providerInfo = resolveOrgInfo(t.provider_org_id, t.provider_org_name, t.provider_org_ref, t.provider_org_acronym)
         const receiverInfo = resolveOrgInfo(t.receiver_org_id, t.receiver_org_name, t.receiver_org_ref, t.receiver_org_acronym)
@@ -2327,7 +2434,7 @@ export default function FinancialAnalyticsTab({
         flows
       }
     }
-  }, [transactions, plannedDisbursements, fundingSourceType, fundingTransactionType, resolveOrgInfo])
+  }, [transactions, plannedDisbursements, fundingSourceType, fundingTransactionType, resolveOrgInfo, fundingSourceCal.effectiveDateRange])
 
   // Export funding source data to CSV
   const exportFundingSourceToCSV = () => {
@@ -2414,761 +2521,249 @@ export default function FinancialAnalyticsTab({
     })
   }
 
+  // ── Aid Modality Mix ────────────────────────────────────────────────────
+  // Group OUTGOING transactions by IATI Finance Type buckets so users can
+  // see the activity's instrument mix (grants vs loans vs equity vs
+  // guarantees vs other) at a glance. Users can filter the included
+  // transaction types via the dropdown in the expanded toolbar; the chart
+  // also tracks per-type sub-totals so the hover tooltip can show the
+  // disaggregation (Commitments / Disbursements / Expenditures).
+  const AID_MODALITY_OUTGOING_TYPES = ['2', '3', '4'] as const
+  const AID_MODALITY_TYPE_LABELS: Record<string, string> = {
+    '2': 'Outgoing Commitments',
+    '3': 'Disbursements',
+    '4': 'Expenditures',
+  }
+  const [aidModalityTxTypes, setAidModalityTxTypes] = useState<Set<string>>(
+    () => new Set(AID_MODALITY_OUTGOING_TYPES),
+  )
+  const aidModalityData = useMemo(() => {
+    const buckets: Record<string, { value: number; byType: Record<string, number> }> = {}
+    transactions?.forEach((t: any) => {
+      if (!withinRange(t, aidModalityCal.effectiveDateRange)) return
+      const type = String(t.transaction_type ?? '')
+      if (!aidModalityTxTypes.has(type)) return
+      const usd = parseFloat(t.usd_value || t.value_usd) || 0
+      const usable = usd || (t.currency === 'USD' ? parseFloat(t.value) || 0 : 0)
+      if (!Number.isFinite(usable) || usable <= 0) return
+      const code = String(t.finance_type || '')
+      let bucket = 'Unspecified'
+      if (!code) bucket = 'Unspecified'
+      else if (code.startsWith('11') || code === '110' || code === '111') bucket = 'Grants'
+      else if (code.startsWith('4') || ['410','411','412','413','414','421','422','423','424'].includes(code)) bucket = 'Loans'
+      else if (code.startsWith('5') || ['510','511','512','513','520'].includes(code)) bucket = 'Equity'
+      else if (code.startsWith('6') || ['610','611','612','613','620','630'].includes(code)) bucket = 'Guarantees / Insurance'
+      else bucket = 'Other'
+      if (!buckets[bucket]) buckets[bucket] = { value: 0, byType: {} }
+      buckets[bucket].value += usable
+      buckets[bucket].byType[type] = (buckets[bucket].byType[type] || 0) + usable
+    })
+    return Object.entries(buckets)
+      .map(([name, { value, byType }]) => ({ name, value, byType }))
+      .sort((a, b) => b.value - a.value)
+  }, [transactions, aidModalityCal.effectiveDateRange, aidModalityTxTypes])
+  // Aid modality colours map to the same brand palette as the rest of the
+  // finance charts (primaryScarlet / blueSlate / coolSteel / paleSlate).
+  // Falling back to neutral greys for Other / Unspecified keeps the focal
+  // categories prominent.
+  const aidModalityColors: Record<string, string> = {
+    Grants: '#dc2625',
+    Loans: '#4c5568',
+    Equity: '#7b95a7',
+    'Guarantees / Insurance': '#cfd0d5',
+    Other: '#94a3b8',
+    Unspecified: '#e2e8f0',
+  }
+  const aidModalityTotal = aidModalityData.reduce((sum, d) => sum + d.value, 0)
+
+  // ── Top Counterparties ──────────────────────────────────────────────────
+  // Sum outgoing-money transactions (types 2/3/4) by provider org and by
+  // receiver org. Top 5 of each, ranked by USD volume. Computed separately
+  // so each chart respects its own calendar/year-range filter.
+  const computeTopByRole = (
+    role: 'provider' | 'receiver',
+    range: { from: Date; to: Date } | null,
+  ) => {
+    const byName: Record<string, { displayName: string; value: number }> = {}
+    transactions?.forEach((t: any) => {
+      if (!withinRange(t, range)) return
+      const type = String(t.transaction_type ?? '')
+      if (!['2', '3', '4'].includes(type)) return
+      const usd = parseFloat(t.usd_value || t.value_usd) || 0
+      const usable = usd || (t.currency === 'USD' ? parseFloat(t.value) || 0 : 0)
+      if (!Number.isFinite(usable) || usable <= 0) return
+      const info = role === 'provider'
+        ? resolveOrgInfo(t.provider_org_id, t.provider_org_name, t.provider_org_ref, t.provider_org_acronym)
+        : resolveOrgInfo(t.receiver_org_id, t.receiver_org_name, t.receiver_org_ref, t.receiver_org_acronym)
+      const name = info.name || (role === 'provider' ? 'Unknown Provider' : 'Unknown Receiver')
+      if (!byName[name]) byName[name] = { displayName: info.displayName || name, value: 0 }
+      byName[name].value += usable
+    })
+    return Object.entries(byName)
+      .map(([name, { displayName, value }]) => ({ name, displayName, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
+  }
+  const topProvidersData = useMemo(
+    () => computeTopByRole('provider', topProvidersCal.effectiveDateRange),
+    [transactions, resolveOrgInfo, topProvidersCal.effectiveDateRange],
+  )
+  const topReceiversData = useMemo(
+    () => computeTopByRole('receiver', topReceiversCal.effectiveDateRange),
+    [transactions, resolveOrgInfo, topReceiversCal.effectiveDateRange],
+  )
+
   if (loading || isPending) {
     return <FinancialAnalyticsSkeleton />
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Cumulative Overview Chart - All Transaction Types, Planned Disbursements, and Budgets */}
-      <Card className="border-border">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <CardTitle className="text-lg font-semibold text-foreground">
-                {isCumulative ? 'Cumulative' : 'Period-by-Period'} Financial Overview
-              </CardTitle>
-              <CardDescription>
-                {isCumulative
-                  ? 'Cumulative view of all transaction types, planned disbursements, and planned budgets over time'
-                  : 'Period-by-period view showing financial activity for each time period'
-                }
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCumulative(true)}
-                  className={cn("h-8", isCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Cumulative
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCumulative(false)}
-                  className={cn("h-8", !isCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Periodic
-                </Button>
-              </div>
-              {/* Allocation Method Toggle */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 bg-muted">
-                  <Label htmlFor="allocation-toggle-overview" className="text-body text-foreground cursor-pointer">
-                    {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                  </Label>
-                  <Switch
-                    id="allocation-toggle-overview"
-                    checked={allocationMethod === 'proportional'}
-                    onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
-                  />
+      {/* Financial Totals — reused from the analytics dashboard,
+          scoped to this activity. Spans both columns of the grid. Inline view
+          is bare-bones: just the chart and an expand button. The dialog form
+          (clicking expand) reveals all calendar/year/transaction-type/
+          chart-type/export controls. */}
+      <ChartFullscreen className="lg:col-span-2">
+        {({ isFullscreen, toggle }) => (
+          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+            <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-foreground">
+                    Financial Totals
+                  </CardTitle>
+                  <CardDescription>
+                    Yearly budget, planned, and actual flows
+                  </CardDescription>
                 </div>
-                <HelpTextTooltip 
-                  content={
-                    allocationMethod === 'proportional'
-                      ? "Allocates budget and planned disbursement amounts across their time periods. For example, a $100,000 budget from July 2024 to June 2025 will be split proportionally across those 12 months."
-                      : "Shows the full budget or planned disbursement amount at its start date. Useful for seeing when amounts were originally planned or committed."
-                  }
-                />
+                {!isFullscreen && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
+                  </div>
+                )}
               </div>
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOverviewChartType('line')}
-                  className={cn("h-8 flex-shrink-0", overviewChartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Line"
-                >
-                  <LineChartIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOverviewChartType('bar')}
-                  className={cn("h-8 flex-shrink-0", overviewChartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Bar"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOverviewChartType('area')}
-                  className={cn("h-8 flex-shrink-0", overviewChartType === 'area' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Area"
-                >
-                  <TrendingUpIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOverviewChartType('table')}
-                  className={cn("h-8 flex-shrink-0", overviewChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Table"
-                >
-                  <TableIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOverviewChartType('total')}
-                  className={cn("h-8 flex-shrink-0", overviewChartType === 'total' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Total"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportCumulativeOverviewToCSV}
-                  className="h-8 px-2"
-                  title="Export to CSV"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportCumulativeOverviewToJPG}
-                  className="h-8 px-2"
-                  title="Export to JPG"
-                  disabled={overviewChartType === 'table' || overviewChartType === 'total'}
-                >
-                  <FileImage className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredCumulativeOverviewData.length > 0 ? (
-            <>
-              {overviewChartType === 'total' ? (
-                <div className="cumulative-overview-chart">
-                  <ResponsiveContainer width="100%" height={500}>
-                    <BarChart data={overviewTotalData} margin={{ top: 20, right: 30, left: 60, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                      <XAxis
-                        dataKey="name"
-                        stroke="#64748B"
-                        fontSize={12}
-                        angle={0}
-                        textAnchor="middle"
-                        height={60}
-                      />
-                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
-                      <Tooltip
-                        formatter={(value: any) => [formatCompactCurrencyTooltip(value), '']}
-                        separator=""
-                        labelStyle={{ color: '#1e293b', fontWeight: 600 }}
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={300}>
-                        {overviewTotalData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : overviewChartType === 'table' ? (
-                <div className="overflow-auto h-[500px] border border-border rounded-lg">
-                  <table className="w-full text-body">
-                    <thead className="sticky top-0 bg-surface-muted z-10">
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Period</th>
-                        {activeSeries.has('Incoming Funds') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Incoming Funds</th>
-                        )}
-                        {activeSeries.has('Incoming Commitments') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Incoming Commitments</th>
-                        )}
-                        {activeSeries.has('Outgoing Commitments') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Outgoing Commitments</th>
-                        )}
-                        {activeSeries.has('Disbursements') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Disbursements</th>
-                        )}
-                        {activeSeries.has('Expenditures') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Expenditures</th>
-                        )}
-                        {activeSeries.has('Planned Disbursements') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Planned Disbursements</th>
-                        )}
-                        {activeSeries.has('Budgets') && (
-                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Budgets</th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredCumulativeOverviewData.map((row, index) => (
-                        <tr key={index} className="border-b border-border hover:bg-muted/50">
-                          <td className="py-2.5 px-4 font-medium text-foreground">{row.displayDate}</td>
-                          {activeSeries.has('Incoming Funds') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Incoming Funds'])}</td>
-                          )}
-                          {activeSeries.has('Incoming Commitments') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Incoming Commitments'])}</td>
-                          )}
-                          {activeSeries.has('Outgoing Commitments') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Outgoing Commitments'])}</td>
-                          )}
-                          {activeSeries.has('Disbursements') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Disbursements'])}</td>
-                          )}
-                          {activeSeries.has('Expenditures') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Expenditures'])}</td>
-                          )}
-                          {activeSeries.has('Planned Disbursements') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Planned Disbursements'])}</td>
-                          )}
-                          {activeSeries.has('Budgets') && (
-                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Budgets'])}</td>
-                          )}
-                        </tr>
-                      ))}
-                      {/* Total Row - Use periodic data to avoid double counting */}
-                      {(() => {
-                        // Use periodicOverviewData filtered by same time period to calculate totals
-                        const periodicFiltered = filterDataByDate(periodicOverviewData, overviewTimePeriod, 'date')
-                        const totals = {
-                          'Incoming Funds': periodicFiltered.reduce((sum, row) => sum + (row['Incoming Funds'] || 0), 0),
-                          'Incoming Commitments': periodicFiltered.reduce((sum, row) => sum + (row['Incoming Commitments'] || 0), 0),
-                          'Outgoing Commitments': periodicFiltered.reduce((sum, row) => sum + (row['Outgoing Commitments'] || 0), 0),
-                          'Disbursements': periodicFiltered.reduce((sum, row) => sum + (row['Disbursements'] || 0), 0),
-                          'Expenditures': periodicFiltered.reduce((sum, row) => sum + (row['Expenditures'] || 0), 0),
-                          'Planned Disbursements': periodicFiltered.reduce((sum, row) => sum + (row['Planned Disbursements'] || 0), 0),
-                          'Budgets': periodicFiltered.reduce((sum, row) => sum + (row['Budgets'] || 0), 0)
-                        }
-                        return (
-                          <tr className="border-t-2 border-border bg-muted font-semibold">
-                            <td className="py-2.5 px-4 text-foreground">Total</td>
-                            {activeSeries.has('Incoming Funds') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Incoming Funds'])}</td>
-                            )}
-                            {activeSeries.has('Incoming Commitments') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Incoming Commitments'])}</td>
-                            )}
-                            {activeSeries.has('Outgoing Commitments') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Outgoing Commitments'])}</td>
-                            )}
-                            {activeSeries.has('Disbursements') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Disbursements'])}</td>
-                            )}
-                            {activeSeries.has('Expenditures') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Expenditures'])}</td>
-                            )}
-                            {activeSeries.has('Planned Disbursements') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Planned Disbursements'])}</td>
-                            )}
-                            {activeSeries.has('Budgets') && (
-                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Budgets'])}</td>
-                            )}
-                          </tr>
-                        )
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
+            </CardHeader>
+            <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
+              {isFullscreen ? (
+                <FinancialTotalsBarChart activityId={activityId} fillHeight />
               ) : (
-                <div className="cumulative-overview-chart">
-                  <ResponsiveContainer width="100%" height={500}>
-                    {overviewChartType === 'line' ? (
-                    <LineChart 
-                      data={processedCumulativeOverviewData} 
-                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                      key={`overview-line-${allocationMethod}-${isCumulative}-${overviewChartType}`}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                      <XAxis
-                        dataKey="timestamp"
-                        type="number"
-                        scale="time"
-                        domain={['dataMin', 'dataMax']}
-                        ticks={generateYearTicks(processedCumulativeOverviewData)}
-                        tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
-                        stroke="#64748B"
-                        fontSize={12}
-                        angle={0}
-                        textAnchor="middle"
-                        height={40}
-                      />
-                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
-                      {activeSeries.has('Incoming Funds') && (
-                        <Line
-                          type="monotone"
-                          dataKey="Incoming Funds"
-                          stroke={hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625'}
-                          strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 3}
-                          dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625', r: 4 }}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Incoming Commitments') && (
-                        <Line
-                          type="monotone"
-                          dataKey="Incoming Commitments"
-                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568'}
-                          strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 3}
-                          strokeDasharray="8 4"
-                          dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568', r: 4 }}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Outgoing Commitments') && (
-                        <Line
-                          type="monotone"
-                          dataKey="Outgoing Commitments"
-                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7'}
-                          strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 3}
-                          strokeDasharray="12 6"
-                          dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7', r: 4 }}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Disbursements') && (
-                        <Line
-                          type="monotone"
-                          dataKey="Disbursements"
-                          stroke={hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625'}
-                          strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 3}
-                          dot={{ fill: hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625', r: 4 }}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Expenditures') && (
-                        <Line
-                          type="monotone"
-                          dataKey="Expenditures"
-                          stroke={hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568'}
-                          strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 3}
-                          strokeDasharray="4 4"
-                          dot={{ fill: hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568', r: 4 }}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Planned Disbursements') && (
-                        <Line
-                          type="monotone"
-                          dataKey="Planned Disbursements"
-                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7'}
-                          strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2.5}
-                          strokeDasharray="5 5"
-                          dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7', r: 3 }}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Budgets') && (
-                        <Line
-                          type="linear"
-                          dataKey="Budgets"
-                          stroke={hiddenSeries.has('Budgets') ? '#cfd0d5' : '#cfd0d5'}
-                          strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2.5}
-                          strokeDasharray="3 3"
-                          dot={false}
-                          connectNulls={true}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
-                        />
-                      )}
-                    </LineChart>
-                  ) : overviewChartType === 'area' ? (
-                    <AreaChart 
-                      data={processedCumulativeOverviewData} 
-                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                      key={`overview-area-${allocationMethod}-${isCumulative}-${overviewChartType}`}
-                    >
-                      <defs>
-                        <linearGradient id="colorIncomingFunds" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorIncomingCommitments" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorOutgoingCommitments" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorDisbursements" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorExpenditures" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorPlannedDisbursements" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6}/>
-                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
-                        </linearGradient>
-                        <linearGradient id="colorBudgets" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#64748b" stopOpacity={0.6}/>
-                          <stop offset="95%" stopColor="#64748b" stopOpacity={0.05}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                      <XAxis
-                        dataKey="timestamp"
-                        type="number"
-                        scale="time"
-                        domain={['dataMin', 'dataMax']}
-                        ticks={generateYearTicks(processedCumulativeOverviewData)}
-                        tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
-                        stroke="#64748B"
-                        fontSize={12}
-                        angle={0}
-                        textAnchor="middle"
-                        height={40}
-                      />
-                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
-                      {activeSeries.has('Incoming Funds') && (
-                        <Area
-                          type="monotone"
-                          dataKey="Incoming Funds"
-                          stroke={hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625'}
-                          strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2}
-                          fill={hiddenSeries.has('Incoming Funds') ? 'transparent' : 'url(#colorIncomingFunds)'}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Incoming Commitments') && (
-                        <Area
-                          type="monotone"
-                          dataKey="Incoming Commitments"
-                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568'}
-                          strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2}
-                          fill={hiddenSeries.has('Incoming Commitments') ? 'transparent' : 'url(#colorIncomingCommitments)'}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Outgoing Commitments') && (
-                        <Area
-                          type="monotone"
-                          dataKey="Outgoing Commitments"
-                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7'}
-                          strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2}
-                          fill={hiddenSeries.has('Outgoing Commitments') ? 'transparent' : 'url(#colorOutgoingCommitments)'}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Disbursements') && (
-                        <Area
-                          type="monotone"
-                          dataKey="Disbursements"
-                          stroke={hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625'}
-                          strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2}
-                          fill={hiddenSeries.has('Disbursements') ? 'transparent' : 'url(#colorDisbursements)'}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Expenditures') && (
-                        <Area
-                          type="monotone"
-                          dataKey="Expenditures"
-                          stroke={hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568'}
-                          strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2}
-                          fill={hiddenSeries.has('Expenditures') ? 'transparent' : 'url(#colorExpenditures)'}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Planned Disbursements') && (
-                        <Area
-                          type="monotone"
-                          dataKey="Planned Disbursements"
-                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7'}
-                          strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
-                          strokeDasharray="5 5"
-                          fill={hiddenSeries.has('Planned Disbursements') ? 'transparent' : 'url(#colorPlannedDisbursements)'}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Budgets') && (
-                        <Area
-                          type="linear"
-                          dataKey="Budgets"
-                          stroke={hiddenSeries.has('Budgets') ? '#cfd0d5' : '#cfd0d5'}
-                          strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
-                          strokeDasharray="3 3"
-                          fill={hiddenSeries.has('Budgets') ? 'transparent' : 'url(#colorBudgets)'}
-                          connectNulls={true}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
-                        />
-                      )}
-                    </AreaChart>
-                  ) : (
-                    <BarChart 
-                      data={processedCumulativeOverviewData} 
-                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                      key={`overview-bar-${allocationMethod}-${isCumulative}-${overviewChartType}`}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                      <XAxis
-                        dataKey="timestamp"
-                        type="number"
-                        scale="time"
-                        domain={['dataMin', 'dataMax']}
-                        ticks={generateYearTicks(processedCumulativeOverviewData)}
-                        tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
-                        stroke="#64748B"
-                        fontSize={12}
-                        angle={0}
-                        textAnchor="middle"
-                        height={40}
-                      />
-                      <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
-                      {activeSeries.has('Incoming Funds') && (
-                        <Bar
-                          dataKey="Incoming Funds"
-                          fill={hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Incoming Commitments') && (
-                        <Bar
-                          dataKey="Incoming Commitments"
-                          fill={hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Outgoing Commitments') && (
-                        <Bar
-                          dataKey="Outgoing Commitments"
-                          fill={hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Disbursements') && (
-                        <Bar
-                          dataKey="Disbursements"
-                          fill={hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Expenditures') && (
-                        <Bar
-                          dataKey="Expenditures"
-                          fill={hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Planned Disbursements') && (
-                        <Bar
-                          dataKey="Planned Disbursements"
-                          fill={hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
-                        />
-                      )}
-                      {activeSeries.has('Budgets') && (
-                        <Bar
-                          dataKey="Budgets"
-                          fill={hiddenSeries.has('Budgets') ? '#cfd0d5' : '#cfd0d5'}
-                          radius={[4, 4, 0, 0]}
-                          isAnimationActive={true}
-                          animationDuration={600}
-                          animationEasing="ease-in-out"
-                          opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
-                        />
-                      )}
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
+                <div className="h-[500px]">
+                  <FinancialTotalsBarChart activityId={activityId} compact />
                 </div>
               )}
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-96 text-muted-foreground">
-              <div className="text-center">
-                <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="font-medium">No cumulative overview data available</p>
-                <p className="text-helper mt-2">Add transactions, planned disbursements, or budgets to see this chart</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        )}
+      </ChartFullscreen>
 
       {/* Budget versus Actual Spend Trajectory Chart */}
       <ActivitySpendTrajectoryChart activityId={activityId} />
 
       {/* Budget vs Actual Spending - Full Width */}
-      <Card className="border-border">
-        <CardHeader>
+      <ChartFullscreen>
+        {({ isFullscreen, toggle }) => (
+      <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+        <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-lg font-semibold text-foreground">
                 {isBudgetCumulative ? 'Cumulative' : 'Period-by-Period'} Budget vs Actual Spending by Year
               </CardTitle>
               <CardDescription>
-                {isBudgetCumulative
-                  ? 'Cumulative view of planned budgets compared with actual spending over time'
-                  : 'Period-by-period view of budgets and actual spending for each time period'
-                }
+                Annual planned vs actual spending
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsBudgetCumulative(true)}
-                  className={cn("h-8", isBudgetCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Cumulative
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsBudgetCumulative(false)}
-                  className={cn("h-8", !isBudgetCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Periodic
-                </Button>
+            {/* Inline view: only the expand affordance lives in the title row. */}
+            {!isFullscreen && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
               </div>
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBudgetChartType('line')}
-                  className={cn("h-8", budgetChartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Line"
-                >
-                  <TrendingUpIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBudgetChartType('bar')}
-                  className={cn("h-8", budgetChartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Bar"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBudgetChartType('table')}
-                  className={cn("h-8", budgetChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  title="Table"
-                >
-                  <TableIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={budgetChartType === 'total' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setBudgetChartType('total')}
-                  className="h-8"
-                  title="Total"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportBudgetVsActualToCSV}
-                  className="h-8 px-2"
-                  title="Export to CSV"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportBudgetVsActualToJPG}
-                  className="h-8 px-2"
-                  title="Export to JPG"
-                  disabled={budgetChartType === 'table' || budgetChartType === 'total'}
-                >
-                  <FileImage className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </CardHeader>
+        {isFullscreen && (
+          <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
+            <CalendarYearSelector {...budgetVsActualCal} />
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsBudgetCumulative(true)}
+                className={cn("h-8", isBudgetCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              >
+                Cumulative
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsBudgetCumulative(false)}
+                className={cn("h-8", !isBudgetCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              >
+                Periodic
+              </Button>
+            </div>
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setBudgetChartType('line')}
+                className={cn("h-8", budgetChartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                title="Line"
+              >
+                <TrendingUpIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setBudgetChartType('bar')}
+                className={cn("h-8", budgetChartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                title="Bar"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setBudgetChartType('table')}
+                className={cn("h-8", budgetChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                title="Table"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={budgetChartType === 'total' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBudgetChartType('total')}
+                className="h-8"
+                title="Total"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="ml-auto flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportBudgetVsActualToCSV}
+                className="h-8 px-2"
+                title="Export to CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportBudgetVsActualToJPG}
+                className="h-8 px-2"
+                title="Export to JPG"
+                disabled={budgetChartType === 'table' || budgetChartType === 'total'}
+              >
+                <FileImage className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
         <CardContent>
           {filteredBudgetVsActual.length > 0 ? (
             budgetChartType === 'total' ? (
@@ -3266,7 +2861,7 @@ export default function FinancialAnalyticsTab({
                     />
                     <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />
+                    {isFullscreen && <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />}
                     <Line
                       type="monotone"
                       dataKey="budget"
@@ -3314,7 +2909,7 @@ export default function FinancialAnalyticsTab({
                     />
                     <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
-                    <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />
+                    {isFullscreen && <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />}
                     <Bar
                       dataKey="budget"
                       name="Budget"
@@ -3349,121 +2944,138 @@ export default function FinancialAnalyticsTab({
               </div>
             </div>
           )}
+          {isFullscreen && (
+            <p className="text-body text-muted-foreground leading-relaxed mt-4">
+              <strong>What this shows:</strong> the activity's <strong>annual planned budget</strong> compared with the <strong>actual money spent</strong> in each year — sourced from disbursements and expenditures. <strong>How to read it:</strong> bars of similar height mean spending kept pace with plan; budget bars taller than actual bars indicate <strong>under-spending</strong>; actual bars taller than budget indicate <strong>over-spending</strong>. The cumulative view turns this into a running total, useful for spotting whether under-spending in one year was made up later. <strong>How to use it:</strong> grade the activity's budget execution. Persistent under-spending often signals procurement delays, unused capacity, or partner-side bottlenecks; over-spending can indicate scope creep or cost overruns.
+            </p>
+          )}
         </CardContent>
       </Card>
+        )}
+      </ChartFullscreen>
 
       {/* Funding Source Breakdown */}
-      <Card className="border-border">
-        <CardHeader>
+      <ChartFullscreen>
+        {({ isFullscreen, toggle }) => (
+      <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+        <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-lg font-semibold text-foreground">Funding Source Breakdown</CardTitle>
-              <CardDescription>Distribution of funding by development partner/provider</CardDescription>
+              <CardDescription>Provider-to-receiver flows</CardDescription>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Source Type Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFundingSourceType('transactions')}
-                  className={cn("h-8", fundingSourceType === 'transactions' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Transactions
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFundingSourceType('planned')}
-                  className={cn("h-8", fundingSourceType === 'planned' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Planned
-                </Button>
+            {/* Inline view: only the expand affordance lives in the title row. */}
+            {!isFullscreen && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
               </div>
-
-              {/* Transaction Type Filter (only show when viewing transactions) */}
-              {fundingSourceType === 'transactions' && (
-                <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFundingTransactionType('1')}
-                    className={cn("h-8 text-helper px-2", fundingTransactionType === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    Incoming
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFundingTransactionType('2')}
-                    className={cn("h-8 text-helper px-2", fundingTransactionType === '2' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    Commitment
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFundingTransactionType('3')}
-                    className={cn("h-8 text-helper px-2", fundingTransactionType === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    Disbursement
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFundingTransactionType('4')}
-                    className={cn("h-8 text-helper px-2", fundingTransactionType === '4' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    Expenditure
-                  </Button>
-                </div>
-              )}
-
-              {/* View Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFundingChartType('chart')}
-                  className={cn("h-8", fundingChartType === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Chart
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFundingChartType('table')}
-                  className={cn("h-8", fundingChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Table
-                </Button>
-              </div>
-
-              {/* Export Buttons */}
-              <div className="flex gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportFundingSourceToCSV}
-                  className="h-8 px-2"
-                  title="Export to CSV"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportFundingSourceToJPG}
-                  className="h-8 px-2"
-                  title="Export to JPG"
-                  disabled={fundingChartType === 'table'}
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </CardHeader>
+        {isFullscreen && (
+          <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
+            <CalendarYearSelector {...fundingSourceCal} />
+            {/* Source Type Toggle */}
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFundingSourceType('transactions')}
+                className={cn("h-8", fundingSourceType === 'transactions' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              >
+                Transactions
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFundingSourceType('planned')}
+                className={cn("h-8", fundingSourceType === 'planned' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              >
+                Planned
+              </Button>
+            </div>
+
+            {/* Transaction Type Filter (only show when viewing transactions) */}
+            {fundingSourceType === 'transactions' && (
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFundingTransactionType('1')}
+                  className={cn("h-8 text-helper px-2", fundingTransactionType === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                >
+                  Incoming
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFundingTransactionType('2')}
+                  className={cn("h-8 text-helper px-2", fundingTransactionType === '2' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                >
+                  Commitment
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFundingTransactionType('3')}
+                  className={cn("h-8 text-helper px-2", fundingTransactionType === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                >
+                  Disbursement
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFundingTransactionType('4')}
+                  className={cn("h-8 text-helper px-2", fundingTransactionType === '4' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                >
+                  Expenditure
+                </Button>
+              </div>
+            )}
+
+            {/* View Toggle */}
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFundingChartType('chart')}
+                className={cn("h-8", fundingChartType === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              >
+                Chart
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFundingChartType('table')}
+                className={cn("h-8", fundingChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+              >
+                Table
+              </Button>
+            </div>
+
+            <div className="ml-auto flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportFundingSourceToCSV}
+                className="h-8 px-2"
+                title="Export to CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportFundingSourceToJPG}
+                className="h-8 px-2"
+                title="Export to JPG"
+                disabled={fundingChartType === 'table'}
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
         <CardContent>
           {filteredFundingSourceData.providers && filteredFundingSourceData.providers.length > 0 ? (
             fundingChartType === 'table' ? (
@@ -3509,11 +3121,15 @@ export default function FinancialAnalyticsTab({
                 </table>
               </div>
             ) : (
-              <FundingSourceSankey
-                data={filteredFundingSourceData}
-                fundingSourceType={fundingSourceType}
-                fundingTransactionType={fundingTransactionType}
-              />
+              // Inline cells match the other charts at 500px; in fullscreen
+              // the sankey's own dynamic height (up to 850px) is allowed.
+              <div className={cn(!isFullscreen && "h-[500px] overflow-hidden")}>
+                <FundingSourceSankey
+                  data={filteredFundingSourceData}
+                  fundingSourceType={fundingSourceType}
+                  fundingTransactionType={fundingTransactionType}
+                />
+              </div>
             )
           ) : (
             <div className="flex items-center justify-center h-96 text-muted-foreground">
@@ -3524,8 +3140,320 @@ export default function FinancialAnalyticsTab({
               </div>
             </div>
           )}
+          {isFullscreen && (
+            <p className="text-body text-muted-foreground leading-relaxed mt-4">
+              <strong>What this shows:</strong> Sankey-style flows from each <strong>provider organisation</strong> on the left to the <strong>receiver organisations</strong> on the right, with band width sized by USD value. <strong>How to read it:</strong> wider bands mean more money moved between that provider–receiver pair; narrow tails are small-volume relationships that wouldn't stand out in a flat transaction list. Switch the toggle to view <strong>actual transactions</strong> by type (incoming, commitment, disbursement, expenditure) or <strong>planned disbursements</strong> only. <strong>How to use it:</strong> see at a glance who the activity's primary funders are, where the money is being directed, and whether funding is concentrated with one partner or spread across several — concentration can signal risk if a single funder withdraws.
+            </p>
+          )}
         </CardContent>
       </Card>
+        )}
+      </ChartFullscreen>
+
+      {/* Aid Modality Mix — outgoing-money pie grouped by IATI finance-type
+          buckets (grants / loans / equity / guarantees / other). */}
+      <ChartFullscreen>
+        {({ isFullscreen, toggle }) => (
+          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+            <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-foreground">
+                    Aid Modality Mix
+                  </CardTitle>
+                  <CardDescription>
+                    Outgoing finance by instrument
+                  </CardDescription>
+                </div>
+                {!isFullscreen && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            {isFullscreen && (
+              <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
+                <CalendarYearSelector {...aidModalityCal} />
+                {/* Multi-select dropdown — pick which outgoing transaction
+                    types to include in the modality mix. Defaults to all
+                    three (Commitments + Disbursements + Expenditures).
+                    `ml-auto` pushes it to the right edge of the toolbar. */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 ml-auto">
+                      Transaction Types ({aidModalityTxTypes.size})
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-72 p-2"
+                    onCloseAutoFocus={(e) => e.preventDefault()}
+                  >
+                    <div className="space-y-1">
+                      {AID_MODALITY_OUTGOING_TYPES.map((code) => {
+                        const checked = aidModalityTxTypes.has(code)
+                        const toggle = () => {
+                          setAidModalityTxTypes((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(code)) next.delete(code)
+                            else next.add(code)
+                            return next
+                          })
+                        }
+                        return (
+                          <div
+                            key={code}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                            onClick={toggle}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={toggle}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">
+                              {code}
+                            </code>
+                            <span className="text-body">{AID_MODALITY_TYPE_LABELS[code]}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+            <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
+              {aidModalityTotal > 0 ? (
+                <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
+                  <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={aidModalityData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius="75%"
+                          innerRadius="45%"
+                          paddingAngle={2}
+                        >
+                          {aidModalityData.map((d) => (
+                            <Cell key={d.name} fill={aidModalityColors[d.name] ?? '#94a3b8'} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          content={({ active, payload }: any) => {
+                            if (!active || !payload?.length) return null
+                            const entry = payload[0]
+                            const slice = entry.payload || {}
+                            const value = Number(entry.value) || 0
+                            const pct = aidModalityTotal > 0 ? (value / aidModalityTotal) * 100 : 0
+                            const sliceColor = entry.payload?.fill || aidModalityColors[entry.name]
+                            // Disaggregate the bucket's USD into the
+                            // contributing transaction types so the user
+                            // can see where the slice's value comes from.
+                            const byType: Record<string, number> = slice.byType || {}
+                            const breakdown = AID_MODALITY_OUTGOING_TYPES
+                              .filter((code) => Number(byType[code]) > 0)
+                              .map((code) => ({
+                                label: AID_MODALITY_TYPE_LABELS[code],
+                                value: formatCurrency(Number(byType[code]) || 0),
+                              }))
+                            return (
+                              <ChartTooltipCard
+                                title={entry.name}
+                                rows={[
+                                  {
+                                    label: 'Total',
+                                    value: formatCurrency(value),
+                                    color: sliceColor,
+                                    extra: `${pct.toFixed(1)}%`,
+                                    bordered: breakdown.length > 0,
+                                  },
+                                  ...breakdown,
+                                ]}
+                              />
+                            )
+                          }}
+                        />
+                        {isFullscreen && <Legend />}
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-96 text-muted-foreground">
+                  <div className="text-center">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="font-medium">No outgoing transactions with finance types recorded</p>
+                  </div>
+                </div>
+              )}
+              {isFullscreen && (
+                <p className="text-body text-muted-foreground leading-relaxed mt-4">
+                  <strong>What this shows:</strong> all <strong>outgoing transactions</strong> (commitments, disbursements, expenditures) grouped by IATI <strong>Finance Type</strong> buckets — Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified. <strong>How to read it:</strong> the slice for each instrument is sized by USD value, so a chart that's almost entirely Grants tells you the activity is concessional in nature; a Loans-heavy mix means market or near-market financing. <strong>How to use it:</strong> understand the financial instrument mix at a glance — useful for assessing concessionality, repayment risk, and how the activity fits into the funder's broader portfolio.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </ChartFullscreen>
+
+      {/* Top Providers — top 5 providers ranked by outgoing-money USD volume. */}
+      <ChartFullscreen>
+        {({ isFullscreen, toggle }) => (
+          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+            <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-foreground">
+                    Top Providers
+                  </CardTitle>
+                  <CardDescription>
+                    Top 5 providers by USD value
+                  </CardDescription>
+                </div>
+                {!isFullscreen && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            {isFullscreen && (
+              <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
+                <CalendarYearSelector {...topProvidersCal} />
+              </div>
+            )}
+            <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
+              {topProvidersData.length > 0 ? (
+                <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
+                  <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topProvidersData} layout="vertical" margin={{ top: 8, right: 24, left: 24, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 11 }} />
+                        <YAxis
+                          type="category"
+                          dataKey="displayName"
+                          width={140}
+                          tick={{ fontSize: 11 }}
+                          tickFormatter={(v: string) => (v && v.length > 22 ? `${v.slice(0, 22)}…` : v)}
+                        />
+                        <Tooltip
+                          content={({ active, payload }: any) => {
+                            if (!active || !payload?.length) return null
+                            const row = payload[0].payload
+                            return (
+                              <ChartTooltipCard
+                                title={row.name}
+                                rows={[{ label: 'Outgoing', value: formatCurrency(Number(row.value) || 0), color: '#dc2625' }]}
+                              />
+                            )
+                          }}
+                        />
+                        <Bar dataKey="value" fill="#dc2625" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-96 text-muted-foreground">
+                  <div className="text-center">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="font-medium">No transactions with provider organisations recorded</p>
+                  </div>
+                </div>
+              )}
+              {isFullscreen && (
+                <p className="text-body text-muted-foreground leading-relaxed mt-4">
+                  <strong>What this shows:</strong> the activity's five biggest <strong>provider organisations</strong> — the orgs sending the money — ranked by total USD across all outgoing transactions (commitments, disbursements, expenditures). <strong>How to read it:</strong> a single dominant top bar means the activity is funded primarily by one provider; a flatter spread means funding comes from several sources. <strong>How to use it:</strong> identify the activity's primary funders at a glance and assess <strong>concentration risk</strong> — heavy reliance on one provider is a fragility worth flagging if that funder were to withdraw.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </ChartFullscreen>
+
+      {/* Top Receivers — top 5 receivers ranked by outgoing-money USD volume. */}
+      <ChartFullscreen>
+        {({ isFullscreen, toggle }) => (
+          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+            <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-foreground">
+                    Top Receivers
+                  </CardTitle>
+                  <CardDescription>
+                    Top 5 receivers by USD value
+                  </CardDescription>
+                </div>
+                {!isFullscreen && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            {isFullscreen && (
+              <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
+                <CalendarYearSelector {...topReceiversCal} />
+              </div>
+            )}
+            <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
+              {topReceiversData.length > 0 ? (
+                <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
+                  <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topReceiversData} layout="vertical" margin={{ top: 8, right: 24, left: 24, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 11 }} />
+                        <YAxis
+                          type="category"
+                          dataKey="displayName"
+                          width={140}
+                          tick={{ fontSize: 11 }}
+                          tickFormatter={(v: string) => (v && v.length > 22 ? `${v.slice(0, 22)}…` : v)}
+                        />
+                        <Tooltip
+                          content={({ active, payload }: any) => {
+                            if (!active || !payload?.length) return null
+                            const row = payload[0].payload
+                            return (
+                              <ChartTooltipCard
+                                title={row.name}
+                                rows={[{ label: 'Incoming', value: formatCurrency(Number(row.value) || 0), color: '#4c5568' }]}
+                              />
+                            )
+                          }}
+                        />
+                        <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-96 text-muted-foreground">
+                  <div className="text-center">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="font-medium">No transactions with receiver organisations recorded</p>
+                  </div>
+                </div>
+              )}
+              {isFullscreen && (
+                <p className="text-body text-muted-foreground leading-relaxed mt-4">
+                  <strong>What this shows:</strong> the activity's five biggest <strong>receiver organisations</strong> — the orgs taking in the money — ranked by total USD across all outgoing transactions (commitments, disbursements, expenditures). <strong>How to read it:</strong> a single dominant top bar means the activity flows mostly to one implementer; a flatter spread means it's distributed across several. <strong>How to use it:</strong> identify the activity's main implementing partners at a glance and assess <strong>delivery concentration</strong> — over-reliance on one receiver is a delivery risk if that partner faces capacity or compliance issues.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </ChartFullscreen>
     </div>
   )
 }

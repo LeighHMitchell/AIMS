@@ -120,7 +120,24 @@ interface FinancialTotalsBarChartProps {
   }
   refreshKey?: number
   compact?: boolean
+  /** Restrict all three Supabase queries (budgets, planned disbursements,
+   *  transactions) to records on this activity. */
+  activityId?: string
+  /** Restrict the three queries to records involving this org in any role:
+   *  budgets / planned disbursements → activities reported by this org;
+   *  transactions → provider OR receiver OR reporting-org of the activity. */
+  organizationId?: string
+  /** Opt-in: when the chart is rendered inside a flex-column parent that has
+   *  an explicit height (e.g. the activity / org profile expanded modal), set
+   *  this so the chart container uses `flex-1` and fills the available space.
+   *  Other callers (analytics dashboard) leave this off and the chart falls
+   *  back to a fixed `h-[500px]` so it doesn't collapse. */
+  fillHeight?: boolean
 }
+
+// Postgrest URL-length cap when expanding `activity_id.in.(uuid,...)` —
+// real orgs are unlikely to exceed this, but trim defensively.
+const MAX_REPORTED_ACTIVITY_IDS = 1000
 
 interface YearlyData {
   year: number
@@ -146,7 +163,14 @@ export function FinancialTotalsBarChart({
   dateRange,
   refreshKey,
   compact = false,
+  activityId,
+  organizationId,
+  fillHeight = false,
 }: FinancialTotalsBarChartProps) {
+  // activityId wins when both are passed — an activity belongs to one org and
+  // mixing the filters produces nonsense.
+  const effectiveActivityId = activityId
+  const effectiveOrgId = activityId ? undefined : organizationId
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rawData, setRawData] = useState<{
@@ -232,28 +256,75 @@ export function FinancialTotalsBarChart({
       if (!supabase) return
 
       try {
-        const { data: transactionDates } = await supabase
+        // Resolve org filter into a list of activity ids reported by the org —
+        // budgets / PDs only join through `activity_id`, so we pre-fetch the
+        // list once and apply it to all three date-range queries below.
+        let reportedActivityIds: string[] | null = null
+        if (effectiveOrgId) {
+          const { data: reportedActivities } = await supabase
+            .from('activities')
+            .select('id')
+            .eq('reporting_org_id', effectiveOrgId)
+            .limit(MAX_REPORTED_ACTIVITY_IDS)
+          reportedActivityIds = (reportedActivities || []).map((a: { id: string }) => a.id)
+        }
+
+        let txQ = supabase
           .from('transactions')
           .select('transaction_date')
           .not('transaction_date', 'is', null)
+        if (effectiveActivityId) {
+          txQ = txQ.eq('activity_id', effectiveActivityId)
+        } else if (effectiveOrgId) {
+          const orParts = [
+            `provider_org_id.eq.${effectiveOrgId}`,
+            `receiver_org_id.eq.${effectiveOrgId}`,
+          ]
+          if (reportedActivityIds && reportedActivityIds.length > 0) {
+            orParts.push(`activity_id.in.(${reportedActivityIds.join(',')})`)
+          }
+          txQ = txQ.or(orParts.join(','))
+        }
+        const { data: transactionDates } = await txQ
 
-        const { data: budgetDates } = await supabase
+        let budgetQ = supabase
           .from('activity_budgets')
           .select('period_start, period_end')
           .not('period_start', 'is', null)
+        if (effectiveActivityId) {
+          budgetQ = budgetQ.eq('activity_id', effectiveActivityId)
+        } else if (effectiveOrgId) {
+          if (reportedActivityIds && reportedActivityIds.length > 0) {
+            budgetQ = budgetQ.in('activity_id', reportedActivityIds)
+          } else {
+            // No reported activities → no budgets for this org. Force-empty.
+            budgetQ = budgetQ.eq('activity_id', '00000000-0000-0000-0000-000000000000')
+          }
+        }
+        const { data: budgetDates } = await budgetQ
 
-        const { data: pdDates } = await supabase
+        let pdQ = supabase
           .from('planned_disbursements')
           .select('period_start, period_end')
           .not('period_start', 'is', null)
+        if (effectiveActivityId) {
+          pdQ = pdQ.eq('activity_id', effectiveActivityId)
+        } else if (effectiveOrgId) {
+          if (reportedActivityIds && reportedActivityIds.length > 0) {
+            pdQ = pdQ.in('activity_id', reportedActivityIds)
+          } else {
+            pdQ = pdQ.eq('activity_id', '00000000-0000-0000-0000-000000000000')
+          }
+        }
+        const { data: pdDates } = await pdQ
 
         const allDates: string[] = []
-        transactionDates?.forEach(t => { if (t.transaction_date) allDates.push(t.transaction_date) })
-        budgetDates?.forEach(b => {
+        transactionDates?.forEach((t: { transaction_date: string | null }) => { if (t.transaction_date) allDates.push(t.transaction_date) })
+        budgetDates?.forEach((b: { period_start: string | null; period_end: string | null }) => {
           if (b.period_start) allDates.push(b.period_start)
           if (b.period_end) allDates.push(b.period_end)
         })
-        pdDates?.forEach(pd => {
+        pdDates?.forEach((pd: { period_start: string | null; period_end: string | null }) => {
           if (pd.period_start) allDates.push(pd.period_start)
           if (pd.period_end) allDates.push(pd.period_end)
         })
@@ -280,7 +351,7 @@ export function FinancialTotalsBarChart({
     }
 
     fetchDateRange()
-  }, [])
+  }, [effectiveActivityId, effectiveOrgId])
 
   // Handle year click
   const handleYearClick = (year: number, shiftKey: boolean) => {
@@ -336,30 +407,84 @@ export function FinancialTotalsBarChart({
           return
         }
 
-        // Fetch all data without date filtering - filter in processing
-        const { data: budgets, error: budgetsError } = await supabase
+        // Resolve org filter into a list of activity ids reported by the org
+        // (budgets / PDs only join through activity_id).
+        let reportedActivityIds: string[] | null = null
+        if (effectiveOrgId) {
+          const { data: reportedActivities, error: repErr } = await supabase
+            .from('activities')
+            .select('id')
+            .eq('reporting_org_id', effectiveOrgId)
+            .limit(MAX_REPORTED_ACTIVITY_IDS)
+          if (repErr) {
+            console.error('[FinancialTotalsBarChart] Error resolving reporting-org activities:', repErr)
+          }
+          reportedActivityIds = (reportedActivities || []).map((a: { id: string }) => a.id)
+          if (reportedActivityIds && reportedActivityIds.length === MAX_REPORTED_ACTIVITY_IDS) {
+            console.warn('[FinancialTotalsBarChart] reporting-org activity list truncated at', MAX_REPORTED_ACTIVITY_IDS)
+          }
+        }
+
+        // Build budgets query
+        let budgetsQuery = supabase
           .from('activity_budgets')
           .select('period_start, period_end, value, usd_value, currency')
           .not('period_start', 'is', null)
+        if (effectiveActivityId) {
+          budgetsQuery = budgetsQuery.eq('activity_id', effectiveActivityId)
+        } else if (effectiveOrgId) {
+          if (reportedActivityIds && reportedActivityIds.length > 0) {
+            budgetsQuery = budgetsQuery.in('activity_id', reportedActivityIds)
+          } else {
+            budgetsQuery = budgetsQuery.eq('activity_id', '00000000-0000-0000-0000-000000000000')
+          }
+        }
+        const { data: budgets, error: budgetsError } = await budgetsQuery
 
         if (budgetsError) {
           console.error('[FinancialTotalsBarChart] Error fetching budgets:', budgetsError)
         }
 
-        const { data: plannedDisbursements, error: plannedError } = await supabase
+        // Build planned disbursements query
+        let pdQuery = supabase
           .from('planned_disbursements')
           .select('period_start, period_end, amount, usd_amount, currency')
           .not('period_start', 'is', null)
+        if (effectiveActivityId) {
+          pdQuery = pdQuery.eq('activity_id', effectiveActivityId)
+        } else if (effectiveOrgId) {
+          if (reportedActivityIds && reportedActivityIds.length > 0) {
+            pdQuery = pdQuery.in('activity_id', reportedActivityIds)
+          } else {
+            pdQuery = pdQuery.eq('activity_id', '00000000-0000-0000-0000-000000000000')
+          }
+        }
+        const { data: plannedDisbursements, error: plannedError } = await pdQuery
 
         if (plannedError) {
           console.error('[FinancialTotalsBarChart] Error fetching planned disbursements:', plannedError)
         }
 
-        const { data: transactions, error: transactionsError } = await supabase
+        // Build transactions query — org filter pulls in any role
+        // (provider, receiver, or activity-reporting-org).
+        let txQuery = supabase
           .from('transactions')
           .select('transaction_date, transaction_type, value, value_usd, currency')
           .eq('status', 'actual')
           .not('transaction_date', 'is', null)
+        if (effectiveActivityId) {
+          txQuery = txQuery.eq('activity_id', effectiveActivityId)
+        } else if (effectiveOrgId) {
+          const orParts = [
+            `provider_org_id.eq.${effectiveOrgId}`,
+            `receiver_org_id.eq.${effectiveOrgId}`,
+          ]
+          if (reportedActivityIds && reportedActivityIds.length > 0) {
+            orParts.push(`activity_id.in.(${reportedActivityIds.join(',')})`)
+          }
+          txQuery = txQuery.or(orParts.join(','))
+        }
+        const { data: transactions, error: transactionsError } = await txQuery
 
         if (transactionsError) {
           console.error('[FinancialTotalsBarChart] Error fetching transactions:', transactionsError)
@@ -379,7 +504,7 @@ export function FinancialTotalsBarChart({
     }
 
     fetchData()
-  }, [refreshKey])
+  }, [refreshKey, effectiveActivityId, effectiveOrgId])
 
   // Process data into yearly chart data
   const chartData = useMemo(() => {
@@ -682,9 +807,14 @@ export function FinancialTotalsBarChart({
 
   // Render the appropriate chart type
   const renderChart = (height: number, isCompact: boolean) => {
-    const margin = isCompact 
+    const margin = isCompact
       ? { top: 10, right: 20, left: 20, bottom: 30 }
-      : { top: 20, right: 30, left: 20, bottom: 60 }
+      : isExpanded
+        // In the expanded modal the legend lives outside the SVG, so we
+        // shrink the chart's internal margins. ~32px below leaves the X-axis
+        // labels lifted slightly off the chart's bottom edge.
+        ? { top: 4, right: 30, left: 20, bottom: 32 }
+        : { top: 20, right: 30, left: 20, bottom: 60 }
 
     const commonProps = {
       data: chartData,
@@ -772,13 +902,13 @@ export function FinancialTotalsBarChart({
 
     if (chartType === 'line') {
       return (
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={isExpanded ? "100%" : height}>
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
-            {!isCompact && <Legend content={renderLegend} />}
+            {!isCompact && !isExpanded && <Legend content={renderLegend} />}
             {activeDataKeys.map(key => (
               <Line
                 key={key}
@@ -799,7 +929,7 @@ export function FinancialTotalsBarChart({
 
     if (chartType === 'area') {
       return (
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={isExpanded ? "100%" : height}>
           <AreaChart {...commonProps}>
             <defs>
               {activeDataKeys.map(key => (
@@ -813,7 +943,7 @@ export function FinancialTotalsBarChart({
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
-            {!isCompact && <Legend content={renderLegend} />}
+            {!isCompact && !isExpanded && <Legend content={renderLegend} />}
             {activeDataKeys.map(key => (
               <Area
                 key={key}
@@ -840,7 +970,7 @@ export function FinancialTotalsBarChart({
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} />
           <Tooltip content={<CustomTooltip />} />
-          {!isCompact && <Legend content={renderLegend} />}
+          {!isCompact && !isExpanded && <Legend content={renderLegend} />}
           {activeDataKeys.map(key => (
             <Bar
               key={key}
@@ -912,10 +1042,16 @@ export function FinancialTotalsBarChart({
     )
   }
 
+  // The flex-fill layout (h-full + flex-1 chart) only works when the parent
+  // gives us an explicit height. The activity / org profile passes
+  // `fillHeight` because their modal is a flex column with h-[85vh]; the
+  // analytics dashboard's expanded Dialog has an auto-height parent, so
+  // omitting `fillHeight` keeps the chart at a safe fixed h-[500px] there.
+  const fillsCard = isExpanded && fillHeight
   return (
-    <div className="space-y-4">
+    <div className={cn(fillsCard ? "flex flex-col h-full pt-2" : "space-y-4")}>
       {/* Controls Row */}
-      <div className="flex items-start gap-2 flex-wrap">
+      <div className={cn("flex items-start gap-2 flex-wrap shrink-0", fillsCard && "mb-3")}>
         {/* Calendar & Year Selectors */}
         {customYears.length > 0 && (
           <>
@@ -1121,10 +1257,18 @@ export function FinancialTotalsBarChart({
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="h-[500px]">
+      {/* Chart — when filling the card, use absolute positioning so the
+          ResponsiveContainer always sees an explicit pixel height. flex-1 on
+          its own doesn't reliably propagate through to Recharts. */}
+      <div className={cn(fillsCard ? "flex-1 min-h-0 relative" : "h-[500px]")}>
         {chartData.length > 0 ? (
-          renderChart(500, false)
+          fillsCard ? (
+            <div className="absolute inset-0">
+              {renderChart(500, false)}
+            </div>
+          ) : (
+            renderChart(500, false)
+          )
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
@@ -1136,14 +1280,52 @@ export function FinancialTotalsBarChart({
         )}
       </div>
 
-      {/* Explanatory text */}
-      <p className="text-body text-muted-foreground leading-relaxed">
-        This chart provides a comprehensive view of financial flows over time, helping you understand the full lifecycle of aid funding. 
-        <strong> Budgets</strong> represent approved funding allocations, while <strong>Planned Disbursements</strong> show when funds are scheduled to be released. 
-        By comparing these forward-looking figures with actual <strong>transaction types</strong> (such as disbursements, commitments, and expenditures), 
-        you can assess aid predictability, identify gaps between planned and actual spending, and track how effectively funds flow from commitment to implementation. 
-        This analysis is essential for development partners coordinating their support and for recipient governments planning their budgets around expected aid inflows.
-      </p>
+      {/* External legend (expanded mode only). Rendered outside the chart so
+          the SVG's bars + X-axis fill the chart container all the way to the
+          bottom — Recharts' built-in <Legend> reserves space inside the SVG
+          which leaves dead-space below the X-axis. */}
+      {isExpanded && chartData.length > 0 && (
+        <ul className="flex flex-wrap justify-center gap-4 mt-2 shrink-0">
+          {activeDataKeys.map((key) => {
+            const isHidden = hiddenSeries.has(key)
+            return (
+              <li
+                key={key}
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleSeries(key)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    toggleSeries(key)
+                  }
+                }}
+                title={isHidden ? 'Click to show' : 'Click to hide'}
+                className={cn(
+                  'flex items-center gap-2 cursor-pointer select-none transition-opacity',
+                  isHidden ? 'opacity-40' : 'opacity-100'
+                )}
+              >
+                <span
+                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: colorMap[key] }}
+                />
+                <span className={cn('text-body text-foreground', isHidden && 'line-through')}>
+                  {key}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {/* Explanatory text — expanded view only. Inline cards stay compact;
+          the explanation is for users who've opened the modal to focus. */}
+      {isExpanded && (
+        <p className={cn("text-body text-muted-foreground leading-relaxed shrink-0", fillsCard && "mt-16")}>
+          <strong>What this shows:</strong> the activity's planned financial commitments — <strong>approved budgets</strong> and <strong>scheduled planned disbursements</strong> — alongside the actual money that moved as recorded <strong>transactions</strong> (commitments, disbursements, expenditures). <strong>How to read it:</strong> compare year-by-year heights to spot when planned amounts matched delivery and when they diverged. Tall budget bars with short disbursement bars mean funds were approved but not yet released; the inverse points to spending that outpaced plan. <strong>How to use it:</strong> check whether the activity is delivering its budget on schedule and identify the years where execution slipped most.
+        </p>
+      )}
     </div>
   )
 }

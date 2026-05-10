@@ -18,6 +18,21 @@ import { CHART_STRUCTURE_COLORS, OTHERS_COLOR } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+type Top10Basis = 'total' | 'commitment' | 'disbursement'
+
+const BASIS_LABEL: Record<Top10Basis, string> = {
+  total: 'Commitments + Disbursements',
+  commitment: 'Commitments',
+  disbursement: 'Disbursements',
+}
 
 interface Top10TotalFinancialValueChartProps {
   dateRange: {
@@ -50,10 +65,13 @@ export function Top10TotalFinancialValueChart({
   const isExpanded = useChartExpansion()
   const [data, setData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
+  // Basis controls which transaction types are summed server-side. Default
+  // matches the original behaviour (commitments + disbursements together).
+  const [basis, setBasis] = useState<Top10Basis>('total')
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey])
+  }, [dateRange, filters, refreshKey, basis])
 
   const fetchData = async () => {
     try {
@@ -62,7 +80,8 @@ export function Top10TotalFinancialValueChart({
       const params = new URLSearchParams({
         dateFrom: dateRange.from.toISOString(),
         dateTo: dateRange.to.toISOString(),
-        limit: '10'
+        limit: '10',
+        basis,
       })
       
       if (filters?.country && filters.country !== 'all') {
@@ -137,7 +156,7 @@ export function Top10TotalFinancialValueChart({
       <ChartTooltipCard
         title={fullName}
         rows={[{
-          label: 'Commitments + Disbursements',
+          label: BASIS_LABEL[basis],
           value: formatTooltipCurrency(item.totalValue, isExpanded),
           color: item.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR,
         }]}
@@ -145,26 +164,51 @@ export function Top10TotalFinancialValueChart({
     )
   }
 
+  // Basis toggle — surfaces what the bars represent so users can compare
+  // Commitments alone vs Disbursements alone vs both together. Server-side
+  // filter via `basis` query param.
+  const basisToggle = (
+    <div className="flex items-center justify-end">
+      <Select value={basis} onValueChange={(v) => setBasis(v as Top10Basis)}>
+        <SelectTrigger className="h-8 w-[240px] text-helper">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="total">Commitments + Disbursements</SelectItem>
+          <SelectItem value="commitment">Commitments only</SelectItem>
+          <SelectItem value="disbursement">Disbursements only</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+
   if (loading) {
     return (
-      <ChartLoadingPlaceholder />
+      <div className="space-y-3">
+        {basisToggle}
+        <ChartLoadingPlaceholder />
+      </div>
     )
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
-        <div className="text-center">
-          <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No financial data available</p>
-          <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+      <div className="space-y-3">
+        {basisToggle}
+        <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
+          <div className="text-center">
+            <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No financial data available</p>
+            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div>
+    <div className="space-y-3">
+      {basisToggle}
       <ResponsiveContainer width="100%" height={400}>
         <BarChart
           data={data}

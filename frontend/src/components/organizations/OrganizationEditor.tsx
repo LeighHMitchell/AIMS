@@ -4,8 +4,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, MessageSquare, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { exportOrganizationToExcel } from '@/lib/organization-export'
+import { OrganizationComments } from './OrganizationComments'
 import {
   Dialog,
   DialogContent,
@@ -52,6 +54,10 @@ export function OrganizationEditor({
   const [tabCompletionStatus, setTabCompletionStatus] = useState<Record<string, { isComplete: boolean; isInProgress: boolean }>>({})
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  // Footer state for standalone (non-form) sections — these tabs autosave so
+  // there's no Save button, but we still want navigation, comments and export.
+  const [showStandaloneCommentsModal, setShowStandaloneCommentsModal] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // Ref to track current org ID so callbacks don't depend on the full organization object
   const orgIdRef = useRef(organizationId || (initialData as Organization)?.id)
@@ -182,18 +188,20 @@ export function OrganizationEditor({
     return mapping[section] || 'basic'
   }
 
-  // Section order for navigation
+  // Section order for navigation — must mirror the navigation groups in
+  // OrganizationEditorNavigation.tsx so Back / Next walk in the same order
+  // the user sees in the sidebar.
   const sectionOrder = [
     'general',
     'contact',
     'contacts',
-    'aliases',
-    'merge',
     'funding-envelope',
     'iati-import',
     'budgets',
     'documents',
-    'iati-prefs'
+    'iati-prefs',
+    'aliases',
+    'merge',
   ]
 
   // Navigate to next section
@@ -205,6 +213,20 @@ export function OrganizationEditor({
       window.history.replaceState(null, '', `/organizations/${orgIdRef.current}/edit?section=${nextSection}`)
     }
   }, [activeSection])
+
+  // Navigate to previous section
+  const handlePreviousSection = useCallback(() => {
+    const currentIndex = sectionOrder.indexOf(activeSection)
+    if (currentIndex > 0) {
+      const previousSection = sectionOrder[currentIndex - 1]
+      setActiveSection(previousSection)
+      window.history.replaceState(null, '', `/organizations/${orgIdRef.current}/edit?section=${previousSection}`)
+    }
+  }, [activeSection])
+
+  const currentSectionIndex = sectionOrder.indexOf(activeSection)
+  const hasPreviousSection = currentSectionIndex > 0
+  const hasNextSection = currentSectionIndex >= 0 && currentSectionIndex < sectionOrder.length - 1
 
   // Render section content
   const renderSectionContent = () => {
@@ -230,6 +252,9 @@ export function OrganizationEditor({
           initialTab={getFormTab(activeSection)}
           externalSaving={saving}
           onNextSection={handleNextSection}
+          onPreviousSection={handlePreviousSection}
+          hasPreviousSection={hasPreviousSection}
+          hasNextSection={hasNextSection}
         />
       )
     }
@@ -301,22 +326,124 @@ export function OrganizationEditor({
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-white">
+    <div className="flex h-[calc(100vh-6rem)] overflow-hidden gap-x-6 lg:gap-x-8">
       {/* Navigation Sidebar */}
-      <OrganizationEditorNavigation
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        organizationCreated={organizationCreated}
-        tabCompletionStatus={tabCompletionStatus}
-        disabled={saving}
-        organization={organization}
-        onDelete={() => setShowDeleteDialog(true)}
-      />
+      <aside className="w-80 flex-shrink-0 bg-card overflow-y-auto pb-24">
+        <OrganizationEditorNavigation
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          organizationCreated={organizationCreated}
+          tabCompletionStatus={tabCompletionStatus}
+          disabled={saving}
+          organization={organization}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
+      </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 overflow-y-auto bg-card pb-24">
         {renderSectionContent()}
-      </div>
+      </main>
+
+      {/* Footer for standalone-component sections — the form sections render
+          their own footer inside OrganizationFormContent, so we only render
+          this one when a non-form section is active to avoid duplicates. */}
+      {!['general', 'contact', 'aliases', 'merge'].includes(activeSection) && (
+        <footer className="fixed bottom-0 right-0 left-72 bg-card/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 z-[60]">
+          <div className="max-w-full flex items-center justify-end gap-3">
+            {/* Comments Button */}
+            {organization?.id ? (
+              <Button
+                variant="outline"
+                className="px-4 py-3 text-base font-semibold relative"
+                onClick={() => setShowStandaloneCommentsModal(true)}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Comments
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="px-4 py-3 text-base font-semibold opacity-50 cursor-not-allowed"
+                disabled
+                title="Save the organization first to enable comments"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Comments
+              </Button>
+            )}
+
+            {/* Back Button */}
+            <Button
+              variant="outline"
+              className="px-6 py-3 text-base font-semibold min-w-[140px]"
+              onClick={handlePreviousSection}
+              disabled={!hasPreviousSection || saving}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+
+            {/* Next Button */}
+            <Button
+              variant="outline"
+              className="px-6 py-3 text-base font-semibold min-w-[120px]"
+              onClick={handleNextSection}
+              disabled={!hasNextSection || saving}
+            >
+              Next
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+
+            {/* Export for Review Button */}
+            {organization?.id && (
+              <Button
+                variant="outline"
+                className="px-6 py-3 text-base font-semibold min-w-[200px]"
+                onClick={async () => {
+                  if (exporting || !organization?.id) return
+                  setExporting(true)
+                  try {
+                    await exportOrganizationToExcel(organization.id)
+                  } catch (e) {
+                    console.error('[OrgEditor] Export for Review failed:', e)
+                    toast.error('Failed to generate Excel export')
+                  } finally {
+                    setExporting(false)
+                  }
+                }}
+                disabled={exporting || saving}
+                title="Download a complete Excel snapshot of this organization to share with a reviewer"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {exporting ? 'Exporting…' : 'Export for Review'}
+              </Button>
+            )}
+          </div>
+        </footer>
+      )}
+
+      {/* Comments dialog for standalone sections */}
+      {organization?.id && (
+        <Dialog
+          open={showStandaloneCommentsModal}
+          onOpenChange={setShowStandaloneCommentsModal}
+        >
+          <DialogContent className="max-w-3xl min-h-[60vh] max-h-[95vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Comments</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <OrganizationComments
+                organizationId={organization.id}
+                contextSection={activeSection}
+                allowContextSwitch
+                showInline
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete Organization Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -161,10 +161,10 @@ export function CompactChartCard({
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-foreground truncate">
+              <CardTitle className="text-lg font-semibold text-foreground truncate">
                 {title}
               </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-body text-muted-foreground line-clamp-1 mt-0.5">
                 {shortDescription}
               </CardDescription>
             </div>
@@ -221,10 +221,10 @@ export function CompactChartCard({
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
-                <DialogTitle className="text-2xl font-semibold text-foreground">
+                <DialogTitle className="text-lg font-semibold text-foreground">
                   {title}
                 </DialogTitle>
-                <DialogDescription className="text-base mt-2">
+                <DialogDescription className="text-body mt-2">
                   {fullDescription || shortDescription}
                 </DialogDescription>
               </div>

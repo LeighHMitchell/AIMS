@@ -86,12 +86,35 @@ export async function GET(
       }
     }
     
+    // Sum total disbursed (USD) where this org is the provider on disbursement
+    // (type 3) or expenditure (type 4) transactions. Used by the org-profile
+    // hero subtitle (e.g. "Active in 24 activities · USD 12.4m disbursed").
+    let totalDisbursedUsd = 0;
+    try {
+      const { data: disbTxns } = await supabase
+        .from('transactions')
+        .select('value_usd, value, currency, transaction_type')
+        .eq('provider_org_id', id)
+        .in('transaction_type', ['3', '4']);
+      if (disbTxns) {
+        for (const t of disbTxns) {
+          const stored = t.value_usd != null && !Number.isNaN(Number(t.value_usd))
+            ? Number(t.value_usd)
+            : (t.currency === 'USD' && t.value != null ? Number(t.value) : 0);
+          totalDisbursedUsd += stored || 0;
+        }
+      }
+    } catch (sumError) {
+      console.warn('[AIMS] Could not compute total_disbursed_usd:', sumError);
+    }
+
     // Enhance organization with computed fields
     const enhancedOrganization = {
       ...organization,
       // Ensure we use the correct organisation_type field for frontend compatibility
       organisation_type: organization.organisation_type || organization.type,
       active_project_count: totalActivitiesCount,
+      total_disbursed_usd: totalDisbursedUsd,
       // Map country back to country_represented for frontend form compatibility
       country_represented: organization.country,
       // Add default values for IATI fields if not present

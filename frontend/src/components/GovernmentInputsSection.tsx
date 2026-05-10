@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Layers, Calendar as CalendarIcon, Eye as EyeIcon, ClipboardCheck } from "lucide-react";
 import { Plus, X, Upload, HelpCircle, FileText, CheckCircle2, Circle, CircleSlash } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -150,6 +151,7 @@ export default function GovernmentInputsSection({
   governmentInputs, 
   onChange 
 }: GovernmentInputsSectionProps) {
+  const [govInputsTab, setGovInputsTab] = useState<"budget-classification" | "planning-coordination" | "oversight-context" | "evaluation-results">("budget-classification");
   const [annualContribution, setAnnualContribution] = useState({
     year: new Date().getFullYear(),
     amountLocal: 0,
@@ -227,24 +229,22 @@ export default function GovernmentInputsSection({
           </p>
         </div>
 
-        <Tabs defaultValue="budget-classification" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-muted border border-border">
-            <TabsTrigger value="budget-classification" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
-              Budget Classification
-            </TabsTrigger>
-            <TabsTrigger value="planning-coordination" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
-              Planning & Coordination
-            </TabsTrigger>
-            <TabsTrigger value="oversight-context" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
-              Oversight & Context
-            </TabsTrigger>
-            <TabsTrigger value="evaluation-results" className="text-foreground data-[state=active]:bg-white data-[state=active]:text-foreground">
-              Evaluation & Results
-            </TabsTrigger>
-          </TabsList>
+        <SegmentedControl
+          ariaLabel="Government inputs section"
+          variant="icon-text"
+          value={govInputsTab}
+          onValueChange={setGovInputsTab}
+          options={[
+            { value: "budget-classification", label: "Budget Classification", icon: Layers },
+            { value: "planning-coordination", label: "Planning & Coordination", icon: CalendarIcon },
+            { value: "oversight-context", label: "Oversight & Context", icon: EyeIcon },
+            { value: "evaluation-results", label: "Evaluation & Results", icon: ClipboardCheck },
+          ]}
+        />
 
-          {/* Tab 1: Budget Classification & Financial Contribution */}
-          <TabsContent value="budget-classification" className="mt-6 border-0 p-0 bg-transparent">
+        {/* Tab 1: Budget Classification & Financial Contribution */}
+        {govInputsTab === "budget-classification" && (
+        <div className="mt-6 border-0 p-0 bg-transparent">
             <div className="space-y-6">
 
             {/* 1. On-Budget Classification */}
@@ -645,10 +645,12 @@ export default function GovernmentInputsSection({
               </CardContent>
             </Card>
             </div>
-          </TabsContent>
+        </div>
+        )}
 
-          {/* Tab 2: Planning & Coordination */}
-          <TabsContent value="planning-coordination" className="mt-6 border-0 p-0 bg-transparent">
+        {/* Tab 2: Planning & Coordination */}
+        {govInputsTab === "planning-coordination" && (
+        <div className="mt-6 border-0 p-0 bg-transparent">
             <div className="space-y-6">
 
             {/* National Planning Alignment */}
@@ -877,10 +879,12 @@ export default function GovernmentInputsSection({
               </CardContent>
             </Card>
             </div>
-          </TabsContent>
+        </div>
+        )}
 
-          {/* Tab 3: Oversight & Context */}
-          <TabsContent value="oversight-context" className="mt-6 border-0 p-0 bg-transparent">
+        {/* Tab 3: Oversight & Context */}
+        {govInputsTab === "oversight-context" && (
+        <div className="mt-6 border-0 p-0 bg-transparent">
             <div className="space-y-6">
 
             {/* Oversight & Agreement Status */}
@@ -1125,10 +1129,12 @@ export default function GovernmentInputsSection({
               </CardContent>
             </Card>
             </div>
-          </TabsContent>
+        </div>
+        )}
 
-          {/* Tab 4: Evaluation & Results */}
-          <TabsContent value="evaluation-results" className="mt-6 border-0 p-0 bg-transparent">
+        {/* Tab 4: Evaluation & Results */}
+        {govInputsTab === "evaluation-results" && (
+        <div className="mt-6 border-0 p-0 bg-transparent">
             <div className="space-y-6">
 
             {/* Evaluation and Results */}
@@ -1219,8 +1225,8 @@ export default function GovernmentInputsSection({
               </CardContent>
             </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+        </div>
+        )}
       </div>
     </TooltipProvider>
   );

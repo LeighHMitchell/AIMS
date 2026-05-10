@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Info, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight, Globe } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { PolicyMarkerScoreSelectIATI } from '@/components/forms/PolicyMarkerScoreSelectIATI';
@@ -340,31 +340,42 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
 
 
       {/* Tabbed Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          {Object.entries(MARKER_TYPE_LABELS).map(([type, label]) => {
-            const typeMarkers = getMarkersByType(type);
-            const selectedInType = typeMarkers.filter(m => selectedMarkers.has(m.id)).length;
-            
-            return (
-              <TabsTrigger key={type} value={type} className="relative">
-                <div className="flex items-center gap-2">
-                  {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{label.split(' ')[0]}</span>
-                </div>
-                {selectedInType > 0 && (
-                  <Badge variant="secondary" className="ml-2 text-helper">
-                    {selectedInType}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      <SegmentedControl
+        ariaLabel="Policy marker category"
+        variant="icon-text"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        options={[
+          {
+            value: 'environmental',
+            label: 'Environmental',
+            icon: Leaf,
+            badge: getMarkersByType('environmental').filter(m => selectedMarkers.has(m.id)).length > 0
+              ? <Badge variant="secondary" className="text-helper">{getMarkersByType('environmental').filter(m => selectedMarkers.has(m.id)).length}</Badge>
+              : undefined,
+          },
+          {
+            value: 'social_governance',
+            label: 'Social & Governance',
+            icon: Users,
+            badge: getMarkersByType('social_governance').filter(m => selectedMarkers.has(m.id)).length > 0
+              ? <Badge variant="secondary" className="text-helper">{getMarkersByType('social_governance').filter(m => selectedMarkers.has(m.id)).length}</Badge>
+              : undefined,
+          },
+          {
+            value: 'other',
+            label: 'Other',
+            icon: Wrench,
+            badge: getMarkersByType('other').filter(m => selectedMarkers.has(m.id)).length > 0
+              ? <Badge variant="secondary" className="text-helper">{getMarkersByType('other').filter(m => selectedMarkers.has(m.id)).length}</Badge>
+              : undefined,
+          },
+        ]}
+      />
 
-        {Object.keys(MARKER_TYPE_LABELS).map(type => (
-          <TabsContent key={type} value={type} className="mt-6">
+      {Object.keys(MARKER_TYPE_LABELS).map(type => (
+        activeTab === type ? (
+          <div key={type} className="mt-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
@@ -372,20 +383,20 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
                   {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS]}
                 </h4>
               </div>
-              
+
               <div className="grid gap-4">
                 {getMarkersByType(type).map(renderMarkerCard)}
               </div>
-              
+
               {getMarkersByType(type).length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS].toLowerCase()} markers available</p>
                 </div>
               )}
             </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+          </div>
+        ) : null
+      ))}
     </div>
   );
 }

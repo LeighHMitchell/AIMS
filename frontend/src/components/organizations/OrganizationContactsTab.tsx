@@ -2,7 +2,13 @@
 
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, List } from 'lucide-react';
+import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, List, HelpCircle } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
@@ -44,6 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface Contact {
@@ -83,6 +90,23 @@ interface OrgUser {
   department?: string;
   telephone?: string;
   contact_type?: string;
+}
+
+// Small inline help icon — sits next to a Label and shows a tooltip on hover.
+// Used across the contact form so users understand what to put in each field.
+function FieldHelp({ children }: { children: React.ReactNode }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help align-text-bottom" />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <p>{children}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 interface OrganizationInfo {
@@ -238,7 +262,16 @@ export default function OrganizationContactsTab({ organizationId, organization }
         });
 
         if (!response.ok) {
-          throw new Error('Failed to create contact');
+          // Surface the API's `details` so the user sees the real cause
+          // instead of a generic "failed to create" toast.
+          let detail: string | undefined
+          try {
+            const body = await response.json()
+            detail = body?.details || body?.error
+          } catch {
+            // ignore non-JSON error bodies
+          }
+          throw new Error(detail || 'Failed to create contact')
         }
 
         toast.success('Contact added successfully');
@@ -249,7 +282,8 @@ export default function OrganizationContactsTab({ organizationId, organization }
       setEditingContact(null);
     } catch (error) {
       console.error('[OrgContactsTab] Error saving contact:', error);
-      toast.error('Failed to save contact');
+      const msg = error instanceof Error ? error.message : 'Failed to save contact'
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -419,10 +453,12 @@ export default function OrganizationContactsTab({ organizationId, organization }
         />
       )}
 
-      {/* Current Contacts List */}
-      <div className="bg-card p-6 rounded-lg border border-border">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+      {/* Current Contacts List — mirrors the activity editor's structure
+          (no surrounding card) so the table's own border has clear contrast
+          against the page background. */}
+      <div>
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold">
               Organization Contacts
             </h2>
@@ -431,24 +467,17 @@ export default function OrganizationContactsTab({ organizationId, organization }
             </p>
           </div>
           {contacts.length > 0 && (
-            <div className="flex items-center border rounded-md flex-shrink-0">
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-r-none h-9"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'card' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('card')}
-                className="rounded-l-none h-9"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
+            <SegmentedControl
+              ariaLabel="View mode"
+              variant="icon"
+              className="flex-shrink-0 ml-auto"
+              value={viewMode}
+              onValueChange={(v) => setViewMode(v as 'list' | 'card')}
+              options={[
+                { value: 'list', label: 'Table view', icon: List },
+                { value: 'card', label: 'Card view', icon: LayoutGrid },
+              ]}
+            />
           )}
         </div>
 
@@ -515,38 +544,43 @@ function ContactCard({
 
   return (
     <div className="relative border border-border rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-card">
-      {/* Primary badge */}
+      {/* Primary badge — sits top-right so it doesn't collide with the
+          action button group on the left. */}
       {contact.isPrimary && (
-        <div className="absolute top-4 left-4">
+        <div className="absolute top-4 right-4">
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             Primary Contact
           </span>
         </div>
       )}
 
-      {/* Action buttons */}
-      <div className="absolute top-4 right-4 flex gap-2">
+      {/* Action buttons — wrapped in a single bordered group with a divider
+          so edit + delete read as one control instead of floating icons. */}
+      <div className="absolute top-4 left-4 inline-flex items-stretch border border-border rounded-md overflow-hidden bg-card">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onEdit(contact)}
-          className="h-8 w-8 p-0 hover:bg-muted rounded-md"
+          className="h-8 w-8 p-0 hover:bg-muted rounded-none"
           title="Edit contact"
         >
           <Pencil className="h-4 w-4 text-muted-foreground" />
         </Button>
+        <div className="w-px bg-border" />
         <Button
           variant="ghost"
           size="sm"
           onClick={() => contact.id && onDelete(contact.id)}
-          className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive rounded-md"
+          className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive rounded-none"
           title="Delete contact"
         >
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
 
-      <div className={cn("flex items-start gap-4", contact.isPrimary && "mt-6")}>
+      {/* Action buttons sit absolute top-left, so the content row needs a
+          top-margin to clear them. */}
+      <div className="flex items-start gap-4 mt-10">
         <UserAvatar
           src={contact.profilePhoto || contact.linkedUser?.avatarUrl}
           seed={contact.email || contact.linkedUserId || fullName}
@@ -557,11 +591,6 @@ function ContactCard({
         <div className="flex-1 min-w-0 space-y-1">
           <h3 className="text-lg font-semibold text-foreground leading-tight break-words">
             {fullName}
-            {contact.linkedUser && (
-              <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                Linked User
-              </span>
-            )}
           </h3>
 
           {jobLine && (
@@ -683,9 +712,13 @@ function ContactsTable({
   }, [contacts, sortField, sortDirection]);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-surface-muted">
+    // Two wrappers: outer carries the border (no `overflow-` class so the
+    // global "[class*=overflow-] { border: none }" rule in globals.css can't
+    // strip it), inner clips children into the rounded corners.
+    <div className="rounded-lg border w-full">
+      <div className="overflow-hidden rounded-lg">
+        <table className="w-full">
+          <thead className="bg-surface-muted">
           <tr className="border-b border-border">
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
               <div className="flex items-center gap-1">Contact {getSortIcon('name', sortField, sortDirection)}</div>
@@ -693,7 +726,6 @@ function ContactsTable({
             <th className={`text-left py-3 px-4 text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('role')}>
               <div className="flex items-center gap-1">Role {getSortIcon('role', sortField, sortDirection)}</div>
             </th>
-            <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Organization</th>
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('email')}>
               <div className="flex items-center gap-1">Email {getSortIcon('email', sortField, sortDirection)}</div>
             </th>
@@ -732,30 +764,6 @@ function ContactsTable({
                   <p className="text-body text-foreground">{jobLine || '—'}</p>
                 </td>
                 <td className="py-3 px-4">
-                  {organization ? (
-                    <div className="flex items-center gap-2">
-                      {organization.logo ? (
-                        <img
-                          src={organization.logo}
-                          alt={organization.name}
-                          className="w-5 h-5 object-contain rounded"
-                        />
-                      ) : (
-                        <div className="w-5 h-5 bg-muted rounded flex items-center justify-center">
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            {organization.acronym?.charAt(0) || organization.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                      <span className="text-body text-muted-foreground">
-                        {organization.acronym || organization.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-body text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td className="py-3 px-4">
                   {contact.email ? (
                     <a
                       href={`mailto:${contact.email}`}
@@ -775,9 +783,7 @@ function ContactsTable({
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
-                    {typeInfo.label}
-                  </span>
+                  <span className="text-body text-foreground">{typeInfo.label}</span>
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center justify-end gap-1">
@@ -806,6 +812,7 @@ function ContactsTable({
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -1056,6 +1063,9 @@ function ContactFormDialog({
           <div>
             <Label htmlFor="type">
               Contact Type <RequiredDot />
+              <FieldHelp>
+                The IATI contact type — pick the role this person plays. "General Enquiries" is fine for a public-facing point of contact; use "Financial Management" or "Project Management" when this person handles a specific function.
+              </FieldHelp>
             </Label>
             <Popover open={contactTypeOpen} onOpenChange={setContactTypeOpen}>
               <PopoverTrigger asChild>
@@ -1120,7 +1130,10 @@ function ContactFormDialog({
           {/* Name Row */}
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">
+                Title
+                <FieldHelp>Optional courtesy title used in formal correspondence (e.g. Mr, Ms, Dr).</FieldHelp>
+              </Label>
               <Select
                 value={formData.title || '__none__'}
                 onValueChange={(value) => handleChange('title', value === '__none__' ? undefined : value)}
@@ -1142,6 +1155,7 @@ function ContactFormDialog({
             <div className="col-span-5">
               <Label htmlFor="firstName">
                 First Name <RequiredDot />
+                <FieldHelp>Given name as the contact would like it to appear publicly.</FieldHelp>
               </Label>
               <Input
                 id="firstName"
@@ -1155,6 +1169,7 @@ function ContactFormDialog({
             <div className="col-span-5">
               <Label htmlFor="lastName">
                 Last Name <RequiredDot />
+                <FieldHelp>Family name. If the contact only goes by a single name, repeat the first name here.</FieldHelp>
               </Label>
               <Input
                 id="lastName"
@@ -1181,7 +1196,10 @@ function ContactFormDialog({
           {/* Job Title and Department Row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="jobTitle">Job Title</Label>
+              <Label htmlFor="jobTitle">
+                Job Title
+                <FieldHelp>The contact's role at the organisation, e.g. "Country Director", "Programme Officer".</FieldHelp>
+              </Label>
               <Input
                 id="jobTitle"
                 value={formData.jobTitle || ''}
@@ -1191,7 +1209,10 @@ function ContactFormDialog({
             </div>
 
             <div>
-              <Label htmlFor="department">Department</Label>
+              <Label htmlFor="department">
+                Department
+                <FieldHelp>The team or unit they sit in, e.g. "Operations", "Finance", "Communications".</FieldHelp>
+              </Label>
               <Input
                 id="department"
                 value={formData.department || ''}
@@ -1203,7 +1224,12 @@ function ContactFormDialog({
 
           {/* Email */}
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">
+              Email
+              <FieldHelp>
+                Public-facing email — typically a role-based address like info@example.org. Avoid sharing personal mailboxes unless the contact is happy to receive direct enquiries.
+              </FieldHelp>
+            </Label>
             <Input
               id="email"
               type="email"
@@ -1217,7 +1243,10 @@ function ContactFormDialog({
           {/* Phone Number with Country Code */}
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-4">
-              <Label htmlFor="countryCode">Country Code</Label>
+              <Label htmlFor="countryCode">
+                Country Code
+                <FieldHelp>The international dial code prefix (e.g. +95 for Myanmar, +1 for the US). Pick from the list to keep formatting consistent.</FieldHelp>
+              </Label>
               <CountryCodeSearchableSelect
                 value={formData.countryCode || ''}
                 onValueChange={(value) => handleChange('countryCode', value)}
@@ -1226,7 +1255,10 @@ function ContactFormDialog({
               />
             </div>
             <div className="col-span-8">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Label htmlFor="phoneNumber">
+                Phone Number
+                <FieldHelp>Just the number — no country code (that's set in the field on the left). Spaces and hyphens are fine.</FieldHelp>
+              </Label>
               <Input
                 id="phoneNumber"
                 value={formData.phoneNumber || ''}
@@ -1238,7 +1270,12 @@ function ContactFormDialog({
 
           {/* Website */}
           <div>
-            <Label htmlFor="website">Website</Label>
+            <Label htmlFor="website">
+              Website
+              <FieldHelp>
+                Personal or role-specific page — for example a staff bio. Must include the protocol, e.g. https://example.org/team/alex.
+              </FieldHelp>
+            </Label>
             <Input
               id="website"
               type="url"
@@ -1251,7 +1288,12 @@ function ContactFormDialog({
 
           {/* Mailing Address */}
           <div>
-            <Label htmlFor="mailingAddress">Mailing Address</Label>
+            <Label htmlFor="mailingAddress">
+              Mailing Address
+              <FieldHelp>
+                Full postal address for letters or deliveries — street, city, region, postal code, and country. Leave blank if the contact has no public mailing address.
+              </FieldHelp>
+            </Label>
             <textarea
               id="mailingAddress"
               value={formData.mailingAddress || ''}
@@ -1264,7 +1306,12 @@ function ContactFormDialog({
 
           {/* Notes */}
           <div>
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">
+              Notes
+              <FieldHelp>
+                Internal context that won't appear publicly — for example "best reached on Tuesdays" or "covers Yangon office only". Keep sensitive data out of this field.
+              </FieldHelp>
+            </Label>
             <textarea
               id="notes"
               value={formData.notes || ''}

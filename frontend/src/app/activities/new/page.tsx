@@ -5725,28 +5725,14 @@ function NewActivityPageContent() {
             <div className="bg-card p-4">
               <div className="space-y-2 text-body">
                 <div className="mb-3">
-                    <span className="group/title inline">
-                      <Link
-                        href={`/activities/${general.id}`}
-                        className="text-lg font-semibold text-foreground leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
-                        title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
-                      >
-                        {general.title || 'Untitled Activity'}
-                        {general.acronym && <span> ({general.acronym})</span>}
-                      </Link>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const titleText = `${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`;
-                          navigator.clipboard.writeText(titleText);
-                          toast.success('Activity title copied to clipboard');
-                        }}
-                        className="ml-1 p-1 hover:bg-muted rounded transition-colors inline-flex items-center align-middle opacity-0 group-hover/title:opacity-100"
-                        title="Copy activity title"
-                      >
-                        <Copy className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    </span>
+                    <Link
+                      href={`/activities/${general.id}`}
+                      className="text-2xl font-semibold text-foreground leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
+                      title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
+                    >
+                      {general.title || 'Untitled Activity'}
+                      {general.acronym && <span> ({general.acronym})</span>}
+                    </Link>
                     {/* Activity Identifier and IATI ID */}
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap text-helper">
                       {(general.otherIdentifier || general.partner_id) && (

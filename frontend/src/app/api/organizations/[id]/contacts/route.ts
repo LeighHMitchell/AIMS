@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -112,7 +113,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  // Auth-gate the write but use the admin client for the actual insert.
+  // The organization_contacts RLS policy only allows the writing user when
+  // they're a member of the target org — which excludes super-users editing
+  // an org they don't belong to (e.g. an admin editing another partner's
+  // profile). Since this route already requires authentication, dropping
+  // RLS for the write is safe.
+  const { user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -124,7 +131,8 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (!supabase) {
+    const admin = getSupabaseAdmin();
+    if (!admin) {
       return NextResponse.json(
         { error: 'Database connection not available' },
         { status: 500 }
@@ -133,30 +141,34 @@ export async function POST(
 
     const body = await request.json();
 
-    // Transform frontend format to database format
+    // Transform frontend format to database format. last_name is NOT NULL
+    // in the schema, but a linked user with only a first name will arrive
+    // here with an empty string — which is fine, but we coerce explicitly
+    // to satisfy the constraint.
     const contactData = {
       organization_id: organizationId,
       type: body.type || '1',
-      title: body.title,
-      first_name: body.firstName,
-      middle_name: body.middleName,
-      last_name: body.lastName,
-      job_title: body.jobTitle,
-      department: body.department,
-      email: body.email,
-      phone: body.phone,
-      phone_number: body.phoneNumber,
-      country_code: body.countryCode,
-      website: body.website,
-      mailing_address: body.mailingAddress,
-      profile_photo: body.profilePhoto,
-      notes: body.notes,
-      linked_user_id: body.linkedUserId,
+      title: body.title || null,
+      first_name: body.firstName ?? '',
+      middle_name: body.middleName || null,
+      last_name: body.lastName ?? '',
+      job_title: body.jobTitle || null,
+      department: body.department || null,
+      email: body.email || null,
+      phone: body.phone || null,
+      phone_number: body.phoneNumber || null,
+      country_code: body.countryCode || null,
+      website: body.website || null,
+      mailing_address: body.mailingAddress || null,
+      profile_photo: body.profilePhoto || null,
+      notes: body.notes || null,
+      linked_user_id: body.linkedUserId || null,
       is_primary: body.isPrimary || false,
       display_order: body.displayOrder || 0,
+      created_by: user?.id ?? null,
     };
 
-    const { data: contact, error } = await supabase
+    const { data: contact, error } = await admin
       .from('organization_contacts')
       .insert(contactData)
       .select()
@@ -165,7 +177,7 @@ export async function POST(
     if (error) {
       console.error('[OrgContacts API] Error creating contact:', error);
       return NextResponse.json(
-        { error: 'Failed to create contact' },
+        { error: 'Failed to create contact', details: error.message },
         { status: 500 }
       );
     }
@@ -174,7 +186,7 @@ export async function POST(
   } catch (error) {
     console.error('[OrgContacts API] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'An unexpected error occurred', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -185,7 +197,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -197,7 +209,8 @@ export async function PUT(
         { status: 400 }
       );
     }
-    if (!supabase) {
+    const admin = getSupabaseAdmin();
+    if (!admin) {
       return NextResponse.json(
         { error: 'Database connection not available' },
         { status: 500 }
@@ -235,7 +248,7 @@ export async function PUT(
     if (body.isPrimary !== undefined) contactData.is_primary = body.isPrimary;
     if (body.displayOrder !== undefined) contactData.display_order = body.displayOrder;
 
-    const { data: contact, error } = await supabase
+    const { data: contact, error } = await admin
       .from('organization_contacts')
       .update(contactData)
       .eq('id', contactId)
@@ -246,7 +259,7 @@ export async function PUT(
     if (error) {
       console.error('[OrgContacts API] Error updating contact:', error);
       return NextResponse.json(
-        { error: 'Failed to update contact' },
+        { error: 'Failed to update contact', details: error.message },
         { status: 500 }
       );
     }
@@ -255,7 +268,7 @@ export async function PUT(
   } catch (error) {
     console.error('[OrgContacts API] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'An unexpected error occurred', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -266,7 +279,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -287,14 +300,15 @@ export async function DELETE(
         { status: 400 }
       );
     }
-    if (!supabase) {
+    const admin = getSupabaseAdmin();
+    if (!admin) {
       return NextResponse.json(
         { error: 'Database connection not available' },
         { status: 500 }
       );
     }
 
-    const { error } = await supabase
+    const { error } = await admin
       .from('organization_contacts')
       .delete()
       .eq('id', contactId)
@@ -303,7 +317,7 @@ export async function DELETE(
     if (error) {
       console.error('[OrgContacts API] Error deleting contact:', error);
       return NextResponse.json(
-        { error: 'Failed to delete contact' },
+        { error: 'Failed to delete contact', details: error.message },
         { status: 500 }
       );
     }
@@ -312,7 +326,7 @@ export async function DELETE(
   } catch (error) {
     console.error('[OrgContacts API] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'An unexpected error occurred', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

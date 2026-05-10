@@ -81,11 +81,23 @@ export async function GET(request: NextRequest) {
     const rows = funds.map(fund => {
       const contributions = (incoming || [])
         .filter(t => t.activity_id === fund.id)
-        .reduce((sum, t) => sum + (t.value_usd || t.usd_value || t.value || 0), 0)
+        .reduce((sum, t: any) => {
+          // Currency-safe: only fall back to raw value when currency === 'USD'.
+          const usd = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
+            : (t.usd_value != null && Number.isFinite(Number(t.usd_value))) ? Number(t.usd_value)
+            : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0)
+          return sum + usd
+        }, 0)
 
       const disbursements = (outgoing || [])
         .filter(t => t.activity_id === fund.id)
-        .reduce((sum, t) => sum + (t.value_usd || t.usd_value || t.value || 0), 0)
+        .reduce((sum, t: any) => {
+          // Currency-safe: only fall back to raw value when currency === 'USD'.
+          const usd = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
+            : (t.usd_value != null && Number.isFinite(Number(t.usd_value))) ? Number(t.usd_value)
+            : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0)
+          return sum + usd
+        }, 0)
 
       const balance = contributions - disbursements
       const utilisation = contributions > 0 ? ((disbursements / contributions) * 100).toFixed(1) : '0.0'

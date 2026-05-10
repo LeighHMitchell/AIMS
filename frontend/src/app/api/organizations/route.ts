@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     // Build query with filters
     let query = supabaseAdmin
       .from('organizations')
-      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, reporting_org_ref, reporting_org_type, reporting_org_name, reporting_org_secondary_reporter, last_updated_datetime, default_currency, default_language, social_twitter, social_facebook, social_linkedin, social_instagram, social_youtube, created_at, updated_at');
+      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, mission, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, reporting_org_ref, reporting_org_type, reporting_org_name, reporting_org_secondary_reporter, last_updated_datetime, default_currency, default_language, social_twitter, social_facebook, social_linkedin, social_instagram, social_youtube, created_at, updated_at');
     
     // Filter by IATI org ID (exact match)
     if (iatiOrgId) {

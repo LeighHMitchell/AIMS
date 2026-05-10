@@ -7,6 +7,7 @@ import { Transaction } from "@/types/transaction";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActivityDefaults } from "@/hooks/use-activity-defaults";
 import { apiFetch } from '@/lib/api-fetch';
+import { safeUsd } from '@/lib/safe-usd';
 
 interface FinancesSectionProps {
   activityId: string;
@@ -89,19 +90,19 @@ export default function FinancesSection({
       }
       transactionsByType[type].count += 1;
       transactionsByType[type].total += (t.value || 0);
-      transactionsByType[type].totalUSD += (t.value_usd || t.value || 0);
+      transactionsByType[type].totalUSD += safeUsd(t);
     });
 
-    const totalPublished = published.reduce((sum, t) => sum + (t.value_usd || t.value || 0), 0);
+    const totalPublished = published.reduce((sum, t) => sum + safeUsd(t), 0);
     const totalCommitted = (transactionsByType['2']?.totalUSD || 0);
     const totalDisbursed = (transactionsByType['3']?.totalUSD || 0);
     const totalReceived = (transactionsByType['12']?.totalUSD || 0);
 
     // Calculate budget totals
-    const totalBudgets = budgets.reduce((sum, b) => sum + (b.usd_value || b.value || 0), 0);
+    const totalBudgets = budgets.reduce((sum, b) => sum + safeUsd(b), 0);
 
     // Calculate planned disbursement totals
-    const totalPlannedDisbursements = plannedDisbursements.reduce((sum, pd) => sum + (pd.usd_value || pd.value || 0), 0);
+    const totalPlannedDisbursements = plannedDisbursements.reduce((sum, pd) => sum + safeUsd(pd), 0);
 
     return {
       totalPublished,
@@ -140,6 +141,13 @@ export default function FinancesSection({
 
   return (
     <div className="space-y-6">
+      {/* USD-equivalent disclaimer — totals here use the converted value_usd
+          / usd_value where available, and fall back to the original `value`
+          when no conversion is recorded (effectively treating it as USD).
+          This footnote lets users know unconverted rows are included. */}
+      <p className="text-helper text-muted-foreground italic">
+        Totals shown in USD-equivalent. Rows without a stored conversion are included at face value, so non-USD currencies missing exchange rates may slightly distort the figures.
+      </p>
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>

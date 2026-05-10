@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { List, GanttChartSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Plus, 
@@ -80,6 +81,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
+  const [strategiesView, setStrategiesView] = useState<"list" | "gantt">("list");
 
   const fetchStrategies = async () => {
     try {
@@ -249,13 +251,21 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
       )}
 
       {/* Main Content */}
-      <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="gantt">Timeline View</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="list" className="space-y-4">
+      <div className="flex justify-end">
+        <SegmentedControl
+          ariaLabel="Strategies view"
+          variant="icon"
+          value={strategiesView}
+          onValueChange={setStrategiesView}
+          options={[
+            { value: "list", label: "List View", icon: List },
+            { value: "gantt", label: "Timeline View", icon: GanttChartSquare },
+          ]}
+        />
+      </div>
+
+      {strategiesView === "list" && (
+      <div className="space-y-4">
           {strategies.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
@@ -384,15 +394,17 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
               ))}
             </div>
           )}
-        </TabsContent>
-        
-        <TabsContent value="gantt">
-          <StrategiesGanttChart 
-            strategies={strategies}
-            isPublicView={isPublicView}
-          />
-        </TabsContent>
-      </Tabs>
+      </div>
+      )}
+
+      {strategiesView === "gantt" && (
+      <div>
+        <StrategiesGanttChart
+          strategies={strategies}
+          isPublicView={isPublicView}
+        />
+      </div>
+      )}
 
       <ConfirmDialog />
 

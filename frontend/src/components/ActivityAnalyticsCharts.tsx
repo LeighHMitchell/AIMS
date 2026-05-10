@@ -17,7 +17,8 @@ import {
   AreaChart,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Calendar, CalendarDays, TrendingUp } from "lucide-react";
 import { format, parseISO, getYear, startOfYear, endOfYear } from "date-fns";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 
@@ -308,17 +309,27 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
     );
   };
 
+  const [periodMode, setPeriodMode] = React.useState<"fiscal" | "calendar" | "cumulative">("fiscal");
+
   return (
     <div className="space-y-6">
       {/* Financial Breakdown Charts */}
-      <Tabs defaultValue="fiscal" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="fiscal">Fiscal Year</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar Year</TabsTrigger>
-          <TabsTrigger value="cumulative">Cumulative</TabsTrigger>
-        </TabsList>
+      <div className="flex justify-end">
+        <SegmentedControl
+          ariaLabel="Period grouping"
+          variant="icon"
+          value={periodMode}
+          onValueChange={setPeriodMode}
+          options={[
+            { value: "fiscal", label: "Fiscal Year", icon: Calendar },
+            { value: "calendar", label: "Calendar Year", icon: CalendarDays },
+            { value: "cumulative", label: "Cumulative", icon: TrendingUp },
+          ]}
+        />
+      </div>
 
-        <TabsContent value="fiscal">
+      {periodMode === "fiscal" && (
+      <div>
           <Card>
             <CardHeader>
               <CardTitle>Financial Analysis by Fiscal Year</CardTitle>
@@ -339,9 +350,11 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </TabsContent>
+      </div>
+      )}
 
-        <TabsContent value="calendar">
+      {periodMode === "calendar" && (
+      <div>
           <Card>
             <CardHeader>
               <CardTitle>Financial Analysis by Calendar Year</CardTitle>
@@ -362,9 +375,11 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </TabsContent>
+      </div>
+      )}
 
-        <TabsContent value="cumulative">
+      {periodMode === "cumulative" && (
+      <div>
           <Card>
             <CardHeader>
               <CardTitle>Cumulative Financial Progress</CardTitle>
@@ -431,8 +446,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
+      )}
 
       {/* Additional Useful Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

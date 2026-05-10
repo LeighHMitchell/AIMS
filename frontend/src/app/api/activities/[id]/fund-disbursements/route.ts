@@ -235,8 +235,17 @@ export async function GET(
   }
 }
 
+// Currency-safe: only treats raw `value` as USD when currency === 'USD'.
+// Non-USD records without a stored conversion contribute 0.
 function getUsdValue(t: any): number {
-  return t.value_usd || t.usd_value || t.value || 0
+  if (t == null) return 0
+  if (t.value_usd != null && Number.isFinite(Number(t.value_usd))) return Number(t.value_usd)
+  if (t.usd_value != null && Number.isFinite(Number(t.usd_value))) return Number(t.usd_value)
+  if ((t.currency ?? '').toString().toUpperCase() === 'USD') {
+    const raw = Number(t.value)
+    if (Number.isFinite(raw)) return raw
+  }
+  return 0
 }
 
 function getYear(t: any): string {

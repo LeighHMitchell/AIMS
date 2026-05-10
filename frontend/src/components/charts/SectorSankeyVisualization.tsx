@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { exportToCSV } from '@/lib/exports';
 import { cn } from '@/lib/utils';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
@@ -1687,22 +1687,19 @@ export default function SectorSankeyVisualization({
 
           {/* Right side: view-mode toggle (icons only) + CSV download */}
           <div className="flex items-center gap-2">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
-              <TabsList className="h-9">
-                <TabsTrigger value="sankey" className="px-2.5" aria-label="Sankey" title="Sankey">
-                  <GitBranch className="h-3.5 w-3.5" />
-                </TabsTrigger>
-                <TabsTrigger value="pie" className="px-2.5" aria-label="Sunburst" title="Sunburst">
-                  <PieChart className="h-3.5 w-3.5" />
-                </TabsTrigger>
-                <TabsTrigger value="bar" className="px-2.5" aria-label="Bar chart" title="Bar chart">
-                  <BarChart3 className="h-3.5 w-3.5" />
-                </TabsTrigger>
-                <TabsTrigger value="table" className="px-2.5" aria-label="Table" title="Table">
-                  <TableIcon className="h-3.5 w-3.5" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <SegmentedControl
+              ariaLabel="Visualization type"
+              variant="icon"
+              size="sm"
+              value={viewMode}
+              onValueChange={(value) => setViewMode(value as ViewMode)}
+              options={[
+                { value: 'sankey', label: 'Sankey', icon: GitBranch },
+                { value: 'pie', label: 'Sunburst', icon: PieChart },
+                { value: 'bar', label: 'Bar chart', icon: BarChart3 },
+                { value: 'table', label: 'Table', icon: TableIcon },
+              ]}
+            />
             <Button
               variant="outline"
               size="icon"

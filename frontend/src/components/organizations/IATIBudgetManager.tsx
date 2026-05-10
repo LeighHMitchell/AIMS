@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Separator } from '@/components/ui/separator'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
@@ -522,18 +522,22 @@ export function IATIBudgetManager({
         )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          {BUDGET_TYPES.map((type) => (
-            <TabsTrigger key={type.value} value={type.value} className="text-helper">
-              <type.icon className="h-3 w-3 mr-1" />
-              {type.label.split(' ')[0]}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <SegmentedControl
+        ariaLabel="Budget type"
+        variant="icon-text"
+        size="sm"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        options={BUDGET_TYPES.map((type) => ({
+          value: type.value,
+          label: type.label.split(' ')[0],
+          icon: type.icon,
+        }))}
+      />
 
-        {BUDGET_TYPES.map((type) => (
-          <TabsContent key={type.value} value={type.value} className="space-y-4">
+      {BUDGET_TYPES.map((type) => (
+        activeTab === type.value ? (
+        <div key={type.value} className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">{type.label}</h4>
@@ -572,9 +576,9 @@ export function IATIBudgetManager({
                 </div>
               )}
             </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+        </div>
+        ) : null
+      ))}
 
       {/* Budget Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

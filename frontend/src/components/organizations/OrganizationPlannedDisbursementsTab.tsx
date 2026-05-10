@@ -53,11 +53,14 @@ interface HeroCardProps {
 }
 
 function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
+  // Fixed width keeps every hero card identical regardless of how many sit
+  // in the row, so the Transactions cards line up with the single Planned
+  // Disbursements card on the same finances page.
   return (
-    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className="w-56 p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
-        <div>
-          <div className="text-body text-muted-foreground">{title}</div>
+        <div className="min-w-0">
+          <div className="text-body text-muted-foreground truncate">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
           <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>

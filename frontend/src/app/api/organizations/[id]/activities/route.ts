@@ -180,8 +180,10 @@ export async function GET(
                               trans.receiver_org_name === organization.name;
             
             if (isInvolved) {
-              const transValue = trans.value_usd || trans.value;
-              const amount = (typeof transValue === 'number' && !isNaN(transValue)) ? transValue : 0;
+              // Currency-safe: only fall back to raw value when currency === 'USD'.
+              const transValue = (trans.value_usd != null && Number.isFinite(Number(trans.value_usd))) ? Number(trans.value_usd)
+                : ((trans.currency ?? '').toString().toUpperCase() === 'USD' ? Number(trans.value) || 0 : 0);
+              const amount = Number.isFinite(transValue) ? transValue : 0;
               return sum + amount;
             }
             
@@ -199,8 +201,10 @@ export async function GET(
       const total_disbursed = (disbursementTransactions || [])
         .filter((txn: any) => txn.activity_id === activity.id)
         .reduce((sum: number, txn: any) => {
-          const value = txn.value_usd || txn.value || 0;
-          return sum + (typeof value === 'number' ? value : 0);
+          // Currency-safe: only fall back to raw value when currency === 'USD'.
+          const value = (txn.value_usd != null && Number.isFinite(Number(txn.value_usd))) ? Number(txn.value_usd)
+            : ((txn.currency ?? '').toString().toUpperCase() === 'USD' ? Number(txn.value) || 0 : 0);
+          return sum + (Number.isFinite(value) ? value : 0);
         }, 0);
 
       return {
