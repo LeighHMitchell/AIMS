@@ -19,6 +19,12 @@ interface Location {
   description?: string;
   location_description?: string;
   activity_location_description?: string;
+  activity?: {
+    id?: string;
+    title?: string;
+    organization_name?: string;
+    organization_acronym?: string;
+  } | null;
   [key: string]: unknown;
 }
 
@@ -65,12 +71,29 @@ function SimpleLocationMarker({
   };
 
   const address = getFullAddress(location);
+  const linkedActivityTitle = location.activity?.title || activityTitle;
+  const linkedActivityId = location.activity?.id;
 
   const infoContent = (
     <div className="p-2.5">
-      <div className="font-semibold text-helper text-foreground mb-1.5">
+      <div className="font-semibold text-helper text-foreground mb-1.5 pr-6">
         {location.location_name || 'Unnamed Location'}
       </div>
+      {linkedActivityTitle && (
+        linkedActivityId ? (
+          <a
+            href={`/activities/${linkedActivityId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="block text-[11px] font-medium text-foreground hover:text-primary mb-1.5 line-clamp-2 pr-6 leading-snug no-underline"
+          >
+            {linkedActivityTitle}
+          </a>
+        ) : (
+          <div className="text-[11px] font-medium text-foreground mb-1.5 line-clamp-2 pr-6 leading-snug">
+            {linkedActivityTitle}
+          </div>
+        )
+      )}
       <div className="text-[10px] space-y-1">
         {location.location_description && (
           <div className="text-muted-foreground leading-snug">{location.location_description}</div>

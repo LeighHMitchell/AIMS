@@ -475,7 +475,30 @@ function MarkerPopup({
     popup.setDOMContent(container);
     marker.setPopup(popup);
 
+    // Single-popup-at-a-time: when this popup opens, close any other
+    // MarkerPopup currently open on the same map.
+    const handleOpen = () => {
+      const registry = (map as unknown as { __markerPopupRegistry?: Set<MapLibreGL.Popup> });
+      if (!registry.__markerPopupRegistry) {
+        registry.__markerPopupRegistry = new Set();
+      }
+      registry.__markerPopupRegistry.forEach((other) => {
+        if (other !== popup && other.isOpen()) other.remove();
+      });
+      registry.__markerPopupRegistry.add(popup);
+    };
+    const handleClose = () => {
+      const registry = (map as unknown as { __markerPopupRegistry?: Set<MapLibreGL.Popup> });
+      registry.__markerPopupRegistry?.delete(popup);
+    };
+    popup.on("open", handleOpen);
+    popup.on("close", handleClose);
+
     return () => {
+      popup.off("open", handleOpen);
+      popup.off("close", handleClose);
+      const registry = (map as unknown as { __markerPopupRegistry?: Set<MapLibreGL.Popup> });
+      registry.__markerPopupRegistry?.delete(popup);
       marker.setPopup(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

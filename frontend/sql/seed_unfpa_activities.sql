@@ -966,6 +966,198 @@ BEGIN
 
 
     -- ========================================================================
+    -- BACKFILL: Enrich existing coverage rows with admin codes + descriptions
+    -- (state_region_code = ISO 3166-2:MM, plus IATI feature_designation/class)
+    -- ========================================================================
+
+    UPDATE activity_locations SET state_region_code='MM-11', admin_unit='State', admin_area_name='Kachin State',           location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Kachin State, Myanmar''s northernmost state, mountainous and ethnically diverse with significant displacement and humanitarian access challenges. Capital: Myitkyina.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Kachin';
+    UPDATE activity_locations SET state_region_code='MM-17', admin_unit='State', admin_area_name='Shan State',             location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Shan State, Myanmar''s largest state by area, bordering China, Laos and Thailand. Mountainous, ethnically diverse, parts of the state remain conflict-affected. Capital: Taunggyi.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Shan';
+    UPDATE activity_locations SET state_region_code='MM-16', admin_unit='State', admin_area_name='Rakhine State',          location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Rakhine State on Myanmar''s western coast hosts large displaced populations including Rohingya communities; significant maternal-health access gaps. Capital: Sittwe.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Rakhine';
+    UPDATE activity_locations SET state_region_code='MM-14', admin_unit='State', admin_area_name='Chin State',             location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Chin State, mountainous and remote in western Myanmar, has the country''s lowest service-coverage indicators and is heavily conflict-affected. Capital: Hakha.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Chin';
+    UPDATE activity_locations SET state_region_code='MM-12', admin_unit='State', admin_area_name='Kayah State',            location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Kayah (Karenni) State, eastern Myanmar bordering Thailand, conflict-affected with reduced facility-based delivery rates. Capital: Loikaw.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Kayah';
+    UPDATE activity_locations SET state_region_code='MM-13', admin_unit='State', admin_area_name='Kayin State',            location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Kayin (Karen) State, eastern Myanmar bordering Thailand; mixed ethnic communities with several conflict-affected townships. Capital: Hpa-an.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Kayin';
+    UPDATE activity_locations SET state_region_code='MM-15', admin_unit='State', admin_area_name='Mon State',              location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Mon State along Myanmar''s southeast coast; Mawlamyine port city; mixed Bamar–Mon population. Capital: Mawlamyine.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Mon';
+    UPDATE activity_locations SET state_region_code='MM-05', admin_unit='Region', admin_area_name='Tanintharyi Region',    location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Tanintharyi Region forms Myanmar''s southern panhandle with sparse rural townships and isolated coastal communities. Capital: Dawei.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Tanintharyi';
+    UPDATE activity_locations SET state_region_code='MM-06', admin_unit='Region', admin_area_name='Yangon Region',         location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Yangon Region is Myanmar''s largest urban agglomeration and primary commercial centre. Capital: Yangon (Rangoon).'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Yangon';
+    UPDATE activity_locations SET state_region_code='MM-04', admin_unit='Region', admin_area_name='Mandalay Region',       location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Mandalay Region in central Myanmar is the second-largest urban centre and a key health-workforce training hub. Capital: Mandalay.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Mandalay';
+    UPDATE activity_locations SET state_region_code='MM-02', admin_unit='Region', admin_area_name='Bago Region',           location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Bago Region (Pegu) lies between Yangon and central Myanmar; mixed urban and rural townships. Capital: Bago.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Bago';
+    UPDATE activity_locations SET state_region_code='MM-01', admin_unit='Region', admin_area_name='Sagaing Region',        location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Sagaing Region in northwest Myanmar is the country''s largest by population, with vast rural areas and significant conflict-affected districts since 2021. Capital: Sagaing.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Sagaing';
+    UPDATE activity_locations SET state_region_code='MM-03', admin_unit='Region', admin_area_name='Magway Region',         location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Magway Region in central-western Myanmar is mostly rural and arid, dependent on the Ayeyarwady river system. Capital: Magway.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Magway';
+    UPDATE activity_locations SET state_region_code='MM-07', admin_unit='Region', admin_area_name='Ayeyarwady Region',     location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Ayeyarwady Region (Irrawaddy Delta) is Myanmar''s most populous rural region, low-lying and highly vulnerable to cyclones. Capital: Pathein.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Ayeyarwady';
+    UPDATE activity_locations SET state_region_code='MM-18', admin_unit='Union Territory', admin_area_name='Naypyidaw Union Territory', location_class=1, feature_designation='ADM1', location_id_vocabulary='G1',
+        location_description='Naypyidaw Union Territory is Myanmar''s purpose-built capital city housing all central government ministries.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND state_region_name='Naypyidaw';
+
+    -- National-coverage rows (act 5 + 9)
+    UPDATE activity_locations SET admin_unit='Country', admin_area_name='Republic of the Union of Myanmar', location_class=1, feature_designation='ADM0', location_id_vocabulary='A2',
+        location_description='Republic of the Union of Myanmar — national-level coverage spanning all 14 states and regions plus the Union Territory of Naypyidaw.'
+        WHERE activity_id::text LIKE '41119000-0001-4000-8000-%' AND coverage_scope='national';
+
+
+    -- ========================================================================
+    -- BACKFILL: Per-activity activity_location_description (CASE per state)
+    -- Describes WHAT the activity does in that geography.
+    -- ========================================================================
+
+    -- U01 SMNHS
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Kachin'  THEN 'Mobile EmOC clinics, skilled birth attendance training, and maternal waiting homes serving displaced and host communities in Myitkyina, Bhamo, and Mohnyin districts.'
+        WHEN 'Shan'    THEN 'Refresher training for midwives and CEmOC strengthening at Lashio, Hsipaw, and Kengtung district hospitals serving northern Shan State.'
+        WHEN 'Rakhine' THEN 'Maternal newborn health services in Sittwe, Mrauk-U, and Maungdaw townships, including referral pathways for IDP and Rohingya communities.'
+        WHEN 'Chin'    THEN 'Hakha and Falam township referral support, mentorship for newly-deployed midwives, and community midwifery in remote mountainous townships.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000001';
+
+    -- U02 AFSRH
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Yangon'   THEN 'Flagship adolescent-friendly health services in 18 Yangon townships, peer-educator networks in secondary schools, and youth-led advocacy groups across the region.'
+        WHEN 'Mandalay' THEN 'AFHS centres in 12 Mandalay townships, regional youth advisory board, and curriculum rollout to 40 secondary schools.'
+        WHEN 'Bago'     THEN 'AFHS centre setup and peer-educator training in 8 Bago Region townships.'
+        WHEN 'Sagaing'  THEN 'Out-of-school youth outreach and rural CSE delivery in 8 Sagaing townships, with reach into displaced-youth populations.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000002';
+
+    -- U03 LMFPSC
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Ayeyarwady' THEN 'Pathein central regional warehouse upgrade, cold-chain extension, and CHW-led last-mile distribution covering 26 delta townships.'
+        WHEN 'Magway'     THEN 'Magway regional warehouse modernisation and last-mile contraceptive distribution to 25 townships across the dry zone.'
+        WHEN 'Sagaing'    THEN 'Monywa sub-warehouse, township health-department LMIS rollout, and CHW supply runs across 34 Sagaing townships.'
+        WHEN 'Tanintharyi'THEN 'Coastal contraceptive distribution to remote townships including Dawei, Myeik, and Kawthaung; boat-based mobile clinic resupply.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000003';
+
+    -- U04 MWST
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Yangon'    THEN 'Yangon Central Midwifery Training Centre — pre-service curriculum reform, tutor capacity building, and skills-lab upgrade.'
+        WHEN 'Mandalay'  THEN 'Mandalay Regional Nursing & Midwifery School — pre-service training and competency assessments for 600 students per cohort.'
+        WHEN 'Naypyidaw' THEN 'National Health Workforce Training Hub — regulatory framework support, national CPD rollout, and policy dialogue with the Nurse and Midwife Council.'
+        WHEN 'Mon'       THEN 'Mawlamyine Regional Midwifery Training Centre — equipment upgrade, tutor refresher, and clinical practicum partnerships.'
+        WHEN 'Kayin'     THEN 'Hpa-an mentorship hub for newly-deployed midwives in Kayin State and adjoining border districts.'
+        WHEN 'Kachin'    THEN 'Myitkyina mentorship hub for newly-deployed midwives in Kachin and northern Sagaing.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000004';
+
+    -- U05 PHCTS (national)
+    UPDATE activity_locations SET activity_location_description =
+        'National-level technical assistance to the Department of Population for census planning, enumerator training, processing, and dissemination, with subnational support to all 14 states/regions and Naypyidaw Union Territory.'
+        WHERE activity_id = '41119000-0001-4000-8000-000000000005';
+
+    -- U06 EMRH (humanitarian, cyclone-affected)
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Ayeyarwady' THEN 'MISP rollout in Labutta, Bogale, Mawlamyinegyun, and Pyapon — most-affected delta townships post-cyclone; mobile RH clinics, dignity kits, GBV referral pathways.'
+        WHEN 'Yangon'     THEN 'Coordination hub plus MISP services in cyclone-affected outer Yangon townships including Kyauktan, Thanlyin, and Twantay.'
+        WHEN 'Bago'       THEN 'MISP services and clinical management of rape in Pyay, Paungde, and Thegon townships.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000006';
+
+    -- U07 GBVRK (Rakhine + Kachin)
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Rakhine' THEN 'Women and girls'' safe spaces in Sittwe, Mrauk-U, Buthidaung, and Maungdaw; case management, psychosocial support, legal aid, and clinical management of rape.'
+        WHEN 'Kachin'  THEN 'Safe spaces, peer-led prevention, and engagement with men and boys on harmful gender norms in Myitkyina, Bhamo, and Waingmaw townships.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000007';
+
+    -- U08 HIVPK
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Yangon'   THEN 'Drop-in centres and peer outreach for sex workers, MSM, transgender people, and PWID across Insein, Hlaing Tharyar, North Okkalapa, and South Dagon townships.'
+        WHEN 'Mandalay' THEN 'Combination prevention package — HIVST, PrEP introduction, condom programming — across central Mandalay urban townships.'
+        WHEN 'Shan'     THEN 'Cross-border KP outreach in Tachileik, Muse, and Kengtung border towns; integrated SRH-HIV services for migrant and mobile populations.'
+        WHEN 'Kachin'   THEN 'KP outreach in Myitkyina, Bhamo, and Waingmaw including PWID needle-and-syringe programmes co-located with SRH services.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000008';
+
+    -- U09 CPD9 (national, pipeline)
+    UPDATE activity_locations SET activity_location_description =
+        'CPD-IX inception activities led from the UNFPA Country Office in Yangon with situation analyses commissioned across all 14 states/regions and stakeholder consultations in Naypyidaw, Yangon, and Mandalay.'
+        WHERE activity_id = '41119000-0001-4000-8000-000000000009';
+
+    -- U10 RHCPP1 (closed)
+    UPDATE activity_locations SET activity_location_description = CASE state_region_name
+        WHEN 'Yangon'    THEN 'Central Medical Stores Depot upgrade — primary national entry point for procured RH commodities and the principal pre-positioning warehouse for southern Myanmar.'
+        WHEN 'Mandalay'  THEN 'Mandalay Regional Warehouse — secondary pre-positioning hub serving Mandalay, Sagaing, and northern Shan State.'
+        WHEN 'Naypyidaw' THEN 'National strategic stockpile co-located with the Department of Medical Services HQ in Naypyidaw.'
+    END WHERE activity_id = '41119000-0001-4000-8000-000000000010';
+
+
+    -- ========================================================================
+    -- INSERT: Site-level locations (specific facilities) — IATI <location> rows
+    -- Each site has exact lat/lng, an address, a feature designation, and an
+    -- activity_location_description detailing what UNFPA does at that site.
+    -- percentage_allocation is NULL on sites (allocation lives on coverage rows).
+    -- ========================================================================
+
+    INSERT INTO activity_locations (activity_id, location_type, location_name, country_code, state_region_name, state_region_code, township_name, admin_unit, admin_area_name, coverage_scope, source, location_reach, exactness, location_class, admin_level, feature_designation, location_id_vocabulary, latitude, longitude, address_line1, city, location_description, activity_location_description) VALUES
+    -- U01 SMNHS — three referral hospitals
+    ('41119000-0001-4000-8000-000000000001', 'site', 'Myitkyina General Hospital',                   'MM', 'Kachin',  'MM-11', 'Myitkyina', 'Township',     'Myitkyina Township', 'subnational', 'manual', '1', '1', 4, '2', 'HSP', 'G1', 25.3833, 97.4000, 'Bogyoke Aung San Road',     'Myitkyina',  'Kachin State''s principal public-sector referral hospital and CEmOC training site.',                                            'Comprehensive emergency obstetric care strengthening, blood-bank support, and skilled birth-attendance training for the Kachin referral network.'),
+    ('41119000-0001-4000-8000-000000000001', 'site', 'Sittwe District Hospital',                     'MM', 'Rakhine', 'MM-16', 'Sittwe',    'Township',     'Sittwe Township',    'subnational', 'manual', '1', '1', 4, '2', 'HSP', 'G1', 20.1444, 92.8975, 'Strand Road',               'Sittwe',     'Rakhine State''s primary public referral hospital, serving displaced and host populations.',                                       'Maternal waiting home, mobile EmOC outreach to camps, and CMR-trained provider deployment for IDP-serving facilities.'),
+    ('41119000-0001-4000-8000-000000000001', 'site', 'Hakha Township Hospital',                      'MM', 'Chin',    'MM-14', 'Hakha',     'Township',     'Hakha Township',     'subnational', 'manual', '1', '1', 4, '2', 'HSP', 'G1', 22.6450, 93.6075, 'Hakha-Falam Road',          'Hakha',      'Township-level hospital in Chin State''s remote highland capital with limited specialist access.',                                  'Mentorship for newly-deployed midwives, EmOC kits pre-positioning, and helicopter-supported referral protocols for high-risk obstetric cases.'),
+
+    -- U02 AFSRH — three adolescent-friendly health centres
+    ('41119000-0001-4000-8000-000000000002', 'site', 'Yangon Adolescent-Friendly Health Centre',     'MM', 'Yangon',  'MM-06', 'East Dagon','Township',     'East Dagon Township','subnational', 'manual', '1', '1', 4, '2', 'HSPC','G1', 16.9100, 96.2350, 'No. 14, Theingyi Street, Ward 1','Yangon','Flagship UNFPA-supported adolescent-friendly health services centre in East Dagon Township.',                                       'Youth-led service design, on-site SRH counselling, contraceptive provision, and peer-educator training hub for greater Yangon.'),
+    ('41119000-0001-4000-8000-000000000002', 'site', 'Mandalay Youth Health Hub',                    'MM', 'Mandalay','MM-04', 'Chanmyathazi','Township',   'Chanmyathazi Township','subnational','manual','1', '1', 4, '2', 'HSPC','G1', 21.9700, 96.1200, '36th Street, between 73rd & 74th','Mandalay','AFHS centre co-located with the regional youth resource library.',                                                                'Peer-educator network coordination, youth advisory board, and AFHS service delivery for adolescents from across Mandalay Region.'),
+    ('41119000-0001-4000-8000-000000000002', 'site', 'Bago Adolescent Health Centre',                'MM', 'Bago',    'MM-02', 'Bago',      'Township',     'Bago Township',      'subnational', 'manual', '1', '1', 4, '2', 'HSPC','G1', 17.3361, 96.4814, 'Yangon-Mandalay Road',      'Bago',       'Township-level AFHS centre serving Bago Region.',                                                                                  'Comprehensive sexuality education roll-out to 40 secondary schools and AFHS service delivery for in-school and out-of-school youth.'),
+
+    -- U03 LMFPSC — central + regional + sub warehouses
+    ('41119000-0001-4000-8000-000000000003', 'site', 'Pathein Central Warehouse',                    'MM', 'Ayeyarwady','MM-07','Pathein',   'Township',     'Pathein Township',   'subnational', 'manual', '1', '1', 4, '2', 'WHSE','G1', 16.7794, 94.7322, 'Industrial Zone 2',         'Pathein',    'Regional medical commodities warehouse serving the Ayeyarwady delta.',                                                              'Cold-chain extension, LMIS modernisation, and last-mile contraceptive distribution hub for 26 delta townships.'),
+    ('41119000-0001-4000-8000-000000000003', 'site', 'Magway Regional Warehouse',                    'MM', 'Magway',  'MM-03', 'Magway',    'Township',     'Magway Township',    'subnational', 'manual', '1', '1', 4, '2', 'WHSE','G1', 20.1500, 94.9333, 'Magway Industrial Zone',    'Magway',     'Regional warehouse for the central dry zone.',                                                                                     'Procurement reception, township-level pre-positioning, and CHW supply runs to 25 Magway townships.'),
+    ('41119000-0001-4000-8000-000000000003', 'site', 'Monywa Sub-warehouse',                         'MM', 'Sagaing', 'MM-01', 'Monywa',    'Township',     'Monywa Township',    'subnational', 'manual', '1', '1', 4, '2', 'WHSE','G1', 22.1083, 95.1361, 'No. 22, Bogyoke Road',      'Monywa',     'Sub-regional warehouse serving Sagaing and northern Magway.',                                                                       'Sagaing-region LMIS pilot, last-mile distribution, and stockout-monitoring rollout to 34 townships.'),
+
+    -- U04 MWST — four training centres
+    ('41119000-0001-4000-8000-000000000004', 'site', 'Yangon Central Midwifery Training Centre',     'MM', 'Yangon',  'MM-06', 'Yangon',    'Township',     'Yangon Township',    'subnational', 'manual', '1', '1', 4, '2', 'SCH', 'G1', 16.7833, 96.1667, 'Lower Kyimyindaing Road',   'Yangon',     'Flagship pre-service midwifery training institution under the University of Nursing.',                                              'Curriculum reform, tutor capacity building, skills-lab upgrade, and clinical practicum partnership with Central Women''s Hospital.'),
+    ('41119000-0001-4000-8000-000000000004', 'site', 'Mandalay Regional Nursing & Midwifery School', 'MM', 'Mandalay','MM-04', 'Mandalay',  'Township',     'Mandalay Township',  'subnational', 'manual', '1', '1', 4, '2', 'SCH', 'G1', 21.9700, 96.0830, '30th Street near 73rd',     'Mandalay',   'Regional pre-service midwifery school producing 600 students per cohort.',                                                          'Tutor refresher training, competency-based assessment rollout, and ICM-aligned curriculum implementation.'),
+    ('41119000-0001-4000-8000-000000000004', 'site', 'Naypyidaw National Health Workforce Hub',      'MM', 'Naypyidaw','MM-18','Zabuthiri', 'Union Territory','Naypyidaw Union Territory','subnational','manual','1','1',4,'2','ADMF','G1', 19.7633, 96.0786, 'Ministry of Health Compound, Office No. 4','Naypyidaw','Central coordination hub for national health workforce policy and training.',                                                       'Regulatory framework support to the Nurse & Midwife Council, national CPD rollout, and policy dialogue.'),
+    ('41119000-0001-4000-8000-000000000004', 'site', 'Mawlamyine Regional Training Centre',          'MM', 'Mon',     'MM-15', 'Mawlamyine','Township',     'Mawlamyine Township','subnational', 'manual', '1', '1', 4, '2', 'SCH', 'G1', 16.4900, 97.6244, 'Strand Road',               'Mawlamyine', 'Regional pre-service midwifery training centre for southeast Myanmar.',                                                              'Equipment upgrade, tutor refresher, and clinical practicum partnership with Mawlamyine General Hospital.'),
+
+    -- U05 PHCTS — DOP HQ + CSO
+    ('41119000-0001-4000-8000-000000000005', 'site', 'Department of Population HQ',                  'MM', 'Naypyidaw','MM-18','Zabuthiri', 'Union Territory','Naypyidaw Union Territory','subnational','manual','1','1',4,'2','ADMF','G1', 19.7633, 96.0786, 'Building No. 32, Government Office Complex','Naypyidaw','Lead government counterpart agency for the Population & Housing Census.',                                                          'Census-management system development, enumerator-training curriculum design, and inter-ministerial coordination.'),
+    ('41119000-0001-4000-8000-000000000005', 'site', 'Central Statistical Organisation',             'MM', 'Naypyidaw','MM-18','Zabuthiri', 'Union Territory','Naypyidaw Union Territory','subnational','manual','1','1',4,'2','ADMF','G1', 19.7633, 96.0786, 'Ministry of Planning, Office No. 32','Naypyidaw','National statistical office responsible for SDG indicator reporting.',                                                              'SDG-aligned tabulation plan, disaggregation framework using Washington Group Short Set, and microdata-protection protocol.'),
+
+    -- U06 EMRH — three emergency response sites
+    ('41119000-0001-4000-8000-000000000006', 'site', 'Pathein Emergency Coordination Hub',           'MM', 'Ayeyarwady','MM-07','Pathein',   'Township',     'Pathein Township',   'subnational', 'manual', '1', '1', 4, '2', 'ADMF','G1', 16.7794, 94.7322, 'Strand Road, near port',    'Pathein',    'Inter-agency emergency coordination hub activated post-Cyclone Mocha.',                                                              'MISP coordination, mobile RH clinic dispatch, dignity-kit pre-positioning, and CMR-trained provider deployment.'),
+    ('41119000-0001-4000-8000-000000000006', 'site', 'Labutta Township Emergency Site',              'MM', 'Ayeyarwady','MM-07','Labutta',   'Township',     'Labutta Township',   'subnational', 'manual', '1', '1', 4, '2', 'PPL', 'G1', 16.1500, 94.7667, 'Township Health Office',    'Labutta',    'Among the most cyclone-affected townships in the delta; near-total facility damage.',                                              'Mobile clinic deployment, restoration of maternal-care continuity, and GBV referral pathway re-establishment.'),
+    ('41119000-0001-4000-8000-000000000006', 'site', 'Yangon Logistics Hub',                         'MM', 'Yangon',  'MM-06', 'Yangon',    'Township',     'Yangon Township',    'subnational', 'manual', '1', '1', 4, '2', 'WHSE','G1', 16.8000, 96.1500, 'Mingaladon Industrial Park','Yangon',     'Logistics receiving hub for emergency RH supplies arriving via Yangon port and airport.',                                          'Inter-agency logistics, dignity-kit assembly, and onward dispatch to Ayeyarwady delta sites.'),
+
+    -- U07 GBVRK — two safe spaces
+    ('41119000-0001-4000-8000-000000000007', 'site', 'Sittwe Women & Girls'' Safe Space',            'MM', 'Rakhine', 'MM-16', 'Sittwe',    'Township',     'Sittwe Township',    'subnational', 'manual', '1', '1', 4, '2', 'BLDG','G1', 20.1500, 92.8980, 'Quarter 5, behind district hospital','Sittwe','UNFPA-supported women & girls'' safe space for Rakhine State.',                                                                     'Case management, psychosocial support, GBV legal aid, and clinical management of rape; survivor-centred service delivery.'),
+    ('41119000-0001-4000-8000-000000000007', 'site', 'Myitkyina Safe Space',                         'MM', 'Kachin',  'MM-11', 'Myitkyina', 'Township',     'Myitkyina Township', 'subnational', 'manual', '1', '1', 4, '2', 'BLDG','G1', 25.3850, 97.4050, 'Shatapru Quarter',          'Myitkyina',  'Women & girls'' safe space serving Kachin State.',                                                                                  'Peer-led prevention, men-and-boys engagement on harmful norms, and case management for survivors of GBV.'),
+
+    -- U08 HIVPK — three drop-in centres
+    ('41119000-0001-4000-8000-000000000008', 'site', 'Yangon Insein Drop-in Centre',                 'MM', 'Yangon',  'MM-06', 'Insein',    'Township',     'Insein Township',    'subnational', 'manual', '1', '1', 4, '2', 'HSPC','G1', 16.9000, 96.1000, 'Mingyi Mahar Mintha Street','Yangon',     'Community-based drop-in centre for sex workers, MSM, and transgender clients.',                                                    'HIV self-testing, PrEP, condom programming, peer-led outreach, and integrated SRH services.'),
+    ('41119000-0001-4000-8000-000000000008', 'site', 'Mandalay KP Outreach Site',                    'MM', 'Mandalay','MM-04', 'Chanmyathazi','Township',   'Chanmyathazi Township','subnational','manual','1', '1', 4, '2', 'HSPC','G1', 21.9700, 96.0830, '35th Street near 80th',     'Mandalay',   'Combination-prevention drop-in centre in central Mandalay.',                                                                       'Peer outreach to PWID, opioid-substitution referrals, and integrated SRH-HIV services.'),
+    ('41119000-0001-4000-8000-000000000008', 'site', 'Tachileik Border Town Site',                   'MM', 'Shan',    'MM-17', 'Tachileik', 'Township',     'Tachileik Township', 'subnational', 'manual', '1', '1', 4, '2', 'HSPC','G1', 20.4500, 99.8833, 'Border-area Health Post',   'Tachileik',  'Cross-border outreach site near the Thailand frontier.',                                                                            'Outreach to migrant and mobile populations, integrated TB-HIV-SRH services, and cross-border referral coordination.'),
+
+    -- U09 CPD9 — country office + government liaison
+    ('41119000-0001-4000-8000-000000000009', 'site', 'UNFPA Myanmar Country Office',                 'MM', 'Yangon',  'MM-06', 'Bahan',     'Township',     'Bahan Township',     'subnational', 'manual', '1', '1', 4, '2', 'ADMF','G1', 16.8000, 96.1500, 'No. 6, Natmauk Road',       'Yangon',     'UNFPA''s Myanmar country office, lead implementer of the Country Programme.',                                                       'CPD-IX inception management, situation-analysis commissioning, and donor consultations.'),
+    ('41119000-0001-4000-8000-000000000009', 'site', 'Naypyidaw Government Liaison Office',          'MM', 'Naypyidaw','MM-18','Zabuthiri', 'Union Territory','Naypyidaw Union Territory','subnational','manual','1','1',4,'2','ADMF','G1', 19.7633, 96.0786, 'UN House, Government Office Zone','Naypyidaw','UNFPA government-liaison presence at central ministries.',                                                                          'Inter-ministerial coordination, CPD-IX consultations with MOHS and MOPFI, and Strategic Note alignment.'),
+
+    -- U10 RHCPP1 — three warehouses (closed activity)
+    ('41119000-0001-4000-8000-000000000010', 'site', 'Yangon Central Medical Stores Depot',          'MM', 'Yangon',  'MM-06', 'Mingaladon','Township',     'Mingaladon Township','subnational', 'manual', '1', '1', 4, '2', 'WHSE','G1', 16.9100, 96.1300, 'Mingaladon Cantonment',     'Yangon',     'National medical stores depot — primary entry point for procured RH commodities.',                                                  'Phase-1 pre-positioning of LARC, EC, and MNCH supplies; LMIS integration; cold-chain assessment.'),
+    ('41119000-0001-4000-8000-000000000010', 'site', 'Mandalay Regional Warehouse',                  'MM', 'Mandalay','MM-04', 'Aungmyaythazan','Township','Aungmyaythazan Township','subnational','manual','1','1',4,'2','WHSE','G1', 21.9700, 96.0830, 'Industrial Zone 1',         'Mandalay',   'Regional pre-positioning warehouse for upper Myanmar.',                                                                            'Phase-1 commodity reception, regional pre-positioning, and CHW resupply for Mandalay, Sagaing, and northern Shan.'),
+    ('41119000-0001-4000-8000-000000000010', 'site', 'Naypyidaw National Stockpile',                 'MM', 'Naypyidaw','MM-18','Zabuthiri', 'Union Territory','Naypyidaw Union Territory','subnational','manual','1','1',4,'2','WHSE','G1', 19.7633, 96.0786, 'DMS Compound, Office No. 41','Naypyidaw',  'National strategic RH commodity stockpile co-located with the Department of Medical Services HQ.',                                  'Phase-1 strategic stockpile establishment and emergency-replenishment SOP development.');
+
+
+    -- ========================================================================
     -- ACTIVITY_BUDGETS — IATI annual budget rows (max 1 year per row)
     -- type:   1 = Original, 2 = Revised
     -- status: 1 = Indicative (future), 2 = Committed (current/past)

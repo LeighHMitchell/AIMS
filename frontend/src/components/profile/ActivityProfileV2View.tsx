@@ -187,7 +187,16 @@ export function ActivityProfileV2View({
       .then((data) => {
         if (cancelled || !data) return
         if (data.success && Array.isArray(data.locations)) {
-          setActivityLocations(data.locations)
+          // Match the activity-editor behaviour: drop coverage-type rows
+          // (those belong to the Sub-national Allocation tab, not Activity
+          // Sites) so the profile shows the same set of pins / table rows
+          // the editor's "Activity Sites" view does. Without this filter,
+          // state-level coverage entries appear duplicated against actual
+          // project sites.
+          const siteOnly = data.locations.filter(
+            (loc: any) => loc?.location_type !== 'coverage',
+          )
+          setActivityLocations(siteOnly)
         } else {
           setActivityLocations([])
         }
@@ -722,7 +731,7 @@ export function ActivityProfileV2View({
                 ? (
                     <Link
                       href={`/organizations/${reportingOrg.id}`}
-                      className="font-medium text-foreground hover:underline"
+                      className="font-medium text-foreground no-underline hover:no-underline"
                     >
                       {reportingOrgDisplay}
                     </Link>

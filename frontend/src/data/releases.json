@@ -1,7 +1,38 @@
 {
-  "currentVersion": "3.38.0",
-  "narrativeSummary": "Version 3.38.0 ships the <b>Organization Profile v2</b> as the new default for every <code>/organizations/[id]</code> page &mdash; the old 4,500-line legacy page is replaced by a 50-line shell that defers to a layout-driven v2 view (Hero + compact-strip + Tabs + Rails) mirroring the Activity Profile v2 introduced in 3.35.0. New panes (<code>OrganizationOverview</code>, <code>OrganizationFinancesPane</code>) plus the existing org analytics charts now sit inside the v2 layout, and a new <code>useShrinkOnScroll</code> hook lets the Hero collapse into a compact strip as the user scrolls. The Activity Editor's <b>Financial Analytics</b> tab is rebuilt around a new chart-primitive set: <code>SegmentedControl</code>, <code>CalendarYearSelector</code>, and <code>ChartFullscreen</code> &mdash; all reusable across the dashboard. A new <code>safe-usd</code> helper centralises the &ldquo;is this a real USD value?&rdquo; check, the version badge in the sidebar gains a small <i>beta</i> pill, and many organisation API routes and form sections receive polish.",
+  "currentVersion": "3.38.1",
+  "narrativeSummary": "Version 3.38.1 polishes the v2 profiles' Locations experience and the org-profile Finances pane. The Organization Profile's Locations tab is rebuilt around a new <code>OrganizationLocationsSection</code> that combines map + sortable table views (replacing the prior map-only widget). The shared <code>ActivityLocationsTable</code> gains pagination (20 rows per page), an auto-show <i>Activity</i> column when rows span multiple activities (e.g. on the Org profile), and more sortable columns. The Activity Profile's Locations now filter out IATI coverage-type rows so the profile shows the same site list as the editor's <i>Activity Sites</i> view. Map markers gain a single-popup-at-a-time behaviour and clickable activity-title links. The Organization Finances pane gains a Grants vs Loans / Outgoing-type breakdown with checkbox toggles. The ProfileHero compact strip tightens spacing so IATI ID pills sit immediately after the title.",
   "releases": [
+    {
+      "version": "3.38.1",
+      "date": "2026-05-11",
+      "narrativeSummary": "Polish to v2 profile Locations + Finances. New OrganizationLocationsSection (map + sortable table) on the org profile. ActivityLocationsTable gains pagination + auto-show Activity column. Activity Profile filters out IATI coverage-type rows so it matches the editor's Activity Sites view. Map markers: single-popup-at-a-time, clickable activity-title links. Organization Finances pane gains Outgoing-type breakdown.",
+      "changes": [
+        "<b>Organization Profile &mdash; Locations tab rebuilt</b>",
+        "&nbsp;&nbsp;New <code>components/profile/OrganizationLocationsSection.tsx</code> &mdash; combines a map view, sortable table view, and a download button into one SegmentedControl-driven section",
+        "&nbsp;&nbsp;Replaces the prior map-only <code>OrgActivitiesMap</code> on the Locations tab of <code>OrganizationProfileV2View</code>",
+        "&nbsp;&nbsp;Map view loads <code>ActivityLocationsMapViewV2</code> via <code>next/dynamic</code> with <code>ssr: false</code> so MapLibre / Leaflet bundles don't ship in the parent chunk and don't get evaluated during SSR",
+        "<b>ActivityLocationsTable &mdash; pagination + cross-activity columns</b>",
+        "&nbsp;&nbsp;Adds <code>PAGE_SIZE = 20</code> pagination with chevron Prev / Next controls; resets to page 1 on sort",
+        "&nbsp;&nbsp;Accepts an optional <code>activity</code> field per row (id, title, organization name, acronym) and auto-shows an <i>Activity</i> column when at least one row carries an activity title &mdash; used by the Org profile where the table aggregates locations across activities",
+        "&nbsp;&nbsp;Adds sortable columns for name, state/region, activity, location, location description, and activity description",
+        "&nbsp;&nbsp;Used by both the Activity Profile and the new Organization Locations Section, so both views stay in sync",
+        "<b>Activity Profile &mdash; Locations match editor's Activity Sites view</b>",
+        "&nbsp;&nbsp;<code>ActivityProfileV2View</code> filters out IATI <code>location_type === 'coverage'</code> rows when populating the Locations map + table",
+        "&nbsp;&nbsp;Coverage rows belong to the Sub-national Allocation tab, not Activity Sites &mdash; the previous behaviour duplicated state-level coverage entries against actual project sites",
+        "<b>Map markers &mdash; single popup + clickable activity titles</b>",
+        "&nbsp;&nbsp;<code>components/ui/map.tsx</code>: <code>MarkerPopup</code> now registers itself on a per-map registry and closes any other popup when it opens, so only one marker popup is visible at a time",
+        "&nbsp;&nbsp;<code>SimpleActivityMarkersLayer</code>: popup content now shows the linked activity title as a clickable link to <code>/activities/[id]</code> (with <code>stopPropagation</code> so the click doesn't dismiss the popup)",
+        "<b>Organization Finances pane &mdash; outgoing-type breakdown</b>",
+        "&nbsp;&nbsp;<code>OrganizationFinancesPane</code> gains a <i>Grants vs Loans / Outgoing-type</i> breakdown driven by transaction types 2 (Outgoing Commitments), 3 (Disbursements), and 4 (Expenditures) &mdash; same set as the Activity Profile's Aid Modality Mix chart",
+        "&nbsp;&nbsp;Type filter exposed via a <code>DropdownMenu</code> + <code>Checkbox</code> combo so users can show / hide each outgoing type independently",
+        "<b>ProfileHero compact strip &mdash; tighter layout</b>",
+        "&nbsp;&nbsp;ID pills (e.g. IATI identifier) now sit immediately after the title rather than floated to the right of the strip &mdash; they're glued to the activity name where they're easier to read",
+        "&nbsp;&nbsp;Reporting-org subtitle follows the IDs (still hidden below <code>md</code> to save space)",
+        "&nbsp;&nbsp;Removed the 3px accent line from the compact strip; full Hero retains it",
+        "<b>Database seeds</b>",
+        "&nbsp;&nbsp;<code>seed_unfpa_activities.sql</code> expanded (+192 lines) with more reference activities for local development"
+      ]
+    },
     {
       "version": "3.38.0",
       "date": "2026-05-10",

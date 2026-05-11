@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ChevronDown } from "lucide-react"
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -390,7 +397,7 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
 
           <ChartCard
             title="Spend Trajectory"
-            description="Cumulative spend trajectory"
+            description="Actual vs perfect cumulative disbursement"
             interpretation={
               <>
                 <strong>What it shows.</strong> Cumulative actual disbursements over time, plotted against an even-spend baseline that assumes the budget is paid out at a constant rate across the activity life-cycle.
@@ -793,27 +800,42 @@ function TransactionTypeByYearBody({ data, types }: { data: any[] | null; types:
   )
 }
 
+// Outgoing transaction types that can contribute to the Grants vs Loans
+// breakdown. Same set as the activity profile's Aid Modality Mix chart.
+const GVL_OUTGOING_TYPES = ['2', '3', '4'] as const
+const GVL_TYPE_LABELS: Record<string, string> = {
+  '2': 'Outgoing Commitments',
+  '3': 'Disbursements',
+  '4': 'Expenditures',
+}
+
 function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
+  // Multi-select filter — defaults to all three outgoing types. State lives
+  // here (parent) so the expanded toolbar can mutate it and the data memo
+  // recomputes the slices + per-type breakdowns.
+  const [txTypes, setTxTypes] = useState<Set<string>>(() => new Set(GVL_OUTGOING_TYPES))
+
   const data = useMemo(() => {
     if (!transactions) return null
-    const totals: Record<string, number> = {}
+    const buckets: Record<string, { value: number; byType: Record<string, number> }> = {}
     for (const t of transactions) {
-      // Only outgoing money: disbursements (3), commitments (2), expenditures (4).
       const type = String(t.transaction_type ?? "")
-      if (!["2", "3", "4"].includes(type)) continue
+      if (!txTypes.has(type)) continue
       const usd = t.value_usd != null ? Number(t.value_usd) : (t.currency === "USD" ? Number(t.value) : 0)
       if (!Number.isFinite(usd) || usd === 0) continue
       const bucket = bucketFinanceType(t.finance_type)
-      totals[bucket] = (totals[bucket] ?? 0) + usd
+      if (!buckets[bucket]) buckets[bucket] = { value: 0, byType: {} }
+      buckets[bucket].value += usd
+      buckets[bucket].byType[type] = (buckets[bucket].byType[type] || 0) + usd
     }
-    return Object.entries(totals)
-      .map(([name, value]) => ({ name, value }))
+    return Object.entries(buckets)
+      .map(([name, { value, byType }]) => ({ name, value, byType }))
       .sort((a, b) => b.value - a.value)
-  }, [transactions])
+  }, [transactions, txTypes])
 
   return (
     <ChartCard
-      title="Grants vs Loans"
+      title="Aid Modality Mix"
       description="Outgoing finance by instrument"
       interpretation={
         <>
@@ -823,12 +845,26 @@ function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
         </>
       }
     >
-      <GrantsVsLoansBody data={data} />
+      <GrantsVsLoansBody data={data} txTypes={txTypes} setTxTypes={setTxTypes} />
     </ChartCard>
   )
 }
 
-function GrantsVsLoansBody({ data }: { data: { name: string; value: number }[] | null }) {
+interface GrantsVsLoansSlice {
+  name: string
+  value: number
+  byType: Record<string, number>
+}
+
+function GrantsVsLoansBody({
+  data,
+  txTypes,
+  setTxTypes,
+}: {
+  data: GrantsVsLoansSlice[] | null
+  txTypes: Set<string>
+  setTxTypes: React.Dispatch<React.SetStateAction<Set<string>>>
+}) {
   const isExpanded = useChartExpansion()
   // Brand palette — matches the activity profile's Aid Modality Mix.
   const colors: Record<string, string> = {
@@ -842,47 +878,124 @@ function GrantsVsLoansBody({ data }: { data: { name: string; value: number }[] |
   const total = (data ?? []).reduce((sum, d) => sum + d.value, 0)
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No outgoing transactions with finance types recorded." />
-  return (
-    <ChartFrame>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={isExpanded ? "75%" : 100}
-            innerRadius={isExpanded ? "45%" : 55}
-            paddingAngle={2}
-          >
-            {data.map((d, i) => (
-              <Cell key={i} fill={colors[d.name] ?? "#94a3b8"} />
-            ))}
-          </Pie>
-          <Tooltip
-            content={({ active, payload }: any) => {
-              if (!active || !payload?.length) return null
-              const entry = payload[0]
-              const value = Number(entry.value) || 0
-              const pct = total > 0 ? (value / total) * 100 : 0
-              return (
-                <ChartTooltipCard
-                  title={entry.name}
-                  rows={[{
+
+  const pieChart = (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={isExpanded ? "75%" : 100}
+          innerRadius={isExpanded ? "45%" : 55}
+          paddingAngle={2}
+        >
+          {data.map((d, i) => (
+            <Cell key={i} fill={colors[d.name] ?? "#94a3b8"} />
+          ))}
+        </Pie>
+        <Tooltip
+          content={({ active, payload }: any) => {
+            if (!active || !payload?.length) return null
+            const entry = payload[0]
+            const slice = (entry.payload || {}) as Partial<GrantsVsLoansSlice>
+            const value = Number(entry.value) || 0
+            const pct = total > 0 ? (value / total) * 100 : 0
+            const sliceColor = entry.payload?.fill || colors[entry.name]
+            // Disaggregate by transaction type — same hover pattern as
+            // the activity profile's Aid Modality Mix.
+            const byType: Record<string, number> = slice.byType || {}
+            const breakdown = GVL_OUTGOING_TYPES
+              .filter((code) => Number(byType[code]) > 0)
+              .map((code) => ({
+                label: GVL_TYPE_LABELS[code],
+                value: compactUsd(Number(byType[code]) || 0),
+              }))
+            return (
+              <ChartTooltipCard
+                title={entry.name}
+                rows={[
+                  {
                     label: 'Total',
                     value: compactUsd(value),
-                    color: entry.payload?.fill || colors[entry.name],
+                    color: sliceColor,
                     extra: `${pct.toFixed(1)}%`,
-                  }]}
-                />
-              )
-            }}
-          />
-          {isExpanded && <Legend />}
-        </PieChart>
-      </ResponsiveContainer>
-    </ChartFrame>
+                    bordered: breakdown.length > 0,
+                  },
+                  ...breakdown,
+                ]}
+              />
+            )
+          }}
+        />
+        {isExpanded && <Legend />}
+      </PieChart>
+    </ResponsiveContainer>
+  )
+
+  if (!isExpanded) {
+    return <div className="h-72 w-full">{pieChart}</div>
+  }
+
+  // Expanded layout — year chip top-left, transaction-types dropdown
+  // top-right, pie filling the rest.
+  return (
+    <div className="h-full w-full flex flex-col min-h-0">
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <ExpandedYearChip />
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                Transaction Types ({txTypes.size})
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-72 p-2"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <div className="space-y-1">
+                {GVL_OUTGOING_TYPES.map((code) => {
+                  const checked = txTypes.has(code)
+                  const toggle = () => {
+                    setTxTypes((prev) => {
+                      const next = new Set(prev)
+                      if (next.has(code)) next.delete(code)
+                      else next.add(code)
+                      return next
+                    })
+                  }
+                  return (
+                    <div
+                      key={code}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                      onClick={toggle}
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={toggle}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">
+                        {code}
+                      </code>
+                      <span className="text-body">{GVL_TYPE_LABELS[code]}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0">{pieChart}</div>
+      </div>
+    </div>
   )
 }
 

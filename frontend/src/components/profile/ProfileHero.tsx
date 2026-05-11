@@ -203,22 +203,24 @@ export function ProfileHeroCompactStrip({
         transition: "height 100ms linear, opacity 100ms linear",
       }}
     >
-      <div className="flex items-center gap-3 px-6 h-[calc(100%-3px)] min-w-0">
+      <div className="flex items-center gap-3 px-6 h-full min-w-0">
         {breadcrumb && <div className="flex-shrink-0">{breadcrumb}</div>}
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           <span className="text-base font-semibold text-foreground whitespace-nowrap">{title}</span>
+          {/* IDs (e.g. IATI identifier pill) sit immediately after the title
+              so they're glued to the activity name rather than floated to
+              the right of the strip. The reporting-org subtitle follows. */}
+          {ids && <div className="flex items-center gap-1.5 flex-shrink-0">{ids}</div>}
           {subtitle && (
             <span className="hidden md:inline text-body text-foreground truncate before:content-['·'] before:mx-2 before:text-muted-foreground/50">
               {subtitle}
             </span>
           )}
-          {ids && <div className="flex items-center gap-1.5 ml-auto md:ml-2 flex-shrink-0">{ids}</div>}
         </div>
         {actions && (
           <div className="flex items-center gap-1 flex-shrink-0">{actions}</div>
         )}
       </div>
-      <div className={cn("h-[3px] w-full", ACCENT_LINE[accent])} />
     </div>
   )
 }

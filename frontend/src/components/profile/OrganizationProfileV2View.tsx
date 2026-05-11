@@ -37,7 +37,7 @@ import { apiFetch } from "@/lib/api-fetch"
 import { OrganizationOverview } from "@/components/profile/OrganizationOverview"
 import { OrganizationFinancesPane } from "@/components/profile/OrganizationFinancesPane"
 import { DEFAULT_ORGANIZATION_TYPES } from "@/components/organizations/OrganizationFormContent"
-import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
+import { OrganizationLocationsSection } from "@/components/profile/OrganizationLocationsSection"
 import {
   Table,
   TableBody,
@@ -422,7 +422,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       </OrgPane>
 
       <OrgPane tab="locations" activeTab={activeTab} visitedTabs={visitedTabs}>
-        <OrgActivitiesMap organizationId={organization.id} />
+        <OrganizationLocationsSection organizationId={organization.id} />
       </OrgPane>
 
       <OrgPane tab="partnerships" activeTab={activeTab} visitedTabs={visitedTabs}>
