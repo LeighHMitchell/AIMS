@@ -67,6 +67,12 @@ interface OrganizationSpendTrajectoryChartProps {
   organizationId: string
   organizationName?: string
   compact?: boolean
+  /** Override the chart/table view from the outside. When passed, replaces
+   *  the component's internal `viewMode` state — used by the org-profile
+   *  SpendTrajectoryFrame so its toolbar toggle controls this chart's
+   *  rendering even in `compact` mode (where the internal toolbar UI is
+   *  suppressed). */
+  viewModeOverride?: 'chart' | 'table'
 }
 
 const formatCurrencyCompact = (value: number): string => {
@@ -88,7 +94,8 @@ const formatTooltipCurrency = (value: number): string => {
 export function OrganizationSpendTrajectoryChart({
   organizationId,
   organizationName,
-  compact = false
+  compact = false,
+  viewModeOverride,
 }: OrganizationSpendTrajectoryChartProps) {
   // Compact mode is used inside a ChartCard wrapper that toggles between
   // collapsed (in-grid) and expanded (full-screen dialog). Read the shared
@@ -99,7 +106,10 @@ export function OrganizationSpendTrajectoryChart({
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<SpendData | null>(null)
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set(['cumulativePlannedDisbursements', 'cumulativeCommitments']))
-  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
+  const [viewModeState, setViewMode] = useState<'chart' | 'table'>('chart')
+  // External overrides take precedence — lets the parent control rendering
+  // without losing the internal state when no override is in play.
+  const viewMode = viewModeOverride ?? viewModeState
   const chartRef = useRef<HTMLDivElement>(null)
   const [comparisonSeries, setComparisonSeries] = useState<'cumulativeDisbursements' | 'cumulativePlannedDisbursements' | 'cumulativeCommitments'>('cumulativeDisbursements')
 
@@ -437,6 +447,67 @@ export function OrganizationSpendTrajectoryChart({
     return null
   }
 
+  // Annual rollup — collapses the per-month displayData into one row per
+  // year. Each row's cumulative columns take the LAST observation in that
+  // year; "Disbursed in year" is the delta from the previous year's
+  // year-end cumulative; "Variance vs baseline" is signed actual minus
+  // the even-spend baseline.
+  const renderAnnualRollupTable = () => (
+    <div className="rounded-md border overflow-auto h-full">
+      <Table>
+        <TableHeader>
+          <TableRow className="sticky top-0 bg-surface-muted z-10">
+            <TableHead className="whitespace-nowrap">Year</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Disbursed in year</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Cumulative actual</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Even-spend baseline</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Variance vs baseline</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Cumulative planned</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Cumulative commitments</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {(() => {
+            const byYear = new Map<number, typeof displayData[number]>()
+            for (const row of displayData) {
+              const year = (row as any).year as number
+              const existing = byYear.get(year)
+              if (!existing || row.timestamp > existing.timestamp) byYear.set(year, row)
+            }
+            const sortedYears = Array.from(byYear.keys()).sort((a, b) => a - b)
+            let prevCumulative = 0
+            return sortedYears.map((year) => {
+              const row = byYear.get(year)!
+              const cumActual = Number(row.cumulativeDisbursements) || 0
+              const inYear = cumActual - prevCumulative
+              prevCumulative = cumActual
+              const baseline = Number(row.perfectSpend) || 0
+              const variance = cumActual - baseline
+              const varianceColor = Math.abs(variance) < 1
+                ? undefined
+                : variance >= 0 ? "#16a34a" : "#dc2626"
+              return (
+                <TableRow key={year}>
+                  <TableCell className="font-medium text-foreground">{year}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(inYear)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(cumActual)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(baseline)}</TableCell>
+                  <TableCell className="text-right tabular-nums" style={{ color: varianceColor }}>
+                    {Math.abs(variance) < 1
+                      ? "—"
+                      : `${variance >= 0 ? "+" : "−"}${formatTooltipCurrency(Math.abs(variance))}`}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(Number(row.cumulativePlannedDisbursements) || 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(Number(row.cumulativeCommitments) || 0)}</TableCell>
+                </TableRow>
+              )
+            })
+          })()}
+        </TableBody>
+      </Table>
+    </div>
+  )
+
   // Compact mode - render just the chart without card wrapper
   if (compact) {
     // When the surrounding ChartCard is expanded (full-screen dialog) the
@@ -453,6 +524,12 @@ export function OrganizationSpendTrajectoryChart({
           <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
+    }
+    // When the parent SpendTrajectoryFrame asks for the table view, render
+    // the annual rollup instead of the chart. Keeps the same height shell so
+    // the dialog layout doesn't jump.
+    if (viewMode === 'table') {
+      return <div className={heightClass}>{renderAnnualRollupTable()}</div>
     }
     const compactMaxDisbursement = displayData.length
       ? Math.max(...displayData.map(d => Math.max(
@@ -791,30 +868,7 @@ export function OrganizationSpendTrajectoryChart({
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="rounded-md border overflow-auto max-h-[400px]">
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 bg-white z-10">
-                    <TableHead>Month</TableHead>
-                    <TableHead className="text-right">Baseline (USD)</TableHead>
-                    <TableHead className="text-right">Planned (USD)</TableHead>
-                    <TableHead className="text-right">Commitments (USD)</TableHead>
-                    <TableHead className="text-right">Disbursements (USD)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayData.map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{format(new Date(row.timestamp), 'MMM yyyy')}</TableCell>
-                      <TableCell className="text-right">{formatTooltipCurrency(row.perfectSpend || 0)}</TableCell>
-                      <TableCell className="text-right">{formatTooltipCurrency(row.cumulativePlannedDisbursements || 0)}</TableCell>
-                      <TableCell className="text-right">{formatTooltipCurrency(row.cumulativeCommitments || 0)}</TableCell>
-                      <TableCell className="text-right">{formatTooltipCurrency(row.cumulativeDisbursements || 0)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            renderAnnualRollupTable()
           )}
         </div>
 

@@ -262,7 +262,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   }, [data, timeRange, effectiveDateRange])
 
   const formatXAxisTick = (timestamp: number) => {
-    return new Date(timestamp).getFullYear().toString()
+    return calendarYearState.getYearLabel(new Date(timestamp).getFullYear())
   }
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -496,7 +496,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         </div>
         {isFullscreen && (
           <p className="text-body text-muted-foreground leading-relaxed mt-auto pt-6 shrink-0">
-            <strong>What this shows:</strong> the dashed line is the activity's <strong>perfect spend trajectory</strong> — what cumulative disbursements would look like if the full budget were spent evenly across the activity's planned start and end dates. The solid stepped line is the <strong>actual cumulative disbursements</strong> reported to date. <strong>How to read it:</strong> when the solid line tracks below the dashed line the activity is behind on disbursing funds; above it, ahead. The diagonal-striped band measures the variance. <strong>How to use it:</strong> a persistent gap below the line is an early signal that planned activities aren't being funded on time — investigate whether procurement, partner readiness, or reporting lag is driving the under-disbursement.
+            The dashed line is the activity's <strong>perfect spend trajectory</strong> — what cumulative disbursements would look like if the full budget were paid out evenly across the planned start and end dates — while the solid stepped line tracks the <strong>actual cumulative disbursements</strong> reported to date. When the solid line sits below the dashed one the activity is behind on disbursing funds; above it, ahead. The diagonal-striped band measures that variance, and a persistent gap below the line is an early signal that planned activities aren't being funded on time — worth investigating against procurement, partner readiness, or reporting lag.
           </p>
         )}
       </CardContent>

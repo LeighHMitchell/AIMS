@@ -111,7 +111,9 @@ export async function GET(
       .from('activities')
       .select(`
         id,
+        iati_identifier,
         title_narrative,
+        description_narrative,
         acronym,
         activity_status,
         publication_status,
@@ -130,6 +132,62 @@ export async function GET(
       .in('id', Array.from(allActivityIds))
       .in('activity_status', ['2', '3']) // Only active statuses
       .order('created_at', { ascending: false }) : { data: [], error: null };
+
+    // Pre-fetch budgets + planned disbursements once for all activities in
+    // scope, then bucket by activity_id so we can attach the four headline
+    // totals (budget / planned / committed / disbursed) to each row.
+    const activeActivityIds = (activities || []).map((a: any) => a.id);
+
+    // Column names: activity_budgets has `usd_value` (not value_usd);
+    // planned_disbursements has `usd_amount` (not amount_usd). Selecting
+    // a non-existent column makes Supabase reject the whole query and the
+    // totals come back as 0 — confirmed by inspecting the response.
+    const [{ data: budgetRows }, { data: plannedDisbursementRows }, { data: allTxRows }] = activeActivityIds.length > 0
+      ? await Promise.all([
+          supabase.from('activity_budgets')
+            .select('activity_id, value, usd_value, currency')
+            .in('activity_id', activeActivityIds),
+          supabase.from('planned_disbursements')
+            .select('activity_id, amount, usd_amount, currency')
+            .in('activity_id', activeActivityIds),
+          supabase.from('transactions')
+            .select('activity_id, transaction_type, value, value_usd, currency')
+            .in('activity_id', activeActivityIds),
+        ])
+      : [{ data: [] as any[] }, { data: [] as any[] }, { data: [] as any[] }];
+
+    // Currency-safe USD coercion — only treats raw `value` as USD when
+    // currency === 'USD'. Non-USD rows missing a stored conversion
+    // contribute 0 (avoids AUD-as-USD inflation).
+    const toUsd = (r: any, valueKey: string = 'value'): number => {
+      if (!r) return 0;
+      const stored = r.value_usd ?? r.usd_value ?? r.amount_usd ?? r.usd_amount;
+      if (stored != null && Number.isFinite(Number(stored))) return Number(stored);
+      const currency = (r.currency ?? '').toString().toUpperCase();
+      if (currency === 'USD') {
+        const raw = Number(r[valueKey]);
+        if (Number.isFinite(raw)) return raw;
+      }
+      return 0;
+    };
+
+    const budgetByActivity = new Map<string, number>();
+    (budgetRows || []).forEach((b: any) => {
+      const usd = toUsd(b, 'value');
+      budgetByActivity.set(b.activity_id, (budgetByActivity.get(b.activity_id) || 0) + usd);
+    });
+    const plannedByActivity = new Map<string, number>();
+    (plannedDisbursementRows || []).forEach((p: any) => {
+      const usd = toUsd(p, 'amount');
+      plannedByActivity.set(p.activity_id, (plannedByActivity.get(p.activity_id) || 0) + usd);
+    });
+    const committedByActivity = new Map<string, number>();
+    (allTxRows || []).forEach((t: any) => {
+      // Outgoing commitments are transaction_type === '2'.
+      if (String(t.transaction_type) !== '2') return;
+      const usd = toUsd(t, 'value');
+      committedByActivity.set(t.activity_id, (committedByActivity.get(t.activity_id) || 0) + usd);
+    });
 
     
     // Debug logging (same as partners summary)
@@ -218,6 +276,12 @@ export async function GET(
                              activity.activity_status,
         logo: activity.icon, // Map icon to logo for ActivityCardModern
         financialData,
+        // Four headline financial totals used by the org-profile activities
+        // table. All USD-equivalent (currency-safe — non-USD rows missing a
+        // stored conversion contribute 0).
+        total_budgeted: budgetByActivity.get(activity.id) || 0,
+        total_planned_disbursement: plannedByActivity.get(activity.id) || 0,
+        total_committed: committedByActivity.get(activity.id) || 0,
         total_disbursed
       };
     });

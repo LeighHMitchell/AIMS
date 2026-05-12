@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Copy, ChevronLeft, ChevronRight } from "lucide-react";
+import { Copy, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,77 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { countries } from "@/data/countries";
+import { useMapStyle, MAP_STYLE_RASTER_TILES } from "@/lib/map-style-context";
+
+/**
+ * Small static map tile thumbnail centred on the given coords. Uses the
+ * raster equivalent of whatever basemap style the user has selected on
+ * the main map above (via the shared MapStyleProvider) — when no provider
+ * is in scope, falls back to the Carto Positron 'carto_light' default.
+ *
+ * Renders at zoom 11 (city / district scale — enough to place the point
+ * in its region) with a red marker dot at the centre. Falls back to a
+ * muted MapPin placeholder when no coordinates are available.
+ */
+function LocationThumbnail({
+  lat,
+  lng,
+  size = 72,
+  zoom = 11,
+}: {
+  lat: number | string | null | undefined
+  lng: number | string | null | undefined
+  size?: number
+  zoom?: number
+}) {
+  const { style } = useMapStyle()
+  const latNum = typeof lat === "string" ? parseFloat(lat) : lat
+  const lngNum = typeof lng === "string" ? parseFloat(lng) : lng
+  if (latNum == null || lngNum == null || !Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+    return (
+      <div
+        className="shrink-0 rounded bg-muted/40 border border-border flex items-center justify-center"
+        style={{ width: size, height: size }}
+        aria-hidden
+      >
+        <MapPin className="h-4 w-4 text-muted-foreground" />
+      </div>
+    )
+  }
+  const n = Math.pow(2, zoom)
+  const x = Math.floor(((lngNum + 180) / 360) * n)
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan((latNum * Math.PI) / 180) + 1 / Math.cos((latNum * Math.PI) / 180)) / Math.PI) /
+      2) *
+      n,
+  )
+  // Clamp Y to valid tile range (handles points at the poles).
+  const safeY = Math.max(0, Math.min(n - 1, y))
+  const safeX = ((x % n) + n) % n
+  const tileBuilder = MAP_STYLE_RASTER_TILES[style] || MAP_STYLE_RASTER_TILES.carto_light
+  const tileUrl = tileBuilder.url(zoom, safeX, safeY)
+  return (
+    <div
+      className="relative shrink-0 rounded overflow-hidden bg-muted border border-border"
+      style={{ width: size, height: size }}
+    >
+      <img
+        src={tileUrl}
+        alt=""
+        loading="lazy"
+        // Cache-bust on style change so React doesn't reuse the stale tile
+        // when the parent style changes — `key` on the parent div does the
+        // same job at the DOM level if React Strict re-uses elements.
+        key={tileUrl}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      {/* Centre dot — approximates the marker position. A single tile
+          covers ~20km at zoom 11, so the offset is well within "close
+          enough" for a thumbnail. */}
+      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-rose-600 ring-2 ring-white shadow" />
+    </div>
+  )
+}
 
 interface ActivityLocationRow {
   id?: string | null;
@@ -37,6 +108,10 @@ interface ActivityLocationRow {
   activity?: {
     id?: string | null;
     title?: string | null;
+    /** Activity-level description, used as last-resort fallback for the
+     *  Activity Description column when neither activity_location_description
+     *  nor description is set on the location row. */
+    description?: string | null;
     organization_name?: string | null;
     organization_acronym?: string | null;
   } | null;
@@ -76,10 +151,27 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
   };
 
   const formatAddress = (location: ActivityLocationRow): string => {
+    // Walk admin levels from most specific (township) to least (region).
+    // Drop any rung whose value matches one already kept — so the common
+    // Myanmar pattern of township == city == region == "Magway" collapses
+    // to "Magway township, Myanmar" rather than repeating the same name
+    // four times. Each surviving rung gets a level suffix so the user can
+    // see which rung the kept value refers to. Country has no suffix.
+    const levels: { value?: string | null; suffix: string }[] = [
+      { value: location.township_name, suffix: "township" },
+      { value: location.city, suffix: "city" },
+      { value: location.state_region_name, suffix: "region" },
+    ];
+    const seen = new Set<string>();
     const parts: string[] = [];
-    if (location.township_name) parts.push(location.township_name);
-    if (location.city) parts.push(location.city);
-    if (location.state_region_name) parts.push(location.state_region_name);
+    for (const { value, suffix } of levels) {
+      const trimmed = value?.trim();
+      if (!trimmed) continue;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      parts.push(`${trimmed} ${suffix}`);
+    }
     if (location.country_code) parts.push(getCountryName(location.country_code));
     return parts.join(", ") || "N/A";
   };
@@ -120,8 +212,8 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
           bVal = (b.location_description || "").toLowerCase();
           break;
         case "activity_description":
-          aVal = (a.activity_location_description || a.description || "").toLowerCase();
-          bVal = (b.activity_location_description || b.description || "").toLowerCase();
+          aVal = (a.activity_location_description || a.description || a.activity?.description || "").toLowerCase();
+          bVal = (b.activity_location_description || b.description || b.activity?.description || "").toLowerCase();
           break;
       }
       return aVal.localeCompare(bVal) * dir;
@@ -147,26 +239,13 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead
-                className={`cursor-pointer hover:bg-muted/30 transition-colors ${showActivity ? "w-[20%]" : "w-[24%]"}`}
-                onClick={() => handleSort("name")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Name</span>
-                  {getSortIcon("name", sortField, sortOrder)}
-                </div>
-              </TableHead>
-              {showActivity && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/30 transition-colors w-[16%]"
-                  onClick={() => handleSort("state_region")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>State / Region</span>
-                    {getSortIcon("state_region", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
+              {/* On the org profile (showActivity) the column order is
+                  Activity Title → Name → Location → Activity Description.
+                  Activity profile keeps the legacy two-column layout
+                  (Name + Location) since it has no activity context. */}
+              {/* Equal-width columns — 20% each when the Activity Title is
+                  shown (5 cols on org profile) and 25% each on the activity
+                  profile (4 cols). */}
               {showActivity && (
                 <TableHead
                   className="cursor-pointer hover:bg-muted/30 transition-colors w-[20%]"
@@ -178,30 +257,35 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
                   </div>
                 </TableHead>
               )}
-              {showActivity && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/30 transition-colors w-[22%]"
-                  onClick={() => handleSort("location_description")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Location Description</span>
-                    {getSortIcon("location_description", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {!showActivity && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/30 transition-colors w-[26%]"
-                  onClick={() => handleSort("location")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Location</span>
-                    {getSortIcon("location", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
               <TableHead
-                className={`cursor-pointer hover:bg-muted/30 transition-colors ${showActivity ? "w-[22%]" : "w-[50%]"}`}
+                className={`cursor-pointer hover:bg-muted/30 transition-colors ${showActivity ? "w-[20%]" : "w-[25%]"}`}
+                onClick={() => handleSort("name")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Location Name</span>
+                  {getSortIcon("name", sortField, sortOrder)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`cursor-pointer hover:bg-muted/30 transition-colors ${showActivity ? "w-[20%]" : "w-[25%]"}`}
+                onClick={() => handleSort("location")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Address</span>
+                  {getSortIcon("location", sortField, sortOrder)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`cursor-pointer hover:bg-muted/30 transition-colors ${showActivity ? "w-[20%]" : "w-[25%]"}`}
+                onClick={() => handleSort("location_description")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Location Description</span>
+                  {getSortIcon("location_description", sortField, sortOrder)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`cursor-pointer hover:bg-muted/30 transition-colors ${showActivity ? "w-[20%]" : "w-[25%]"}`}
                 onClick={() => handleSort("activity_description")}
               >
                 <div className="flex items-center gap-1">
@@ -213,13 +297,46 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
           </TableHeader>
           <TableBody>
             {paginatedLocations.map((location, idx) => {
-              const activityDesc = location.activity_location_description || location.description;
+              // Fallback chain for the Activity Description column:
+              //   1. activity_location_description — most specific (what
+              //      the activity does *at this place*)
+              //   2. description — the location row's own description
+              //   3. activity.description — the activity-level narrative
+              //      (last resort, but better than blank)
+              const activityDesc =
+                location.activity_location_description ||
+                location.description ||
+                location.activity?.description;
               return (
                 <TableRow key={location.id ?? `loc-${idx}`}>
+                  {showActivity && (
+                    <TableCell className="text-body align-top">
+                      {location.activity?.id ? (
+                        <a
+                          href={`/activities/${location.activity.id}`}
+                          className="text-body text-foreground no-underline hover:no-underline line-clamp-2 whitespace-normal break-words"
+                        >
+                          {location.activity.title || "Untitled activity"}
+                        </a>
+                      ) : (
+                        <span className="text-body line-clamp-2 whitespace-normal break-words">
+                          {location.activity?.title || "—"}
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="align-top">
-                    <div className="text-body">{location.location_name || "Unnamed Location"}</div>
+                    <div className="flex items-start gap-3 min-w-0">
+                      <LocationThumbnail lat={location.latitude} lng={location.longitude} />
+                      <div className="text-body min-w-0 break-words">
+                        {location.location_name || "Unnamed Location"}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-body align-top">
+                    <div>{formatAddress(location)}</div>
                     {location.latitude != null && location.longitude != null && (
-                      <div className="group/coords flex items-center gap-1 text-helper text-muted-foreground mt-0.5 w-fit">
+                      <div className="group/coords flex items-center gap-1.5 text-helper text-muted-foreground mt-0.5 w-fit">
                         <span>
                           {Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}
                         </span>
@@ -237,61 +354,38 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
                         >
                           <Copy className="h-3 w-3" />
                         </button>
+                        {/* Same Google Maps icon used in the map marker
+                            popups (SimpleActivityMarkersLayer). Opens the
+                            satellite-tile view at the location's coords.
+                            Reveals on hover only — same pattern as the
+                            Copy button above. */}
+                        <a
+                          href={`https://www.google.com/maps?q=${Number(location.latitude)},${Number(location.longitude)}&t=k`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Open in Google Maps"
+                          aria-label="Open in Google Maps"
+                          className="opacity-0 group-hover/coords:opacity-100 transition-opacity hover:opacity-80 flex-shrink-0"
+                        >
+                          <img
+                            src="https://www.gstatic.com/marketing-cms/assets/images/0f/9a/58f1d92b46069b4a8bdc556b612c/google-maps.webp"
+                            alt=""
+                            className="h-3.5 w-3.5"
+                          />
+                        </a>
                       </div>
                     )}
                   </TableCell>
-                  {showActivity && (
-                    <TableCell className="text-body align-top">
-                      <div>{location.state_region_name || "—"}</div>
-                      {location.country_code && (
-                        <div className="text-helper text-muted-foreground mt-0.5">
-                          {getCountryName(location.country_code)}
-                        </div>
-                      )}
-                    </TableCell>
-                  )}
-                  {showActivity && (
-                    <TableCell className="text-body align-top">
-                      {location.activity?.id ? (
-                        <a
-                          href={`/activities/${location.activity.id}`}
-                          className="text-body text-foreground no-underline hover:no-underline line-clamp-2 whitespace-normal break-words"
-                        >
-                          {location.activity.title || "Untitled activity"}
-                        </a>
-                      ) : (
-                        <span className="text-body line-clamp-2 whitespace-normal break-words">
-                          {location.activity?.title || "—"}
-                        </span>
-                      )}
-                    </TableCell>
-                  )}
-                  {showActivity && (
-                    <TableCell className="text-body align-top">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="line-clamp-3 whitespace-normal break-words cursor-default">
-                            {location.location_description || "-"}
-                          </span>
-                        </TooltipTrigger>
-                        {location.location_description && (
-                          <TooltipContent side="top" className="max-w-md">
-                            <p>{location.location_description}</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TableCell>
-                  )}
-                  {!showActivity && (
-                    <TableCell className="text-body align-top">
-                      <div>{formatAddress(location)}</div>
-                      {location.location_description && (
-                        <div className="text-body mt-0.5 whitespace-normal break-words text-muted-foreground">
-                          {location.location_description}
-                        </div>
-                      )}
-                    </TableCell>
-                  )}
+                  <TableCell className="text-body align-top">
+                    {location.location_description ? (
+                      <span className="whitespace-normal break-words">
+                        {location.location_description}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-body align-top">
                     <Tooltip>
                       <TooltipTrigger asChild>

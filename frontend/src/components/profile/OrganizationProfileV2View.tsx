@@ -38,6 +38,7 @@ import { OrganizationOverview } from "@/components/profile/OrganizationOverview"
 import { OrganizationFinancesPane } from "@/components/profile/OrganizationFinancesPane"
 import { DEFAULT_ORGANIZATION_TYPES } from "@/components/organizations/OrganizationFormContent"
 import { OrganizationLocationsSection } from "@/components/profile/OrganizationLocationsSection"
+import { EmailCell } from "@/components/profile/EmailCell"
 import {
   Table,
   TableBody,
@@ -45,11 +46,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableContainer,
+  getSortIcon,
+  sortableHeaderClasses,
 } from "@/components/ui/table"
 import { RailBlock } from "@/components/profile/RailBlock"
 import { countries as COUNTRY_LIST } from "@/data/countries"
 import { isInstitutionalGroup } from "@/data/location-groups"
-import { Mail, Phone, Twitter, Facebook, Linkedin, Instagram, Youtube, MapPin, Building2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
+import { Mail, Phone, Twitter, Facebook, Linkedin, Instagram, Youtube, MapPin, Building2, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import Flag from "react-world-flags"
 import { getActivityStatusLabel } from "@/lib/activity-status-utils"
 
@@ -136,6 +140,26 @@ function formatUsdCompact(value: number): string {
   if (abs >= 1_000_000) return `USD ${(value / 1_000_000).toFixed(1)}m`
   if (abs >= 1_000) return `USD ${(value / 1_000).toFixed(0)}k`
   return `USD ${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+}
+
+// JSX variant of the same compact format — renders the "USD" prefix small /
+// gray (matches the transactions table style elsewhere in the app) with the
+// numeric value in normal weight beside it.
+function CompactUsd({ value }: { value: number }): JSX.Element {
+  const abs = Math.abs(value)
+  const num = abs >= 1_000_000_000
+    ? `${(value / 1_000_000_000).toFixed(1)}b`
+    : abs >= 1_000_000
+    ? `${(value / 1_000_000).toFixed(1)}m`
+    : abs >= 1_000
+    ? `${(value / 1_000).toFixed(0)}k`
+    : value.toLocaleString("en-US", { maximumFractionDigits: 0 })
+  return (
+    <span>
+      <span className="text-helper text-muted-foreground font-normal">USD</span>{" "}
+      {num}
+    </span>
+  )
 }
 
 // Pane wrapper hoisted to module scope so its component identity is stable
@@ -487,7 +511,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
   const compactActions = (
     <>
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         className="h-8 w-8"
         onClick={toggleBookmark}
@@ -499,7 +523,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             className="h-8 w-8"
             title="Export"
@@ -519,6 +543,13 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <Link
+        href={`/organizations/${organization.id}/edit`}
+        className="ml-1 inline-flex items-center h-8 rounded-md bg-primary text-primary-foreground px-3 text-[12px] font-medium hover:bg-primary/90 transition-colors"
+      >
+        <Pencil className="w-3.5 h-3.5 mr-1.5" />
+        Edit
+      </Link>
     </>
   )
 
@@ -678,18 +709,31 @@ function stripHtml(input: string | null | undefined): string {
     .trim()
 }
 
-type ActivitiesSortField = "title" | "status" | "updated"
+type ActivitiesSortField =
+  | "title"
+  | "status"
+  | "updated"
+  | "totalBudgeted"
+  | "totalPlannedDisbursement"
+  | "totalCommitted"
+  | "totalDisbursed"
+
+const ACTIVITIES_PAGE_SIZE = 20
 
 function OrganizationActivitiesTab({ organizationId }: { organizationId: string }) {
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState<ActivitiesSortField>("updated")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    apiFetch(`/api/activities?organization_id=${organizationId}`)
+    // Use the org-activities endpoint — it computes the four headline
+    // financial totals (budget / planned / committed / disbursed) the
+    // table now renders, plus filters to active activities only.
+    apiFetch(`/api/organizations/${organizationId}/activities`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
         if (cancelled) return
@@ -710,6 +754,15 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
   const sorted = React.useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1
     const arr = [...activities]
+    const numericGetter: Record<ActivitiesSortField, ((a: any) => number) | null> = {
+      title: null,
+      status: null,
+      updated: null,
+      totalBudgeted: (a) => Number(a.total_budgeted) || 0,
+      totalPlannedDisbursement: (a) => Number(a.total_planned_disbursement) || 0,
+      totalCommitted: (a) => Number(a.total_committed) || 0,
+      totalDisbursed: (a) => Number(a.total_disbursed) || 0,
+    }
     arr.sort((a, b) => {
       let cmp = 0
       switch (sortField) {
@@ -722,6 +775,10 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
         case "updated":
           cmp = new Date(a.updated_at || a.created_at || 0).getTime() - new Date(b.updated_at || b.created_at || 0).getTime()
           break
+        default: {
+          const getter = numericGetter[sortField]
+          if (getter) cmp = getter(a) - getter(b)
+        }
       }
       return cmp * dir
     })
@@ -733,16 +790,28 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
       setSortDir(sortDir === "asc" ? "desc" : "asc")
     } else {
       setSortField(field)
-      setSortDir(field === "updated" ? "desc" : "asc")
+      // Numeric / date columns default to descending (biggest / newest
+      // first); text columns default to ascending.
+      const descByDefault: ActivitiesSortField[] = [
+        "updated",
+        "totalBudgeted",
+        "totalPlannedDisbursement",
+        "totalCommitted",
+        "totalDisbursed",
+      ]
+      setSortDir(descByDefault.includes(field) ? "desc" : "asc")
     }
+    setPage(1) // any sort change pulls the user back to the first page
   }
 
-  const sortIcon = (field: ActivitiesSortField) =>
-    sortField === field ? (
-      sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-    ) : (
-      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-    )
+  // Pagination slice — applied after sorting so the user always sees the
+  // top of the chosen order on page 1.
+  const totalRows = sorted.length
+  const totalPages = Math.max(1, Math.ceil(totalRows / ACTIVITIES_PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = (safePage - 1) * ACTIVITIES_PAGE_SIZE
+  const pageEnd = Math.min(pageStart + ACTIVITIES_PAGE_SIZE, totalRows)
+  const paginated = sorted.slice(pageStart, pageEnd)
 
   if (loading) {
     return (
@@ -772,41 +841,77 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
           {activities.length} {activities.length === 1 ? "activity" : "activities"} reported by or contributed to this organisation
         </p>
       </div>
-      <div className="rounded-md border">
+      <TableContainer className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead
-                className="cursor-pointer hover:bg-muted/30"
+                className={sortableHeaderClasses}
                 onClick={() => toggleSort("title")}
               >
                 <div className="flex items-center gap-1">
                   Activity
-                  {sortIcon("title")}
+                  {getSortIcon("title", sortField, sortDir)}
                 </div>
               </TableHead>
               <TableHead
-                className="w-[160px] cursor-pointer hover:bg-muted/30"
+                className={`w-[140px] ${sortableHeaderClasses}`}
                 onClick={() => toggleSort("status")}
               >
                 <div className="flex items-center gap-1">
                   Status
-                  {sortIcon("status")}
+                  {getSortIcon("status", sortField, sortDir)}
                 </div>
               </TableHead>
               <TableHead
-                className="w-[140px] text-right cursor-pointer hover:bg-muted/30"
+                className={`w-[140px] text-right ${sortableHeaderClasses}`}
+                onClick={() => toggleSort("totalBudgeted")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  Total Budgeted
+                  {getSortIcon("totalBudgeted", sortField, sortDir)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`w-[160px] text-right ${sortableHeaderClasses}`}
+                onClick={() => toggleSort("totalPlannedDisbursement")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  Total Planned
+                  {getSortIcon("totalPlannedDisbursement", sortField, sortDir)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`w-[140px] text-right ${sortableHeaderClasses}`}
+                onClick={() => toggleSort("totalCommitted")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  Total Committed
+                  {getSortIcon("totalCommitted", sortField, sortDir)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`w-[140px] text-right ${sortableHeaderClasses}`}
+                onClick={() => toggleSort("totalDisbursed")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  Total Disbursed
+                  {getSortIcon("totalDisbursed", sortField, sortDir)}
+                </div>
+              </TableHead>
+              <TableHead
+                className={`w-[120px] text-right ${sortableHeaderClasses}`}
                 onClick={() => toggleSort("updated")}
               >
                 <div className="flex items-center justify-end gap-1">
-                  Last Updated
-                  {sortIcon("updated")}
+                  Updated
+                  {getSortIcon("updated", sortField, sortDir)}
                 </div>
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((a: any) => {
+            {paginated.map((a: any) => {
               const title = a.title_narrative || a.title || "Untitled activity"
               const iati = a.iati_identifier || a.iati_id
               const description = stripHtml(a.description_narrative || a.description)
@@ -819,17 +924,23 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
                   <TableCell className="py-3">
                     <Link
                       href={`/activities/${a.id}`}
-                      className="font-medium text-foreground hover:underline block leading-snug"
+                      className="font-medium text-foreground no-underline hover:no-underline block leading-snug"
                     >
                       {title}
                       {a.acronym && (
-                        <span className="text-muted-foreground font-normal ml-1.5">({a.acronym})</span>
+                        // No colour/weight overrides — inherit `font-medium
+                        // text-foreground` from the parent Link so the
+                        // acronym matches the activity title visually.
+                        <span className="ml-1.5">({a.acronym})</span>
                       )}
                     </Link>
                     {iati && (
-                      <div className="text-helper text-muted-foreground font-mono mt-0.5">
+                      // IATI identifier rendered as a code chip — same
+                      // monospace gray treatment used for transaction-type
+                      // codes and other identifiers elsewhere in the app.
+                      <code className="inline-block mt-1 font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {iati}
-                      </div>
+                      </code>
                     )}
                     {description && (
                       <p className="text-helper text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
@@ -839,6 +950,18 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
                   </TableCell>
                   <TableCell className="py-3 text-helper text-muted-foreground whitespace-nowrap">
                     {getActivityStatusLabel(a.activity_status) || "—"}
+                  </TableCell>
+                  <TableCell className="py-3 text-right text-body text-foreground whitespace-nowrap tabular-nums">
+                    <CompactUsd value={Number(a.total_budgeted) || 0} />
+                  </TableCell>
+                  <TableCell className="py-3 text-right text-body text-foreground whitespace-nowrap tabular-nums">
+                    <CompactUsd value={Number(a.total_planned_disbursement) || 0} />
+                  </TableCell>
+                  <TableCell className="py-3 text-right text-body text-foreground whitespace-nowrap tabular-nums">
+                    <CompactUsd value={Number(a.total_committed) || 0} />
+                  </TableCell>
+                  <TableCell className="py-3 text-right text-body text-foreground whitespace-nowrap tabular-nums">
+                    <CompactUsd value={Number(a.total_disbursed) || 0} />
                   </TableCell>
                   <TableCell className="py-3 text-right text-helper text-muted-foreground whitespace-nowrap">
                     {updated
@@ -854,7 +977,40 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
             })}
           </TableBody>
         </Table>
-      </div>
+      </TableContainer>
+
+      {totalRows > ACTIVITIES_PAGE_SIZE && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-helper text-muted-foreground">
+            Showing {pageStart + 1}–{pageEnd} of {totalRows} activities
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="h-8"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <span className="text-helper text-muted-foreground px-3">
+              Page {safePage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="h-8"
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
@@ -1060,13 +1216,7 @@ function OrganizationPeopleTab({ organizationId }: { organizationId: string }) {
                     {[p.jobTitle, p.department].filter(Boolean).join(" · ") || "—"}
                   </TableCell>
                   <TableCell className="text-helper text-muted-foreground">
-                    {p.email ? (
-                      <a href={`mailto:${p.email}`} className="hover:underline">
-                        {p.email}
-                      </a>
-                    ) : (
-                      "—"
-                    )}
+                    {p.email ? <EmailCell email={p.email} /> : "—"}
                   </TableCell>
                   <TableCell className="text-helper text-muted-foreground">{p.phone || "—"}</TableCell>
                   <TableCell className="text-helper text-muted-foreground">{p.role || "—"}</TableCell>

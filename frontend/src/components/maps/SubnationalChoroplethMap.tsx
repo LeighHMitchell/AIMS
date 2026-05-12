@@ -110,6 +110,10 @@ interface SubnationalChoroplethMapProps {
   // Region-keyed totals, passed through to the township tooltip so it can show
   // the parent region's aggregate percentage alongside the township value.
   regionTotals?: Record<string, number>;
+  /** Hide the top-right "Expand" button. Useful when the host already
+   *  provides its own expand affordance (e.g. the org profile renders
+   *  this inside a card with no need for the modal expansion). */
+  hideExpandButton?: boolean;
 }
 
 // Get color for a percentage value using linear interpolation
@@ -852,13 +856,13 @@ function SubnationalChoroplethMapComponent({
   onFeatureClick,
   isExpanded: isExpandedProp = false,
   regionTotals,
+  hideExpandButton = false,
 }: SubnationalChoroplethMapProps) {
   const [isExpanded, setIsExpanded] = useState(isExpandedProp);
   const [isExporting, setIsExporting] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState<Feature<Geometry> | null>(null);
   const [is3DMode, setIs3DMode] = useState(false);
   const [dialogToolbarEl, setDialogToolbarEl] = useState<HTMLDivElement | null>(null);
-  const [cardToolbarEl, setCardToolbarEl] = useState<HTMLDivElement | null>(null);
   const [cardStatsEl, setCardStatsEl] = useState<HTMLDivElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -999,16 +1003,15 @@ function SubnationalChoroplethMapComponent({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 flex-1 h-[calc(100%-4rem)] flex flex-col">
-        {/*
-          Toolbar strip above the map. Left side hosts the 3D/Reset/Zoom
-          controls (portalled in by Map3DController); right side hosts the
-          ADM1/ADM3 view-level toggle and Expand button. Keeping these
-          inline above the map prevents them from obscuring map content.
-        */}
-        <div className="flex items-start justify-between gap-2 mb-2 min-h-9">
-          <div ref={setCardToolbarEl} className="flex flex-wrap items-center gap-2 min-w-0 flex-1" />
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center border rounded-md bg-card">
+        {/* All controls now overlay the map itself — 3D/Reset float on the
+            top-left (rendered by Map3DController when no portalTarget is
+            supplied), ADM1/ADM3 + Expand float on the top-right, and the
+            zoom-stats badge sits bottom-left when 3D mode is active. */}
+        <div ref={mapContainerRef} className="relative w-full flex-1 min-h-[500px] border-2 border-gray-300 rounded-lg overflow-hidden">
+          {!isExpanded && renderMap(null, cardStatsEl)}
+          {/* Top-right overlay: ADM1/ADM3 view toggle + Expand */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <div className="flex items-center border rounded-md bg-card shadow-md">
               <Button
                 variant={viewLevel === 'region' ? 'default' : 'ghost'}
                 size="sm"
@@ -1030,19 +1033,18 @@ function SubnationalChoroplethMapComponent({
                 ADM3
               </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 w-9 p-0 bg-card"
-              onClick={() => setIsExpanded(true)}
-              title="Expand"
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-            </Button>
+            {!hideExpandButton && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 p-0 bg-card shadow-md"
+                onClick={() => setIsExpanded(true)}
+                title="Expand"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
-        </div>
-        <div ref={mapContainerRef} className="relative w-full flex-1 min-h-[500px] border-2 border-gray-300 rounded-lg overflow-hidden">
-          {!isExpanded && renderMap(cardToolbarEl, cardStatsEl)}
           {/* 3D stats overlay — populated by Map3DController only when in 3D mode */}
           <div ref={setCardStatsEl} className="absolute bottom-3 left-3 z-10 pointer-events-none" />
         </div>

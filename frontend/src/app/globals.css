@@ -412,44 +412,12 @@ select:focus {
   mix-blend-mode: multiply;
 }
 
-/* Modal dialog z-index higher than Leaflet */
-[data-radix-dialog-content] {
-  z-index: 1000 !important;
-}
-
-/* Ensure modal overlay is above everything */
-[data-radix-dialog-overlay] {
-  z-index: 999 !important;
-}
-
 /* Ensure hover card content is fully opaque */
 [data-radix-hover-card-content] {
   background-color: #f6f5f3 !important;
   opacity: 1 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-}
-
-/* Ensure modal is properly centered and contained */
-[data-radix-dialog-content] {
-  position: fixed !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-  width: calc(100vw - 2rem) !important;
-  max-width: 100% !important;
-}
-
-/* Prevent horizontal overflow on small screens */
-@media (max-width: 768px) {
-  [data-radix-dialog-content] {
-    width: calc(100vw - 1rem) !important;
-    margin: 0.5rem !important;
-    transform: translate(-50%, -50%) !important;
-    left: 50% !important;
-    top: 50% !important;
-  }
 }
 
 /* Prevent body scroll when modal is open */

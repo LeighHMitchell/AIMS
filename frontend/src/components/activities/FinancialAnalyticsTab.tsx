@@ -2537,6 +2537,9 @@ export default function FinancialAnalyticsTab({
   const [aidModalityTxTypes, setAidModalityTxTypes] = useState<Set<string>>(
     () => new Set(AID_MODALITY_OUTGOING_TYPES),
   )
+  const [aidModalityView, setAidModalityView] = useState<'chart' | 'table'>('chart')
+  const [topProvidersView, setTopProvidersView] = useState<'chart' | 'table'>('chart')
+  const [topReceiversView, setTopReceiversView] = useState<'chart' | 'table'>('chart')
   const aidModalityData = useMemo(() => {
     const buckets: Record<string, { value: number; byType: Record<string, number> }> = {}
     transactions?.forEach((t: any) => {
@@ -2804,15 +2807,15 @@ export default function FinancialAnalyticsTab({
                 <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Period</th>
-                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Budget</th>
-                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Actual Spending</th>
+                      <th className="text-left py-3 px-4 font-medium text-foreground">Period</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground">Budget</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground">Actual Spending</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredBudgetVsActual.map((row, index) => (
                       <tr key={index} className="border-b border-border hover:bg-muted/50">
-                        <td className="py-2.5 px-4 font-medium text-foreground">{budgetGroupBy === 'year' ? row.year : row.period}</td>
+                        <td className="py-2.5 px-4 font-medium text-foreground">{budgetGroupBy === 'year' ? budgetVsActualCal.getYearLabel(Number(row.year)) : row.period}</td>
                         <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row.budget)}</td>
                         <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row.actual)}</td>
                       </tr>
@@ -2852,7 +2855,7 @@ export default function FinancialAnalyticsTab({
                       scale="time"
                       domain={[(dataMin) => dataMin - 15768000000, (dataMax) => dataMax + 15768000000]}
                       ticks={generateYearTicks(processedBudgetVsActual)}
-                      tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
+                      tickFormatter={(timestamp) => budgetVsActualCal.getYearLabel(new Date(timestamp).getFullYear())}
                       stroke="#64748B"
                       fontSize={12}
                       angle={0}
@@ -2900,7 +2903,7 @@ export default function FinancialAnalyticsTab({
                       scale="time"
                       domain={[(dataMin) => dataMin - 15768000000, (dataMax) => dataMax + 15768000000]}
                       ticks={generateYearTicks(processedBudgetVsActual)}
-                      tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
+                      tickFormatter={(timestamp) => budgetVsActualCal.getYearLabel(new Date(timestamp).getFullYear())}
                       stroke="#64748B"
                       fontSize={12}
                       angle={0}
@@ -2946,7 +2949,7 @@ export default function FinancialAnalyticsTab({
           )}
           {isFullscreen && (
             <p className="text-body text-muted-foreground leading-relaxed mt-4">
-              <strong>What this shows:</strong> the activity's <strong>annual planned budget</strong> compared with the <strong>actual money spent</strong> in each year — sourced from disbursements and expenditures. <strong>How to read it:</strong> bars of similar height mean spending kept pace with plan; budget bars taller than actual bars indicate <strong>under-spending</strong>; actual bars taller than budget indicate <strong>over-spending</strong>. The cumulative view turns this into a running total, useful for spotting whether under-spending in one year was made up later. <strong>How to use it:</strong> grade the activity's budget execution. Persistent under-spending often signals procurement delays, unused capacity, or partner-side bottlenecks; over-spending can indicate scope creep or cost overruns.
+              The chart compares the activity's <strong>annual planned budget</strong> with the <strong>actual money spent</strong> each year, drawn from disbursements and expenditures. Bars of similar height mean spending kept pace with plan; taller budget bars signal <strong>under-spending</strong> and taller actual bars signal <strong>over-spending</strong>, with the cumulative view turning these into a running total that reveals whether shortfalls in one year were made up later. Reading this regularly grades the activity's budget execution: persistent under-spend often points to procurement delays, unused capacity, or partner-side bottlenecks, while sustained over-spend can flag scope creep or cost overruns.
             </p>
           )}
         </CardContent>
@@ -3083,10 +3086,10 @@ export default function FinancialAnalyticsTab({
                 <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Provider</th>
-                      <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Receiver</th>
-                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Amount (USD)</th>
-                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Percentage</th>
+                      <th className="text-left py-3 px-4 font-medium text-foreground">Provider</th>
+                      <th className="text-left py-3 px-4 font-medium text-foreground">Receiver</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground">Amount (USD)</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground">Percentage</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3142,7 +3145,7 @@ export default function FinancialAnalyticsTab({
           )}
           {isFullscreen && (
             <p className="text-body text-muted-foreground leading-relaxed mt-4">
-              <strong>What this shows:</strong> Sankey-style flows from each <strong>provider organisation</strong> on the left to the <strong>receiver organisations</strong> on the right, with band width sized by USD value. <strong>How to read it:</strong> wider bands mean more money moved between that provider–receiver pair; narrow tails are small-volume relationships that wouldn't stand out in a flat transaction list. Switch the toggle to view <strong>actual transactions</strong> by type (incoming, commitment, disbursement, expenditure) or <strong>planned disbursements</strong> only. <strong>How to use it:</strong> see at a glance who the activity's primary funders are, where the money is being directed, and whether funding is concentrated with one partner or spread across several — concentration can signal risk if a single funder withdraws.
+              Sankey-style flows run from each <strong>provider organisation</strong> on the left to the <strong>receivers</strong> on the right, with band width sized by USD value — wider bands mean more money moved between that pair, and narrow tails reveal smaller-volume relationships that wouldn't stand out in a flat transaction list. The toggle switches between <strong>actual transactions</strong> by type (incoming, commitment, disbursement, expenditure) and <strong>planned disbursements</strong> only. At a glance, this tells you who the activity's primary funders are, where the money is being directed, and whether funding is concentrated with one partner or spread across several — concentration can signal risk if a single funder withdraws.
             </p>
           )}
         </CardContent>
@@ -3175,13 +3178,33 @@ export default function FinancialAnalyticsTab({
             {isFullscreen && (
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...aidModalityCal} />
+                {/* Chart / table view toggle */}
+                <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAidModalityView('chart')}
+                    className={cn("h-8 w-8", aidModalityView === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Chart"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAidModalityView('table')}
+                    className={cn("h-8 w-8", aidModalityView === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Table"
+                  >
+                    <TableIcon className="h-4 w-4" />
+                  </Button>
+                </div>
                 {/* Multi-select dropdown — pick which outgoing transaction
                     types to include in the modality mix. Defaults to all
-                    three (Commitments + Disbursements + Expenditures).
-                    `ml-auto` pushes it to the right edge of the toolbar. */}
+                    three (Commitments + Disbursements + Expenditures). */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 ml-auto">
+                    <Button variant="outline" size="sm" className="h-8">
                       Transaction Types ({aidModalityTxTypes.size})
                       <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
@@ -3226,7 +3249,41 @@ export default function FinancialAnalyticsTab({
               </div>
             )}
             <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
-              {aidModalityTotal > 0 ? (
+              {aidModalityTotal > 0 && isFullscreen && aidModalityView === 'table' ? (
+                <div className="flex-1 min-h-0 overflow-auto border border-border rounded-lg">
+                  <table className="w-full text-body">
+                    <thead className="sticky top-0 bg-surface-muted z-10">
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Instrument</th>
+                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total (USD)</th>
+                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">% Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aidModalityData.map((row) => {
+                        const pct = aidModalityTotal > 0 ? (row.value / aidModalityTotal) * 100 : 0
+                        return (
+                          <tr key={row.name} className="border-b border-border hover:bg-muted/50">
+                            <td className="py-2.5 px-4 font-medium text-foreground">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: aidModalityColors[row.name] ?? '#94a3b8' }} />
+                                {row.name}
+                              </div>
+                            </td>
+                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(row.value)}</td>
+                            <td className="text-right py-2.5 px-4 text-muted-foreground tabular-nums">{pct.toFixed(1)}%</td>
+                          </tr>
+                        )
+                      })}
+                      <tr className="border-t-2 border-border bg-muted font-semibold">
+                        <td className="py-2.5 px-4 text-foreground">Total</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(aidModalityTotal)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">100.0%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : aidModalityTotal > 0 ? (
                 <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
                   <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -3295,7 +3352,7 @@ export default function FinancialAnalyticsTab({
               )}
               {isFullscreen && (
                 <p className="text-body text-muted-foreground leading-relaxed mt-4">
-                  <strong>What this shows:</strong> all <strong>outgoing transactions</strong> (commitments, disbursements, expenditures) grouped by IATI <strong>Finance Type</strong> buckets — Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified. <strong>How to read it:</strong> the slice for each instrument is sized by USD value, so a chart that's almost entirely Grants tells you the activity is concessional in nature; a Loans-heavy mix means market or near-market financing. <strong>How to use it:</strong> understand the financial instrument mix at a glance — useful for assessing concessionality, repayment risk, and how the activity fits into the funder's broader portfolio.
+                  The pie groups all <strong>outgoing transactions</strong> (commitments, disbursements, expenditures) by IATI <strong>Finance Type</strong> bucket — Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified — with each slice sized by USD value. A chart that's almost entirely Grants tells you the activity is concessional in nature, while a Loans-heavy mix points to market or near-market financing. Reading the instrument mix this way is a quick way to assess concessionality, repayment risk, and how the activity fits into the funder's broader portfolio.
                 </p>
               )}
             </CardContent>
@@ -3327,10 +3384,39 @@ export default function FinancialAnalyticsTab({
             {isFullscreen && (
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...topProvidersCal} />
+                <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                  <Button variant="ghost" size="icon" onClick={() => setTopProvidersView('chart')} className={cn("h-8 w-8", topProvidersView === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Chart">
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setTopProvidersView('table')} className={cn("h-8 w-8", topProvidersView === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Table">
+                    <TableIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
             <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
-              {topProvidersData.length > 0 ? (
+              {topProvidersData.length > 0 && isFullscreen && topProvidersView === 'table' ? (
+                <div className="flex-1 min-h-0 overflow-auto border border-border rounded-lg">
+                  <table className="w-full text-body">
+                    <thead className="sticky top-0 bg-surface-muted z-10">
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap w-12">#</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Provider</th>
+                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Outgoing (USD)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topProvidersData.map((row, i) => (
+                        <tr key={row.name} className="border-b border-border hover:bg-muted/50">
+                          <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{i + 1}</td>
+                          <td className="py-2.5 px-4 font-medium text-foreground" title={row.name}>{row.displayName || row.name}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(Number(row.value) || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : topProvidersData.length > 0 ? (
                 <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
                   <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -3371,7 +3457,7 @@ export default function FinancialAnalyticsTab({
               )}
               {isFullscreen && (
                 <p className="text-body text-muted-foreground leading-relaxed mt-4">
-                  <strong>What this shows:</strong> the activity's five biggest <strong>provider organisations</strong> — the orgs sending the money — ranked by total USD across all outgoing transactions (commitments, disbursements, expenditures). <strong>How to read it:</strong> a single dominant top bar means the activity is funded primarily by one provider; a flatter spread means funding comes from several sources. <strong>How to use it:</strong> identify the activity's primary funders at a glance and assess <strong>concentration risk</strong> — heavy reliance on one provider is a fragility worth flagging if that funder were to withdraw.
+                  The chart ranks the activity's five biggest <strong>provider organisations</strong> — the orgs sending the money — by total USD across all outgoing transactions (commitments, disbursements, expenditures). A single dominant top bar means the activity is funded primarily by one provider, while a flatter spread shows funding from several sources. It's the quickest way to identify the primary funders and to flag <strong>concentration risk</strong> — heavy reliance on one provider is a fragility worth tracking if that funder were ever to withdraw.
                 </p>
               )}
             </CardContent>
@@ -3403,10 +3489,39 @@ export default function FinancialAnalyticsTab({
             {isFullscreen && (
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...topReceiversCal} />
+                <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                  <Button variant="ghost" size="icon" onClick={() => setTopReceiversView('chart')} className={cn("h-8 w-8", topReceiversView === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Chart">
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setTopReceiversView('table')} className={cn("h-8 w-8", topReceiversView === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Table">
+                    <TableIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
             <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
-              {topReceiversData.length > 0 ? (
+              {topReceiversData.length > 0 && isFullscreen && topReceiversView === 'table' ? (
+                <div className="flex-1 min-h-0 overflow-auto border border-border rounded-lg">
+                  <table className="w-full text-body">
+                    <thead className="sticky top-0 bg-surface-muted z-10">
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap w-12">#</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Receiver</th>
+                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Incoming (USD)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topReceiversData.map((row, i) => (
+                        <tr key={row.name} className="border-b border-border hover:bg-muted/50">
+                          <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{i + 1}</td>
+                          <td className="py-2.5 px-4 font-medium text-foreground" title={row.name}>{row.displayName || row.name}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(Number(row.value) || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : topReceiversData.length > 0 ? (
                 <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
                   <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -3447,7 +3562,7 @@ export default function FinancialAnalyticsTab({
               )}
               {isFullscreen && (
                 <p className="text-body text-muted-foreground leading-relaxed mt-4">
-                  <strong>What this shows:</strong> the activity's five biggest <strong>receiver organisations</strong> — the orgs taking in the money — ranked by total USD across all outgoing transactions (commitments, disbursements, expenditures). <strong>How to read it:</strong> a single dominant top bar means the activity flows mostly to one implementer; a flatter spread means it's distributed across several. <strong>How to use it:</strong> identify the activity's main implementing partners at a glance and assess <strong>delivery concentration</strong> — over-reliance on one receiver is a delivery risk if that partner faces capacity or compliance issues.
+                  The chart ranks the activity's five biggest <strong>receiver organisations</strong> — the orgs taking in the money — by total USD across all outgoing transactions (commitments, disbursements, expenditures). A single dominant top bar means the activity flows mostly to one implementer; a flatter spread distributes across several. It identifies the main implementing partners and exposes <strong>delivery concentration</strong> — over-reliance on one receiver is a delivery risk if that partner runs into capacity or compliance issues.
                 </p>
               )}
             </CardContent>

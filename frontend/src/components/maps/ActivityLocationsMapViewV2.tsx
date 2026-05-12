@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Map, useMap } from '@/components/ui/map';
+import { useMapStyle, type MapStyleKey as SharedMapStyleKey } from '@/lib/map-style-context';
 import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
 import { MapBridge, MapZoomRotateOverlay } from '@/components/maps/MapOverlayControls';
 import { Button } from '@/components/ui/button';
@@ -236,7 +237,12 @@ export default function ActivityLocationsMapViewV2({
     setMapInstance(map);
   }, []);
 
-  const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light');
+  // Pull style from the shared context when one is in scope (so sibling
+  // components like the locations table can mirror the user's choice).
+  // Falls back to a self-owned default when rendered standalone.
+  const { style: sharedStyle, setStyle: setSharedStyle } = useMapStyle()
+  const mapStyle = sharedStyle as MapStyleKey
+  const setMapStyle = (s: MapStyleKey) => setSharedStyle(s as SharedMapStyleKey)
   const [viewMode, setViewMode] = useState<'markers' | 'heatmap'>(initialViewMode);
   const [showOtherOrgs, setShowOtherOrgs] = useState(false);
   const [otherOrgsLocations, setOtherOrgsLocations] = useState<OtherOrgLocation[]>([]);

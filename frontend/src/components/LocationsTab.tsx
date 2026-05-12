@@ -38,6 +38,7 @@ import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
 
 import LocationModal from './locations/LocationModal';
 import LocationCard from './locations/LocationCard';
+import { QuickLogFieldEventButton } from './locations/QuickLogFieldEventButton';
 import { LocationsSkeleton } from './activities/TabSkeletons';
 import ActivityLocationsHeatmap from './maps/ActivityLocationsHeatmap';
 
@@ -208,16 +209,20 @@ export default function LocationsTab({
 
 
   // Handle save location (create or update)
-  const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
+  // When options.keepOpen is true, the modal stays open and the newly-saved
+  // location is returned so the caller can continue editing it (e.g. to add
+  // a Field Report inline). Otherwise the modal closes as before.
+  const handleSaveLocation = useCallback(async (
+    locationData: LocationSchema,
+    options?: { keepOpen?: boolean },
+  ): Promise<LocationSchema | void> => {
     try {
-      
-      const url = editingLocation 
+      const url = editingLocation
         ? `/api/locations/${editingLocation.id}`
         : `/api/activities/${activityId}/locations`;
-      
+
       const method = editingLocation ? 'PATCH' : 'POST';
-      
-      
+
       const response = await apiFetch(url, {
         method,
         headers: {
@@ -226,7 +231,6 @@ export default function LocationsTab({
         body: JSON.stringify(locationData),
       });
 
-
       if (!response.ok) {
         const errorData = await response.json();
         console.error('[LocationsTab] ❌ API error response:', errorData);
@@ -234,12 +238,20 @@ export default function LocationsTab({
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         toast.success(editingLocation ? 'Location updated successfully' : 'Location added successfully');
         await loadLocations();
+        const saved: LocationSchema | undefined = result.location ?? undefined;
+        if (options?.keepOpen) {
+          // Keep modal open; promote the freshly-created location to "editing"
+          // so subsequent saves are PATCHes and the Field Reports section unlocks.
+          if (saved) setEditingLocation(saved as LocationSchema);
+          return saved;
+        }
         setIsModalOpen(false);
         setEditingLocation(undefined);
+        return saved;
       } else {
         console.error('[LocationsTab] ❌ API returned success: false:', result);
         throw new Error(result.error || 'Failed to save location');
@@ -247,6 +259,7 @@ export default function LocationsTab({
     } catch (err) {
       console.error('[LocationsTab] ❌ Error saving location:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to save location');
+      throw err;
     }
   }, [activityId, editingLocation, loadLocations]);
 
@@ -376,10 +389,18 @@ export default function LocationsTab({
             </div>
           )}
           {canEdit && locations.length > 0 && (
-            <Button onClick={handleAddLocation} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Location
-            </Button>
+            <>
+              <QuickLogFieldEventButton
+                activityId={activityId}
+                existingLocations={locations}
+                onLocationsChanged={loadLocations}
+                canEdit={canEdit}
+              />
+              <Button onClick={handleAddLocation} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Location
+              </Button>
+            </>
           )}
         </div>
       </div>

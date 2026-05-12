@@ -99,6 +99,10 @@ export async function GET(request: NextRequest) {
       totalPercentage: number
       activityCount: number
       pcode: string | null
+      /** Only populated in township view — the parent state/region name so
+       *  the client can group townships hierarchically (matches the activity
+       *  editor's region/township nesting). */
+      parentRegion?: string | null
       activities: Array<{
         id: string
         title: string
@@ -110,12 +114,14 @@ export async function GET(request: NextRequest) {
     breakdowns?.forEach((breakdown: any) => {
       let key: string
       let pcode: string | null = null
+      let parentRegion: string | null = null
 
       if (viewLevel === 'township' && breakdown.allocation_level === 'township') {
         // Use township-level data - extract just the township name for map matching
         // region_name format is "State/Region - Township" (e.g., "Kachin State - Myitkyina")
         if (breakdown.region_name.includes(' - ')) {
           const parts = breakdown.region_name.split(' - ')
+          parentRegion = parts[0]
           key = parts[1] // Just the township name (e.g., "Myitkyina")
         } else {
           key = breakdown.region_name
@@ -150,6 +156,7 @@ export async function GET(request: NextRequest) {
           totalPercentage: 0,
           activityCount: 0,
           pcode,
+          parentRegion,
           activities: []
         }
       }

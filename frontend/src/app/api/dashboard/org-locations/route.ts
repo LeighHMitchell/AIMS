@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         title_narrative,
+        description_narrative,
         acronym,
         activity_status,
         reporting_org_id,
@@ -184,6 +185,13 @@ export async function GET(request: NextRequest) {
         location_type: location.location_type,
         location_name: location.location_name,
         description: location.description,
+        // location_description = "what's at this place" (e.g. "Regional
+        // warehouse for the central dry zone"). activity_location_description
+        // = "what the activity does here" (e.g. "Procurement reception,
+        // township-level pre-positioning, CHW supply runs..."). Both are
+        // surfaced separately on the locations table.
+        location_description: location.location_description,
+        activity_location_description: location.activity_location_description,
         latitude: parseFloat(location.latitude),
         longitude: parseFloat(location.longitude),
         address: location.address,
@@ -197,11 +205,16 @@ export async function GET(request: NextRequest) {
         district_name: location.district_name,
         village_name: location.village_name,
         city: location.city,
+        country_code: location.country_code,
         created_at: location.created_at,
         updated_at: location.updated_at,
         activity: activity ? {
           id: activity.id,
           title: activity.title_narrative,
+          // Activity-level description — used by the table's Activity
+          // Description column as a fallback when the per-location row has
+          // no activity_location_description / description of its own.
+          description: activity.description_narrative,
           acronym: activity.acronym,
           status: activity.activity_status,
           organization_id: activity.reporting_org_id,

@@ -41,6 +41,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Card } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { EmailCell } from "@/components/profile/EmailCell"
 import { ActivityVote } from "@/components/ui/activity-vote"
 import { SafeHtml } from "@/components/ui/safe-html"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
@@ -61,6 +71,7 @@ import { MapPin, BarChart3 } from "lucide-react"
 import { EnhancedSubnationalBreakdown } from "@/components/activities/EnhancedSubnationalBreakdown"
 import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
 import { ActivityLocationsTable } from "@/components/locations/ActivityLocationsTable"
+import { MapStyleProvider } from "@/lib/map-style-context"
 import { Table2 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { XlsxWorkbookBuilder } from "@/lib/exports/xlsx-workbook"
@@ -179,14 +190,16 @@ export function ActivityProfileV2View({
   // embedded `locations.specificLocations` is often empty. Match the v1 page so the
   // map has data to render.
   const [activityLocations, setActivityLocations] = useState<any[]>([])
+  const [isLoadingActivityLocations, setIsLoadingActivityLocations] = useState(true)
   useEffect(() => {
     if (!activity?.id) return
     let cancelled = false
+    setIsLoadingActivityLocations(true)
     apiFetch(`/api/activities/${activity.id}/locations`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (cancelled || !data) return
-        if (data.success && Array.isArray(data.locations)) {
+        if (cancelled) return
+        if (data?.success && Array.isArray(data.locations)) {
           // Match the activity-editor behaviour: drop coverage-type rows
           // (those belong to the Sub-national Allocation tab, not Activity
           // Sites) so the profile shows the same set of pins / table rows
@@ -200,9 +213,12 @@ export function ActivityProfileV2View({
         } else {
           setActivityLocations([])
         }
+        setIsLoadingActivityLocations(false)
       })
       .catch(() => {
-        if (!cancelled) setActivityLocations([])
+        if (cancelled) return
+        setActivityLocations([])
+        setIsLoadingActivityLocations(false)
       })
     return () => {
       cancelled = true
@@ -235,17 +251,22 @@ export function ActivityProfileV2View({
   // Sub-national breakdowns recorded against this activity. Used by the
   // Locations tab's "Sub-national Breakdown" sub-view (mirrors the Atlas).
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<any[]>([])
+  const [isLoadingSubnational, setIsLoadingSubnational] = useState(true)
   useEffect(() => {
     if (!activity?.id) return
     let cancelled = false
+    setIsLoadingSubnational(true)
     apiFetch(`/api/activities/${activity.id}/subnational-breakdown`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (cancelled || !data) return
+        if (cancelled) return
         setSubnationalBreakdowns(Array.isArray(data) ? data : [])
+        setIsLoadingSubnational(false)
       })
       .catch(() => {
-        if (!cancelled) setSubnationalBreakdowns([])
+        if (cancelled) return
+        setSubnationalBreakdowns([])
+        setIsLoadingSubnational(false)
       })
     return () => {
       cancelled = true
@@ -443,7 +464,7 @@ export function ActivityProfileV2View({
   const compactActions = (
     <>
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         className="h-8 w-8"
         onClick={onToggleBookmark}
@@ -456,7 +477,7 @@ export function ActivityProfileV2View({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             className="h-8 w-8"
             title="Export"
@@ -695,6 +716,8 @@ export function ActivityProfileV2View({
     activityLocations,
     validMapLocations,
     regionBreakdownsWithDetails,
+    isLoadingActivityLocations,
+    isLoadingSubnational,
     financials,
     totalBudgeted,
     totalPlannedDisbursements,
@@ -816,6 +839,8 @@ function renderMainSlot(args: {
   activityLocations: any[]
   validMapLocations: any[]
   regionBreakdownsWithDetails: Record<string, { percentage: number; activityCount: number; activities: Array<{ id: string; title: string }> }>
+  isLoadingActivityLocations: boolean
+  isLoadingSubnational: boolean
   financials: any
   totalBudgeted: number
   totalPlannedDisbursements: number
@@ -826,7 +851,7 @@ function renderMainSlot(args: {
   onTabChange: (tab: string) => void
   user: any
 }) {
-  const { activeTab, activity, visitedTabs, activityLocations, validMapLocations, regionBreakdownsWithDetails, totalBudgeted, totalPlannedDisbursements } = args
+  const { activeTab, activity, visitedTabs, activityLocations, validMapLocations, regionBreakdownsWithDetails, isLoadingActivityLocations, isLoadingSubnational, totalBudgeted, totalPlannedDisbursements } = args
   const startDate = activity?.actualStartDate || activity?.plannedStartDate || ""
   const endDate = activity?.actualEndDate || activity?.plannedEndDate || ""
 
@@ -896,6 +921,8 @@ function renderMainSlot(args: {
           activityLocations={activityLocations}
           validMapLocations={validMapLocations}
           regionBreakdownsWithDetails={regionBreakdownsWithDetails}
+          isLoadingActivityLocations={isLoadingActivityLocations}
+          isLoadingSubnational={isLoadingSubnational}
         />
       </ProfilePane>
 
@@ -950,11 +977,15 @@ function ActivityLocationsSection({
   activityLocations,
   validMapLocations,
   regionBreakdownsWithDetails,
+  isLoadingActivityLocations,
+  isLoadingSubnational,
 }: {
   activity: any
   activityLocations: any[]
   validMapLocations: any[]
   regionBreakdownsWithDetails: Record<string, RegionEntry>
+  isLoadingActivityLocations: boolean
+  isLoadingSubnational: boolean
 }) {
   const [view, setView] = useState<"map" | "subnational">("map")
 
@@ -1000,8 +1031,19 @@ function ActivityLocationsSection({
         </div>
 
         {view === "map" && (
+        <MapStyleProvider>
         <div className="m-0 space-y-6">
-          {validMapLocations.length > 0 ? (
+          {isLoadingActivityLocations ? (
+            <>
+              <Skeleton className="h-[640px] w-full rounded-md" />
+              <div className="space-y-2">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            </>
+          ) : validMapLocations.length > 0 ? (
             <div className="h-[640px] rounded-md overflow-hidden border border-border">
               <ActivityLocationsMapViewV2
                 locations={validMapLocations}
@@ -1014,20 +1056,28 @@ function ActivityLocationsSection({
           ) : (
             <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
           )}
-          {activityLocations.length > 0 && (
+          {!isLoadingActivityLocations && activityLocations.length > 0 && (
             <ActivityLocationsTable locations={activityLocations} />
           )}
         </div>
+        </MapStyleProvider>
         )}
 
         {view === "subnational" && (
         <div className="m-0">
-          {/* Read-only render of the same component used in the Activity Editor:
-              two-column layout with Sub-national Map on the left and the
-              Sub-national Allocation table on the right. canEdit=false hides
-              the dropdown / Distribute / Clear All / per-row delete controls
-              and disables the percentage inputs. */}
-          <EnhancedSubnationalBreakdown activityId={activity.id} canEdit={false} />
+          {isLoadingSubnational ? (
+            <div className="space-y-4">
+              <Skeleton className="h-[640px] w-full rounded-md" />
+              <Skeleton className="h-48 w-full rounded-lg" />
+            </div>
+          ) : (
+            /* Read-only render of the same component used in the Activity Editor:
+                two-column layout with Sub-national Map on the left and the
+                Sub-national Allocation table on the right. canEdit=false hides
+                the dropdown / Distribute / Clear All / per-row delete controls
+                and disables the percentage inputs. */
+            <EnhancedSubnationalBreakdown activityId={activity.id} canEdit={false} />
+          )}
         </div>
         )}
       </div>
@@ -1293,6 +1343,12 @@ function PeopleSection({
   emptyHint: string
   showRoleBadge?: boolean
 }) {
+  const formatOrg = (p: any) => {
+    const name = p.organization?.name?.trim()
+    const acronym = p.organization?.acronym?.trim()
+    if (name && acronym && name !== acronym) return `${name} (${acronym})`
+    return name || acronym || p.organisation || ""
+  }
   return (
     <section>
       <h3 className="text-section-label uppercase text-muted-foreground mb-3 tracking-wide">
@@ -1304,54 +1360,73 @@ function PeopleSection({
       {people.length === 0 ? (
         <p className="text-helper text-muted-foreground">{emptyHint}</p>
       ) : (
-        <div className="rounded-md border divide-y">
-          {people.map((p: any, i: number) => (
-            <div key={p.id ?? `${p.name}-${i}`} className="flex items-start gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-helper font-medium text-muted-foreground shrink-0">
-                {(p.first_name || p.name || "?").charAt(0).toUpperCase()}
-                {(p.last_name || "").charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground break-words">
-                  {p.title ? `${p.title} ` : ""}
-                  {p.name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "—"}
-                </div>
-                {(p.job_title || p.position) && (
-                  <div className="text-helper text-muted-foreground break-words">
-                    {p.job_title || p.position}
-                  </div>
-                )}
-                {p.department && (
-                  <div className="text-helper text-muted-foreground break-words">
-                    {p.department}
-                  </div>
-                )}
-                {(p.organisation || p.organization?.name) && (
-                  <div className="text-helper text-muted-foreground break-words">
-                    {p.organization?.name && p.organization?.acronym && p.organization.name !== p.organization.acronym
-                      ? `${p.organization.name} (${p.organization.acronym})`
-                      : p.organization?.name || p.organization?.acronym || p.organisation}
-                  </div>
-                )}
-                {showRoleBadge && p.type && (
-                  <div className="mt-1">
-                    <span className="inline-flex items-center align-baseline px-2 h-5 text-caption font-medium rounded bg-muted text-foreground border border-border">
-                      {String(p.type).replace(/_/g, " ")}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {p.email && (
-                <a
-                  href={`mailto:${p.email}`}
-                  className="text-muted-foreground hover:text-foreground transition-colors text-helper shrink-0 mt-1 break-all"
-                  title={p.email}
-                >
-                  {p.email}
-                </a>
-              )}
-            </div>
-          ))}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Job Title</TableHead>
+                <TableHead>Organisation</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                {showRoleBadge && <TableHead className="w-[160px]">Role</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {people.map((p: any, i: number) => {
+                const fullName =
+                  p.name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "—"
+                const displayName = p.title ? `${p.title} ${fullName}` : fullName
+                const initials = `${(p.first_name || p.name || "?").charAt(0)}${(p.last_name || "").charAt(0)}`.toUpperCase()
+                const jobTitle = [p.job_title || p.position, p.department].filter(Boolean).join(" · ")
+                const org = formatOrg(p)
+                const phone = p.phone || p.telephone || p.phone_number
+                return (
+                  <TableRow key={p.id ?? `${fullName}-${i}`}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2.5">
+                        {p.avatar_url || p.avatarUrl ? (
+                          <img
+                            src={p.avatar_url || p.avatarUrl}
+                            alt=""
+                            className="w-7 h-7 rounded-full object-cover bg-muted"
+                          />
+                        ) : (
+                          <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground inline-flex items-center justify-center text-[11px] font-medium">
+                            {initials || "?"}
+                          </span>
+                        )}
+                        <span>{displayName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-helper text-muted-foreground">
+                      {jobTitle || "—"}
+                    </TableCell>
+                    <TableCell className="text-helper text-muted-foreground">
+                      {org || "—"}
+                    </TableCell>
+                    <TableCell className="text-helper text-muted-foreground">
+                      {p.email ? <EmailCell email={p.email} /> : "—"}
+                    </TableCell>
+                    <TableCell className="text-helper text-muted-foreground">
+                      {phone || "—"}
+                    </TableCell>
+                    {showRoleBadge && (
+                      <TableCell className="text-helper text-muted-foreground">
+                        {p.type ? (
+                          <span className="inline-flex items-center align-baseline px-2 h-5 text-caption font-medium rounded bg-muted text-foreground border border-border">
+                            {String(p.type).replace(/_/g, " ")}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </section>

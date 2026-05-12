@@ -47,6 +47,7 @@ import { createContext, useContext } from "react"
 import { TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_LABELS_PLURAL } from "@/types/transaction"
 import { formatAxisCurrency } from "@/lib/format"
 import { YearRangeChip } from "@/components/ui/year-range-chip"
+import { type CustomYear as CustomYearType, getCustomYearLabel as getCustomYearLabelFromCtx } from "@/types/custom-years"
 import {
   Select,
   SelectContent,
@@ -94,27 +95,92 @@ function compactUsd(value: number): string {
 
 // Year filter — shared across every chart on this pane so the selector lives
 // inside each chart's expanded modal (rather than once at the top), but
-// changing the year range from any chart applies portfolio-wide.
+// changing the year range from any chart applies portfolio-wide. Also
+// surfaces `calendarType` + `customYears` so the chart axes can render
+// year labels in the user's chosen calendar format (e.g. CY2024 / FY24/25).
 interface OrgYearFilterValue {
   selectedYears: number[]
   onYearsChange: (years: number[]) => void
   yearBounds: { minYear: number; maxYear: number } | null
+  customYears: CustomYearType[]
+  calendarType: string
+  onCalendarTypeChange: (id: string) => void
 }
 const OrgYearFilterContext = createContext<OrgYearFilterValue | null>(null)
 
+/** Format a calendar-year number for axis labels using the org-pane's
+ *  selected calendar type. Falls back to the bare year when no provider
+ *  is in scope (e.g. shared chart used elsewhere). */
+function useOrgYearLabel(): (year: number) => string {
+  const ctx = useContext(OrgYearFilterContext)
+  return (year: number) => {
+    if (!ctx) return String(year)
+    const cy = ctx.customYears.find((c) => c.id === ctx.calendarType)
+    return cy ? getCustomYearLabelFromCtx(cy, year) : String(year)
+  }
+}
+
 /** Renders the year-range chip top-left of a chart's body — but only when
- *  the chart is in its expanded modal. Inline cards stay clean. */
+ *  the chart is in its expanded modal. Inline cards stay clean. Returns
+ *  just the chip element so the caller can position it inside a shared
+ *  toolbar row alongside other controls (e.g. chart/table toggle). */
 function ExpandedYearChip() {
   const isExpanded = useChartExpansion()
   const ctx = useContext(OrgYearFilterContext)
   if (!isExpanded || !ctx) return null
   return (
-    <div className="flex items-center justify-start mb-3 shrink-0">
-      <YearRangeChip
-        selectedYears={ctx.selectedYears}
-        onYearsChange={ctx.onYearsChange}
-        actualDataRange={ctx.yearBounds}
-      />
+    <YearRangeChip
+      selectedYears={ctx.selectedYears}
+      onYearsChange={ctx.onYearsChange}
+      actualDataRange={ctx.yearBounds}
+      customYears={ctx.customYears}
+      calendarType={ctx.calendarType}
+      onCalendarTypeChange={ctx.onCalendarTypeChange}
+    />
+  )
+}
+
+/** Shared chart/table view toggle — renders only when the chart is in its
+ *  expanded modal. Caller owns the `view` state. */
+function ChartTableToggle({
+  view,
+  setView,
+}: {
+  view: "chart" | "table"
+  setView: (v: "chart" | "table") => void
+}) {
+  return (
+    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setView("chart")}
+        className={cn(
+          "h-8 w-8",
+          view === "chart"
+            ? "bg-muted text-foreground"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+        title="Chart"
+        aria-label="Chart view"
+      >
+        <BarChart3 className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setView("table")}
+        className={cn(
+          "h-8 w-8",
+          view === "table"
+            ? "bg-muted text-foreground"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+        title="Table"
+        aria-label="Table view"
+      >
+        <Table2 className="h-4 w-4" />
+      </Button>
     </div>
   )
 }
@@ -226,6 +292,11 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
   // Year-range selection for the chart filter chip. Empty = no filter (show
   // everything). The chip mutates this on user change.
   const [selectedYears, setSelectedYears] = useState<number[]>([])
+  // Custom-year (calendar) state lifted to the parent so every chart's
+  // year axis can use the same calendar format (e.g. CY2024 / FY24/25)
+  // selected via the YearRangeChip in any one chart's expanded modal.
+  const [customYears, setCustomYears] = useState<CustomYearType[]>([])
+  const [calendarType, setCalendarType] = useState<string>("")
 
   useEffect(() => {
     let cancelled = false
@@ -243,6 +314,30 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
       cancelled = true
     }
   }, [organizationId])
+
+  // Fetch the custom-year config once on mount and pick the system default
+  // (or the first entry) so the shared calendarType has a sensible value.
+  useEffect(() => {
+    let cancelled = false
+    apiFetch(`/api/custom-years`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((result) => {
+        if (cancelled || !result) return
+        const years: CustomYearType[] = result.data || []
+        setCustomYears(years)
+        if (!calendarType) {
+          const def = result.defaultId
+            ? years.find((cy) => cy.id === result.defaultId)
+            : years[0]
+          if (def) setCalendarType(def.id)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Compute the actual data range for the chip's "Data" quick-action, plus
   // pre-filter the data passed to charts. When selectedYears is empty (no
@@ -353,6 +448,9 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
             selectedYears,
             onYearsChange: setSelectedYears,
             yearBounds,
+            customYears,
+            calendarType,
+            onCalendarTypeChange: setCalendarType,
           }}
         >
         {/* Single 2-column grid for everything. Financial Totals spans both
@@ -400,9 +498,7 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
             description="Actual vs perfect cumulative disbursement"
             interpretation={
               <>
-                <strong>What it shows.</strong> Cumulative actual disbursements over time, plotted against an even-spend baseline that assumes the budget is paid out at a constant rate across the activity life-cycle.
-                {" "}<strong>How to read it.</strong> Where the red line sits below the dashed baseline, this organisation is spending more slowly than planned — a flat or shallow line means delivery has stalled. A line that climbs faster than the baseline indicates accelerated execution.
-                {" "}<strong>How to apply it.</strong> Use this to gauge delivery health. Persistent under-spend can flag absorption problems, procurement bottlenecks, or context disruption; a sudden jump usually marks a single large disbursement rather than steady-state delivery.
+                Cumulative actual disbursements over time, plotted against an even-spend baseline that assumes the budget is paid out at a constant rate across the activity life-cycle. Where the red line sits below the dashed baseline, this organisation is spending more slowly than planned — a flat or shallow line means delivery has stalled, while a line climbing faster than the baseline indicates accelerated execution. The gap is a quick read on delivery health: persistent under-spend can flag absorption problems, procurement bottlenecks, or context disruption, while a sudden jump usually marks a single large disbursement rather than steady-state delivery.
               </>
             }
           >
@@ -437,20 +533,37 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
 // correct context value at render time. If the conditional were applied in
 // the parent chart component (above ChartCard), the JSX would be computed
 // before the provider was in scope and isExpanded would always be false.
-function ChartFrame({ children }: { children: React.ReactNode }) {
+function ChartFrame({
+  children,
+  controls,
+  tableMode = false,
+}: {
+  children: React.ReactNode
+  /** Extra toolbar items rendered top-right of the expanded chart (e.g. a
+   *  chart/table view toggle). Inline cards never render these. */
+  controls?: React.ReactNode
+  /** When true the chart slot becomes a normal scrolling block instead of
+   *  the absolute-positioned fill — needed for table content because the
+   *  rows determine their own height. */
+  tableMode?: boolean
+}) {
   const isExpanded = useChartExpansion()
   if (!isExpanded) {
     return <div className="h-72 w-full">{children}</div>
   }
-  // Expanded: flex column with the year-range chip (only renders when an
-  // OrgYearFilterContext is in scope, i.e. on the org-finance pane) sitting
-  // top-left, and the chart filling the remaining vertical space.
   return (
     <div className="h-full w-full flex flex-col min-h-0">
-      <ExpandedYearChip />
-      <div className="flex-1 min-h-0 relative">
-        <div className="absolute inset-0">{children}</div>
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <ExpandedYearChip />
+        {controls && <div className="ml-auto">{controls}</div>}
       </div>
+      {tableMode ? (
+        <div className="flex-1 min-h-0 overflow-auto">{children}</div>
+      ) : (
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0">{children}</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -460,17 +573,37 @@ function ChartFrame({ children }: { children: React.ReactNode }) {
  *  we just wrap it in the expand-aware shell. */
 function SpendTrajectoryFrame({ organizationId }: { organizationId: string }) {
   const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
   if (!isExpanded) {
     return <OrganizationSpendTrajectoryChart organizationId={organizationId} compact />
   }
   return (
     <div className="h-full w-full flex flex-col min-h-0">
-      <ExpandedYearChip />
-      <div className="flex-1 min-h-0 relative">
-        <div className="absolute inset-0">
-          <OrganizationSpendTrajectoryChart organizationId={organizationId} compact />
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <ExpandedYearChip />
+        <div className="ml-auto">
+          <ChartTableToggle view={view} setView={setView} />
         </div>
       </div>
+      {view === "table" ? (
+        <div className="flex-1 min-h-0 overflow-auto">
+          <OrganizationSpendTrajectoryChart
+            organizationId={organizationId}
+            compact
+            viewModeOverride="table"
+          />
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0">
+            <OrganizationSpendTrajectoryChart
+              organizationId={organizationId}
+              compact
+              viewModeOverride="chart"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -522,9 +655,7 @@ function FundingOverTimeChart({ envelopes }: { envelopes: any[] | null }) {
       description="Annual envelopes by status"
       interpretation={
         <>
-          <strong>What it shows.</strong> Year-by-year funding envelopes declared by this organisation, stacked into three statuses — actual (past), current (this year) and indicative (forward).
-          {" "}<strong>How to read it.</strong> Heights compare absolute scale across years. Tall red (actual) blocks signal a strong delivery track-record; tall grey (indicative) blocks at the right of the chart flag a forward pipeline that hasn't yet been confirmed.
-          {" "}<strong>How to apply it.</strong> Use this to size the organisation's commitment to country and to spot signal-vs-noise in their forward plans. A pipeline that's mostly indicative deserves more cautious assumptions than one anchored in current-year actuals.
+          Year-by-year funding envelopes declared by this organisation, stacked into three statuses — actual (past), current (this year) and indicative (forward). Comparing the heights across years places the organisation's commitment to country in absolute terms: tall red blocks signal a strong delivery track-record, while tall grey blocks at the right of the chart flag a forward pipeline that hasn't yet been confirmed. A pipeline that's mostly indicative deserves more cautious assumptions than one anchored in current-year actuals.
         </>
       }
     >
@@ -537,21 +668,55 @@ function FundingOverTimeChart({ envelopes }: { envelopes: any[] | null }) {
 // returns the right value (false in the in-grid card, true inside the dialog).
 function FundingOverTimeBody({ data }: { data: any[] | null }) {
   const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
+  const yearLabel = useOrgYearLabel()
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No funding envelope data recorded for this organisation." />
+  const controls = isExpanded ? <ChartTableToggle view={view} setView={setView} /> : null
+  if (isExpanded && view === "table") {
+    return (
+      <ChartFrame controls={controls} tableMode>
+        <table className="w-full text-body">
+          <thead className="sticky top-0 bg-surface-muted z-10">
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Actual</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Current</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Indicative</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => {
+              const total = (row.actual || 0) + (row.current || 0) + (row.indicative || 0)
+              return (
+                <tr key={row.year} className="border-b border-border hover:bg-muted/50">
+                  <td className="py-2.5 px-4 font-medium text-foreground">{yearLabel(Number(row.year))}</td>
+                  <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.actual || 0)}</td>
+                  <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.current || 0)}</td>
+                  <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.indicative || 0)}</td>
+                  <td className="text-right py-2.5 px-4 text-foreground font-semibold tabular-nums">{compactUsd(total)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </ChartFrame>
+    )
+  }
   return (
-    <ChartFrame>
+    <ChartFrame controls={controls}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="year" tick={{ fontSize: 12 }} tickFormatter={(v: string) => yearLabel(Number(v))} />
           <YAxis tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
           <Tooltip
             content={({ active, payload, label }: any) => {
               if (!active || !payload?.length) return null
               return (
                 <ChartTooltipCard
-                  title={`Year ${label}`}
+                  title={yearLabel(Number(label))}
                   rows={payload.map((p: any) => ({
                     label: p.name,
                     value: compactUsd(Number(p.value) || 0),
@@ -602,9 +767,7 @@ function CommitmentsVsPlannedChart({ transactions }: { transactions: any[] | nul
       description="Outgoing commitments vs incoming pipeline"
       interpretation={
         <>
-          <strong>What it shows.</strong> Annual outgoing commitments this organisation has made to others (paying out), set alongside incoming commitments that fund its work (the pipeline coming in).
-          {" "}<strong>How to read it.</strong> A wide gap between outgoing and incoming in the same year indicates a structural mismatch — either spending ahead of new funding, or sitting on undeployed pipeline.
-          {" "}<strong>How to apply it.</strong> Use this to assess the org's funding momentum. Healthy patterns show outgoing tracking close to incoming with a sustainable lag; volatile years suggest concentration risk in a few large agreements.
+          Annual outgoing commitments this organisation has made to others (paying out) set alongside the incoming commitments that fund its own work (the pipeline coming in). A wide gap between the two in the same year indicates a structural mismatch — either spending ahead of new funding, or sitting on undeployed pipeline. Healthy patterns show outgoing tracking close to incoming with a sustainable lag; volatile years suggest concentration risk in a few large agreements.
         </>
       }
     >
@@ -615,21 +778,48 @@ function CommitmentsVsPlannedChart({ transactions }: { transactions: any[] | nul
 
 function CommitmentsVsPlannedBody({ data }: { data: any[] | null }) {
   const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
+  const yearLabel = useOrgYearLabel()
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No commitment or planned disbursement data." />
+  const controls = isExpanded ? <ChartTableToggle view={view} setView={setView} /> : null
+  if (isExpanded && view === "table") {
+    return (
+      <ChartFrame controls={controls} tableMode>
+        <table className="w-full text-body">
+          <thead className="sticky top-0 bg-surface-muted z-10">
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Outgoing Commitments</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Incoming Commitments / Pipeline</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <tr key={row.year} className="border-b border-border hover:bg-muted/50">
+                <td className="py-2.5 px-4 font-medium text-foreground">{yearLabel(Number(row.year))}</td>
+                <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.commitments || 0)}</td>
+                <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.planned || 0)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </ChartFrame>
+    )
+  }
   return (
-    <ChartFrame>
+    <ChartFrame controls={controls}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="year" tick={{ fontSize: 12 }} tickFormatter={(v: string) => yearLabel(Number(v))} />
           <YAxis tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
           <Tooltip
             content={({ active, payload, label }: any) => {
               if (!active || !payload?.length) return null
               return (
                 <ChartTooltipCard
-                  title={`Year ${label}`}
+                  title={yearLabel(Number(label))}
                   rows={payload.map((p: any) => ({
                     label: p.name,
                     value: compactUsd(Number(p.value) || 0),
@@ -674,9 +864,7 @@ function AllTransactionTypesChart({ transactions }: { transactions: any[] | null
       description="USD totals by transaction type"
       interpretation={
         <>
-          <strong>What it shows.</strong> Total USD value broken down by every IATI transaction type the organisation has reported — incoming funds, commitments, disbursements, expenditures, pledges and beyond.
-          {" "}<strong>How to read it.</strong> Length compares dollar weight across types. A long Disbursements bar with a short Commitments bar means most reported activity is delivery, while the inverse signals an org that promises more than it pays.
-          {" "}<strong>How to apply it.</strong> Use this to characterise the organisation's reporting style and financial role — whether it primarily funds others, receives funds, or operates as both donor and channel.
+          Total USD value broken down by every IATI transaction type the organisation has reported — incoming funds, commitments, disbursements, expenditures, pledges and beyond — with bar length comparing dollar weight across the types. A long Disbursements bar with a short Commitments bar means most reported activity is delivery, while the inverse signals an organisation that promises more than it pays. The mix characterises the organisation's reporting style and financial role — whether it primarily funds others, receives funds, or operates as both donor and channel.
         </>
       }
     >
@@ -686,10 +874,55 @@ function AllTransactionTypesChart({ transactions }: { transactions: any[] | null
 }
 
 function AllTransactionTypesBody({ data }: { data: any[] | null }) {
+  const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No transactions to summarise." />
+  const controls = isExpanded ? <ChartTableToggle view={view} setView={setView} /> : null
+  if (isExpanded && view === "table") {
+    const total = data.reduce((sum, d) => sum + (Number(d.value) || 0), 0)
+    return (
+      <ChartFrame controls={controls} tableMode>
+        <table className="w-full text-body">
+          <thead className="sticky top-0 bg-surface-muted z-10">
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap w-16">Code</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Transaction Type</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total (USD)</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">% Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => {
+              const pct = total > 0 ? ((Number(row.value) || 0) / total) * 100 : 0
+              return (
+                <tr key={row.type} className="border-b border-border hover:bg-muted/50">
+                  <td className="py-2.5 px-4 text-muted-foreground">
+                    <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{row.type}</code>
+                  </td>
+                  <td className="py-2.5 px-4 font-medium text-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: TYPE_COLORS[row.type] ?? "#94a3b8" }} />
+                      {row.name}
+                    </div>
+                  </td>
+                  <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(Number(row.value) || 0)}</td>
+                  <td className="text-right py-2.5 px-4 text-muted-foreground tabular-nums">{pct.toFixed(1)}%</td>
+                </tr>
+              )
+            })}
+            <tr className="border-t-2 border-border bg-muted/50 font-semibold">
+              <td className="py-2.5 px-4 text-foreground" colSpan={2}>Total</td>
+              <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(total)}</td>
+              <td className="text-right py-2.5 px-4 text-foreground tabular-nums">100.0%</td>
+            </tr>
+          </tbody>
+        </table>
+      </ChartFrame>
+    )
+  }
   return (
-    <ChartFrame>
+    <ChartFrame controls={controls}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -748,9 +981,7 @@ function TransactionTypeByYearChart({ transactions }: { transactions: any[] | nu
       description="Yearly breakdown by transaction type"
       interpretation={
         <>
-          <strong>What it shows.</strong> Annual breakdown of incoming funds, outgoing commitments, disbursements and expenditures — the four IATI types that drive most financial reporting.
-          {" "}<strong>How to read it.</strong> Look for trends across years. Rising disbursements indicate accelerating delivery; a peak in commitments without matching disbursements signals an upcoming pipeline that hasn't yet flowed.
-          {" "}<strong>How to apply it.</strong> Use this to compare delivery rhythm year-on-year. Big swings can reflect a shifting portfolio (new programmes starting, old ones closing) or external shocks affecting absorption capacity.
+          Annual breakdown of incoming funds, outgoing commitments, disbursements and expenditures — the four IATI types that drive most financial reporting. The trends across years tell the story: rising disbursements indicate accelerating delivery, while a peak in commitments without matching disbursements signals an upcoming pipeline that hasn't yet flowed. Comparing the rhythm year-on-year highlights shifting portfolios — new programmes starting, old ones closing — or external shocks affecting absorption capacity.
         </>
       }
     >
@@ -761,21 +992,57 @@ function TransactionTypeByYearChart({ transactions }: { transactions: any[] | nu
 
 function TransactionTypeByYearBody({ data, types }: { data: any[] | null; types: string[] }) {
   const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
+  const yearLabel = useOrgYearLabel()
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No transactions recorded for this organisation." />
+  const controls = isExpanded ? <ChartTableToggle view={view} setView={setView} /> : null
+  if (isExpanded && view === "table") {
+    return (
+      <ChartFrame controls={controls} tableMode>
+        <table className="w-full text-body">
+          <thead className="sticky top-0 bg-surface-muted z-10">
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
+              {types.map((tp) => (
+                <th key={tp} className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                  <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                    <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: TYPE_COLORS[tp] ?? "#94a3b8" }} />
+                    {TRANSACTION_TYPE_LABELS_PLURAL[tp as keyof typeof TRANSACTION_TYPE_LABELS_PLURAL] ?? tp}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <tr key={row.year} className="border-b border-border hover:bg-muted/50">
+                <td className="py-2.5 px-4 font-medium text-foreground">{yearLabel(Number(row.year))}</td>
+                {types.map((tp) => (
+                  <td key={tp} className="text-right py-2.5 px-4 text-foreground tabular-nums">
+                    {compactUsd(Number(row[tp]) || 0)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </ChartFrame>
+    )
+  }
   return (
-    <ChartFrame>
+    <ChartFrame controls={controls}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="year" tick={{ fontSize: 12 }} tickFormatter={(v: string) => yearLabel(Number(v))} />
           <YAxis tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
           <Tooltip
             content={({ active, payload, label }: any) => {
               if (!active || !payload?.length) return null
               return (
                 <ChartTooltipCard
-                  title={`Year ${label}`}
+                  title={yearLabel(Number(label))}
                   rows={payload.map((p: any) => ({
                     label: p.name,
                     value: compactUsd(Number(p.value) || 0),
@@ -839,9 +1106,7 @@ function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
       description="Outgoing finance by instrument"
       interpretation={
         <>
-          <strong>What it shows.</strong> Outgoing finance grouped by IATI finance-type buckets — grants, loans, equity, guarantees / insurance, and other.
-          {" "}<strong>How to read it.</strong> Slice size compares dollar share of each instrument. A grant-heavy mix indicates concessional support; a loan-heavy mix signals market or near-market financing terms.
-          {" "}<strong>How to apply it.</strong> Use this to understand the financial concessionality of the organisation's support — recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
+          Outgoing finance grouped by IATI finance-type bucket — grants, loans, equity, guarantees / insurance, and other — with each slice sized by dollar share. A grant-heavy mix indicates concessional support, while a loan-heavy mix signals market or near-market financing terms. Understanding the mix matters because recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
         </>
       }
     >
@@ -866,6 +1131,7 @@ function GrantsVsLoansBody({
   setTxTypes: React.Dispatch<React.SetStateAction<Set<string>>>
 }) {
   const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
   // Brand palette — matches the activity profile's Aid Modality Mix.
   const colors: Record<string, string> = {
     Grants: "#dc2625",
@@ -878,6 +1144,58 @@ function GrantsVsLoansBody({
   const total = (data ?? []).reduce((sum, d) => sum + d.value, 0)
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No outgoing transactions with finance types recorded." />
+
+  const dataTable = (
+    <table className="w-full text-body">
+      <thead className="sticky top-0 bg-surface-muted z-10">
+        <tr className="border-b border-border">
+          <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Instrument</th>
+          <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total (USD)</th>
+          <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">% Share</th>
+          {GVL_OUTGOING_TYPES.map((code) => (
+            <th key={code} className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+              {GVL_TYPE_LABELS[code]}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row) => {
+          const pct = total > 0 ? (row.value / total) * 100 : 0
+          return (
+            <tr key={row.name} className="border-b border-border hover:bg-muted/50">
+              <td className="py-2.5 px-4 font-medium text-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: colors[row.name] ?? "#94a3b8" }} />
+                  {row.name}
+                </div>
+              </td>
+              <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.value)}</td>
+              <td className="text-right py-2.5 px-4 text-muted-foreground tabular-nums">{pct.toFixed(1)}%</td>
+              {GVL_OUTGOING_TYPES.map((code) => (
+                <td key={code} className="text-right py-2.5 px-4 text-foreground tabular-nums">
+                  {Number(row.byType?.[code]) > 0 ? compactUsd(Number(row.byType[code])) : "—"}
+                </td>
+              ))}
+            </tr>
+          )
+        })}
+        <tr className="border-t-2 border-border bg-muted/50 font-semibold">
+          <td className="py-2.5 px-4 text-foreground">Total</td>
+          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(total)}</td>
+          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">100.0%</td>
+          {GVL_OUTGOING_TYPES.map((code) => {
+            const colTotal = data.reduce((s, r) => s + (Number(r.byType?.[code]) || 0), 0)
+            return (
+              <td key={code} className="text-right py-2.5 px-4 text-foreground tabular-nums">
+                {colTotal > 0 ? compactUsd(colTotal) : "—"}
+              </td>
+            )
+          })}
+        </tr>
+      </tbody>
+    </table>
+  )
 
   const pieChart = (
     <ResponsiveContainer width="100%" height="100%">
@@ -939,13 +1257,14 @@ function GrantsVsLoansBody({
     return <div className="h-72 w-full">{pieChart}</div>
   }
 
-  // Expanded layout — year chip top-left, transaction-types dropdown
-  // top-right, pie filling the rest.
+  // Expanded layout — year chip top-left, chart/table toggle +
+  // transaction-types dropdown top-right, pie OR table filling the rest.
   return (
     <div className="h-full w-full flex flex-col min-h-0">
       <div className="flex items-center gap-2 mb-3 shrink-0">
         <ExpandedYearChip />
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <ChartTableToggle view={view} setView={setView} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
@@ -992,9 +1311,13 @@ function GrantsVsLoansBody({
           </DropdownMenu>
         </div>
       </div>
-      <div className="flex-1 min-h-0 relative">
-        <div className="absolute inset-0">{pieChart}</div>
-      </div>
+      {view === "table" ? (
+        <div className="flex-1 min-h-0 overflow-auto">{dataTable}</div>
+      ) : (
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0">{pieChart}</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1124,9 +1447,7 @@ function LargestActivitiesChart({
       description={`Top 10 activities by ${modeLabel.toLowerCase()}`}
       interpretation={
         <>
-          <strong>What it shows.</strong> The ten activities with the highest value for the selected basis. Use the dropdown to switch between disbursements (actual money out), commitments (money pledged), expenditures, total outgoing (a sum of those three), or total budget. Each mode reads from a single explicit data source — no silent substitution.
-          {" "}<strong>How to read it.</strong> Bars are sorted longest-to-shortest, so the top-ranked activity dominates the portfolio under the chosen basis. A long-tail distribution (one or two large bars then a steep drop) signals concentration risk.
-          {" "}<strong>How to apply it.</strong> Compare modes to spot mismatches: an activity with high commitments but low disbursements may be slow to deliver; a high budget but low transactions could indicate a recently-started or paused programme.
+          The ten activities with the highest value for the selected basis, sorted longest-to-shortest. The dropdown switches between disbursements (actual money out), commitments (money pledged), expenditures, total outgoing (the sum of those three), or total budget — each mode reads from a single explicit data source, no silent substitution. A long-tail distribution (one or two large bars then a steep drop) signals concentration risk, and comparing across modes can surface mismatches — an activity with high commitments but low disbursements may be slow to deliver, while a high budget paired with low transactions could indicate a recently-started or paused programme.
         </>
       }
     >
@@ -1145,15 +1466,18 @@ function LargestActivitiesBody({
   setMode: (m: LargestActivitiesMode) => void
 }) {
   const isExpanded = useChartExpansion()
+  const [view, setView] = useState<"chart" | "table">("chart")
   const currentMode = LARGEST_ACTIVITIES_MODES.find((m) => m.value === mode)
   return (
     <div className={cn(isExpanded ? "h-full flex flex-col gap-3 min-h-0" : "space-y-3")}>
-      {/* Year-range chip on the left, mode picker on the right — both only
-          render in the expanded modal. Inline cards stay chart-only. */}
+      {/* Year-range chip on the left, chart/table toggle + mode picker on the
+          right — all only render in the expanded modal. Inline cards stay
+          chart-only. */}
       {isExpanded && (
         <div className="flex items-center gap-2 shrink-0">
           <ExpandedYearChip />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+          <ChartTableToggle view={view} setView={setView} />
           <Select value={mode} onValueChange={(v) => setMode(v as LargestActivitiesMode)}>
             <SelectTrigger className="h-8 w-auto min-w-[260px] text-body">
               <SelectValue>
@@ -1187,6 +1511,33 @@ function LargestActivitiesBody({
         <ChartLoading />
       ) : data.length === 0 ? (
         <ChartEmpty message={`No ${LARGEST_ACTIVITIES_MODES.find((m) => m.value === mode)?.label.toLowerCase()} data found.`} />
+      ) : isExpanded && view === "table" ? (
+        <div className="flex-1 min-h-0 overflow-auto">
+          <table className="w-full text-body">
+            <thead className="sticky top-0 bg-surface-muted z-10">
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap w-12">#</th>
+                <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Activity</th>
+                <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                  {LARGEST_ACTIVITIES_MODES.find((m) => m.value === mode)?.label ?? "Value"} (USD)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row, i) => (
+                <tr key={`${row.full}-${i}`} className="border-b border-border hover:bg-muted/50">
+                  <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{i + 1}</td>
+                  <td className="py-2.5 px-4 font-medium text-foreground" title={row.full}>
+                    {row.label}
+                  </td>
+                  <td className="text-right py-2.5 px-4 text-foreground tabular-nums">
+                    {compactUsd(Number(row.value) || 0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div className={cn(isExpanded ? "flex-1 min-h-0 relative" : "h-80 w-full")}>
           <div className={isExpanded ? "absolute inset-0" : "h-full w-full"}>

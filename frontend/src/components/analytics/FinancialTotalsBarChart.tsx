@@ -9,6 +9,7 @@ import {
   Line,
   AreaChart,
   Area,
+  ComposedChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,7 +17,7 @@ import {
   Legend,
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table as TableIcon, Layers as LayersIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   DropdownMenu,
@@ -111,7 +112,9 @@ const AVAILABLE_YEARS = Array.from(
   (_, i) => 2010 + i
 )
 
-type ChartType = 'bar' | 'line' | 'area' | 'table'
+// `combo` renders Budgets + Planned Disbursements as filled areas and the
+// selected transaction types as vertical bars on the same axis.
+type ChartType = 'bar' | 'line' | 'area' | 'combo' | 'table'
 
 interface FinancialTotalsBarChartProps {
   dateRange?: {
@@ -842,8 +845,8 @@ export function FinancialTotalsBarChart({
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-foreground border-b">Year</th>
                 {activeDataKeys.map(key => (
-                  <th key={key} className="text-right px-4 py-3 font-medium text-foreground border-b">
-                    <div className="flex items-center justify-end gap-2">
+                  <th key={key} className="text-right px-4 py-3 font-medium text-foreground border-b whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"
                         style={{ backgroundColor: colorMap[key] }}
@@ -856,19 +859,19 @@ export function FinancialTotalsBarChart({
               </tr>
             </thead>
             <tbody>
-              {chartData.map((row, idx) => {
+              {chartData.map((row) => {
                 const rowTotal = activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0)
                 return (
-                  <tr key={row.displayYear} className={idx % 2 === 0 ? 'bg-card' : 'bg-muted/50'}>
-                    <td className="px-4 py-2.5 font-medium text-foreground border-b border-border">
+                  <tr key={row.displayYear} className="border-b border-border hover:bg-muted/50">
+                    <td className="px-4 py-2.5 font-medium text-foreground">
                       {row.displayYear}
                     </td>
                     {activeDataKeys.map(key => (
-                      <td key={key} className="text-right px-4 py-2.5 text-muted-foreground border-b border-border font-mono">
+                      <td key={key} className="text-right px-4 py-2.5 text-foreground tabular-nums">
                         {formatCurrencyFull(Number(row[key]) || 0)}
                       </td>
                     ))}
-                    <td className="text-right px-4 py-2.5 text-foreground font-semibold border-b border-border font-mono">
+                    <td className="text-right px-4 py-2.5 text-foreground font-semibold tabular-nums">
                       {formatCurrencyFull(rowTotal)}
                     </td>
                   </tr>
@@ -881,12 +884,12 @@ export function FinancialTotalsBarChart({
                 {activeDataKeys.map(key => {
                   const columnTotal = chartData.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)
                   return (
-                    <td key={key} className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border font-mono">
+                    <td key={key} className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border tabular-nums">
                       {formatCurrencyFull(columnTotal)}
                     </td>
                   )
                 })}
-                <td className="text-right px-4 py-3 font-bold text-foreground border-t-2 border-border font-mono">
+                <td className="text-right px-4 py-3 font-bold text-foreground border-t-2 border-border tabular-nums">
                   {formatCurrencyFull(
                     chartData.reduce((grandTotal, row) => 
                       grandTotal + activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0), 0
@@ -958,6 +961,64 @@ export function FinancialTotalsBarChart({
               />
             ))}
           </AreaChart>
+        </ResponsiveContainer>
+      )
+    }
+
+    if (chartType === 'combo') {
+      // Areas for planned figures (Budgets + Planned Disbursements), bars
+      // for everything else (the active transaction types). Same `colorMap`
+      // and `hiddenSeries` toggle behaviour as the other modes.
+      const areaKeys = activeDataKeys.filter((k) => k === 'Budgets' || k === 'Planned Disbursements')
+      const barKeys = activeDataKeys.filter((k) => k !== 'Budgets' && k !== 'Planned Disbursements')
+      return (
+        <ResponsiveContainer width="100%" height={isExpanded ? "100%" : height}>
+          <ComposedChart {...commonProps} barGap={0} barCategoryGap="20%">
+            <defs>
+              {areaKeys.map((key) => (
+                <linearGradient
+                  key={`combo-gradient-${key}`}
+                  id={`combo-area-${key.replace(/\s+/g, '')}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="5%" stopColor={colorMap[key]} stopOpacity={0.55} />
+                  <stop offset="95%" stopColor={colorMap[key]} stopOpacity={0.05} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+            <XAxis {...xAxisProps} />
+            <YAxis {...yAxisProps} />
+            <Tooltip content={<CustomTooltip />} />
+            {!isCompact && !isExpanded && <Legend content={renderLegend} />}
+            {areaKeys.map((key) => (
+              <Area
+                key={key}
+                type="monotone"
+                dataKey={key}
+                name={key}
+                stroke={colorMap[key]}
+                strokeWidth={2}
+                fill={`url(#combo-area-${key.replace(/\s+/g, '')})`}
+                fillOpacity={1}
+                hide={hiddenSeries.has(key)}
+                isAnimationActive={false}
+              />
+            ))}
+            {barKeys.map((key) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                name={key}
+                fill={colorMap[key]}
+                radius={[4, 4, 0, 0]}
+                hide={hiddenSeries.has(key)}
+              />
+            ))}
+          </ComposedChart>
         </ResponsiveContainer>
       )
     }
@@ -1232,6 +1293,16 @@ export function FinancialTotalsBarChart({
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setChartType('combo')}
+              className={cn("h-8 w-8", chartType === 'combo' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              title="Areas (budgets + planned) + bars (transactions)"
+              aria-label="Areas + bars"
+            >
+              <LayersIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setChartType('table')}
               className={cn("h-8 w-8", chartType === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
@@ -1323,7 +1394,7 @@ export function FinancialTotalsBarChart({
           the explanation is for users who've opened the modal to focus. */}
       {isExpanded && (
         <p className={cn("text-body text-muted-foreground leading-relaxed shrink-0", fillsCard && "mt-16")}>
-          <strong>What this shows:</strong> the activity's planned financial commitments — <strong>approved budgets</strong> and <strong>scheduled planned disbursements</strong> — alongside the actual money that moved as recorded <strong>transactions</strong> (commitments, disbursements, expenditures). <strong>How to read it:</strong> compare year-by-year heights to spot when planned amounts matched delivery and when they diverged. Tall budget bars with short disbursement bars mean funds were approved but not yet released; the inverse points to spending that outpaced plan. <strong>How to use it:</strong> check whether the activity is delivering its budget on schedule and identify the years where execution slipped most.
+          Each year pairs the activity's planned commitments — <strong>approved budgets</strong> and <strong>scheduled planned disbursements</strong> — against the actual money that moved as recorded <strong>transactions</strong> (commitments, disbursements, expenditures). Comparing the year-by-year heights surfaces when planned amounts matched delivery and when they diverged: tall budget bars with short disbursement bars mean funds were approved but not yet released, while the reverse points to spending that outpaced plan. Together this is the quickest way to gauge whether the activity is delivering its budget on schedule and which years saw the biggest slippage.
         </p>
       )}
     </div>

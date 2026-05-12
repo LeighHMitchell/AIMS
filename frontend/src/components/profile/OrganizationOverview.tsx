@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import { Card } from "@/components/ui/card"
 import { SafeHtml } from "@/components/ui/safe-html"
 import { Globe } from "lucide-react"
 
@@ -10,15 +9,19 @@ interface OrganizationOverviewProps {
 }
 
 // Read-only "About" panel for the organisation profile. Shows the description /
-// mission narrative plus a small contact line if a website is set. The Identity
-// rail block sits beside this panel on the Overview tab.
+// mission narrative plus a small contact line if a website is set. Rendered
+// borderless / card-less — the About text flows directly in the grid column
+// so it reads as the page's primary content rather than a boxed widget.
+// p-6 matches the rail cards' internal padding so the "About" heading sits
+// at the same Y as the rail cards' headings ("Identity", "Contact
+// Information") — both are inset 24px from their column / card top edge.
 export function OrganizationOverview({ organization }: OrganizationOverviewProps) {
   const description = (organization?.description ?? "").trim()
   const mission = (organization?.mission ?? "").trim()
 
   return (
     <div className="space-y-6">
-      <Card className="border-border bg-card p-6">
+      <div className="p-6">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground mb-3">About</h2>
         {description || mission ? (
           <div className="space-y-4">
@@ -58,7 +61,7 @@ export function OrganizationOverview({ organization }: OrganizationOverviewProps
             </a>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   )
 }

@@ -75,26 +75,28 @@ function SimpleLocationMarker({
   const linkedActivityId = location.activity?.id;
 
   const infoContent = (
-    <div className="p-2.5">
-      <div className="font-semibold text-helper text-foreground mb-1.5 pr-6">
-        {location.location_name || 'Unnamed Location'}
+    <div>
+      <div className="bg-surface-muted px-3 py-2 border-b border-border pr-7">
+        <p className="font-semibold text-helper text-foreground leading-snug">
+          {location.location_name || 'Unnamed Location'}
+        </p>
+        {linkedActivityTitle && (
+          linkedActivityId ? (
+            <a
+              href={`/activities/${linkedActivityId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="block text-[11px] text-muted-foreground hover:text-primary mt-0.5 line-clamp-2 leading-snug no-underline"
+            >
+              {linkedActivityTitle}
+            </a>
+          ) : (
+            <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
+              {linkedActivityTitle}
+            </div>
+          )
+        )}
       </div>
-      {linkedActivityTitle && (
-        linkedActivityId ? (
-          <a
-            href={`/activities/${linkedActivityId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="block text-[11px] font-medium text-foreground hover:text-primary mb-1.5 line-clamp-2 pr-6 leading-snug no-underline"
-          >
-            {linkedActivityTitle}
-          </a>
-        ) : (
-          <div className="text-[11px] font-medium text-foreground mb-1.5 line-clamp-2 pr-6 leading-snug">
-            {linkedActivityTitle}
-          </div>
-        )
-      )}
-      <div className="text-[10px] space-y-1">
+      <div className="p-3 text-[10px] space-y-1">
         {location.location_description && (
           <div className="text-muted-foreground leading-snug">{location.location_description}</div>
         )}

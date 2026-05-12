@@ -2777,46 +2777,47 @@ const router = useRouter();
                         </div>
                       </td>
                           ),
-                          reportedBy: (
+                          reportedBy: (() => {
+                            const reportedByOrgId = activity.reportingOrgId || activity.createdByOrg;
+                            const reportedByOrg = orgByIdMap.get(reportedByOrgId || '');
+                            return (
 <td key="reportedBy" className="px-4 py-2 text-body text-foreground text-left" style={{textAlign: 'left'}}>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 text-left cursor-pointer" style={{textAlign: 'left'}}>
-                                {/* Organization Logo */}
-                                {(() => {
-                                  const orgId = activity.reportingOrgId || activity.createdByOrg;
-                                  const org = orgByIdMap.get(orgId || '');
-                                  
-                                  if (org?.logo) {
-                                    return (
-                                      <div className="flex-shrink-0">
-                                        <div className="w-5 h-5 rounded-sm overflow-hidden border border-border bg-white">
-                                          <img 
-                                            src={org.logo} 
-                                            alt={`${org.name} logo`} 
-                                            className="w-full h-full object-contain"
-                                            onError={(e) => {
-                                              const target = e.target as HTMLImageElement;
-                                              target.style.display = 'none';
-                                              const parent = target.parentElement;
-                                              if (parent) {
-                                                parent.innerHTML = `
-                                                  <div class="w-5 h-5 bg-green-100 rounded-sm flex items-center justify-center">
-                                                    <span class="text-[hsl(var(--success-icon))] font-semibold text-helper">O</span>
-                                                  </div>
-                                                `;
-                                              }
-                                            }}
-                                          />
-                                        </div>
+                              {reportedByOrgId ? (
+                                <a
+                                  href={`/organizations/${reportedByOrgId}`}
+                                  className="flex items-center gap-2 text-left cursor-pointer no-underline hover:no-underline"
+                                  style={{textAlign: 'left'}}
+                                  onClick={(e) => {
+                                    if (e.metaKey || e.ctrlKey) return;
+                                    e.preventDefault();
+                                    router.push(`/organizations/${reportedByOrgId}`);
+                                  }}
+                                >
+                                  {reportedByOrg?.logo && (
+                                    <div className="flex-shrink-0">
+                                      <div className="w-5 h-5 rounded-sm overflow-hidden border border-border bg-white">
+                                        <img
+                                          src={reportedByOrg.logo}
+                                          alt={`${reportedByOrg.name} logo`}
+                                          className="w-full h-full object-contain"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                          }}
+                                        />
                                       </div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                                <span>{creatorOrg}</span>
-                              </div>
+                                    </div>
+                                  )}
+                                  <span>{creatorOrg}</span>
+                                </a>
+                              ) : (
+                                <div className="flex items-center gap-2 text-left" style={{textAlign: 'left'}}>
+                                  <span>{creatorOrg}</span>
+                                </div>
+                              )}
                             </TooltipTrigger>
                             <TooltipContent 
                               className="max-w-sm p-4 bg-white border border-border shadow-lg"
@@ -2845,7 +2846,8 @@ const router = useRouter();
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                          ),
+                            );
+                          })(),
                           totalBudgeted: (
 <td key="totalBudgeted" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>

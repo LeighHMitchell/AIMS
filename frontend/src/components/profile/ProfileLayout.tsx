@@ -35,7 +35,7 @@ export function ProfileLayout({
   className,
 }: ProfileLayoutProps) {
   const hasRail = !!rail
-  // The MainLayout's TopNav is itself `sticky top-0 z-[9999] h-16` inside the
+  // The MainLayout's TopNav is itself `sticky top-0 z-30 h-16` inside the
   // same scroll container, so we offset our sticky bar by its height to
   // avoid overlap. Rail offset compensates for both — TopNav + tab bar +
   // visible compact-strip portion.
