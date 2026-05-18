@@ -146,7 +146,7 @@ export const ACTIVITY_REPEAT_GROUPS: { key: string; label: string }[] = [
   { key: 'sector', label: 'Sectors (1-5)' },
   { key: 'country', label: 'Countries (1-5)' },
   { key: 'region', label: 'Recipient Regions (1-5)' },
-  { key: 'participating_org', label: 'Participating Organizations (1-5)' },
+  { key: 'participating_org', label: 'Participating Organisations (1-5)' },
   { key: 'contact', label: 'Contacts (1-5)' },
   { key: 'sdg', label: 'SDG Alignment (1-5)' },
   { key: 'policy_marker', label: 'Policy Markers (1-5)' },

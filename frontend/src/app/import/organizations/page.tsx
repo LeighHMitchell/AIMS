@@ -44,9 +44,9 @@ export default function ImportOrganizationsPage() {
         </div>
         
         <div>
-          <h1 className="text-2xl font-bold">Import Organizations</h1>
+          <h1 className="text-2xl font-bold">Import Organisations</h1>
           <p className="text-muted-foreground mt-1">
-            Import your organization data from CSV or Excel files
+            Import your organization data from CSV files
           </p>
         </div>
         

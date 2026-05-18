@@ -57,7 +57,7 @@ export default function EditOrganizationPage() {
 
   useEffect(() => {
     if (!organizationId) {
-      setError('Organization ID is required')
+      setError('Organisation ID is required')
       setLoading(false)
       return
     }
@@ -68,9 +68,9 @@ export default function EditOrganizationPage() {
         
         if (!response.ok) {
           if (response.status === 404) {
-            setError('Organization not found')
+            setError('Organisation not found')
           } else {
-            setError('Failed to load organization')
+            setError('Failed to load organisation')
           }
           return
         }
@@ -125,7 +125,7 @@ export default function EditOrganizationPage() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Not Found</AlertTitle>
-            <AlertDescription>Organization not found</AlertDescription>
+            <AlertDescription>Organisation not found</AlertDescription>
           </Alert>
         </div>
       </MainLayout>

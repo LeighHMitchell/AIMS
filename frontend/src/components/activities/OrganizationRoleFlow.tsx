@@ -42,17 +42,6 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export default function OrganizationRoleFlow({ data, transactions = [] }: OrganizationRoleFlowProps) {
-  if (!data || !data.nodes || data.nodes.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-96 text-muted-foreground">
-        <div className="text-center">
-          <p className="font-medium">No organization role data available</p>
-          <p className="text-helper mt-2">Add participating organizations to see role-based financial flow</p>
-        </div>
-      </div>
-    )
-  }
-
   // Helper function to normalize role to string code (1-4)
   const normalizeRole = (role: any): string => {
     if (!role) return 'unknown'
@@ -91,6 +80,18 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
       })
     }
   }, [data])
+
+  // Guard AFTER hooks so hook order stays stable (Rules of Hooks)
+  if (!data || !data.nodes || data.nodes.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
+        <div className="text-center">
+          <p className="font-medium">No organisation role data available</p>
+          <p className="text-helper mt-2">Add participating organisations to see role-based financial flow</p>
+        </div>
+      </div>
+    )
+  }
 
   // Group organizations by role
   const roleGroups = data.nodes.reduce((acc: Record<string, { count: number; total: number; orgs: string[] }>, node) => {
@@ -158,7 +159,7 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground mb-2">{data.role}</p>
           <p className="text-body text-muted-foreground">
-            <span className="font-medium">Organizations: </span>
+            <span className="font-medium">Organisations: </span>
             {data.organizations}
           </p>
           <p className="text-body text-muted-foreground">
@@ -196,7 +197,7 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
           <Legend />
-          <Bar dataKey="organizations" name="Number of Organizations" fill="#dc2625" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="organizations" name="Number of Organisations" fill="#dc2625" radius={[4, 4, 0, 0]} />
           <Bar dataKey="totalValue" name="Total Value (USD)" fill="#4c5568" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>

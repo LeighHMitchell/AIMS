@@ -366,7 +366,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
     <div className="space-y-6">
       {/* Search and Add Section */}
       <div className="bg-card p-6 rounded-lg border border-border">
-        <h2 className="text-lg font-semibold mb-4">Add Contact to Organization Profile</h2>
+        <h2 className="text-lg font-semibold mb-4">Add Contact to Organisation Profile</h2>
         <p className="text-body text-muted-foreground mb-4">
           Add contacts that will be displayed on your public organization profile page. You can search for existing users in your organization or create new contact records.
         </p>
@@ -382,7 +382,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
                 setShowUserSearch(true);
               }}
               onFocus={() => setShowUserSearch(true)}
-              placeholder="Search users in your organization..."
+              placeholder="Search users in your organisation..."
               className="pl-10"
             />
             {searchQuery && (

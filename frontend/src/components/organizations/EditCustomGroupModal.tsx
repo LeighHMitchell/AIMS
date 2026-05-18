@@ -357,8 +357,8 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                 >
                   <span className="truncate">
                     {selectedOrgs.length > 0
-                      ? `${selectedOrgs.length} organization${selectedOrgs.length > 1 ? 's' : ''} selected`
-                      : "Select organizations..."}
+                      ? `${selectedOrgs.length} organisation${selectedOrgs.length > 1 ? 's' : ''} selected`
+                      : "Select organisations..."}
                   </span>
                   <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </div>
@@ -366,7 +366,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
               <PopoverContent className="w-[600px] p-0" align="start">
                 <div className="p-2 border-b">
                   <Input
-                    placeholder="Search organizations by name or acronym..."
+                    placeholder="Search organisations by name or acronym..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="h-9"
@@ -375,7 +375,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                 <ScrollArea className="h-[300px] p-1">
                   {filteredOrganizations.length === 0 ? (
                     <div className="p-4 text-center text-body text-muted-foreground">
-                      No organization found.
+                      No organisation found.
                     </div>
                   ) : (
                     filteredOrganizations.map((org) => (

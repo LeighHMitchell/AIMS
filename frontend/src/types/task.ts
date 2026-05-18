@@ -734,7 +734,7 @@ export function getRecurrenceFrequencyLabel(frequency: RecurrenceFrequency, inte
  */
 export function getTargetScopeLabel(scope: TargetScope): string {
   const labels: Record<TargetScope, string> = {
-    organisation: 'By Organization',
+    organisation: 'By Organisation',
     role: 'By Role',
     user: 'Individual Users',
     activity_set: 'Activity Stakeholders',

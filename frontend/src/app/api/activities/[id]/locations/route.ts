@@ -33,7 +33,7 @@ export async function GET(
       );
     }
 
-    
+
     const transformedLocations = locations?.map((location: any) => {
       return {
       id: location.id,
@@ -269,6 +269,13 @@ export async function PUT(
     }
 
 
+    // Snapshot existing locations BEFORE deleting so we can roll back if the
+    // re-insert fails — a failed bulk save must never wipe location data.
+    const { data: previousLocations } = await supabase
+      .from('activity_locations')
+      .select('*')
+      .eq('activity_id', activityId);
+
     const { error: deleteError } = await supabase
       .from('activity_locations')
       .delete()
@@ -350,6 +357,21 @@ export async function PUT(
 
       if (insertError) {
         console.error('[Locations API] Error inserting locations:', insertError);
+        // Compensating rollback: restore the locations we deleted so a failed
+        // save does not leave the activity with zero locations.
+        if (previousLocations && previousLocations.length > 0) {
+          const { error: restoreError } = await supabase
+            .from('activity_locations')
+            .insert(previousLocations);
+          if (restoreError) {
+            console.error('[Locations API] CRITICAL: could not restore locations after failed insert:', restoreError.message);
+            return NextResponse.json(
+              { error: `Failed to save locations and previous locations could not be restored automatically. Please refresh the Locations tab. (cause: ${insertError.message})` },
+              { status: 500 }
+            );
+          }
+          console.warn(`[Locations API] Rolled back: restored ${previousLocations.length} previous location(s) after failed insert`);
+        }
         return NextResponse.json(
           { error: `Failed to insert locations: ${insertError.message}` },
           { status: 500 }

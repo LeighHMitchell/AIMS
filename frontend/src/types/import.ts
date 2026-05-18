@@ -56,8 +56,8 @@ export interface MappingTemplate {
 export const ACTIVITY_FIELDS: SystemField[] = [
   { id: 'title', name: 'Activity Title', type: 'string', required: true, description: 'The name or title of the activity' },
   { id: 'description', name: 'Description', type: 'string', required: false, description: 'Detailed description of the activity' },
-  { id: 'donor_name', name: 'Donor Organization', type: 'string', required: true, description: 'Name of the donor organization' },
-  { id: 'implementing_org_name', name: 'Implementing Organization', type: 'string', required: false, description: 'Name of the implementing organization' },
+  { id: 'donor_name', name: 'Donor Organisation', type: 'string', required: true, description: 'Name of the donor organisation' },
+  { id: 'implementing_org_name', name: 'Implementing Organisation', type: 'string', required: false, description: 'Name of the implementing organisation' },
   { id: 'start_date_planned', name: 'Start Date', type: 'date', required: true, description: 'Planned start date (YYYY-MM-DD)', format: 'YYYY-MM-DD' },
   { id: 'end_date_planned', name: 'End Date', type: 'date', required: true, description: 'Planned end date (YYYY-MM-DD)', format: 'YYYY-MM-DD' },
   { id: 'total_budget', name: 'Total Budget', type: 'number', required: true, description: 'Total budget amount in USD' },
@@ -73,24 +73,24 @@ export const ACTIVITY_FIELDS: SystemField[] = [
 ];
 
 export const ORGANIZATION_FIELDS: SystemField[] = [
-  { id: 'name', name: 'Organization Name', type: 'string', required: true, description: 'Full name of the organization' },
+  { id: 'name', name: 'Organisation Name', type: 'string', required: true, description: 'Full name of the organisation' },
   { id: 'acronym', name: 'Acronym', type: 'string', required: false, description: 'Abbreviated name or acronym' },
-  { id: 'iati_identifier', name: 'IATI Organization ID', type: 'string', required: false, description: 'IATI organization identifier' },
-  { id: 'organization_type', name: 'Organization Type', type: 'select', required: true, description: 'Type of organization', options: [
+  { id: 'iati_identifier', name: 'IATI Organisation ID', type: 'string', required: false, description: 'IATI organisation identifier' },
+  { id: 'organization_type', name: 'Organisation Type', type: 'select', required: true, description: 'Type of organisation', options: [
     { value: 'government', label: 'Government Agency' },
-    { value: 'ngo', label: 'Non-Governmental Organization' },
+    { value: 'ngo', label: 'Non-Governmental Organisation' },
     { value: 'ingo', label: 'International NGO' },
     { value: 'un', label: 'UN Agency' },
     { value: 'bilateral', label: 'Bilateral Donor' },
-    { value: 'multilateral', label: 'Multilateral Organization' },
+    { value: 'multilateral', label: 'Multilateral Organisation' },
     { value: 'private', label: 'Private Sector' },
     { value: 'academic', label: 'Academic Institution' },
     { value: 'other', label: 'Other' }
   ]},
   { id: 'country_name', name: 'Country', type: 'string', required: false, description: 'Country where the organization is based' },
-  { id: 'website', name: 'Website', type: 'string', required: false, description: 'Organization website URL' },
+  { id: 'website', name: 'Website', type: 'string', required: false, description: 'Organisation website URL' },
   { id: 'contact_email', name: 'Contact Email', type: 'string', required: false, description: 'Primary contact email address' },
-  { id: 'description', name: 'Description', type: 'string', required: false, description: 'Brief description of the organization' },
+  { id: 'description', name: 'Description', type: 'string', required: false, description: 'Brief description of the organisation' },
 ];
 
 export const TRANSACTION_FIELDS: SystemField[] = [
@@ -113,8 +113,8 @@ export const TRANSACTION_FIELDS: SystemField[] = [
     { value: 'loan_repayment', label: 'Loan Repayment' },
     { value: 'interest_payment', label: 'Interest Payment' }
   ]},
-  { id: 'provider_organization_name', name: 'Provider Organization', type: 'string', required: false, description: 'Organization providing the funds' },
-  { id: 'receiver_organization_name', name: 'Receiver Organization', type: 'string', required: false, description: 'Organization receiving the funds' },
+  { id: 'provider_organization_name', name: 'Provider Organisation', type: 'string', required: false, description: 'Organisation providing the funds' },
+  { id: 'receiver_organization_name', name: 'Receiver Organisation', type: 'string', required: false, description: 'Organisation receiving the funds' },
   { id: 'description', name: 'Description', type: 'string', required: false, description: 'Transaction description or notes' },
   { id: 'reference', name: 'Reference Number', type: 'string', required: false, description: 'Transaction reference number' },
 ];

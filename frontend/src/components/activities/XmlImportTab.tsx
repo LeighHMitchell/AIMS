@@ -395,7 +395,7 @@ const getOrganizationTypeLabel = (code: string): { code: string, name: string } 
     '80': 'Academic, Training and Research',
     '90': 'Other'
   };
-  return { code, name: typeMap[code] || 'Unknown organization type' };
+  return { code, name: typeMap[code] || 'Unknown organisation type' };
 };
 
 const getOrganizationRoleLabel = (code: string): { code: string, name: string } | null => {
@@ -628,7 +628,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                     <span className="text-destructive text-helper cursor-help">⚠</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-helper">Invalid IATI organization identifier format</p>
+                                    <p className="text-helper">Invalid IATI organisation identifier format</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -813,7 +813,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                         <span className="text-destructive text-helper cursor-help">⚠</span>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className="text-helper">Invalid IATI organization identifier format</p>
+                                        <p className="text-helper">Invalid IATI organisation identifier format</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
@@ -1349,7 +1349,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           selected: false,
           hasConflict: false,
           tab: 'transactions',
-          description: 'Organization providing the funds'
+          description: 'Organisation providing the funds'
         });
       }
       
@@ -1362,7 +1362,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           selected: false,
           hasConflict: false,
           tab: 'transactions',
-          description: 'Organization receiving the funds'
+          description: 'Organisation receiving the funds'
         });
       }
       
@@ -3541,7 +3541,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
         parsedActivity.participatingOrgs.forEach((org: any, index: number) => {
-          const orgName = org.narrative || org.ref || 'Unknown Organization';
+          const orgName = org.narrative || org.ref || 'Unknown Organisation';
           const role = org.role || 'Unknown Role';
           
           // Try to find matching current participating organization
@@ -6235,8 +6235,8 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (pdOrgsLinked > 0) {
                 orgParts.push(`${pdOrgsLinked} existing org${pdOrgsLinked !== 1 ? 's' : ''} linked`);
               }
-              toast.info(`Organizations: ${orgParts.join(', ')}`, {
-                description: pdOrgsCreated > 0 ? 'Auto-created organizations can be managed in the Organizations section.' : undefined,
+              toast.info(`Organisations: ${orgParts.join(', ')}`, {
+                description: pdOrgsCreated > 0 ? 'Auto-created organisations can be managed in the Organisations section.' : undefined,
                 duration: 7000
               });
             }
@@ -7098,8 +7098,8 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               if (orgsLinked > 0) {
                 orgParts.push(`${orgsLinked} existing org${orgsLinked !== 1 ? 's' : ''} linked`);
               }
-              toast.info(`Organizations: ${orgParts.join(', ')}`, {
-                description: orgsCreated > 0 ? 'Auto-created organizations can be managed in the Organizations section.' : undefined,
+              toast.info(`Organisations: ${orgParts.join(', ')}`, {
+                description: orgsCreated > 0 ? 'Auto-created organisations can be managed in the Organisations section.' : undefined,
                 duration: 7000
               });
             }
@@ -7288,7 +7288,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         setImportStatus({
           stage: 'importing',
           progress: 92,
-          message: `Importing ${totalOrgs} participating organization${totalOrgs !== 1 ? 's' : ''}...`
+          message: `Importing ${totalOrgs} participating organisation${totalOrgs !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -7408,19 +7408,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
 
           if (successCount > 0) {
-            toast.success(`Participating organizations imported successfully`, {
-              description: `${successCount} organization(s) added to the activity${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            toast.success(`Participating organisations imported successfully`, {
+              description: `${successCount} organisation(s) added to the activity${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
             });
           }
 
           if (errorCount > 0 && successCount === 0) {
-            toast.error('Couldn’t import participating organizations. Please try again in a moment.', {
-              description: `${errorCount} organization(s) could not be imported`
+            toast.error('Couldn’t import participating organisations. Please try again in a moment.', {
+              description: `${errorCount} organisation(s) could not be imported`
             });
           }
         } catch (participatingOrgsError: any) {
           console.error('[XML Import] Participating organizations import error:', participatingOrgsError);
-          toast.error('Couldn’t import participating organizations. Please try again in a moment.', {
+          toast.error('Couldn’t import participating organisations. Please try again in a moment.', {
             description: `An error occurred: ${participatingOrgsError.message}`
           });
         }
@@ -8168,7 +8168,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 )}
                 {field.currentValue.organization && (
                   <div className="flex items-center gap-1">
-                    <span className="text-helper text-muted-foreground">Organization:</span>
+                    <span className="text-helper text-muted-foreground">Organisation:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
@@ -8222,7 +8222,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                  <span className="text-body font-medium text-foreground">Organization</span>
+                  <span className="text-body font-medium text-foreground">Organisation</span>
                 </div>
                 {field.currentValue.name && (
                   <div className="flex items-center gap-1">
@@ -8375,7 +8375,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               )}
               {field.importValue.organization && (
                 <div className="flex items-center gap-1">
-                  <span className="text-helper text-muted-foreground">Organization:</span>
+                  <span className="text-helper text-muted-foreground">Organisation:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.organization}</span>
                 </div>
               )}
@@ -8426,7 +8426,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                <span className="text-body font-medium text-foreground">Organization</span>
+                <span className="text-body font-medium text-foreground">Organisation</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-helper text-muted-foreground">Name:</span>
@@ -9133,7 +9133,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <Label htmlFor="xml-snippet" className="text-body font-medium">Paste IATI XML Snippet</Label>
                   <Textarea
                     id="xml-snippet"
-                    placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
+                    placeholder="Paste any IATI XML snippet here (transactions, organisations, locations, sectors, etc.)..."
                     value={snippetContent}
                     onChange={(e) => setSnippetContent(e.target.value)}
                     className="font-mono text-sm min-h-[300px] mt-2"
@@ -9186,7 +9186,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     <p className="font-medium mb-2">Snippet Import supports:</p>
                     <ul className="list-disc list-inside space-y-1 text-body">
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
-                      <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organisations</li>
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
@@ -9962,7 +9962,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           isOpen={showExternalPublisherModal}
           onClose={() => setShowExternalPublisherModal(false)}
           meta={externalPublisherMeta}
-          userOrgName={user?.organization?.name || 'Your Organization'}
+          userOrgName={user?.organization?.name || 'Your Organisation'}
           userPublisherRefs={userPublisherRefs}
           onChoose={handleExternalPublisherChoice}
           currentActivityId={activityId}

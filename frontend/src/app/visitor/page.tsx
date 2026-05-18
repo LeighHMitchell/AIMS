@@ -62,7 +62,7 @@ export default function VisitorHomePage() {
 
   const quickLinks = [
     { label: "Activities", href: "/activities", icon: Activity, description: "Browse all development activities" },
-    { label: "Organizations", href: "/organizations", icon: Building2, description: "Explore partner organizations" },
+    { label: "Organisations", href: "/organizations", icon: Building2, description: "Explore partner organisations" },
     { label: "Atlas", href: "/atlas", icon: Globe, description: "Geographic view of activities" },
     { label: "Search", href: "/search", icon: Search, description: "Search across all data" },
     { label: "Analytics", href: "/analytics-dashboard", icon: BarChart3, description: "View analytics dashboards" },
@@ -134,7 +134,7 @@ export default function VisitorHomePage() {
                   <Building2 className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-body text-muted-foreground">Organizations</p>
+                  <p className="text-body text-muted-foreground">Organisations</p>
                   {loading ? (
                     <Skeleton className="h-7 w-20 mt-1" />
                   ) : (

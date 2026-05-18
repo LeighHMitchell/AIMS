@@ -48,7 +48,7 @@ const SYNC_FIELD_GROUPS: Record<string, string> = {
   transactions: 'Transactions',
   budgets: 'Budgets',
   sectors: 'Sectors',
-  organizations: 'Participating Organizations',
+  organizations: 'Participating Organisations',
   locations: 'Locations',
   contacts: 'Contacts',
   documents: 'Documents',
@@ -729,8 +729,8 @@ export function IATISyncPanel({
                   orgParts.push(`${organizations_linked} existing org${organizations_linked !== 1 ? 's' : ''} linked`);
                 }
                 toast.success(message);
-                toast.info(`Organizations: ${orgParts.join(', ')}`, {
-                  description: 'Auto-created organizations can be managed in the Organizations section.',
+                toast.info(`Organisations: ${orgParts.join(', ')}`, {
+                  description: 'Auto-created organisations can be managed in the Organisations section.',
                   duration: 7000
                 });
               } else {

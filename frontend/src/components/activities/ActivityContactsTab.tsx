@@ -362,7 +362,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             <TableRow className="bg-muted">
               <TableHead className="font-medium">Name</TableHead>
               <TableHead className="font-medium">Position</TableHead>
-              <TableHead className="font-medium">Organization</TableHead>
+              <TableHead className="font-medium">Organisation</TableHead>
               <TableHead className="font-medium">Email</TableHead>
               <TableHead className="font-medium">Phone</TableHead>
               <TableHead className="font-medium">Type</TableHead>

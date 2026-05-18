@@ -1,11 +1,9 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import Flag from "react-world-flags";
 import {
   Building2,
-  Copy,
 } from "lucide-react";
 import { getCountryCode } from "@/lib/country-utils";
 import {
@@ -20,6 +18,8 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
+  TableHead,
   TableHeader,
   TableRow,
   getSortIcon,
@@ -31,6 +31,7 @@ import {
   OrganizationColumnId,
   ORGANIZATION_COLUMN_ORDER_LOCALSTORAGE_KEY,
 } from "@/app/organizations/columns";
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 
 type Organization = {
   id: string;
@@ -81,10 +82,15 @@ interface OrganizationTableProps {
 // Format currency helper - returns JSX with gray currency code
 const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
   if (amount == null || isNaN(amount)) return '-';
-  const formattedValue = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  const abs = Math.abs(amount);
+  const formattedValue =
+    abs >= 1_000_000_000
+      ? `${(amount / 1_000_000_000).toFixed(1)}b`
+      : abs >= 1_000_000
+      ? `${(amount / 1_000_000).toFixed(1)}m`
+      : abs >= 1_000
+      ? `${(amount / 1_000).toFixed(0)}k`
+      : amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
   return (
     <>
@@ -97,20 +103,11 @@ const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
 const formatDate = (dateString: string): string => {
   if (!dateString) return '-';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   }).format(date);
-};
-
-// Copy to clipboard helper
-const copyToClipboard = (text: string, label: string) => {
-  navigator.clipboard.writeText(text).then(() => {
-    toast.success(`${label} copied to clipboard`);
-  }).catch(() => {
-    toast.error('Failed to copy to clipboard');
-  });
 };
 
 // Get organization type label
@@ -188,7 +185,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   if (organizations.length === 0) {
     return (
       <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
-        <div className="text-muted-foreground">No organizations found</div>
+        <div className="text-muted-foreground">No organisations found</div>
       </div>
     );
   }
@@ -203,7 +200,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
         onClick={() => onSort('name')}
       >
         <div className="flex items-center gap-1">
-          <span>Organization Name</span>
+          <span>Organisation Name</span>
           {getSortIcon('name', sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -216,7 +213,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
         onClick={() => onSort('type')}
       >
         <div className="flex items-center gap-1">
-          <span>Type</span>
+          <span>Organisation Type</span>
           {getSortIcon('type', sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -255,7 +252,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
         onClick={() => onSort('reported')}
       >
         <div className="flex items-center justify-center gap-1">
-          <span>Reported</span>
+          <span>Activities Reported</span>
           {getSortIcon('reported', sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -281,7 +278,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
         onClick={() => onSort('funding')}
       >
         <div className="flex items-center justify-end gap-1">
-          <span>Funding</span>
+          <span>Total Budgeted</span>
           {getSortIcon('funding', sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -302,15 +299,14 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-md shadow-sm border border-border">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
+    <TableContainer className="bg-white shadow-sm">
+      <Table>
+        <TableHeader>
             <TableRow>
                 {orderedColumns.map((colId) => headerMap[colId])}
-              <th className="h-12 px-4 text-right align-top text-body font-medium text-muted-foreground w-[13%]">
+              <TableHead className="text-right w-[13%]">
                 Actions
-              </th>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -361,30 +357,10 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                   {org.iati_org_id && (
                                     <>
                                       {' '}
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyToClipboard(org.iati_org_id!, 'IATI ID');
-                                        }}
-                                        title="Click to copy"
-                                        className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded align-middle cursor-pointer"
-                                      >
-                                        {org.iati_org_id}
-                                      </button>
+                                      <CopyableIdBadge value={org.iati_org_id} label="IATI Org ID" />
                                     </>
                                   )}
                                 </span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    copyToClipboard(org.name, 'Organization name');
-                                  }}
-                                  className="flex-shrink-0 p-1 hover:bg-muted rounded transition-colors"
-                                  title="Copy organization name"
-                                >
-                                  <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-muted-foreground" />
-                                </button>
                               </div>
                             </TooltipTrigger>
                             {org.description && (
@@ -408,28 +384,28 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 location: (
                   <TableCell key="location" className="px-4 py-3 text-body text-foreground">
                     {org.country_represented ? (
-                      <div className="flex items-start gap-2">
+                      <div>
                         {org.country_represented === 'United Nations' ? (
                           <img
                             src="/images/flags/united-nations.svg"
                             alt="UN Flag"
-                            className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
+                            className="inline-block h-4 w-5 rounded-sm object-cover align-middle mr-2"
                           />
                         ) : org.country_represented === 'European Union Institutions' ? (
                           <img
                             src="/images/flags/european-union.svg"
                             alt="EU Flag"
-                            className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
+                            className="inline-block h-4 w-5 rounded-sm object-cover align-middle mr-2"
                           />
                         ) : getCountryCode(org.country_represented) ? (
                           <Flag
                             code={getCountryCode(org.country_represented)!}
-                            className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
+                            className="inline-block h-4 w-5 rounded-sm object-cover align-middle mr-2"
                           />
                         ) : (
-                          <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+                          <Building2 className="inline-block h-4 w-4 text-muted-foreground align-middle mr-2" />
                         )}
-                        <span>{org.country_represented}</span>
+                        {org.country_represented}
                       </div>
                     ) : (
                       '-'
@@ -529,8 +505,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
               );
             })}
           </TableBody>
-        </Table>
-      </div>
-    </div>
+      </Table>
+    </TableContainer>
   );
 };

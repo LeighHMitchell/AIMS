@@ -269,7 +269,7 @@ export function Top10SectorFocusedChart({
           <table className="w-full text-body">
             <thead className="bg-surface-muted">
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Organization</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Organisation</th>
                 <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total Value</th>
               </tr>
             </thead>

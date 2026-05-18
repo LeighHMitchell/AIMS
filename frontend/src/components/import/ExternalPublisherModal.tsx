@@ -307,7 +307,7 @@ export function ExternalPublisherModal({
       // Participating Organizations
       if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
         fields.push({
-          fieldName: 'Participating Organizations',
+          fieldName: 'Participating Organisations',
           iatiPath: 'iati-activity/participating-org',
           currentValue: null,
           importValue: parsedActivity.participatingOrgs,

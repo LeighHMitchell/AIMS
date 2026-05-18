@@ -1,10 +1,7 @@
 "use client"
 
-import React, { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
+import React from 'react';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 
 interface ActivityMetadataPanelProps {
   systemUUID?: string;
@@ -19,27 +16,6 @@ export function ActivityMetadataPanel({
   iatiIdentifier,
   className = ""
 }: ActivityMetadataPanelProps) {
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  const copyToClipboard = async (text: string, fieldName: string) => {
-    if (!text) return;
-    
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(fieldName);
-      toast.success(`${fieldName} copied to clipboard`);
-      
-      // Reset the copied state after 2 seconds
-      setTimeout(() => {
-        setCopiedField(null);
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to copy text: ', error);
-      toast.error('Failed to copy to clipboard');
-    }
-  };
-
-  // Don't render if no data is available
   if (!systemUUID && !activityPartnerID && !iatiIdentifier) {
     return null;
   }
@@ -47,110 +23,26 @@ export function ActivityMetadataPanel({
   return (
     <div className={`bg-muted border border-border rounded-lg p-4 space-y-3 ${className}`}>
       <h3 className="text-body font-medium text-foreground mb-3">Activity Identifiers</h3>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* System UUID */}
         {systemUUID && (
-          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="text-helper font-medium text-foreground mb-1">System UUID</div>
-                <div className="text-sm text-muted-foreground font-mono break-all" title={systemUUID}>
-                  {systemUUID}
-                </div>
-              </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      onClick={() => copyToClipboard(systemUUID, 'UUID')}
-                    >
-                      {copiedField === 'UUID' ? (
-                        <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
-                      ) : (
-                        <Copy className="h-3 w-3 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Copy UUID</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          <div className="bg-white rounded-md p-3 border border-border">
+            <div className="text-helper font-medium text-foreground mb-1">System UUID</div>
+            <CopyableIdBadge value={systemUUID} label="UUID" className="text-sm" />
           </div>
         )}
 
-        {/* Activity Partner ID */}
         {activityPartnerID && (
-          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="text-helper font-medium text-foreground mb-1">Activity Partner ID</div>
-                <div className="text-body text-muted-foreground break-all" title={activityPartnerID}>
-                  {activityPartnerID}
-                </div>
-              </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      onClick={() => copyToClipboard(activityPartnerID, 'Partner ID')}
-                    >
-                      {copiedField === 'Partner ID' ? (
-                        <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
-                      ) : (
-                        <Copy className="h-3 w-3 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Copy Partner ID</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          <div className="bg-white rounded-md p-3 border border-border">
+            <div className="text-helper font-medium text-foreground mb-1">Activity Partner ID</div>
+            <CopyableIdBadge value={activityPartnerID} label="Partner ID" className="text-body" />
           </div>
         )}
 
-        {/* IATI Identifier */}
         {iatiIdentifier && (
-          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="text-helper font-medium text-foreground mb-1">IATI Identifier</div>
-                <div className="text-body text-muted-foreground break-all" title={iatiIdentifier}>
-                  {iatiIdentifier}
-                </div>
-              </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      onClick={() => copyToClipboard(iatiIdentifier, 'IATI Identifier')}
-                    >
-                      {copiedField === 'IATI Identifier' ? (
-                        <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
-                      ) : (
-                        <Copy className="h-3 w-3 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Copy IATI Identifier</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          <div className="bg-white rounded-md p-3 border border-border">
+            <div className="text-helper font-medium text-foreground mb-1">IATI Identifier</div>
+            <CopyableIdBadge value={iatiIdentifier} label="IATI Identifier" className="text-body" />
           </div>
         )}
       </div>

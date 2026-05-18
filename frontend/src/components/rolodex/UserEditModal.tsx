@@ -37,8 +37,8 @@ const USER_ROLES = [
   { value: 'super_user', label: 'Administrator' },
   { value: 'government_partner_tier_1', label: 'Government Manager' },
   { value: 'government_partner_tier_2', label: 'Government Editor' },
-  { value: 'development_partner_tier_1', label: 'Partner Manager' },
-  { value: 'development_partner_tier_2', label: 'Partner Editor' },
+  { value: 'development_partner_tier_1', label: 'Development Partner Manager' },
+  { value: 'development_partner_tier_2', label: 'Development Partner Editor' },
   { value: 'orphan', label: 'Unassigned User' },
 ];
 
@@ -301,13 +301,13 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="organization">Organization</Label>
+                <Label htmlFor="organization">Organisation</Label>
                 <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select organization" />
+                    <SelectValue placeholder="Select organisation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No Organization</SelectItem>
+                    <SelectItem value="none">No Organisation</SelectItem>
                     {organizations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>
                         {org.name} {org.acronym && `(${org.acronym})`}
@@ -324,7 +324,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
             <div className="bg-muted p-4 rounded-md">
               <div className="text-body font-medium text-foreground mb-2">Current Assignment</div>
               <div className="text-body text-muted-foreground">
-                <strong>Organization:</strong> {selectedOrg.name} {selectedOrg.acronym && `(${selectedOrg.acronym})`}
+                <strong>Organisation:</strong> {selectedOrg.name} {selectedOrg.acronym && `(${selectedOrg.acronym})`}
               </div>
               <div className="text-body text-muted-foreground">
                 <strong>Role:</strong> {USER_ROLES.find(r => r.value === formData.role)?.label || formData.role}

@@ -119,7 +119,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
       return <Badge variant="secondary" className="text-helper">System</Badge>;
     }
     if (template.created_by_org_id) {
-      return <Badge variant="outline" className="text-helper">Organization</Badge>;
+      return <Badge variant="outline" className="text-helper">Organisation</Badge>;
     }
     return <Badge variant="outline" className="text-helper text-muted-foreground">Personal</Badge>;
   };
@@ -174,7 +174,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="organization">Organization</TabsTrigger>
+          <TabsTrigger value="organization">Organisation</TabsTrigger>
           <TabsTrigger value="personal">Personal</TabsTrigger>
         </TabsList>
 

@@ -674,9 +674,9 @@ export default function AnalyticsDashboardPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-card">
+      <div className="w-full bg-card">
         {/* Main Dashboard Content */}
-        <div className="mx-auto p-6">
+        <div className="w-full">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <div>
@@ -693,6 +693,35 @@ export default function AnalyticsDashboardPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Headline KPI tile (F3.1.b) — at-a-glance numbers for executives */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {kpiCards.slice(0, 4).map((kpi) => {
+              const Icon = kpi.icon;
+              return (
+                <Card key={kpi.title} className="border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
+                          {kpi.title}
+                        </p>
+                        <p className="text-2xl font-bold text-foreground mt-1 truncate">
+                          {kpi.value}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {kpi.description}
+                        </p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-muted shrink-0">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                 <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
@@ -746,7 +775,7 @@ export default function AnalyticsDashboardPage() {
                         title="External Development Partners Financial Overview"
                         shortDescription="External development partners ranked by budgets, planned & actual disbursements"
                         fullDescription="Complete ranking of external development partners by total budgets, planned disbursements, or actual disbursements. Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
-                        mathTooltip="Aggregates totals per partner from the chosen view (budgets, planned disbursements, commitments, or actual disbursements), credited to the provider organisation on each transaction. Period-spanning budgets and planned disbursements are allocated proportionally by overlap days within the selected year window. Organizations whose country is Myanmar are excluded from this chart so recipient-government ministries (e.g. MOALI) don't appear as funders."
+                        mathTooltip="Aggregates totals per partner from the chosen view (budgets, planned disbursements, commitments, or actual disbursements), credited to the provider organisation on each transaction. Period-spanning budgets and planned disbursements are allocated proportionally by overlap days within the selected year window. Organisations whose country is Myanmar are excluded from this chart so recipient-government ministries (e.g. MOALI) don't appear as funders."
                         className="w-full"
                         compactHeight={300}
                       >
@@ -795,7 +824,7 @@ export default function AnalyticsDashboardPage() {
                     <div>
                       <CompactChartCard
                         title="Coordination"
-                        shortDescription="Network visualization of organizations and their sector focus"
+                        shortDescription="Network visualization of organisations and their sector focus"
                         fullDescription={coordinationView === 'sectors'
                           ? "Who's working in each sector? Each circle represents a sector with partners shown as smaller circles."
                           : "What is each partner working on? Each circle represents a partner with sectors shown as smaller circles."}
@@ -1140,8 +1169,8 @@ export default function AnalyticsDashboardPage() {
                         </CompactChartCard>
                         <CompactChartCard
                           title="Executing Agencies"
-                          shortDescription="Organizations managing budgets on behalf of funders"
-                          fullDescription="Top organizations managing budgets on behalf of funders by commitments or disbursements."
+                          shortDescription="Organisations managing budgets on behalf of funders"
+                          fullDescription="Top organisations managing budgets on behalf of funders by commitments or disbursements."
                           mathTooltip="Sums the selected USD metric (commitments or disbursements) per organisation listed in the Extending/Accountable participating-org role across activities. Organisations are ranked descending and the top N are shown."
                           compactHeight={300}
                         >
@@ -1149,8 +1178,8 @@ export default function AnalyticsDashboardPage() {
                         </CompactChartCard>
                         <CompactChartCard
                           title="Implementing Agencies"
-                          shortDescription="Organizations with implementing role"
-                          fullDescription="Top organizations responsible for the physical delivery of assistance on the ground."
+                          shortDescription="Organisations with implementing role"
+                          fullDescription="Top organisations responsible for the physical delivery of assistance on the ground."
                           mathTooltip="Sums the selected USD metric (commitments or disbursements) per organisation listed in the Implementing participating-org role across activities. Organisations are ranked descending and the top N are shown."
                           compactHeight={300}
                         >
@@ -1235,8 +1264,8 @@ export default function AnalyticsDashboardPage() {
 
                         <ExpandableCard
                           className="bg-card border-border"
-                          title="Budget vs. Spending by Reporting Organization"
-                          description="Compare budget and spending across different reporting organizations"
+                          title="Budget vs. Spending by Reporting Organisation"
+                          description="Compare budget and spending across different reporting organisations"
                           mathTooltip="For each reporting organisation (the publisher of the IATI activity), sums the activity's budgets and actual spending (disbursements + expenditures) in USD. Lets you compare which publishers have the largest gap between planned and actual."
                           exportData={reportingOrgData}
                         >
@@ -1274,8 +1303,8 @@ export default function AnalyticsDashboardPage() {
 
                         <ExpandableCard
                           className="bg-card border-border"
-                          title="Budget vs. Spending by Organization Type"
-                          description="Analyze budget and spending patterns by organization type (Government, NGO, Multilateral, etc.)"
+                          title="Budget vs. Spending by Organisation Type"
+                          description="Analyze budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
                           mathTooltip="Groups budgets and actual spending by the IATI organisation type of the providing organisation (Government, NGO, Multilateral, Foundation, etc.). All values are USD-converted and aggregated per type."
                           exportData={orgTypeData}
                         >
@@ -1308,12 +1337,12 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Aid Networks</h2>
-                      <p className="text-muted-foreground mb-4">Relationships and roles between organizations across the aid system</p>
+                      <p className="text-muted-foreground mb-4">Relationships and roles between organisations across the aid system</p>
                       <div className="space-y-6">
                         <div>
-                          <h2 className="text-2xl font-bold text-foreground mb-2">Participating Organizations Flow</h2>
+                          <h2 className="text-2xl font-bold text-foreground mb-2">Participating Organisations Flow</h2>
                           <p className="text-muted-foreground mb-4">
-                            4-tier Sankey visualization showing the flow of organizations across IATI participating-org roles:
+                            4-tier Sankey visualization showing the flow of organisations across IATI participating-org roles:
                             Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
                           </p>
                           <ParticipatingOrgsSankey refreshKey={refreshKey} />
@@ -1321,8 +1350,8 @@ export default function AnalyticsDashboardPage() {
 
                         <ChartGrid>
                           <CompactChartCard
-                            title="Organizational Positioning Map"
-                            shortDescription="Organizations positioned by humanitarian/development focus and funder/implementer role"
+                            title="Organisational Positioning Map"
+                            shortDescription="Organisations positioned by humanitarian/development focus and funder/implementer role"
                             mathTooltip="For each organisation, computes two ratios from its USD transactions: humanitarian share (humanitarian-flagged dollars / total dollars) plots on one axis, and funder-vs-implementer balance (provider-side dollars / total participating-org dollars) plots on the other. Bubble size scales with the organisation's total financial volume."
                             compactHeight={350}
                           >
@@ -1334,7 +1363,7 @@ export default function AnalyticsDashboardPage() {
 
                           <CompactChartCard
                             title="Aid Ecosystem Solar System"
-                            shortDescription="Organizations ranked by financial gravity and arranged in concentric rings"
+                            shortDescription="Organisations ranked by financial gravity and arranged in concentric rings"
                             mathTooltip="Ranks organisations by total USD financial volume across all transactions and participating-org roles. Largest organisations sit in the inner ring; smaller ones radiate outward. Distance from the centre reflects relative financial scale."
                             compactHeight={350}
                           >
@@ -1354,7 +1383,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Funding by Development Partner"
                           shortDescription="Top 5 development partners by contribution"
-                          fullDescription="Top 5 individual development partner organizations by financial contribution, with remaining development partners aggregated."
+                          fullDescription="Top 5 individual development partner organisations by financial contribution, with remaining development partners aggregated."
                           mathTooltip="Sums USD value of the selected metric (commitments or disbursements) per individual provider organisation. Top 5 partners are shown individually; the rest are rolled into 'Others'."
                           compactHeight={300}
                         >

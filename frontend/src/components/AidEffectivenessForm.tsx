@@ -1532,7 +1532,14 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Aid Effectiveness</h2>
+              <h2 className="text-lg font-bold text-white flex items-center gap-1">
+                Aid Effectiveness
+                <HelpTextTooltip
+                  content="GPEDC = Global Partnership for Effective Development Co-operation. These questions measure how well aid follows GPEDC principles: country ownership, use of country systems, transparency, mutual accountability, and inclusive partnerships."
+                  className="text-white/70 hover:text-white"
+                  contentClassName="max-w-sm"
+                />
+              </h2>
               <p className="text-helper font-bold text-white/70">GPEDC Monitoring Framework</p>
             </div>
           </div>

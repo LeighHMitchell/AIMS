@@ -9,6 +9,7 @@ import { Plus, Pencil, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ParticipatingOrgModal, ParticipatingOrgData } from '@/components/modals/ParticipatingOrgModal';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { useParticipatingOrganizations } from '@/hooks/use-participating-organizations';
 import { getSectionHelpText } from '@/components/activities/groups/SectionHeader';
 import { toast } from 'sonner';
@@ -106,14 +107,14 @@ export default function OrganisationsSection({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Failed to update organization');
+          throw new Error(error.error || 'Failed to update organisation');
         }
 
-        toast.success('Organization updated successfully');
+        toast.success('Organisation updated successfully');
       } else {
         // Add new organization
         await addParticipatingOrganization(data.organization_id, data.role_type, data);
-        toast.success('Organization added successfully');
+        toast.success('Organisation added successfully');
       }
       
       // Refresh the list
@@ -127,19 +128,19 @@ export default function OrganisationsSection({
   };
 
   const handleDelete = async (org: any) => {
-    if (!(await confirm({ title: 'Remove organisation?', description: `Are you sure you want to remove ${org.organization?.name || org.narrative || 'this organization'}?`, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Remove organisation?', description: `Are you sure you want to remove ${org.organization?.name || org.narrative || 'this organisation'}?`, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
       return;
     }
 
     // Validate required data
     if (!activityId) {
-      toast.error('Activity ID is missing. Cannot delete organization.');
+      toast.error('Activity ID is missing. Cannot delete organisation.');
       console.error('[Delete] Missing activityId');
       return;
     }
 
     if (!org.id) {
-      toast.error('Organization ID is missing. Cannot delete organization.');
+      toast.error('Organisation ID is missing. Cannot delete organisation.');
       console.error('[Delete] Missing org.id. Org data:', org);
       return;
     }
@@ -154,16 +155,16 @@ export default function OrganisationsSection({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('[Delete] Error response:', errorData);
-        throw new Error(errorData.error || `Failed to remove organization (${response.status})`);
+        throw new Error(errorData.error || `Failed to remove organisation (${response.status})`);
       }
 
-      toast('Organization removed');
+      toast('Organisation removed');
       
       // Refresh the list
       await refetch();
     } catch (error) {
       console.error('[Delete] Error removing organization:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to remove organization');
+      toast.error(error instanceof Error ? error.message : 'Failed to remove organisation');
     }
   };
 
@@ -384,7 +385,7 @@ export default function OrganisationsSection({
                                   >
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
-                                     'Unknown Organization'}
+                                     'Unknown Organisation'}
                                     {participatingOrg.organization?.acronym &&
                                      ` (${participatingOrg.organization.acronym})`}
                                   </Link>
@@ -392,17 +393,18 @@ export default function OrganisationsSection({
                                   <span className="text-body">
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
-                                     'Unknown Organization'}
+                                     'Unknown Organisation'}
                                     {participatingOrg.organization?.acronym &&
                                      ` (${participatingOrg.organization.acronym})`}
                                   </span>
                                 )}
                               {' '}
-                              {(participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id) && (
-                                <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded whitespace-nowrap inline-block align-middle">
-                                  {participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
-                                </span>
-                              )}
+                              <CopyableIdBadge
+                                value={participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
+                                label="Org Ref"
+                                emptyFallback={null}
+                              />
+                              {' '}
                               {' '}
                               {participatingOrg.id && (
                                 <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] inline-block align-middle" />

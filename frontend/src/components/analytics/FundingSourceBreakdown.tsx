@@ -123,7 +123,7 @@ export function FundingSourceBreakdown({
 
         transactions?.forEach((transaction: any) => {
           const orgId = transaction.provider_org_id
-          const orgName = transaction.organizations?.name || 'Unknown Organization'
+          const orgName = transaction.organizations?.name || 'Unknown Organisation'
           const value = parseFloat(String(transaction.value)) || 0
 
           if (!sourceMap.has(orgId)) {
@@ -384,7 +384,7 @@ export function FundingSourceBreakdown({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No funding source data available</p>
-              <p className="text-helper mt-2">Add participating organizations or transactions to see funding breakdown</p>
+              <p className="text-helper mt-2">Add participating organisations or transactions to see funding breakdown</p>
             </div>
           </div>
         )}

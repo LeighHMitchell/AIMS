@@ -421,7 +421,7 @@ export default function TransparencyIndexPage() {
               <div className="p-8 text-center text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="font-medium">No development partner data available</p>
-                <p className="text-body mt-1">Organizations will appear here once they have activities with transparency scores.</p>
+                <p className="text-body mt-1">Organisations will appear here once they have activities with transparency scores.</p>
                 <p className="text-helper mt-2 text-muted-foreground">
                   Tip: Activities need a reporting_org_id to appear in donor rankings.
                 </p>
@@ -430,7 +430,7 @@ export default function TransparencyIndexPage() {
               <div className="divide-y divide-border">
                 <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted text-section-label font-semibold text-muted-foreground uppercase">
                   <div className="col-span-1">Rank</div>
-                  <div className="col-span-4">Organization</div>
+                  <div className="col-span-4">Organisation</div>
                   <div className="col-span-2 text-center">Projects</div>
                   <div className="col-span-2 text-center">Avg Score</div>
                   <div className="col-span-2 text-center">Good Standing</div>

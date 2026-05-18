@@ -389,7 +389,7 @@ const getOrganizationTypeLabel = (code: string): { code: string, name: string } 
     '80': 'Academic, Training and Research',
     '90': 'Other'
   };
-  return { code, name: typeMap[code] || 'Unknown organization type' };
+  return { code, name: typeMap[code] || 'Unknown organisation type' };
 };
 
 const getOrganizationRoleLabel = (code: string): { code: string, name: string } | null => {
@@ -1267,7 +1267,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                             <div className="text-helper text-foreground leading-relaxed break-words overflow-wrap-anywhere min-w-0 w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                               {(() => {
                                 const description = activity.description || 
-                                  `This activity is reported by ${activity.reportingOrg}${activity.reportingOrgRef ? ` (${activity.reportingOrgRef})` : ''}. The reporting organization is responsible for publishing this activity data to the IATI Registry and maintaining its accuracy. This organization typically provides funding or has oversight responsibility for the activity.`;
+                                  `This activity is reported by ${activity.reportingOrg}${activity.reportingOrgRef ? ` (${activity.reportingOrgRef})` : ''}. The reporting organisation is responsible for publishing this activity data to the IATI Registry and maintaining its accuracy. This organisation typically provides funding or has oversight responsibility for the activity.`;
                                 
                                 if (!description || description.trim() === '') {
                                   return null;
@@ -1347,7 +1347,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                                   <span className="text-destructive text-helper cursor-help">⚠</span>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                  <p className="text-helper">Invalid IATI organization identifier format</p>
+                                                  <p className="text-helper">Invalid IATI organisation identifier format</p>
                                                 </TooltipContent>
                                               </Tooltip>
                                             </TooltipProvider>
@@ -1908,7 +1908,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               id: matchingOrg.id,
               iati_org_id: matchingOrg.iati_org_id
             });
-            toast.success('Matching organization found', {
+            toast.success('Matching organisation found', {
               description: `${matchingOrg.name} has been automatically selected.`
             });
           }
@@ -2173,7 +2173,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           selected: false,
           hasConflict: false,
           tab: 'transactions',
-          description: 'Organization providing the funds'
+          description: 'Organisation providing the funds'
         });
       }
       
@@ -2186,7 +2186,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           selected: false,
           hasConflict: false,
           tab: 'transactions',
-          description: 'Organization receiving the funds'
+          description: 'Organisation receiving the funds'
         });
       }
       
@@ -3651,7 +3651,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           selected: isFieldAllowedByPreferences('iati-activity[@hierarchy]') && getDefaultSelectedFromPreferences('iati-activity[@hierarchy]', hierarchyShouldSelect),
           hasConflict: hasConflict(currentHierarchy, parsedActivity.hierarchy),
           tab: 'other',
-          description: 'Organizational level within project structure (1=top-level, higher=sub-components)'
+          description: 'Organisational level within project structure (1=top-level, higher=sub-components)'
         };
         fields.push(hierarchyField);
         console.log('[IATI Import] ✅ Successfully added hierarchy field to fields array:', {
@@ -3690,7 +3690,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             selected: false, // Don't select by default since there's nothing to import
             hasConflict: false,
             tab: 'other',
-            description: 'Organizational level within project structure (current value shown, no import value available)'
+            description: 'Organisational level within project structure (current value shown, no import value available)'
           });
 
         }
@@ -5616,7 +5616,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
         parsedActivity.participatingOrgs.forEach((org: any, index: number) => {
-          const orgName = org.narrative || org.ref || 'Unknown Organization';
+          const orgName = org.narrative || org.ref || 'Unknown Organisation';
           const role = org.role || 'Unknown Role';
           
           // Try to find matching current participating organization
@@ -6255,7 +6255,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               }
             } catch (error) {
               console.error('[IATI Import] Failed to fetch organizations:', error);
-              toast.error('Couldn’t load organizations. Please try again.. Please try again in a moment.');
+              toast.error('Couldn’t load organisations. Please try again.. Please try again in a moment.');
             }
             
             return; // Exit here - reporting org selection modal will handle the rest
@@ -6717,8 +6717,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
         if (!normalizedXmlOrgRef) {
           console.warn('[External Publisher] ⚠️  No reporting org ref found in XML data');
-          toast.warning('No reporting organization reference found in XML', {
-            description: 'Please select an organization manually.'
+          toast.warning('No reporting organisation reference found in XML', {
+            description: 'Please select an organisation manually.'
           });
         }
         
@@ -6817,8 +6817,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         } else {
           setSelectedReportingOrgId(null);
           // Show a helpful message to the user
-          toast.info('No matching organization found', {
-            description: `Could not find an organization matching "${xmlOrgRef}". Please select one manually.`
+          toast.info('No matching organisation found', {
+            description: `Could not find an organisation matching "${xmlOrgRef}". Please select one manually.`
           });
         }
         
@@ -6829,7 +6829,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }, 100);
       } catch (error) {
         console.error('[External Publisher] Failed to fetch organizations:', error);
-        toast.error('Couldn’t load organizations. Please try again.. Please try again in a moment.');
+        toast.error('Couldn’t load organisations. Please try again.. Please try again in a moment.');
         // Fall back to showing field selection without modal
         setImportStatus({ stage: 'previewing', progress: 100 });
       }
@@ -9430,8 +9430,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (pdOrgsLinked > 0) {
                 orgParts.push(`${pdOrgsLinked} existing org${pdOrgsLinked !== 1 ? 's' : ''} linked`);
               }
-              toast.info(`Organizations: ${orgParts.join(', ')}`, {
-                description: pdOrgsCreated > 0 ? 'Auto-created organizations can be managed in the Organizations section.' : undefined,
+              toast.info(`Organisations: ${orgParts.join(', ')}`, {
+                description: pdOrgsCreated > 0 ? 'Auto-created organisations can be managed in the Organisations section.' : undefined,
                 duration: 7000
               });
             }
@@ -10335,8 +10335,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (orgsLinked > 0) {
                 orgParts.push(`${orgsLinked} existing org${orgsLinked !== 1 ? 's' : ''} linked`);
               }
-              toast.info(`Organizations: ${orgParts.join(', ')}`, {
-                description: orgsCreated > 0 ? 'Auto-created organizations can be managed in the Organizations section.' : undefined,
+              toast.info(`Organisations: ${orgParts.join(', ')}`, {
+                description: orgsCreated > 0 ? 'Auto-created organisations can be managed in the Organisations section.' : undefined,
                 duration: 7000
               });
             }
@@ -11674,7 +11674,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 )}
                 {field.currentValue.organization && (
                   <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                    <span className="text-helper text-muted-foreground">Organization:</span>
+                    <span className="text-helper text-muted-foreground">Organisation:</span>
                     <span className="text-helper text-muted-foreground truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
@@ -11743,7 +11743,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                  <span className="text-body font-medium text-foreground">Organization</span>
+                  <span className="text-body font-medium text-foreground">Organisation</span>
                 </div>
                 {field.currentValue.name && (
                   <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
@@ -11896,7 +11896,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               )}
               {field.importValue.organization && (
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                  <span className="text-helper text-muted-foreground">Organization:</span>
+                  <span className="text-helper text-muted-foreground">Organisation:</span>
                   <span className="text-helper text-muted-foreground truncate max-w-32">{field.importValue.organization}</span>
                 </div>
               )}
@@ -11962,7 +11962,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                <span className="text-body font-medium text-foreground">Organization</span>
+                <span className="text-body font-medium text-foreground">Organisation</span>
               </div>
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-helper text-muted-foreground">Name:</span>
@@ -12707,7 +12707,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <Label htmlFor="xml-snippet" className="text-body font-medium">Paste IATI XML Snippet</Label>
                   <Textarea
                     id="xml-snippet"
-                    placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
+                    placeholder="Paste any IATI XML snippet here (transactions, organisations, locations, sectors, etc.)..."
                     value={snippetContent}
                     onChange={(e) => setSnippetContent(e.target.value)}
                     className="font-mono text-sm min-h-[300px] mt-2"
@@ -12760,7 +12760,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     <p className="font-medium mb-2">Snippet Import supports:</p>
                     <ul className="list-disc list-inside space-y-1 text-body">
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
-                      <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                      <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organisations</li>
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
                       <li><code className="text-helper bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
@@ -13145,7 +13145,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       )}
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-1">
-                      {parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref || 'Unknown Organization'}
+                      {parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref || 'Unknown Organisation'}
                     </h3>
                     {parsedActivity.reportingOrg.ref && (
                       <div className="flex items-center gap-2 mt-2">
@@ -13738,7 +13738,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       
                       if (matchingOrg) {
                         setSelectedReportingOrgId(matchingOrg.id);
-                        toast.success('Matching organization found and selected', {
+                        toast.success('Matching organisation found and selected', {
                           description: `${matchingOrg.name} has been pre-selected. Please confirm to continue.`
                         });
                         // Don't close modal yet - let user see the selection
@@ -13750,8 +13750,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   }
                   
                   // If still no match found, warn user but allow them to proceed
-                  toast.warning('No matching organization found', {
-                    description: 'You can proceed without selecting an organization, or cancel to select one manually.'
+                  toast.warning('No matching organisation found', {
+                    description: 'You can proceed without selecting an organisation, or cancel to select one manually.'
                   });
                 }
                 

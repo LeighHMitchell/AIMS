@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 // GET - Fetch transaction documents
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const transactionId = searchParams.get('transactionId');
     const activityId = searchParams.get('activityId');
 
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
+    // Acting user comes from requireAuth(); enforce it explicitly.
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     let query = supabase
       .from('transaction_documents')

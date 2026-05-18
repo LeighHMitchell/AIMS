@@ -103,13 +103,13 @@ export function OrgTypeMappingModal({
     setIsUpdating(true)
     try {
       await onSave(organization.id, selectedType)
-      toast.success("Organization type updated", {
+      toast.success("Organisation type updated", {
         description: `${organization.name} is now "${getOrgTypeLabel(selectedType)}"`,
       })
       onClose()
     } catch (error) {
       console.error("[OrgTypeMappingModal] Error updating organization:", error)
-      toast.error("Failed to update organization type", {
+      toast.error("Failed to update organisation type", {
         description: error instanceof Error ? error.message : "Please try again",
       })
     } finally {
@@ -137,10 +137,10 @@ export function OrgTypeMappingModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5" />
-            Update Organization Type
+            Update Organisation Type
           </DialogTitle>
           <DialogDescription>
-            This organization uses a legacy IATI type code that has been replaced with more specific options.
+            This organisation uses a legacy IATI type code that has been replaced with more specific options.
           </DialogDescription>
         </DialogHeader>
 
@@ -179,7 +179,7 @@ export function OrgTypeMappingModal({
 
           {/* New Type Selection */}
           <div className="space-y-3">
-            <Label className="text-body font-medium">Select new organization type</Label>
+            <Label className="text-body font-medium">Select new organisation type</Label>
             
             <RadioGroup
               value={selectedType}

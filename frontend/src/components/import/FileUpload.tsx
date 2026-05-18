@@ -15,7 +15,7 @@ interface FileUploadProps {
 
 export function FileUpload({ 
   onFileSelect, 
-  accept = '.csv,.xls,.xlsx',
+  accept = '.csv',
   isLoading = false 
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -25,12 +25,12 @@ export function FileUpload({
     setError(null);
     
     // Validate file type
-    const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const validTypes = ['text/csv', 'application/csv'];
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const validExtensions = ['csv', 'xls', 'xlsx'];
-    
+    const validExtensions = ['csv'];
+
     if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension || '')) {
-      setError('Please upload a CSV or Excel file (.csv, .xls, .xlsx)');
+      setError('Please upload a CSV file (.csv). If your data is in Excel, use File → Save As → CSV first.');
       return;
     }
     
@@ -90,13 +90,13 @@ export function FileUpload({
           <div>
             <h3 className="font-semibold text-lg">Upload your file</h3>
             <p className="text-body text-muted-foreground mt-1">
-              Drag and drop your CSV or Excel file here, or click to browse
+              Drag and drop your CSV file here, or click to browse
             </p>
           </div>
           
           <div className="flex items-center gap-2 text-helper text-muted-foreground">
             <Upload className="h-4 w-4" />
-            <span>Supported formats: CSV, XLS, XLSX (Max 10MB)</span>
+            <span>Supported format: CSV (Max 10MB)</span>
           </div>
           
           <label htmlFor="file-upload">

@@ -763,12 +763,12 @@ export function EnhancedActivityComments({
                         <div className="absolute top-full left-0 right-0 z-50 mt-1">
                           <Command className="border rounded-lg shadow-lg bg-white">
                             <CommandInput
-                              placeholder="Search users and organizations..."
+                              placeholder="Search users and organisations..."
                               value={mentionSearch}
                               onChange={(e) => setMentionSearch(e.target.value)}
                             />
                             <CommandList>
-                              <CommandEmpty>No users or organizations found.</CommandEmpty>
+                              <CommandEmpty>No users or organisations found.</CommandEmpty>
                               
                               {availableUsers.length > 0 && (
                                 <CommandGroup>

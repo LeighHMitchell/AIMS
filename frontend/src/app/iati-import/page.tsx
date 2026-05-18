@@ -881,13 +881,13 @@ export default function IATIImportPage() {
         }
       }))
       
-      toast.success(`Imported ${result.organizationIds?.length || 0} organizations`)
+      toast.success(`Imported ${result.organizationIds?.length || 0} organisations`)
       
       // Move to activities step
       setStep('activities')
     } catch (error) {
       console.error('Import error:', error)
-      toast.error('Failed to import organizations')
+      toast.error('Failed to import organisations')
       setImportState(prev => ({
         ...prev,
         organizations: {
@@ -1211,7 +1211,7 @@ export default function IATIImportPage() {
                 { key: 'upload', label: 'Upload', icon: Upload },
                 { key: 'parse', label: 'Parse', icon: FileCode },
                 { key: 'summary', label: 'Summary', icon: Database },
-                { key: 'organizations', label: 'Organizations', icon: Building2 },
+                { key: 'organizations', label: 'Organisations', icon: Building2 },
                 { key: 'activities', label: 'Activities', icon: Activity },
                 { key: 'transactions', label: 'Transactions', icon: CreditCard },
                 { key: 'complete', label: 'Complete', icon: CheckCircle2 }
@@ -1315,8 +1315,8 @@ export default function IATIImportPage() {
                         <AlertDescription>
                           The import process will check for existing data and guide you through importing:
                           <ol className="list-decimal list-inside mt-2 space-y-1">
-                            <li>Organizations first (to establish references)</li>
-                            <li>Activities second (linked to organizations)</li>
+                            <li>Organisations first (to establish references)</li>
+                            <li>Activities second (linked to organisations)</li>
                             <li>Transactions last (linked to activities)</li>
                           </ol>
                         </AlertDescription>
@@ -1447,7 +1447,7 @@ export default function IATIImportPage() {
                       <div className="space-y-3">
                         <label className="text-body font-medium">Paste IATI XML Snippet</label>
                         <Textarea
-                          placeholder="Paste any IATI XML snippet here (transactions, organizations, locations, sectors, etc.)..."
+                          placeholder="Paste any IATI XML snippet here (transactions, organisations, locations, sectors, etc.)..."
                           value={snippetContent}
                           onChange={(e) => setSnippetContent(e.target.value)}
                           className="font-mono text-sm min-h-[300px]"
@@ -1479,7 +1479,7 @@ export default function IATIImportPage() {
                           <p className="font-medium mb-2">Snippet Import supports:</p>
                           <ul className="list-disc list-inside space-y-1 text-body">
                             <li><code className="text-helper bg-muted px-1 rounded">&lt;transaction&gt;</code> - Individual or multiple transactions</li>
-                            <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                            <li><code className="text-helper bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organisations</li>
                             <li><code className="text-helper bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
                             <li><code className="text-helper bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
                             <li><code className="text-helper bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-helper bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
@@ -1541,7 +1541,7 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <Building2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                           <p className="text-3xl font-bold">{parsedData.organizations.length}</p>
-                          <p className="text-body text-muted-foreground">Organizations</p>
+                          <p className="text-body text-muted-foreground">Organisations</p>
                           <div className="mt-2 text-helper text-muted-foreground">
                             <p>{parsedData.organizations.filter(o => o.matched).length} existing</p>
                             <p>{parsedData.organizations.filter(o => !o.matched).length} new</p>
@@ -1586,10 +1586,10 @@ export default function IATIImportPage() {
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
                       <AlertDescription className="text-yellow-800">
                         <p className="font-medium mb-2">Limited data found</p>
-                        <p>We found activities but no organizations or transactions. This might happen if:</p>
+                        <p>We found activities but no organisations or transactions. This might happen if:</p>
                         <ul className="list-disc list-inside mt-2 space-y-1 text-body">
                           <li>The XML file doesn't contain complete IATI data</li>
-                          <li>Organizations are not properly tagged with ref attributes</li>
+                          <li>Organisations are not properly tagged with ref attributes</li>
                           <li>Transactions are missing or in a different format</li>
                         </ul>
                         <p className="mt-2">Check the browser console for detailed parsing logs.</p>
@@ -1649,7 +1649,7 @@ export default function IATIImportPage() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-blue-600">{parsedData.organizations.length}</p>
-                        <p className="text-body text-muted-foreground">Organizations</p>
+                        <p className="text-body text-muted-foreground">Organisations</p>
                         <p className="text-helper text-muted-foreground mt-1">
                           {parsedData.organizations.filter(o => !o.matched).length} new
                         </p>
@@ -2056,7 +2056,7 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-body text-muted-foreground">Organizations</p>
+                              <p className="text-body text-muted-foreground">Organisations</p>
                               <p className="text-2xl font-bold">{importState.organizations.imported.length}</p>
                             </div>
                           </div>

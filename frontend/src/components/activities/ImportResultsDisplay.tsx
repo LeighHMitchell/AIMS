@@ -11,8 +11,6 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
 
-  if (!importSummary) return null;
-
   const toggleRow = (rowId: string) => {
     const newExpanded = new Set(expandedRows);
     if (newExpanded.has(rowId)) {
@@ -52,6 +50,9 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
       setInitialized(true);
     }
   }, [importSummary, initialized]);
+
+  // Guard AFTER hooks so hook order stays stable (Rules of Hooks)
+  if (!importSummary) return null;
 
   const getSectionStatus = (section: any) => {
     if (!section) return 'empty';
@@ -326,7 +327,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
     ['conditions', 'Conditions', importSummary.conditions],
     ['humanitarianScopes', 'Humanitarian Scopes', importSummary.humanitarianScopes],
     ['contacts', 'Contacts', importSummary.contacts],
-    ['participatingOrgs', 'Participating Organizations', importSummary.participatingOrgs],
+    ['participatingOrgs', 'Participating Organisations', importSummary.participatingOrgs],
     ['otherIdentifiers', 'Other Identifiers', importSummary.otherIdentifiers],
     ['relatedActivities', 'Related Activities', importSummary.relatedActivities],
     ['fss', 'Forward Spending Survey (FSS)', importSummary.fss],

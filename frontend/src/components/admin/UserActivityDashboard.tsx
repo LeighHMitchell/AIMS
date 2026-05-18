@@ -377,7 +377,7 @@ export function UserActivityDashboard() {
                         <div className="flex items-center gap-1">User {getSortIcon('user', engagementSortField, engagementSortDir)}</div>
                       </TableHead>
                       <TableHead className={sortableHeaderClasses} onClick={() => handleEngagementSort('organization')}>
-                        <div className="flex items-center gap-1">Organization {getSortIcon('organization', engagementSortField, engagementSortDir)}</div>
+                        <div className="flex items-center gap-1">Organisation {getSortIcon('organization', engagementSortField, engagementSortDir)}</div>
                       </TableHead>
                       <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleEngagementSort('actions')}>
                         <div className="flex items-center justify-end gap-1">Actions {getSortIcon('actions', engagementSortField, engagementSortDir)}</div>
@@ -564,7 +564,7 @@ export function UserActivityDashboard() {
                           <div className="flex items-center gap-1">Role {getSortIcon('role', inactiveSortField, inactiveSortDir)}</div>
                         </TableHead>
                         <TableHead className={sortableHeaderClasses} onClick={() => handleInactiveSort('organization')}>
-                          <div className="flex items-center gap-1">Organization {getSortIcon('organization', inactiveSortField, inactiveSortDir)}</div>
+                          <div className="flex items-center gap-1">Organisation {getSortIcon('organization', inactiveSortField, inactiveSortDir)}</div>
                         </TableHead>
                         <TableHead className={sortableHeaderClasses} onClick={() => handleInactiveSort('lastActivity')}>
                           <div className="flex items-center gap-1">Last Activity {getSortIcon('lastActivity', inactiveSortField, inactiveSortDir)}</div>

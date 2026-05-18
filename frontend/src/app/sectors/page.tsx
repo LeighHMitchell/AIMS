@@ -176,8 +176,8 @@ export default function SectorsListingPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="w-full p-6 space-y-6">
+        <div className="w-full">
+          <div className="w-full space-y-6">
             <PageHeaderSkeleton />
             <StatsRowSkeleton tiles={3} />
             <div className="space-y-2">
@@ -194,8 +194,8 @@ export default function SectorsListingPage() {
   if (error || !data) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="w-full p-6">
+        <div className="w-full">
+          <div className="w-full">
             <Card>
               <CardContent className="p-6 text-center">
                 <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -211,8 +211,8 @@ export default function SectorsListingPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen">
-        <div className="w-full p-6">
+      <div className="w-full">
+        <div className="w-full">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <div>
@@ -353,13 +353,15 @@ export default function SectorsListingPage() {
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
-                    <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{group.code}</code>
-                    <Link
-                      href={`/sectors/${group.code}`}
-                      className="font-semibold text-foreground text-body flex-1 text-left hover:text-blue-600"
-                    >
-                      {group.name}
-                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{group.code}</code>
+                      <Link
+                        href={`/sectors/${group.code}`}
+                        className="font-semibold text-foreground text-body hover:text-blue-600"
+                      >
+                        {group.name}
+                      </Link>
+                    </div>
                     <div className="w-24 text-right flex-shrink-0">
                       {group.activityCount > 0 && (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -397,14 +399,16 @@ export default function SectorsListingPage() {
                                   <div className="w-3.5" />
                                 )}
                               </div>
-                              <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{cat.code}</code>
-                              <Link
-                                href={`/sectors/${cat.code}`}
-                                onClick={e => e.stopPropagation()}
-                                className="font-medium text-foreground text-body flex-1 text-left hover:text-blue-600"
-                              >
-                                {cat.name}
-                              </Link>
+                              <div className="flex-1 min-w-0">
+                                <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{cat.code}</code>
+                                <Link
+                                  href={`/sectors/${cat.code}`}
+                                  onClick={e => e.stopPropagation()}
+                                  className="font-medium text-foreground text-body hover:text-blue-600"
+                                >
+                                  {cat.name}
+                                </Link>
+                              </div>
                               <div className="w-24 text-right flex-shrink-0">
                                 {cat.activityCount > 0 && (
                                   <span className="text-helper text-muted-foreground">{cat.activityCount}</span>
@@ -427,8 +431,10 @@ export default function SectorsListingPage() {
                                     className="flex items-center gap-3 px-3 py-2 pl-16 border-t border-border/30 hover:bg-muted/50 transition-colors"
                                   >
                                     <div className="w-4 flex-shrink-0" />
-                                    <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{sector.code}</code>
-                                    <span className="text-body text-muted-foreground flex-1">{sector.name}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{sector.code}</code>
+                                      <span className="text-body text-muted-foreground">{sector.name}</span>
+                                    </div>
                                     <div className="w-24 text-right flex-shrink-0">
                                       {sector.activityCount > 0 && (
                                         <span className="text-[10px] text-muted-foreground">{sector.activityCount}</span>

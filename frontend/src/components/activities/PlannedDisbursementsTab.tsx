@@ -76,6 +76,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
 import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { exportToCSV } from '@/lib/exports';
 import {
   exportPlannedDisbursementsCsv,
@@ -245,12 +246,6 @@ export default function PlannedDisbursementsTab({
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Click-to-copy for Planned Disbursement ID column
-  const copyPdId = (value: string) => {
-    navigator.clipboard.writeText(value);
-    toast.success('Planned Disbursement ID copied');
-  };
-
   // Filter state — empty array means "all". Codes are IATI numeric strings ('1' = Original, '2' = Revised).
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
@@ -266,7 +261,7 @@ export default function PlannedDisbursementsTab({
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update organization type');
+      throw new Error('Failed to update organisation type');
     }
   };
 
@@ -1770,22 +1765,7 @@ export default function PlannedDisbursementsTab({
                           )}
                           {/* Planned Disbursement ID */}
                           <TableCell className="py-3 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                            {(disbursement as any).auto_ref ? (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  copyPdId((disbursement as any).auto_ref);
-                                }}
-                                title="Click to copy"
-                                className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
-                              >
-                                <span>{(disbursement as any).auto_ref}</span>
-                              </button>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                            <CopyableIdBadge value={(disbursement as any).auto_ref} label="Planned Disbursement ID" />
                           </TableCell>
                           {/* Period */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">

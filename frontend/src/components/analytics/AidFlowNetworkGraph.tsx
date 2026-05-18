@@ -413,7 +413,7 @@ export default function AidFlowNetworkGraph({
       <div className="absolute top-2 left-2 z-10 bg-white/90 backdrop-blur p-3 rounded-lg border">
         <div className="flex items-center gap-2 mb-2">
           <Network className="h-4 w-4" />
-          <span className="text-body font-medium">Organization Types</span>
+          <span className="text-body font-medium">Organisation Types</span>
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">

@@ -47,7 +47,7 @@ export function NormalizedOrgRef({
             <span className="text-destructive text-helper cursor-help">⚠</span>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-helper">Invalid IATI organization identifier format</p>
+            <p className="text-helper">Invalid IATI organisation identifier format</p>
           </TooltipContent>
         </Tooltip>
       )}

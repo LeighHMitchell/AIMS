@@ -8,7 +8,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -109,7 +109,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -121,8 +121,9 @@ export async function POST(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
+    // Acting user comes from requireAuth(); enforce it explicitly so the
+    // permission checks and `uploaded_by` attribution below use the real user.
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Validate required fields
     if (!body.url || !body.format || !body.title || !body.categoryCode) {
@@ -258,7 +259,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -270,8 +271,9 @@ export async function PUT(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
+    // Acting user comes from requireAuth(); enforce it explicitly so the
+    // permission checks and `uploaded_by` attribution below use the real user.
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (!body.documentId) {
       return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
@@ -414,7 +416,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -431,8 +433,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
     }
 
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
+    // Acting user comes from requireAuth(); enforce it explicitly so the
+    // permission checks and `uploaded_by` attribution below use the real user.
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Check if document exists and user has permission
     const { data: existingDoc, error: fetchError } = await supabase

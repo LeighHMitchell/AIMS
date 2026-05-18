@@ -68,6 +68,11 @@ interface ProjectLocation {
     organization_name?: string
     organization_acronym?: string
   } | null
+  // Field-report signals consumed by the map pin renderer.
+  field_report_count?: number
+  fieldReportCount?: number
+  field_report_photo_count?: number
+  fieldReportPhotoCount?: number
 }
 
 interface RegionDetail {
@@ -114,6 +119,29 @@ export function OrganizationLocationsSection({
   // User-driven filters above the map. Empty arrays = no filter (show all).
   const [selectedStates, setSelectedStates] = useState<string[]>([])
   const [selectedActivities, setSelectedActivities] = useState<string[]>([])
+
+  // Click-thumbnail-in-table → fly the map camera to the pin and open that
+  // pin's popup. No page-scroll: the user can still see the result if the
+  // map is off-screen (e.g. an overview popup that briefly draws attention),
+  // and not yanking the viewport keeps the table row they just clicked in
+  // sight. Mirrors the activity-profile locations tab.
+  const [focusedLocationId, setFocusedLocationId] = useState<string | null>(null)
+  const mapInstanceRef = React.useRef<any>(null)
+
+  const handleTableLocationClick = (loc: any) => {
+    const lat = Number(loc?.latitude)
+    const lng = Number(loc?.longitude)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    // Re-set the id even if it's the same, so the FocusOpener inside the
+    // marker layer's useEffect re-runs and re-opens an already-dismissed
+    // popup. (Same id twice in a row would otherwise be a no-op.)
+    setFocusedLocationId(null)
+    requestAnimationFrame(() => setFocusedLocationId(loc?.id || null))
+    const map = mapInstanceRef.current
+    if (map?.flyTo) {
+      map.flyTo({ center: [lng, lat], zoom: 14, duration: 1200, essential: true })
+    }
+  }
 
   // Fetch the org's project locations (markers on the map). Uses the same
   // endpoint as the legacy OrgActivitiesMap so the data shape matches
@@ -501,6 +529,8 @@ export function OrganizationLocationsSection({
                   mapCenter={[19.0, 96.5]}
                   mapZoom={6}
                   organizationId={organizationId}
+                  focusedLocationId={focusedLocationId}
+                  onMapInstanceReady={(map) => { mapInstanceRef.current = map }}
                 />
               </div>
             ) : (
@@ -514,7 +544,10 @@ export function OrganizationLocationsSection({
               // Drive the table off the same filtered set as the map so the
               // counts line up. The user expects "Showing X of Y" to match
               // the pin count visible above.
-              <ActivityLocationsTable locations={validMapLocations as any} />
+              <ActivityLocationsTable
+                locations={validMapLocations as any}
+                onLocationClick={handleTableLocationClick}
+              />
             )}
           </div>
         )}

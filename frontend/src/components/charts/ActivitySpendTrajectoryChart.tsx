@@ -23,6 +23,7 @@ import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/ChartFullscreen';
 import { cn } from '@/lib/utils';
 import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector';
+import { ChartViewToggle, type ChartView } from '@/components/charts/ChartViewToggle';
 
 // Colour palette as specified
 const COLOURS = {
@@ -49,12 +50,20 @@ interface Disbursement {
   cumulativeValue: number
 }
 
+interface YearlyAggregate {
+  year: number
+  value: number
+  cumulative: number
+}
+
 interface SpendTrajectoryData {
   totalBudget: number
   currency: string
   startDate: string
   endDate: string
   disbursements: Disbursement[]
+  commitmentsByYear?: YearlyAggregate[]
+  plannedByYear?: YearlyAggregate[]
 }
 
 interface ActivitySpendTrajectoryChartProps {
@@ -92,6 +101,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   const [noBudget, setNoBudget] = useState(false)
   const [noDisbursements, setNoDisbursements] = useState(false)
   const [timeRange, setTimeRange] = useState<TimeRangeKey>('all')
+  const [view, setView] = useState<ChartView>('chart')
 
   // Calendar / year selectors — shared component used by every finance chart.
   const calendarYearDates = useMemo(
@@ -261,6 +271,72 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     return { chartData: points, yearTicks: ticks }
   }, [data, timeRange, effectiveDateRange])
 
+  // Annual rollup for the table view — one row per calendar year, using the
+  // last per-year observation for cumulative columns and the delta from the
+  // prior year for "Disbursed in year".
+  const annualRollup = useMemo(() => {
+    if (!data) return []
+    const { totalBudget, startDate, endDate, disbursements } = data
+    const fullStart = new Date(startDate)
+    const fullEnd = new Date(endDate)
+    const fullTotalMs = fullEnd.getTime() - fullStart.getTime()
+    const baselineAt = (date: Date): number => {
+      if (fullTotalMs <= 0) return totalBudget
+      const elapsed = date.getTime() - fullStart.getTime()
+      const progress = Math.max(0, Math.min(1, elapsed / fullTotalMs))
+      return progress * totalBudget
+    }
+
+    const yearCumulative = new Map<number, number>()
+    let running = 0
+    const sorted = [...disbursements].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    )
+    for (const d of sorted) {
+      const year = new Date(d.date).getUTCFullYear()
+      if (!Number.isFinite(year)) continue
+      running += d.value
+      yearCumulative.set(year, running)
+    }
+
+    const plannedMap = new Map<number, number>()
+    ;(data.plannedByYear ?? []).forEach((p) => plannedMap.set(p.year, p.cumulative))
+    const commitMap = new Map<number, number>()
+    ;(data.commitmentsByYear ?? []).forEach((c) => commitMap.set(c.year, c.cumulative))
+
+    const years = new Set<number>()
+    Array.from(yearCumulative.keys()).forEach((y) => years.add(y))
+    Array.from(plannedMap.keys()).forEach((y) => years.add(y))
+    Array.from(commitMap.keys()).forEach((y) => years.add(y))
+    if (years.size === 0) return []
+    const sortedYears = Array.from(years).sort((a, b) => a - b)
+
+    let lastActual = 0
+    let lastPlanned = 0
+    let lastCommit = 0
+    return sortedYears.map((year) => {
+      const cumulativeActual = yearCumulative.get(year) ?? lastActual
+      const disbursedInYear = cumulativeActual - lastActual
+      lastActual = cumulativeActual
+      const cumulativePlanned = plannedMap.get(year) ?? lastPlanned
+      lastPlanned = cumulativePlanned
+      const cumulativeCommitments = commitMap.get(year) ?? lastCommit
+      lastCommit = cumulativeCommitments
+      // Baseline at the end of the year (capped by the activity's end date)
+      const yearEnd = new Date(Date.UTC(year, 11, 31))
+      const baselineDate = yearEnd > fullEnd ? fullEnd : yearEnd < fullStart ? fullStart : yearEnd
+      const baseline = baselineAt(baselineDate)
+      return {
+        year,
+        disbursedInYear,
+        cumulativeActual,
+        baseline,
+        cumulativePlanned,
+        cumulativeCommitments,
+      }
+    })
+  }, [data])
+
   const formatXAxisTick = (timestamp: number) => {
     return calendarYearState.getYearLabel(new Date(timestamp).getFullYear())
   }
@@ -389,6 +465,9 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       {isFullscreen && (
         <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
           <CalendarYearSelector {...calendarYearState} />
+          <div className="ml-auto flex items-center gap-2">
+            <ChartViewToggle view={view} setView={setView} />
+          </div>
         </div>
       )}
       <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col")}>
@@ -401,6 +480,46 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         )}
         
         <div className={cn(isFullscreen ? "flex-1 min-h-0 relative" : "h-[500px]")}>
+          {isFullscreen && view === 'table' ? (
+            <div className="absolute inset-0 overflow-auto rounded-md border border-border">
+              <table className="w-full text-body">
+                <thead className="sticky top-0 bg-surface-muted z-10">
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Disbursed in year</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Cumulative actual</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Even-spend baseline</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Variance vs baseline</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Cumulative planned</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Cumulative commitments</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {annualRollup.map((row) => {
+                    const variance = row.cumulativeActual - row.baseline
+                    const varianceColor = Math.abs(variance) < 1
+                      ? undefined
+                      : variance >= 0 ? '#16a34a' : '#dc2626'
+                    return (
+                      <tr key={row.year} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-2.5 px-4 font-medium text-foreground">{calendarYearState.getYearLabel(row.year)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.disbursedInYear)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.cumulativeActual)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.baseline)}</td>
+                        <td className="text-right py-2.5 px-4 tabular-nums" style={{ color: varianceColor }}>
+                          {Math.abs(variance) < 1
+                            ? '—'
+                            : `${variance >= 0 ? '+' : '−'}${formatTooltipCurrency(Math.abs(variance))}`}
+                        </td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.cumulativePlanned)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.cumulativeCommitments)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
           <div className={isFullscreen ? "absolute inset-0" : "h-full"}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
@@ -493,6 +612,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
           </ComposedChart>
         </ResponsiveContainer>
           </div>
+          )}
         </div>
         {isFullscreen && (
           <p className="text-body text-muted-foreground leading-relaxed mt-auto pt-6 shrink-0">

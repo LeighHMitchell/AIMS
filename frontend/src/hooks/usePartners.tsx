@@ -121,7 +121,7 @@ export function usePartners() {
       }
       
       setPartners(prev => prev.filter(p => p.id !== id));
-      toast('Organization deleted successfully');
+      toast('Organisation deleted successfully');
     } catch (err) {
       console.error('Error deleting partner:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete organization';

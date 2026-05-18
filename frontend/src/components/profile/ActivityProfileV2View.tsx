@@ -72,6 +72,8 @@ import { EnhancedSubnationalBreakdown } from "@/components/activities/EnhancedSu
 import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
 import { ActivityLocationsTable } from "@/components/locations/ActivityLocationsTable"
 import { MapStyleProvider } from "@/lib/map-style-context"
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter"
+import { Label } from "@/components/ui/label"
 import { Table2 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { XlsxWorkbookBuilder } from "@/lib/exports/xlsx-workbook"
@@ -191,6 +193,24 @@ export function ActivityProfileV2View({
   // map has data to render.
   const [activityLocations, setActivityLocations] = useState<any[]>([])
   const [isLoadingActivityLocations, setIsLoadingActivityLocations] = useState(true)
+  // Standalone field trips — rendered as amber pins alongside the red site pins.
+  const [fieldTrips, setFieldTrips] = useState<any[]>([])
+  useEffect(() => {
+    if (!activity?.id) return
+    let cancelled = false
+    apiFetch(`/api/activities/${activity.id}/field-trips`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return
+        setFieldTrips(Array.isArray(data?.fieldTrips) ? data.fieldTrips : [])
+      })
+      .catch(() => {
+        if (!cancelled) setFieldTrips([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activity?.id])
   useEffect(() => {
     if (!activity?.id) return
     let cancelled = false
@@ -231,7 +251,7 @@ export function ActivityProfileV2View({
   const validMapLocations = useMemo(() => {
     const embeddedLocations = activity?.locations?.specificLocations || []
     const sourceLocations = activityLocations.length > 0 ? activityLocations : embeddedLocations
-    return sourceLocations
+    const sitePins = sourceLocations
       .filter((l: any) => l.latitude != null && l.longitude != null)
       .map((l: any) => ({
         id: l.id,
@@ -246,7 +266,23 @@ export function ActivityProfileV2View({
         description: l.description,
         location_description: l.location_description,
       }))
-  }, [activityLocations, activity?.locations?.specificLocations])
+    // Field trips ride the same pin pipeline, flagged so LocationPinIcon
+    // renders them amber with the camera/dot badge.
+    const tripPins = (fieldTrips || [])
+      .filter((t: any) => t.latitude != null && t.longitude != null)
+      .map((t: any) => ({
+        id: `field-trip-${t.id}`,
+        location_name: t.place_name || t.title,
+        latitude: Number(t.latitude),
+        longitude: Number(t.longitude),
+        site_type: "field_trip",
+        description: t.narrative,
+        is_field_trip: true,
+        field_report_count: 1,
+        field_report_photo_count: t.photo_count ?? 0,
+      }))
+    return [...sitePins, ...tripPins]
+  }, [activityLocations, activity?.locations?.specificLocations, fieldTrips])
 
   // Sub-national breakdowns recorded against this activity. Used by the
   // Locations tab's "Sub-national Breakdown" sub-view (mirrors the Atlas).
@@ -344,7 +380,12 @@ export function ActivityProfileV2View({
   }, [activity?.id])
 
   const totalSpent = financials.totalDisbursement + financials.totalExpenditure
-  const spendPct = totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0
+  const plannedPct =
+    totalBudgeted > 0
+      ? Math.round((totalPlannedDisbursements / totalBudgeted) * 100)
+      : 0
+  const disbursedPct =
+    totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0
 
   const heroBadges: { label: string; tone?: "default" | "humanitarian" | "muted" }[] = [
     { label: getActivityStatusLabel(activity?.activityStatus), tone: "default" },
@@ -698,7 +739,10 @@ export function ActivityProfileV2View({
         items={keyNumbers}
         progress={
           totalBudgeted > 0
-            ? { label: "of budget spent", percent: spendPct }
+            ? [
+                { label: "of budget planned for disbursement", percent: plannedPct },
+                { label: "of budget disbursed", percent: disbursedPct },
+              ]
             : undefined
         }
       />
@@ -754,12 +798,30 @@ export function ActivityProfileV2View({
                 ? (
                     <Link
                       href={`/organizations/${reportingOrg.id}`}
-                      className="font-medium text-foreground no-underline hover:no-underline"
+                      className="inline-flex items-center gap-1.5 font-medium text-foreground no-underline hover:no-underline align-middle"
                     >
+                      {reportingOrg?.logo && (
+                        <img
+                          src={reportingOrg.logo}
+                          alt=""
+                          className="w-4 h-4 rounded object-cover flex-shrink-0"
+                        />
+                      )}
                       {reportingOrgDisplay}
                     </Link>
                   )
-                : reportingOrgDisplay
+                : (
+                    <span className="inline-flex items-center gap-1.5 align-middle">
+                      {reportingOrg?.logo && (
+                        <img
+                          src={reportingOrg.logo}
+                          alt=""
+                          className="w-4 h-4 rounded object-cover flex-shrink-0"
+                        />
+                      )}
+                      {reportingOrgDisplay}
+                    </span>
+                  )
               : null
           }
           ids={compactIds}
@@ -988,6 +1050,9 @@ function ActivityLocationsSection({
   isLoadingSubnational: boolean
 }) {
   const [view, setView] = useState<"map" | "subnational">("map")
+  const [selectedStates, setSelectedStates] = useState<string[]>([])
+  const [focusedLocationId, setFocusedLocationId] = useState<string | null>(null)
+  const mapInstanceRef = React.useRef<any>(null)
 
   // Pre-computed breakdown rows for the Excel export — not used for display
   // (the editor component renders its own table).
@@ -996,6 +1061,49 @@ function ActivityLocationsSection({
       .map(([region, data]) => ({ region, percentage: data.percentage }))
       .sort((a, b) => b.percentage - a.percentage)
   }, [regionBreakdownsWithDetails])
+
+  const stateOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const l of activityLocations) {
+      const name = (l?.state_region_name || "").trim()
+      if (!name) continue
+      if (!seen.has(name)) seen.set(name, name)
+    }
+    return Array.from(seen.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [activityLocations])
+
+  const stateSet = useMemo(() => new Set(selectedStates), [selectedStates])
+  const matchesStateFilter = (l: any) => {
+    if (stateSet.size === 0) return true
+    const name = (l?.state_region_name || "").trim()
+    return !!name && stateSet.has(name)
+  }
+
+  const filteredMapLocations = useMemo(
+    () => validMapLocations.filter(matchesStateFilter),
+    [validMapLocations, stateSet],
+  )
+  const filteredTableLocations = useMemo(
+    () => activityLocations.filter(matchesStateFilter),
+    [activityLocations, stateSet],
+  )
+
+  const onTableThumbClick = (loc: any) => {
+    const lat = Number(loc?.latitude)
+    const lng = Number(loc?.longitude)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    // Re-set the id even if it's the same, so the FocusOpener inside the
+    // marker layer's useEffect re-runs and re-opens a dismissed popup.
+    setFocusedLocationId(null)
+    requestAnimationFrame(() => setFocusedLocationId(loc?.id || null))
+    // No page-scroll: user wants the row they clicked to stay in view.
+    const map = mapInstanceRef.current
+    if (map?.flyTo) {
+      map.flyTo({ center: [lng, lat], zoom: 14, duration: 1500, essential: true })
+    }
+  }
 
   return (
     <Card className="border-border bg-card p-6">
@@ -1007,27 +1115,45 @@ function ActivityLocationsSection({
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-end gap-2">
-          <SegmentedControl
-            ariaLabel="Switch between map view and sub-national breakdown"
-            variant="icon"
-            value={view}
-            onValueChange={setView}
-            options={[
-              { value: "map", label: "Map View", icon: MapPin },
-              { value: "subnational", label: "Sub-national Breakdown", icon: BarChart3 },
-            ]}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => exportLocationsXlsx({ activity, validMapLocations, breakdownRows })}
-            title="Export to Excel"
-            aria-label="Export to Excel"
-            disabled={validMapLocations.length === 0 && breakdownRows.length === 0}
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          {view === "map" && stateOptions.length > 0 ? (
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-helper text-muted-foreground">State / Region</Label>
+              <MultiSelectFilter
+                options={stateOptions}
+                value={selectedStates}
+                onChange={setSelectedStates}
+                placeholder="All states / regions"
+                searchPlaceholder="Search states..."
+                icon={<MapPin className="h-4 w-4" />}
+                className="w-[240px]"
+              />
+            </div>
+          ) : (
+            <div />
+          )}
+          <div className="flex items-center gap-2">
+            <SegmentedControl
+              ariaLabel="Switch between map view and sub-national breakdown"
+              variant="icon"
+              value={view}
+              onValueChange={setView}
+              options={[
+                { value: "map", label: "Map View", icon: MapPin },
+                { value: "subnational", label: "Sub-national Breakdown", icon: BarChart3 },
+              ]}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => exportLocationsXlsx({ activity, validMapLocations: filteredMapLocations, breakdownRows })}
+              title="Export to Excel"
+              aria-label="Export to Excel"
+              disabled={filteredMapLocations.length === 0 && breakdownRows.length === 0}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {view === "map" && (
@@ -1043,21 +1169,24 @@ function ActivityLocationsSection({
                 <Skeleton className="h-9 w-full" />
               </div>
             </>
-          ) : validMapLocations.length > 0 ? (
+          ) : filteredMapLocations.length > 0 ? (
             <div className="h-[640px] rounded-md overflow-hidden border border-border">
               <ActivityLocationsMapViewV2
-                locations={validMapLocations}
+                locations={filteredMapLocations}
                 mapCenter={[19.0, 96.5]}
                 mapZoom={6}
                 activityTitle={activity?.title}
+                activityAcronym={activity?.acronym}
                 organizationId={activity?.reporting_org_id}
+                focusedLocationId={focusedLocationId}
+                onMapInstanceReady={(m: any) => { mapInstanceRef.current = m }}
               />
             </div>
           ) : (
             <p className="text-helper text-muted-foreground">No mapped locations for this activity.</p>
           )}
-          {!isLoadingActivityLocations && activityLocations.length > 0 && (
-            <ActivityLocationsTable locations={activityLocations} />
+          {!isLoadingActivityLocations && filteredTableLocations.length > 0 && (
+            <ActivityLocationsTable locations={filteredTableLocations} onLocationClick={onTableThumbClick} />
           )}
         </div>
         </MapStyleProvider>

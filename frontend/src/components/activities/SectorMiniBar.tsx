@@ -162,17 +162,10 @@ export function SectorMiniBar({
   showTooltip = true,
   className = '',
 }: SectorMiniBarProps) {
-  // Handle empty state
-  if (!sectors || sectors.length === 0) {
-    return (
-      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
-        —
-      </div>
-    )
-  }
-
-  // Aggregate sectors based on level
+  // Aggregate sectors based on level.
+  // Hooks must run unconditionally — the empty-state return happens after them.
   const aggregatedSectors = useMemo((): AggregatedSector[] => {
+    if (!sectors || sectors.length === 0) return []
     if (level === 'subsector') {
       // No aggregation - return as-is
       return sectors.map(s => ({
@@ -213,6 +206,15 @@ export function SectorMiniBar({
       categoryCode: data.categoryCode,
     }))
   }, [sectors, level])
+
+  // Handle empty state — after all hooks (Rules of Hooks)
+  if (!sectors || sectors.length === 0) {
+    return (
+      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
+        —
+      </div>
+    )
+  }
 
   // Normalize percentages to sum to 100
   const totalPercentage = aggregatedSectors.reduce((sum, s) => sum + (s.percentage || 0), 0)

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   MapPin,
   Plus,
+  CalendarPlus,
   AlertCircle,
   CheckCircle,
   CheckCircle2,
@@ -38,7 +39,9 @@ import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
 
 import LocationModal from './locations/LocationModal';
 import LocationCard from './locations/LocationCard';
-import { QuickLogFieldEventButton } from './locations/QuickLogFieldEventButton';
+import { FieldTripModal } from './locations/FieldTripModal';
+import { FieldTripsSection } from './locations/FieldTripsSection';
+import type { FieldTrip } from '@/lib/schemas/field-report';
 import { LocationsSkeleton } from './activities/TabSkeletons';
 import ActivityLocationsHeatmap from './maps/ActivityLocationsHeatmap';
 
@@ -96,6 +99,13 @@ export default function LocationsTab({
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationSchema | undefined>();
+  // Field trips are standalone geo-entities, separate from activity sites.
+  const [isFieldTripModalOpen, setIsFieldTripModalOpen] = useState(false);
+  const [editingFieldTrip, setEditingFieldTrip] = useState<FieldTrip | null>(null);
+  const [fieldTripsRefreshKey, setFieldTripsRefreshKey] = useState(0);
+  // Field trips for the map (amber pins). Kept here so the map and the
+  // table stay in sync via fieldTripsRefreshKey.
+  const [mapFieldTrips, setMapFieldTrips] = useState<FieldTrip[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [activityData, setActivityData] = useState<ActivityData | undefined>();
 
@@ -207,15 +217,33 @@ export default function LocationsTab({
     }
   }, [locations, onLocationsChange]);
 
+  // Load field trips for the map. Re-runs on fieldTripsRefreshKey so the
+  // amber pins stay in sync after a trip is created, edited, or deleted.
+  useEffect(() => {
+    if (!activityId) {
+      setMapFieldTrips([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch(`/api/activities/${activityId}/field-trips`);
+        if (!res.ok) throw new Error('Failed to load field trips');
+        const data = await res.json();
+        if (!cancelled) setMapFieldTrips(data.fieldTrips ?? []);
+      } catch (err) {
+        console.error('[LocationsTab] field trips (map) fetch error:', err);
+        if (!cancelled) setMapFieldTrips([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, fieldTripsRefreshKey]);
+
 
   // Handle save location (create or update)
-  // When options.keepOpen is true, the modal stays open and the newly-saved
-  // location is returned so the caller can continue editing it (e.g. to add
-  // a Field Report inline). Otherwise the modal closes as before.
-  const handleSaveLocation = useCallback(async (
-    locationData: LocationSchema,
-    options?: { keepOpen?: boolean },
-  ): Promise<LocationSchema | void> => {
+  const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
       const url = editingLocation
         ? `/api/locations/${editingLocation.id}`
@@ -242,16 +270,8 @@ export default function LocationsTab({
       if (result.success) {
         toast.success(editingLocation ? 'Location updated successfully' : 'Location added successfully');
         await loadLocations();
-        const saved: LocationSchema | undefined = result.location ?? undefined;
-        if (options?.keepOpen) {
-          // Keep modal open; promote the freshly-created location to "editing"
-          // so subsequent saves are PATCHes and the Field Reports section unlocks.
-          if (saved) setEditingLocation(saved as LocationSchema);
-          return saved;
-        }
         setIsModalOpen(false);
         setEditingLocation(undefined);
-        return saved;
       } else {
         console.error('[LocationsTab] ❌ API returned success: false:', result);
         throw new Error(result.error || 'Failed to save location');
@@ -259,7 +279,6 @@ export default function LocationsTab({
     } catch (err) {
       console.error('[LocationsTab] ❌ Error saving location:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to save location');
-      throw err;
     }
   }, [activityId, editingLocation, loadLocations]);
 
@@ -326,6 +345,28 @@ export default function LocationsTab({
     setIsModalOpen(true);
   }, []);
 
+  // Field trip handlers
+  const handleAddFieldTrip = useCallback(() => {
+    setEditingFieldTrip(null);
+    setIsFieldTripModalOpen(true);
+  }, []);
+
+  const handleEditFieldTrip = useCallback((trip: FieldTrip) => {
+    setEditingFieldTrip(trip);
+    setIsFieldTripModalOpen(true);
+  }, []);
+
+  const handleCloseFieldTripModal = useCallback(() => {
+    setIsFieldTripModalOpen(false);
+    setEditingFieldTrip(null);
+  }, []);
+
+  const handleFieldTripSaved = useCallback(() => {
+    setIsFieldTripModalOpen(false);
+    setEditingFieldTrip(null);
+    setFieldTripsRefreshKey((k) => k + 1);
+  }, []);
+
   // Handle refresh
   const handleRefresh = useCallback(() => {
     loadLocations();
@@ -346,6 +387,7 @@ export default function LocationsTab({
         activityTitle={activityTitle}
         activity={activityData}
         simpleMarkers
+        fieldTrips={mapFieldTrips}
       />
 
       {/* Header */}
@@ -356,7 +398,7 @@ export default function LocationsTab({
         </div>
 
         <div className="flex items-center gap-2">
-          {locations.length > 0 && (
+          {(locations.length > 0 || mapFieldTrips.length > 0) && (
             <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant="ghost"
@@ -390,15 +432,17 @@ export default function LocationsTab({
           )}
           {canEdit && locations.length > 0 && (
             <>
-              <QuickLogFieldEventButton
-                activityId={activityId}
-                existingLocations={locations}
-                onLocationsChanged={loadLocations}
-                canEdit={canEdit}
-              />
+              <Button
+                variant="outline"
+                onClick={handleAddFieldTrip}
+                className="flex items-center gap-2"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                Add Field Trip
+              </Button>
               <Button onClick={handleAddLocation} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Add Location
+                Add Site
               </Button>
             </>
           )}
@@ -437,10 +481,18 @@ export default function LocationsTab({
             For broader coverage (an entire country or region), use the Countries &amp; Regions tab instead.
           </p>
           {canEdit && (
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleAddFieldTrip}
+                className="flex items-center gap-2"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                Add Field Trip
+              </Button>
               <Button onClick={handleAddLocation} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Add Your First Location
+                Add Site
               </Button>
             </div>
           )}
@@ -588,6 +640,21 @@ export default function LocationsTab({
         </TooltipProvider>
       )}
 
+      {/* Field Trips — standalone events, separate from activity sites */}
+      {activityId && (
+        <div className="mt-8">
+          <FieldTripsSection
+            activityId={activityId}
+            canEdit={canEdit}
+            refreshKey={fieldTripsRefreshKey}
+            viewMode={viewMode}
+            onAdd={handleAddFieldTrip}
+            onEdit={handleEditFieldTrip}
+            onChanged={() => setFieldTripsRefreshKey((k) => k + 1)}
+          />
+        </div>
+      )}
+
       {/* Location Modal */}
       <LocationModal
         isOpen={isModalOpen}
@@ -598,6 +665,16 @@ export default function LocationsTab({
         activityTitle={activityTitle}
         activitySector={activitySector}
       />
+
+      {/* Field Trip Modal */}
+      {isFieldTripModalOpen && activityId && (
+        <FieldTripModal
+          activityId={activityId}
+          trip={editingFieldTrip}
+          onClose={handleCloseFieldTripModal}
+          onSaved={handleFieldTripSaved}
+        />
+      )}
 
       {/* Delete confirmation — destructive actions need a confirm step. */}
       <ConfirmationDialog

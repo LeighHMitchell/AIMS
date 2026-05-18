@@ -215,7 +215,7 @@ export function EditContactModal({ person, isOpen, onClose, onUpdate }: EditCont
           {/* Organization Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="organization">Organization</Label>
+              <Label htmlFor="organization">Organisation</Label>
               <Input
                 id="organization"
                 value={formData.organization_name}

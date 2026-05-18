@@ -84,7 +84,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
       setParticipatingOrgs(data);
     } catch (error) {
       console.error('Error fetching participating organizations:', error);
-      toast.error('Failed to load participating organizations');
+      toast.error('Failed to load participating organisations');
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
   // Add participating organization
   const addParticipatingOrg = async () => {
     if (!selectedOrgId) {
-      toast.error('Please select an organization');
+      toast.error('Please select an organisation');
       return;
     }
 
@@ -113,16 +113,16 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add organization');
+        throw new Error(errorData.error || 'Failed to add organisation');
       }
 
       const newOrg = await response.json();
       setParticipatingOrgs([...participatingOrgs, newOrg]);
       setSelectedOrgId('');
-      toast.success('Organization added successfully');
+      toast.success('Organisation added successfully');
     } catch (error) {
       console.error('Error adding organization:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to add organization');
+      toast.error(error instanceof Error ? error.message : 'Failed to add organisation');
     } finally {
       setAddingOrg(false);
     }
@@ -245,7 +245,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                   value={selectedOrgId}
                   onValueChange={setSelectedOrgId}
                   organizations={organizations}
-                  placeholder="Select organization..."
+                  placeholder="Select organisation..."
                   disabled={orgsLoading}
                 />
               </div>
@@ -323,7 +323,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                             </Link>
                           ) : (
                             <>
-                              Unknown Organization
+                              Unknown Organisation
                               {org.organization?.acronym && ` (${org.organization.acronym})`}
                             </>
                           )}
@@ -359,8 +359,8 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            Found {participatingOrgs.length} participating organization{participatingOrgs.length !== 1 ? 's' : ''} for this activity.
-            Organizations imported from IATI XML should appear here automatically.
+            Found {participatingOrgs.length} participating organisation{participatingOrgs.length !== 1 ? 's' : ''} for this activity.
+            Organisations imported from IATI XML should appear here automatically.
           </AlertDescription>
         </Alert>
       )}

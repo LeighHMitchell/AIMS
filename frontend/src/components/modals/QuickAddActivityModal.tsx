@@ -813,7 +813,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                         {(user?.organisation || user?.organization?.name) && (
                           <Alert className="border-primary/20 bg-primary/5">
                             <AlertDescription className="text-body">
-                              <strong>Reporting Organization:</strong>{' '}
+                              <strong>Reporting Organisation:</strong>{' '}
                               {user.organization?.name || user.organisation}
                               {user.organization?.acronym && ` (${user.organization.acronym})`}
                             </AlertDescription>

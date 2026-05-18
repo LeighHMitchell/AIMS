@@ -433,7 +433,7 @@ export function DataClinicTransactions() {
                 <SelectItem value="missing_transaction_type">Missing Transaction Type</SelectItem>
                 <SelectItem value="missing_date">Missing Date</SelectItem>
                 <SelectItem value="future_disbursements">Future-dated Disbursements</SelectItem>
-                <SelectItem value="missing_organization">Missing Organization</SelectItem>
+                <SelectItem value="missing_organization">Missing Organisation</SelectItem>
                 <SelectItem value="missing_value">Missing Value</SelectItem>
               </SelectContent>
             </Select>
@@ -507,7 +507,7 @@ export function DataClinicTransactions() {
                   <th className="p-4 text-left text-body font-medium">Value</th>
                   <th className="p-4 text-left text-body font-medium">Finance Type</th>
                   <th className="p-4 text-left text-body font-medium">Aid Type</th>
-                  <th className="p-4 text-left text-body font-medium">Organization</th>
+                  <th className="p-4 text-left text-body font-medium">Organisation</th>
                 </tr>
               </thead>
               <tbody>

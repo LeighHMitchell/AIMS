@@ -3482,7 +3482,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {contactData.organization && (
                                                 <tr className="border-b border-border align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organization:</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organisation:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.organization}</td>
                                                 </tr>
                                               )}
@@ -3554,7 +3554,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 )}
                                                 {field.currentValue.organization && (
                                                   <tr className="border-b border-border align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organization:</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organisation:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.organization}</td>
                                                   </tr>
                                                 )}
@@ -5458,7 +5458,7 @@ ${narrativeLines}
                                               <Lock className="h-3.5 w-3.5 text-amber-600 cursor-help" />
                                             </TooltipTrigger>
                                             <TooltipContent className="max-w-xs">
-                                              <p>These sectors use vocabulary 99 (custom codes defined by the reporting organization) and cannot be automatically mapped to standard DAC sector codes.</p>
+                                              <p>These sectors use vocabulary 99 (custom codes defined by the reporting organisation) and cannot be automatically mapped to standard DAC sector codes.</p>
                                             </TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>

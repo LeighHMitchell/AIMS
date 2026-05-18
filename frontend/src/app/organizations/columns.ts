@@ -17,13 +17,13 @@ export type OrganizationColumnId =
  * Column configuration for the Organizations table
  */
 export const organizationColumns: ColumnConfig<OrganizationColumnId>[] = [
-  { id: "name", label: "Organization Name", group: "default", defaultVisible: true },
-  { id: "type", label: "Type", group: "default", defaultVisible: true },
+  { id: "name", label: "Organisation Name", group: "default", defaultVisible: true },
+  { id: "type", label: "Organisation Type", group: "default", defaultVisible: true },
   { id: "location", label: "Location", group: "default", defaultVisible: true },
   { id: "residency", label: "Residency", group: "default", defaultVisible: true },
-  { id: "reported", label: "Reported", group: "default", defaultVisible: true },
+  { id: "reported", label: "Activities Reported", group: "default", defaultVisible: true },
   { id: "associated", label: "Provider/Receiver", group: "default", defaultVisible: true },
-  { id: "funding", label: "Funding", group: "default", defaultVisible: true },
+  { id: "funding", label: "Total Budgeted", group: "default", defaultVisible: true },
   { id: "created_at", label: "Date Created", group: "default", defaultVisible: true },
 ];
 

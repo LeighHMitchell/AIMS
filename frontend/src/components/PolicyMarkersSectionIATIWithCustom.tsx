@@ -103,7 +103,7 @@ const MARKER_TYPE_LABELS: Record<string, string> = {
 
 const VISIBILITY_OPTIONS: { value: VisibilityLevel; label: string; description: string; code: string }[] = [
   { value: 'public', label: 'Public', description: 'Visible to everyone including external viewers', code: '1' },
-  { value: 'organization', label: 'Organization-only', description: 'Visible to logged-in users only', code: '2' },
+  { value: 'organization', label: 'Organisation-only', description: 'Visible to logged-in users only', code: '2' },
   { value: 'hidden', label: 'Hidden', description: 'Visible to activity editors and admins only', code: '3' }
 ];
 
@@ -867,7 +867,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     <Input
                       value={modalForm.customVocabularyName}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customVocabularyName: e.target.value }))}
-                      placeholder="Organization name"
+                      placeholder="Organisation name"
                     />
                   </div>
                   <div className="space-y-1">
@@ -963,7 +963,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Label>Visibility for this activity</Label>
-                  <HelpTextTooltip content="Override the default visibility for this custom policy marker on this activity only. Use default keeps the marker's organisation-wide visibility setting; Public shows it to all viewers; Organization-only restricts it to logged-in users; Hidden limits visibility to activity editors and admins.">
+                  <HelpTextTooltip content="Override the default visibility for this custom policy marker on this activity only. Use default keeps the marker's organisation-wide visibility setting; Public shows it to all viewers; Organisation-only restricts it to logged-in users; Hidden limits visibility to activity editors and admins.">
                     <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                   </HelpTextTooltip>
                 </div>

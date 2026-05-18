@@ -6,7 +6,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+
+const DATA_CLINIC_TABS = [
+  "activities",
+  "transactions",
+  "budgets",
+  "organizations",
+  "duplicates",
+  "timeliness",
+  "financial-dates",
+  "financial-completeness",
+] as const;
 import { DataClinicActivities } from "@/components/data-clinic/DataClinicActivities";
 import { DataClinicTransactions } from "@/components/data-clinic/DataClinicTransactions";
 import { DataClinicOrganizations } from "@/components/data-clinic/DataClinicOrganizations";
@@ -23,7 +34,28 @@ import { apiFetch } from '@/lib/api-fetch';
 export default function DataClinicPage() {
   const { user } = useUser();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("activities");
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const initialTab =
+    tabFromUrl && (DATA_CLINIC_TABS as readonly string[]).includes(tabFromUrl)
+      ? tabFromUrl
+      : "activities";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Keep the active tab in sync with the URL (e.g. dashboard deep-links)
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && (DATA_CLINIC_TABS as readonly string[]).includes(t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.replace(`/data-clinic?${params.toString()}`, { scroll: false });
+  };
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [isLoadingDebug, setIsLoadingDebug] = useState(false);
@@ -60,12 +92,12 @@ export default function DataClinicPage() {
       setShowDebug(true);
       
       if (data.summary?.migrationRequired) {
-        toast.error('Database migration required! See debug info below.');
+        toast.error('System maintenance required. Please contact your administrator.');
       } else {
-        toast.success('All database fields are properly configured.');
+        toast.success('All system checks passed.');
       }
     } catch (error) {
-      toast.error('Failed to run debug check');
+      toast.error("Couldn't run system check. Please try again.");
       console.error('Debug error:', error);
     } finally {
       setIsLoadingDebug(false);
@@ -90,8 +122,8 @@ export default function DataClinicPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-white">
-        <div className="p-8 w-full">
+      <div className="w-full bg-white">
+        <div className="w-full">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3">
@@ -105,7 +137,7 @@ export default function DataClinicPage() {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="activities" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
               <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <FileText className="h-4 w-4" />

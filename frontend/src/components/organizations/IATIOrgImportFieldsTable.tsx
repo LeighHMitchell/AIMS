@@ -187,7 +187,7 @@ export function IATIOrgImportFieldsTable({
       'total-budgets': 'Total Budgets',
       'country-budgets': 'Recipient Country Budgets',
       'region-budgets': 'Recipient Region Budgets',
-      'org-budgets': 'Recipient Organization Budgets',
+      'org-budgets': 'Recipient Organisation Budgets',
       'expenditures': 'Total Expenditures',
       'documents': 'Document Links'
     }

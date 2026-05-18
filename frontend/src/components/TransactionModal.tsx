@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
@@ -535,7 +536,7 @@ export default function TransactionModal({
     });
     
     if (!response.ok) {
-      throw new Error('Failed to update organization type');
+      throw new Error('Failed to update organisation type');
     }
     
     // Refresh partners to get updated organization data
@@ -2150,7 +2151,7 @@ export default function TransactionModal({
                       providerOrgAutosave.triggerFieldSave('');
                     }
                   }}
-                  placeholder="Search for provider organization..."
+                  placeholder="Search for provider organisation..."
                   organizations={organizations}
                   fallbackRef={formData.provider_org_ref}
                   onLegacyTypeDetected={orgTypeMappingModal.openModal}
@@ -2349,7 +2350,7 @@ export default function TransactionModal({
                       receiverOrgAutosave.triggerFieldSave('');
                     }
                   }}
-                  placeholder="Search for receiver organization..."
+                  placeholder="Search for receiver organisation..."
                   organizations={organizations}
                   fallbackRef={formData.receiver_org_ref}
                   onLegacyTypeDetected={orgTypeMappingModal.openModal}
@@ -3265,83 +3266,46 @@ export default function TransactionModal({
                 {/* Activity ID */}
                 <div className="space-y-2">
                   <label className="text-body font-medium text-foreground">Activity ID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
-                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
-                      {activityPartnerId || 'Not reported'}
-                    </span>
-                    {activityPartnerId && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(activityPartnerId);
-                            toast.success("Activity ID copied to clipboard!");
-                          } catch (error) {
-                            toast.error("Failed to copy to clipboard");
-                          }
-                        }}
-                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
-                        aria-label="Copy Activity ID to clipboard"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
-                    )}
+                  <div className="bg-muted/50 border border-border rounded-md px-3 py-2 text-body min-h-[2.5rem] flex items-center">
+                    <CopyableIdBadge
+                      value={activityPartnerId}
+                      label="Activity ID"
+                      className="text-body"
+                      emptyFallback={<span className="text-muted-foreground font-mono italic">Not reported</span>}
+                    />
                   </div>
                 </div>
 
                 {/* Activity UUID */}
                 <div className="space-y-2">
                   <label className="text-body font-medium text-foreground">Activity UUID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
-                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
-                      {activityId || 'Not available'}
-                    </span>
-                    {activityId && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(activityId);
-                            toast.success("Activity UUID copied to clipboard!");
-                          } catch (error) {
-                            toast.error("Failed to copy to clipboard");
-                          }
-                        }}
-                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
-                        aria-label="Copy Activity UUID to clipboard"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
-                    )}
+                  <div className="bg-muted/50 border border-border rounded-md px-3 py-2 text-body min-h-[2.5rem] flex items-center">
+                    <CopyableIdBadge
+                      value={activityId}
+                      label="Activity UUID"
+                      className="text-body"
+                      emptyFallback={<span className="text-muted-foreground font-mono italic">Not available</span>}
+                    />
                   </div>
                 </div>
 
-                {/* Transaction ID */}
+                {/* Transaction ID (editable when no value set, click-to-copy once set) */}
                 <div className="space-y-2">
                   <label className="text-body font-medium text-foreground">Transaction ID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
-                    <input
-                      value={formData.transaction_reference || ''}
-                      onChange={e => handleFieldChange('transaction_reference', e.target.value)}
-                      placeholder="Will be auto-generated on save"
-                      className="border-0 bg-transparent p-0 text-sm text-muted-foreground placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
-                    />
-                    {formData.transaction_reference && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(formData.transaction_reference || '');
-                            toast.success("Transaction ID copied to clipboard!");
-                          } catch (error) {
-                            toast.error("Failed to copy to clipboard");
-                          }
-                        }}
-                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
-                        aria-label="Copy Transaction ID to clipboard"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
+                  <div className="bg-muted/50 border border-border rounded-md px-3 py-2 text-body min-h-[2.5rem] flex items-center">
+                    {formData.transaction_reference ? (
+                      <CopyableIdBadge
+                        value={formData.transaction_reference}
+                        label="Transaction ID"
+                        className="text-body"
+                      />
+                    ) : (
+                      <input
+                        value={formData.transaction_reference || ''}
+                        onChange={e => handleFieldChange('transaction_reference', e.target.value)}
+                        placeholder="Will be auto-generated on save"
+                        className="border-0 bg-transparent p-0 text-sm text-muted-foreground placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
+                      />
                     )}
                   </div>
                 </div>
@@ -3349,27 +3313,13 @@ export default function TransactionModal({
                 {/* Transaction UUID */}
                 <div className="space-y-2">
                   <label className="text-body font-medium text-foreground">Transaction UUID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-body">
-                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
-                      {transaction?.uuid || 'Generated after save'}
-                    </span>
-                    {transaction?.uuid && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(transaction.uuid);
-                            toast.success("Transaction UUID copied to clipboard!");
-                          } catch (error) {
-                            toast.error("Failed to copy to clipboard");
-                          }
-                        }}
-                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
-                        aria-label="Copy Transaction UUID to clipboard"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
-                    )}
+                  <div className="bg-muted/50 border border-border rounded-md px-3 py-2 text-body min-h-[2.5rem] flex items-center">
+                    <CopyableIdBadge
+                      value={transaction?.uuid}
+                      label="Transaction UUID"
+                      className="text-body"
+                      emptyFallback={<span className="text-muted-foreground font-mono italic">Generated after save</span>}
+                    />
                   </div>
                 </div>
               </div>

@@ -417,7 +417,7 @@ export const ActivityLogger = {
         role: createdBy.role,
       },
       metadata: {
-        details: `Created user: ${userData.name} (${userData.email}) - Role: ${userData.role}${userData.organization?.name ? `, Organization: ${userData.organization.name}` : ''}`,
+        details: `Created user: ${userData.name} (${userData.email}) - Role: ${userData.role}${userData.organization?.name ? `, Organisation: ${userData.organization.name}` : ''}`,
       },
     }),
 

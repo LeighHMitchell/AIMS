@@ -721,17 +721,17 @@ export function OrganizationFormContent({
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.error || 'Failed to update organization')
+          throw new Error(error.error || 'Failed to update organisation')
         }
 
         if (onSuccess) {
           onSuccess()
         }
-        
-        toast.success('Organization updated successfully')
+
+        toast.success('Organisation updated successfully')
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update organization'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update organisation'
       toast.error(errorMessage)
     } finally {
       setSaving(false)
@@ -861,7 +861,7 @@ export function OrganizationFormContent({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to merge organizations')
+        throw new Error(error.error || 'Failed to merge organisations')
       }
 
       const result = await response.json()
@@ -887,7 +887,7 @@ export function OrganizationFormContent({
       setShowMergeConfirm(false)
       
       toast.success(
-        `Successfully merged "${result.sourceOrg.name}" into this organization. ` +
+        `Successfully merged "${result.sourceOrg.name}" into this organisation. ` +
         `Updated ${result.summary.activitiesUpdated} activities, ` +
         `${result.summary.transactionsProviderUpdated + result.summary.transactionsReceiverUpdated} transactions.`
       )
@@ -897,7 +897,7 @@ export function OrganizationFormContent({
         onSuccess()
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to merge organizations'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to merge organisations'
       toast.error(errorMessage)
     } finally {
       setIsMerging(false)
@@ -912,7 +912,7 @@ export function OrganizationFormContent({
       {/* Only show tab list in modal mode - inline mode uses sidebar navigation */}
       {renderMode === 'modal' && (
         <SegmentedControl
-          ariaLabel="Organization form sections"
+          ariaLabel="Organisation form sections"
           variant="icon-text"
           value={activeTab}
           onValueChange={setActiveTab}
@@ -1080,7 +1080,7 @@ export function OrganizationFormContent({
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p>Select a country for bilateral agencies, or an institutional group for multilateral organizations</p>
+                    <p>Select a country for bilateral agencies, or an institutional group for multilateral organisations</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -1450,7 +1450,7 @@ export function OrganizationFormContent({
           <RichTextEditor
             content={formData.description || ''}
             onChange={(content) => handleInputChange('description', content)}
-            placeholder="Brief description of the organization"
+            placeholder="Brief description of the organisation"
             rows={6}
           />
         </div>
@@ -1928,7 +1928,7 @@ export function OrganizationFormContent({
             <div className="flex-1">
               <p className="text-body font-medium text-blue-800 mb-1">About Aliases</p>
               <p className="text-body text-blue-700">
-                Aliases help AIMS automatically recognize this organization when importing IATI data,
+                Aliases help AIMS automatically recognize this organisation when importing IATI data,
                 even if the source uses legacy codes or alternate names. This ensures consistent data
                 linking across different reporting sources.
               </p>
@@ -1942,7 +1942,7 @@ export function OrganizationFormContent({
             {/* Legacy or Internal Codes */}
             <StringArrayInput
               label="Legacy or Internal Codes"
-              description="Alternative organization identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
+              description="Alternative organisation identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
               placeholder="e.g., 010712, KR-MOFA-OLD"
               value={formData.alias_refs || []}
               onChange={(value) => handleInputChange('alias_refs', value)}
@@ -1952,7 +1952,7 @@ export function OrganizationFormContent({
             {/* Alternate Names */}
             <StringArrayInput
               label="Alternate Names"
-              description="Other names this organization is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
+              description="Other names this organisation is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
               placeholder="e.g., KOICA, Korea Intern. Cooperation Agency"
               value={formData.name_aliases || []}
               onChange={(value) => handleInputChange('name_aliases', value)}
@@ -1963,8 +1963,8 @@ export function OrganizationFormContent({
           <div className="text-body text-muted-foreground border-t pt-4">
             <p className="font-medium mb-2">How Aliases Work:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
-              <li>If a match is found, the transaction or activity is automatically linked to this organization</li>
+              <li>When importing IATI XML, AIMS checks organisation references against these aliases</li>
+              <li>If a match is found, the transaction or activity is automatically linked to this organisation</li>
               <li>You can add new aliases anytime you encounter variations in imported data</li>
               <li>Aliases are case-insensitive and whitespace is trimmed automatically</li>
             </ul>
@@ -1988,12 +1988,12 @@ export function OrganizationFormContent({
         {!isCreating ? (
           <>
             <SubSection
-              title="Merge Another Organization"
+              title="Merge Another Organisation"
               intro="Merge a duplicate organisation into this one. All activities, transactions, and references will be transferred, and the duplicate will be deleted."
             >
 
             <div className="space-y-2">
-              <Label className="text-body font-medium">Search for organization to merge</Label>
+              <Label className="text-body font-medium">Search for organisation to merge</Label>
               <OrganizationCombobox
                 organizations={allOrganizations}
                 value={mergeSourceOrgId || ''}
@@ -2084,15 +2084,15 @@ export function OrganizationFormContent({
             <div className="bg-muted border border-border rounded-md p-3 text-body text-muted-foreground">
               <p className="font-medium text-foreground mb-1">Note:</p>
               <p>
-                Merging is permanent and cannot be undone. The source organization will be deleted
-                after all its references are transferred to this organization.
+                Merging is permanent and cannot be undone. The source organisation will be deleted
+                after all its references are transferred to this organisation.
               </p>
             </div>
             </SubSection>
           </>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Save the organization first to access merge functionality</p>
+            <p className="text-muted-foreground">Save the organisation first to access merge functionality</p>
           </div>
         )}
         </div>
@@ -2155,7 +2155,7 @@ export function OrganizationFormContent({
           variant="outline"
           className="px-4 py-3 text-base font-semibold opacity-50 cursor-not-allowed"
           disabled
-          title="Save the organization first to enable comments"
+          title="Save the organisation first to enable comments"
         >
           <MessageSquare className="mr-2 h-4 w-4" />
           <span>Comments</span>
@@ -2202,7 +2202,7 @@ export function OrganizationFormContent({
             }
           }}
           disabled={exporting || isSaving}
-          title="Download a complete Excel snapshot of this organization to share with a reviewer"
+          title="Download a complete Excel snapshot of this organisation to share with a reviewer"
         >
           {exporting ? (
             <>
@@ -2280,7 +2280,7 @@ export function OrganizationFormContent({
                 <ul className="text-body text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>
                   <li>• Add the source IATI ID as an alias</li>
-                  <li>• <strong>Permanently delete</strong> the source organization</li>
+                  <li>• <strong>Permanently delete</strong> the source organisation</li>
                 </ul>
               </div>
               
@@ -2306,7 +2306,7 @@ export function OrganizationFormContent({
                 Merging...
               </>
             ) : (
-              'Yes, Merge Organizations'
+              'Yes, Merge Organisations'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -2321,13 +2321,13 @@ export function OrganizationFormContent({
         <DialogHeader>
           <DialogTitle>Import from IATI</DialogTitle>
           <DialogDescription>
-            Enter an IATI organization identifier to import data automatically.
+            Enter an IATI organisation identifier to import data automatically.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="iati_import_id">IATI Organization ID</Label>
+            <Label htmlFor="iati_import_id">IATI Organisation ID</Label>
             <Input
               id="iati_import_id"
               placeholder="e.g., DK-CVR-20228799"
@@ -2364,8 +2364,8 @@ export function OrganizationFormContent({
             <div className="flex-shrink-0 px-6 py-4 border-b bg-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-semibold text-foreground">Add New Organization</h1>
-                  <p className="text-body text-muted-foreground mt-1">Create a new organization profile</p>
+                  <h1 className="text-xl font-semibold text-foreground">Add New Organisation</h1>
+                  <p className="text-body text-muted-foreground mt-1">Create a new organisation profile</p>
                 </div>
                 <TooltipProvider>
                   <Tooltip>

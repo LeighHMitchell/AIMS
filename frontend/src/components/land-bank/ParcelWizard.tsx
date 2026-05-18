@@ -348,12 +348,12 @@ function StepBasicInfo({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="wiz-sub-org">Organization</Label>
+            <Label htmlFor="wiz-sub-org">Organisation</Label>
             <Input
               id="wiz-sub-org"
               value={formData.submitter_organization}
               onChange={e => updateField("submitter_organization", e.target.value)}
-              placeholder="Organization"
+              placeholder="Organisation"
             />
           </div>
         </div>

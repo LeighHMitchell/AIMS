@@ -109,7 +109,7 @@ export function SidebarNav({
       icon: Search,
       defaultOpen: true,
       items: [
-        { name: "Dashboards", href: "/analytics-dashboard", show: true },
+        { name: "Country Analytics", href: "/analytics-dashboard", show: true },
         { name: "Plan Alignment", href: "/alignment", show: true },
         { name: "Atlas", href: "/atlas", show: true },
         { name: "Search", href: "/search", show: true },
@@ -141,7 +141,7 @@ export function SidebarNav({
       icon: Users,
       defaultOpen: true,
       items: [
-        { name: "Organizations", href: "/organizations", show: true },
+        { name: "Organisations", href: "/organizations", show: true },
         { name: "Rolodex", href: "/rolodex", show: true },
       ]
     },
@@ -475,7 +475,8 @@ export function SidebarNav({
           {topLevelItems.length > 0 && (
             <div className="space-y-1">
               {topLevelItems.filter(item => item.show).map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href) && pathname === item.href)
+                // Top-level module link (e.g. Workspace/Dashboard): exact match only
+                const isActive = pathname === item.href
                 const ItemIcon = item.icon
 
                 const linkContent = (
@@ -484,10 +485,9 @@ export function SidebarNav({
                     className={cn(
                       "group relative flex items-center gap-3 py-2 px-3 ml-2 text-body font-semibold rounded-md",
                       "transition-colors duration-150",
-                      "hover:bg-[hsl(var(--nav-hover-bg))]",
                       isActive
-                        ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))]"
-                        : "text-foreground hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-200"
+                        ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))] shadow-sm ring-1 ring-black/5"
+                        : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-200"
                     )}
                   >
                     <ItemIcon className="h-4 w-4 flex-shrink-0" />
@@ -621,10 +621,9 @@ export function SidebarNav({
                               className={cn(
                                 "group relative flex items-center justify-between py-1.5 px-3 text-body font-medium rounded-md",
                                 "transition-colors duration-150",
-                                "hover:bg-[hsl(var(--nav-hover-bg))]",
                                 isActive
-                                  ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))] font-semibold"
-                                  : "text-foreground hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-300 dark:hover:text-gray-100",
+                                  ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))] font-semibold shadow-sm ring-1 ring-black/5"
+                                  : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-300 dark:hover:text-gray-100",
                                 // Add left padding for connector when not collapsed
                                 !isCollapsed && "ml-6 pl-6"
                               )}

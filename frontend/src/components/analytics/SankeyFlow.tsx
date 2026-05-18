@@ -20,6 +20,7 @@ import {
   Cell
 } from 'recharts'
 import { ExpandableCard } from '@/components/ui/expandable-card'
+import { ChartMethodology } from '@/components/analytics/ChartMethodology'
 import { exportToCSV } from '@/lib/exports'
 import { CHART_COLORS, CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
@@ -486,6 +487,13 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         <div className="flex items-center gap-2">
           <ArrowRight className="h-5 w-5" />
           <span>Sector Flow Visualization</span>
+          <ChartMethodology
+            source="Disbursement transactions linked to activity sector codes"
+            basis="IATI transaction_type = 3 (Disbursement), status = actual"
+            currency="USD (converted at transaction date for non-USD source values)"
+            asOf={`${dateRange.from.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} – ${dateRange.to.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+            notes="Excludes commitments and expenditures. Only transactions with a valid provider organisation and at least one activity sector are included."
+          />
         </div>
       }
       description="Flow of disbursements from development partners to sectors"

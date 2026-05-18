@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireSuperUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -66,7 +66,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  // FAQ is global admin content — editing requires a super_user.
+  const { supabase, response: authResponse } = await requireSuperUser();
   if (authResponse) return authResponse;
 
   try {
@@ -75,7 +76,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
 
-    // Permission check will be handled on frontend for now
+    // Authorisation enforced by requireSuperUser() above.
 
     const body = await request.json()
     const { question, answer, category, tags } = body
@@ -115,7 +116,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  // FAQ is global admin content — deleting requires a super_user.
+  const { supabase, response: authResponse } = await requireSuperUser();
   if (authResponse) return authResponse;
 
   try {
@@ -124,7 +126,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
 
-    // Permission check will be handled on frontend for now
+    // Authorisation enforced by requireSuperUser() above.
 
     const { error } = await supabase
       .from('faq')

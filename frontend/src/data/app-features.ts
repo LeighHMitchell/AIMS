@@ -173,8 +173,8 @@ export const APP_FEATURES: AppFeatureGroup[] = [
     features: [
       {
         code: "activity_organizations",
-        name: "Organizations Tab",
-        description: "Partner organizations and roles",
+        name: "Organisations Tab",
+        description: "Partner organisations and roles",
         group: "Activity Editor - Partnerships"
       },
       {
@@ -244,31 +244,31 @@ export const APP_FEATURES: AppFeatureGroup[] = [
     ]
   },
   {
-    label: "Organizations Management",
+    label: "Organisations Management",
     features: [
       {
         code: "organizations_list",
-        name: "Organizations Directory",
-        description: "Browse and manage partner organizations",
-        group: "Organizations Management"
+        name: "Organisations Directory",
+        description: "Browse and manage partner organisations",
+        group: "Organisations Management"
       },
       {
         code: "organizations_create",
-        name: "Add Organization",
-        description: "Register new partner organizations",
-        group: "Organizations Management"
+        name: "Add Organisation",
+        description: "Register new partner organisations",
+        group: "Organisations Management"
       },
       {
         code: "organizations_profiles",
-        name: "Organization Profiles",
-        description: "Detailed organization information and profiles",
-        group: "Organizations Management"
+        name: "Organisation Profiles",
+        description: "Detailed organisation information and profiles",
+        group: "Organisations Management"
       },
       {
         code: "organizations_roles",
-        name: "Organization Roles",
-        description: "Define and manage organization roles in activities",
-        group: "Organizations Management"
+        name: "Organisation Roles",
+        description: "Define and manage organisation roles in activities",
+        group: "Organisations Management"
       }
     ]
   },

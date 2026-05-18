@@ -230,7 +230,7 @@ export function FilterPanel({
 
         {/* Organization Filter */}
         <div className="flex-1 min-w-[180px]">
-          <label className="block text-helper font-medium text-muted-foreground mb-1">Organization</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Organisation</label>
           <Popover open={openPopover === 'org'} onOpenChange={(open) => {
             setOpenPopover(open ? 'org' : null);
             if (open) {

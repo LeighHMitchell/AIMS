@@ -71,7 +71,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
 
           {/* Organization Filter */}
           <div className="space-y-2">
-            <Label className="text-helper text-muted-foreground">Organization</Label>
+            <Label className="text-helper text-muted-foreground">Organisation</Label>
             <Select
               value={filters.organizationId || 'all'}
               onValueChange={(value) => onFiltersChange({ ...filters, organizationId: value })}
@@ -83,7 +83,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
                 <SelectValue placeholder={loadingOrgs ? "Loading..." : "Select organization"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All organizations</SelectItem>
+                <SelectItem value="all">All organisations</SelectItem>
                 {organizations.map(org => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.acronym || org.name}

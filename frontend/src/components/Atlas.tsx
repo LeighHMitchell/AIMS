@@ -748,7 +748,7 @@ export default function Atlas() {
 
                 {/* Organization Filter */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-helper font-medium text-muted-foreground">Organization</label>
+                  <label className="text-helper font-medium text-muted-foreground">Organisation</label>
                   <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -759,10 +759,10 @@ export default function Atlas() {
                       >
                         <span className="truncate">
                           {orgFilter.length === 0
-                            ? 'All Organizations'
+                            ? 'All Organisations'
                             : orgFilter.length === 1
                               ? orgFilter[0]
-                              : `${orgFilter.length} organizations`}
+                              : `${orgFilter.length} organisations`}
                         </span>
                       <div className="flex items-center gap-1 shrink-0">
                         {orgFilter.length > 0 && (
@@ -781,13 +781,13 @@ export default function Atlas() {
                   <PopoverContent className="w-[350px] p-0" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="Search organizations..."
+                        placeholder="Search organisations..."
                         value={orgFilterSearch}
                         onValueChange={setOrgFilterSearch}
                         className="text-helper"
                       />
                       <CommandList>
-                        <CommandEmpty>No organization found.</CommandEmpty>
+                        <CommandEmpty>No organisation found.</CommandEmpty>
                         <CommandGroup>
                           {organizations
                             .filter(org =>

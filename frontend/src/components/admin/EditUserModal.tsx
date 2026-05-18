@@ -440,7 +440,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
 
           {/* Organization Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Organization Information</h3>
+            <h3 className="text-lg font-medium">Organisation Information</h3>
             
             <div>
               <Label htmlFor="contactType">Contact Type</Label>
@@ -460,7 +460,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
             </div>
             
             <div>
-              <Label htmlFor="organization">Organization</Label>
+              <Label htmlFor="organization">Organisation</Label>
               <OrganizationCombobox
                 organizations={organizations?.map(org => ({
                   id: org.id,
@@ -473,7 +473,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 })) || []}
                 value={form.organizationId}
                 onValueChange={handleOrganizationChange}
-                placeholder="Select or search for an organization"
+                placeholder="Select or search for an organisation"
               />
               <p className="text-helper text-muted-foreground mt-1">
                 Select the organization this user belongs to. This determines their access and reporting scope.

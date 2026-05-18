@@ -120,14 +120,14 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
       const response = await apiFetch(`/api/organization-bookmarks/organizations?userId=${userId}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch bookmarked organizations');
+        throw new Error('Failed to fetch bookmarked organisations');
       }
 
       const data = await response.json();
       setOrganizations(data.organizations || []);
     } catch (err) {
       console.error('[BookmarkedOrganizationsTable] Error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load bookmarked organizations');
+      setError(err instanceof Error ? err.message : 'Failed to load bookmarked organisations');
     } finally {
       setLoading(false);
     }
@@ -184,11 +184,11 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Bookmarked Organizations
+            Bookmarked Organisations
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-body text-destructive">Failed to load bookmarked organizations: {error}</p>
+          <p className="text-body text-destructive">Failed to load bookmarked organisations: {error}</p>
         </CardContent>
       </Card>
     );
@@ -201,7 +201,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
           <div>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-muted-foreground" />
-              Bookmarked Organizations
+              Bookmarked Organisations
             </CardTitle>
             <CardDescription>
               Your saved organizations for quick access
@@ -245,7 +245,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
         {organizations.length === 0 ? (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-body text-muted-foreground mb-2">No bookmarked organizations</p>
+            <p className="text-body text-muted-foreground mb-2">No bookmarked organisations</p>
             <p className="text-helper text-muted-foreground">
               Bookmark organizations from the organization profile or organization cards to see them here.
             </p>
@@ -279,7 +279,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
               <TableRow>
                 <TableHead className={`w-[35%] ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
                   <div className="flex items-center gap-1">
-                    Organization
+                    Organisation
                     {getSortIcon('name', sortField, sortDirection)}
                   </div>
                 </TableHead>
@@ -334,7 +334,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                         </div>
                       )}
                       <div>
-                        <p className="text-body text-foreground" title={organization.name}>
+                        <p className="text-body font-medium text-foreground" title={organization.name}>
                           {organization.name}
                           {organization.acronym && (
                             <span> ({organization.acronym})</span>

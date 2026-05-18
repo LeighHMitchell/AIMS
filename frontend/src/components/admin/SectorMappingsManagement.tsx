@@ -1274,8 +1274,8 @@ export function SectorMappingsManagement() {
                 <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization (Receiver)</th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organisation (Receiver)</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organisation Type</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Line Ministry</th>
                     </tr>
                   </thead>
@@ -1359,7 +1359,7 @@ export function SectorMappingsManagement() {
           <TabsContent value="funding_sources" className="mt-0">
             {/* Organization Type Filter */}
             <div className="mb-4 flex items-center gap-2">
-              <label className="text-body font-medium text-muted-foreground">Organization Type:</label>
+              <label className="text-body font-medium text-muted-foreground">Organisation Type:</label>
               <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
                 <SelectTrigger className="w-[220px]">
                   <SelectValue placeholder="All types" />
@@ -1379,8 +1379,8 @@ export function SectorMappingsManagement() {
                 <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization</th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organisation</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organisation Type</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Funding Source</th>
                     </tr>
                   </thead>

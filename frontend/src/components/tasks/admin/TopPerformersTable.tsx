@@ -27,16 +27,6 @@ interface TopPerformersTableProps {
 }
 
 export function TopPerformersTable({ performers }: TopPerformersTableProps) {
-  if (performers.length === 0) {
-    return (
-      <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
-        <Trophy className="mb-2 h-8 w-8" />
-        <p className="text-lg font-medium text-foreground">No Performance Data</p>
-        <p className="text-body">No completed assignments in this period</p>
-      </div>
-    );
-  }
-
   const getRankIcon = (index: number) => {
     switch (index) {
       case 0:
@@ -83,6 +73,17 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
       }
     });
   }, [performers, sortField, sortDirection]);
+
+  // Guard AFTER hooks so hook order stays stable (Rules of Hooks)
+  if (performers.length === 0) {
+    return (
+      <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
+        <Trophy className="mb-2 h-8 w-8" />
+        <p className="text-lg font-medium text-foreground">No Performance Data</p>
+        <p className="text-body">No completed assignments in this period</p>
+      </div>
+    );
+  }
 
   const getInitials = (performer: TaskPerformerStats): string => {
     const first = performer.user.first_name?.[0] || '';

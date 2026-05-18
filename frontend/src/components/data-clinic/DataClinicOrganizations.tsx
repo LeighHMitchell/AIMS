@@ -71,7 +71,7 @@ export function DataClinicOrganizations() {
       setDataGaps(data.dataGaps || []);
     } catch (error) {
       console.error('Error fetching organizations:', error);
-      toast.error('Failed to load organizations');
+      toast.error('Failed to load organisations');
     } finally {
       setLoading(false);
     }
@@ -163,17 +163,17 @@ export function DataClinicOrganizations() {
         organization.id === organizationId ? { ...organization, [field]: value } : organization
       ));
 
-      toast.success('Organization updated successfully');
+      toast.success('Organisation updated successfully');
     } catch (error) {
       console.error('Error updating organization:', error);
-      toast.error('Failed to update organization');
+      toast.error('Failed to update organisation');
       throw error; // Re-throw so EditableCell knows it failed
     }
   };
 
   const handleBulkUpdate = async () => {
     if (!bulkEditField || !bulkEditValue || selectedOrganizations.size === 0) {
-      toast.error('Please select organizations and provide a field and value');
+      toast.error('Please select organisations and provide a field and value');
       return;
     }
 
@@ -192,14 +192,14 @@ export function DataClinicOrganizations() {
 
       if (!res.ok) throw new Error('Failed to bulk update');
 
-      toast.success(`Updated ${selectedOrganizations.size} organizations`);
+      toast.success(`Updated ${selectedOrganizations.size} organisations`);
       setSelectedOrganizations(new Set());
       setBulkEditField('');
       setBulkEditValue('');
       fetchOrganizationsWithGaps(); // Refresh data
     } catch (error) {
       console.error('Error bulk updating:', error);
-      toast.error('Failed to bulk update organizations');
+      toast.error('Failed to bulk update organisations');
     }
   };
 
@@ -244,7 +244,7 @@ export function DataClinicOrganizations() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search organizations..."
+                  placeholder="Search organisations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -256,9 +256,9 @@ export function DataClinicOrganizations() {
                 <SelectValue placeholder="Filter by missing field" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All organizations</SelectItem>
+                <SelectItem value="all">All organisations</SelectItem>
                 <SelectItem value="missing_identifier">Missing/Invalid Identifier</SelectItem>
-                <SelectItem value="missing_type">Missing Organization Type</SelectItem>
+                <SelectItem value="missing_type">Missing Organisation Type</SelectItem>
                 <SelectItem value="missing_currency">Missing Default Currency</SelectItem>
                 <SelectItem value="missing_budget">Missing Budget</SelectItem>
                 <SelectItem value="missing_country">Missing Country</SelectItem>
@@ -286,7 +286,7 @@ export function DataClinicOrganizations() {
                     <SelectValue placeholder="Select field" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="type">Organization Type</SelectItem>
+                    <SelectItem value="type">Organisation Type</SelectItem>
                     <SelectItem value="default_currency">Default Currency</SelectItem>
                     <SelectItem value="country">Country</SelectItem>
                   </SelectContent>
@@ -363,8 +363,8 @@ export function DataClinicOrganizations() {
                         </td>
                       )}
                       <td className="p-4">
-                        <div className="flex items-start gap-2 max-w-xs">
-                          <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div className="max-w-xs">
+                          <Building2 className="inline-block h-4 w-4 text-muted-foreground align-middle mr-2" />
                           <Link
                             href={`/organizations/${organization.id}`}
                             className="font-medium break-words hover:opacity-70 transition-opacity"

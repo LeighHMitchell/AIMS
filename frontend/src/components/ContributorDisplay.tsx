@@ -76,7 +76,7 @@ export function ContributorDisplay({
     return (
       <TooltipContent className="max-w-sm">
         <div className="space-y-2">
-          <h4 className="font-medium text-body">All Contributing Organizations:</h4>
+          <h4 className="font-medium text-body">All Contributing Organisations:</h4>
           <div className="space-y-1">
             {acceptedContributors.map((contributor, index) => (
               <div key={contributor.id} className="flex items-center justify-between text-helper">
@@ -198,7 +198,7 @@ export function ContributorDisplayCompact({
       </TooltipTrigger>
       <TooltipContent className="max-w-sm">
         <div className="space-y-2">
-          <h4 className="font-medium text-body">Contributing Organizations:</h4>
+          <h4 className="font-medium text-body">Contributing Organisations:</h4>
           <div className="space-y-1">
             {acceptedContributors.map((contributor) => (
               <div key={contributor.id} className="flex items-center justify-between text-helper">

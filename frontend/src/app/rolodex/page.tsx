@@ -442,7 +442,7 @@ export default function RolodexPage() {
                           onClick={() => handleSortChange('organization')}
                         >
                           <div className="flex items-center">
-                            <span>Organization</span>
+                            <span>Organisation</span>
                             {getSortIcon('organization')}
                           </div>
                         </th>

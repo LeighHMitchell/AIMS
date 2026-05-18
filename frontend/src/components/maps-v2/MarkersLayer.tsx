@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { MapPin, Building2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/components/ui/map';
+import { LocationPinIcon } from '@/components/maps/LocationPinIcon';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
@@ -55,6 +56,11 @@ interface LocationData {
     banner?: string;
     icon?: string;
   } | null;
+  // Field-report signals that drive the amber pin + camera badge.
+  field_report_count?: number;
+  fieldReportCount?: number;
+  field_report_photo_count?: number;
+  fieldReportPhotoCount?: number;
 }
 
 interface MarkersLayerProps {
@@ -341,11 +347,17 @@ function LocationMarker({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Custom marker appearance */}
+      {/* Custom marker — amber when the location has field reports. */}
       <MarkerContent>
-        <MapPin
-          className={isSelected ? "fill-[#7f1d1d] stroke-white" : "fill-[#DC2625] stroke-white"}
+        <LocationPinIcon
           size={28}
+          selected={isSelected}
+          hasFieldReports={
+            (location.fieldReportCount ?? location.field_report_count ?? 0) > 0
+          }
+          hasPhotos={
+            (location.fieldReportPhotoCount ?? location.field_report_photo_count ?? 0) > 0
+          }
         />
       </MarkerContent>
 

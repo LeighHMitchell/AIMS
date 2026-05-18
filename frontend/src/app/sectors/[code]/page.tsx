@@ -472,7 +472,7 @@ export default function SectorProfilePage() {
             </CardContent></Card>
 
             {/* Organizations */}
-            <Card><CardHeader><CardTitle className="text-body">Organizations</CardTitle></CardHeader><CardContent className="space-y-4">
+            <Card><CardHeader><CardTitle className="text-body">Organisations</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1">
                   {['all', 'funding', 'implementing', 'accountable'].map(role => (
@@ -515,7 +515,7 @@ export default function SectorProfilePage() {
                     </Link>
                   ))}
                 </div>
-              ) : <p className="text-muted-foreground text-body text-center py-8">No organizations found</p>}
+              ) : <p className="text-muted-foreground text-body text-center py-8">No organisations found</p>}
             </CardContent></Card>
 
             {/* Geography */}

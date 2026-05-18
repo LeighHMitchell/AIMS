@@ -1394,8 +1394,8 @@ export default function ActivityDetailPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="w-full p-6">
+        <div className="w-full">
+          <div className="w-full">
             <Skeleton className="h-8 w-64 mb-6" />
             <Skeleton className="h-64 w-full mb-6" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -1583,10 +1583,10 @@ export default function ActivityDetailPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen">
+      <div className="w-full">
         {/* Page top anchor for reliable scrolling */}
         <div id="page-top" className="absolute top-0" />
-        <div className="w-full p-6">
+        <div className="w-full">
           {/* Activity Profile Header */}
           <ActivityProfileHeader
             activity={activity}
@@ -2885,7 +2885,7 @@ export default function ActivityDetailPage() {
                           <Table className="table-fixed">
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '35%' }}>Organization</TableHead>
+                                <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '35%' }}>Organisation</TableHead>
                                 <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '20%' }}>Role</TableHead>
                                 <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '30%' }}>Organisation Type</TableHead>
                                 <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '15%' }}>Country</TableHead>
@@ -2899,7 +2899,7 @@ export default function ActivityDetailPage() {
                                       {reportingOrg.logo ? (
                                         <img
                                           src={reportingOrg.logo}
-                                          alt={reportingOrg.name || 'Organization logo'}
+                                          alt={reportingOrg.name || 'Organisation logo'}
                                           className="w-10 h-10 rounded object-cover bg-card"
                                           onError={(e) => {
                                             (e.target as HTMLImageElement).style.display = 'none';
@@ -2918,12 +2918,12 @@ export default function ActivityDetailPage() {
                                             href={`/organizations/${reportingOrg.id}`}
                                             className="hover:text-blue-600 transition-colors"
                                           >
-                                            {reportingOrg.name || 'Unknown Organization'}
+                                            {reportingOrg.name || 'Unknown Organisation'}
                                             {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && ` (${reportingOrg.acronym})`}
                                           </Link>
                                         ) : (
                                           <span>
-                                            {reportingOrg.name || 'Unknown Organization'}
+                                            {reportingOrg.name || 'Unknown Organisation'}
                                             {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && ` (${reportingOrg.acronym})`}
                                           </span>
                                         )}
@@ -2986,7 +2986,7 @@ export default function ActivityDetailPage() {
                                   onClick={() => handlePartnershipsSort('organization')}
                                 >
                                   <div className="flex items-center gap-1">
-                                    <span>Organization</span>
+                                    <span>Organisation</span>
                                     {getPartnershipsSortIcon('organization')}
                                   </div>
                                 </TableHead>
@@ -3031,7 +3031,7 @@ export default function ActivityDetailPage() {
                                         {org.organization?.logo ? (
                                     <img
                                       src={org.organization.logo}
-                                            alt={org.organization.name || 'Organization logo'}
+                                            alt={org.organization.name || 'Organisation logo'}
                                             className="w-10 h-10 rounded object-cover bg-card"
                                             onError={(e) => {
                                               (e.target as HTMLImageElement).style.display = 'none';
@@ -3050,12 +3050,12 @@ export default function ActivityDetailPage() {
                                               href={`/organizations/${org.organization.id}`}
                                               className="hover:text-blue-600 transition-colors"
                                             >
-                                              {org.narrative || org.organization?.name || 'Unknown Organization'}
+                                              {org.narrative || org.organization?.name || 'Unknown Organisation'}
                                               {org.organization?.acronym && org.organization.acronym !== org.organization.name && ` (${org.organization.acronym})`}
                                             </Link>
                                     ) : (
                                             <span>
-                                              {org.narrative || org.organization?.name || 'Unknown Organization'}
+                                              {org.narrative || org.organization?.name || 'Unknown Organisation'}
                                               {org.organization?.acronym && org.organization.acronym !== org.organization.name && ` (${org.organization.acronym})`}
                                             </span>
                                           )}

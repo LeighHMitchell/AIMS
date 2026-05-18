@@ -18,19 +18,19 @@ const importOptions = [
   {
     id: 'activities',
     title: 'Import Activities',
-    description: 'Import activity data including titles, descriptions, dates, budgets, and implementing organizations',
+    description: 'Import activity data including titles, descriptions, dates, budgets, and implementing organisations',
     icon: Activity,
     href: '/import/activities',
-    fields: ['Activity Title', 'Start Date', 'End Date', 'Total Budget', 'Development Partner Organization'],
+    fields: ['Activity Title', 'Start Date', 'End Date', 'Total Budget', 'Development Partner Organisation'],
     color: 'bg-blue-50 text-blue-700 border-blue-200',
   },
   {
     id: 'organizations',
-    title: 'Import Organizations',
-    description: 'Import organization data including names, IATI identifiers, countries, and contact information',
+    title: 'Import Organisations',
+    description: 'Import organisation data including names, IATI identifiers, countries, and contact information',
     icon: Building2,
     href: '/import/organizations',
-    fields: ['Organization Name', 'IATI ID', 'Country', 'Organization Type'],
+    fields: ['Organisation Name', 'IATI ID', 'Country', 'Organisation Type'],
     color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]',
   },
   {
@@ -54,7 +54,7 @@ export default function ImportPage() {
             Smart Import Tool
           </h1>
           <p className="text-muted-foreground mt-2">
-            Bulk import your data from CSV or Excel files with intelligent field mapping
+            Bulk import your data from CSV files with intelligent field mapping
           </p>
         </div>
 
@@ -107,7 +107,7 @@ export default function ImportPage() {
               <h3 className="font-semibold">How it works</h3>
               <ol className="list-decimal list-inside space-y-1 text-body text-muted-foreground">
                 <li>Choose the type of data you want to import</li>
-                <li>Upload your CSV or Excel file (max 10MB)</li>
+                <li>Upload your CSV file (max 10MB)</li>
                 <li>Map your file columns to system fields using drag-and-drop</li>
                 <li>Review validation results and import your data</li>
               </ol>

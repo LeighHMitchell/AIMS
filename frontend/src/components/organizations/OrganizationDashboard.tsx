@@ -276,7 +276,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
             </p>
           </div>
           <div>
-            <p className="text-body text-purple-600 font-medium">Organization Type</p>
+            <p className="text-body text-purple-600 font-medium">Organisation Type</p>
             <Badge variant="outline" className="border-purple-300 text-purple-700">
               {organization.organisation_type}
             </Badge>

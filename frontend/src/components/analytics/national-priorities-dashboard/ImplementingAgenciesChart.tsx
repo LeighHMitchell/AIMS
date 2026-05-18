@@ -280,7 +280,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
       <Table>
         <TableHeader>
           <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-            <TableHead>Organization</TableHead>
+            <TableHead>Organisation</TableHead>
             <TableHead className="text-right whitespace-normal">Value (USD)</TableHead>
             <TableHead className="text-right">%</TableHead>
           </TableRow>

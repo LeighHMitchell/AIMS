@@ -60,8 +60,8 @@ const financialReports: ReportConfig[] = [
     apiEndpoint: "/api/reports/disbursements-by-partner",
     filename: "disbursements_by_partner",
     headers: [
-      { key: "organization_name", label: "Organization Name" },
-      { key: "organization_type", label: "Organization Type" },
+      { key: "organization_name", label: "Organisation Name" },
+      { key: "organization_type", label: "Organisation Type" },
       { key: "total_committed", label: "Total Committed (USD)" },
       { key: "total_disbursed", label: "Total Disbursed (USD)" },
       { key: "activity_count", label: "Activity Count" },
@@ -121,7 +121,7 @@ const organizationReports: ReportConfig[] = [
     apiEndpoint: "/api/reports/organizations-summary",
     filename: "organizations_summary",
     headers: [
-      { key: "organization_name", label: "Organization Name" },
+      { key: "organization_name", label: "Organisation Name" },
       { key: "organization_type", label: "Type" },
       { key: "iati_ref", label: "IATI Ref" },
       { key: "active_activities", label: "Active Activities" },
@@ -298,7 +298,7 @@ export default function ReportsPage() {
             {/* Organization Reports */}
             <section>
               <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
-                Organization Reports
+                Organisation Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {organizationReports.map((report) => (

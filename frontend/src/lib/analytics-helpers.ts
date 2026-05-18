@@ -222,7 +222,7 @@ export function buildAidFlowGraphData(
     organizations.slice(0, Math.min(20, organizations.length)).forEach(org => {
       nodesMap.set(org.id, {
         id: org.id,
-        name: org.name || `Organization ${org.id}`,
+        name: org.name || `Organisation ${org.id}`,
         type: mapOrgTypeToNodeType(org.type),
         sector: org.sector,
         logo: org.logo || null,

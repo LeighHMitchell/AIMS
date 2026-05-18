@@ -45,7 +45,7 @@ export default function ImportActivitiesPage() {
         <div>
           <h1 className="text-2xl font-bold">Import Activities</h1>
           <p className="text-muted-foreground mt-1">
-            Import your activity data from CSV or Excel files
+            Import your activity data from CSV files
           </p>
         </div>
         

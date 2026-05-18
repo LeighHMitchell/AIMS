@@ -999,14 +999,14 @@ export default function TransactionForm({
           <div className="space-y-8"> {/* Add more whitespace between cards */}
             <h3 className="text-body font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Organizations
+              Organisations
             </h3>
             
             {/* Provider Organization */}
             <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-muted'}`}>
               <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-body flex items-center gap-2">
-                  Provider Organization
+                  Provider Organisation
                   {!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId && (
                     <Badge variant="outline" className="text-helper bg-blue-50 border-blue-200 text-blue-600 font-normal">
                       Auto-filled
@@ -1024,7 +1024,7 @@ export default function TransactionForm({
                       await saveField("provider_org_id", orgId);
                     }
                   }}
-                  placeholder="Select provider organization..."
+                  placeholder="Select provider organisation..."
                   allowManualEntry={false}
                   fallbackRef={formData.provider_org_ref}
                   className="px-4 py-4 text-base leading-relaxed h-auto min-h-[3.5rem]"
@@ -1037,7 +1037,7 @@ export default function TransactionForm({
             <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-muted'}`}>
               <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-body flex items-center gap-2">
-                  Receiver Organization
+                  Receiver Organisation
                   {typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId && (
                     <Badge variant="outline" className="text-helper bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] font-normal">
                       Auto-filled
@@ -1055,7 +1055,7 @@ export default function TransactionForm({
                       await saveField("receiver_org_id", orgId);
                     }
                   }}
-                  placeholder="Select receiver organization..."
+                  placeholder="Select receiver organisation..."
                   allowManualEntry={false}
                   fallbackRef={formData.receiver_org_ref}
                   className="px-4 py-4 text-base leading-relaxed h-auto min-h-[3.5rem]"

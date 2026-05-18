@@ -137,7 +137,7 @@ export function ResolveOrganizationModal({
     ).length
 
     if (unresolvedCount > 0) {
-      toast.error(`Please resolve all ${unresolvedCount} remaining organizations or skip them`)
+      toast.error(`Please resolve all ${unresolvedCount} remaining organisations or skip them`)
       return
     }
 
@@ -147,7 +147,7 @@ export function ResolveOrganizationModal({
     )
 
     if (invalidCreates.length > 0) {
-      toast.error('All new organizations must have a name')
+      toast.error('All new organisations must have a name')
       return
     }
 
@@ -162,11 +162,11 @@ export function ResolveOrganizationModal({
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">
-            Resolve Organization References
+            Resolve Organisation References
           </DialogTitle>
           <DialogDescription>
-            {totalCount} organization{totalCount !== 1 ? 's' : ''} in the import {totalCount !== 1 ? 'are' : 'is'} not recognized. 
-            Please link {totalCount !== 1 ? 'them' : 'it'} to existing organizations, create new ones, or skip for now.
+            {totalCount} organisation{totalCount !== 1 ? 's' : ''} in the import {totalCount !== 1 ? 'are' : 'is'} not recognized.
+            Please link {totalCount !== 1 ? 'them' : 'it'} to existing organisations, create new ones, or skip for now.
           </DialogDescription>
         </DialogHeader>
 
@@ -175,10 +175,10 @@ export function ResolveOrganizationModal({
           <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-body font-medium text-amber-800">
-              Unresolved organizations will prevent data from being imported correctly
+              Unresolved organisations will prevent data from being imported correctly
             </p>
             <p className="text-helper text-amber-700 mt-1">
-              Transactions and activities referencing these organizations will not be linked until they are resolved.
+              Transactions and activities referencing these organisations will not be linked until they are resolved.
             </p>
           </div>
         </div>
@@ -260,7 +260,7 @@ export function ResolveOrganizationModal({
                         <RadioGroupItem value="link" id={`${key}-link`} />
                         <div className="flex-1 space-y-2">
                           <Label htmlFor={`${key}-link`} className="font-medium">
-                            Link to existing organization
+                            Link to existing organisation
                           </Label>
                           
                           {resolution?.action === 'link' || resolution?.action === undefined ? (
@@ -268,7 +268,7 @@ export function ResolveOrganizationModal({
                               <OrganizationCombobox
                                 value={resolution?.organizationId || ''}
                                 onValueChange={(value) => handleLinkToExisting(org, value)}
-                                placeholder="Search organizations..."
+                                placeholder="Search organisations..."
                               />
                               
                               {resolution?.organizationId && (
@@ -296,7 +296,7 @@ export function ResolveOrganizationModal({
                         <RadioGroupItem value="create" id={`${key}-create`} />
                         <div className="flex-1">
                           <Label htmlFor={`${key}-create`} className="font-medium">
-                            Create new organization
+                            Create new organisation
                           </Label>
                           {resolution?.action === 'create' && (
                             <div className="mt-2 space-y-2 bg-muted/50 p-3 rounded border">
@@ -314,7 +314,7 @@ export function ResolveOrganizationModal({
                                       }
                                     })
                                   }}
-                                  placeholder="Organization name"
+                                  placeholder="Organisation name"
                                   className="mt-1"
                                 />
                               </div>
@@ -352,7 +352,7 @@ export function ResolveOrganizationModal({
                             Skip (resolve later)
                           </Label>
                           <p className="text-helper text-muted-foreground mt-1">
-                            Activities and transactions referencing this organization will not be imported
+                            Activities and transactions referencing this organisation will not be imported
                           </p>
                         </div>
                       </div>

@@ -227,7 +227,7 @@ export function DataClinicDuplicates() {
           ? 'Marked as not a duplicate' 
           : action === 'linked'
           ? 'Activities linked'
-          : 'Organizations merged'
+          : 'Organisations merged'
       );
 
       // Remove from list
@@ -312,7 +312,7 @@ export function DataClinicDuplicates() {
             </TabsTrigger>
             <TabsTrigger value="organizations" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Organizations
+              Organisations
               {stats?.organizations.total ? (
                 <Badge variant="secondary" className="ml-1">
                   {stats.organizations.total}
@@ -496,7 +496,7 @@ export function DataClinicDuplicates() {
             <Card>
               <CardContent className="p-6 text-center">
                 <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--success-icon))]" />
-                <h3 className="text-lg font-medium mb-2">No Organization Duplicates Found</h3>
+                <h3 className="text-lg font-medium mb-2">No Organisation Duplicates Found</h3>
                 <p className="text-muted-foreground">
                   {confidenceFilter !== 'all' || detectionTypeFilter !== 'all'
                     ? 'No duplicates match your current filters. Try adjusting your filters.'

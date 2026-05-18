@@ -46,14 +46,14 @@ export function getRoleDisplayLabel(role: string | undefined | null): string {
   // Import ROLE_LABELS dynamically to avoid circular dependencies
   const roleLabelsMap: Record<string, string> = {
     [USER_ROLES.SUPER_USER]: "Administrator",
-    [USER_ROLES.DEV_PARTNER_TIER_1]: "Partner Manager",
-    [USER_ROLES.DEV_PARTNER_TIER_2]: "Partner Editor",
+    [USER_ROLES.DEV_PARTNER_TIER_1]: "Development Partner Manager",
+    [USER_ROLES.DEV_PARTNER_TIER_2]: "Development Partner Editor",
     [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Manager",
     [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Editor",
     [USER_ROLES.PUBLIC_USER]: "Viewer",
     'admin': "Administrator",
-    'development_partner_tier_1': "Partner Manager",
-    'development_partner_tier_2': "Partner Editor",
+    'development_partner_tier_1': "Development Partner Manager",
+    'development_partner_tier_2': "Development Partner Editor",
     'government_partner_tier_1': "Government Manager",
     'government_partner_tier_2': "Government Editor",
     'orphan': "Unassigned User"

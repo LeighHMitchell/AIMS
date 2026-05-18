@@ -275,7 +275,7 @@ export default function FundFlowGraph({
     node.append('title')
       .text(d => {
         const roleLabel = d.type === 'provider' ? 'Provider' : 'Receiver'
-        const unknownNote = d.isUnknown ? ' (Unknown - missing organization data)' : ''
+        const unknownNote = d.isUnknown ? ' (Unknown - missing organisation data)' : ''
         return `${roleLabel}: ${d.name}${unknownNote}`
       })
 
@@ -427,7 +427,7 @@ export default function FundFlowGraph({
       <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No fund flow data available</p>
-          <p className="text-helper mt-2">Add transactions or planned disbursements with provider and receiver organizations to see the flow graph</p>
+          <p className="text-helper mt-2">Add transactions or planned disbursements with provider and receiver organisations to see the flow graph</p>
         </div>
       </div>
     )
@@ -495,12 +495,12 @@ export default function FundFlowGraph({
                 </p>
                 {currentDataQuality.partialData > 0 && (
                   <p>
-                    • <strong>{currentDataQuality.partialData}</strong> items have incomplete organization data (showing as "Unknown Provider" or "Unknown Receiver" with dashed borders)
+                    • <strong>{currentDataQuality.partialData}</strong> items have incomplete organisation data (showing as "Unknown Provider" or "Unknown Receiver" with dashed borders)
                   </p>
                 )}
                 {currentDataQuality.skippedNoOrgs > 0 && (
                   <p>
-                    • <strong>{currentDataQuality.skippedNoOrgs}</strong> items excluded (missing both provider and receiver organizations)
+                    • <strong>{currentDataQuality.skippedNoOrgs}</strong> items excluded (missing both provider and receiver organisations)
                   </p>
                 )}
                 {currentDataQuality.skippedNoAmount > 0 && (

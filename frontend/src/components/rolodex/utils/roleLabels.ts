@@ -9,8 +9,8 @@ export const ROLE_LABELS: Record<string, { label: string; color: string; categor
   'super_user': { label: 'Administrator', color: 'bg-destructive text-destructive-foreground', category: ROLE_CATEGORIES.SYSTEM },
   'government_partner_tier_1': { label: 'Government Manager', color: 'bg-green-700 text-white border border-green-800', category: ROLE_CATEGORIES.SYSTEM },
   'government_partner_tier_2': { label: 'Government Editor', color: 'bg-green-100 text-green-700 border border-green-200', category: ROLE_CATEGORIES.SYSTEM },
-  'development_partner_tier_1': { label: 'Partner Manager', color: 'bg-blue-700 text-white border border-blue-800', category: ROLE_CATEGORIES.SYSTEM },
-  'development_partner_tier_2': { label: 'Partner Editor', color: 'bg-blue-100 text-blue-700 border border-blue-200', category: ROLE_CATEGORIES.SYSTEM },
+  'development_partner_tier_1': { label: 'Development Partner Manager', color: 'bg-blue-700 text-white border border-blue-800', category: ROLE_CATEGORIES.SYSTEM },
+  'development_partner_tier_2': { label: 'Development Partner Editor', color: 'bg-blue-100 text-blue-700 border border-blue-200', category: ROLE_CATEGORIES.SYSTEM },
   'orphan': { label: 'Unassigned User', color: 'text-foreground', category: ROLE_CATEGORIES.SYSTEM },
 
   // Organization roles
@@ -38,7 +38,7 @@ export const ROLE_LABELS: Record<string, { label: string; color: string; categor
 export const SOURCE_LABELS: Record<string, { label: string; color: string; icon: string }> = {
   'user': { label: 'System User', color: 'bg-blue-100 text-blue-800', icon: '' },
   'activity_contact': { label: 'Activity Contact', color: 'bg-purple-100 text-purple-800', icon: '' },
-  'organization_contact': { label: 'Organization Contact', color: 'bg-green-100 text-green-800', icon: '' },
+  'organization_contact': { label: 'Organisation Contact', color: 'bg-green-100 text-green-800', icon: '' },
 };
 
 // Contact type categories for better filtering
@@ -59,8 +59,8 @@ export const CONTACT_TYPE_CATEGORIES = {
   },
   ORGANIZATION_CONTACTS: {
     key: 'organization_contacts',
-    label: 'Organization Contacts', 
-    description: 'Organization-level contacts',
+    label: 'Organisation Contacts',
+    description: 'Organisation-level contacts',
     icon: '',
     color: 'bg-green-100 text-green-800'
   }

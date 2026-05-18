@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
  * - comments?: string
  */
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
       };
 
       if (validated) {
-        updateData.validated_by = 'admin'; // Placeholder - should be actual user ID from auth context
+        updateData.validated_by = user?.id ?? null;
         updateData.validated_at = new Date().toISOString();
       } else {
         updateData.validated_by = null;

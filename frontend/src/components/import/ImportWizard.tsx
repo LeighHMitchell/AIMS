@@ -279,7 +279,7 @@ export function ImportWizard({ entityType, onImport, requiredPermission }: Impor
               <div>
                 <h2 className="text-xl font-semibold">Upload {entityType} Data</h2>
                 <p className="text-muted-foreground mt-1">
-                  Select a CSV or Excel file containing your {entityType} data
+                  Select a CSV file containing your {entityType} data
                 </p>
               </div>
               <Button

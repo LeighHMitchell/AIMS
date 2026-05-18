@@ -21,7 +21,10 @@ import { Map, useMap } from '@/components/ui/map'
 // Dynamic import for MapLibre-based layers
 const ActivityMarkersLayer = dynamic(() => import('../maps-v2/ActivityMarkersLayer'), { ssr: false })
 const SimpleActivityMarkersLayer = dynamic(() => import('../maps-v2/SimpleActivityMarkersLayer'), { ssr: false })
+const FieldTripMarkersLayer = dynamic(() => import('../maps-v2/FieldTripMarkersLayer'), { ssr: false })
 const HeatmapLayer = dynamic(() => import('../maps-v2/HeatmapLayer'), { ssr: false })
+
+import type { FieldTripMarker } from '../maps-v2/FieldTripMarkersLayer'
 
 interface SectorData {
   code: string
@@ -56,6 +59,9 @@ interface ActivityLocationsHeatmapProps {
   activityTitle?: string
   activity?: ActivityData
   simpleMarkers?: boolean
+  /** Standalone field trips, rendered as amber pins distinct from the red
+   *  activity-site pins. Optional — callers without field trips omit it. */
+  fieldTrips?: FieldTripMarker[]
 }
 
 type ViewMode = 'markers' | 'heatmap'
@@ -294,7 +300,8 @@ export default function ActivityLocationsHeatmap({
   title = "Activity Locations Map",
   activityTitle,
   activity,
-  simpleMarkers = false
+  simpleMarkers = false,
+  fieldTrips = []
 }: ActivityLocationsHeatmapProps) {
   const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light')
   const [isExporting, setIsExporting] = useState(false)
@@ -361,6 +368,15 @@ export default function ActivityLocationsHeatmap({
     })
   }, [locations])
 
+  // Field trips with valid coordinates — rendered as amber pins.
+  const validFieldTrips = useMemo(() => {
+    return (fieldTrips || []).filter(ft => {
+      const lat = Number(ft.latitude)
+      const lng = Number(ft.longitude)
+      return !isNaN(lat) && !isNaN(lng)
+    })
+  }, [fieldTrips])
+
   // Prepare heatmap points
   const heatmapPoints = useMemo(() => {
     return validLocations
@@ -414,8 +430,9 @@ export default function ActivityLocationsHeatmap({
     }
   }
 
-  // Don't show map if no valid locations
-  if (validLocations.length === 0) {
+  // Don't show map if there's nothing to plot (no site locations and no
+  // field trips with coordinates).
+  if (validLocations.length === 0 && validFieldTrips.length === 0) {
     return null
   }
 
@@ -512,18 +529,25 @@ export default function ActivityLocationsHeatmap({
             />
 
             {/* Markers Mode */}
-            {viewMode === 'markers' && validLocations.length > 0 && (
-              simpleMarkers ? (
-                <SimpleActivityMarkersLayer
-                  locations={validLocations}
-                  activityTitle={activityTitle}
-                />
-              ) : (
-                <ActivityMarkersLayer
-                  locations={validLocations}
-                  activity={activity}
-                />
-              )
+            {viewMode === 'markers' && (
+              <>
+                {validLocations.length > 0 && (
+                  simpleMarkers ? (
+                    <SimpleActivityMarkersLayer
+                      locations={validLocations}
+                      activityTitle={activityTitle}
+                    />
+                  ) : (
+                    <ActivityMarkersLayer
+                      locations={validLocations}
+                      activity={activity}
+                    />
+                  )
+                )}
+                {validFieldTrips.length > 0 && (
+                  <FieldTripMarkersLayer fieldTrips={validFieldTrips} />
+                )}
+              </>
             )}
 
             {/* Heatmap Mode */}

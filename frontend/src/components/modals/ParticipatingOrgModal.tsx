@@ -171,7 +171,7 @@ export function ParticipatingOrgModal({
 
   const handleSubmit = async () => {
     if (!formData.organization_id || !formData.role_type) {
-      toast.error('Please select an organization and role');
+      toast.error('Please select an organisation and role');
       return;
     }
 
@@ -206,7 +206,7 @@ export function ParticipatingOrgModal({
       onClose();
     } catch (error) {
       console.error('Error saving participating organization:', error);
-      toast.error('Failed to save organization');
+      toast.error('Failed to save organisation');
     } finally {
       setSaving(false);
     }
@@ -217,7 +217,7 @@ export function ParticipatingOrgModal({
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-visible">
         <DialogHeader>
           <DialogTitle>
-            {editingOrg ? 'Edit Participating Organization' : 'Add Participating Organization'}
+            {editingOrg ? 'Edit Participating Organisation' : 'Add Participating Organisation'}
           </DialogTitle>
           <DialogDescription>
             Select an organization and assign their role in this activity.
@@ -228,14 +228,14 @@ export function ParticipatingOrgModal({
           {/* Organization Selection */}
           <div className="space-y-2">
             <Label htmlFor="organization" className="flex items-center gap-2">
-              Organization <RequiredDot />
-              <HelpTextTooltip content="Select an existing organization from your database. Can't find your organization? Add it in the Organizations page first." />
+              Organisation <RequiredDot />
+              <HelpTextTooltip content="Select an existing organisation from your database. Can't find your organisation? Add it in the Organisations page first." />
             </Label>
             <OrganizationCombobox
               value={formData.organization_id || ''}
               onValueChange={(value) => setFormData(prev => ({ ...prev, organization_id: value }))}
               organizations={organizations}
-              placeholder="Search for an organization..."
+              placeholder="Search for an organisation..."
               disabled={orgsLoading}
               open={activeDropdown === 'organization'}
               onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'organization' : null)}
@@ -245,12 +245,12 @@ export function ParticipatingOrgModal({
           {/* Role Selection */}
           <div className="space-y-2">
             <Label htmlFor="role" className="flex items-center gap-2">
-              Organization Role <RequiredDot />
-              <HelpTextTooltip content="The role of the organization in this activity according to IATI standard: Funding (provides funds), Accountable (legal responsibility), Extending (manages on behalf of funder), or Implementing (physically carries out)." />
+              Organisation Role <RequiredDot />
+              <HelpTextTooltip content="The role of the organisation in this activity according to IATI standard: Funding (provides funds), Accountable (legal responsibility), Extending (manages on behalf of funder), or Implementing (physically carries out)." />
             </Label>
             <EnhancedSearchableSelect
               groups={[{
-                label: "Organization Roles",
+                label: "Organisation Roles",
                 options: IATI_ORGANIZATION_ROLES.map(r => ({
                   code: r.code.toString(),
                   name: r.name,
@@ -483,7 +483,7 @@ export function ParticipatingOrgModal({
         <ModalFooter
           onCancel={onClose}
           onSubmit={handleSubmit}
-          submitText={editingOrg ? 'Update Participating Organization' : 'Add Participating Organization'}
+          submitText={editingOrg ? 'Update Participating Organisation' : 'Add Participating Organisation'}
           loadingText="Saving..."
           isLoading={saving}
           isDisabled={!formData.organization_id || !formData.role_type}

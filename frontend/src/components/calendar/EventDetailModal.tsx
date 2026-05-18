@@ -686,7 +686,7 @@ export function EventDetailModal({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Building2 className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-body font-medium text-[#4c5568]">Organization</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Organisation</Label>
                 </div>
                 <div className="flex-1">
                   <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">

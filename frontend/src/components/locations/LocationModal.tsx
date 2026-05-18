@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SegmentedControl } from '@/components/ui/segmented-control';
-import { Settings as SettingsIcon, SlidersHorizontal, ClipboardList } from 'lucide-react';
+import { Settings as SettingsIcon, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,7 +71,6 @@ import { IATI_LOCATION_TYPE_GROUPS } from '@/data/iati-location-types';
 import { countries } from '@/data/countries';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
 import { apiFetch } from '@/lib/api-fetch';
-import { FieldReportsSection } from './FieldReportsSection';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -564,10 +563,7 @@ const LAYER_PREFERENCE_KEY = 'aims-map-layer-preference';
 interface LocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (
-    location: LocationSchema,
-    options?: { keepOpen?: boolean },
-  ) => Promise<LocationSchema | void>;
+  onSave: (location: LocationSchema) => Promise<void>;
   onDelete?: (locationId: string) => Promise<void>;
   activityId: string;
   location?: LocationSchema;
@@ -586,7 +582,7 @@ export default function LocationModal({
   // Form state
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationFormSection, setLocationFormSection] = useState<'general' | 'advanced' | 'field-reports'>('general');
+  const [locationFormSection, setLocationFormSection] = useState<'general' | 'advanced'>('general');
   const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
@@ -601,9 +597,6 @@ export default function LocationModal({
   const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM);
 
   const mapRef = useRef<any>(null);
-  // Tracks whether the next form submission should close the modal (normal Save)
-  // or keep it open and switch into the Field Reports section after saving.
-  const submitModeRef = useRef<'close' | 'continue-to-reports'>('close');
 
   // Fetch home country from system settings
   useEffect(() => {
@@ -1082,24 +1075,14 @@ const autoPopulateIatiFields = useCallback((params: {
       };
 
 
-      const keepOpen = submitModeRef.current === 'continue-to-reports';
-      await onSave(locationData, { keepOpen });
+      await onSave(locationData);
 
-      // LocationsTab shows its own success toast when keepOpen is true and
-      // promotes the new location to "editing" — the modal stays open and the
-      // Field Reports section unlocks automatically via the updated `location`
-      // prop. For the normal Save path, we close the modal here.
-      if (keepOpen) {
-        setLocationFormSection('field-reports');
-      } else {
-        toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
-        onClose();
-      }
+      toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
+      onClose();
     } catch (error) {
       console.error('[LocationModal] ❌ Error saving location:', error);
       toast.error('Failed to save location. Please try again.');
     } finally {
-      submitModeRef.current = 'close';
       setIsSaving(false);
     }
   };
@@ -1118,19 +1101,6 @@ const autoPopulateIatiFields = useCallback((params: {
     const list = missing.length ? missing.join(', ') : 'required fields';
     toast.error(`Please complete required fields: ${list}`);
   };
-
-  // Triggered by the Field Reports section empty state when the user wants to
-  // save the location now and continue straight into adding a field report. If
-  // validation fails we bounce them back to the General tab so the highlighted
-  // fields are visible.
-  const handleSaveAndContinueToReports = useCallback(() => {
-    submitModeRef.current = 'continue-to-reports';
-    handleSubmit(onSubmit, (errors) => {
-      submitModeRef.current = 'close';
-      setLocationFormSection('general');
-      onInvalid(errors);
-    })();
-  }, [handleSubmit]);
 
   // Handle delete
   const handleDelete = async () => {
@@ -1329,7 +1299,6 @@ const autoPopulateIatiFields = useCallback((params: {
               options={[
                 { value: 'general', label: 'General', icon: SettingsIcon },
                 { value: 'advanced', label: 'Advanced', icon: SlidersHorizontal },
-                { value: 'field-reports', label: 'Field Reports', icon: ClipboardList },
               ]}
             />
 
@@ -1640,7 +1609,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 <div className="space-y-2">
                   <Label htmlFor="location_ref" className="flex items-center gap-2">
                     Location Reference
-                    <HelpTextTooltip content="A unique identifier for this location (e.g., AF-KAN, KH-PNH). This is typically assigned by the reporting organization and matches the IATI location ref attribute." />
+                    <HelpTextTooltip content="A unique identifier for this location (e.g., AF-KAN, KH-PNH). This is typically assigned by the reporting organisation and matches the IATI location ref attribute." />
                   </Label>
                   <Input
                     id="location_ref"
@@ -1818,15 +1787,6 @@ const autoPopulateIatiFields = useCallback((params: {
             </div>
             )}
 
-            {locationFormSection === 'field-reports' && (
-              <FieldReportsSection
-                activityId={activityId}
-                locationId={location?.id}
-                isNewLocation={!location?.id}
-                onSaveAndContinue={handleSaveAndContinueToReports}
-                isSaving={isSaving}
-              />
-            )}
 
           </div>
         </div>

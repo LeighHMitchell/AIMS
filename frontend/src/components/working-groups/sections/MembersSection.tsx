@@ -335,7 +335,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
       }
       return val
     }
-    const headers = ['Name', 'Role', 'Organization', 'Department', 'Job Title', 'Email', 'Joined', 'Status']
+    const headers = ['Name', 'Role', 'Organisation', 'Department', 'Job Title', 'Email', 'Joined', 'Status']
     const rows = members.map(m => [
       escCSV(m.person_name || ''),
       escCSV(getRoleLabel(m.role)),
@@ -401,7 +401,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                   <span className="flex items-center gap-1">Role {getSortIcon('role', sortField, sortDirection)}</span>
                 </th>
                 <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('organization')}>
-                  <span className="flex items-center gap-1">Organization {getSortIcon('organization', sortField, sortDirection)}</span>
+                  <span className="flex items-center gap-1">Organisation {getSortIcon('organization', sortField, sortDirection)}</span>
                 </th>
                 <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('email')}>
                   <span className="flex items-center gap-1">Email {getSortIcon('email', sortField, sortDirection)}</span>
@@ -632,11 +632,11 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Organization</Label>
+                  <Label>Organisation</Label>
                   <Input
                     value={newOrg}
                     onChange={(e) => setNewOrg(e.target.value)}
-                    placeholder="Organization name"
+                    placeholder="Organisation name"
                   />
                 </div>
               </>

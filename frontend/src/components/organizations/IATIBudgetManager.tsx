@@ -51,8 +51,8 @@ interface IATIBudgetManagerProps {
 }
 
 const BUDGET_TYPES = [
-  { value: 'total', label: 'Total Budgeted', icon: DollarSign, description: 'Overall organizational budget' },
-  { value: 'recipient-org', label: 'Recipient Organization', icon: Building2, description: 'Budget allocated to specific organizations' },
+  { value: 'total', label: 'Total Budgeted', icon: DollarSign, description: 'Overall organisational budget' },
+  { value: 'recipient-org', label: 'Recipient Organisation', icon: Building2, description: 'Budget allocated to specific organisations' },
   { value: 'recipient-country', label: 'Recipient Country', icon: MapPin, description: 'Budget allocated to specific countries' },
   { value: 'recipient-region', label: 'Recipient Region', icon: Globe2, description: 'Budget allocated to specific regions' }
 ];
@@ -210,7 +210,7 @@ export function IATIBudgetManager({
 
       // Self-contained mode - save to API
       if (!organizationId) {
-        toast.error('Organization ID is required');
+        toast.error('Organisation ID is required');
         return;
       }
 
@@ -701,7 +701,7 @@ export function IATIBudgetManager({
                       <Label>Recipient Reference</Label>
                       <Input
                         placeholder={
-                          editingBudget.budgetType === 'recipient-org' ? 'Organization ID (e.g., AA-AAA-123456789)' :
+                          editingBudget.budgetType === 'recipient-org' ? 'Organisation ID (e.g., AA-AAA-123456789)' :
                           editingBudget.budgetType === 'recipient-country' ? 'Country Code (e.g., AF)' :
                           'Region Code (e.g., A1)'
                         }

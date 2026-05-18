@@ -104,3 +104,75 @@ export const getDefaultFieldReportValues = (): FieldReportFormSchema => ({
   participants_count: null,
   lead_organisation_id: null,
 });
+
+// ---------------------------------------------------------------------------
+// Standalone field trips
+//
+// A field trip is a field report that carries its own geo identity instead of
+// hanging off an activity_location. Same event fields, plus place_name + coords.
+// ---------------------------------------------------------------------------
+export const fieldTripFormSchema = z
+  .object({
+    event_type: z.enum(FIELD_REPORT_EVENT_TYPES),
+    event_type_other: z.string().nullable().optional(),
+    title: z.string().min(1, 'Title is required'),
+    place_name: z.string().min(1, 'Where did this happen?'),
+    latitude: z
+      .union([z.number(), z.null()])
+      .refine((v) => v !== null && v >= -90 && v <= 90, {
+        message: 'Latitude must be between -90 and 90',
+      }),
+    longitude: z
+      .union([z.number(), z.null()])
+      .refine((v) => v !== null && v >= -180 && v <= 180, {
+        message: 'Longitude must be between -180 and 180',
+      }),
+    event_date: z.string().nullable().optional(),
+    event_end_date: z.string().nullable().optional(),
+    narrative: z.string().nullable().optional(),
+    participants_count: z.union([z.number().int().nonnegative(), z.null()]).optional(),
+    lead_organisation_id: z.string().nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      data.event_type !== 'other' ||
+      (typeof data.event_type_other === 'string' && data.event_type_other.trim().length > 0),
+    { message: 'Please describe the event type', path: ['event_type_other'] },
+  )
+  .refine(
+    (data) => {
+      if (!data.event_date || !data.event_end_date) return true;
+      return data.event_end_date >= data.event_date;
+    },
+    { message: 'End date must be on or after the start date', path: ['event_end_date'] },
+  );
+
+export type FieldTripFormSchema = z.infer<typeof fieldTripFormSchema>;
+
+export interface FieldTrip extends Omit<FieldTripFormSchema, 'latitude' | 'longitude'> {
+  id: string;
+  activity_id: string;
+  location_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  attachments?: FieldReportAttachment[];
+  photo_count?: number;
+  document_count?: number;
+}
+
+export const getDefaultFieldTripValues = (): FieldTripFormSchema => ({
+  event_type: 'field_visit',
+  event_type_other: null,
+  title: '',
+  place_name: '',
+  latitude: null,
+  longitude: null,
+  event_date: null,
+  event_end_date: null,
+  narrative: null,
+  participants_count: null,
+  lead_organisation_id: null,
+});

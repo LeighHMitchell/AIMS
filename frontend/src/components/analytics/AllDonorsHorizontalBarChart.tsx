@@ -668,7 +668,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     let rows: string[]
 
     if (chartViewMode === 'stacked') {
-      headers = ['Organization Type', 'Type Code', 'Total Value', 'Number of Development Partners']
+      headers = ['Organisation Type', 'Type Code', 'Total Value', 'Number of Development Partners']
       rows = stackedData.rows.map((d: any) => {
         return [
           d.name,
@@ -912,7 +912,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 onCloseAutoFocus={(e) => e.preventDefault()}
               >
                 <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
-                  <span className="text-helper font-semibold text-foreground">Organization Types</span>
+                  <span className="text-helper font-semibold text-foreground">Organisation Types</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       type="button"
@@ -1178,7 +1178,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
-                <span className="text-helper font-semibold text-foreground">Organization Types</span>
+                <span className="text-helper font-semibold text-foreground">Organisation Types</span>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     type="button"
@@ -1363,7 +1363,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Table>
               <TableHeader>
                 <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-                  <TableHead>Organization</TableHead>
+                  <TableHead>Organisation</TableHead>
                   <TableHead>Type</TableHead>
                   {/* One column per selected metric — column headers reflect
                       the user's current selection in the metric multi-select.

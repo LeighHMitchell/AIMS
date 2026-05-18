@@ -2154,7 +2154,7 @@ export class IATIXMLParser {
         ref: reportingOrgElement?.getAttribute('ref') || '',
         name: this.extractNarrative(reportingOrgElement) || 
               reportingOrgElement?.getAttribute('ref') || 
-              'Unknown Organization',
+              'Unknown Organisation',
       };
 
       // Budget (sum of all budget values)

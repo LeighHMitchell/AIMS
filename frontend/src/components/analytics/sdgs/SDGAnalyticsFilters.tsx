@@ -76,17 +76,17 @@ export function SDGAnalyticsFilters({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Organization Filter */}
         <div className="space-y-2">
-          <Label className="text-helper text-muted-foreground">Organization</Label>
+          <Label className="text-helper text-muted-foreground">Organisation</Label>
           <Select
             value={organizationId}
             onValueChange={onOrganizationChange}
             disabled={loadingOrgs}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select organization" />
+              <SelectValue placeholder="Select organisation" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All organizations</SelectItem>
+              <SelectItem value="all">All organisations</SelectItem>
               {organizations.map((org) => (
                 <SelectItem key={org.id} value={org.id}>
                   {org.name}

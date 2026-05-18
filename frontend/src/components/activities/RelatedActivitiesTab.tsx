@@ -370,7 +370,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         <div className="flex items-center gap-1">IATI Identifier {getSortIcon('iati_id', sortField, sortDirection)}</div>
                       </TableHead>
                       <TableHead className={sortableHeaderClasses} onClick={() => handleSort('organization')}>
-                        <div className="flex items-center gap-1">Organization {getSortIcon('organization', sortField, sortDirection)}</div>
+                        <div className="flex items-center gap-1">Organisation {getSortIcon('organization', sortField, sortDirection)}</div>
                       </TableHead>
                       <TableHead className={sortableHeaderClasses} onClick={() => handleSort('status')}>
                         <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>

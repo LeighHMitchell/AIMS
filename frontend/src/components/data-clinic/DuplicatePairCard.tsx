@@ -59,7 +59,7 @@ const DETECTION_TYPE_LABELS: Record<string, string> = {
   exact_name: 'Exact Name Match',
   exact_acronym: 'Exact Acronym Match',
   similar_name: 'Similar Name',
-  cross_org: 'Cross-Organization Match',
+  cross_org: 'Cross-Organisation Match',
 };
 
 const CONFIDENCE_BADGES: Record<string, { variant: string; icon: React.ReactNode }> = {
@@ -161,7 +161,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
               href={`/organizations/${entity.id}`}
               className="font-medium text-body hover:underline line-clamp-2"
             >
-              {entity.name || 'Unknown Organization'}
+              {entity.name || 'Unknown Organisation'}
             </Link>
             {entity.acronym && (
               <span className="text-helper text-muted-foreground ml-2">({entity.acronym})</span>

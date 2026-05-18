@@ -103,6 +103,14 @@ export default function ParcelDetailPage() {
     }
   }
 
+  const tabs = useMemo(() => [
+    { key: "overview", label: "Overview" },
+    { key: "map", label: "Map" },
+    { key: "documents", label: `Documents (${documents.length})` },
+    { key: "allocation", label: `Allocation (${allocations.length})` },
+    { key: "history", label: `History (${history.length})` },
+  ], [documents.length, allocations.length, history.length])
+
   if (loading) {
     return (
       <MainLayout>
@@ -126,14 +134,6 @@ export default function ParcelDetailPage() {
       </MainLayout>
     )
   }
-
-  const tabs = useMemo(() => [
-    { key: "overview", label: "Overview" },
-    { key: "map", label: "Map" },
-    { key: "documents", label: `Documents (${documents.length})` },
-    { key: "allocation", label: `Allocation (${allocations.length})` },
-    { key: "history", label: `History (${history.length})` },
-  ], [documents.length, allocations.length, history.length])
 
   return (
     <MainLayout>

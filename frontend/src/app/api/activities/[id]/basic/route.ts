@@ -193,6 +193,25 @@ export async function GET(
     // Extract sectors
     const sectors = activity.activity_sectors || [];
     
+    // If the activity is in the recycle bin we want to surface a friendly
+    // "deleted by" name to the editor's warning banner. Resolve it lazily so
+    // we don't pay the cost for normal (non-deleted) activities.
+    let deletedByName: string | null = null;
+    if (activity.deleted_at && activity.deleted_by) {
+      const { data: deleter } = await supabase
+        .from('users')
+        .select('name, first_name, last_name, email')
+        .eq('id', activity.deleted_by)
+        .maybeSingle();
+      if (deleter) {
+        deletedByName =
+          deleter.name ||
+          [deleter.first_name, deleter.last_name].filter(Boolean).join(' ').trim() ||
+          deleter.email ||
+          null;
+      }
+    }
+
     // If created_by_org_name is missing but reporting_org_id exists, look up the org
     let resolvedOrgName = activity.created_by_org_name || activity.reporting_org_name || '';
     let resolvedOrgAcronym = activity.created_by_org_acronym || '';
@@ -356,6 +375,16 @@ export async function GET(
       customDates: activity.custom_dates || [],
       custom_dates: activity.custom_dates || [],
       participatingOrgsCount: participatingOrgsCount || 0,
+      // Recycle bin metadata — surfaces a warning modal + banner in the editor.
+      // deleted_at is non-null when the activity is currently soft-deleted.
+      deleted_at: activity.deleted_at || null,
+      deletedAt: activity.deleted_at || null,
+      deleted_by: activity.deleted_by || null,
+      deletedBy: activity.deleted_by || null,
+      deleted_by_name: deletedByName,
+      deletedByName: deletedByName,
+      purge_paused: activity.purge_paused ?? false,
+      purgePaused: activity.purge_paused ?? false,
       // Tab completion counts (lightweight, fetched in parallel)
       tabCounts: {
         contacts: contactsCount || 0,

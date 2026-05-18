@@ -43,7 +43,7 @@ interface Activity {
 
 export default function ValidationsPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoading: isAuthLoading } = useUser();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'submitted' | 'validated' | 'rejected'>('submitted');
@@ -53,12 +53,12 @@ export default function ValidationsPage() {
   const canValidate = user?.role === 'gov_partner_tier_1' || user?.role === 'super_user';
 
   useEffect(() => {
-    if (!canValidate) {
-      router.push("/");
-      return;
+    if (canValidate) {
+      fetchActivities();
+    } else {
+      setLoading(false);
     }
-    fetchActivities();
-  }, [canValidate, router]);
+  }, [canValidate]);
 
   const fetchActivities = async () => {
     try {
@@ -88,6 +88,34 @@ export default function ValidationsPage() {
   const validatedCount = activities.filter(a => a.submissionStatus === 'validated').length;
   const rejectedCount = activities.filter(a => a.submissionStatus === 'rejected').length;
 
+  if (isAuthLoading) {
+    return (
+      <MainLayout>
+        <ValidationQueueSkeleton />
+      </MainLayout>
+    );
+  }
+
+  if (!canValidate) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="p-6 text-center max-w-md">
+            <ShieldCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Validation Restricted</h2>
+            <p className="text-muted-foreground mb-6">
+              Validation is restricted to Government Manager users.
+              Contact your administrator if you need this role.
+            </p>
+            <Button onClick={() => router.push("/dashboard")}>
+              Return to Dashboard
+            </Button>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
   if (loading) {
     return (
       <MainLayout>
@@ -98,8 +126,8 @@ export default function ValidationsPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen">
-        <div className="p-8 max-w-7xl mx-auto">
+      <div className="w-full">
+        <div className="w-full">
           <div className="mb-8">
             <div className="flex items-center gap-3">
               <div>

@@ -509,7 +509,7 @@ export function AidEcosystemSolarSystem({
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
-        <p className="text-body">No organization data available</p>
+        <p className="text-body">No organisation data available</p>
       </div>
     )
   }
@@ -750,7 +750,7 @@ export function AidEcosystemSolarSystem({
         {data.length === 0 && visibleSectors.size > 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <AlertCircle className="h-12 w-12 text-slate-300 mb-4" />
-            <p className="text-muted-foreground font-medium">No organizations found</p>
+            <p className="text-muted-foreground font-medium">No organisations found</p>
             <p className="text-body text-muted-foreground mt-1 max-w-md">
               No organizations have transactions in the selected {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'}.
               Try selecting different sectors or clearing the filter.
@@ -902,7 +902,7 @@ export function AidEcosystemSolarSystem({
 
       {/* Legend */}
       <div className="rounded-lg p-4" style={{ backgroundColor: '#f1f4f8' }}>
-        <p className="text-helper font-medium mb-2" style={{ color: '#4c5568' }}>Organization Types</p>
+        <p className="text-helper font-medium mb-2" style={{ color: '#4c5568' }}>Organisation Types</p>
         <div className="flex flex-wrap gap-3">
           {legendItems.map(item => (
             <div key={item.value} className="flex items-center gap-1.5">

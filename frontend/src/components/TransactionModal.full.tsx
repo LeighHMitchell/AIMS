@@ -1391,7 +1391,7 @@ export default function TransactionModal({
               <div className="space-y-6">
                 {/* Provider Organization */}
                 <div className="space-y-4 border rounded-lg p-6">
-                  <h4 className="font-medium text-foreground">Provider Organization</h4>
+                  <h4 className="font-medium text-foreground">Provider Organisation</h4>
                   <div className="space-y-3">
                     <OrganizationSearchableSelect
                       organizations={organizations}
@@ -1421,7 +1421,7 @@ export default function TransactionModal({
 
                 {/* Receiver Organization */}
                 <div className="space-y-4 border rounded-lg p-6">
-                  <h4 className="font-medium text-foreground">Receiver Organization</h4>
+                  <h4 className="font-medium text-foreground">Receiver Organisation</h4>
                   <div className="space-y-3">
                     <OrganizationSearchableSelect
                       organizations={organizations}

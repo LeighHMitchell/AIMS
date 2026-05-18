@@ -81,7 +81,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
     } catch (error) {
       console.error('Error fetching reporting org chart data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');
-      toast.error('Failed to load reporting organization data');
+      toast.error('Failed to load reporting organisation data');
     } finally {
       setLoading(false);
     }
@@ -189,7 +189,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
                 onClick={() => handleSort('organization')}
               >
                 <div className="flex items-center gap-1">
-                  <span>Organization</span>
+                  <span>Organisation</span>
                   {getSortIcon('organization')}
                 </div>
               </TableHead>
@@ -279,7 +279,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
         <p>
           <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organizations by total budget |
           <strong> Currency:</strong> {currency} |
-          <strong> Organizations:</strong> {data.length}
+          <strong> Organisations:</strong> {data.length}
         </p>
       </div>
     </div>

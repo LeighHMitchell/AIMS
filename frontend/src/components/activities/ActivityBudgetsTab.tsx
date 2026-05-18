@@ -57,6 +57,7 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { exportToCSV } from '@/lib/exports';
 import { exportBudgetsCsv, type BudgetRow } from '@/lib/exports/entities/budgets';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
@@ -300,12 +301,6 @@ export default function ActivityBudgetsTab({
   // Bulk selection state
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
-  // Click-to-copy for Budget ID column
-  const copyBudgetId = (value: string) => {
-    navigator.clipboard.writeText(value);
-    toast.success('Budget ID copied');
-  };
 
   // Confirmation dialog state
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
@@ -1899,22 +1894,7 @@ export default function ActivityBudgetsTab({
                         </TableCell>
                       )}
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }} onClick={(e) => e.stopPropagation()}>
-                        {(budget as any).auto_ref ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              copyBudgetId((budget as any).auto_ref);
-                            }}
-                            title="Click to copy"
-                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
-                          >
-                            <span>{(budget as any).auto_ref}</span>
-                          </button>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                        <CopyableIdBadge value={(budget as any).auto_ref} label="Budget ID" />
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '200px' }}>
                         {budget.reference && (

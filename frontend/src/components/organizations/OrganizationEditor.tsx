@@ -95,7 +95,7 @@ export function OrganizationEditor({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to create organization')
+        throw new Error(error.message || 'Failed to create organisation')
       }
 
       const newOrg = await response.json()
@@ -106,14 +106,14 @@ export function OrganizationEditor({
         onCreate(newOrg.id)
       }
       
-      toast.success('Organization created successfully')
+      toast.success('Organisation created successfully')
       
       // Switch to general section after creation
       setActiveSection('general')
       router.replace(`/organizations/${newOrg.id}/edit?section=general`, { scroll: false })
     } catch (error: any) {
       console.error('Error creating organization:', error)
-      toast.error(error.message || 'Failed to create organization')
+      toast.error(error.message || 'Failed to create organisation')
       throw error
     }
   }, [onCreate, router])
@@ -136,15 +136,15 @@ export function OrganizationEditor({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to save organization')
+        throw new Error(error.message || 'Failed to save organisation')
       }
 
       const updatedOrg = await response.json()
       setOrganization(updatedOrg)
-      toast.success('Organization saved successfully')
+      toast.success('Organisation saved successfully')
     } catch (error: any) {
       console.error('Error saving organization:', error)
-      toast.error(error.message || 'Failed to save organization')
+      toast.error(error.message || 'Failed to save organisation')
     } finally {
       setSaving(false)
     }
@@ -171,7 +171,7 @@ export function OrganizationEditor({
       }
     } catch (error) {
       console.error('Error deleting organization:', error)
-      toast.error('Failed to delete organization')
+      toast.error('Failed to delete organisation')
     } finally {
       setIsDeleting(false)
     }
@@ -236,7 +236,7 @@ export function OrganizationEditor({
     if (needsOrg && !currentOrgId && !organizationCreated) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">Please create the organization first by entering a name in the General section</p>
+          <p className="text-muted-foreground">Please create the organisation first by entering a name in the General section</p>
         </div>
       )
     }
@@ -262,7 +262,7 @@ export function OrganizationEditor({
     if (!currentOrgId) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">Please create the organization first</p>
+          <p className="text-muted-foreground">Please create the organisation first</p>
         </div>
       )
     }
@@ -366,7 +366,7 @@ export function OrganizationEditor({
                 variant="outline"
                 className="px-4 py-3 text-base font-semibold opacity-50 cursor-not-allowed"
                 disabled
-                title="Save the organization first to enable comments"
+                title="Save the organisation first to enable comments"
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Comments
@@ -413,7 +413,7 @@ export function OrganizationEditor({
                   }
                 }}
                 disabled={exporting || saving}
-                title="Download a complete Excel snapshot of this organization to share with a reviewer"
+                title="Download a complete Excel snapshot of this organisation to share with a reviewer"
               >
                 <Download className="mr-2 h-4 w-4" />
                 {exporting ? 'Exporting…' : 'Export for Review'}
@@ -463,7 +463,7 @@ export function OrganizationEditor({
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteOrganization} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete Organization'}
+              {isDeleting ? 'Deleting...' : 'Delete Organisation'}
             </Button>
           </DialogFooter>
         </DialogContent>

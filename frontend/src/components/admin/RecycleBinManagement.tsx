@@ -31,7 +31,7 @@ type EntityType = typeof ENTITY_TYPES[number]
 const ENTITY_META: Record<EntityType, { label: string; Icon: typeof Activity }> = {
   activities: { label: "Activities", Icon: Activity },
   transactions: { label: "Transactions", Icon: ArrowLeftRight },
-  organizations: { label: "Organizations", Icon: Building2 },
+  organizations: { label: "Organisations", Icon: Building2 },
   contacts: { label: "Contacts", Icon: UserSquare2 },
   tasks: { label: "Tasks", Icon: ListChecks },
 }

@@ -136,7 +136,7 @@ export async function POST(
   const { id: activityId } = await params;
 
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     if (!supabase) {
@@ -190,7 +190,7 @@ export async function POST(
         related_activity_id: linkedActivityId,
         relationship_type: relationshipType,
         narrative: narrative || null,
-        created_by: 'current-user' // TODO: Get from auth
+        created_by: user?.id ?? null
       })
       .select()
       .single();

@@ -46,7 +46,7 @@ export function initializeLocalDb() {
       first_name: 'Test',
       last_name: 'User',
       role: 'super_user',
-      organisation: 'Test Organization',
+      organisation: 'Test Organisation',
       department: 'Development',
       job_title: 'Test Administrator',
       created_at: new Date().toISOString(),
@@ -58,7 +58,7 @@ export function initializeLocalDb() {
       first_name: 'Admin',
       last_name: 'User',
       role: 'super_user',
-      organisation: 'Test Organization',
+      organisation: 'Test Organisation',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }

@@ -46,7 +46,7 @@ export function DataClinicFinancialCompleteness() {
           const result = await response.json();
           const orgs = (result.organizations || result || []).map((org: any) => ({
             id: org.id,
-            name: org.name || org.reporting_org_name || 'Unknown Organization'
+            name: org.name || org.reporting_org_name || 'Unknown Organisation'
           }));
           setOrganizations(orgs);
         }

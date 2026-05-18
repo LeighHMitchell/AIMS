@@ -131,7 +131,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Users className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-2xl font-bold text-foreground">{partnershipData.totalPartners}</p>
-              <p className="text-body text-muted-foreground">Partner Organizations</p>
+              <p className="text-body text-muted-foreground">Partner Organisations</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Activity className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
@@ -242,7 +242,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
             <div className="text-center py-8 text-muted-foreground">
               <Network className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No partnerships found</p>
-              <p className="text-body">Partner organizations will appear here when activities include multiple organizations</p>
+              <p className="text-body">Partner organisations will appear here when activities include multiple organisations</p>
             </div>
           )}
         </div>

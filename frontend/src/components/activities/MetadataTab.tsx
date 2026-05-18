@@ -304,7 +304,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         });
       }
 
-      toast.success('Reporting organization updated');
+      toast.success('Reporting organisation updated');
       
       // Refresh metadata to ensure UI is synchronized
       await fetchMetadata();
@@ -319,7 +319,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }));
     } catch (error) {
       console.error('[AIMS] Error updating reporting organization:', error);
-      toast.error('Couldn\u2019t update the reporting organization. Check your connection and try again.');
+      toast.error('Couldn\u2019t update the reporting organisation. Check your connection and try again.');
     } finally {
       setSavingReportingOrg(false);
     }
@@ -598,7 +598,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             </tr>
             {/* Reporting Organization */}
             <tr>
-              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Reporting Organization</td>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Reporting Organisation</td>
               <td className="px-4 py-3">
                 <div className="w-full">
                   <LockedOrganizationField
@@ -609,7 +609,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                     onSave={handleReportingOrgSave}
                     saving={savingReportingOrg}
                     isSuperUser={true}
-                    placeholder="Select reporting organization..."
+                    placeholder="Select reporting organisation..."
                     lockTooltip="Click to unlock and change the reporting organization"
                     unlockTooltip="Click to unlock and change the reporting organization"
                     disabled={organizationsLoading}

@@ -261,7 +261,7 @@ export function SectorTimeSeriesFilters({
 
       {/* Organization Filter */}
       <div className="space-y-1.5">
-        <Label className="text-helper text-muted-foreground">Organization</Label>
+        <Label className="text-helper text-muted-foreground">Organisation</Label>
         <Select
           value={filters.organizationId || 'all'}
           onValueChange={(value) => onFiltersChange({ ...filters, organizationId: value === 'all' ? undefined : value })}
@@ -273,7 +273,7 @@ export function SectorTimeSeriesFilters({
             <SelectValue placeholder={loadingOrgs ? "Loading..." : "Select organization"} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All organizations</SelectItem>
+            <SelectItem value="all">All organisations</SelectItem>
             {organizations.map(org => (
               <SelectItem key={org.id} value={org.id}>
                 {org.acronym || org.name}

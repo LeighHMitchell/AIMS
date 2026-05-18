@@ -430,13 +430,13 @@ export function ActivityFreshnessChart() {
 
           {/* Organization Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-body text-muted-foreground">Organization:</span>
+            <span className="text-body text-muted-foreground">Organisation:</span>
             <Select value={orgFilter} onValueChange={setOrgFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select organization" />
+                <SelectValue placeholder="Select organisation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All organizations</SelectItem>
+                <SelectItem value="all">All organisations</SelectItem>
                 {organizations.map(org => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.acronym ? `${org.acronym} - ${org.name}` : org.name}

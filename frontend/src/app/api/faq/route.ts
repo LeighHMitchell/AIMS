@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireSuperUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -90,18 +90,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    // FAQ is global admin content — creating it requires a super_user
+    // (mirrors the super_user gate the FAQ page enforces in the UI).
+    const { supabase, response: authResponse } = await requireSuperUser();
     if (authResponse) return authResponse;
 
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
-    
-    // For now, we'll skip user authentication in the API and rely on frontend permissions
-    // TODO: Add proper authentication when user context is available
-    
-    // Permission check will be handled on frontend for now
-    
+
     const body = await request.json()
     const { question, answer, category, tags } = body
     

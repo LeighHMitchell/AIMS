@@ -57,14 +57,16 @@ export function EnhancedSearchableSelect({
   const [localIsOpen, setLocalIsOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  // Use controlled state if provided, then dropdown context, then local state
+  // Use controlled state if provided, then dropdown context, then local state.
+  // useDropdownState must be called unconditionally (Rules of Hooks); it
+  // safely no-ops to internal local state when no provider is present.
   const dropdownContext = React.useContext(DropdownContext);
+  const sharedDropdownState = useDropdownState(dropdownId);
   const { isOpen, setOpen } = controlledOpen !== undefined
     ? { isOpen: controlledOpen, setOpen: (v: boolean) => controlledOnOpenChange?.(v) }
-    : dropdownContext && dropdownId !== "enhanced-searchable-select" ? useDropdownState(dropdownId) : {
-    isOpen: localIsOpen,
-    setOpen: setLocalIsOpen
-  };
+    : dropdownContext && dropdownId !== "enhanced-searchable-select"
+      ? sharedDropdownState
+      : { isOpen: localIsOpen, setOpen: setLocalIsOpen };
 
   // Flatten all options for search and selection
   const allOptions = React.useMemo(

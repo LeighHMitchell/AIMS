@@ -666,7 +666,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Reporting Organization */}
             <div className="space-y-2">
-              <Label htmlFor="reporting-org">Reporting Organization (IATI Identifier)</Label>
+              <Label htmlFor="reporting-org">Reporting Organisation (IATI Identifier)</Label>
               <Popover open={orgPopoverOpen} onOpenChange={setOrgPopoverOpen}>
                 <PopoverTrigger asChild className="w-full">
                   <Button
@@ -1163,7 +1163,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                                     <span className="text-destructive text-helper cursor-help">⚠</span>
                                                   </TooltipTrigger>
                                                   <TooltipContent>
-                                                    <p className="text-helper">Invalid IATI organization identifier format</p>
+                                                    <p className="text-helper">Invalid IATI organisation identifier format</p>
                                                   </TooltipContent>
                                                 </Tooltip>
                                               )}
@@ -1386,7 +1386,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   <li>Search by activity title (e.g., "Technical Assistance on Social Protection")</li>
                   <li>Search by IATI identifier (e.g., "AU-5-INM438")</li>
                   <li>The system automatically detects IATI IDs and searches exactly</li>
-                  <li>Click on role names (e.g., "4 Implementing") to see full organization details</li>
+                  <li>Click on role names (e.g., "4 Implementing") to see full organisation details</li>
                   <li>Add country filter to narrow results</li>
                   <li>If no results, try different keywords or check the IATI identifier format</li>
                 </ul>
@@ -1418,7 +1418,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       <Dialog open={showOrgDetailsModal} onOpenChange={setShowOrgDetailsModal}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Organizations by Role</DialogTitle>
+            <DialogTitle>Organisations by Role</DialogTitle>
             <DialogDescription>
               All organizations grouped by their IATI role types with descriptions
             </DialogDescription>
@@ -1455,7 +1455,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                 ...(unassignedOrgs.length > 0 ? [{
                   roleCode: 'unknown',
                   roleName: 'Other',
-                  roleDescription: 'Organizations without assigned roles',
+                  roleDescription: 'Organisations without assigned roles',
                   orgs: unassignedOrgs
                 }] : [])
               ]

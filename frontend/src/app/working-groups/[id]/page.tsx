@@ -385,7 +385,7 @@ export default function WorkingGroupProfilePage() {
                         <tr className="border-b border-border">
                           <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Name</th>
                           <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Role</th>
-                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Organization</th>
+                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Organisation</th>
                           <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Email</th>
                           <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Joined</th>
                         </tr>

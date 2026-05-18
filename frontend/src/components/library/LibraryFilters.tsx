@@ -20,7 +20,7 @@ interface LibraryFiltersPanelProps {
 const SOURCE_TYPE_OPTIONS = [
   { value: 'activity', label: 'Activities' },
   { value: 'transaction', label: 'Transactions' },
-  { value: 'organization', label: 'Organizations' },
+  { value: 'organization', label: 'Organisations' },
   { value: 'result', label: 'Results' },
   { value: 'indicator', label: 'Indicators' },
   { value: 'standalone', label: 'Library' },

@@ -4,6 +4,8 @@ import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef, sta
 import Image from "next/image";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/main-layout";
+import { ActivityInRecycleBinDialog } from "@/components/activities/ActivityInRecycleBinDialog";
+import { RecycleBinBanner } from "@/components/activities/RecycleBinBanner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EnhancedFinancesSection } from "@/components/activities/EnhancedFinancesSection";
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm";
@@ -38,7 +40,7 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard, Download } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard, Download, Paperclip } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -475,7 +477,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
     } catch (error) {
       console.error('Failed to save reporting organization:', error);
-      toast.error('Couldn\u2019t save the reporting organization. Check your selection and try again.');
+      toast.error('Couldn\u2019t save the reporting organisation. Check your selection and try again.');
     } finally {
       setIsSavingReportingOrg(false);
     }
@@ -709,7 +711,22 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   };
 
-  // Title autosave removed in manual mode to avoid conflicting create flows
+  // Title autosave — ONLY for activities that already exist (general.id set).
+  // For brand-new activities the manual create flow (saveActivity on blur)
+  // still owns creation, so we never let this hook race the create flow.
+  const titleAutosave = useFieldAutosave('title', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    immediate: false,
+    debounceMs: 1200,
+    onSuccess: () => {
+      setPendingSaves(prev => {
+        const newSet = new Set(prev);
+        newSet.delete('title');
+        return newSet;
+      });
+    }
+  });
 
   const acronymAutosave = useFieldAutosave('acronym', {
     activityId: effectiveActivityId,
@@ -892,7 +909,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         {/* Activity Title - takes up 2 columns, enlarged for prominence */}
         <div className="lg:col-span-2 space-y-2">
           <LabelSaveIndicator
-            isSaving={isSaving}
+            isSaving={isSaving || titleAutosave.state.isSaving}
             isSaved={!!general.id && !!general.title?.trim()}
             hasValue={!!general.title?.trim()}
             isFocused={isTitleFocused}
@@ -910,15 +927,25 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               id="title"
               value={general.title || ''}
               onChange={(e) => {
-                setGeneral((g: any) => ({ ...g, title: e.target.value }));
+                const nextTitle = e.target.value;
+                setGeneral((g: any) => ({ ...g, title: nextTitle }));
                 setHasUnsavedChanges(true);
+                // Autosave edits to an EXISTING activity (debounced in the hook).
+                // New activities are still created via the manual flow on blur.
+                if (general.id && nextTitle.trim()) {
+                  setPendingSaves(prev => new Set(prev).add('title'));
+                  titleAutosave.triggerFieldSave(nextTitle);
+                }
               }}
               onFocus={() => setIsTitleFocused(true)}
               onBlur={() => {
                 setIsTitleFocused(false);
-                // Trigger activity creation when user enters title and navigates away
                 if (general.title?.trim() && !general.id) {
+                  // New activity: create it
                   saveActivity({});
+                } else if (general.id && general.title?.trim()) {
+                  // Existing activity: flush any pending title edit immediately
+                  titleAutosave.triggerFieldSave(general.title);
                 }
               }}
               placeholder="Enter activity title"
@@ -4274,6 +4301,17 @@ function NewActivityPageContent() {
   }, [loading, startLoading, stopLoading]);
   
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Recycle bin awareness — set when loadActivity() returns deleted_at != null.
+  // The modal pops once on first load; the persistent banner stays visible until
+  // the activity is restored or the editor is closed.
+  const [recycleBinInfo, setRecycleBinInfo] = useState<{
+    deletedAt: string | null;
+    deletedByName: string | null;
+    purgeOnDate: string | null;
+    purgePaused: boolean;
+  } | null>(null);
+  const [showRecycleBinDialog, setShowRecycleBinDialog] = useState(false);
   
   // Navigation guard removed - all fields auto-save so no data loss on refresh
   // useEffect(() => {
@@ -4500,6 +4538,28 @@ function NewActivityPageContent() {
           }
           
           const data = await response.json();
+
+          // Recycle bin detection — if the activity is currently soft-deleted,
+          // capture the metadata and pop the warning dialog on first load.
+          if (data.deletedAt || data.deleted_at) {
+            const deletedAt: string = data.deletedAt || data.deleted_at;
+            const purgePaused: boolean = data.purgePaused ?? data.purge_paused ?? false;
+            // Recycle bin retention is 30 days from deletion, unless purge is paused.
+            const purgeOnDate = purgePaused
+              ? null
+              : new Date(new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            setRecycleBinInfo({
+              deletedAt,
+              deletedByName: data.deletedByName || data.deleted_by_name || null,
+              purgeOnDate,
+              purgePaused,
+            });
+            setShowRecycleBinDialog(true);
+          } else {
+            setRecycleBinInfo(null);
+            setShowRecycleBinDialog(false);
+          }
+
           // Update all state with loaded data
           setGeneral({
             id: data.id || activityId,
@@ -4874,6 +4934,47 @@ function NewActivityPageContent() {
 
   // Permission checks
   const canEdit = general.submissionStatus === 'draft' || general.submissionStatus === 'rejected' || user?.role === 'super_user';
+  const canRestoreFromRecycleBin = user?.role === 'super_user';
+
+  // Restore this activity from the recycle bin. Hits the existing admin
+  // endpoint (super-user only), clears the recycle bin state on success, then
+  // refetches the activity so the editor reflects the new state without a hard
+  // navigation.
+  const handleRestoreFromRecycleBin = useCallback(async () => {
+    const activityId = general.id;
+    if (!activityId) return;
+    try {
+      const res = await fetch('/api/admin/recycle-bin/activities/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ids: [activityId] }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to restore activity');
+      }
+      toast.success('Activity restored');
+      setRecycleBinInfo(null);
+      setShowRecycleBinDialog(false);
+    } catch (err: any) {
+      console.error('[Editor] restore error:', err);
+      toast.error(err.message || 'Failed to restore activity');
+    }
+  }, [general.id]);
+
+  // Bail out of the editor when the user cancels the warning modal — sends
+  // them back to wherever they came from rather than leaving them on a hidden
+  // editor view that they didn't actively choose.
+  const handleCancelRecycleBinDialog = useCallback(() => {
+    setShowRecycleBinDialog(false);
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/activities');
+    }
+  }, [router]);
+
   const canSubmit = user?.role === 'gov_partner_tier_2' || user?.role === 'dev_partner_tier_2';
   const canValidate = user?.role === 'gov_partner_tier_1' || user?.role === 'super_user';
   // Super users can always see the publish toggle
@@ -5716,6 +5817,25 @@ function NewActivityPageContent() {
       <DropdownProvider>
         {/* Field-level autosave system - no wrapper needed */}
         <div>
+        {recycleBinInfo && (
+          <RecycleBinBanner
+            deletedAt={recycleBinInfo.deletedAt}
+            deletedByName={recycleBinInfo.deletedByName}
+            purgeOnDate={recycleBinInfo.purgeOnDate}
+            canRestore={canRestoreFromRecycleBin}
+            onRestore={handleRestoreFromRecycleBin}
+          />
+        )}
+        <ActivityInRecycleBinDialog
+          open={showRecycleBinDialog}
+          deletedAt={recycleBinInfo?.deletedAt ?? null}
+          deletedByName={recycleBinInfo?.deletedByName ?? null}
+          purgeOnDate={recycleBinInfo?.purgeOnDate ?? null}
+          canRestore={canRestoreFromRecycleBin}
+          onRestore={handleRestoreFromRecycleBin}
+          onContinueEditing={() => setShowRecycleBinDialog(false)}
+          onCancel={handleCancelRecycleBinDialog}
+        />
         {/* 3-Column Layout: Main Sidebar (fixed by MainLayout) | Editor Nav | Main Panel */}
         <div className="flex h-[calc(100vh-6rem)] overflow-hidden gap-x-6 lg:gap-x-8">
         {/* Activity Editor Navigation Panel */}
@@ -5802,6 +5922,20 @@ function NewActivityPageContent() {
                       )}
                     </div>
                   )}
+                  {/* Documents quick-link (F2.3.c) — surfaces buried Library section */}
+                  {documents && documents.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTabChange('documents')}
+                        className="text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
+                        title="Jump to Documents & Images"
+                      >
+                        <Paperclip className="w-3 h-3" />
+                        {documents.length} {documents.length === 1 ? 'document' : 'documents'}
+                      </button>
+                    </div>
+                  )}
                   {showActivityMetadata && (
                     <p className="text-helper text-muted-foreground mt-2">
                       Created by {general.createdBy?.name || user?.name || "Unknown User"}
@@ -5854,6 +5988,19 @@ function NewActivityPageContent() {
         {/* Main Content Panel */}
         <main className="flex-1 overflow-y-auto bg-card">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6 pb-24">
+            {/* Submitted-activity review banner (F1.1.b) — shown to gov validators */}
+            {permissions?.canValidateActivity && (
+              <Alert className="mb-6 border-blue-200 bg-blue-50">
+                <ShieldCheck className="h-4 w-4 text-blue-700" />
+                <AlertDescription className="text-blue-900">
+                  <strong>You&apos;re reviewing a submitted activity.</strong>{' '}
+                  You can validate or reject it, but cannot edit the contents.
+                  To request changes, use <strong>Validation Rejected</strong> below
+                  to send it back to the reporting organisation.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex items-center justify-end mb-6" data-tour="editor-save">
               <div className="flex items-center gap-6">
                 {/* Reject Button - shown next to Published toggle for Tier 1 validators */}

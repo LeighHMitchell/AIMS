@@ -62,7 +62,7 @@ const MARKER_TYPE_LABELS = {
 
 const VOCABULARY_LABELS = {
   '1': 'OECD DAC CRS',
-  '99': 'Custom Organization'
+  '99': 'Custom Organisation'
 };
 
 const HELP_CONTENT = [

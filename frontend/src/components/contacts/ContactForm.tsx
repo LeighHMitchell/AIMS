@@ -524,7 +524,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
               organisationAcronym: org?.acronym
             }));
           }}
-          placeholder="Select organization..."
+          placeholder="Select organisation..."
         />
       </div>
 

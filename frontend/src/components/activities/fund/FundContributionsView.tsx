@@ -79,6 +79,29 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
     if (activityId) load()
   }, [activityId])
 
+  // Hooks must run unconditionally — declared before the loading/error/empty
+  // early returns below (Rules of Hooks).
+  const sortedDonors = useMemo(() => {
+    if (!data) return []
+    return [...data.donors].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1
+      switch (sortField) {
+        case 'name':
+          return dir * a.name.localeCompare(b.name)
+        case 'pledged':
+          return dir * (a.pledged - b.pledged)
+        case 'committed':
+          return dir * (a.committed - b.committed)
+        case 'received':
+          return dir * (a.received - b.received)
+        case 'total':
+          return dir * (a.total - b.total)
+        default:
+          return 0
+      }
+    })
+  }, [data, sortField, sortDirection])
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -100,27 +123,6 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
       </div>
     )
   }
-
-  const sortedDonors = useMemo(() => {
-    if (!data) return []
-    return [...data.donors].sort((a, b) => {
-      const dir = sortDirection === 'asc' ? 1 : -1
-      switch (sortField) {
-        case 'name':
-          return dir * a.name.localeCompare(b.name)
-        case 'pledged':
-          return dir * (a.pledged - b.pledged)
-        case 'committed':
-          return dir * (a.committed - b.committed)
-        case 'received':
-          return dir * (a.received - b.received)
-        case 'total':
-          return dir * (a.total - b.total)
-        default:
-          return 0
-      }
-    })
-  }, [data, sortField, sortDirection])
 
   const chartData = data.donors.map(d => ({
     name: d.name.length > 25 ? d.name.substring(0, 22) + '...' : d.name,

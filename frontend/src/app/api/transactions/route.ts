@@ -542,26 +542,40 @@ export async function GET(request: Request) {
 // Helper functions moved to @/lib/transaction-field-cleaner for consistency across all endpoints
 
 // Helper function to validate IATI field values
-async function validateIATIFields(body: any) {
+// Validates IATI-coded fields against the iati_reference_values view.
+// FAIL-OPEN by design: if the reference data can't be read (view missing,
+// DB error, or empty) validation is SKIPPED rather than rejecting every
+// transaction. A field is only enforced when we actually have a known-good
+// code list for it, so a partially-populated view can't cause false rejects.
+async function validateIATIFields(
+  body: any
+): Promise<{ isValid: boolean; errors: string[]; skipped?: boolean }> {
   const supabase = createSupabaseClient();
   const errors: string[] = [];
-  
+
   if (!supabase) {
-    return { isValid: false, errors: ['Failed to connect to database for validation'] };
+    console.warn('[Transactions API] IATI validation skipped: no database client');
+    return { isValid: true, errors: [], skipped: true };
   }
 
-  // Get all reference values for validation
+  // The repo defines an `iati_reference_values` VIEW (field_name, code, name).
+  // (The old `.rpc('get_iati_reference_values')` never existed, which is why
+  // validation had been disabled.)
   const { data: referenceValues, error } = await supabase
-    .rpc('get_iati_reference_values');
+    .from('iati_reference_values')
+    .select('field_name, code');
 
-  if (error) {
-    console.error('Error fetching IATI reference values for validation:', error);
-    return { isValid: false, errors: ['Unable to validate IATI field values'] };
+  if (error || !referenceValues || referenceValues.length === 0) {
+    console.warn(
+      '[Transactions API] IATI validation skipped: iati_reference_values unavailable —',
+      error?.message || '(no rows)'
+    );
+    return { isValid: true, errors: [], skipped: true };
   }
 
   // Group reference values by field
   const validValues: { [key: string]: string[] } = {};
-  referenceValues?.forEach((item: any) => {
+  referenceValues.forEach((item: any) => {
     if (!validValues[item.field_name]) {
       validValues[item.field_name] = [];
     }
@@ -581,9 +595,11 @@ async function validateIATIFields(body: any) {
   ];
 
   for (const { field, value, required, fieldName } of fieldsToValidate) {
+    const validCodes = validValues[field] || [];
     if (value) {
-      const validCodes = validValues[field] || [];
-      if (!validCodes.includes(value)) {
+      // Only enforce when we have a reference list for this field; if it's
+      // absent we can't know the value is invalid, so don't reject it.
+      if (validCodes.length > 0 && !validCodes.includes(value)) {
         const displayName = fieldName || field;
         errors.push(`Invalid ${displayName}: '${value}'. Valid values are: ${validCodes.slice(0, 10).join(', ')}${validCodes.length > 10 ? '...' : ''}`);
       }
@@ -609,15 +625,23 @@ interface CurrencyConversionOptions {
 }
 
 async function performCurrencyConversion(
-  transactionId: string, 
-  currency: string, 
-  value: number, 
+  transactionId: string,
+  currency: string,
+  value: number,
   valueDate: string,
   manualRate?: number | null,
   manualValueUsd?: number | null,
   isManual?: boolean
 ) {
   try {
+    // Background post-insert backfill — use the service-role client so the
+    // update isn't blocked by RLS. (This was referencing an undeclared
+    // `supabase`, so USD backfill silently failed for non-USD transactions.)
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error('[Transactions API] Currency conversion skipped: Supabase admin client unavailable');
+      return;
+    }
     
     // For USD transactions, still populate USD Value field
     if (currency === 'USD') {
@@ -722,6 +746,13 @@ async function performCurrencyConversion(
 // Helper function to infer and apply budget lines for a transaction
 async function performBudgetLineInference(transactionId: string) {
   try {
+    // Same pre-existing bug as performCurrencyConversion: this referenced an
+    // undeclared `supabase`. Use the service-role client for the backfill.
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      console.error('[Transactions API] Budget line inference skipped: Supabase admin client unavailable');
+      return;
+    }
     // Fetch transaction with its data
     const { data: transaction, error: txnError } = await supabase
       .from('transactions')
@@ -809,21 +840,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Temporarily skip IATI validation to test basic functionality
-    // TODO: Re-enable after ensuring database functions are set up
-    /*
-    // Validate IATI field values
+    // Validate IATI field values (fail-open if reference data is unavailable)
     const validation = await validateIATIFields(body);
     if (!validation.isValid) {
       return NextResponse.json(
-        { 
-          error: 'Invalid IATI field values', 
-          details: validation.errors 
+        {
+          error: 'Invalid IATI field values',
+          details: validation.errors
         },
         { status: 400 }
       );
     }
-    */
 
     // Use provided transaction reference or generate one if empty
     let transactionReference = body.transaction_reference?.trim() || '';
@@ -919,20 +946,16 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('[Transactions API] Error inserting transaction:', error);
       
-      // TEMPORARILY DISABLE unique constraint error to debug
-      // TODO: Re-enable after identifying the root cause
-      /*
-      // Enhanced error handling for unique constraint violations
+      // Friendly error for unique-reference constraint violations
       if (error.message && error.message.includes('unique_transaction_ref')) {
         return NextResponse.json(
-          { 
+          {
             error: 'Transaction reference already exists. Please provide a unique reference or leave blank for auto-generation.',
             details: 'The transaction reference must be unique within this activity.'
           },
           { status: 409 }
         );
       }
-      */
       
       return NextResponse.json(
         { error: error.message || 'Failed to save transaction' },
@@ -1074,21 +1097,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Temporarily skip IATI validation to test basic functionality
-    // TODO: Re-enable after ensuring database functions are set up
-    /*
-    // Validate IATI field values for updates
+    // Validate IATI field values for updates (fail-open if reference data is unavailable)
     const validation = await validateIATIFields(body);
     if (!validation.isValid) {
       return NextResponse.json(
-        { 
-          error: 'Invalid IATI field values', 
-          details: validation.errors 
+        {
+          error: 'Invalid IATI field values',
+          details: validation.errors
         },
         { status: 400 }
       );
     }
-    */
 
     // Handle transaction reference - if empty, keep the existing reference to avoid unique constraint issues
     let transactionReference = body.transaction_reference?.trim() || '';

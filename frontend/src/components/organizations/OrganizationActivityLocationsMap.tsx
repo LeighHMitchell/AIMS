@@ -262,7 +262,7 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="font-medium text-muted-foreground">No activity locations</p>
           <p className="text-body text-muted-foreground">
-            This organization has no activities with location data
+            This organisation has no activities with location data
           </p>
         </div>
       </div>

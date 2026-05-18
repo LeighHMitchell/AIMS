@@ -167,7 +167,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                       <p className="text-body font-medium leading-tight truncate">{getFullName(user)}</p>
                       <p className="text-helper leading-tight text-neutral-500 truncate">{user.email}</p>
                       <p className="text-helper leading-tight text-neutral-400 truncate">
-                        {user.organization?.name || user.organisation || 'No Organization'}
+                        {user.organization?.name || user.organisation || 'No Organisation'}
                       </p>
                     </div>
                   </div>

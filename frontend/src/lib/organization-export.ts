@@ -109,7 +109,7 @@ export async function exportOrganizationToPDF(orgId: string): Promise<void> {
     // Title
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('Organization Profile Export', 14, yPos);
+    doc.text('Organisation Profile Export', 14, yPos);
     yPos += 10;
     
     // Profile Section

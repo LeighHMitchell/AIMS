@@ -63,7 +63,7 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
     { key: 'title', label: 'Activity Title', required: true, weight: 2, getValue: (a) => a.title },
     { key: 'description', label: 'Description', required: true, weight: 2, getValue: (a) => a.description },
     { key: 'activityStatus', label: 'Activity Status', required: true, weight: 2, getValue: (a) => a.activityStatus },
-    { key: 'reportingOrg', label: 'Reporting Organization', required: true, weight: 2, getValue: (a) => a.created_by_org_name },
+    { key: 'reportingOrg', label: 'Reporting Organisation', required: true, weight: 2, getValue: (a) => a.created_by_org_name },
     { key: 'startDate', label: 'Start Date', required: true, weight: 2, getValue: (a) => a.plannedStartDate || a.actualStartDate },
     { key: 'sectors', label: 'Sectors', required: true, weight: 2, getValue: (a) => a.sectors },
     { key: 'defaultAidType', label: 'Default Aid Type', required: true, weight: 2, getValue: (a) => a.defaultAidType },

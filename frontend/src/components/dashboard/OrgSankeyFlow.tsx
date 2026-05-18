@@ -117,7 +117,7 @@ export function OrgSankeyFlow({
 
   // Get self node (the user's organization)
   const selfNode = data?.nodes.find(n => n.type === 'self');
-  const selfName = selfNode?.name || 'Your Organization';
+  const selfName = selfNode?.name || 'Your Organisation';
 
   // Separate incoming and outgoing links
   const incomingLinks = data?.links.filter(l => l.target === selfNode?.id) || [];

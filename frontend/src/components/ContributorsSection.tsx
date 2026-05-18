@@ -96,7 +96,7 @@ export default function ContributorsSection({
 
     // Check if already nominated
     if (isOrganizationContributor(contributors, selectedOrganizationId)) {
-      toast.error("This organization is already a contributor");
+      toast.error("This organisation is already a contributor");
       return;
     }
 
@@ -295,7 +295,7 @@ export default function ContributorsSection({
                     )}
                     value={selectedOrganizationId}
                     onValueChange={setSelectedOrganizationId}
-                    placeholder="Search organizations to nominate..."
+                    placeholder="Search organisations to nominate..."
                     disabled={organizationsLoading}
                     className="w-full border-0 bg-transparent shadow-none"
                   />

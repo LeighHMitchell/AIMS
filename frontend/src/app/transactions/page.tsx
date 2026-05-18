@@ -293,8 +293,8 @@ export default function TransactionsPage() {
     const dataToExport = transactions.data.map((transaction) => ({
       "Transaction ID": transaction.id,
       "Activity": transaction.activityTitle || transaction.activity?.title || transaction.activity_id,
-      "From Organization": transaction.provider_org_name || transaction.from_org || "",
-      "To Organization": transaction.receiver_org_name || transaction.to_org || "",
+      "From Organisation": transaction.provider_org_name || transaction.from_org || "",
+      "To Organisation": transaction.receiver_org_name || transaction.to_org || "",
       "Transaction Type": TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type,
       "Aid Type": transaction.aid_type || "",
       "Flow Type": transaction.flow_type || "",

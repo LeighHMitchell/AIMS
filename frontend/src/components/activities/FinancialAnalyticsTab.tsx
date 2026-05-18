@@ -55,12 +55,26 @@ import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/Char
 import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector'
+import { ChartViewToggle } from '@/components/charts/ChartViewToggle'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { formatAxisCurrency } from '@/lib/format'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
+
+function downloadCsv(content: string, filename: string) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
+  link.setAttribute('download', filename)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
 
 interface FinancialAnalyticsTabProps {
   activityId: string
@@ -2579,6 +2593,85 @@ export default function FinancialAnalyticsTab({
   }
   const aidModalityTotal = aidModalityData.reduce((sum, d) => sum + d.value, 0)
 
+  // By-year matrix used by the table view — rows = years, columns = the
+  // finance-type buckets actually present in the filtered data.
+  const aidModalityByYear = useMemo(() => {
+    const bucketOf = (code: string) => {
+      if (!code) return 'Unspecified'
+      if (code.startsWith('11') || code === '110' || code === '111') return 'Grants'
+      if (code.startsWith('4') || ['410','411','412','413','414','421','422','423','424'].includes(code)) return 'Loans'
+      if (code.startsWith('5') || ['510','511','512','513','520'].includes(code)) return 'Equity'
+      if (code.startsWith('6') || ['610','611','612','613','620','630'].includes(code)) return 'Guarantees / Insurance'
+      return 'Other'
+    }
+    const rows = new Map<number, Record<string, number>>()
+    const buckets = new Set<string>()
+    transactions?.forEach((t: any) => {
+      if (!withinRange(t, aidModalityCal.effectiveDateRange)) return
+      const type = String(t.transaction_type ?? '')
+      if (!aidModalityTxTypes.has(type)) return
+      const usd = parseFloat(t.usd_value || t.value_usd) || 0
+      const usable = usd || (t.currency === 'USD' ? parseFloat(t.value) || 0 : 0)
+      if (!Number.isFinite(usable) || usable <= 0) return
+      const date = t.transaction_date || t.value_date
+      if (!date) return
+      const year = new Date(date).getUTCFullYear()
+      if (!Number.isFinite(year)) return
+      const bucket = bucketOf(String(t.finance_type || ''))
+      buckets.add(bucket)
+      const row = rows.get(year) || {}
+      row[bucket] = (row[bucket] || 0) + usable
+      rows.set(year, row)
+    })
+    // Preserve the visual order from aidModalityData (which is sorted by value)
+    const presentBuckets = aidModalityData.map((d) => d.name).filter((b) => buckets.has(b))
+    const sortedYears = Array.from(rows.keys()).sort((a, b) => a - b)
+    return {
+      years: sortedYears,
+      buckets: presentBuckets,
+      rows,
+    }
+  }, [transactions, aidModalityCal.effectiveDateRange, aidModalityTxTypes, aidModalityData])
+
+  const exportAidModalityToCSV = () => {
+    if (aidModalityView === 'table') {
+      if (!aidModalityByYear.years.length) {
+        toast.error('No data to export')
+        return
+      }
+      const headers = ['Year', ...aidModalityByYear.buckets, 'Total']
+      let csv = headers.join(',') + '\n'
+      aidModalityByYear.years.forEach((year) => {
+        const row = aidModalityByYear.rows.get(year) || {}
+        const cells = [
+          aidModalityCal.getYearLabel(year),
+          ...aidModalityByYear.buckets.map((b) => String(row[b] || 0)),
+        ]
+        const rowTotal = aidModalityByYear.buckets.reduce((s, b) => s + (row[b] || 0), 0)
+        csv += [...cells, String(rowTotal)].join(',') + '\n'
+      })
+      // Totals row
+      const colTotals = aidModalityByYear.buckets.map((b) =>
+        aidModalityByYear.years.reduce((s, y) => s + ((aidModalityByYear.rows.get(y) || {})[b] || 0), 0),
+      )
+      const grand = colTotals.reduce((s, v) => s + v, 0)
+      csv += ['Total', ...colTotals.map(String), String(grand)].join(',') + '\n'
+      downloadCsv(csv, `aid_modality_mix_by_year_${new Date().toISOString().split('T')[0]}.csv`)
+    } else {
+      if (!aidModalityData.length) {
+        toast.error('No data to export')
+        return
+      }
+      let csv = 'Instrument,Total (USD),% Share\n'
+      aidModalityData.forEach((row) => {
+        const pct = aidModalityTotal > 0 ? ((row.value / aidModalityTotal) * 100).toFixed(2) : '0.00'
+        csv += `"${row.name}",${row.value},${pct}%\n`
+      })
+      csv += `"Total",${aidModalityTotal},100.00%\n`
+      downloadCsv(csv, `aid_modality_mix_${new Date().toISOString().split('T')[0]}.csv`)
+    }
+  }
+
   // ── Top Counterparties ──────────────────────────────────────────────────
   // Sum outgoing-money transactions (types 2/3/4) by provider org and by
   // receiver org. Top 5 of each, ranked by USD volume. Computed separately
@@ -2706,63 +2799,19 @@ export default function FinancialAnalyticsTab({
                 Periodic
               </Button>
             </div>
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+            <div className="ml-auto flex items-center gap-2">
+              <ChartViewToggle
+                view={budgetChartType === 'table' ? 'table' : 'chart'}
+                setView={(v) => setBudgetChartType(v === 'table' ? 'table' : 'bar')}
+              />
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={() => setBudgetChartType('line')}
-                className={cn("h-8", budgetChartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                title="Line"
-              >
-                <TrendingUpIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setBudgetChartType('bar')}
-                className={cn("h-8", budgetChartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                title="Bar"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setBudgetChartType('table')}
-                className={cn("h-8", budgetChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                title="Table"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={budgetChartType === 'total' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setBudgetChartType('total')}
-                className="h-8"
-                title="Total"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
+                size="icon"
                 onClick={exportBudgetVsActualToCSV}
-                className="h-8 px-2"
-                title="Export to CSV"
+                className="h-8 w-8"
+                title="Download CSV"
               >
                 <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportBudgetVsActualToJPG}
-                className="h-8 px-2"
-                title="Export to JPG"
-                disabled={budgetChartType === 'table' || budgetChartType === 'total'}
-              >
-                <FileImage className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -3036,45 +3085,16 @@ export default function FinancialAnalyticsTab({
               </div>
             )}
 
-            {/* View Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
+            <div className="ml-auto flex items-center gap-2">
+              <ChartViewToggle view={fundingChartType} setView={setFundingChartType} />
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={() => setFundingChartType('chart')}
-                className={cn("h-8", fundingChartType === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-              >
-                Chart
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFundingChartType('table')}
-                className={cn("h-8", fundingChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-              >
-                Table
-              </Button>
-            </div>
-
-            <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
+                size="icon"
                 onClick={exportFundingSourceToCSV}
-                className="h-8 px-2"
-                title="Export to CSV"
+                className="h-8 w-8"
+                title="Download CSV"
               >
                 <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportFundingSourceToJPG}
-                className="h-8 px-2"
-                title="Export to JPG"
-                disabled={fundingChartType === 'table'}
-              >
-                <Camera className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -3139,7 +3159,7 @@ export default function FinancialAnalyticsTab({
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No funding source data available</p>
-                <p className="text-helper mt-2">Add participating organizations or transactions to see funding breakdown</p>
+                <p className="text-helper mt-2">Add participating organisations or transactions to see funding breakdown</p>
               </div>
             </div>
           )}
@@ -3178,74 +3198,64 @@ export default function FinancialAnalyticsTab({
             {isFullscreen && (
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...aidModalityCal} />
-                {/* Chart / table view toggle */}
-                <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                <div className="ml-auto flex items-center gap-2">
+                  <ChartViewToggle view={aidModalityView} setView={setAidModalityView} />
+                  {/* Multi-select dropdown — pick which outgoing transaction
+                      types to include in the modality mix. */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        Transaction Types ({aidModalityTxTypes.size})
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-72 p-2"
+                      onCloseAutoFocus={(e) => e.preventDefault()}
+                    >
+                      <div className="space-y-1">
+                        {AID_MODALITY_OUTGOING_TYPES.map((code) => {
+                          const checked = aidModalityTxTypes.has(code)
+                          const toggle = () => {
+                            setAidModalityTxTypes((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(code)) next.delete(code)
+                              else next.add(code)
+                              return next
+                            })
+                          }
+                          return (
+                            <div
+                              key={code}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                              onClick={toggle}
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={toggle}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">
+                                {code}
+                              </code>
+                              <span className="text-body">{AID_MODALITY_TYPE_LABELS[code]}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setAidModalityView('chart')}
-                    className={cn("h-8 w-8", aidModalityView === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                    title="Chart"
+                    onClick={exportAidModalityToCSV}
+                    className="h-8 w-8"
+                    title="Download CSV"
                   >
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setAidModalityView('table')}
-                    className={cn("h-8 w-8", aidModalityView === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                    title="Table"
-                  >
-                    <TableIcon className="h-4 w-4" />
+                    <Download className="h-4 w-4" />
                   </Button>
                 </div>
-                {/* Multi-select dropdown — pick which outgoing transaction
-                    types to include in the modality mix. Defaults to all
-                    three (Commitments + Disbursements + Expenditures). */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8">
-                      Transaction Types ({aidModalityTxTypes.size})
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-72 p-2"
-                    onCloseAutoFocus={(e) => e.preventDefault()}
-                  >
-                    <div className="space-y-1">
-                      {AID_MODALITY_OUTGOING_TYPES.map((code) => {
-                        const checked = aidModalityTxTypes.has(code)
-                        const toggle = () => {
-                          setAidModalityTxTypes((prev) => {
-                            const next = new Set(prev)
-                            if (next.has(code)) next.delete(code)
-                            else next.add(code)
-                            return next
-                          })
-                        }
-                        return (
-                          <div
-                            key={code}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
-                            onClick={toggle}
-                          >
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={toggle}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">
-                              {code}
-                            </code>
-                            <span className="text-body">{AID_MODALITY_TYPE_LABELS[code]}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             )}
             <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
@@ -3254,32 +3264,49 @@ export default function FinancialAnalyticsTab({
                   <table className="w-full text-body">
                     <thead className="sticky top-0 bg-surface-muted z-10">
                       <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Instrument</th>
-                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total (USD)</th>
-                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">% Share</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
+                        {aidModalityByYear.buckets.map((bucket) => (
+                          <th key={bucket} className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                              <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: aidModalityColors[bucket] ?? '#94a3b8' }} />
+                              {bucket}
+                            </div>
+                          </th>
+                        ))}
+                        <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {aidModalityData.map((row) => {
-                        const pct = aidModalityTotal > 0 ? (row.value / aidModalityTotal) * 100 : 0
+                      {aidModalityByYear.years.map((year) => {
+                        const row = aidModalityByYear.rows.get(year) || {}
+                        const rowTotal = aidModalityByYear.buckets.reduce((sum, b) => sum + (row[b] || 0), 0)
                         return (
-                          <tr key={row.name} className="border-b border-border hover:bg-muted/50">
-                            <td className="py-2.5 px-4 font-medium text-foreground">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: aidModalityColors[row.name] ?? '#94a3b8' }} />
-                                {row.name}
-                              </div>
-                            </td>
-                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(row.value)}</td>
-                            <td className="text-right py-2.5 px-4 text-muted-foreground tabular-nums">{pct.toFixed(1)}%</td>
+                          <tr key={year} className="border-b border-border hover:bg-muted/50">
+                            <td className="py-2.5 px-4 font-medium text-foreground">{aidModalityCal.getYearLabel(year)}</td>
+                            {aidModalityByYear.buckets.map((bucket) => (
+                              <td key={bucket} className="text-right py-2.5 px-4 text-foreground tabular-nums">
+                                {formatCurrency(row[bucket] || 0)}
+                              </td>
+                            ))}
+                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums font-medium">{formatCurrency(rowTotal)}</td>
                           </tr>
                         )
                       })}
-                      <tr className="border-t-2 border-border bg-muted font-semibold">
-                        <td className="py-2.5 px-4 text-foreground">Total</td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(aidModalityTotal)}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">100.0%</td>
-                      </tr>
+                      {(() => {
+                        const colTotals = aidModalityByYear.buckets.map((b) =>
+                          aidModalityByYear.years.reduce((sum, y) => sum + ((aidModalityByYear.rows.get(y) || {})[b] || 0), 0),
+                        )
+                        const grand = colTotals.reduce((s, v) => s + v, 0)
+                        return (
+                          <tr className="border-t-2 border-border bg-muted font-semibold">
+                            <td className="py-2.5 px-4 text-foreground">Total</td>
+                            {colTotals.map((v, i) => (
+                              <td key={i} className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(v)}</td>
+                            ))}
+                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(grand)}</td>
+                          </tr>
+                        )
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -3384,13 +3411,8 @@ export default function FinancialAnalyticsTab({
             {isFullscreen && (
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...topProvidersCal} />
-                <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-                  <Button variant="ghost" size="icon" onClick={() => setTopProvidersView('chart')} className={cn("h-8 w-8", topProvidersView === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Chart">
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setTopProvidersView('table')} className={cn("h-8 w-8", topProvidersView === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Table">
-                    <TableIcon className="h-4 w-4" />
-                  </Button>
+                <div className="ml-auto flex items-center gap-2">
+                  <ChartViewToggle view={topProvidersView} setView={setTopProvidersView} />
                 </div>
               </div>
             )}
@@ -3489,13 +3511,8 @@ export default function FinancialAnalyticsTab({
             {isFullscreen && (
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...topReceiversCal} />
-                <div className="ml-auto flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-                  <Button variant="ghost" size="icon" onClick={() => setTopReceiversView('chart')} className={cn("h-8 w-8", topReceiversView === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Chart">
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setTopReceiversView('table')} className={cn("h-8 w-8", topReceiversView === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")} title="Table">
-                    <TableIcon className="h-4 w-4" />
-                  </Button>
+                <div className="ml-auto flex items-center gap-2">
+                  <ChartViewToggle view={topReceiversView} setView={setTopReceiversView} />
                 </div>
               </div>
             )}

@@ -243,9 +243,9 @@ export default function PartnerProfilePage() {
       };
       await updatePartner(partner.id, dataToSave, user);
       setShowEditDialog(false);
-      toast.success("Organization profile updated successfully");
+      toast.success("Organisation profile updated successfully");
     } catch (error) {
-      toast.error("Failed to update organization profile");
+      toast.error("Failed to update organisation profile");
     } finally {
       setSubmitting(false);
     }
@@ -654,7 +654,7 @@ export default function PartnerProfilePage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Organization Profile</DialogTitle>
+            <DialogTitle>Edit Organisation Profile</DialogTitle>
             <DialogDescription>
               Update organization information and details
             </DialogDescription>
@@ -832,7 +832,7 @@ export default function PartnerProfilePage() {
                 id="description"
                 value={formData.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of the organization"
+                placeholder="Brief description of the organisation"
                 rows={3}
               />
             </div>
@@ -932,7 +932,7 @@ export default function PartnerProfilePage() {
                     Updating...
                   </>
                 ) : (
-                  'Update Organization'
+                  'Update Organisation'
                 )}
               </Button>
             </div>

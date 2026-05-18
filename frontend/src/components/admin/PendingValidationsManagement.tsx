@@ -231,7 +231,7 @@ const TransactionRow: React.FC<{
         {transaction.activity_iati_id || '-'}
       </TableCell>
       <TableCell className="max-w-[200px]">
-        <div className="truncate text-body">{transaction.activity_title || 'Untitled'}</div>
+        <div className="truncate text-body font-medium">{transaction.activity_title || 'Untitled'}</div>
       </TableCell>
       <TableCell>
         <Badge variant="outline" className="text-helper">

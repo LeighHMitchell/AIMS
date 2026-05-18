@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
     // Transform the data for the map
     const transformedLocations = locations?.map((location: any) => {
       const activity = activitiesMap.get(location.activity_id);
-      
+
       return {
         id: location.id,
         activity_id: location.activity_id,

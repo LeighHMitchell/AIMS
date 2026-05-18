@@ -154,10 +154,10 @@ export type IATIMandatoryField = typeof IATI_MANDATORY_FIELDS[number];
 // Field labels for display
 export const IATI_FIELD_LABELS: Record<IATIMandatoryField, string> = {
   iati_identifier: 'Activity Identifier',
-  reporting_org_id: 'Reporting Organization',
+  reporting_org_id: 'Reporting Organisation',
   title_narrative: 'Activity Title',
   description_narrative: 'Activity Description',
-  participating_org: 'Participating Organization',
+  participating_org: 'Participating Organisation',
   activity_status: 'Activity Status',
   activity_dates: 'Activity Dates',
   sector: 'Sector',

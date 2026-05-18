@@ -279,7 +279,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 p-4 bg-muted rounded-lg border">
           {/* Search */}
           <div className="space-y-1.5">
-            <label className="text-body font-medium text-foreground">Search Organization</label>
+            <label className="text-body font-medium text-foreground">Search Organisation</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input

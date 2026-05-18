@@ -203,7 +203,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
             
             {field === 'participating_orgs' && iatiArray.length > 0 && (
               <div className="ml-6 mt-3 space-y-2">
-                <p className="text-body text-muted-foreground mb-2">IATI organizations to import:</p>
+                <p className="text-body text-muted-foreground mb-2">IATI organisations to import:</p>
                 <div className="bg-white rounded p-3 space-y-1">
                   {iatiArray.map((org: any, idx: number) => (
                     <div key={idx} className="text-body flex items-center justify-between">
@@ -313,7 +313,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="dates">Dates & Status</TabsTrigger>
                 <TabsTrigger value="classifications">Classifications</TabsTrigger>
-                <TabsTrigger value="relationships">Organizations & Finance</TabsTrigger>
+                <TabsTrigger value="relationships">Organisations & Finance</TabsTrigger>
               </TabsList>
               
               <TabsContent value="basic" className="space-y-3 mt-4">
@@ -338,7 +338,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
               </TabsContent>
               
               <TabsContent value="relationships" className="space-y-3 mt-4">
-                {renderArrayComparison('participating_orgs', 'Participating Organizations', <Users className="h-4 w-4" />)}
+                {renderArrayComparison('participating_orgs', 'Participating Organisations', <Users className="h-4 w-4" />)}
                 {renderArrayComparison('transactions', 'Financial Transactions', <Coins className="h-4 w-4" />)}
               </TabsContent>
             </Tabs>

@@ -215,6 +215,17 @@ select:focus {
     --radius: 0.75rem;
     --surface-muted: #f6f5f3;
 
+    /* Sidebar nav states — sidebar bg is --surface-muted (#f6f5f3),
+       so the active item is a white "raised pill" that lifts off it.
+       *-bg / *-fg are consumed as hsl(var(--nav-*)); accents as raw colors. */
+    --nav-active-bg: 0 0% 100%;
+    --nav-active-fg: 0 0% 3.9%;
+    --nav-hover-bg: 0 0% 98%;
+    --nav-hover-fg: 0 0% 3.9%;
+    --nav-accent-aims: #dc2625;
+    --nav-accent-project-bank: #4c5568;
+    --nav-accent-land-bank: #7b95a7;
+
     /* Semantic feedback colors */
     --success-bg: 142 76% 93%;
     --success-text: 143 64% 24%;
@@ -247,19 +258,21 @@ select:focus {
     --chart-1: 12 76% 61%; --chart-2: 173 58% 39%; --chart-3: 197 37% 24%; --chart-4: 43 74% 66%; --chart-5: 27 87% 67%;
   }
 
-  /* MapLibre popup styling - remove default card appearance */
-  .maplibregl-popup-content {
-    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  /* MapLibre / Mapbox popup styling — strip the library's default card so
+     our React popup wrapper can paint edge-to-edge. The earlier `@apply ...!`
+     suffix syntax (Tailwind v4) is silently dropped by Tailwind v3, leaving
+     the library's `padding: 15px 10px` to push our grey header inward. Use
+     plain CSS with `!important` instead so the override actually wins. */
+  .maplibregl-popup-content,
+  .mapboxgl-popup-content {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
   }
-  .maplibregl-popup-tip {
-    @apply hidden!;
-  }
-
-  .mapboxgl-popup-content, .maplibregl-popup-content {
-    @apply bg-transparent! shadow-none! p-0! rounded-none!;
-  }
-  .mapboxgl-popup-tip, .maplibregl-popup-tip {
-    @apply hidden!;
+  .maplibregl-popup-tip,
+  .mapboxgl-popup-tip {
+    display: none !important;
   }
 }
 

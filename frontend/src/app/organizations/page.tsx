@@ -289,16 +289,16 @@ const TAG_DEFINITIONS: Record<string, string> = {
   'Government': 'National government ministries, departments, and agencies',
   'Local Government': 'Subnational government entities including states, regions, and municipalities',
   'Other Public Sector': 'Public institutions outside core government (e.g., state enterprises, public universities)',
-  'International NGO': 'Non-governmental organizations operating across multiple countries',
-  'National NGO': 'Non-governmental organizations operating within a single country',
-  'Regional NGO': 'Non-governmental organizations operating within a specific region',
-  'Partner Country based NGO': 'Local civil society organizations in the recipient country',
+  'International NGO': 'Non-governmental organisations operating across multiple countries',
+  'National NGO': 'Non-governmental organisations operating within a single country',
+  'Regional NGO': 'Non-governmental organisations operating within a specific region',
+  'Partner Country based NGO': 'Local civil society organisations in the recipient country',
   'Public Private Partnership': 'Joint ventures between government and private sector entities',
-  'Multilateral': 'Organizations composed of multiple countries contributing jointly to development financing',
-  'Foundation': 'Philanthropic organizations providing grants for development',
+  'Multilateral': 'Organisations composed of multiple countries contributing jointly to development financing',
+  'Foundation': 'Philanthropic organisations providing grants for development',
   'Private Sector': 'For-profit businesses and commercial entities',
-  'Academic, Training and Research': 'Universities, research institutes, and training organizations',
-  'Other': 'Organizations not fitting into standard categories',
+  'Academic, Training and Research': 'Universities, research institutes, and training organisations',
+  'Other': 'Organisations not fitting into standard categories',
   'External': 'Partners based outside Myanmar providing development assistance',
   'Internal': 'Partners based within Myanmar',
   'Regional': 'Partners operating at a regional level (e.g., ASEAN, Asian Development Bank)'
@@ -804,7 +804,7 @@ const DeleteConfirmationModal: React.FC<{
       onClose()
       setConfirmationText('')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete organization'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete organisation'
       toast.error(errorMessage)
     } finally {
       setDeleting(false)
@@ -825,7 +825,7 @@ const DeleteConfirmationModal: React.FC<{
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            <span>Delete Organization</span>
+            <span>Delete Organisation</span>
           </DialogTitle>
           <DialogDescription>This action is permanent and cannot be undone.</DialogDescription>
         </DialogHeader>
@@ -833,7 +833,7 @@ const DeleteConfirmationModal: React.FC<{
         <div className="space-y-4">
           <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
             <p className="text-body text-red-800">
-              <strong>Warning:</strong> This action cannot be undone. This will permanently delete the organization 
+              <strong>Warning:</strong> This action cannot be undone. This will permanently delete the organisation
               <strong> {organization.displayName}</strong> and remove all associated data.
             </p>
           </div>
@@ -864,7 +864,7 @@ const DeleteConfirmationModal: React.FC<{
             disabled={!isConfirmationValid || deleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {deleting ? 'Deleting...' : 'Delete Organization'}
+            {deleting ? 'Deleting...' : 'Delete Organisation'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1521,7 +1521,7 @@ function OrganizationsPageContent() {
       }
       
       console.error('Error fetching organizations:', error)
-      setFetchError(error instanceof Error ? error.message : 'Failed to load organizations')
+      setFetchError(error instanceof Error ? error.message : 'Failed to load organisations')
       setOrganizations([])
       setSummary({
         totalOrganizations: 0,
@@ -1603,7 +1603,7 @@ function OrganizationsPageContent() {
       onCommitError: (err) => {
         console.error('[OrganizationsPage] Delete failed:', err);
         setOrganizations(snapshot);
-        toast.error(err instanceof Error ? err.message : 'Failed to delete organization');
+        toast.error(err instanceof Error ? err.message : 'Failed to delete organisation');
       },
     })
   }
@@ -1714,7 +1714,7 @@ function OrganizationsPageContent() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Organizations</h1>
+              <h1 className="text-3xl font-bold text-foreground">Organisations</h1>
               <p className="text-muted-foreground mt-1">Browse and explore our development partner network</p>
             </div>
           </div>
@@ -1722,7 +1722,7 @@ function OrganizationsPageContent() {
           <div className="flex items-center space-x-2">
             <Button className="flex items-center space-x-2" onClick={handleAddOrganization}>
               <Plus className="h-4 w-4" />
-              <span>Add Organization</span>
+              <span>Add Organisation</span>
             </Button>
             <ExportButton
               entity="organizations"
@@ -1746,8 +1746,8 @@ function OrganizationsPageContent() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                aria-label={activeFilter === 'custom_groups' ? 'Search custom groups' : 'Search organizations'}
-                placeholder={activeFilter === 'custom_groups' ? "Search custom groups..." : "Search organizations..."}
+                aria-label={activeFilter === 'custom_groups' ? 'Search custom groups' : 'Search organisations'}
+                placeholder={activeFilter === 'custom_groups' ? "Search custom groups..." : "Search organisations..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-10"
@@ -1755,7 +1755,7 @@ function OrganizationsPageContent() {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Clear search"
                   title="Clear search"
                 >
@@ -1839,7 +1839,7 @@ function OrganizationsPageContent() {
             ) : (
               <div className="flex items-center justify-between text-body text-muted-foreground">
                 <span>
-                  Showing {startIndex + 1}-{Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} organizations
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} organisations
                 </span>
                 <span>
                   Page {currentPage} of {totalPages}
@@ -2119,7 +2119,7 @@ function OrganizationsPageContent() {
                     <div className="space-y-4">
                       <Building2 className="mx-auto h-12 w-12 text-destructive" />
                       <div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Organizations</h3>
+                        <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Organisations</h3>
                         <p className="text-muted-foreground mb-4">{fetchError}</p>
                         <Button onClick={fetchOrganizations} variant="outline">
                           Try Again
@@ -2129,16 +2129,16 @@ function OrganizationsPageContent() {
                   ) : searchTerm || activeFilter !== 'all' ? (
                     <EmptyState
                       illustration="/images/empty-roundtable.webp"
-                      title="No organizations found"
-                      message={searchTerm ? 'Try adjusting your search terms.' : 'No organizations match the current filter.'}
+                      title="No organisations found"
+                      message={searchTerm ? 'Try adjusting your search terms.' : 'No organisations match the current filter.'}
                     />
                   ) : (
                     <EmptyState
                       illustration="/images/empty-roundtable.webp"
-                      title="No organizations yet"
-                      message="Get started by adding your first organization."
+                      title="No organisations yet"
+                      message="Get started by adding your first organisation."
                       action={{
-                        label: "Add Organization",
+                        label: "Add Organisation",
                         onClick: handleAddOrganization,
                       }}
                     />

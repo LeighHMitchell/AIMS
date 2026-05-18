@@ -97,7 +97,7 @@ export const transactionColumnGroups: Record<string, string> = {
   transactionDetails: "Transaction Details",
   statusIndicators: "Status Indicators",
   classification: "Classification",
-  organizationDetails: "Organization Details",
+  organizationDetails: "Organisation Details",
   additionalDetails: "Additional Details",
 };
 

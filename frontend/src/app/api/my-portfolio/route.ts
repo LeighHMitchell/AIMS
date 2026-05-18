@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         title_narrative,
         description_narrative,
         activity_status,
+        validation_status,
         planned_start_date,
         planned_end_date,
         updated_at,
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
         recipient_countries,
         recipient_regions,
         activity_budgets(usd_value),
-        activity_sectors(id),
+        activity_sectors(id, category_code, sector_code),
         activity_participating_organizations(id),
         activity_contacts(id),
         activity_locations(id)
@@ -216,20 +217,42 @@ export async function GET(request: NextRequest) {
       missingDataByActivity.sort((a, b) => b.missingFields.length - a.missingFields.length)
     }
 
-    // Mock validation status for now
-    const validationStatus = {
-      validated: Math.floor((activities?.length || 0) * 0.5),
-      pending: Math.floor((activities?.length || 0) * 0.35),
-      rejected: Math.floor((activities?.length || 0) * 0.15)
-    }
+    // Real validation status, derived from each activity's validation_status
+    // column. Buckets: validated; pending = submitted / more-info-requested;
+    // rejected. 'draft' / null are not yet submitted for validation, so they
+    // are intentionally excluded from all three counts.
+    const validationStatus = { validated: 0, pending: 0, rejected: 0 }
+    ;(activities || []).forEach((activity: any) => {
+      switch (activity?.validation_status) {
+        case 'validated':
+          validationStatus.validated++
+          break
+        case 'rejected':
+          validationStatus.rejected++
+          break
+        case 'submitted':
+        case 'more_info_requested':
+          validationStatus.pending++
+          break
+      }
+    })
 
-    // Calculate sector distribution - simplified for now
-    const sectorDistribution: Record<string, number> = {
-      '110': 5, // Education
-      '120': 8, // Health
-      '140': 3, // Water & Sanitation
-      '210': 2  // Transport
-    }
+    // Real sector distribution: number of the user's activities that touch
+    // each 3-digit DAC sector category (each activity counted once per
+    // category it has, regardless of how many sub-sectors fall under it).
+    const sectorDistribution: Record<string, number> = {}
+    ;(activities || []).forEach((activity: any) => {
+      const sectors = Array.isArray(activity?.activity_sectors) ? activity.activity_sectors : []
+      const categories = new Set<string>()
+      sectors.forEach((s: any) => {
+        const code = s?.category_code
+          || (s?.sector_code ? String(s.sector_code).substring(0, 3) : null)
+        if (code) categories.add(code)
+      })
+      categories.forEach((code) => {
+        sectorDistribution[code] = (sectorDistribution[code] || 0) + 1
+      })
+    })
 
     // Create timeline data (legacy - activity date ranges)
     const activityTimeline = activities?.map((activity: any) => ({

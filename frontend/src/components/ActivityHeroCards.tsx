@@ -147,7 +147,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
 
   // Find creator organization
   const creatorOrg = partners.find(p => p.id === activity.createdBy?.id) || 
-    { id: '', name: activity.created_by_org_name || 'Unknown Organization', acronym: activity.created_by_org_acronym };
+    { id: '', name: activity.created_by_org_name || 'Unknown Organisation', acronym: activity.created_by_org_acronym };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -212,7 +212,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-body text-[hsl(var(--success-icon))] font-medium">Reporting Organization</p>
+            <p className="text-body text-[hsl(var(--success-icon))] font-medium">Reporting Organisation</p>
             <p className="text-lg font-bold text-green-900">
               {creatorOrg.acronym || creatorOrg.code || creatorOrg.name}
             </p>

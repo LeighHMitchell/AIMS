@@ -482,7 +482,7 @@ export function IATIDocumentManager({
 
       // Self-contained mode - save to API
       if (!organizationId) {
-        toast.error('Organization ID is required');
+        toast.error('Organisation ID is required');
         return;
       }
 

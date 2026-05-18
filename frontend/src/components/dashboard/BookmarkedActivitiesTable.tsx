@@ -314,7 +314,7 @@ export function BookmarkedActivitiesTable() {
                 >
                   <TableCell>
                     <div>
-                      <p className="text-body text-foreground" title={activity.title_narrative}>
+                      <p className="text-body font-medium text-foreground" title={activity.title_narrative}>
                         {activity.title_narrative}
                         {activity.acronym && (
                           <span> ({activity.acronym})</span>

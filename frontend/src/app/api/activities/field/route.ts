@@ -261,6 +261,22 @@ export async function POST(request: Request) {
         break;
         
       case 'locations':
+        // DISABLED — data-unsafe legacy path (the code below is unreachable).
+        // Locations are saved per-row via the dedicated, schema-complete
+        // endpoint /api/activities/[id]/locations (POST/PUT/DELETE). The bulk
+        // path here performed a destructive delete-all followed by a
+        // reduced-column rewrite that diverged from the IATI location schema
+        // (dropping location_ref, exactness, location_reach, feature_designation,
+        // admin vocab, etc.). Two divergent writers on activity_locations risked
+        // silent data loss, so this path is hard-disabled and fails safe.
+        return NextResponse.json(
+          {
+            error: 'Saving locations via /api/activities/field is disabled. Use /api/activities/[id]/locations (POST/PUT) instead.',
+            code: 'LOCATIONS_FIELD_PATH_DISABLED',
+          },
+          { status: 410 }
+        );
+
         oldValue = existingActivity.locations;
         newValue = body.value;
         
@@ -578,7 +594,22 @@ export async function POST(request: Request) {
                 hint: insertError.hint,
                 code: insertError.code
               });
-              console.error('[Field API] Failed contact data:', JSON.stringify(contactsData, null, 2));
+              // Avoid logging full contact PII; a count is enough to debug.
+              console.error(`[Field API] Failed contact insert affected ${contactsData.length} contact(s)`);
+
+              // Compensating rollback: the delete above already removed the
+              // previous contacts. Restore them so a failed insert never
+              // silently wipes existing data.
+              if (deletedData && deletedData.length > 0) {
+                const { error: restoreError } = await supabase
+                  .from('activity_contacts')
+                  .insert(deletedData);
+                if (restoreError) {
+                  console.error('[Field API] ❌ CRITICAL: could not restore contacts after failed insert:', restoreError.message);
+                  throw new Error(`Failed to save contacts and the previous contacts could not be automatically restored. Please refresh the Contacts tab to check your data. (cause: ${insertError.message})`);
+                }
+                console.warn(`[Field API] Rolled back: restored ${deletedData.length} previous contact(s) after failed insert`);
+              }
               throw new Error(`Database error: ${insertError.message}${insertError.details ? ` - ${insertError.details}` : ''}`);
             }
             

@@ -291,19 +291,16 @@ export function OrgTransactionsTable({
                     onClick={() => handleRowClick(transaction.activityId)}
                   >
                     <TableCell className="min-w-[280px]">
-                      <div className="flex items-start gap-2">
+                      <div className="text-body">
                         {transaction.isProvider ? (
-                          <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" title="Outgoing" />
-
+                          <ArrowUpRight className="inline-block h-4 w-4 text-muted-foreground align-middle mr-2" title="Outgoing" />
                         ) : (
-                          <ArrowDownLeft className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" title="Incoming" />
+                          <ArrowDownLeft className="inline-block h-4 w-4 text-muted-foreground align-middle mr-2" title="Incoming" />
                         )}
-                        <span className="text-body">
-                          {transaction.activityTitle}{' '}
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
-                            {transaction.activityIatiIdentifier || transaction.activityId}
-                          </code>
-                        </span>
+                        {transaction.activityTitle}{' '}
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
+                          {transaction.activityIatiIdentifier || transaction.activityId}
+                        </code>
                       </div>
                     </TableCell>
                     <TableCell>

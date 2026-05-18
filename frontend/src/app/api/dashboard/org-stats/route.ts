@@ -50,23 +50,26 @@ export async function GET(request: NextRequest) {
       lastEditedResult,
       lastValidationResult,
     ] = await Promise.all([
-      // Total activities count
+      // Total activities count — exclude soft-deleted (recycle bin) activities
       supabase
         .from('activities')
         .select('*', { count: 'exact', head: true })
-        .eq('reporting_org_id', organizationId),
+        .eq('reporting_org_id', organizationId)
+        .is('deleted_at', null),
 
       // Status counts (unpublished, pending validation, validated)
       supabase
         .from('activities')
         .select('publication_status, submission_status')
-        .eq('reporting_org_id', organizationId),
+        .eq('reporting_org_id', organizationId)
+        .is('deleted_at', null),
 
       // Last activity created (with creator info)
       supabase
         .from('activities')
         .select('id, title_narrative, iati_identifier, created_at, created_by')
         .eq('reporting_org_id', organizationId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .single(),
@@ -76,6 +79,7 @@ export async function GET(request: NextRequest) {
         .from('activities')
         .select('id, title_narrative, iati_identifier, created_at, updated_at, last_edited_by')
         .eq('reporting_org_id', organizationId)
+        .is('deleted_at', null)
         .not('updated_at', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(1),
@@ -95,10 +99,12 @@ export async function GET(request: NextRequest) {
             id,
             title_narrative,
             iati_identifier,
-            reporting_org_id
+            reporting_org_id,
+            deleted_at
           )
         `)
         .eq('activities.reporting_org_id', organizationId)
+        .is('activities.deleted_at', null)
         .not('validation_status', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -193,7 +199,7 @@ export async function GET(request: NextRequest) {
     // Process last validation event
     let lastValidationEvent: ValidationEvent | null = null;
     if (lastValidationResult.data && !lastValidationResult.error) {
-      const activity = lastValidationResult.data.activities as { id: string; title_narrative: string; iati_identifier?: string } | null;
+      const activity = lastValidationResult.data.activities as unknown as { id: string; title_narrative: string; iati_identifier?: string; deleted_at?: string | null } | null;
       const validatorProfile = buildProfile(lastValidationResult.data.updated_by);
       lastValidationEvent = {
         activityId: lastValidationResult.data.activity_id,

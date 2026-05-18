@@ -46,7 +46,7 @@ export default function ImportTransactionsPage() {
         <div>
           <h1 className="text-2xl font-bold">Import Transactions</h1>
           <p className="text-muted-foreground mt-1">
-            Import your financial transaction data from CSV or Excel files
+            Import your financial transaction data from CSV files
           </p>
         </div>
         

@@ -37,6 +37,13 @@ import { OrganizationBudgetsTab } from "@/components/organizations/OrganizationB
 import { OrganizationPlannedDisbursementsTab } from "@/components/organizations/OrganizationPlannedDisbursementsTab"
 import { OrganizationSpendTrajectoryChart } from "@/components/organizations/OrganizationSpendTrajectoryChart"
 import { FinancialTotalsBarChart } from "@/components/analytics/FinancialTotalsBarChart"
+import {
+  OrganizationFundingFlowsSankey,
+  FUNDING_FLOW_TYPE_COLOR,
+  FUNDING_FLOW_ALL_TYPES,
+  isIncomingType,
+  isOutgoingType,
+} from "@/components/profile/OrganizationFundingFlowsSankey"
 import { ChartFullscreen, ChartExpandIconButton } from "@/components/charts/ChartFullscreen"
 import { CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -278,7 +285,15 @@ function txYear(t: any): number | null {
   return Number.isFinite(y) ? y : null
 }
 
-export function OrganizationFinancesPane({ organizationId }: { organizationId: string }) {
+export function OrganizationFinancesPane({
+  organizationId,
+  organizationName = "This organisation",
+}: {
+  organizationId: string
+  /** Display name used as the centre node of the Funding Flows sankey. Falls
+   *  back to a generic label when the caller doesn't provide it. */
+  organizationName?: string
+}) {
   // Default to Charts so the user lands on the visual summary; they can
   // toggle to Tables to see the underlying transactions / disbursements.
   const [view, setView] = useState<"tables" | "charts">("charts")
@@ -493,6 +508,19 @@ export function OrganizationFinancesPane({ organizationId }: { organizationId: s
             )}
           </ChartFullscreen>
 
+          {/* Funding Flows Sankey — full-width band that visualises money
+              moving INTO the org from upstream funders on the left, and OUT
+              to downstream partners on the right. Default selection covers
+              actual money movement (Incoming Funds + Disbursement); the
+              expanded modal exposes a transaction-type multi-select that
+              re-colours and re-weights every band. */}
+          <FundingFlowsSankeyChart
+            organizationId={organizationId}
+            organizationName={organizationName}
+            transactions={filteredTransactions}
+            className="lg:col-span-2"
+          />
+
           <ChartCard
             title="Spend Trajectory"
             description="Actual vs perfect cumulative disbursement"
@@ -605,6 +633,187 @@ function SpendTrajectoryFrame({ organizationId }: { organizationId: string }) {
         </div>
       )}
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Funding Flows — Sankey of money in / money out, with a transaction-type
+// multi-select that only appears in the expanded modal.
+// ---------------------------------------------------------------------------
+
+// Default to actual-money codes (Incoming Funds + Disbursement) — those are
+// the only two flows that represent real cash movement, so the inline card
+// stays meaningful even before the user opens the type filter.
+const FUNDING_FLOWS_DEFAULT_TYPES = ["1", "3"]
+
+function FundingFlowsSankeyChart({
+  organizationId,
+  organizationName,
+  transactions,
+  className,
+}: {
+  organizationId: string
+  organizationName: string
+  transactions: any[] | null
+  className?: string
+}) {
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(FUNDING_FLOWS_DEFAULT_TYPES)
+  return (
+    <ChartCard
+      title="Funding Flows"
+      description="Money in (from funders) and out (to partners)"
+      interpretation={
+        <>
+          Each band shows a flow of money between this organisation and a counterparty: incoming flows on the left come from upstream funders, outgoing flows on the right go to downstream partners. Band width is proportional to the total US-dollar value of the transactions for that pair, and the colour identifies the IATI transaction type. Use the transaction-type dropdown in the top-right of the expanded view to switch between actual money movement (Incoming Funds + Disbursement), commitments (Outgoing Commitments), or pledges; the same partner can appear with multiple bands if they participate across more than one type. Bands missing a stored USD conversion contribute nothing — non-USD transactions without an exchange rate are excluded rather than counted as USD.
+        </>
+      }
+      className={className}
+    >
+      <FundingFlowsFrame
+        organizationId={organizationId}
+        organizationName={organizationName}
+        transactions={transactions}
+        selectedTypes={selectedTypes}
+        onSelectedTypesChange={setSelectedTypes}
+      />
+    </ChartCard>
+  )
+}
+
+function FundingFlowsFrame({
+  organizationId,
+  organizationName,
+  transactions,
+  selectedTypes,
+  onSelectedTypesChange,
+}: {
+  organizationId: string
+  organizationName: string
+  transactions: any[] | null
+  selectedTypes: string[]
+  onSelectedTypesChange: (next: string[]) => void
+}) {
+  const isExpanded = useChartExpansion()
+
+  if (!isExpanded) {
+    return (
+      <div className="h-72 w-full">
+        <OrganizationFundingFlowsSankey
+          organizationId={organizationId}
+          organizationName={organizationName}
+          transactions={transactions}
+          selectedTypes={selectedTypes}
+          expanded={false}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-full w-full flex flex-col min-h-0">
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <ExpandedYearChip />
+        <div className="ml-auto">
+          <FundingFlowsTypeFilter
+            selectedTypes={selectedTypes}
+            onChange={onSelectedTypesChange}
+          />
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0">
+          <OrganizationFundingFlowsSankey
+            organizationId={organizationId}
+            organizationName={organizationName}
+            transactions={transactions}
+            selectedTypes={selectedTypes}
+            expanded
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FundingFlowsTypeFilter({
+  selectedTypes,
+  onChange,
+}: {
+  selectedTypes: string[]
+  onChange: (next: string[]) => void
+}) {
+  const toggle = (code: string) => {
+    if (selectedTypes.includes(code)) {
+      // Keep at least one selection — otherwise the chart goes blank with
+      // no way back from the dropdown UI.
+      if (selectedTypes.length <= 1) return
+      onChange(selectedTypes.filter((c) => c !== code))
+    } else {
+      onChange([...selectedTypes, code])
+    }
+  }
+
+  const label = selectedTypes.length === FUNDING_FLOW_ALL_TYPES.length
+    ? "All transaction types"
+    : selectedTypes.length === 1
+      ? TRANSACTION_TYPE_LABELS_PLURAL[selectedTypes[0] as keyof typeof TRANSACTION_TYPE_LABELS_PLURAL] || "1 type"
+      : `${selectedTypes.length} types`
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 text-helper gap-2">
+          {label}
+          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <div className="px-2 py-1.5 text-helper text-muted-foreground font-medium">Incoming</div>
+        {FUNDING_FLOW_ALL_TYPES.filter(isIncomingType).map((code) => (
+          <FundingFlowsTypeCheckbox
+            key={code}
+            code={code}
+            checked={selectedTypes.includes(code)}
+            onToggle={() => toggle(code)}
+          />
+        ))}
+        <div className="my-1 h-px bg-border" />
+        <div className="px-2 py-1.5 text-helper text-muted-foreground font-medium">Outgoing</div>
+        {FUNDING_FLOW_ALL_TYPES.filter(isOutgoingType).map((code) => (
+          <FundingFlowsTypeCheckbox
+            key={code}
+            code={code}
+            checked={selectedTypes.includes(code)}
+            onToggle={() => toggle(code)}
+          />
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function FundingFlowsTypeCheckbox({
+  code,
+  checked,
+  onToggle,
+}: {
+  code: string
+  checked: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex w-full items-center gap-2 px-2 py-1.5 text-body text-foreground hover:bg-muted rounded-sm"
+    >
+      <Checkbox checked={checked} onCheckedChange={onToggle} aria-label={TRANSACTION_TYPE_LABELS[code as keyof typeof TRANSACTION_TYPE_LABELS]} />
+      <span
+        className="inline-block h-2.5 w-2.5 rounded-sm flex-shrink-0"
+        style={{ backgroundColor: FUNDING_FLOW_TYPE_COLOR[code] || "#94a3b8" }}
+      />
+      <span className="flex-1 text-left">{TRANSACTION_TYPE_LABELS[code as keyof typeof TRANSACTION_TYPE_LABELS]}</span>
+    </button>
   )
 }
 

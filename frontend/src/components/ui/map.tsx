@@ -459,6 +459,11 @@ function MarkerPopup({
   const popup = useMemo(() => {
     const popupInstance = new MapLibreGL.Popup({
       offset: 16,
+      // MapLibre's default focuses the first focusable element inside the
+      // popup when it opens (our close X). The browser then scrolls that
+      // element into view — so opening a pin from the locations table
+      // yanked the page back up to the map. Disable it.
+      focusAfterOpen: false,
       ...popupOptions,
       closeButton: false,
     })
@@ -522,7 +527,11 @@ function MarkerPopup({
   return createPortal(
     <div
       className={cn(
-        "relative rounded-md bg-popover p-3 text-popover-foreground animate-in fade-in-0 zoom-in-95",
+        // No default padding — every caller passes its own (typically `!p-0`
+        // because they draw their own header bar). Leaving p-3 here as a
+        // default left a 12px gutter inside the popup so the grey header
+        // never reached the popup edges. See: ActivityLocationsMapViewV2.
+        "relative rounded-md bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95",
         className
       )}
     >
@@ -530,7 +539,7 @@ function MarkerPopup({
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-1 right-1 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="absolute top-2 right-2 z-10 rounded-sm text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label="Close popup"
         >
           <X className="h-4 w-4" />
@@ -1417,6 +1426,7 @@ export {
   MapControls,
   MapRoute,
   MapClusterLayer,
+  useMarkerContext,
 };
 
 export type { MapRef };

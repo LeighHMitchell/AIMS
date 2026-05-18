@@ -1,7 +1,40 @@
 {
-  "currentVersion": "3.39.0",
-  "narrativeSummary": "Version 3.39.0 introduces <b>Field Reports</b> &mdash; a new system for capturing what happens on the ground at each activity location. Workshops, field visits, M&amp;E missions, training sessions, community consultations, inception meetings, and handovers can now be logged as narrative events against any location, each with photo and document attachments. A new <i>Quick Log Field Event</i> entry point on the Activity Editor lets users pick (or create) a location and attach a new event in one flow. The Organization Profile gains a <b>portfolio-wide year filter</b> via React context: changing the year range on any chart in the Finances pane updates every chart together, and a calendar-type selector renders axis labels in the user's chosen format (CY2024 / FY24/25). A new <code>MapStyleProvider</code> lets a map and its sibling components (e.g. a locations table with map thumbnails) share the same basemap selection. The Activity Locations table is rebuilt again with richer columns and styling; the Email column gains a click-to-copy cell.",
+  "currentVersion": "3.40.0",
+  "narrativeSummary": "Version 3.40.0 reworks v3.39.0's location-anchored <b>Field Reports</b> into standalone <b>Field Trips</b> &mdash; a field trip now belongs to an activity and carries its own coordinates and place name, so it no longer has to point at an existing activity location. A new idempotent migration, dedicated <code>/api/activities/[id]/field-trips</code> routes (with attachment handling), and rebuilt <code>FieldTripModal</code> / <code>FieldTripsSection</code> / map markers layer replace the old Field Report components. Authorisation is enforced consistently at the API layer (requireAuth on every call), matching the sibling Activity-Editor tables rather than bolting on mismatched RLS. The Organization Profile gains an <b>OrganizationFundingFlowsSankey</b>, the dashboard gains a <b>Data Quality summary</b> card backed by a new <code>/api/data-clinic/summary</code> endpoint, and the Recycle Bin gets a clearer banner + an \"activity is in the recycle bin\" dialog. Charts gain a shared <code>ChartMethodology</code> note and a <code>ChartViewToggle</code>, and the Financial Analytics tab and Organization Finances pane are substantially reworked. This release also includes a large dead-code sweep: the legacy IATI import wizard UI, the old <code>InterventionTreeMap</code>, the unenhanced <code>GovernmentInputsSection</code>, and the demo/test import pages are removed &mdash; a net reduction of roughly 6,500 lines.",
   "releases": [
+    {
+      "version": "3.40.0",
+      "date": "2026-05-18",
+      "narrativeSummary": "Field Reports reworked into standalone Field Trips: a trip belongs to an activity and carries its own coordinates / place name (location_id NULL = standalone), with new idempotent migration, new /api/activities/[id]/field-trips routes + attachments, and rebuilt FieldTripModal / FieldTripsSection / FieldTripMarkersLayer; old FieldReport* components removed. New OrganizationFundingFlowsSankey on the org profile. New Data Quality summary card + /api/data-clinic/summary endpoint. Recycle Bin banner + in-recycle-bin dialog. New ChartMethodology + ChartViewToggle; FinancialAnalyticsTab and OrganizationFinancesPane substantially reworked. Large dead-code cleanup (legacy IATI import wizard UI, InterventionTreeMap, GovernmentInputsSection, demo/test import pages) &mdash; net ~6,500 fewer lines. Added May-2026 persona review doc.",
+      "changes": [
+        "<b>Field Trips &mdash; Field Reports reworked into standalone geo-entities</b>",
+        "&nbsp;&nbsp;A field trip now belongs to an activity and carries its own <code>latitude</code> / <code>longitude</code> / <code>place_name</code> &mdash; it no longer has to reference an <code>activity_locations</code> row (a row with <code>location_id = NULL</code> is a standalone trip)",
+        "&nbsp;&nbsp;New migration <code>20260517000000_field_trips_standalone.sql</code> &mdash; fully idempotent (<code>CREATE/ADD/DROP ... IF [NOT] EXISTS</code>), safe whether the tables are absent or a partial hand-run already created some of them",
+        "&nbsp;&nbsp;New routes under <code>/api/activities/[id]/field-trips</code> &mdash; list / create / update / delete plus per-trip attachment routes (<code>/[tripId]/attachments</code> and <code>/[tripId]/attachments/[attachmentId]</code>)",
+        "&nbsp;&nbsp;New UI: <code>FieldTripModal</code>, <code>FieldTripsSection</code>, and a <code>FieldTripMarkersLayer</code> for the v2 map; <code>LocationsTab</code> updated to host them",
+        "&nbsp;&nbsp;Removed the v3.39.0 Field Report components: <code>FieldReportModal</code>, <code>FieldReportsSection</code>, <code>FieldReportCard</code>, <code>LocationPickerDialog</code>, <code>QuickLogFieldEventButton</code>",
+        "&nbsp;&nbsp;<b>Security model (deliberate):</b> authorisation is enforced at the API layer (<code>requireAuth()</code> on every field-trips call), consistent with the sibling Activity-Editor tables (<code>activity_locations</code>, <code>activity_documents</code>) which run without RLS &mdash; no mismatched RLS policies bolted onto this table alone",
+        "<b>Organization Profile &mdash; Funding Flows Sankey</b>",
+        "&nbsp;&nbsp;New <code>components/profile/OrganizationFundingFlowsSankey.tsx</code> visualises the organisation's incoming / outgoing funding as a Sankey diagram",
+        "&nbsp;&nbsp;<code>OrganizationFinancesPane</code> reworked (+211 lines); <code>OrganizationProfileV2View</code> + <code>ActivityProfileV2View</code> updated to wire it in",
+        "<b>Data Quality summary</b>",
+        "&nbsp;&nbsp;New <code>/api/data-clinic/summary</code> route and <code>components/dashboard/DataQualitySummaryCard.tsx</code> surfacing data-completeness at a glance on the dashboard",
+        "<b>Recycle Bin UX</b>",
+        "&nbsp;&nbsp;New <code>RecycleBinBanner</code> and <code>ActivityInRecycleBinDialog</code> &mdash; clearer signalling when an activity is in the recycle bin",
+        "<b>Charts</b>",
+        "&nbsp;&nbsp;New <code>components/analytics/ChartMethodology.tsx</code> &mdash; shared \"how this is calculated\" note for analytics charts",
+        "&nbsp;&nbsp;New <code>components/charts/ChartViewToggle.tsx</code>; <code>ActivitySpendTrajectoryChart</code> (+120 lines) and the spend-trajectory API refreshed",
+        "&nbsp;&nbsp;<code>FinancialAnalyticsTab</code> substantially reworked (~381 lines changed)",
+        "&nbsp;&nbsp;New <code>components/ui/copyable-id-badge.tsx</code> and <code>components/maps/LocationPinIcon.tsx</code>",
+        "<b>Dead-code cleanup (net ~6,500 fewer lines)</b>",
+        "&nbsp;&nbsp;Removed legacy IATI import wizard UI: <code>PreviewTable</code>, <code>FixWizardModal</code>, <code>FixOrphanedTransactionsStep</code>, <code>AssignOrganizationsModal</code>, <code>AssignTransactionsModal</code>, <code>MapCodesModal</code>, <code>ValidationSummaryPanel</code>, <code>XMLUploadCard</code>, <code>ImportResultToast</code>",
+        "&nbsp;&nbsp;Removed <code>InterventionTreeMap</code> (-786), the unenhanced <code>GovernmentInputsSection</code> (-1233, superseded by <code>GovernmentInputsSectionEnhanced</code>), and the <code>iati-import-enhanced</code> / <code>import-demo</code> / <code>import/test</code> pages",
+        "&nbsp;&nbsp;Removed unused API routes <code>/api/sectors/by-year</code> and <code>/api/sectors/[code]/activities</code>",
+        "<b>Other</b>",
+        "&nbsp;&nbsp;Added <code>docs/persona-review-2026-05.md</code> &mdash; code-grounded persona walkthrough with P0&ndash;P3 findings",
+        "&nbsp;&nbsp;Broad refresh across dashboard, analytics, organizations, transactions, partners and admin pages (245 files, +2,788 / -9,375)"
+      ]
+    },
     {
       "version": "3.39.0",
       "date": "2026-05-12",

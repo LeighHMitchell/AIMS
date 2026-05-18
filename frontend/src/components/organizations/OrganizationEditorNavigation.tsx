@@ -127,7 +127,7 @@ export default function OrganizationEditorNavigation({
                 <Link
                   href={`/organizations/${organization.id}`}
                   className="text-2xl font-semibold text-foreground leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
-                  title={`View organization profile: ${organization.name}${organization.acronym ? ` (${organization.acronym})` : ''}`}
+                  title={`View organisation profile: ${organization.name}${organization.acronym ? ` (${organization.acronym})` : ''}`}
                 >
                   {organization.name}
                   {organization.acronym && <span> ({organization.acronym})</span>}
@@ -244,7 +244,7 @@ export default function OrganizationEditorNavigation({
                           {buttonContent}
                         </TooltipTrigger>
                         <TooltipContent side="right" className="max-w-xs">
-                          <p>This section will be unlocked once you enter an organization name in the General tab.</p>
+                          <p>This section will be unlocked once you enter an organisation name in the General tab.</p>
                         </TooltipContent>
                       </Tooltip>
                     ) : buttonContent

@@ -877,7 +877,7 @@ export default function LocationProfileDetailPage() {
             {/* ======== Organizations ======== */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-body">Organizations ({organizations.length})</CardTitle>
+                <CardTitle className="text-body">Organisations ({organizations.length})</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {organizations.length > 0 ? (
@@ -885,7 +885,7 @@ export default function LocationProfileDetailPage() {
                     <table className="w-full text-body">
                       <thead className="bg-surface-muted">
                         <tr className="border-b border-border bg-muted/50">
-                          <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Organization</th>
+                          <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Organisation</th>
                           <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Role</th>
                           <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Activities</th>
                           <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Committed</th>
@@ -921,7 +921,7 @@ export default function LocationProfileDetailPage() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-body">No organization data available</p>
+                    <p className="text-body">No organisation data available</p>
                   </div>
                 )}
               </CardContent>

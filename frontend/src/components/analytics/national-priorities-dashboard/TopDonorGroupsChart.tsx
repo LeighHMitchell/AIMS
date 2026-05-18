@@ -242,7 +242,7 @@ export function TopDonorGroupsChart({ refreshKey = 0, compact = false }: TopDono
         rows.push({ label: 'Activities', value: item.activityCount });
       }
       if (item.orgCount > 0) {
-        rows.push({ label: 'Organizations', value: item.orgCount });
+        rows.push({ label: 'Organisations', value: item.orgCount });
       }
       return <ChartTooltipCard title={item.name} rows={rows} />;
     }

@@ -257,7 +257,6 @@ export function EditOrganizationModal({
   const [activeTab, setActiveTab] = useState(initialTab || 'basic')
   const [iatiBudgets, setIatiBudgets] = useState<any[]>([])
   const [iatiDocuments, setIatiDocuments] = useState<any[]>([])
-  const [showIatiImport, setShowIatiImport] = useState(false)
   const [countrySearchTerm, setCountrySearchTerm] = useState('')
   const [countrySelectOpen, setCountrySelectOpen] = useState(false)
   
@@ -468,7 +467,7 @@ export function EditOrganizationModal({
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.error || 'Failed to update organization')
+          throw new Error(error.error || 'Failed to update organisation')
         }
 
         if (onSuccess) {
@@ -477,9 +476,9 @@ export function EditOrganizationModal({
       }
       
       handleOpenChange(false)
-      toast.success('Organization updated successfully')
+      toast.success('Organisation updated successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update organization'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update organisation'
       toast.error(errorMessage)
     } finally {
       setSaving(false)
@@ -601,7 +600,7 @@ export function EditOrganizationModal({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to merge organizations')
+        throw new Error(error.error || 'Failed to merge organisations')
       }
 
       const result = await response.json()
@@ -627,7 +626,7 @@ export function EditOrganizationModal({
       setShowMergeConfirm(false)
       
       toast.success(
-        `Successfully merged "${result.sourceOrg.name}" into this organization. ` +
+        `Successfully merged "${result.sourceOrg.name}" into this organisation. ` +
         `Updated ${result.summary.activitiesUpdated} activities, ` +
         `${result.summary.transactionsProviderUpdated + result.summary.transactionsReceiverUpdated} transactions.`
       )
@@ -637,7 +636,7 @@ export function EditOrganizationModal({
         onSuccess()
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to merge organizations'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to merge organisations'
       toast.error(errorMessage)
     } finally {
       setIsMerging(false)
@@ -656,10 +655,10 @@ export function EditOrganizationModal({
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-xl font-semibold">
-                {isCreating ? 'Add New Organization' : 'Edit Organization Profile'}
+                {isCreating ? 'Add New Organisation' : 'Edit Organisation Profile'}
               </DialogTitle>
               <p className="text-body text-muted-foreground">
-                {isCreating ? 'Create a new organization profile' : 'Update organization information and details'}
+                {isCreating ? 'Create a new organisation profile' : 'Update organisation information and details'}
               </p>
             </div>
             {isCreating && (
@@ -704,7 +703,7 @@ export function EditOrganizationModal({
         {!isCreating && (
           <div className="px-6 pb-4">
             <h2 className="text-2xl font-bold text-foreground leading-tight">
-              {formData.name || 'Untitled Organization'}
+              {formData.name || 'Untitled Organisation'}
               {formData.acronym && (
                 <span className="text-xl font-medium text-muted-foreground ml-2">({formData.acronym})</span>
               )}
@@ -1009,7 +1008,7 @@ export function EditOrganizationModal({
                 id="description"
                 value={formData.description || ''}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Brief description of the organization"
+                placeholder="Brief description of the organisation"
                 rows={6}
                 className="resize-none"
               />
@@ -1062,7 +1061,7 @@ export function EditOrganizationModal({
               {/* Organization UUID (Read-only) */}
               {organization?.id && (
                 <div className="space-y-2">
-                  <Label htmlFor="uuid_class" className="text-body font-medium">Organization UUID</Label>
+                  <Label htmlFor="uuid_class" className="text-body font-medium">Organisation UUID</Label>
                   <div className="flex gap-2">
                     <Input
                       id="uuid_class"
@@ -1289,7 +1288,7 @@ export function EditOrganizationModal({
           {/* Branding Tab */}
           <TabsContent value="branding" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
             <div className="space-y-6">
-              <p className="text-body text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
+              <p className="text-body text-muted-foreground">Upload logos and banner images for your organisation profile. Hover over images to reposition, replace, or remove them.</p>
 
               {/* Logo */}
               <div>
@@ -1383,7 +1382,7 @@ export function EditOrganizationModal({
             {/* Social Media Section */}
             <div className="space-y-4">
               <h3 className="text-body font-semibold text-foreground border-b pb-2">Social Media</h3>
-              <p className="text-body text-muted-foreground">Add social media profiles for your organization</p>
+              <p className="text-body text-muted-foreground">Add social media profiles for your organisation</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1483,7 +1482,7 @@ export function EditOrganizationModal({
               <div className="flex-1">
                 <p className="text-body font-medium text-blue-800 mb-1">About Aliases</p>
                 <p className="text-body text-blue-700">
-                  Aliases help AIMS automatically recognize this organization when importing IATI data, 
+                  Aliases help AIMS automatically recognize this organisation when importing IATI data,
                   even if the source uses legacy codes or alternate names. This ensures consistent data 
                   linking across different reporting sources.
                 </p>
@@ -1494,7 +1493,7 @@ export function EditOrganizationModal({
               {/* Legacy or Internal Codes */}
               <StringArrayInput
                 label="Legacy or Internal Codes"
-                description="Alternative organization identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
+                description="Alternative organisation identifiers used in IATI data (e.g., 010712, KR-GOV-OLD)"
                 placeholder="e.g., 010712, KR-MOFA-OLD"
                 value={formData.alias_refs || []}
                 onChange={(value) => handleInputChange('alias_refs', value)}
@@ -1504,7 +1503,7 @@ export function EditOrganizationModal({
               {/* Alternate Names */}
               <StringArrayInput
                 label="Alternate Names"
-                description="Other names this organization is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
+                description="Other names this organisation is known by in IATI data (e.g., KOICA, Korea Intern. Cooperation Agency)"
                 placeholder="e.g., KOICA, Korea Intern. Cooperation Agency"
                 value={formData.name_aliases || []}
                 onChange={(value) => handleInputChange('name_aliases', value)}
@@ -1515,8 +1514,8 @@ export function EditOrganizationModal({
             <div className="text-body text-muted-foreground border-t pt-4">
               <p className="font-medium mb-2">How Aliases Work:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
-                <li>If a match is found, the transaction or activity is automatically linked to this organization</li>
+                <li>When importing IATI XML, AIMS checks organisation references against these aliases</li>
+                <li>If a match is found, the transaction or activity is automatically linked to this organisation</li>
                 <li>You can add new aliases anytime you encounter variations in imported data</li>
                 <li>Aliases are case-insensitive and whitespace is trimmed automatically</li>
               </ul>
@@ -1527,16 +1526,16 @@ export function EditOrganizationModal({
               <div className="border-t pt-6 space-y-4">
                 <div className="flex items-center gap-2">
                   <Merge className="h-5 w-5 text-muted-foreground" />
-                  <h3 className="text-base font-semibold text-foreground">Merge Another Organization</h3>
+                  <h3 className="text-base font-semibold text-foreground">Merge Another Organisation</h3>
                 </div>
                 
                 <p className="text-body text-muted-foreground">
-                  Merge a duplicate organization into this one. All activities, transactions, and references 
-                  will be transferred to this organization, and the duplicate will be deleted.
+                  Merge a duplicate organisation into this one. All activities, transactions, and references
+                  will be transferred to this organisation, and the duplicate will be deleted.
                 </p>
 
                 <div className="space-y-2">
-                  <Label className="text-body font-medium">Search for organization to merge</Label>
+                  <Label className="text-body font-medium">Search for organisation to merge</Label>
                   <OrganizationCombobox
                     organizations={allOrganizations}
                     value={mergeSourceOrgId || ''}
@@ -1617,7 +1616,7 @@ export function EditOrganizationModal({
                       ) : (
                         <>
                           <Merge className="mr-2 h-4 w-4" />
-                          Merge into this Organization
+                          Merge into this Organisation
                         </>
                       )}
                     </Button>
@@ -1627,8 +1626,8 @@ export function EditOrganizationModal({
                 <div className="bg-muted border border-border rounded-md p-3 text-body text-muted-foreground">
                   <p className="font-medium text-foreground mb-1">Note:</p>
                   <p>
-                    Merging is permanent and cannot be undone. The source organization will be deleted 
-                    after all its references are transferred to this organization.
+                    Merging is permanent and cannot be undone. The source organisation will be deleted
+                    after all its references are transferred to this organisation.
                   </p>
                 </div>
               </div>
@@ -1667,45 +1666,6 @@ export function EditOrganizationModal({
       </DialogContent>
     </Dialog>
 
-    {/* IATI Import Modal */}
-    <Dialog open={showIatiImport} onOpenChange={setShowIatiImport}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Import from IATI</DialogTitle>
-          <p className="text-body text-muted-foreground">
-            Enter an IATI organization identifier to import data automatically
-          </p>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="iati_import_id">IATI Organization ID</Label>
-            <Input
-              id="iati_import_id"
-              placeholder="e.g., DK-CVR-20228799"
-              // TODO: Add state for IATI import ID and functionality
-            />
-            <p className="text-helper text-muted-foreground">
-              Example: DK-CVR-20228799 (DANIDA), GB-GOV-1 (FCDO)
-            </p>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowIatiImport(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={() => {
-              // TODO: Implement IATI import functionality
-              setShowIatiImport(false);
-            }}
-          >
-            Import Organization
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
 
     {/* Merge Confirmation Dialog */}
     <AlertDialog open={showMergeConfirm} onOpenChange={setShowMergeConfirm}>
@@ -1713,7 +1673,7 @@ export function EditOrganizationModal({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            Confirm Organization Merge
+            Confirm Organisation Merge
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-left">
@@ -1727,7 +1687,7 @@ export function EditOrganizationModal({
                 <ul className="text-body text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>
                   <li>• Add the source IATI ID as an alias</li>
-                  <li>• <strong>Permanently delete</strong> the source organization</li>
+                  <li>• <strong>Permanently delete</strong> the source organisation</li>
                 </ul>
               </div>
               
@@ -1753,7 +1713,7 @@ export function EditOrganizationModal({
                 Merging...
               </>
             ) : (
-              'Yes, Merge Organizations'
+              'Yes, Merge Organisations'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

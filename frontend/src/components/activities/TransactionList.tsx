@@ -69,6 +69,7 @@ import { TransactionValueDisplay } from '@/components/currency/TransactionValueD
 import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { toast } from 'sonner';
 import { 
   Tooltip,
@@ -523,14 +524,6 @@ export default function TransactionList({
     return visibleColumns.includes(columnId);
   };
 
-  // Click-to-copy state for Transaction ID column
-  const [copiedTxnId, setCopiedTxnId] = useState<string | null>(null);
-  const copyTransactionId = (value: string, rowId: string) => {
-    navigator.clipboard.writeText(value);
-    setCopiedTxnId(rowId);
-    setTimeout(() => setCopiedTxnId((prev) => (prev === rowId ? null : prev)), 1500);
-  };
-  
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -1461,7 +1454,7 @@ export default function TransactionList({
                     
                     {/* Type column */}
                     {isColumnVisible('transactionType') && (
-                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px', maxWidth: '160px' }} onClick={() => handleSort('transaction_type')}>
+                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ minWidth: '220px' }} onClick={() => handleSort('transaction_type')}>
                         <div className="flex items-center gap-1">
                           <span>Type</span>
                           {getSortIcon('transaction_type')}
@@ -1660,25 +1653,7 @@ export default function TransactionList({
                       {/* Transaction ID (optional) */}
                       {isColumnVisible('transactionId') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
-                          {(transaction as any).auto_ref ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                copyTransactionId((transaction as any).auto_ref, transaction.uuid || transaction.id);
-                              }}
-                              title={copiedTxnId === (transaction.uuid || transaction.id) ? 'Copied!' : 'Click to copy'}
-                              className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
-                            >
-                              {copiedTxnId === (transaction.uuid || transaction.id) && (
-                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                              )}
-                              <span>{(transaction as any).auto_ref}</span>
-                            </button>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          <CopyableIdBadge value={(transaction as any).auto_ref} label="Transaction ID" />
                         </TableCell>
                       )}
 
@@ -2226,25 +2201,12 @@ export default function TransactionList({
                                     </div>
                                   </div>
                                 )}
-                                {transaction.provider_org_ref && (() => {
-                                  const rowId = transaction.uuid || transaction.id;
-                                  const copyKey = `${rowId}:provider-ref`;
-                                  const isCopied = copiedTxnId === copyKey;
-                                  return (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="text-muted-foreground">Provider Reference</span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); copyTransactionId(transaction.provider_org_ref!, copyKey); }}
-                                        title={isCopied ? 'Copied!' : 'Click to copy'}
-                                        className="font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer break-all"
-                                      >
-                                        {isCopied && <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />}
-                                        <span>{transaction.provider_org_ref}</span>
-                                      </button>
-                                    </div>
-                                  );
-                                })()}
+                                {transaction.provider_org_ref && (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Provider Reference</span>
+                                    <CopyableIdBadge value={transaction.provider_org_ref} label="Provider Reference" />
+                                  </div>
+                                )}
                                 {transaction.receiver_org_name && (
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-muted-foreground">Receiver Organisation</span>
@@ -2282,25 +2244,12 @@ export default function TransactionList({
                                     </div>
                                   </div>
                                 )}
-                                {transaction.receiver_org_ref && (() => {
-                                  const rowId = transaction.uuid || transaction.id;
-                                  const copyKey = `${rowId}:receiver-ref`;
-                                  const isCopied = copiedTxnId === copyKey;
-                                  return (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="text-muted-foreground">Receiver Reference</span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); copyTransactionId(transaction.receiver_org_ref!, copyKey); }}
-                                        title={isCopied ? 'Copied!' : 'Click to copy'}
-                                        className="font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer break-all"
-                                      >
-                                        {isCopied && <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />}
-                                        <span>{transaction.receiver_org_ref}</span>
-                                      </button>
-                                    </div>
-                                  );
-                                })()}
+                                {transaction.receiver_org_ref && (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-muted-foreground">Receiver Reference</span>
+                                    <CopyableIdBadge value={transaction.receiver_org_ref} label="Receiver Reference" />
+                                  </div>
+                                )}
                                 </div>
                               </div>
 
@@ -2308,23 +2257,7 @@ export default function TransactionList({
                                 <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">System Identifiers</h4>
                                 <div className="space-y-3 ml-4">
                                 {(() => {
-                                  const rowId = transaction.uuid || transaction.id;
                                   const txnRef = (transaction as any).auto_ref || transaction.transaction_reference || null;
-                                  const renderCopyable = (value: string | null | undefined, copyKey: string) => {
-                                    if (!value) return <span className="text-muted-foreground">—</span>;
-                                    const isCopied = copiedTxnId === copyKey;
-                                    return (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); copyTransactionId(value, copyKey); }}
-                                        title={isCopied ? 'Copied!' : 'Click to copy'}
-                                        className="font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer break-all"
-                                      >
-                                        {isCopied && <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />}
-                                        <span>{value}</span>
-                                      </button>
-                                    );
-                                  };
                                   const countryName = transaction.recipient_country_code
                                     ? countryList.find(c => c.code === transaction.recipient_country_code)?.name
                                     : null;
@@ -2332,20 +2265,20 @@ export default function TransactionList({
                                     <>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-muted-foreground">Activity ID</span>
-                                        {renderCopyable(activityIdentifiers.customId, `${rowId}:activity-id`)}
+                                        <CopyableIdBadge value={activityIdentifiers.customId} label="Activity ID" />
                                       </div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-muted-foreground">IATI Identifier</span>
-                                        {renderCopyable(activityIdentifiers.iatiId, `${rowId}:iati-id`)}
+                                        <CopyableIdBadge value={activityIdentifiers.iatiId} label="IATI Identifier" />
                                       </div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-muted-foreground">Transaction ID</span>
-                                        {renderCopyable(txnRef, `${rowId}:txn-id`)}
+                                        <CopyableIdBadge value={txnRef} label="Transaction ID" />
                                       </div>
                                       {transaction.sector_code && (
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <span className="text-muted-foreground">Sector</span>
-                                          {renderCopyable(transaction.sector_code, `${rowId}:sector`)}
+                                          <CopyableIdBadge value={transaction.sector_code} label="Sector code" />
                                         </div>
                                       )}
                                       {transaction.recipient_country_code && (

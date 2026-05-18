@@ -77,6 +77,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 
 // Transaction type to icon mapping (IATI Standard v2.03)
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -890,14 +891,7 @@ export function TransactionTable({
                             {(() => {
                               const iatiId = transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier;
                               return iatiId ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); copyToClipboard(iatiId, 'iati', transaction.uuid || transaction.id); }}
-                                  title="Click to copy"
-                                  className="text-xs font-mono font-normal text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block cursor-pointer"
-                                >
-                                  {iatiId}
-                                </button>
+                                <span className="ml-2 inline-block align-middle"><CopyableIdBadge value={iatiId} label="IATI Identifier" /></span>
                               ) : null;
                             })()}
                           </div>
@@ -909,31 +903,16 @@ export function TransactionTable({
                     ) : null,
                     systemId: (
                       <td key="systemId" className="py-3 px-4 whitespace-nowrap">
-                        {(transaction as any).auto_ref ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              copyToClipboard((transaction as any).auto_ref, 'systemId', transactionId);
-                            }}
-                            title="Click to copy"
-                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-middle cursor-pointer"
-                          >
-                            <span>{(transaction as any).auto_ref}</span>
-                          </button>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                        <CopyableIdBadge value={(transaction as any).auto_ref} label="Transaction ID" />
                       </td>
                     ),
                     activityId: (
-                      <td key="activityId" className="py-3 px-4 whitespace-nowrap">{(() => { const pid = (transaction.activity_id && activityDetails[transaction.activity_id]?.partner_id) || transaction.activity?.partner_id; return pid ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{pid}</span> : <span className="text-muted-foreground">—</span>; })()}</td>
+                      <td key="activityId" className="py-3 px-4 whitespace-nowrap">{(() => { const pid = (transaction.activity_id && activityDetails[transaction.activity_id]?.partner_id) || transaction.activity?.partner_id; return <CopyableIdBadge value={pid} label="Activity ID" />; })()}</td>
                     ),
                     iatiIdentifier: (() => {
                       const iati = transaction.activityIatiIdentifier || (transaction.activity_id && activityDetails[transaction.activity_id]?.iati_identifier) || transaction.activity?.iati_identifier;
                       return (
-                        <td key="iatiIdentifier" className="py-3 px-4 whitespace-nowrap">{iati ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{iati}</span> : <span className="text-muted-foreground">—</span>}</td>
+                        <td key="iatiIdentifier" className="py-3 px-4 whitespace-nowrap"><CopyableIdBadge value={iati} label="IATI Identifier" /></td>
                       );
                     })(),
                     reportingOrg: (() => {
@@ -1415,15 +1394,7 @@ export function TransactionTable({
                               <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-section-label font-semibold text-foreground uppercase">Provider Activity</span>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(transaction.provider_org_activity_id || '');
-                                      toast.success('Activity ID copied');
-                                    }}
-                                    className="text-muted-foreground hover:text-foreground transition-colors"
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </button>
+                                  <CopyableIdBadge value={transaction.provider_org_activity_id} label="Activity ID" />
                                 </div>
                                 {loadingActivities.has(transaction.provider_org_activity_id) ? (
                                   <p className="text-body text-muted-foreground">Loading...</p>
@@ -1431,9 +1402,7 @@ export function TransactionTable({
                                   <div className="space-y-1">
                                     <p className="font-medium text-body">{activityDetails[transaction.provider_org_activity_id]?.acronym || activityDetails[transaction.provider_org_activity_id]?.title}</p>
                                     {activityDetails[transaction.provider_org_activity_id]?.iati_identifier && (
-                                      <p className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded inline-block">
-                                        {activityDetails[transaction.provider_org_activity_id]?.iati_identifier}
-                                      </p>
+                                      <CopyableIdBadge value={activityDetails[transaction.provider_org_activity_id]?.iati_identifier} label="IATI Identifier" />
                                     )}
                                     {activityDetails[transaction.provider_org_activity_id]?.reporting_org && (
                                       <p className="text-helper text-muted-foreground">
@@ -1451,15 +1420,7 @@ export function TransactionTable({
                               <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-section-label font-semibold text-foreground uppercase">Receiver Activity</span>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(transaction.receiver_org_activity_id || '');
-                                      toast.success('Activity ID copied');
-                                    }}
-                                    className="text-muted-foreground hover:text-foreground transition-colors"
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </button>
+                                  <CopyableIdBadge value={transaction.receiver_org_activity_id} label="Activity ID" />
                           </div>
                                 {loadingActivities.has(transaction.receiver_org_activity_id) ? (
                                   <p className="text-body text-muted-foreground">Loading...</p>
@@ -1467,9 +1428,7 @@ export function TransactionTable({
                                   <div className="space-y-1">
                                     <p className="font-medium text-body">{activityDetails[transaction.receiver_org_activity_id]?.acronym || activityDetails[transaction.receiver_org_activity_id]?.title}</p>
                                     {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier && (
-                                      <p className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded inline-block">
-                                        {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier}
-                                      </p>
+                                      <CopyableIdBadge value={activityDetails[transaction.receiver_org_activity_id]?.iati_identifier} label="IATI Identifier" />
                                     )}
                                     {activityDetails[transaction.receiver_org_activity_id]?.reporting_org && (
                                       <p className="text-helper text-muted-foreground">
@@ -1681,18 +1640,7 @@ export function TransactionTable({
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-helper text-muted-foreground">Transaction Reference</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{transaction.transaction_reference}</span>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(transaction.transaction_reference || '');
-                                    toast.success('Reference copied');
-                                  }}
-                                  className="text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </button>
-                        </div>
+                              <CopyableIdBadge value={transaction.transaction_reference} label="Transaction Reference" />
                       </div>
                           </div>
                           </div>

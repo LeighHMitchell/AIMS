@@ -166,13 +166,13 @@ export function getSuggestionReason(suggestedCode: string, orgCountry?: string |
     case '71':
       return orgCountry 
         ? `${orgCountry} is a donor/provider country`
-        : 'Organization appears to be in a donor country';
+        : 'Organisation appears to be in a donor country';
     case '72':
       return orgCountry
         ? `${orgCountry} is an aid recipient country`
         : 'Most private sector partners in aid activities are in recipient countries';
     case '73':
-      return 'Organization is in a third country (neither provider nor recipient)';
+      return 'Organisation is in a third country (neither provider nor recipient)';
     default:
       return '';
   }

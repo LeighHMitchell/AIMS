@@ -87,14 +87,14 @@ export async function GET(
       )
     }
 
-    // Fetch disbursement transactions ONLY (transaction_type = '3')
-    // STRICT: Ignore commitments, expenditures, planned disbursements
-    // Note: transactions table has value_usd column (not usd_value)
+    // Fetch disbursement + outgoing commitment transactions
+    // - Disbursements drive the cumulative actual line / "Disbursed in year" column
+    // - Outgoing commitments populate the "Cumulative commitments" column
     const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
-      .select('transaction_date, value, value_usd, currency')
+      .select('transaction_date, value, value_usd, currency, transaction_type')
       .eq('activity_id', activityId)
-      .eq('transaction_type', '3') // ONLY disbursements
+      .in('transaction_type', ['2', '3'])
       .order('transaction_date', { ascending: true })
 
     if (transactionsError) {
@@ -102,31 +102,27 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch transaction data' }, { status: 500 })
     }
 
+    const resolveUsd = (row: { value: any; value_usd: any; currency: any }) => {
+      let value = parseFloat(String(row.value_usd)) || 0
+      if (!value && row.currency === 'USD' && row.value) {
+        value = parseFloat(String(row.value)) || 0
+      }
+      if (!value && row.value) {
+        value = parseFloat(String(row.value)) || 0
+      }
+      return value
+    }
+
     // Process disbursements - compute cumulative sum
     let cumulativeValue = 0
     const disbursements = (transactions || [])
-      .filter(t => t.transaction_date) // Must have a valid date
+      .filter(t => t.transaction_date && t.transaction_type === '3')
       .map(t => {
-        // Prefer USD value (value_usd field from transactions table)
-        let value = parseFloat(String(t.value_usd)) || 0
-        
-        // If no USD value but currency is USD, use raw value
-        if (!value && t.currency === 'USD' && t.value) {
-          value = parseFloat(String(t.value)) || 0
-        }
-        
-        // Fallback to raw value if no USD conversion available
-        if (!value && t.value) {
-          value = parseFloat(String(t.value)) || 0
-        }
-        
-        // Only include positive values
+        const value = resolveUsd(t)
         if (value <= 0) {
           return null
         }
-        
         cumulativeValue += value
-        
         return {
           date: t.transaction_date,
           value,
@@ -134,6 +130,61 @@ export async function GET(
         }
       })
       .filter(Boolean) as Array<{ date: string; value: number; cumulativeValue: number }>
+
+    // Aggregate outgoing commitments by calendar year (cumulative)
+    const commitmentYearMap = new Map<number, number>()
+    ;(transactions || [])
+      .filter(t => t.transaction_date && t.transaction_type === '2')
+      .forEach(t => {
+        const value = resolveUsd(t)
+        if (value <= 0) return
+        const year = new Date(t.transaction_date as string).getUTCFullYear()
+        if (!Number.isFinite(year)) return
+        commitmentYearMap.set(year, (commitmentYearMap.get(year) || 0) + value)
+      })
+
+    let commitCumulative = 0
+    const commitmentsByYear = Array.from(commitmentYearMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([year, value]) => {
+        commitCumulative += value
+        return { year, value, cumulative: commitCumulative }
+      })
+
+    // Fetch planned disbursements and aggregate by year (cumulative)
+    const { data: plannedRows, error: plannedError } = await supabase
+      .from('planned_disbursements')
+      .select('period_start, period_end, amount, usd_amount, currency')
+      .eq('activity_id', activityId)
+
+    if (plannedError) {
+      console.error('[SpendTrajectory] Error fetching planned disbursements:', plannedError)
+    }
+
+    const plannedYearMap = new Map<number, number>()
+    ;(plannedRows || []).forEach(p => {
+      const dateRaw = p.period_start || p.period_end
+      if (!dateRaw) return
+      const year = new Date(dateRaw as string).getUTCFullYear()
+      if (!Number.isFinite(year)) return
+      let value = parseFloat(String(p.usd_amount)) || 0
+      if (!value && p.currency === 'USD' && p.amount) {
+        value = parseFloat(String(p.amount)) || 0
+      }
+      if (!value && p.amount) {
+        value = parseFloat(String(p.amount)) || 0
+      }
+      if (value <= 0) return
+      plannedYearMap.set(year, (plannedYearMap.get(year) || 0) + value)
+    })
+
+    let plannedCumulative = 0
+    const plannedByYear = Array.from(plannedYearMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([year, value]) => {
+        plannedCumulative += value
+        return { year, value, cumulative: plannedCumulative }
+      })
 
     // Determine time axis bounds
     // Start: actual_start_date if available, otherwise planned_start_date, otherwise first disbursement
@@ -166,6 +217,8 @@ export async function GET(
       startDate,
       endDate,
       disbursements,
+      commitmentsByYear,
+      plannedByYear,
     })
 
   } catch (error) {

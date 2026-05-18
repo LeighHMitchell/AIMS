@@ -631,8 +631,8 @@ export default function UserManagement() {
         <div className="min-h-screen">
           <div className="p-8 max-w-full mx-auto">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">User & Organization Management</h1>
-              <p className="text-muted-foreground">Manage system users, roles, and organizations</p>
+              <h1 className="text-3xl font-bold mb-2">User & Organisation Management</h1>
+              <p className="text-muted-foreground">Manage system users, roles, and organisations</p>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -685,10 +685,10 @@ export default function UserManagement() {
                       </Select>
                       <Select value={filterOrg} onValueChange={setFilterOrg}>
                         <SelectTrigger className="w-[200px]">
-                          <SelectValue placeholder="Filter by organization" />
+                          <SelectValue placeholder="Filter by organisation" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All organizations</SelectItem>
+                          <SelectItem value="all">All organisations</SelectItem>
                           {organizations.map((org) => (
                             <SelectItem key={org.id} value={org.id}>
                               {org.name && org.acronym && org.name !== org.acronym 
@@ -1283,12 +1283,12 @@ function UserEditor({
           </div>
 
           <div>
-            <Label htmlFor="organization">Organization</Label>
+            <Label htmlFor="organization">Organisation</Label>
             <OrganizationCombobox
               organizations={organizations}
               value={formData.organizationId || ""}
               onValueChange={(v) => setFormData({ ...formData, organizationId: v })}
-              placeholder="Select organization..."
+              placeholder="Select organisation..."
               className="w-full"
             />
             {!formData.organizationId && (

@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { USER_ROLES } from "@/types/user"
@@ -28,6 +29,8 @@ import {
   ClipboardList,
   Bell,
   Users,
+  Minimize2,
+  Maximize2,
 } from "lucide-react"
 import {
   AidFlowsIcon,
@@ -41,6 +44,7 @@ import { HeroVisualizationCards } from "@/components/dashboard/HeroVisualization
 import { DashboardHeroCards } from "@/components/dashboard/DashboardHeroCards"
 import { RecencyCards } from "@/components/dashboard/RecencyCards"
 import { ActionsRequiredPanel } from "@/components/dashboard/ActionsRequiredPanel"
+import { DataQualitySummaryCard } from "@/components/dashboard/DataQualitySummaryCard"
 import { OrgFinancialTabs } from "@/components/dashboard/OrgFinancialTabs"
 import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
@@ -64,8 +68,28 @@ export default function Dashboard() {
   const { data: unreadNotificationCount = 0 } = useNotificationCount(user?.id);
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+  const [isCompact, setIsCompact] = useState(false);
 
   const isVisitor = isVisitorUser(user);
+
+  // Load compact-mode preference from localStorage
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem('aims:dashboard-compact') === 'true') {
+        setIsCompact(true);
+      }
+    } catch {}
+  }, []);
+
+  const toggleCompact = () => {
+    setIsCompact((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem('aims:dashboard-compact', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // Sync tab with URL search params (e.g. when navigating from nav bar)
   // For visitors, force blocked tabs to 'overview'
@@ -81,8 +105,8 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="p-8">
+        <div className="w-full">
+          <div>
             <div className="space-y-6">
               {/* Header Skeleton - matches actual avatar + welcome + org layout */}
               <div className="flex items-center gap-6 pb-2">
@@ -153,8 +177,8 @@ export default function Dashboard() {
   if (!user) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="p-8">
+        <div className="w-full">
+          <div>
             <div className="flex items-center justify-center min-h-[60vh]">
               <Card className="max-w-lg bg-card">
                 <CardHeader>
@@ -183,14 +207,14 @@ export default function Dashboard() {
   if (!user.organizationId && !isVisitor) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="p-8">
+        <div className="w-full">
+          <div>
             <div className="flex items-center justify-center min-h-[60vh]">
               <Card className="max-w-lg bg-card">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     <AlertCircle className="h-6 w-6 text-orange-500" />
-                    <CardTitle>Organization Assignment Pending</CardTitle>
+                    <CardTitle>Organisation Assignment Pending</CardTitle>
                   </div>
                   <CardDescription>
                     Your account has been created but you haven't been assigned to an organization yet.
@@ -231,79 +255,102 @@ export default function Dashboard() {
   // Main dashboard view - organization scoped
   return (
     <MainLayout>
-      <div className="min-h-screen">
-        <div className="p-8">
+      <div className="w-full">
+        <div>
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-6 pb-2" data-tour="dashboard-welcome">
-              {/* User Avatar */}
-              <Avatar className="h-[88px] w-[88px] shrink-0 ring-2 ring-border/50 shadow-sm">
-                {user.profilePicture ? (
-                  <AvatarImage src={user.profilePicture} alt={user.name} className="object-cover" />
-                ) : null}
-                <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-semibold">
-                  {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
-                  {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex items-start justify-between gap-4 pb-2" data-tour="dashboard-welcome">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
+                {/* User Avatar */}
+                <Avatar className={`shrink-0 ring-2 ring-border/50 shadow-sm ${isCompact ? 'h-10 w-10' : 'h-[88px] w-[88px]'}`}>
+                  {user.profilePicture ? (
+                    <AvatarImage src={user.profilePicture} alt={user.name} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className={`bg-muted text-muted-foreground font-semibold ${isCompact ? 'text-sm' : 'text-2xl'}`}>
+                    {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
+                    {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
 
-              {/* Text Content */}
-              <div className="space-y-1.5 min-w-0">
-                {/* Welcome message with role badge on same line */}
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                    Welcome, <span>
-                      {user.firstName || user.name.split(' ')[0]}
-                    </span>
-                  </h1>
-                  {user.role === USER_ROLES.SUPER_USER ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant={getRoleBadgeVariant(user.role)}>
-                            {getRoleDisplayLabel(user.role)}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Shield className="h-4 w-4" />
-                              <p className="font-semibold">Super User Access</p>
+                {/* Text Content */}
+                <div className="space-y-1.5 min-w-0">
+                  {/* Welcome message with role badge on same line */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className={`font-bold tracking-tight text-foreground ${isCompact ? 'text-lg' : 'text-3xl'}`}>
+                      Welcome, <span>
+                        {user.firstName || user.name.split(' ')[0]}
+                      </span>
+                    </h1>
+                    {user.role === USER_ROLES.SUPER_USER ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant={getRoleBadgeVariant(user.role)}>
+                              {getRoleDisplayLabel(user.role)}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4" />
+                                <p className="font-semibold">Super User Access</p>
+                              </div>
+                              <p className="text-body">
+                                You have full system access. This dashboard shows data scoped to your organization.
+                                Use the Admin panel to view system-wide data.
+                              </p>
                             </div>
-                            <p className="text-body">
-                              You have full system access. This dashboard shows data scoped to your organization.
-                              Use the Admin panel to view system-wide data.
-                            </p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <Badge variant={getRoleBadgeVariant(user.role)}>
-                      {getRoleDisplayLabel(user.role)}
-                    </Badge>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {getRoleDisplayLabel(user.role)}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {!isCompact && (
+                    <>
+                      {/* Position and department */}
+                      {(user.jobTitle || user.department) && (
+                        <p className="text-base font-medium text-foreground">
+                          {user.jobTitle && user.department
+                            ? <>{user.jobTitle} <span>&middot;</span> {user.department}</>
+                            : user.jobTitle || user.department}
+                        </p>
+                      )}
+
+                      {/* Organization info */}
+                      {user.organization && (
+                        <p className="text-base font-medium text-foreground">
+                          <Link
+                            href={`/organizations/${user.organizationId}`}
+                            className="no-underline hover:no-underline text-foreground hover:text-foreground/80 transition-colors"
+                          >
+                            {user.organization.name}
+                            {user.organization.acronym && (
+                              <span> ({user.organization.acronym})</span>
+                            )}
+                          </Link>
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
-
-                {/* Position and department */}
-                {(user.jobTitle || user.department) && (
-                  <p className="text-base font-medium text-foreground">
-                    {user.jobTitle && user.department
-                      ? <>{user.jobTitle} <span>&middot;</span> {user.department}</>
-                      : user.jobTitle || user.department}
-                  </p>
-                )}
-
-                {/* Organization info */}
-                {user.organization && (
-                  <p className="text-base font-medium text-foreground">
-                    {user.organization.name}
-                    {user.organization.acronym && (
-                      <span> ({user.organization.acronym})</span>
-                    )}
-                  </p>
-                )}
               </div>
+
+              {/* Compact-mode toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleCompact}
+                aria-label={isCompact ? "Expand dashboard header" : "Compact dashboard view"}
+                title={isCompact ? "Expand header" : "Compact view"}
+                className="shrink-0 mt-1 text-muted-foreground hover:text-foreground"
+              >
+                {isCompact ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+              </Button>
             </div>
 
             {/* Dashboard Tabs */}
@@ -385,6 +432,9 @@ export default function Dashboard() {
                 />
                 </div>
 
+                {/* Row 4b: Data Quality summary (self-gates by role) */}
+                <DataQualitySummaryCard />
+
                 {/* Row 5: Organisation Financial Data Tabs */}
                 <div data-tour="org-financial-data">
                   <OrgFinancialTabs organizationId={user.organizationId} userId={user.id} context="overview" />
@@ -417,7 +467,7 @@ export default function Dashboard() {
                 <Tabs defaultValue="activities" className="w-full">
                   <TabsList className="mb-4">
                     <TabsTrigger value="activities">Activities</TabsTrigger>
-                    <TabsTrigger value="organizations">Organizations</TabsTrigger>
+                    <TabsTrigger value="organizations">Organisations</TabsTrigger>
                   </TabsList>
                   <TabsContent value="activities">
                     <BookmarkedActivitiesTable />

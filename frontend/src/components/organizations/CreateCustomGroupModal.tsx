@@ -129,7 +129,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
     }
 
     if (selectedOrgs.length === 0) {
-      toast.error('Please select at least one organization')
+      toast.error('Please select at least one organisation')
       return
     }
 
@@ -185,7 +185,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
 
       if (response.ok) {
         const newGroup = await response.json()
-        toast.success('Custom group created successfully with organizations assigned!')
+        toast.success('Custom group created successfully with organisations assigned!')
         
         // Reset form
         setFormData({
@@ -287,7 +287,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
             Create Custom Group
           </DialogTitle>
           <DialogDescription>
-            Create a new custom grouping of organizations for better coordination and reporting
+            Create a new custom grouping of organisations for better coordination and reporting
           </DialogDescription>
         </DialogHeader>
 
@@ -319,8 +319,8 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                 >
                   <span className="truncate">
                     {selectedOrgs.length > 0
-                      ? `${selectedOrgs.length} organization${selectedOrgs.length > 1 ? 's' : ''} selected`
-                      : "Select organizations..."}
+                      ? `${selectedOrgs.length} organisation${selectedOrgs.length > 1 ? 's' : ''} selected`
+                      : "Select organisations..."}
                   </span>
                   <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </div>
@@ -328,7 +328,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
               <PopoverContent className="w-[600px] p-0" align="start">
                 <div className="p-2 border-b">
                   <Input
-                    placeholder="Search organizations by name or acronym..."
+                    placeholder="Search organisations by name or acronym..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="h-9"
@@ -337,7 +337,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                 <ScrollArea className="h-[300px] p-1">
                   {filteredOrganizations.length === 0 ? (
                     <div className="p-4 text-center text-body text-muted-foreground">
-                      No organization found.
+                      No organisation found.
                     </div>
                   ) : (
                     filteredOrganizations.map((org) => (

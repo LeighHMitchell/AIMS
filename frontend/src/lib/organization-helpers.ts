@@ -52,7 +52,7 @@ export async function getOrCreateOrganization(
     return null;
   }
 
-  const orgName = name || ref || 'Unknown Organization';
+  const orgName = name || ref || 'Unknown Organisation';
 
   try {
     // Step 1: Try exact match by iati_org_id (most reliable)

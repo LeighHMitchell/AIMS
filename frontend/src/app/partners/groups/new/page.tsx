@@ -148,7 +148,7 @@ export default function NewGroupPage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Create Custom Group</h1>
-            <p className="text-muted-foreground mt-1">Create a new custom grouping of organizations</p>
+            <p className="text-muted-foreground mt-1">Create a new custom grouping of organisations</p>
           </div>
         </div>
 
@@ -267,9 +267,9 @@ export default function NewGroupPage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Search organizations..." autoFocus />
+                      <CommandInput placeholder="Search organisations..." autoFocus />
                       <CommandList>
-                        <CommandEmpty>No organization found.</CommandEmpty>
+                        <CommandEmpty>No organisation found.</CommandEmpty>
                         <CommandGroup>
                           {organizations.map((org) => (
                             <CommandItem

@@ -44,7 +44,7 @@ export const PAGE_HELP_SLUGS: readonly PageHelpSlug[] = [
   { route: '/budgets', slug: 'budgets', title: 'Budgets' },
 
   // --- ACTORS ---
-  { route: '/organizations', slug: 'organizations', title: 'Organizations' },
+  { route: '/organizations', slug: 'organizations', title: 'Organisations' },
   { route: '/rolodex', slug: 'rolodex', title: 'Rolodex' },
 
   // --- PROFILES ---

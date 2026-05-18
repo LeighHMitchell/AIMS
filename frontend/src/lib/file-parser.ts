@@ -9,7 +9,7 @@ export async function parseFile(file: File): Promise<{
   if (fileExtension === 'csv') {
     return parseCSV(file);
   } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-    throw new Error('Excel file support temporarily disabled for security. Please convert to CSV format.');
+    throw new Error('Excel files aren’t supported. In Excel, use File → Save As → CSV, then upload the .csv file.');
   } else {
     throw new Error('Unsupported file type. Please upload a CSV file.');
   }

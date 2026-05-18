@@ -257,7 +257,7 @@ export function OrganizationalPositioningMap({
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
-        <p className="text-body">No organization data available</p>
+        <p className="text-body">No organisation data available</p>
       </div>
     )
   }
@@ -433,7 +433,7 @@ export function OrganizationalPositioningMap({
 
       {/* Legend */}
       <div className="rounded-lg p-4" style={{ backgroundColor: '#f1f4f8' }}>
-        <p className="text-helper font-medium mb-2" style={{ color: '#4c5568' }}>Organization Types</p>
+        <p className="text-helper font-medium mb-2" style={{ color: '#4c5568' }}>Organisation Types</p>
         <div className="flex flex-wrap gap-3">
           {legendItems.map(item => (
             <div key={item.value} className="flex items-center gap-1.5">

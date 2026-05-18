@@ -31,7 +31,7 @@ export function OrganizationTypeSelect({
   value,
   onValueChange,
   disabled = false,
-  placeholder = 'Select organization type',
+  placeholder = 'Select organisation type',
   className = ''
 }: OrganizationTypeSelectProps) {
   const [open, setOpen] = React.useState(false);
@@ -110,7 +110,7 @@ export function OrganizationTypeSelect({
             <div className="flex items-center border-b px-3 py-2">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <input
-                placeholder="Search organization types..."
+                placeholder="Search organisation types..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -171,7 +171,7 @@ export function OrganizationTypeSelect({
               {Object.keys(groupedOptions).length === 0 && (
                 <div className="py-8 text-center">
                   <div className="text-body text-muted-foreground">
-                    No organization types found.
+                    No organisation types found.
                   </div>
                   <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms

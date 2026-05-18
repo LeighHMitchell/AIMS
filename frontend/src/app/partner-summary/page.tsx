@@ -268,8 +268,8 @@ export default function PartnerSummaryPage() {
         groups.set('ungrouped', { 
           info: { 
             id: 'ungrouped', 
-            name: 'Ungrouped Organizations', 
-            description: 'Organizations not assigned to any group',
+            name: 'Ungrouped Organisations',
+            description: 'Organisations not assigned to any group',
             createdBy: '',
             lastUpdated: '',
             memberCount: ungroupedPartners.length
@@ -410,7 +410,7 @@ export default function PartnerSummaryPage() {
     if (!data) return;
     
     const csvData = [
-      ['Organisation Name', 'Organization Type', 'Active Projects', `2022 (USD) - ${financialMode}`, `2023 - ${financialMode}`, `2024 - ${financialMode}`, `2025 - ${financialMode}`, `2026 - ${financialMode}`, `2027 - ${financialMode}`],
+      ['Organisation Name', 'Organisation Type', 'Active Projects', `2022 (USD) - ${financialMode}`, `2023 - ${financialMode}`, `2024 - ${financialMode}`, `2025 - ${financialMode}`, `2026 - ${financialMode}`, `2027 - ${financialMode}`],
       ...filteredPartners.map(partner => [
         partner.fullName && partner.acronym ? `${partner.fullName} (${partner.acronym})` : partner.name,
         partner.organizationTypeLabel,
@@ -484,7 +484,7 @@ export default function PartnerSummaryPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Partner Organizations</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Partner Organisations</h1>
             <p className="text-muted-foreground">
               Browse and explore our development partner network
             </p>
@@ -516,7 +516,7 @@ export default function PartnerSummaryPage() {
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search organizations..."
+                placeholder="Search organisations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -785,7 +785,7 @@ export default function PartnerSummaryPage() {
         <Dialog open={showCreateGroupModal} onOpenChange={setShowCreateGroupModal}>
           <DialogContent className="max-w-2xl max-h-[80vh]">
             <DialogHeader>
-              <DialogTitle>Create Organization Group</DialogTitle>
+              <DialogTitle>Create Organisation Group</DialogTitle>
               <DialogDescription>
                 Create a new group and assign organizations to it
               </DialogDescription>
@@ -814,7 +814,7 @@ export default function PartnerSummaryPage() {
               </div>
               
               <div className="space-y-2">
-                <Label>Assign Organizations</Label>
+                <Label>Assign Organisations</Label>
                 <ScrollArea className="h-[200px] border rounded-md p-4">
                   <div className="space-y-2">
                     {data?.partners.map((partner) => (

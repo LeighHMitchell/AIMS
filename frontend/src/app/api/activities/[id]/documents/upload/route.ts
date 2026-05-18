@@ -11,7 +11,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
@@ -23,8 +23,8 @@ export async function POST(
 
     const { id: activityId } = await params;
 
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
+    // Acting user comes from requireAuth(); enforce it explicitly.
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Parse form data
     const formData = await request.formData();
@@ -72,10 +72,11 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Check if activity exists (simplified permission check for now)
+    // Permission: the activity creator, or an editor/admin contributor
+    // (mirrors the document POST route's check on the same feature).
     const { data: activity, error: activityError } = await supabase
       .from('activities')
-      .select('id, created_by')
+      .select('id, created_by, activity_contributors(user_id, role)')
       .eq('id', activityId)
       .single();
 
@@ -84,8 +85,14 @@ export async function POST(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
-    // Simplified permission check - allow all authenticated users for now
-    // TODO: Implement proper permission checking later
+    const hasPermission = activity.created_by === user.id ||
+      (activity.activity_contributors && activity.activity_contributors.some((contrib: any) =>
+        contrib.user_id === user.id && ['editor', 'admin'].includes(contrib.role)
+      ));
+
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
 
     // Generate unique filename and storage path
     const timestamp = Date.now();

@@ -184,7 +184,10 @@ interface ActivityLocationsMapViewV2Props {
   mapZoom: number;
   viewMode?: 'markers' | 'heatmap';
   activityTitle?: string;
+  activityAcronym?: string;
   organizationId?: string;
+  focusedLocationId?: string | null;
+  onMapInstanceReady?: (map: MapLibreMap | null) => void;
 }
 
 // Fit map bounds around all activity locations
@@ -230,12 +233,16 @@ export default function ActivityLocationsMapViewV2({
   mapZoom,
   viewMode: initialViewMode = 'markers',
   activityTitle,
+  activityAcronym,
   organizationId,
+  focusedLocationId,
+  onMapInstanceReady,
 }: ActivityLocationsMapViewV2Props) {
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
   const handleMapReady = useCallback((map: MapLibreMap | null) => {
     setMapInstance(map);
-  }, []);
+    onMapInstanceReady?.(map);
+  }, [onMapInstanceReady]);
 
   // Pull style from the shared context when one is in scope (so sibling
   // components like the locations table can mirror the user's choice).
@@ -655,6 +662,8 @@ export default function ActivityLocationsMapViewV2({
           <SimpleActivityMarkersLayer
             locations={validLocations}
             activityTitle={activityTitle}
+            activityAcronym={activityAcronym}
+            focusedLocationId={focusedLocationId}
           />
         )}
 

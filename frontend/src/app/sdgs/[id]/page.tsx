@@ -742,7 +742,7 @@ export default function SDGProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-body font-medium">Organizations</CardTitle>
+                  <CardTitle className="text-body font-medium">Organisations</CardTitle>
                   <div className="flex items-center gap-2">
                     {['all', 'funding', 'implementing', 'accountable'].map(role => (
                       <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-helper px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
@@ -795,7 +795,7 @@ export default function SDGProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-body text-center py-8">No organizations found</p>
+                  <p className="text-muted-foreground text-body text-center py-8">No organisations found</p>
                 )}
               </CardContent>
             </Card>

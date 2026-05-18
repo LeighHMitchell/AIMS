@@ -171,7 +171,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
       if (field === 'sectors') {
         if (!sectors || sectors.length === 0) missing.required.push('Sectors');
       } else if (field === 'participatingOrg') {
-        if (!activity.partnerId) missing.required.push('Partner Organization');
+        if (!activity.partnerId) missing.required.push('Partner Organisation');
       } else if (!activity[field] || !activity[field].toString().trim()) {
         missing.required.push(field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1').trim());
       }

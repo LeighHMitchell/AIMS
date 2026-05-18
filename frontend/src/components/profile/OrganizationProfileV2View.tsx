@@ -134,14 +134,6 @@ function deriveOrgAccent(org: any): HeroAccent {
   return "grey"
 }
 
-function formatUsdCompact(value: number): string {
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `USD ${(value / 1_000_000_000).toFixed(1)}b`
-  if (abs >= 1_000_000) return `USD ${(value / 1_000_000).toFixed(1)}m`
-  if (abs >= 1_000) return `USD ${(value / 1_000).toFixed(0)}k`
-  return `USD ${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-}
-
 // JSX variant of the same compact format — renders the "USD" prefix small /
 // gray (matches the transactions table style elsewhere in the app) with the
 // numeric value in normal weight beside it.
@@ -204,16 +196,33 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
     ? `${orgName} (${acronym})`
     : orgName || acronym || "Untitled Organisation"
 
-  // Subtitle: "Active in N activities · USD X.Xm disbursed" (skips when both 0)
+  // Subtitle: "Active in N activities across X sectors" — sector segment hides
+  // when there are no classified sectors. The whole line hides when the org
+  // has zero activities.
   const activeCount = Number(organization?.active_project_count ?? 0)
-  const disbursed = Number(organization?.total_disbursed_usd ?? 0)
-  const heroSubtitle = activeCount > 0 || disbursed > 0 ? (
+  const [sectorCount, setSectorCount] = useState<number | null>(null)
+  useEffect(() => {
+    if (!organization?.id) return
+    let cancelled = false
+    apiFetch(`/api/organizations/${organization.id}/sectors`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows) => {
+        if (cancelled) return
+        setSectorCount(Array.isArray(rows) ? rows.length : 0)
+      })
+      .catch(() => {
+        if (!cancelled) setSectorCount(0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [organization?.id])
+  const heroSubtitle = activeCount > 0 ? (
     <span className="inline-flex items-center gap-2 font-bold">
-      {activeCount > 0 && (
-        <>Active in {activeCount} {activeCount === 1 ? "activity" : "activities"}</>
+      <>Active in {activeCount} {activeCount === 1 ? "activity" : "activities"}</>
+      {sectorCount !== null && sectorCount > 0 && (
+        <> across {sectorCount} {sectorCount === 1 ? "sector" : "sectors"}</>
       )}
-      {activeCount > 0 && disbursed > 0 && <span className="opacity-60">·</span>}
-      {disbursed > 0 && <>{formatUsdCompact(disbursed)} disbursed</>}
     </span>
   ) : null
 
@@ -442,7 +451,10 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       </OrgPane>
 
       <OrgPane tab="finances" activeTab={activeTab} visitedTabs={visitedTabs}>
-        <OrganizationFinancesPane organizationId={organization.id} />
+        <OrganizationFinancesPane
+          organizationId={organization.id}
+          organizationName={organization.acronym || organization.name || "This organisation"}
+        />
       </OrgPane>
 
       <OrgPane tab="locations" activeTab={activeTab} visitedTabs={visitedTabs}>
@@ -492,8 +504,15 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       type="button"
       onClick={scrollToTop}
       title="Back to top"
-      className="inline-flex items-center h-8 px-2.5 -ml-2.5 rounded-md text-base font-semibold text-foreground hover:bg-muted transition-colors whitespace-nowrap"
+      className="inline-flex items-center gap-2 h-8 px-2.5 -ml-2.5 rounded-md text-base font-semibold text-foreground hover:bg-muted transition-colors whitespace-nowrap"
     >
+      {organization?.logo && (
+        <img
+          src={organization.logo}
+          alt=""
+          className="w-5 h-5 rounded object-cover flex-shrink-0"
+        />
+      )}
       <span className="whitespace-nowrap">{heroTitle}</span>
     </button>
   )
@@ -507,7 +526,15 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       <code className="font-mono">{organization.iati_org_id}</code>
     </button>
   ) : null
-  const compactSubtitle = organization?.country_represented || null
+  // Mirror the non-shrunk hero's identity-card row: country/institutional
+  // group glyph followed by its label. The compact strip's `subtitle` slot
+  // accepts JSX, so we render the flag inline rather than dropping it.
+  const compactSubtitle = organization?.country_represented ? (
+    <span className="inline-flex items-center gap-1.5">
+      <LocationGlyph value={organization.country_represented} />
+      <span>{organization.country_represented}</span>
+    </span>
+  ) : null
   const compactActions = (
     <>
       <Button
@@ -935,12 +962,27 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
                       )}
                     </Link>
                     {iati && (
-                      // IATI identifier rendered as a code chip — same
-                      // monospace gray treatment used for transaction-type
-                      // codes and other identifiers elsewhere in the app.
-                      <code className="inline-block mt-1 font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      // IATI identifier rendered as a click-to-copy chip —
+                      // same monospace gray treatment used elsewhere, but
+                      // a button so the value can be lifted to the
+                      // clipboard without selecting the text manually.
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          try {
+                            await navigator.clipboard.writeText(iati)
+                            toast.success("IATI identifier copied", { description: iati })
+                          } catch {
+                            toast.error("Could not copy to clipboard")
+                          }
+                        }}
+                        title="Click to copy"
+                        className="inline-block mt-1 font-mono text-xs text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                      >
                         {iati}
-                      </code>
+                      </button>
                     )}
                     {description && (
                       <p className="text-helper text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">

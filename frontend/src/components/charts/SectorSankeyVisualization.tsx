@@ -141,7 +141,7 @@ const generateShades = (baseColor: string) => {
 };
 
 // Function to generate multiple shades within the same color family for different ring levels (same as sunburst)
-const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades: number, ringLevel: 'sector' | 'subsector') => {
+const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades: number, ringLevel: 'sector' | 'subsector' | 'subsector-bar') => {
   const hex = baseColor.replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
@@ -153,6 +153,10 @@ const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades
     // Middle ring - moderate lightening range
     minLighten = 0.1;
     maxLighten = 0.3;
+  } else if (ringLevel === 'subsector-bar') {
+    // Bar-chart sub-sectors — stay vibrant, barely lighter than parent
+    minLighten = 0.0;
+    maxLighten = 0.15;
   } else {
     // Outer ring - lighter range
     minLighten = 0.4;
@@ -471,7 +475,7 @@ export default function SectorSankeyVisualization({
         const baseColor = BASE_COLORS[gIdx % BASE_COLORS.length];
         const bucket = groupBuckets.get(groupCode)!;
         bucket.forEach((row, sIdx) => {
-          colourByCode.set(row.code, generateVariedShades(baseColor, sIdx, bucket.length, 'subsector'));
+          colourByCode.set(row.code, generateVariedShades(baseColor, sIdx, bucket.length, 'subsector-bar'));
         });
       });
 

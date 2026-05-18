@@ -139,7 +139,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
 
         <Onboarding totalSteps={3} className="px-1">
           <Onboarding.StepIndicator
-            labels={["Name", "Organization", "Contact"]}
+            labels={["Name", "Organisation", "Contact"]}
             className="py-4"
           />
 
@@ -193,13 +193,13 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           <Onboarding.Step step={1} className="space-y-4">
             <div>
               <label className="mb-1.5 block text-body font-medium">
-                Organization <RequiredDot />
+                Organisation <RequiredDot />
               </label>
               <OrganizationSearchableSelect
                 organizations={organizations}
                 value={form.organizationId}
                 onValueChange={(v) => updateField("organizationId", v)}
-                placeholder="Select your organization..."
+                placeholder="Select your organisation..."
                 searchPlaceholder="Search organizations..."
               />
             </div>

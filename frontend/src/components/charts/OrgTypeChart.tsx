@@ -84,7 +84,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
     } catch (error) {
       console.error('Error fetching org type chart data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');
-      toast.error('Failed to load organization type data');
+      toast.error('Failed to load organisation type data');
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
       return (
         <ChartTooltipCard
           title={label}
-          subtitle="Organization Type"
+          subtitle="Organisation Type"
           rows={rows}
         />
       );
@@ -239,7 +239,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
         <p>
           <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organization types by total budget | 
           <strong> Currency:</strong> {currency} | 
-          <strong> Organization Types:</strong> {data.length}
+          <strong> Organisation Types:</strong> {data.length}
         </p>
       </div>
     </div>

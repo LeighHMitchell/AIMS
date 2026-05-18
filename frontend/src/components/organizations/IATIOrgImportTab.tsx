@@ -141,7 +141,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
 
     // Identification fields
     fields.push({
-      fieldName: 'IATI Organization ID',
+      fieldName: 'IATI Organisation ID',
       iatiPath: 'organisation-identifier',
       currentValue: currentOrg?.iati_org_id || '',
       importValue: parsed.identifier || '',
@@ -152,7 +152,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
     })
 
     fields.push({
-      fieldName: 'Organization Name',
+      fieldName: 'Organisation Name',
       iatiPath: 'name/narrative',
       currentValue: currentOrg?.name || '',
       importValue: parsed.name || '',
@@ -502,7 +502,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Import IATI Organization XML</CardTitle>
+          <CardTitle>Import IATI Organisation XML</CardTitle>
           <CardDescription>
             Upload, paste, or fetch an IATI Organization XML file to import data into this organization
           </CardDescription>
@@ -533,7 +533,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                   ) : (
                     <div>
                       <p className="text-muted-foreground mb-2">Drag and drop an XML file here, or click to select</p>
-                      <p className="text-body text-muted-foreground">IATI Organization XML files only</p>
+                      <p className="text-body text-muted-foreground">IATI Organisation XML files only</p>
                     </div>
                   )}
                 </div>
@@ -550,7 +550,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                   <Textarea
                     value={xmlContent}
                     onChange={(e) => setXmlContent(e.target.value)}
-                    placeholder="Paste IATI Organization XML here..."
+                    placeholder="Paste IATI Organisation XML here..."
                     className="font-mono text-sm"
                     rows={10}
                   />
@@ -615,7 +615,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                           <div className="flex-1">
                             <p className="font-medium text-green-900">Country-Specific Budget Available</p>
                             <p className="text-body text-green-700 mt-1">
-                              This organization has published a budget specifically for {homeCountryName}.
+                              This organisation has published a budget specifically for {homeCountryName}.
                             </p>
                             {budgetCoverage.countryBudgets.homeCountryBudget && (
                               <p className="text-body text-muted-foreground mt-2">
@@ -630,7 +630,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                           <div className="flex-1">
                             <p className="font-medium text-red-900">Country-Specific Budget Not Available</p>
                             <p className="text-body text-destructive mt-1">
-                              This organization has not published a budget specifically for {homeCountryName}.
+                              This organisation has not published a budget specifically for {homeCountryName}.
                             </p>
                             {budgetCoverage.countryBudgets.otherCountries.length > 0 && (
                               <p className="text-body text-muted-foreground mt-2">

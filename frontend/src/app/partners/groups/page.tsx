@@ -152,7 +152,7 @@ export default function ManageGroupsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Custom Groups</h1>
-            <p className="text-muted-foreground mt-1">Manage custom organization groupings and consortiums</p>
+            <p className="text-muted-foreground mt-1">Manage custom organisation groupings and consortiums</p>
           </div>
           
           <Button 

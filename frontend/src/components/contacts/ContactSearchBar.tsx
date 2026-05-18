@@ -156,7 +156,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search existing contacts by name, email, or organization..."
+            placeholder="Search existing contacts by name, email, or organisation..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={handleFocus}

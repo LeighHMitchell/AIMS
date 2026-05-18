@@ -198,7 +198,7 @@ export function OrganizationDropdownWithLogo({
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search organizations..."
+                placeholder="Search organisations..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-9 px-3 text-body rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -215,7 +215,7 @@ export function OrganizationDropdownWithLogo({
           >
             {filteredOrgs.length === 0 ? (
               <div className="p-4 text-center text-body text-muted-foreground">
-                No organization found.
+                No organisation found.
               </div>
             ) : (
               <div className="p-1">

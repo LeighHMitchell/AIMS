@@ -10,8 +10,8 @@ export const USER_ROLES = {
 
 export const ROLE_LABELS = {
   [USER_ROLES.SUPER_USER]: "Administrator",
-  [USER_ROLES.DEV_PARTNER_TIER_1]: "Partner Manager",
-  [USER_ROLES.DEV_PARTNER_TIER_2]: "Partner Editor",
+  [USER_ROLES.DEV_PARTNER_TIER_1]: "Development Partner Manager",
+  [USER_ROLES.DEV_PARTNER_TIER_2]: "Development Partner Editor",
   [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Manager",
   [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Editor",
   [USER_ROLES.PUBLIC_USER]: "Viewer",
@@ -201,6 +201,9 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
       };
 
     default:
+      if (role) {
+        console.warn(`[getUserPermissions] Unknown role: "${role}". Falling back to no permissions.`);
+      }
       return {
         canCreateActivities: false,
         canValidateActivities: false,
@@ -214,4 +217,4 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canRequestAllocation: false,
       };
   }
-} 
+}

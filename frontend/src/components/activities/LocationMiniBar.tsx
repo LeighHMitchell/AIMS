@@ -110,20 +110,12 @@ export function LocationMiniBar({
   showTooltip = true,
   className = '',
 }: LocationMiniBarProps) {
-  // Handle empty state
-  if (!locations || locations.length === 0) {
-    return (
-      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
-        —
-      </div>
-    )
-  }
-
-  // Aggregate locations by admin_unit (with fallback to state_region_name)
+  // Aggregate locations by admin_unit (with fallback to state_region_name).
+  // Hooks must run unconditionally — the empty-state return happens after them.
   const aggregatedLocations = useMemo(() => {
     const grouped = new Map<string, { percentage: number; count: number }>()
-    
-    locations.forEach(loc => {
+
+    ;(locations || []).forEach(loc => {
       // Use admin_unit, fallback to state_region_name
       const locationName = loc.admin_unit || loc.state_region_name
       if (!locationName) return
@@ -156,6 +148,7 @@ export function LocationMiniBar({
   const totalPercentage = aggregatedLocations.reduce((sum, loc) => sum + (loc.percentage || 0), 0)
   
   const normalizedLocations = useMemo(() => {
+    if (aggregatedLocations.length === 0) return []
     if (totalPercentage === 0) {
       // No percentages set - distribute evenly
       const evenShare = 100 / aggregatedLocations.length
@@ -178,6 +171,15 @@ export function LocationMiniBar({
         : totalValue / aggregatedLocations.length,
     }))
   }, [aggregatedLocations, totalPercentage, totalValue])
+
+  // Handle empty state — after all hooks (Rules of Hooks)
+  if (!locations || locations.length === 0) {
+    return (
+      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
+        —
+      </div>
+    )
+  }
 
   // Sort by percentage descending
   const sortedLocations = [...normalizedLocations].sort((a, b) => b.normalizedPercentage - a.normalizedPercentage)

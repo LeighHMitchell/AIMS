@@ -3,10 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Building2, MapPin, Activity, DollarSign, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
 import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
 import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 
 // Color palette — uses brand tokens from CSS variables for theme compatibility
 const colors = {
@@ -72,11 +72,6 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
   const orgUrl = `/organizations/${organization.id}`;
   const { isBookmarked, toggleBookmark } = useOrganizationBookmarks();
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
-  };
-
   // Display ID - prefer IATI org ID, fallback to internal ID
   const displayId = organization.iati_org_id || organization.id.slice(0, 12);
 
@@ -103,7 +98,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
           <h2 className="text-lg font-bold text-white mb-1 transition-colors">
             <Link
               href={orgUrl}
-              className="relative z-10 hover:underline inline"
+              className="relative z-10 no-underline hover:no-underline inline"
               onClick={(e) => e.stopPropagation()}
             >
               {organization.name}
@@ -112,19 +107,12 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
               )}
             </Link>
             {' '}
-            <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  copyToClipboard(displayId);
-                }}
-                title="Click to copy"
-                className="text-xs font-mono font-normal bg-white/20 text-white/80 hover:bg-white/30 hover:text-white transition-colors px-1.5 py-0.5 rounded backdrop-blur-sm no-underline relative z-10 cursor-pointer"
-              >
-                {displayId}
-              </button>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle relative z-10">
+              <CopyableIdBadge
+                value={displayId}
+                label={organization.iati_org_id ? 'IATI Org ID' : 'Org ID'}
+                className="text-white/80 bg-white/20 hover:bg-white/30 hover:text-white backdrop-blur-sm no-underline"
+              />
             </span>
           </h2>
           <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>

@@ -40,8 +40,8 @@ const AVAILABLE_ROLES = [
 
 const ROLE_DISPLAY_NAMES: Record<string, string> = {
   super_user: 'Administrator',
-  dev_partner_tier_1: 'Partner Manager',
-  dev_partner_tier_2: 'Partner Editor',
+  dev_partner_tier_1: 'Development Partner Manager',
+  dev_partner_tier_2: 'Development Partner Editor',
   gov_partner_tier_1: 'Government Manager',
   gov_partner_tier_2: 'Government Editor',
 };
@@ -461,7 +461,7 @@ function UserPickerInner({
                   )}
                   {selectedAssignees.organization_ids && selectedAssignees.organization_ids.length > 0 && (
                     <div>
-                      <span className="font-medium">Organizations:</span>{' '}
+                      <span className="font-medium">Organisations:</span>{' '}
                       {selectedAssignees.organization_ids.map(oid => {
                         const org = organizations.find(o => o.id === oid);
                         return org?.name || 'Loading...';
@@ -544,7 +544,7 @@ function UserPickerInner({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search organizations..."
+                placeholder="Search organisations..."
                 value={orgSearch}
                 onChange={(e) => setOrgSearch(e.target.value)}
                 className="pl-9"

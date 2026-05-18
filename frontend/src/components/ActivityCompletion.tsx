@@ -31,8 +31,8 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
   const fieldMappings = [
     { key: 'title', label: 'Activity Title', value: activity.title },
     { key: 'description', label: 'Description', value: activity.description },
-    { key: 'reporting_org', label: 'Reporting Organization', value: activity.reporting_org },
-    { key: 'participating_orgs', label: 'Participating Organizations', value: activity.participating_orgs },
+    { key: 'reporting_org', label: 'Reporting Organisation', value: activity.reporting_org },
+    { key: 'participating_orgs', label: 'Participating Organisations', value: activity.participating_orgs },
     { key: 'recipient_countries', label: 'Recipient Countries', value: activity.recipient_countries },
     { key: 'sectors', label: 'Sectors', value: activity.sectors },
     { key: 'activity_status', label: 'Activity Status', value: activity.activity_status },

@@ -119,6 +119,7 @@ interface ActivityLocationRow {
 
 interface ActivityLocationsTableProps {
   locations: ActivityLocationRow[];
+  onLocationClick?: (location: ActivityLocationRow) => void;
 }
 
 type SortField = "name" | "state_region" | "activity" | "location" | "location_description" | "activity_description";
@@ -130,7 +131,7 @@ const PAGE_SIZE = 20;
 // Three columns: Name (with coords + copy button), Location (formatted address +
 // location description), Activity Description (line-clamped with tooltip).
 // All three are sortable using the standard `getSortIcon` chevron pattern.
-export function ActivityLocationsTable({ locations }: ActivityLocationsTableProps) {
+export function ActivityLocationsTable({ locations, onLocationClick }: ActivityLocationsTableProps) {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [page, setPage] = useState(1);
@@ -314,12 +315,12 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
                       {location.activity?.id ? (
                         <a
                           href={`/activities/${location.activity.id}`}
-                          className="text-body text-foreground no-underline hover:no-underline line-clamp-2 whitespace-normal break-words"
+                          className="text-body font-medium text-foreground no-underline hover:no-underline line-clamp-2 whitespace-normal break-words"
                         >
                           {location.activity.title || "Untitled activity"}
                         </a>
                       ) : (
-                        <span className="text-body line-clamp-2 whitespace-normal break-words">
+                        <span className="text-body font-medium line-clamp-2 whitespace-normal break-words">
                           {location.activity?.title || "—"}
                         </span>
                       )}
@@ -327,8 +328,20 @@ export function ActivityLocationsTable({ locations }: ActivityLocationsTableProp
                   )}
                   <TableCell className="align-top">
                     <div className="flex items-start gap-3 min-w-0">
-                      <LocationThumbnail lat={location.latitude} lng={location.longitude} />
-                      <div className="text-body min-w-0 break-words">
+                      {onLocationClick && location.latitude != null && location.longitude != null ? (
+                        <button
+                          type="button"
+                          onClick={() => onLocationClick(location)}
+                          className="flex-shrink-0 rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:ring-2 hover:ring-primary transition"
+                          title="Show on map"
+                          aria-label="Show on map"
+                        >
+                          <LocationThumbnail lat={location.latitude} lng={location.longitude} />
+                        </button>
+                      ) : (
+                        <LocationThumbnail lat={location.latitude} lng={location.longitude} />
+                      )}
+                      <div className="text-body font-medium min-w-0 break-words">
                         {location.location_name || "Unnamed Location"}
                       </div>
                     </div>

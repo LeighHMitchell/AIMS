@@ -1627,7 +1627,7 @@ export default function PartnersPage() {
                 <div className="text-body text-muted-foreground font-normal">{selectedOrg?.fullName}</div>
               </div>
             </DialogTitle>
-            <DialogDescription>View organization details, contact information, and activity involvement.</DialogDescription>
+            <DialogDescription>View organisation details, contact information, and activity involvement.</DialogDescription>
           </DialogHeader>
 
           {selectedOrg && (

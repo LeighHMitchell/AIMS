@@ -534,7 +534,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
 
           {/* Organization Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Organization Information</h3>
+            <h3 className="text-lg font-medium">Organisation Information</h3>
             
             <div>
               <Label htmlFor="contactType">Contact Type</Label>
@@ -554,14 +554,14 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
             
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <Label htmlFor="organization" className="mb-0">Organization</Label>
+                <Label htmlFor="organization" className="mb-0">Organisation</Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-[280px]">
-                      <p>The organization this user belongs to or works for. This determines what activities and data the user can access.</p>
+                      <p>The organisation this user belongs to or works for. This determines what activities and data the user can access.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -582,26 +582,26 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
             </div>
 
             <div>
-              <Label htmlFor="organisation">Organization Name (if not in list)</Label>
+              <Label htmlFor="organisation">Organisation Name (if not in list)</Label>
               <Input
                 id="organisation"
                 value={form.organisation}
                 onChange={(e) => handleFormChange("organisation", e.target.value)}
-                placeholder="Enter organization name"
+                placeholder="Enter organisation name"
               />
             </div>
 
             {/* Reported by Organization Dropdown */}
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <Label htmlFor="reportedByOrg" className="mb-0">Reported by Organization</Label>
+                <Label htmlFor="reportedByOrg" className="mb-0">Reported by Organisation</Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-[280px]">
-                      <p>The organization that registered this user in the system. This may differ from the user's employer if one organization creates accounts on behalf of another.</p>
+                      <p>The organisation that registered this user in the system. This may differ from the user's employer if one organisation creates accounts on behalf of another.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -618,7 +618,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
                 })) || []}
                 value={form.reportedByOrgId}
                 onValueChange={(value) => handleFormChange("reportedByOrgId", value)}
-                placeholder="Select reporting organization..."
+                placeholder="Select reporting organisation..."
               />
             </div>
           </div>

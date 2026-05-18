@@ -106,7 +106,7 @@ const getTypeLabel = (value: string): string => {
 const FIELD_LABELS: Record<string, string> = {
   acronym: 'Acronym',
   iati_org_id: 'IATI Identifier',
-  type: 'Organization Type',
+  type: 'Organisation Type',
   country_represented: 'Location Represented',
   default_currency: 'Default Currency',
 };
@@ -288,7 +288,7 @@ export function EditableCell({
                   </TooltipTrigger>
                   <TooltipContent>
                     <div className="text-helper space-y-1">
-                      <p className="font-semibold">Invalid IATI Organization Identifier</p>
+                      <p className="font-semibold">Invalid IATI Organisation Identifier</p>
                       <p>Required format: AGENCY-REGISTRATION</p>
                       <p className="text-muted-foreground">Examples:</p>
                       <p className="text-muted-foreground">• XI-IATI-1234</p>

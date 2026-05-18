@@ -50,7 +50,7 @@ export function StageRestructuring({ wizard }: StageRestructuringProps) {
           id="restructuring_notes"
           value={formData.restructuring_notes || ''}
           onChange={e => updateField('restructuring_notes', e.target.value)}
-          placeholder="Describe any restructuring steps taken or planned — organizational changes, workforce adjustments, financial restructuring, etc."
+          placeholder="Describe any restructuring steps taken or planned — organisational changes, workforce adjustments, financial restructuring, etc."
           rows={5}
         />
       </div>

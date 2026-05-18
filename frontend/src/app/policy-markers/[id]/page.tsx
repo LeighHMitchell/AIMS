@@ -320,7 +320,7 @@ export default function PolicyMarkerProfilePage() {
               <TabsTrigger value="financials">Financials</TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
               <TabsTrigger value="donors">Development Partners</TabsTrigger>
-              <TabsTrigger value="organizations">Organizations</TabsTrigger>
+              <TabsTrigger value="organizations">Organisations</TabsTrigger>
               <TabsTrigger value="geography">Geography</TabsTrigger>
             </TabsList>
 
@@ -329,7 +329,7 @@ export default function PolicyMarkerProfilePage() {
               <Card><CardHeader><CardTitle className="text-body">Summary</CardTitle></CardHeader><CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div><p className="text-helper font-medium text-muted-foreground mb-1">Aligned Activities</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalActivities)}</p><p className="text-helper text-muted-foreground mt-0.5">using this policy marker</p></div>
-                  <div><p className="text-helper font-medium text-muted-foreground mb-1">Organizations</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalOrganizations)}</p><p className="text-helper text-muted-foreground mt-0.5">involved</p></div>
+                  <div><p className="text-helper font-medium text-muted-foreground mb-1">Organisations</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalOrganizations)}</p><p className="text-helper text-muted-foreground mt-0.5">involved</p></div>
                   <div><p className="text-helper font-medium text-muted-foreground mb-1">Total Financial Value</p><p className="text-3xl font-bold text-foreground">{formatCurrencyShort(metrics.totalValue)}</p><p className="text-helper text-muted-foreground mt-0.5">across all transactions</p></div>
                 </div>
               </CardContent></Card>
@@ -601,7 +601,7 @@ export default function PolicyMarkerProfilePage() {
                     </Link>
                   ))}
                 </div>
-              ) : <Card><CardContent className="p-6 text-center"><p className="text-muted-foreground text-body">No organizations found</p></CardContent></Card>}
+              ) : <Card><CardContent className="p-6 text-center"><p className="text-muted-foreground text-body">No organisations found</p></CardContent></Card>}
             </TabsContent>
 
             {/* Geography */}

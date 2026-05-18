@@ -759,7 +759,7 @@ export default function EnhancedAidFlowGraph({
           // Determine role based on flow direction
           const flowRole = inflow > 0 && outflow > 0 ? 'Intermediary' :
                           inflow > outflow ? 'Net Receiver' : 
-                          outflow > inflow ? 'Net Provider' : 'Organization'
+                          outflow > inflow ? 'Net Provider' : 'Organisation'
           
           return (
             <div 

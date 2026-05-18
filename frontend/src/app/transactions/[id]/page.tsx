@@ -241,11 +241,11 @@ export default function TransactionDetailPage() {
         {/* Organizations */}
         <Card>
           <CardHeader>
-            <CardTitle>Organizations</CardTitle>
+            <CardTitle>Organisations</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-body font-medium text-muted-foreground">Provider Organization</label>
+              <label className="text-body font-medium text-muted-foreground">Provider Organisation</label>
               <p className="mt-1 text-foreground">
                 {transaction.provider_org_name || "—"}
               </p>
@@ -257,7 +257,7 @@ export default function TransactionDetailPage() {
             </div>
 
             <div>
-              <label className="text-body font-medium text-muted-foreground">Receiver Organization</label>
+              <label className="text-body font-medium text-muted-foreground">Receiver Organisation</label>
               <p className="mt-1 text-foreground">
                 {transaction.receiver_org_name || "—"}
               </p>

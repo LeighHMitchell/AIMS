@@ -23,8 +23,8 @@ interface TaskAudienceStepProps {
 }
 
 const AVAILABLE_ROLES = [
-  { value: 'dev_partner_tier_1', label: 'Partner Manager' },
-  { value: 'dev_partner_tier_2', label: 'Partner Editor' },
+  { value: 'dev_partner_tier_1', label: 'Development Partner Manager' },
+  { value: 'dev_partner_tier_2', label: 'Development Partner Editor' },
   { value: 'gov_partner_tier_1', label: 'Government Manager' },
   { value: 'gov_partner_tier_2', label: 'Government Editor' },
   { value: 'super_user', label: 'Administrator' },

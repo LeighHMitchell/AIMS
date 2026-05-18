@@ -1,80 +1,128 @@
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value)
+/**
+ * Canonical money & date formatting. Import from here — do NOT define
+ * formatCurrency/formatDate locally.
+ *
+ * Currency style (project standard):
+ *   - ISO code, space, value           e.g.  USD 1,234,567.50
+ *   - Compact: 1-dp lowercase k/m/b    e.g.  USD 23.4m / USD 1.2b / USD 43.3k
+ *   - Under 1,000: whole number        e.g.  USD 850
+ *   - Sign first                       e.g.  -USD 23.4m
+ *   - Currency-aware (never assume $)  e.g.  EUR 4.2k
+ *
+ * Date style: "18 May 2024" (D MMM YYYY, no leading zero).
+ */
+
+const DEFAULT_CURRENCY = 'USD'
+
+function normalizeCode(currency?: string | null): string {
+  return (currency || DEFAULT_CURRENCY).toUpperCase()
+}
+
+function isBadNumber(value: number): boolean {
+  return value === null || value === undefined || isNaN(value) || !isFinite(value)
 }
 
 /**
- * Format currency value in abbreviated form (e.g., $43.3k, $23.4M, $1.2B)
- * Used for tooltips and compact displays
- * @deprecated Use formatCurrencyShort instead
+ * Internal: compact form — `USD 23.4m`, `USD 1.2b`, `USD 43.3k`, `USD 850`,
+ * `-USD 23.4m`, `USD 0`. `decimals` controls the k/m/b precision
+ * (1 for general/tooltip, 0 for chart axes).
  */
-export function formatCurrencyAbbreviated(value: number): string {
-  return formatCurrencyShort(value)
-}
-
-/**
- * Format currency in short abbreviated form: $18.0M, $1.2B, $43.3k
- * Canonical implementation — import this instead of defining locally.
- */
-export function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
+function compact(value: number, currency: string | undefined, decimals: number): string {
+  const code = normalizeCode(currency)
+  if (isBadNumber(value)) return `${code} 0`
   const abs = Math.abs(value)
   const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
+  if (abs >= 1_000_000_000) return `${sign}${code} ${(abs / 1_000_000_000).toFixed(decimals)}b`
+  if (abs >= 1_000_000) return `${sign}${code} ${(abs / 1_000_000).toFixed(decimals)}m`
+  if (abs >= 1_000) return `${sign}${code} ${(abs / 1_000).toFixed(decimals)}k`
+  return `${sign}${code} ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(abs))}`
 }
 
+/**
+ * Precise / full form for exact amounts (transaction detail):
+ * `USD 1,234,567.50`, `-USD 85.00`, `USD 0.00`.
+ */
+export function formatCurrencyPrecise(value: number, currency: string = DEFAULT_CURRENCY): string {
+  const code = normalizeCode(currency)
+  if (isBadNumber(value)) return `${code} 0.00`
+  const sign = value < 0 ? '-' : ''
+  const body = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value))
+  return `${sign}${code} ${body}`
+}
+
+/**
+ * Default everyday currency display = precise/full (`USD 1,234,567.50`).
+ * Use formatCurrencyCompact for tables/cards/charts where space is tight.
+ * `currency` is optional and defaults to USD for backward compatibility.
+ */
+export function formatCurrency(value: number, currency: string = DEFAULT_CURRENCY): string {
+  return formatCurrencyPrecise(value, currency)
+}
+
+/**
+ * Canonical compact form: `USD 23.4m` / `USD 1.2b` / `USD 43.3k` / `USD 850`.
+ * Prefer this name in new code.
+ */
+export function formatCurrencyCompact(value: number, currency: string = DEFAULT_CURRENCY): string {
+  return compact(value, currency, 1)
+}
+
+/**
+ * @deprecated Use formatCurrencyCompact. Kept for backward compatibility.
+ */
+export function formatCurrencyAbbreviated(value: number, currency: string = DEFAULT_CURRENCY): string {
+  return compact(value, currency, 1)
+}
+
+/**
+ * Short abbreviated form: `USD 23.4m`, `USD 1.2b`, `USD 43.3k`.
+ * (Now consistent — previously mixed `$18.0M`/`$43.3k`.)
+ */
+export function formatCurrencyShort(value: number, currency: string = DEFAULT_CURRENCY): string {
+  return compact(value, currency, 1)
+}
+
+/**
+ * Previously a separate lowercase variant; now identical to
+ * formatCurrencyShort (the canonical compact form is already lowercase).
+ * Kept so existing imports keep working.
+ */
+export function formatCurrencyShortLower(value: number, currency: string = DEFAULT_CURRENCY): string {
+  return compact(value, currency, 1)
+}
+
+/**
+ * Chart axis form — terser, whole numbers: `USD 23m`, `USD 5k`, `USD 850`.
+ */
+export function formatAxisCurrency(value: number, currency: string = DEFAULT_CURRENCY): string {
+  return compact(value, currency, 0)
+}
+
+/**
+ * Chart tooltip — full precise when expanded, compact when not.
+ */
+export function formatTooltipCurrency(
+  value: number,
+  isExpanded: boolean,
+  currency: string = DEFAULT_CURRENCY,
+): string {
+  return isExpanded ? formatCurrencyPrecise(value, currency) : compact(value, currency, 1)
+}
+
+/**
+ * Canonical absolute date: "18 May 2024" (D MMM YYYY, no leading zero).
+ * Returns '' for invalid input. Relative dates ("3 days ago") are a
+ * separate concern — do not put them here.
+ */
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
+  if (!d || isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
     month: 'short',
-    day: 'numeric'
+    year: 'numeric',
   })
-}
-
-/**
- * Format currency in short lowercase form: $18.0m, $1.2b, $43.3k, $234.
- * Use in chart tooltips when the chart is in compact (non-expanded) view.
- */
-export function formatCurrencyShortLower(value: number): string {
-  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}b`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}m`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
-}
-
-/**
- * Format currency for chart Y-axis (or X-axis on horizontal bar charts).
- * Always whole numbers, lowercase suffix: $10m, $20b, $5k, $234.
- * No decimals — axes should be terse and easily scannable.
- */
-export function formatAxisCurrency(value: number): string {
-  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${Math.round(abs / 1_000_000_000)}b`
-  if (abs >= 1_000_000) return `${sign}$${Math.round(abs / 1_000_000)}m`
-  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}k`
-  return `${sign}$${Math.round(abs)}`
-}
-
-/**
- * Format currency for chart tooltips, picking the right form based on
- * whether the chart is in its expanded view.
- *  - compact:  $23.2m / $1.2b (short, lowercase)
- *  - expanded: $23,234,567   (full, no decimals)
- */
-export function formatTooltipCurrency(value: number, isExpanded: boolean): string {
-  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) return '$0'
-  return isExpanded ? formatCurrency(value) : formatCurrencyShortLower(value)
 }

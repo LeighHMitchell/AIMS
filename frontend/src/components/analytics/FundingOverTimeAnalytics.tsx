@@ -150,7 +150,7 @@ export function FundingOverTimeAnalytics() {
         )
       } catch (error) {
         console.error('Error fetching organizations:', error)
-        toast.error('Failed to load organizations')
+        toast.error('Failed to load organisations')
       } finally {
         setLoadingOrgs(false)
       }
@@ -397,7 +397,7 @@ export function FundingOverTimeAnalytics() {
                 options={organizationOptions}
                 selected={selectedDonors}
                 onChange={setSelectedDonors}
-                placeholder="Select organizations to compare..."
+                placeholder="Select organisations to compare..."
                 disabled={loadingOrgs}
                 showSelectAll={true}
                 selectedLabel={`development partner${selectedDonors.length !== 1 ? 's' : ''} selected`}
@@ -483,7 +483,7 @@ export function FundingOverTimeAnalytics() {
             <div className="text-center" style={{ color: COLORS.blueSlate }}>
               <Building2 className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
               <p className="font-medium mb-1">No development partners selected</p>
-              <p className="text-body">Select one or more organizations to compare funding over time</p>
+              <p className="text-body">Select one or more organisations to compare funding over time</p>
             </div>
           </CardContent>
         </Card>
@@ -499,7 +499,7 @@ export function FundingOverTimeAnalytics() {
             <div className="text-center" style={{ color: COLORS.blueSlate }}>
               <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
               <p className="font-medium mb-1">No data available</p>
-              <p className="text-body">The selected organizations don&apos;t have funding data for this period</p>
+              <p className="text-body">The selected organisations don&apos;t have funding data for this period</p>
             </div>
           </CardContent>
         </Card>

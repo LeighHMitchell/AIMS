@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
     // Transform locations to match Atlas format
     const transformedLocations = locations.map((location: any) => {
       const activity = activitiesMap.get(location.activity_id);
-      
+
       return {
         id: location.id,
         activity_id: location.activity_id,

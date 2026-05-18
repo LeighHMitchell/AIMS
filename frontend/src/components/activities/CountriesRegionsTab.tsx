@@ -159,7 +159,7 @@ export default function CountriesRegionsTab({
     } else if (selectedType === 'region') {
       return [{ value: '1', label: 'OECD DAC' }];
     } else if (selectedType === 'custom') {
-      return [{ value: '99', label: 'Reporting Organization' }];
+      return [{ value: '99', label: 'Reporting Organisation' }];
     }
     return [];
   };

@@ -147,7 +147,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
     let filename: string
 
     if (viewMode === 'sankey') {
-      const headers = ['Source Organization', 'Source Role', 'Target Organization', 'Target Role', 'Activity Count', 'Budget Value (USD)']
+      const headers = ['Source Organisation', 'Source Role', 'Target Organisation', 'Target Role', 'Activity Count', 'Budget Value (USD)']
       const rows = data.links.map((link) => {
         const sourceNode = data.nodes.find((n) => n.id === link.source)
         const targetNode = data.nodes.find((n) => n.id === link.target)
@@ -364,8 +364,8 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
     <div className="space-y-6">
       {/* Main Chart Card */}
       <ExpandableCard
-        title="Organization Role Flow"
-        description="Flow of participating organizations across IATI roles: Funding → Extending → Accountable → Implementing"
+        title="Organisation Role Flow"
+        description="Flow of participating organisations across IATI roles: Funding → Extending → Accountable → Implementing"
         exportData={data.links}
       >
         <div className="space-y-4">
@@ -432,7 +432,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                 </span>
               </div>
               <div>
-                <span className="text-body text-muted-foreground">Organizations:</span>
+                <span className="text-body text-muted-foreground">Organisations:</span>
                 <span className="ml-2 font-bold text-foreground">
                   {formatNumber(data.summary.totalOrganizations)}
                 </span>
@@ -452,7 +452,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
               {!hasNodes ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium">No Organizations Found</p>
+                  <p className="text-lg font-medium">No Organisations Found</p>
                   <p className="text-body mt-2 text-center max-w-md">
                     No participating organizations found for this dataset.
                   </p>
@@ -564,9 +564,9 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
               <Table>
                 <TableHeader>
                   <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-                    <TableHead className="whitespace-normal">Source Organization</TableHead>
+                    <TableHead className="whitespace-normal">Source Organisation</TableHead>
                     <TableHead className="whitespace-normal">Source Role</TableHead>
-                    <TableHead className="whitespace-normal">Target Organization</TableHead>
+                    <TableHead className="whitespace-normal">Target Organisation</TableHead>
                     <TableHead className="whitespace-normal">Target Role</TableHead>
                     <TableHead className="text-right">Activities</TableHead>
                     {metricMode === 'value' && (
