@@ -13,6 +13,7 @@ import {
   ArrowRightLeft
 } from 'lucide-react';
 import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
+import { formatCurrencyPrecise } from '@/lib/format';
 
 interface LinkedTransaction {
   id: string;
@@ -150,31 +151,6 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
     });
   };
 
-  // Format currency value
-  const formatCurrency = (value: number, currency: string) => {
-    // Ensure currency is a valid 3-letter code, fallback to USD
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
-      ? currency.toUpperCase() 
-      : "USD";
-    
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: safeCurrency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value);
-    } catch (error) {
-      console.warn(`[LinkedTransactionsTab] Invalid currency "${currency}", using USD:`, error);
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: "USD",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value);
-    }
-  };
-
   // Transaction type icon
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -270,7 +246,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
           {Object.entries(totalsByCurrency).map(([currency, total]) => (
             <div key={currency} className="bg-muted rounded-lg p-4">
               <div className="text-body text-muted-foreground">Total in {currency}</div>
-              <div className="text-2xl font-semibold">{formatCurrency(total, currency)}</div>
+              <div className="text-2xl font-semibold">{formatCurrencyPrecise(total, currency)}</div>
             </div>
           ))}
         </div>
@@ -340,7 +316,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-body font-medium">
-                      {formatCurrency(transaction.value, transaction.currency)}
+                      {formatCurrencyPrecise(transaction.value, transaction.currency)}
                     </div>
                   </td>
                   <td className="px-6 py-4">

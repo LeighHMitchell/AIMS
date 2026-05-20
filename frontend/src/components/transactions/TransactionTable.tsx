@@ -78,6 +78,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
+import { formatCurrencyPrecise, formatDate as formatDateCanonical } from "@/lib/format";
 
 // Transaction type to icon mapping (IATI Standard v2.03)
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -553,16 +554,7 @@ export function TransactionTable({
 
   // String version of formatCurrency for group headers
   const formatCurrencyString = (value: number, currency: string = "USD") => {
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
-      ? currency.toUpperCase()
-      : "USD";
-
-    const formattedValue = new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-
-    return `${safeCurrency} ${formattedValue}`;
+    return formatCurrencyPrecise(value, currency);
   };
 
   const getTransactionIcon = (type: string) => {
@@ -594,13 +586,7 @@ export function TransactionTable({
 
   const formatTransactionDate = (dateString: string | null | undefined) => {
     if (!dateString) return '—';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '—';
-      return format(date, "dd MMM yyyy");
-    } catch (error) {
-      return '—';
-    }
+    return formatDateCanonical(dateString) || '—';
   };
 
   if (loading) {

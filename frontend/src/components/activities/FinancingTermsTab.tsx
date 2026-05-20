@@ -45,6 +45,7 @@ import { RepaymentPlanSelect } from '@/components/forms/RepaymentPlanSelect';
 import { OECDCRSFlagsMultiSelect } from '@/components/forms/OECDCRSFlagsMultiSelect';
 import { AddLoanStatusModal } from './AddLoanStatusModal';
 import { DatePicker } from '@/components/ui/date-picker';
+import { formatDate as formatDateCanonical } from '@/lib/format';
 
 export function FinancingTermsTab({ 
   activityId, 
@@ -308,12 +309,7 @@ export function FinancingTermsTab({
   // Helper function to format date as "1 Jan 2023" (used in tables)
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatDateCanonical(dateString) || '-';
   };
 
   // Helper function to format date as "1 January 2023" (used in display cards)

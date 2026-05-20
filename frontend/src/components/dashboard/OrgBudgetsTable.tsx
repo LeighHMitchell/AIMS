@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
+import { formatCurrencyCompact } from '@/lib/format';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 
@@ -61,13 +62,6 @@ const BUDGET_TYPE_LABELS: Record<number, string> = {
   1: 'Original',
   2: 'Revised',
 };
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
-}
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
@@ -254,7 +248,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                       <div className="flex items-center gap-1">
                         <span className="font-medium text-foreground">
                           <span className="text-helper text-muted-foreground mr-1 font-normal">{budget.currency}</span>
-                          {formatCurrency(budget.value)}
+                          {formatCurrencyCompact(budget.value, budget.currency)}
                         </span>
                       </div>
                     </TableCell>
@@ -268,7 +262,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                         <div className="flex items-center gap-1">
                           <span className="font-medium text-foreground">
                             <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
-                            {formatCurrency(budget.value_usd)}
+                            {formatCurrencyCompact(budget.value_usd, 'USD')}
                           </span>
                         </div>
                       ) : (

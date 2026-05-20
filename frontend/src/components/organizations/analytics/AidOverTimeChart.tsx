@@ -16,6 +16,7 @@ import {
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAxisCurrency } from '@/lib/format';
+import { getTransactionTypeColor, BUDGET_COLOR, TOTAL_SPENDING_COLOR } from '@/lib/chart-colors';
 
 interface TimeSeriesData {
   year: number;
@@ -145,7 +146,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 type="monotone"
                 dataKey="commitments"
                 name="Commitments"
-                stroke="#10b981"
+                stroke={getTransactionTypeColor('2')}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -154,7 +155,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 type="monotone"
                 dataKey="disbursements"
                 name="Disbursements"
-                stroke="#f59e0b"
+                stroke={getTransactionTypeColor('3')}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -163,7 +164,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 type="monotone"
                 dataKey="expenditures"
                 name="Expenditures"
-                stroke="#3b82f6"
+                stroke={getTransactionTypeColor('4')}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -193,7 +194,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 type="monotone"
                 dataKey="Budget"
                 name="Budget"
-                stroke="#8b5cf6"
+                stroke={BUDGET_COLOR}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -202,7 +203,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
                 type="monotone"
                 dataKey="Expenditure + Disbursement"
                 name="Expenditure + Disbursement"
-                stroke="#ec4899"
+                stroke={TOTAL_SPENDING_COLOR}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}

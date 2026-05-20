@@ -13,7 +13,7 @@ interface BulkAction {
 
 interface BulkActionToolbarProps {
   selectedCount: number;
-  itemType?: "activities" | "transactions" | "documents";
+  itemType?: "activities" | "transactions" | "documents" | "organizations";
   onDelete?: () => void;
   onCancel?: () => void;
   onClearSelection?: () => void;
@@ -38,6 +38,8 @@ function getItemLabel(itemType: string, count: number): string {
       return count === 1 ? 'transaction' : 'transactions';
     case 'documents':
       return count === 1 ? 'document' : 'documents';
+    case 'organizations':
+      return count === 1 ? 'organisation' : 'organisations';
     default:
       return count === 1 ? 'item' : 'items';
   }
@@ -97,6 +99,11 @@ export function BulkActionToolbar({
           {itemType === 'documents' && deletableCount !== undefined && deletableCount < selectedCount && (
             <div className="text-helper text-muted-foreground mt-1">
               {deletableCount} can be deleted (standalone only)
+            </div>
+          )}
+          {itemType === 'organizations' && deletableCount !== undefined && deletableCount < selectedCount && (
+            <div className="text-helper text-muted-foreground mt-1">
+              {deletableCount} can be deleted ({selectedCount - deletableCount} linked &amp; protected)
             </div>
           )}
         </div>

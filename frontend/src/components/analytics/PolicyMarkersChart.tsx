@@ -446,20 +446,53 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
     )
   }
 
+  // Minimal card preview: just the activity-count chart, no filters / view
+  // toggles / titles / second chart. Everything else appears only once the
+  // card is expanded (CompactChartCard supplies the title, ƒ and expand).
+  if (!isExpanded) {
+    return (
+      <div className="h-full w-full">
+        {chartData.length === 0 ? (
+          <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+            <p className="text-body">No data available</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+              <XAxis
+                dataKey="markerName"
+                angle={-45}
+                textAnchor="end"
+                height={70}
+                tick={{ fontSize: 10, fill: '#64748b' }}
+              />
+              <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
+              <Tooltip content={<ActivityCountTooltip />} />
+              {selectedSignificance.includes(0) && (
+                <Bar dataKey="notTargeted" stackId="1" fill={SIGNIFICANCE_LABELS[0].color} name={SIGNIFICANCE_LABELS[0].label} />
+              )}
+              {selectedSignificance.includes(1) && (
+                <Bar dataKey="significant" stackId="1" fill={SIGNIFICANCE_LABELS[1].color} name={SIGNIFICANCE_LABELS[1].label} />
+              )}
+              {selectedSignificance.includes(2) && (
+                <Bar dataKey="principal" stackId="1" fill={SIGNIFICANCE_LABELS[2].color} name={SIGNIFICANCE_LABELS[2].label} />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Filters and Controls */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-medium text-foreground">
-                Policy Markers Analytics
-              </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground mt-0.5">
-                Analyze activities by policy marker and significance level
-              </CardDescription>
-            </div>
+            {/* Title/description supplied by the surrounding CompactChartCard. */}
+            <div />
             {!compact && isExpanded && (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -617,8 +650,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           {/* Activity Count Chart */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-medium text-foreground">Number of Activities by Policy Marker and Significance</CardTitle>
-              <CardDescription className="text-helper text-muted-foreground mt-0.5">
+              <CardTitle className="text-lg font-semibold text-foreground">Number of Activities by Policy Marker and Significance</CardTitle>
+              <CardDescription className="text-body text-muted-foreground mt-0.5">
                 Count of distinct activities grouped by policy marker and significance level
               </CardDescription>
             </CardHeader>
@@ -684,8 +717,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           {showValueChart && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium text-foreground">Value of Activities by Policy Marker and Significance</CardTitle>
-                <CardDescription className="text-helper text-muted-foreground mt-0.5">
+                <CardTitle className="text-lg font-semibold text-foreground">Value of Activities by Policy Marker and Significance</CardTitle>
+                <CardDescription className="text-body text-muted-foreground mt-0.5">
                   Total Activity Budget (USD) for activities where policy marker is Significant or Principal objective
                 </CardDescription>
               </CardHeader>
@@ -747,8 +780,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-medium text-foreground">Policy Markers Data</CardTitle>
-                <CardDescription className="text-helper text-muted-foreground mt-0.5">Detailed breakdown by policy marker and significance</CardDescription>
+                <CardTitle className="text-lg font-semibold text-foreground">Policy Markers Data</CardTitle>
+                <CardDescription className="text-body text-muted-foreground mt-0.5">Detailed breakdown by policy marker and significance</CardDescription>
               </div>
               <Button
                 variant="outline"
@@ -882,8 +915,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                   />
                 )}
                 <div>
-                  <CardTitle className="text-base font-medium text-foreground">Policy Markers Time Series</CardTitle>
-                  <CardDescription className="text-helper text-muted-foreground mt-0.5">
+                  <CardTitle className="text-lg font-semibold text-foreground">Policy Markers Time Series</CardTitle>
+                  <CardDescription className="text-body text-muted-foreground mt-0.5">
                     Total spend by policy marker and year (disbursements + expenditures)
                   </CardDescription>
                 </div>

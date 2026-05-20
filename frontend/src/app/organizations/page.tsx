@@ -39,6 +39,8 @@ import {
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
 import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
 import { OrganizationTable } from '@/components/organizations/OrganizationTable'
+import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar'
+import { OrganizationDeleteBlockerDialog, type BlockedOrganization } from '@/components/organizations/OrganizationDeleteBlockerDialog'
 import { CustomGroupCard } from '@/components/organizations/CustomGroupCard'
 import OrganizationCardModern from '@/components/organizations/OrganizationCardModern'
 import {
@@ -782,95 +784,8 @@ const ImageUpload: React.FC<{
   )
 }
 
-// Delete Confirmation Modal Component
-const DeleteConfirmationModal: React.FC<{
-  organization: Organization | null
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => Promise<void>
-}> = ({ organization, isOpen, onClose, onConfirm }) => {
-  const [confirmationText, setConfirmationText] = useState('')
-  const [deleting, setDeleting] = useState(false)
-  
-  const requiredText = organization?.acronym || organization?.name || ''
-  const isConfirmationValid = confirmationText === requiredText
-
-  const handleConfirm = async () => {
-    if (!isConfirmationValid) return
-    
-    setDeleting(true)
-    try {
-      await onConfirm()
-      onClose()
-      setConfirmationText('')
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete organisation'
-      toast.error(errorMessage)
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!isOpen) {
-      setConfirmationText('')
-    }
-  }, [isOpen])
-
-  if (!organization) return null
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            <span>Delete Organisation</span>
-          </DialogTitle>
-          <DialogDescription>This action is permanent and cannot be undone.</DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
-            <p className="text-body text-red-800">
-              <strong>Warning:</strong> This action cannot be undone. This will permanently delete the organisation
-              <strong> {organization.displayName}</strong> and remove all associated data.
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="confirmation">
-              To confirm deletion, please type <strong>{requiredText}</strong> below:
-            </Label>
-            <Input
-              id="confirmation"
-              value={confirmationText}
-              onChange={(e) => setConfirmationText(e.target.value)}
-              placeholder={`Type "${requiredText}" to confirm`}
-              className={confirmationText && !isConfirmationValid ? 'border-destructive' : ''}
-            />
-            {confirmationText && !isConfirmationValid && (
-              <p className="text-body text-destructive">
-                Text does not match. Please type exactly: <strong>{requiredText}</strong>
-              </p>
-            )}
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!isConfirmationValid || deleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {deleting ? 'Deleting...' : 'Delete Organisation'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
+// Delete confirmation is handled inline on the Organisations page via a
+// lightweight confirm + read-only blocker dialog (see requestDeleteOrganizations).
 
 // Organization Card Component with optimized image loading
 const OrganizationCard: React.FC<{ 
@@ -1180,8 +1095,6 @@ function OrganizationsPageContent() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null)
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [summary, setSummary] = useState<OrganizationSummary | null>(null)
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
@@ -1203,7 +1116,15 @@ function OrganizationsPageContent() {
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   const { confirm, ConfirmDialog } = useConfirmDialog()
-  
+
+  // Multi-select + bulk delete state
+  const [selectedOrgIds, setSelectedOrgIds] = useState<Set<string>>(new Set())
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [checkingRefs, setCheckingRefs] = useState(false)
+  const [blockerOrgs, setBlockerOrgs] = useState<BlockedOrganization[]>([])
+  const [blockerOpen, setBlockerOpen] = useState(false)
+  const [blockerSkipped, setBlockerSkipped] = useState(false)
+
   // Sorting state for table view
   const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'residency' | 'created_at'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -1315,6 +1236,34 @@ function OrganizationsPageContent() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm, activeFilter])
+
+  // Clear multi-selection when the visible set changes (search/filter/tab)
+  useEffect(() => {
+    setSelectedOrgIds(new Set())
+  }, [searchTerm, activeFilter])
+
+  // Selection helpers
+  const toggleSelectOrg = useCallback((orgId: string, checked: boolean) => {
+    setSelectedOrgIds(prev => {
+      const next = new Set(prev)
+      if (checked) next.add(orgId)
+      else next.delete(orgId)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAllOnPage = useCallback((checked: boolean) => {
+    setSelectedOrgIds(prev => {
+      const next = new Set(prev)
+      for (const o of paginatedOrganizations) {
+        if (checked) next.add(o.id)
+        else next.delete(o.id)
+      }
+      return next
+    })
+  }, [paginatedOrganizations])
+
+  const clearSelection = useCallback(() => setSelectedOrgIds(new Set()), [])
 
   // Fetch organizations data and types
   useEffect(() => {
@@ -1546,10 +1495,170 @@ function OrganizationsPageContent() {
     router.push('/organizations/new')
   }
 
-  const handleDeleteOrganization = (organization: Organization) => {
-    setSelectedOrganization(organization)
-    setDeleteModalOpen(true)
-  }
+  // Read-only pre-flight: which of these orgs are referenced by activities /
+  // transactions / people and therefore cannot be deleted.
+  const checkOrgReferences = useCallback(async (ids: string[]) => {
+    const res = await apiFetch('/api/organizations/check-references', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    if (!res.ok) {
+      let msg = 'Failed to check organisation references'
+      try { const j = await res.json(); msg = j.error || msg } catch {}
+      throw new Error(msg)
+    }
+    const data = await res.json()
+    return (data.results || {}) as Record<
+      string,
+      { name: string; hasReferences: boolean; references: string[] }
+    >
+  }, [])
+
+  // Unified delete path used by both the single-row action and the bulk
+  // toolbar. Clean orgs get a lightweight confirm + optimistic undo; orgs with
+  // associations are reported via the read-only blocker dialog and skipped.
+  const requestDeleteOrganizations = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return
+
+    setCheckingRefs(true)
+    let results: Record<string, { name: string; hasReferences: boolean; references: string[] }>
+    try {
+      results = await checkOrgReferences(ids)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to check organisation references')
+      setCheckingRefs(false)
+      return
+    }
+    setCheckingRefs(false)
+
+    const nameOf = (id: string) =>
+      results[id]?.name || organizations.find(o => o.id === id)?.name || 'organisation'
+
+    const clean: string[] = []
+    const blocked: BlockedOrganization[] = []
+    for (const id of ids) {
+      const r = results[id]
+      if (!r || r.hasReferences) {
+        blocked.push({ id, name: nameOf(id), references: r?.references || [] })
+      } else {
+        clean.push(id)
+      }
+    }
+
+    // Nothing deletable → read-only blocker dialog, keep selection intact
+    if (clean.length === 0) {
+      setBlockerOrgs(blocked)
+      setBlockerSkipped(false)
+      setBlockerOpen(true)
+      return
+    }
+
+    const isSingle = clean.length === 1
+    const title = isSingle ? 'Delete organisation?' : `Delete ${clean.length} organisations?`
+    const skippedNote = blocked.length
+      ? ` ${blocked.length} selected ${blocked.length === 1 ? 'organisation is' : 'organisations are'} linked to activities, transactions or people and will be skipped.`
+      : ''
+    const description = isSingle
+      ? `Delete "${nameOf(clean[0])}"? You can undo this for a few seconds.${skippedNote}`
+      : `Delete ${clean.length} organisations? You can undo this for a few seconds.${skippedNote}`
+
+    const ok = await confirm({
+      title,
+      description,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      destructive: true,
+    })
+    if (!ok) return
+
+    const cleanSet = new Set(clean)
+    const snapshot = organizations
+    setOrganizations(prev => prev.filter(o => !cleanSet.has(o.id)))
+    setSelectedOrgIds(prev => {
+      const next = new Set(prev)
+      for (const id of clean) next.delete(id)
+      return next
+    })
+    setIsBulkDeleting(true)
+
+    const label = isSingle ? `"${nameOf(clean[0])}" deleted` : `${clean.length} organisations deleted`
+
+    showUndoToast(label, {
+      id: `delete-orgs-${Date.now()}`,
+      source: 'organizations-list',
+      commit: async () => {
+        try {
+          const response = await apiFetch('/api/organizations', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: clean }),
+          })
+          if (!response.ok) {
+            let errorData
+            try { errorData = await response.json() }
+            catch { errorData = { error: `Server returned ${response.status}: ${response.statusText}` } }
+            throw new Error(errorData.details || errorData.error || 'Failed to delete organisations')
+          }
+          const result = await response.json()
+          const serverBlocked: BlockedOrganization[] = result.blocked || []
+          const failed: Array<{ id: string }> = result.failed || []
+          const notDeleted = new Set<string>([
+            ...serverBlocked.map(b => b.id),
+            ...failed.map(f => f.id),
+          ])
+          // Restore any orgs the server did not actually delete (rare race
+          // where references appeared between the pre-check and the delete).
+          if (notDeleted.size > 0) {
+            setOrganizations(prev => {
+              const present = new Set(prev.map(o => o.id))
+              const restore = snapshot.filter(o => notDeleted.has(o.id) && !present.has(o.id))
+              return restore.length ? [...prev, ...restore] : prev
+            })
+            if (serverBlocked.length > 0) {
+              toast.error(
+                `${serverBlocked.length} organisation${serverBlocked.length === 1 ? '' : 's'} could not be deleted (now linked to other records)`
+              )
+            }
+            if (failed.length > 0) {
+              toast.error(
+                `${failed.length} organisation${failed.length === 1 ? '' : 's'} could not be deleted`
+              )
+            }
+          }
+          await fetchOrganizations(true)
+        } finally {
+          setIsBulkDeleting(false)
+        }
+      },
+      onUndo: () => {
+        setOrganizations(snapshot)
+        setIsBulkDeleting(false)
+      },
+      onCommitError: (err) => {
+        console.error('[OrganizationsPage] Delete failed:', err)
+        setOrganizations(snapshot)
+        setIsBulkDeleting(false)
+        toast.error(err instanceof Error ? err.message : 'Failed to delete organisations')
+      },
+    })
+
+    // Surface the pre-check skipped orgs right away so the user knows why
+    // some of their selection survived.
+    if (blocked.length > 0) {
+      setBlockerOrgs(blocked)
+      setBlockerSkipped(true)
+      setBlockerOpen(true)
+    }
+  }, [organizations, checkOrgReferences, confirm])
+
+  const handleDeleteOrganization = useCallback((organization: Organization) => {
+    requestDeleteOrganizations([organization.id])
+  }, [requestDeleteOrganizations])
+
+  const handleBulkDeleteSelected = useCallback(() => {
+    requestDeleteOrganizations(Array.from(selectedOrgIds))
+  }, [requestDeleteOrganizations, selectedOrgIds])
 
 
   const handleDeleteCustomGroup = async (group: any) => {
@@ -1573,37 +1682,6 @@ function OrganizationsPageContent() {
         console.error('Error deleting group:', err)
         setCustomGroups(snapshot)
         toast.error('Failed to delete group')
-      },
-    })
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!selectedOrganization) return
-
-    const orgId = selectedOrganization.id
-    const snapshot = organizations
-    setOrganizations(prev => prev.filter(o => o.id !== orgId))
-
-    showUndoToast(`"${selectedOrganization.name}" deleted`, {
-      id: `delete-org-${orgId}`,
-      source: "organizations-list",
-      commit: async () => {
-        const response = await apiFetch(`/api/organizations?id=${orgId}`, {
-          method: 'DELETE',
-        })
-        if (!response.ok) {
-          let errorData;
-          try { errorData = await response.json(); }
-          catch { errorData = { error: `Server returned ${response.status}: ${response.statusText}` }; }
-          throw new Error(errorData.details || errorData.error || 'Failed to delete organization')
-        }
-        await fetchOrganizations(true)
-      },
-      onUndo: () => setOrganizations(snapshot),
-      onCommitError: (err) => {
-        console.error('[OrganizationsPage] Delete failed:', err);
-        setOrganizations(snapshot);
-        toast.error(err instanceof Error ? err.message : 'Failed to delete organisation');
       },
     })
   }
@@ -2048,6 +2126,9 @@ function OrganizationsPageContent() {
                           onDelete={handleDeleteOrganization}
                           onExportPDF={handleExportOrgPDF}
                           onExportExcel={handleExportOrgExcel}
+                          selectable
+                          selected={selectedOrgIds.has(organization.id)}
+                          onToggleSelect={toggleSelectOrg}
                         />
                       ))}
                     </div>
@@ -2062,6 +2143,10 @@ function OrganizationsPageContent() {
                       onDelete={handleDeleteOrganization}
                       onExportPDF={handleExportOrgPDF}
                       onExportExcel={handleExportOrgExcel}
+                      selectable
+                      selectedIds={selectedOrgIds}
+                      onToggleSelect={toggleSelectOrg}
+                      onToggleSelectAll={toggleSelectAllOnPage}
                     />
                   )}
                   
@@ -2112,6 +2197,14 @@ function OrganizationsPageContent() {
                       </Button>
                     </div>
                   )}
+
+                  <BulkActionToolbar
+                    selectedCount={selectedOrgIds.size}
+                    itemType="organizations"
+                    onDelete={handleBulkDeleteSelected}
+                    onClearSelection={clearSelection}
+                    isDeleting={isBulkDeleting || checkingRefs}
+                  />
                 </>
               ) : (
                 <div className="text-center py-12">
@@ -2151,15 +2244,12 @@ function OrganizationsPageContent() {
 
         {/* Edit Modal - Removed, now using full-page editor at /organizations/[id]/edit */}
 
-        {/* Delete Confirmation Modal */}
-        <DeleteConfirmationModal
-          organization={selectedOrganization}
-          isOpen={deleteModalOpen}
-          onClose={() => {
-            setDeleteModalOpen(false)
-            setSelectedOrganization(null)
-          }}
-          onConfirm={handleConfirmDelete}
+        {/* Read-only "can't delete" dialog for organisations with associations */}
+        <OrganizationDeleteBlockerDialog
+          open={blockerOpen}
+          onOpenChange={setBlockerOpen}
+          organizations={blockerOrgs}
+          skipped={blockerSkipped}
         />
 
         {/* Create Custom Group Modal */}

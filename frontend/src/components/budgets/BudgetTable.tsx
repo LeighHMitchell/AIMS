@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatDate as formatDateCanonical } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -155,13 +156,8 @@ export function BudgetTable({
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '—';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '—';
-      return format(date, "dd MMM yyyy");
-    } catch (error) {
-      return '—';
-    }
+    const formatted = formatDateCanonical(dateString);
+    return formatted || '—';
   };
 
   const formatPeriodMonth = (dateString: string | null | undefined) => {

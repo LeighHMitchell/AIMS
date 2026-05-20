@@ -13,6 +13,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { formatAxisCurrency } from '@/lib/format';
+import { BUDGET_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 
 interface ProjectData {
   id: string;
@@ -156,13 +157,13 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
             <Tooltip content={<CustomTooltip />} />
             <Legend content={<CustomLegend />} />
             {!hiddenSeries.has('Total Budgeted') && (
-              <Bar dataKey="Total Budgeted" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Total Budgeted" fill={BUDGET_COLOR} radius={[4, 4, 0, 0]} />
             )}
             {!hiddenSeries.has('Commitments') && (
-              <Bar dataKey="Commitments" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Commitments" fill={getTransactionTypeColor('2')} radius={[4, 4, 0, 0]} />
             )}
             {!hiddenSeries.has('Disbursements') && (
-              <Bar dataKey="Disbursements" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Disbursements" fill={getTransactionTypeColor('3')} radius={[4, 4, 0, 0]} />
             )}
           </BarChart>
         </ResponsiveContainer>

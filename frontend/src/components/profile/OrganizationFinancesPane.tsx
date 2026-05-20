@@ -46,6 +46,7 @@ import {
 } from "@/components/profile/OrganizationFundingFlowsSankey"
 import { ChartFullscreen, ChartExpandIconButton } from "@/components/charts/ChartFullscreen"
 import { CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { FormulaTooltip } from "@/components/ui/formula-tooltip"
 import { cn } from "@/lib/utils"
 import { apiFetch } from "@/lib/api-fetch"
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip"
@@ -62,22 +63,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { TRANSACTION_TYPE_COLORS, getTransactionTypeColor } from "@/lib/chart-colors"
 
-const TYPE_COLORS: Record<string, string> = {
-  "1": "#4c5568",
-  "2": "#7b95a7",
-  "3": "#dc2625",
-  "4": "#f59e0b",
-  "5": "#22c55e",
-  "6": "#0891b2",
-  "7": "#a855f7",
-  "8": "#ec4899",
-  "9": "#14b8a6",
-  "10": "#f43f5e",
-  "11": "#0ea5e9",
-  "12": "#8b5cf6",
-  "13": "#06b6d4",
-}
+// Transaction-type colours delegate to the single source of truth so this
+// pane matches every other transaction-type chart in the app.
+const TYPE_COLORS: Record<string, string> = { ...TRANSACTION_TYPE_COLORS }
 
 // IATI Finance Type buckets (rolled up to grant / loan / equity / guarantee /
 // other for the "Grants vs Loans" chart). Codes are taken from the IATI
@@ -199,6 +189,7 @@ function ChartCard({
   title,
   description,
   interpretation,
+  mathTooltip,
   children,
   className,
 }: {
@@ -207,6 +198,9 @@ function ChartCard({
   /** Longer paragraph shown beneath the chart explaining what it shows,
    *  how to interpret it, and how it informs understanding of the org. */
   interpretation?: React.ReactNode
+  /** Math-only explanation of how the chart's numbers are calculated.
+   *  Renders the same ƒ box used on the Analytics Dashboard. */
+  mathTooltip?: React.ReactNode
   children: React.ReactNode
   className?: string
 }) {
@@ -224,16 +218,19 @@ function ChartCard({
             </p>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          onClick={() => setOpen(true)}
-          title="Expand chart"
-          aria-label="Expand chart"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          {mathTooltip && <FormulaTooltip content={mathTooltip} size="sm" />}
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => setOpen(true)}
+            title="Expand chart"
+            aria-label="Expand chart"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       <div className="min-w-0">
         <ChartExpansionProvider isExpanded={false}>
@@ -244,16 +241,21 @@ function ChartCard({
           it would crowd the grid. It only renders in the expanded dialog
           footer below the chart. */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[1400px] w-[95vw] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogContent chart className="max-w-[1400px] w-[95vw] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
           {/* Override DialogHeader's default `-mx-6 -mt-6` (which assumes
               the parent uses p-6). Our DialogContent uses p-0, so the
               negative margins would shove the header outside the dialog
               bounds. mx-0 mt-0 reset that. */}
           <DialogHeader className="bg-surface-muted border-b border-border px-6 py-4 mx-0 mt-0">
-            <DialogTitle className="text-lg font-semibold text-foreground">{title}</DialogTitle>
-            <DialogDescription className="text-body text-muted-foreground">
-              {description}
-            </DialogDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <DialogTitle className="text-lg font-semibold text-foreground">{title}</DialogTitle>
+                <DialogDescription className="text-body text-muted-foreground">
+                  {description}
+                </DialogDescription>
+              </div>
+              {mathTooltip && <FormulaTooltip content={mathTooltip} size="md" />}
+            </div>
           </DialogHeader>
           {/* Children fill the rest of the dialog — flex-1 + min-h-0 + relative
               gives Recharts an explicit pixel-sized box; absolute inset-0
@@ -488,11 +490,15 @@ export function OrganizationFinancesPane({
                         Yearly budget, planned, and actual flows
                       </CardDescription>
                     </div>
-                    {!isFullscreen && (
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <FormulaTooltip
+                        content="Sums all actual transactions (Commitments, Disbursements, Expenditures, etc.) by reporting year, alongside published activity budgets and planned disbursements. Multi-year budgets and planned disbursements that span the boundary are split proportionally by overlap days. All values use USD-converted amounts where available."
+                        size={isFullscreen ? 'md' : 'sm'}
+                      />
+                      {!isFullscreen && (
                         <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
@@ -524,6 +530,7 @@ export function OrganizationFinancesPane({
           <ChartCard
             title="Spend Trajectory"
             description="Actual vs perfect cumulative disbursement"
+            mathTooltip="Builds an even-spend baseline by spreading the organisation's total budget evenly across its activity life-cycle, then plots it against the actual cumulative disbursement curve over the same horizon. The gap between the two lines is the pace of execution against plan. All amounts are USD-converted."
             interpretation={
               <>
                 Cumulative actual disbursements over time, plotted against an even-spend baseline that assumes the budget is paid out at a constant rate across the activity life-cycle. Where the red line sits below the dashed baseline, this organisation is spending more slowly than planned — a flat or shallow line means delivery has stalled, while a line climbing faster than the baseline indicates accelerated execution. The gap is a quick read on delivery health: persistent under-spend can flag absorption problems, procurement bottlenecks, or context disruption, while a sudden jump usually marks a single large disbursement rather than steady-state delivery.
@@ -662,6 +669,7 @@ function FundingFlowsSankeyChart({
     <ChartCard
       title="Funding Flows"
       description="Money in (from funders) and out (to partners)"
+      mathTooltip="Sums USD-converted transaction values for each counterparty paired with this organisation: incoming flows (from upstream funders) sit on the left, outgoing flows (to downstream partners) on the right. Band width is proportional to the total USD for that pair and transaction type. Transactions with no stored USD conversion are excluded rather than counted as USD."
       interpretation={
         <>
           Each band shows a flow of money between this organisation and a counterparty: incoming flows on the left come from upstream funders, outgoing flows on the right go to downstream partners. Band width is proportional to the total US-dollar value of the transactions for that pair, and the colour identifies the IATI transaction type. Use the transaction-type dropdown in the top-right of the expanded view to switch between actual money movement (Incoming Funds + Disbursement), commitments (Outgoing Commitments), or pledges; the same partner can appear with multiple bands if they participate across more than one type. Bands missing a stored USD conversion contribute nothing — non-USD transactions without an exchange rate are excluded rather than counted as USD.
@@ -862,6 +870,7 @@ function FundingOverTimeChart({ envelopes }: { envelopes: any[] | null }) {
     <ChartCard
       title="Funding Over Time"
       description="Annual envelopes by status"
+      mathTooltip="For each year, sums the organisation's reported funding envelopes split by status — actual, current, and indicative. Multi-year envelopes are spread evenly across the years they cover (per-year amount = total ÷ number of years) before being added to each year's stacked bar. All amounts are USD-converted."
       interpretation={
         <>
           Year-by-year funding envelopes declared by this organisation, stacked into three statuses — actual (past), current (this year) and indicative (forward). Comparing the heights across years places the organisation's commitment to country in absolute terms: tall red blocks signal a strong delivery track-record, while tall grey blocks at the right of the chart flag a forward pipeline that hasn't yet been confirmed. A pipeline that's mostly indicative deserves more cautious assumptions than one anchored in current-year actuals.
@@ -974,6 +983,7 @@ function CommitmentsVsPlannedChart({ transactions }: { transactions: any[] | nul
     <ChartCard
       title="Commitments vs Planned Disbursements"
       description="Outgoing commitments vs incoming pipeline"
+      mathTooltip="For each year, sums USD-converted outgoing commitments (transaction type 2) and planned disbursements (type 11) separately, then plots the two series side-by-side. Transactions are bucketed by their transaction or value date."
       interpretation={
         <>
           Annual outgoing commitments this organisation has made to others (paying out) set alongside the incoming commitments that fund its own work (the pipeline coming in). A wide gap between the two in the same year indicates a structural mismatch — either spending ahead of new funding, or sitting on undeployed pipeline. Healthy patterns show outgoing tracking close to incoming with a sustainable lag; volatile years suggest concentration risk in a few large agreements.
@@ -1039,8 +1049,8 @@ function CommitmentsVsPlannedBody({ data }: { data: any[] | null }) {
             }}
           />
           {isExpanded && <Legend />}
-          <Bar dataKey="commitments" name="Outgoing Commitments" fill="#4c5568" />
-          <Bar dataKey="planned" name="Incoming Commitments / Pipeline" fill="#7b95a7" />
+          <Bar dataKey="commitments" name="Outgoing Commitments" fill={getTransactionTypeColor('2')} />
+          <Bar dataKey="planned" name="Incoming Commitments / Pipeline" fill={getTransactionTypeColor('11')} />
         </BarChart>
       </ResponsiveContainer>
     </ChartFrame>
@@ -1071,6 +1081,7 @@ function AllTransactionTypesChart({ transactions }: { transactions: any[] | null
     <ChartCard
       title="All Transaction Types"
       description="USD totals by transaction type"
+      mathTooltip="Sums USD-converted value across all of the organisation's transactions, grouped by IATI transaction type (Incoming Funds, Outgoing Commitment, Disbursement, Expenditure, etc.). Each bar is that type's total dollar value; types are ranked descending."
       interpretation={
         <>
           Total USD value broken down by every IATI transaction type the organisation has reported — incoming funds, commitments, disbursements, expenditures, pledges and beyond — with bar length comparing dollar weight across the types. A long Disbursements bar with a short Commitments bar means most reported activity is delivery, while the inverse signals an organisation that promises more than it pays. The mix characterises the organisation's reporting style and financial role — whether it primarily funds others, receives funds, or operates as both donor and channel.
@@ -1188,6 +1199,7 @@ function TransactionTypeByYearChart({ transactions }: { transactions: any[] | nu
     <ChartCard
       title="Transactions by Year"
       description="Yearly breakdown by transaction type"
+      mathTooltip="For each year, sums USD-converted transaction value split by IATI transaction type (Incoming Funds, Outgoing Commitments, Disbursements, Expenditures). Each year's bar stacks the types; transactions are bucketed by their transaction or value date."
       interpretation={
         <>
           Annual breakdown of incoming funds, outgoing commitments, disbursements and expenditures — the four IATI types that drive most financial reporting. The trends across years tell the story: rising disbursements indicate accelerating delivery, while a peak in commitments without matching disbursements signals an upcoming pipeline that hasn't yet flowed. Comparing the rhythm year-on-year highlights shifting portfolios — new programmes starting, old ones closing — or external shocks affecting absorption capacity.
@@ -1313,6 +1325,7 @@ function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
     <ChartCard
       title="Aid Modality Mix"
       description="Outgoing finance by instrument"
+      mathTooltip="Groups the organisation's outgoing finance by IATI finance type — bucketed into Grants, Loans, Equity, Guarantees, or Other — and sums USD-converted value. Each slice is that instrument's share of total outgoing USD. The transaction-type filter re-scopes which transactions are counted."
       interpretation={
         <>
           Outgoing finance grouped by IATI finance-type bucket — grants, loans, equity, guarantees / insurance, and other — with each slice sized by dollar share. A grant-heavy mix indicates concessional support, while a loan-heavy mix signals market or near-market financing terms. Understanding the mix matters because recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
@@ -1654,6 +1667,7 @@ function LargestActivitiesChart({
     <ChartCard
       title="Largest Activities"
       description={`Top 10 activities by ${modeLabel.toLowerCase()}`}
+      mathTooltip={`Sums the selected metric (${modeLabel.toLowerCase()}) in USD per activity this organisation participates in, ranks them descending, and shows the top 10. Activities with no value for the chosen metric are excluded.`}
       interpretation={
         <>
           The ten activities with the highest value for the selected basis, sorted longest-to-shortest. The dropdown switches between disbursements (actual money out), commitments (money pledged), expenditures, total outgoing (the sum of those three), or total budget — each mode reads from a single explicit data source, no silent substitution. A long-tail distribution (one or two large bars then a steep drop) signals concentration risk, and comparing across modes can surface mismatches — an activity with high commitments but low disbursements may be slow to deliver, while a high budget paired with low transactions could indicate a recently-started or paused programme.

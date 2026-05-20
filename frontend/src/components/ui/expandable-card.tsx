@@ -193,6 +193,7 @@ export function ExpandableCard({
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent
+          chart
           className="max-w-7xl w-[95vw] max-h-[95vh] overflow-y-auto"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >

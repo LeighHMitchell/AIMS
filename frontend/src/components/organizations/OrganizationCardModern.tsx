@@ -7,6 +7,7 @@ import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
 import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
 import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Color palette — uses brand tokens from CSS variables for theme compatibility
 const colors = {
@@ -42,6 +43,9 @@ interface OrganizationCardModernProps {
   onExportPDF?: (orgId: string) => void;
   onExportExcel?: (orgId: string) => void;
   className?: string;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (orgId: string, checked: boolean) => void;
 }
 
 // Currency formatting utility
@@ -67,7 +71,10 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
   onDelete,
   onExportPDF,
   onExportExcel,
-  className = ''
+  className = '',
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }) => {
   const orgUrl = `/organizations/${organization.id}`;
   const { isBookmarked, toggleBookmark } = useOrganizationBookmarks();
@@ -83,15 +90,34 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       bannerImage={organization.banner}
       bannerIcon={Building2}
       bannerActions={
-        <OrganizationCardActionMenu
-          organizationId={organization.id}
-          onEdit={onEdit ? () => onEdit(organization) : undefined}
-          onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
-          onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
-          onDelete={onDelete ? () => onDelete(organization) : undefined}
-          isBookmarked={isBookmarked(organization.id)}
-          onToggleBookmark={() => toggleBookmark(organization.id)}
-        />
+        <div className="flex items-center gap-2">
+          {selectable && (
+            <div
+              className="rounded bg-white/90 p-1 shadow-sm backdrop-blur-sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <Checkbox
+                aria-label={`Select ${organization.name}`}
+                checked={selected}
+                onCheckedChange={(checked) =>
+                  onToggleSelect?.(organization.id, !!checked)
+                }
+              />
+            </div>
+          )}
+          <OrganizationCardActionMenu
+            organizationId={organization.id}
+            onEdit={onEdit ? () => onEdit(organization) : undefined}
+            onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
+            onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
+            onDelete={onDelete ? () => onDelete(organization) : undefined}
+            isBookmarked={isBookmarked(organization.id)}
+            onToggleBookmark={() => toggleBookmark(organization.id)}
+          />
+        </div>
       }
       bannerOverlay={
         <>

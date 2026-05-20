@@ -17,8 +17,13 @@ import { cn } from '@/lib/utils'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
 
-export function SectorTimeSeriesPanel() {
+export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
   const isExpanded = useChartExpansion()
+  // When rendered inside a CompactChartCard, the card supplies the chrome +
+  // title and controls/filters appear only on expand, so the card stays
+  // minimal. Standalone (e.g. the Sector Analytics page) keeps full chrome.
+  const insideCard = compact !== undefined
+  const showControls = !insideCard || isExpanded
   // State for toggles
   const [dataType, setDataType] = useState<TimeSeriesDataType>('actual')
   const [chartType, setChartType] = useState<TimeSeriesChartType>('area')
@@ -101,19 +106,22 @@ export function SectorTimeSeriesPanel() {
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader>
+    <Card className={insideCard ? "border-0 shadow-none bg-transparent" : "border-border"}>
+      <CardHeader className={insideCard && !showControls ? "p-0" : undefined}>
         <div className="flex flex-col gap-4">
-          {/* Title */}
+          {/* Title — omitted inside a card; CompactChartCard supplies it. */}
+          {!insideCard && (
           <div>
-            <CardTitle className="text-base font-medium text-foreground">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Sector Disbursements Over Time
             </CardTitle>
-            <CardDescription className="text-helper text-muted-foreground mt-0.5">
+            <CardDescription className="text-body text-muted-foreground mt-0.5">
               Track planned and actual disbursements by sector across years
             </CardDescription>
           </div>
+          )}
 
+          {showControls && (<>
           {/* Top-Level Toggles */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             {isExpanded && (
@@ -214,6 +222,7 @@ export function SectorTimeSeriesPanel() {
               availableSectors={sectorNames}
             />
           )}
+          </>)}
         </div>
       </CardHeader>
 

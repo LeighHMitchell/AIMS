@@ -57,6 +57,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies'
+import { formatCurrencyPrecise, formatCurrencyCompact as formatCurrencyCompactCanonical } from '@/lib/format'
 
 interface OrganizationFundingEnvelopeTabProps {
   organizationId: string
@@ -432,27 +433,13 @@ export default function OrganizationFundingEnvelopeTab({
 
   const formatCurrency = (amount: number | null | undefined, currency: string = 'USD') => {
     if (amount === null || amount === undefined) return 'N/A'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
+    return formatCurrencyPrecise(amount, currency)
   }
 
-  // Format currency compact (e.g., $56.5m, $53.2k)
+  // Format currency compact (e.g., $56.5m, $53.2k) — values are USD subtotals
   const formatCurrencyCompact = (amount: number | null | undefined) => {
     if (amount === null || amount === undefined) return 'N/A'
-    if (amount >= 1_000_000_000) {
-      return `$${(amount / 1_000_000_000).toFixed(1)}b`
-    }
-    if (amount >= 1_000_000) {
-      return `$${(amount / 1_000_000).toFixed(1)}m`
-    }
-    if (amount >= 1_000) {
-      return `$${(amount / 1_000).toFixed(1)}k`
-    }
-    return `$${amount}`
+    return formatCurrencyCompactCanonical(amount)
   }
 
   // Format year range

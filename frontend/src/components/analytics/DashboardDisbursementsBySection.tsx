@@ -1,21 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { DisbursementsBySectorChart } from '@/components/activities/DisbursementsBySectorChart'
 import { DisbursementsOverTimeChart } from '@/components/activities/DisbursementsOverTimeChart'
 import { Card, CardContent } from '@/components/ui/card'
+import { CompactChartCard } from '@/components/ui/compact-chart-card'
 import { apiFetch } from '@/lib/api-fetch';
-import { Button } from '@/components/ui/button'
-import { BarChart3, Table as TableIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 
 interface DateRange {
   from: Date;
@@ -36,26 +26,6 @@ export function DashboardDisbursementsBySection({
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
-
-  // Build a flat tabular view of the section data (used for the table view).
-  const tableRows = useMemo(() => {
-    const sectors = (data?.sectors ?? []) as Array<any>;
-    return sectors.map((s: any) => {
-      const years = Array.isArray(s.years) ? s.years : [];
-      const planned = years.reduce((sum: number, y: any) => sum + Number(y.planned || 0), 0);
-      const actual = years.reduce((sum: number, y: any) => sum + Number(y.actual || 0), 0);
-      return {
-        sectorCode: String(s.sectorCode ?? ''),
-        sector: s.sectorName ?? 'Unknown',
-        category: s.categoryName ?? '',
-        planned: Math.round(planned),
-        actual: Math.round(actual),
-      };
-    });
-  }, [data]);
-
-  const formatUSD = (value: number) => `$${value.toLocaleString()}`;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,79 +87,33 @@ export function DashboardDisbursementsBySection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "h-8 w-8",
-              viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => setViewMode('chart')}
-            title="Chart View"
-            aria-label="Chart View"
-          >
-            <BarChart3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "h-8 w-8",
-              viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => setViewMode('table')}
-            title="Table View"
-            aria-label="Table View"
-          >
-            <TableIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <CompactChartCard
+        title="Planned and Actual Disbursements by Sector"
+        shortDescription="Compare planned vs actual disbursements across sectors"
+        fullDescription="Compare planned vs actual disbursements across sectors, by year"
+        mathTooltip="For each sector, sums USD-converted planned disbursements and actual disbursements per year. Activities tagged with multiple sectors are split using the declared sector percentage."
+        className="w-full"
+        compactHeight={320}
+      >
+        <DisbursementsBySectorChart
+          data={data || { sectors: [] }}
+          loading={loading}
+        />
+      </CompactChartCard>
 
-      {viewMode === 'chart' ? (
-        <>
-          <DisbursementsBySectorChart
-            data={data || { sectors: [] }}
-            loading={loading}
-          />
-
-          <DisbursementsOverTimeChart
-            data={data || { sectors: [] }}
-            loading={loading}
-          />
-        </>
-      ) : (
-        <Card className="border-border">
-          <CardContent className="p-4">
-            <div className="overflow-auto max-h-[600px]">
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-                    <TableHead className="whitespace-normal">Sector Code</TableHead>
-                    <TableHead>Sector</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right whitespace-normal">Planned (USD)</TableHead>
-                    <TableHead className="text-right whitespace-normal">Actual (USD)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tableRows.map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-mono text-sm">{row.sectorCode}</TableCell>
-                      <TableCell className="font-medium">{row.sector}</TableCell>
-                      <TableCell>{row.category}</TableCell>
-                      <TableCell className="text-right font-mono">{formatUSD(row.planned)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatUSD(row.actual)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <CompactChartCard
+        title="Disbursements Over Time by Sector"
+        shortDescription="Track disbursements across sectors over time"
+        fullDescription="Track planned or actual disbursements across sectors over time"
+        mathTooltip="Sums USD-converted disbursements per year and sector (planned or actual, selectable when expanded). Activities tagged with multiple sectors are split using the declared sector percentage."
+        className="w-full"
+        compactHeight={320}
+      >
+        <DisbursementsOverTimeChart
+          data={data || { sectors: [] }}
+          loading={loading}
+        />
+      </CompactChartCard>
     </div>
   );
 }

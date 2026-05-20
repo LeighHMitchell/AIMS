@@ -17,21 +17,25 @@ import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Info, CalendarIcon, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/ChartFullscreen';
+import { FormulaTooltip } from '@/components/ui/formula-tooltip';
 import { cn } from '@/lib/utils';
 import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector';
 import { ChartViewToggle, type ChartView } from '@/components/charts/ChartViewToggle';
 
-// Colour palette as specified
+// Series colours resolve through the single source of truth (lib/chart-colors)
+// so the actual-spend line and perfect-spend reference line match every
+// other financial chart in the app. Structural greys (grid/axis/bg) are
+// kept local since they are not data-series colours.
 const COLOURS = {
-  primaryScarlet: '#dc2625',  // Cumulative disbursements line (solid)
-  paleSlate: '#cfd0d5',       // Grid lines
-  blueSlate: '#4c5568',       // Axis text
-  coolSteel: '#7b95a7',       // Perfect spend trajectory line (dashed)
-  platinum: '#f1f4f8',        // Background/tooltips
+  primaryScarlet: getTransactionTypeColor('3'), // Cumulative disbursements (= Disbursement scarlet)
+  paleSlate: '#cfd0d5',                          // Grid lines
+  blueSlate: '#4c5568',                          // Axis text
+  coolSteel: PERFECT_SPEND_COLOR,                // Perfect spend trajectory (reference line)
+  platinum: '#f1f4f8',                           // Background/tooltips
 }
 
 // Time range filter options
@@ -455,11 +459,15 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
               Actual vs perfect cumulative disbursement
             </CardDescription>
           </div>
-          {!isFullscreen && (
-            <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <FormulaTooltip
+              content="Builds an even-spend baseline by spreading the activity's total budget evenly across its planned duration, then plots it against the actual cumulative disbursement curve over the same horizon. The gap between the two lines is the pace of execution against plan. All amounts are USD-converted."
+              size={isFullscreen ? 'md' : 'sm'}
+            />
+            {!isFullscreen && (
               <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardHeader>
       {isFullscreen && (

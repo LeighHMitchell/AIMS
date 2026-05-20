@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, BUDGET_COLOR, getTransactionTypeColor, OTHERS_COLOR } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
@@ -101,10 +101,10 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const rows = [
-        { label: 'Activities', value: String(data.activityCount), color: '#94a3b8' },
-        { label: 'Budget', value: `${formatCurrency(data.totalBudget)} (${data.budgetPercentage.toFixed(1)}%)`, color: '#4c5568' },
-        { label: 'Disbursements', value: `${formatCurrency(data.totalDisbursements)} (${data.disbursementPercentage.toFixed(1)}%)`, color: '#7b95a7' },
-        { label: 'Expenditures', value: `${formatCurrency(data.totalExpenditures)} (${data.expenditurePercentage.toFixed(1)}%)`, color: '#cfd0d5' },
+        { label: 'Activities', value: String(data.activityCount), color: OTHERS_COLOR },
+        { label: 'Budget', value: `${formatCurrency(data.totalBudget)} (${data.budgetPercentage.toFixed(1)}%)`, color: BUDGET_COLOR },
+        { label: 'Disbursements', value: `${formatCurrency(data.totalDisbursements)} (${data.disbursementPercentage.toFixed(1)}%)`, color: getTransactionTypeColor('3') },
+        { label: 'Expenditures', value: `${formatCurrency(data.totalExpenditures)} (${data.expenditurePercentage.toFixed(1)}%)`, color: getTransactionTypeColor('4') },
       ];
       return (
         <ChartTooltipCard

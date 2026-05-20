@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
@@ -27,7 +28,7 @@ import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName, getOrganizationTypeCo
 import { SectorHierarchyFilter, SectorFilterSelection } from '@/components/maps/SectorHierarchyFilter'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, BUDGET_COLOR, PLANNED_DISBURSEMENT_COLOR } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
@@ -114,6 +115,15 @@ const METRIC_LABEL: Record<Metric, string> = METRIC_DEFS.reduce((acc, m) => {
 }, {} as Record<Metric, string>)
 const ALL_METRIC_KEYS: Metric[] = METRIC_DEFS.map(m => m.key)
 
+// Canonical colour for a metric segment when the bar view is stacked by
+// metric — budgets/planned use their brand constants; transaction types
+// resolve through the shared single-source-of-truth palette.
+const metricColor = (m: Metric): string => {
+  if (m === 'budgets') return BUDGET_COLOR
+  if (m === 'planned') return PLANNED_DISBURSEMENT_COLOR
+  return getTransactionTypeColor(m.slice(3)) // 'tx_3' -> '3'
+}
+
 interface AllDonorsChartProps {
   dateRange?: {
     from: Date
@@ -198,7 +208,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   // Sector dropdown open state is mirrored into `openFilter` so only ONE
   // top-row dropdown can be open at a time (matches the year/calendar/
   // org-type dropdowns).
-  const [showOnlyActiveSectors, setShowOnlyActiveSectors] = useState(false)
+  // Default to active-only, matching the Atlas. Requires `sectorActivityCounts`
+  // (fetched below) so the picker can actually tell which sectors are active.
+  const [showOnlyActiveSectors, setShowOnlyActiveSectors] = useState(true)
+  // Sector code → activity count, fed to SectorHierarchyFilter so the
+  // "show only active sectors" toggle behaves exactly as it does in the Atlas.
+  const [sectorActivityCounts, setSectorActivityCounts] = useState<Record<string, number>>({})
 
   // Coordinate which filter dropdown is open (only one at a time)
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
@@ -280,6 +295,32 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       }
     }
     fetchActualDataRange()
+  }, [])
+
+  // Fetch sector activity counts once so the sector picker can show only
+  // active sectors (same data the Atlas uses, flattened across all levels).
+  useEffect(() => {
+    const fetchSectorCounts = async () => {
+      try {
+        const response = await apiFetch('/api/sectors/summary')
+        if (!response.ok) return
+        const result = await response.json()
+        const counts: Record<string, number> = {}
+        ;(result.groups || []).forEach((g: any) => {
+          if (g?.code) counts[g.code] = g.activityCount || 0
+          ;(g.categories || []).forEach((c: any) => {
+            if (c?.code) counts[c.code] = c.activityCount || 0
+            ;(c.sectors || []).forEach((s: any) => {
+              if (s?.code) counts[s.code] = s.activityCount || 0
+            })
+          })
+        })
+        setSectorActivityCounts(counts)
+      } catch (err) {
+        console.error('Failed to fetch sector activity counts:', err)
+      }
+    }
+    fetchSectorCounts()
   }, [])
 
   // Update date range when calendar type or years change
@@ -501,6 +542,9 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         fullName: donor.name,
         acronym: donor.acronym,
         value,
+        // Per-metric values keyed by Metric so the bar view can stack one
+        // segment per selected metric (e.g. row['tx_3'], row['budgets']).
+        ...Object.fromEntries(selectedMetrics.map(m => [m, getMetricValue(donor, m)])),
         totalBudget: donor.totalBudget,
         totalPlannedDisbursement: donor.totalPlannedDisbursement,
         totalCommitment: donor.totalCommitment || 0,
@@ -726,9 +770,16 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     URL.revokeObjectURL(url)
   }
 
+  // True only on the very first load. Once we have data, subsequent
+  // filter-driven refetches keep the existing chart on screen (just dimmed)
+  // instead of blanking the whole card to a loading placeholder — so the
+  // expanded modal never appears to "reload" when you change a filter.
+  const isInitialLoad = (loading || customYearsLoading) && allData.length === 0
+  const isRefreshing = loading && allData.length > 0
+
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
-    if (loading) {
+    if (isInitialLoad) {
       return <ChartLoadingPlaceholder />
     }
     if (!chartData || chartData.length === 0) {
@@ -769,7 +820,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     )
   }
 
-  if (loading || customYearsLoading) {
+  if (isInitialLoad) {
     return (
       <ChartLoadingPlaceholder />
     )
@@ -901,7 +952,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           <div className="flex items-center gap-3">
             <DropdownMenu open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+                <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between">
                   <span className="truncate text-body">{orgTypeFilterLabel}</span>
                   <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
                 </Button>
@@ -955,7 +1006,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 the user can re-add a metric while seeing the empty state. */}
             <DropdownMenu open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+                <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between">
                   <span className="flex items-center gap-2 truncate text-body">
                     {selectedMetrics.length === 1 && primaryMetric === 'budgets' && (
                       <Wallet className="h-4 w-4 flex-shrink-0" />
@@ -1167,7 +1218,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         <div className="flex items-center gap-3">
           <DropdownMenu open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between">
                 <span className="truncate text-body">{orgTypeFilterLabel}</span>
                 <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
               </Button>
@@ -1217,16 +1268,17 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Sector Filter — same hierarchical picker used in the Atlas tab.
-              `showOnlyActiveSectors` toggle is local-only (no activityCounts
-              wired since the chart aggregates server-side). Open-state is
-              coordinated through `openFilter` so only one top-row dropdown
-              can be open at a time. */}
+          {/* Sector Filter — same hierarchical picker used in the Atlas tab,
+              wired with sector activity counts so "show only active sectors"
+              (on by default, like the Atlas) actually hides inactive sectors.
+              Open-state is coordinated through `openFilter` so only one
+              top-row dropdown can be open at a time. */}
           <SectorHierarchyFilter
             selected={sectorFilter}
             onChange={setSectorFilter}
             open={openFilter === 'sector'}
             onOpenChange={filterOpenHandler('sector')}
+            activityCounts={sectorActivityCounts}
             showOnlyActiveSectors={showOnlyActiveSectors}
             onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
             className="min-w-[280px] h-9"
@@ -1239,7 +1291,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               the trigger label is the count summary. */}
           <DropdownMenu open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between font-normal">
+              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between">
                 <span className="flex items-center gap-2 truncate text-body">
                   {selectedMetrics.length === 1 && primaryMetric === 'budgets' && (
                     <Wallet className="h-4 w-4 flex-shrink-0" />
@@ -1356,30 +1408,40 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         </div>
       </div>
 
-      {/* Chart Content */}
-      <div id="all-donors-chart">
+      {/* Chart Content — dims (but stays mounted) while a filter change
+          refetches, so the modal never blanks to a loading state. */}
+      <div
+        id="all-donors-chart"
+        className={cn(isRefreshing && 'opacity-50 pointer-events-none transition-opacity')}
+      >
         {chartViewMode === 'table' ? (
           <div className="rounded-md border overflow-auto max-h-[600px]">
             <Table>
               <TableHeader>
-                <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
+                <TableRow className="sticky top-0 bg-white z-10">
                   <TableHead>Organisation</TableHead>
                   <TableHead>Type</TableHead>
                   {/* One column per selected metric — column headers reflect
                       the user's current selection in the metric multi-select.
+                      The code chip sits on its own line with the metric label
+                      wrapping beneath it (aligned under the code), and the
+                      cell uses the app-standard TableHead styling so this
+                      header matches every other table-view header in the app.
                       A trailing "Total" column shows the sum across all
                       selected metrics (only when 2+ are selected, otherwise
                       it's redundant with the single metric column). */}
                   {selectedMetrics.map((m) => {
                     const code = METRIC_DEFS.find(d => d.key === m)?.code
                     return (
-                      <TableHead key={m} className="text-right whitespace-normal">
-                        {code && (
-                          <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
-                            {code}
-                          </code>
-                        )}
-                        {METRIC_LABEL[m]}
+                      <TableHead key={m} className="text-right">
+                        <span className="flex flex-col items-end gap-1">
+                          {code && (
+                            <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
+                              {code}
+                            </code>
+                          )}
+                          <span className="whitespace-normal">{METRIC_LABEL[m]}</span>
+                        </span>
                       </TableHead>
                     )
                   })}
@@ -1529,7 +1591,28 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                   width={140}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} fill={barColor} />
+                {selectedMetrics.length > 1 ? (
+                  <>
+                    <Legend
+                      wrapperStyle={{ fontSize: 12 }}
+                      formatter={(value) => (
+                        <span className="text-body text-foreground">{value}</span>
+                      )}
+                    />
+                    {selectedMetrics.map((m, i) => (
+                      <Bar
+                        key={m}
+                        dataKey={m}
+                        name={METRIC_LABEL[m]}
+                        stackId="metrics"
+                        fill={metricColor(m)}
+                        radius={i === selectedMetrics.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} fill={barColor} />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>

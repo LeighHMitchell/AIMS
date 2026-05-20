@@ -44,6 +44,7 @@ import {
 } from "@/utils/transactionMigrationHelper";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyPrecise, formatCurrencyCompact, formatDate as formatDateCanonical } from '@/lib/format';
 
 // Define FINANCE_TYPES locally since it's not exported from the helper
 const FINANCE_TYPES: Record<string, string> = {
@@ -864,14 +865,7 @@ export default function TransactionsManager({
   // Helper function to safely format dates
   const formatTransactionDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '-';
-      return format(date, "MMM dd, yyyy");
-    } catch (error) {
-      console.warn('Date formatting error:', dateString, error);
-      return '-';
-    }
+    return formatDateCanonical(dateString) || '-';
   };
 
   // Calculate dynamic summary statistics by transaction type
@@ -980,30 +974,12 @@ export default function TransactionsManager({
     .reduce((sum, t) => sum + t.value, 0);
 
   const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatCurrencyPrecise(value, currency);
   };
 
-  // Format currency with abbreviations (K, M, B)
+  // Format currency with abbreviations (k, m, b) — values here are USD aggregates
   const formatCurrencyAbbreviated = (value: number) => {
-    const absValue = Math.abs(value);
-    let formattedValue: string;
-
-    if (absValue >= 1_000_000_000) {
-      formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
-    } else if (absValue >= 1_000_000) {
-      formattedValue = (value / 1_000_000).toFixed(1) + 'M';
-    } else if (absValue >= 1_000) {
-      formattedValue = (value / 1_000).toFixed(1) + 'K';
-    } else {
-      formattedValue = value.toFixed(0);
-    }
-
-    return '$' + formattedValue;
+    return formatCurrencyCompact(value);
   };
 
   // Check if transaction was imported from IATI (no created_by field)

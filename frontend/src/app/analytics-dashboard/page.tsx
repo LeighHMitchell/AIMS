@@ -728,7 +728,7 @@ export default function AnalyticsDashboardPage() {
                   {[
                     { value: 'overview', label: 'Overview' },
                     { value: 'trends-performance', label: 'Trends & Performance' },
-                    { value: 'sectors-sdgs', label: 'Sectors & SDGs' },
+                    { value: 'sectors-sdgs', label: 'Sectors & Policy Markers' },
                     { value: 'sdgs', label: 'SDGs' },
                     { value: 'humanitarian-spend', label: 'Humanitarian Spend' },
                     { value: 'capital-spend', label: 'Capital Spend' },
@@ -788,36 +788,39 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Top Partners & Sectors</h2>
-                      <p className="text-muted-foreground mb-4">Who is funding the most, and where the money is going</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-4">Top Partners & Sectors</h2>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ExpandableCard
-                          className="bg-card border-border"
+                        <CompactChartCard
+                          className="w-full"
                           title="Top Development Partners by Commitments and Disbursements"
-                          description="Sum of outgoing commitments and disbursements made by each external development partner. Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
+                          shortDescription="External development partners ranked by commitments & disbursements"
+                          fullDescription="Sum of outgoing commitments and disbursements made by each external development partner. Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
                           mathTooltip="Sums USD-converted outgoing commitments (transaction type 2) and disbursements (type 3) per provider organisation, then ranks the top 10. Internal pooled-fund transfers are excluded so providers aren't credited for shuffling money between their own accounts. Organisations whose country is Myanmar are excluded so recipient-government ministries (e.g. MOALI, MoHS, MoE) don't appear as funders. Remaining partners beyond the top 10 are aggregated into an 'All Others' bucket. If fewer than 10 partners have transactions in the selected period, only the available rows are shown."
                           exportData={top10TotalFinancialData}
+                          compactHeight={300}
                         >
                           <Top10TotalFinancialValueChart
                             dateRange={dateRange}
                             refreshKey={refreshKey}
                             onDataChange={setTop10TotalFinancialData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <ExpandableCard
-                          className="bg-card border-border"
+                        <CompactChartCard
+                          className="w-full"
                           title="Aid Distribution by Sector"
-                          description="Breakdown of funding across sectors"
+                          shortDescription="Breakdown of funding across sectors"
+                          fullDescription="Breakdown of funding across sectors"
                           mathTooltip="Sums actual disbursements (type 3) per published activity, then allocates each activity's total across its declared sectors using the sector percentage on the activity. Top 7 sectors are shown; the remainder is grouped into 'Others'. Activities with no sector assignment fall into 'Unspecified'."
                           exportData={sectorPieData}
+                          compactHeight={300}
                         >
                           <SectorPieChart
                             dateRange={dateRange}
                             refreshKey={refreshKey}
                             onDataChange={setSectorPieData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
                       </div>
                     </div>
 
@@ -862,9 +865,17 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
-                      <div className="w-full">
+                      <CompactChartCard
+                        title="Aid Flow Map"
+                        shortDescription="How funding flows from development partners to recipients"
+                        fullDescription="Sankey view of how funding flows from external development partners through to implementing organisations and recipients"
+                        mathTooltip="Aggregates USD-converted disbursements and commitments along provider → receiver organisation links, then draws a flow diagram whose ribbon widths are proportional to the total value moving along each link."
+                        className="w-full"
+                        compactHeight={500}
+                        hideViewToggle
+                      >
                         <AidFlowMap height={500} />
-                      </div>
+                      </CompactChartCard>
                     </div>
                   </div>
                 </TabsContent>
@@ -1015,7 +1026,16 @@ export default function AnalyticsDashboardPage() {
                       </ChartGrid>
 
                       <div className="mt-6">
-                        <SectorTimeSeriesPanel />
+                        <CompactChartCard
+                          title="Sector Disbursements Over Time"
+                          shortDescription="Track planned and actual disbursements by sector across years"
+                          fullDescription="Track planned and actual disbursements by sector across years"
+                          mathTooltip="Sums USD-converted disbursements per year and DAC sector (planned or actual, selectable when expanded). Activities tagged with multiple sectors are split using the declared sector percentage; sectors are grouped at the chosen DAC level."
+                          className="w-full"
+                          compactHeight={340}
+                        >
+                          <SectorTimeSeriesPanel />
+                        </CompactChartCard>
                       </div>
 
                       <div className="mt-6">
@@ -1030,7 +1050,16 @@ export default function AnalyticsDashboardPage() {
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
                       <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
-                      <PolicyMarkersChart refreshKey={refreshKey} />
+                      <CompactChartCard
+                        title="Policy Markers Analytics"
+                        shortDescription="Activities by policy marker and significance level"
+                        fullDescription="Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation."
+                        mathTooltip="Counts distinct activities per policy marker, split by significance (Not targeted / Significant / Principal). The value chart sums activity budgets (USD) for activities where the marker is Significant or Principal. Policy markers reflect policy intent, not a financial allocation."
+                        className="w-full"
+                        compactHeight={320}
+                      >
+                        <PolicyMarkersChart refreshKey={refreshKey} />
+                      </CompactChartCard>
                     </div>
                   </div>
                 </TabsContent>

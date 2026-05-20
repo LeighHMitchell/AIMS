@@ -29,6 +29,7 @@ import { TableRowActionMenu } from './TableRowActionMenu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import { useUser } from '@/hooks/useUser';
+import { formatCurrencyCompact } from '@/lib/format';
 
 interface OrgActivitiesTableProps {
   organizationId: string;
@@ -104,14 +105,6 @@ const VARIANT_CONFIG: Record<ActivityTableVariant, {
     emptyMessage: 'No activities closing soon',
   },
 };
-
-// Format currency without symbol
-function formatCurrency(value: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
-}
 
 export function OrgActivitiesTable({
   organizationId,
@@ -457,19 +450,19 @@ export function OrgActivitiesTable({
                               <span className="text-helper text-muted-foreground mr-1 font-normal">
                                 {activity.currency}
                               </span>
-                              {formatCurrency(activity.totalBudgetOriginal, activity.currency)}
+                              {formatCurrencyCompact(activity.totalBudgetOriginal, activity.currency)}
                             </span>
                             {activity.totalBudget && activity.totalBudget > 0 && (
                               <span className="text-helper text-muted-foreground mt-0.5">
                                 <span className="mr-1 font-normal">USD</span>
-                                {formatCurrency(activity.totalBudget, 'USD')}
+                                {formatCurrencyCompact(activity.totalBudget, 'USD')}
                               </span>
                             )}
                           </div>
                         ) : activity.totalBudget && activity.totalBudget > 0 ? (
                           <span className="font-medium">
                             <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
-                            {formatCurrency(activity.totalBudget, 'USD')}
+                            {formatCurrencyCompact(activity.totalBudget, 'USD')}
                           </span>
                         ) : (
                           '-'
@@ -482,19 +475,19 @@ export function OrgActivitiesTable({
                               <span className="text-helper text-muted-foreground mr-1 font-normal">
                                 {activity.currency}
                               </span>
-                              {formatCurrency(activity.totalPlannedDisbursementsOriginal, activity.currency)}
+                              {formatCurrencyCompact(activity.totalPlannedDisbursementsOriginal, activity.currency)}
                             </span>
                             {activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 && (
                               <span className="text-helper text-muted-foreground mt-0.5">
                                 <span className="mr-1 font-normal">USD</span>
-                                {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
+                                {formatCurrencyCompact(activity.totalPlannedDisbursements, 'USD')}
                               </span>
                             )}
                           </div>
                         ) : activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 ? (
                           <span className="font-medium">
                             <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
-                            {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
+                            {formatCurrencyCompact(activity.totalPlannedDisbursements, 'USD')}
                           </span>
                         ) : (
                           '-'

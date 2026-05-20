@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Building2 } from 'lucide-react';
+import { Building2, Copy, Check } from 'lucide-react';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/components/ui/map';
 import { LocationPinIcon } from '@/components/maps/LocationPinIcon';
 import { Badge } from '@/components/ui/badge';
@@ -108,14 +108,11 @@ const formatCompactCurrency = (amount?: number): string => {
   const absAmount = Math.abs(amount);
   const sign = amount < 0 ? '-' : '';
   if (absAmount >= 1000000000) {
-    const value = absAmount / 1000000000;
-    return `${sign}$${value >= 10 ? value.toFixed(0) : value.toFixed(1)}b`;
+    return `${sign}$${(absAmount / 1000000000).toFixed(1)}b`;
   } else if (absAmount >= 1000000) {
-    const value = absAmount / 1000000;
-    return `${sign}$${value >= 10 ? value.toFixed(0) : value.toFixed(1)}m`;
+    return `${sign}$${(absAmount / 1000000).toFixed(1)}m`;
   } else if (absAmount >= 1000) {
-    const value = absAmount / 1000;
-    return `${sign}$${value >= 10 ? value.toFixed(0) : value.toFixed(1)}k`;
+    return `${sign}$${(absAmount / 1000).toFixed(1)}k`;
   }
   return `${sign}$${absAmount.toFixed(0)}`;
 };
@@ -311,6 +308,14 @@ function LocationMarker({
   const lat = Number(location.latitude);
   const lng = Number(location.longitude);
   const statusInfo = getStatusInfo(location.activity?.status);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCoords = () => {
+    navigator.clipboard.writeText(`${lat}, ${lng}`).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
 
   if (isNaN(lat) || isNaN(lng)) return null;
 
@@ -484,23 +489,27 @@ function LocationMarker({
           </Badge>
         </div>
         
-        {/* Address */}
+        {/* Location: address + coordinates */}
         <div className="mb-3">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Address</div>
-          <div className="text-helper text-foreground leading-snug">{getFullAddress(location)}</div>
-        </div>
-        
-        {/* Divider */}
-        <hr className="border-border mb-3" />
-        
-        {/* Coordinates */}
-        <div className="mb-3">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Coordinates</div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Location</div>
+          <div className="text-helper text-foreground leading-snug mb-1.5">{getFullAddress(location)}</div>
           <div className="flex items-center gap-2">
             <div className="font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
               {lat.toFixed(6)}, {lng.toFixed(6)}
             </div>
-            <a 
+            <button
+              type="button"
+              onClick={handleCopyCoords}
+              title="Copy coordinates"
+              className="hover:opacity-80"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+            <a
               href={`https://www.google.com/maps?q=${lat},${lng}&t=k`}
               target="_blank"
               rel="noopener noreferrer"

@@ -58,7 +58,11 @@ interface FundingSourceBreakdownProps {
   onDataChange?: (data: Array<{ "Funding Source": string; "Amount (USD)": number; "Share (%)": number }>) => void
 }
 
-const COLORS = ['DATA_COLORS.actual', '#64748B', 'DATA_COLORS.disbursements', 'DATA_COLORS.expenditures', '#EF4444', 'DATA_COLORS.commitments', '#EC4899', '#14B8A6']
+// Funding sources are a categorical (per-organisation) breakdown, not a
+// financial-series chart — a distinct, valid qualitative palette. (Previously
+// held invalid string literals like 'DATA_COLORS.actual' from a botched edit,
+// which rendered as no/black fill.)
+const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#db2777', '#65a30d']
 
 export function FundingSourceBreakdown({
   dateRange,

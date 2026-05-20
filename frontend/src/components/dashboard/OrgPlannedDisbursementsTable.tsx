@@ -24,6 +24,7 @@ import { Banknote, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUp
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { apiFetch } from '@/lib/api-fetch';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
+import { formatCurrencyCompact } from '@/lib/format';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 
@@ -59,13 +60,6 @@ interface DisbursementRow {
     iati_identifier: string | null;
     reporting_org_id?: string | null;
   } | null;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -245,7 +239,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                     <div className="flex items-center gap-1">
                       <span className="font-medium text-foreground">
                         <span className="text-helper text-muted-foreground mr-1 font-normal">{d.currency}</span>
-                        {formatCurrency(d.amount)}
+                        {formatCurrencyCompact(d.amount, d.currency)}
                       </span>
                     </div>
                   </TableCell>
@@ -259,7 +253,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                       <div className="flex items-center gap-1">
                         <span className="font-medium text-foreground">
                           <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
-                          {formatCurrency(d.usd_amount)}
+                          {formatCurrencyCompact(d.usd_amount, 'USD')}
                         </span>
                       </div>
                     ) : (

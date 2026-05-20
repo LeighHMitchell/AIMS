@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, getTransactionTypeColor } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
@@ -82,8 +82,9 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     }
   };
 
-  // Custom color palette: Primary Scarlet, Blue Slate, Cool Steel, Pale Slate, Platinum
-  const COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'];
+  // Colours resolve by IATI transaction-type code through the single source
+  // of truth (lib/chart-colors) so this chart matches every other
+  // transaction-type chart in the app.
 
   const formatValue = (value: number) => {
     if (metric === 'value') {
@@ -146,8 +147,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               label={({ typeName, percentage }) => `${percentage.toFixed(0)}%`}
               labelLine={false}
             >
-              {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={getTransactionTypeColor(entry.transactionType)} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
@@ -252,7 +253,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               paddingAngle={2}
             >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Cell key={`cell-${index}`} fill={getTransactionTypeColor(entry.transactionType)} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
@@ -274,7 +275,11 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="displayValue" fill="#dc2625" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="displayValue" radius={[4, 4, 0, 0]}>
+              {chartData.map((entry, index) => (
+                <Cell key={`bar-cell-${index}`} fill={getTransactionTypeColor(entry.transactionType)} />
+              ))}
+            </Bar>
           </BarChart>
         )}
       </ResponsiveContainer>

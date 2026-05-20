@@ -52,13 +52,15 @@ import {
 import { useOrganizations } from '@/hooks/use-organizations'
 import { ActivitySpendTrajectoryChart } from '@/components/charts/ActivitySpendTrajectoryChart'
 import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/ChartFullscreen'
+import { FormulaTooltip } from '@/components/ui/formula-tooltip'
 import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector'
 import { ChartViewToggle } from '@/components/charts/ChartViewToggle'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format'
+import { getFinancialSeriesColor, getTransactionTypeColor, BUDGET_COLOR } from '@/lib/chart-colors'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -307,14 +309,8 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
 
   const [containerSize, setContainerSize] = useState({ width: 1200, height: dynamicHeight })
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
+  // Sankey flows use USD-converted values.
+  const formatCurrency = (value: number) => formatCurrencyCompact(value)
 
   // Update height when data changes
   useEffect(() => {
@@ -1290,49 +1286,16 @@ export default function FinancialAnalyticsTab({
     )
   }
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      const millions = value / 1000000
-      return `$${Number.isInteger(millions) ? millions.toFixed(0) : millions.toFixed(1).replace(/\.0$/, '')}m`
-    } else if (value >= 1000) {
-      const thousands = value / 1000
-      return `$${Number.isInteger(thousands) ? thousands.toFixed(0) : thousands.toFixed(1).replace(/\.0$/, '')}k`
-    }
-    return `$${value.toFixed(0)}`
-  }
+  // Aggregate/chart values in this tab are USD-converted.
+  const formatCurrency = (value: number) => formatCurrencyCompact(value)
 
-  const formatTooltipValue = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}m`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`
-    }
-    return `$${value.toLocaleString()}`
-  }
+  const formatTooltipValue = (value: number) => formatCurrencyCompact(value)
 
-  // Compact currency formatter for Y-axis (e.g., "5M", "2K") - whole numbers only
-  const formatCompactCurrency = (value: number) => {
-    if (value >= 1000000000) {
-      return `${Math.round(value / 1000000000)}B`
-    } else if (value >= 1000000) {
-      return `${Math.round(value / 1000000)}M`
-    } else if (value >= 1000) {
-      return `${Math.round(value / 1000)}K`
-    }
-    return `${Math.round(value)}`
-  }
+  // Compact currency formatter for Y-axis - whole numbers only
+  const formatCompactCurrency = (value: number) => formatAxisCurrency(value)
 
-  // Compact currency formatter for tooltips with one decimal (e.g., "50.5M")
-  const formatCompactCurrencyTooltip = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(1)}B`
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`
-    }
-    return `$${value.toFixed(0)}`
-  }
+  // Compact currency formatter for tooltips with one decimal
+  const formatCompactCurrencyTooltip = (value: number) => formatCurrencyCompact(value)
 
   // Toggle series visibility in the cumulative overview chart
   const handleToggleSeries = (seriesName: string) => {
@@ -2216,13 +2179,13 @@ export default function FinancialAnalyticsTab({
     // Create array of data for bar chart
     const data = []
     const seriesConfig = {
-      'Incoming Funds': { color: '#dc2625' },
-      'Incoming Commitments': { color: '#4c5568' },
-      'Outgoing Commitments': { color: '#7b95a7' },
-      'Disbursements': { color: '#dc2625' },
-      'Expenditures': { color: '#4c5568' },
-      'Planned Disbursements': { color: '#7b95a7' },
-      'Budgets': { color: '#cfd0d5' }
+      'Incoming Funds': { color: getFinancialSeriesColor('Incoming Funds') },
+      'Incoming Commitments': { color: getFinancialSeriesColor('Incoming Commitments') },
+      'Outgoing Commitments': { color: getFinancialSeriesColor('Outgoing Commitments') },
+      'Disbursements': { color: getFinancialSeriesColor('Disbursements') },
+      'Expenditures': { color: getFinancialSeriesColor('Expenditures') },
+      'Planned Disbursements': { color: getFinancialSeriesColor('Planned Disbursements') },
+      'Budgets': { color: getFinancialSeriesColor('Budgets') }
     }
 
     Object.entries(seriesConfig).forEach(([name, config]) => {
@@ -2263,8 +2226,8 @@ export default function FinancialAnalyticsTab({
     }
 
     const data = [
-      { name: 'Budget', value: totalBudget, color: '#dc2625' },
-      { name: 'Actual Spending', value: totalActual, color: '#4c5568' }
+      { name: 'Budget', value: totalBudget, color: BUDGET_COLOR },
+      { name: 'Actual Spending', value: totalActual, color: getTransactionTypeColor('3') }
     ]
 
     // Sort from largest to smallest
@@ -2733,11 +2696,15 @@ export default function FinancialAnalyticsTab({
                     Yearly budget, planned, and actual flows
                   </CardDescription>
                 </div>
-                {!isFullscreen && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <FormulaTooltip
+                    content="Sums all actual transactions (Commitments, Disbursements, Expenditures, etc.) by reporting year, alongside published activity budgets and planned disbursements. Multi-year budgets and planned disbursements that span the boundary are split proportionally by overlap days. All values use USD-converted amounts where available."
+                    size={isFullscreen ? 'md' : 'sm'}
+                  />
+                  {!isFullscreen && (
                     <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className={cn(isFullscreen && "flex-1 min-h-0 flex flex-col pt-4")}>
@@ -2770,12 +2737,15 @@ export default function FinancialAnalyticsTab({
                 Annual planned vs actual spending
               </CardDescription>
             </div>
-            {/* Inline view: only the expand affordance lives in the title row. */}
-            {!isFullscreen && (
-              <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <FormulaTooltip
+                content="For each calendar year, compares the activity's published budget against actual spending (disbursements + expenditures), all USD-converted. Multi-year budget periods are split proportionally by day overlap so annual totals reconcile. The cumulative view replaces each year's value with a running total of that year plus all prior years."
+                size={isFullscreen ? 'md' : 'sm'}
+              />
+              {!isFullscreen && (
                 <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
         {isFullscreen && (
@@ -3016,12 +2986,15 @@ export default function FinancialAnalyticsTab({
               <CardTitle className="text-lg font-semibold text-foreground">Funding Source Breakdown</CardTitle>
               <CardDescription>Provider-to-receiver flows</CardDescription>
             </div>
-            {/* Inline view: only the expand affordance lives in the title row. */}
-            {!isFullscreen && (
-              <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <FormulaTooltip
+                content="Sums USD-converted transaction values for each provider→receiver organisation pair and renders them as Sankey ribbons whose width is proportional to the total dollars moved between that pair. The toggle switches the source set between actual transactions (incoming, commitment, disbursement, expenditure) and planned disbursements only."
+                size={isFullscreen ? 'md' : 'sm'}
+              />
+              {!isFullscreen && (
                 <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
         {isFullscreen && (
@@ -3188,11 +3161,15 @@ export default function FinancialAnalyticsTab({
                     Outgoing finance by instrument
                   </CardDescription>
                 </div>
-                {!isFullscreen && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <FormulaTooltip
+                    content="Groups all outgoing transactions (commitments, disbursements, expenditures) by the IATI finance type of each transaction — bucketed into Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified — and sums their USD-converted value. Each slice is that bucket's share of total outgoing USD."
+                    size={isFullscreen ? 'md' : 'sm'}
+                  />
+                  {!isFullscreen && (
                     <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardHeader>
             {isFullscreen && (
@@ -3401,11 +3378,15 @@ export default function FinancialAnalyticsTab({
                     Top 5 providers by USD value
                   </CardDescription>
                 </div>
-                {!isFullscreen && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <FormulaTooltip
+                    content="Sums USD-converted outgoing transactions (commitments, disbursements, expenditures) per provider organisation, ranks them descending, and shows the top 5. Transactions without a stored USD value are excluded."
+                    size={isFullscreen ? 'md' : 'sm'}
+                  />
+                  {!isFullscreen && (
                     <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardHeader>
             {isFullscreen && (
@@ -3501,11 +3482,15 @@ export default function FinancialAnalyticsTab({
                     Top 5 receivers by USD value
                   </CardDescription>
                 </div>
-                {!isFullscreen && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <FormulaTooltip
+                    content="Sums USD-converted outgoing transactions (commitments, disbursements, expenditures) per receiver organisation, ranks them descending, and shows the top 5. Transactions without a stored USD value are excluded."
+                    size={isFullscreen ? 'md' : 'sm'}
+                  />
+                  {!isFullscreen && (
                     <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardHeader>
             {isFullscreen && (

@@ -36,7 +36,7 @@ export function MiniChartCard({ title, children, expandedContent }: MiniChartCar
       </Card>
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent chart className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
           </DialogHeader>

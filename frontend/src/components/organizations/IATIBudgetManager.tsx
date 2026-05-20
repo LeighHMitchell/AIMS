@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Plus, Pencil, Trash2, DollarSign, Building2, Globe2, MapPin, Loader2, AlertCircle, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyPrecise } from '@/lib/format';
 
 interface BudgetLine {
   id?: string;
@@ -341,12 +342,7 @@ export function IATIBudgetManager({
 
   const formatCurrency = (amount: number | undefined, currency: string = defaultCurrency) => {
     if (amount === undefined) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatCurrencyPrecise(amount, currency);
   };
 
   const renderBudgetCard = (budget: Budget, budgetIndex: number) => {

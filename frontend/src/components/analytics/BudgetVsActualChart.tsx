@@ -16,7 +16,7 @@ import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, BUDGET_COLOR, getTransactionTypeColor } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
@@ -344,7 +344,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
           />
           <Bar
             dataKey="budget"
-            fill="#e2e8f0"
+            fill={BUDGET_COLOR}
             name="Budget"
             radius={[4, 4, 0, 0]}
             isAnimationActive={true}
@@ -353,7 +353,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
           />
           <Bar
             dataKey="disbursed"
-            fill="#475569"
+            fill={getTransactionTypeColor('3')}
             name="Disbursed"
             radius={[4, 4, 0, 0]}
             isAnimationActive={true}
@@ -362,7 +362,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
           />
           <Bar
             dataKey="expenditure"
-            fill="#94a3b8"
+            fill={getTransactionTypeColor('4')}
             name="Expenditure"
             radius={[4, 4, 0, 0]}
             isAnimationActive={true}

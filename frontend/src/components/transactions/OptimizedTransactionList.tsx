@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, SlidersHorizontal, RefreshCw, DollarSign, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { formatDate as formatDateCanonical } from '@/lib/format';
 
 interface Transaction {
   id: string;
@@ -176,11 +177,7 @@ export function OptimizedTransactionList({
 
   // Format date
   const formatDate = useCallback((dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    return formatDateCanonical(dateString);
   }, []);
 
   // Load initial data

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -19,6 +19,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
+  getTransactionTypeColor as getCentralTransactionTypeColor,
+  DATA_COLORS,
+  BUDGET_COLOR,
+  PLANNED_DISBURSEMENT_COLOR,
+  TOTAL_SPENDING_COLOR,
+} from '@/lib/chart-colors';
+import {
   BarChart,
   Bar,
   Cell,
@@ -33,7 +40,6 @@ import {
   DollarSign,
   CalendarClock,
   BarChart3,
-  Wallet,
   Maximize2,
   HelpCircle,
   LineChart as LineChartIcon,
@@ -49,6 +55,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyCompact, formatCurrencyPrecise, formatAxisCurrency } from '@/lib/format';
 import { exportChartToCSV } from '@/lib/chart-export';
 import { Download } from 'lucide-react';
 
@@ -111,12 +118,12 @@ interface HeroVisualizationCardsProps {
 const BAR_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'];
 const SECTOR_COLORS = ['#4c5568', '#7b95a7', '#dc2625', '#cfd0d5', '#64748b', '#94a3b8', '#334155', '#475569'];
 
-const TRANSACTION_TYPE_COLOR_PALETTE = [
-  '#dc2625', '#cfd0d5', '#4c5568', '#7b95a7', '#f1f4f8',
-];
-
-const getTransactionTypeColor = (_typeCode: string, index: number): string => {
-  return TRANSACTION_TYPE_COLOR_PALETTE[index % TRANSACTION_TYPE_COLOR_PALETTE.length];
+// Transaction-type color resolves through the single source of truth in
+// @/lib/chart-colors. The legacy (typeCode, index) signature is preserved so
+// existing call sites are untouched; the index argument is now ignored — the
+// color is keyed off the transaction type itself, consistent app-wide.
+const getTransactionTypeColor = (typeCode: string, _index: number): string => {
+  return getCentralTransactionTypeColor(typeCode);
 };
 
 const getUniqueTransactionTypes = (transactionTrend: TransactionTrendPoint[]): string[] => {
@@ -147,21 +154,9 @@ const transformDataForValueChart = (
   });
 };
 
-const formatCurrency = (value: number): string => {
-  if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
-  return `$${value.toFixed(0)}`;
-};
-
-const formatCurrencyFull = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+// Aggregate/headline values are USD-converted (see chart labels "(USD)").
+const formatCurrency = (value: number): string => formatCurrencyCompact(value);
+const formatCurrencyFull = (value: number): string => formatCurrencyPrecise(value);
 
 function ExpandedChartModal({
   open,
@@ -313,11 +308,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-muted-foreground" />
+            <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Total Budgets
               <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
-            </CardTitle>
+            </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</p>
               <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Total Budgets')} />
@@ -376,7 +370,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             return null;
                           }}
                         />
-                        <Line type="monotone" dataKey="amount" stroke="#dc2625" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="amount" stroke={BUDGET_COLOR} strokeWidth={2} dot={false} />
                       </LineChart>
                     ) : (
                       <BarChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
@@ -407,7 +401,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             return null;
                           }}
                         />
-                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#dc2625" />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill={BUDGET_COLOR} />
                       </BarChart>
                     )}
                   </ResponsiveContainer>
@@ -432,11 +426,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+            <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Planned Disbursements
               <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
-            </CardTitle>
+            </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalPlanned)}</p>
               <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Planned Disbursements')} />
@@ -495,7 +488,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             return null;
                           }}
                         />
-                        <Line type="monotone" dataKey="amount" stroke="#4c5568" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="amount" stroke={BUDGET_COLOR} strokeWidth={2} dot={false} />
                       </LineChart>
                     ) : (
                       <BarChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
@@ -526,7 +519,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             return null;
                           }}
                         />
-                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#4c5568" />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill={BUDGET_COLOR} />
                       </BarChart>
                     )}
                   </ResponsiveContainer>
@@ -551,11 +544,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Transactions by Type
               <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
-            </CardTitle>
+            </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalTransactionValue)}</p>
               <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} onExport={() => data?.transactionTrend && exportChartToCSV(data.transactionTrend.map(p => ({ Month: p.month, Count: p.count, 'Amount (USD)': p.amount })), 'Transactions by Type')} />
@@ -722,8 +714,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Sectors
               <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Toggle to size bars by budget, planned disbursements, or number of activities. Hover for full financial details in USD." />
               <div className="flex gap-0.5 ml-auto">
@@ -748,7 +739,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3 flex-1 flex flex-col justify-center">
               {data?.sectorBreakdown && data.sectorBreakdown.length > 0 ? (
@@ -830,7 +821,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             {budgetViewMode === 'line' ? (
               <LineChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -857,12 +848,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     return null;
                   }}
                 />
-                <Line type="monotone" dataKey="amount" stroke="#dc2625" strokeWidth={2} dot={{ r: 4 }} name="Budget (USD)" />
+                <Line type="monotone" dataKey="amount" stroke={DATA_COLORS.budget} strokeWidth={2} dot={{ r: 4 }} name="Budget (USD)" />
               </LineChart>
             ) : (
               <BarChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -889,7 +880,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     return null;
                   }}
                 />
-                <Bar dataKey="amount" name="Budget (USD)" fill="#dc2625" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="amount" name="Budget (USD)" fill={DATA_COLORS.budget} radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -925,7 +916,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             {plannedViewMode === 'line' ? (
               <LineChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -952,12 +943,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     return null;
                   }}
                 />
-                <Line type="monotone" dataKey="amount" stroke="#4c5568" strokeWidth={2} dot={{ r: 4 }} name="Planned Disbursements (USD)" />
+                <Line type="monotone" dataKey="amount" stroke={PLANNED_DISBURSEMENT_COLOR} strokeWidth={2} dot={{ r: 4 }} name="Planned Disbursements (USD)" />
               </LineChart>
             ) : (
               <BarChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -984,7 +975,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     return null;
                   }}
                 />
-                <Bar dataKey="amount" name="Planned Disbursements (USD)" fill="#4c5568" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="amount" name="Planned Disbursements (USD)" fill={PLANNED_DISBURSEMENT_COLOR} radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -1089,7 +1080,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               {transactionsViewMode === 'bar' ? (
                 <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                   {expandedTransactionTooltip}
                   {hasTypeData ? (
                     uniqueTypes.map((type, index) => (
@@ -1108,7 +1099,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               ) : (
                 <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                   {expandedTransactionTooltip}
                   {hasTypeData ? (
                     uniqueTypes.map((type, index) => (
@@ -1126,7 +1117,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Line
                       type="monotone"
                       dataKey="amount"
-                      stroke="#7b95a7"
+                      stroke={TOTAL_SPENDING_COLOR}
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       name="Transaction Value (USD)"

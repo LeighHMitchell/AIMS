@@ -32,6 +32,8 @@ import {
   ORGANIZATION_COLUMN_ORDER_LOCALSTORAGE_KEY,
 } from "@/app/organizations/columns";
 import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
+import { formatDate as formatDateCanonical } from "@/lib/format";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Organization = {
   id: string;
@@ -77,6 +79,11 @@ interface OrganizationTableProps {
   onDelete: (org: Organization) => void;
   onExportPDF?: (orgId: string) => void;
   onExportExcel?: (orgId: string) => void;
+  /** When provided, a leading selection checkbox column is rendered. */
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (orgId: string, checked: boolean) => void;
+  onToggleSelectAll?: (checked: boolean) => void;
 }
 
 // Format currency helper - returns JSX with gray currency code
@@ -102,12 +109,7 @@ const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
 // Format date helper
 const formatDate = (dateString: string): string => {
   if (!dateString) return '-';
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
+  return formatDateCanonical(dateString) || '-';
 };
 
 // Get organization type label
@@ -161,9 +163,20 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   onDelete,
   onExportPDF,
   onExportExcel,
+  selectable = false,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
 }) => {
   const router = useRouter();
   const { isBookmarked, toggleBookmark } = useOrganizationBookmarks();
+
+  const selectedSet = selectedIds ?? new Set<string>();
+  const selectedOnPage = organizations.filter((o) => selectedSet.has(o.id)).length;
+  const allOnPageSelected =
+    organizations.length > 0 && selectedOnPage === organizations.length;
+  const someOnPageSelected =
+    selectedOnPage > 0 && selectedOnPage < organizations.length;
 
   const { getOrderedVisibleColumns, handleReorder } = useColumnOrder<OrganizationColumnId>({
     storageKey: ORGANIZATION_COLUMN_ORDER_LOCALSTORAGE_KEY,
@@ -303,6 +316,18 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
       <Table>
         <TableHeader>
             <TableRow>
+                {selectable && (
+                  <TableHead className="w-[44px] px-3">
+                    <Checkbox
+                      aria-label="Select all organisations on this page"
+                      checked={allOnPageSelected}
+                      indeterminate={someOnPageSelected}
+                      onCheckedChange={(checked) =>
+                        onToggleSelectAll?.(!!checked)
+                      }
+                    />
+                  </TableHead>
+                )}
                 {orderedColumns.map((colId) => headerMap[colId])}
               <TableHead className="text-right w-[13%]">
                 Actions
@@ -483,9 +508,24 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
               return (
                 <TableRow
                   key={org.id}
-                  className="group hover:bg-muted/50 transition-colors cursor-pointer"
+                  data-state={selectable && selectedSet.has(org.id) ? "selected" : undefined}
+                  className="group hover:bg-muted/50 transition-colors cursor-pointer data-[state=selected]:bg-muted/60"
                   onClick={(e) => handleRowClick(org.id, e)}
                 >
+                  {selectable && (
+                    <TableCell
+                      className="w-[44px] px-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        aria-label={`Select ${org.name}`}
+                        checked={selectedSet.has(org.id)}
+                        onCheckedChange={(checked) =>
+                          onToggleSelect?.(org.id, !!checked)
+                        }
+                      />
+                    </TableCell>
+                  )}
                   {orderedColumns.map((colId) => cellMap[colId])}
                   <TableCell className="px-4 py-3 text-body text-foreground text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end">

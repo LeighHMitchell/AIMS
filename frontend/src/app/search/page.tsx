@@ -9,7 +9,7 @@ import { SearchResultsSkeleton } from '@/components/ui/skeleton-loader'
 import { SearchResultRow } from '@/components/search'
 import { GlobalSearchBar } from '@/components/search/GlobalSearchBar'
 import { cn } from '@/lib/utils'
-import { Search, Activity, Building2, PieChart, Tag, Users, Contact2, Clock, X, Sparkles, ArrowRight } from 'lucide-react'
+import { Search, Clock, X, Sparkles, ArrowRight } from 'lucide-react'
 import type { SearchResult, SearchResultType } from '@/types/search'
 import { normalizeSearchResults } from '@/lib/search-normalizer'
 import { LoadingText } from '@/components/ui/loading-text'
@@ -19,11 +19,11 @@ const MAX_RECENT_SEARCHES = 6
 
 const SUGGESTED_QUERIES: string[] = [
   'Health',
+  'Water',
   'Education',
+  'SDG',
   'Climate',
-  'Infrastructure',
-  'Gender',
-  'Agriculture',
+  'Energy',
 ]
 
 function readRecentSearches(): string[] {
@@ -66,15 +66,6 @@ const resultTypeLabels: Record<SearchResultType, string> = {
   tag: 'Tags',
   user: 'Users',
   contact: 'Contacts'
-}
-
-const resultTypeIcons: Record<SearchResultType, React.ComponentType<{ className?: string }>> = {
-  activity: Activity,
-  organisation: Building2,
-  sector: PieChart,
-  tag: Tag,
-  user: Users,
-  contact: Contact2
 }
 
 
@@ -348,24 +339,6 @@ function SearchPageContent() {
                       {q}
                     </button>
                   ))}
-                </div>
-              </section>
-
-              <section>
-                <div className="text-section-label text-muted-foreground mb-3">Search covers</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {searchResultOrder.map((type) => {
-                    const Icon = resultTypeIcons[type]
-                    return (
-                      <div
-                        key={type}
-                        className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-body text-muted-foreground"
-                      >
-                        <Icon className="h-4 w-4" />
-                        {resultTypeLabels[type]}
-                      </div>
-                    )
-                  })}
                 </div>
               </section>
             </div>

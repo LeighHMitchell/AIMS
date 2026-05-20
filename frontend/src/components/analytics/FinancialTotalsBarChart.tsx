@@ -28,9 +28,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, getFinancialSeriesColor, BUDGET_COLOR, PLANNED_DISBURSEMENT_COLOR, OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import financeTypesData from '@/data/finance-types.json'
+import aidTypesData from '@/data/aid-types.json'
 // Brand color palette - 5 distinct colors, no duplicates
 const BRAND_PALETTE = {
   primaryScarlet: '#dc2625',
@@ -40,14 +42,6 @@ const BRAND_PALETTE = {
   platinum: '#f1f4f8',
 } as const
 
-// Ordered array for cycling through colors
-const PALETTE_ARRAY = [
-  BRAND_PALETTE.primaryScarlet,
-  BRAND_PALETTE.blueSlate,
-  BRAND_PALETTE.coolSteel,
-  BRAND_PALETTE.paleSlate,
-  BRAND_PALETTE.platinum,
-]
 import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format, parseISO } from 'date-fns'
 import {
@@ -76,34 +70,110 @@ const TRANSACTION_TYPES: Record<string, string> = {
   '13': 'Incoming Pledges',
 }
 
-// Fixed color assignments for always-visible categories
-const FIXED_COLORS: Record<string, string> = {
-  'Budgets': BRAND_PALETTE.coolSteel,
-  'Planned Disbursements': BRAND_PALETTE.paleSlate,
+// Reverse map: plural display name → IATI code, so transaction-type colours
+// resolve through the single source of truth in @/lib/chart-colors and stay
+// consistent with every other chart in the app.
+const NAME_TO_CODE: Record<string, string> = Object.fromEntries(
+  Object.entries(TRANSACTION_TYPES).map(([code, name]) => [name, code])
+)
+
+// Deterministic colour for a data key. Budgets / Planned Disbursements use
+// their canonical brand constants; transaction types resolve by IATI code;
+// any other label falls back to the shared financial-series resolver.
+// Colours no longer depend on series order, so the trailing args are unused
+// (kept only for call-site signature compatibility).
+function getColorForKey(key: string, _activeKeys?: string[], _index?: number): string {
+  if (key === 'Budgets') return BUDGET_COLOR
+  if (key === 'Planned Disbursements') return PLANNED_DISBURSEMENT_COLOR
+  const code = NAME_TO_CODE[key]
+  if (code) return getTransactionTypeColor(code)
+  return getFinancialSeriesColor(key)
 }
 
-// Get color for a data key, ensuring no duplicates across active keys
-function getColorForKey(key: string, activeKeys: string[], index: number): string {
-  // Fixed categories get fixed colors
-  if (FIXED_COLORS[key]) {
-    return FIXED_COLORS[key]
+// --- Disaggregation (Finance Type / Aid Type / Donor) ----------------------
+
+type DisaggregateMode = 'none' | 'finance_type' | 'aid_type' | 'donor'
+
+const DISAGGREGATE_OPTIONS: { value: DisaggregateMode; label: string }[] = [
+  { value: 'none', label: 'No disaggregation' },
+  { value: 'finance_type', label: 'Finance Type' },
+  { value: 'aid_type', label: 'Aid Type' },
+  { value: 'donor', label: 'Donor' },
+]
+
+// Composite series key separator, e.g. "Disbursements — World Bank".
+const DISAGG_SEP = ' — '
+// Cap segments per transaction type so the chart stays legible; the long
+// tail is merged into an "Other" segment.
+const MAX_DISAGGREGATE_SEGMENTS = 12
+
+// IATI Finance Type code → name (full OECD DAC codelist).
+const FINANCE_TYPE_NAMES: Record<string, string> = Object.fromEntries(
+  (financeTypesData as Array<{ code: string; name: string }>).map(f => [String(f.code), f.name])
+)
+
+// IATI Aid Type code → name (flatten parent categories + children).
+const AID_TYPE_NAMES: Record<string, string> = (() => {
+  const m: Record<string, string> = {}
+  ;(aidTypesData as Array<{ code: string; name: string; children?: Array<{ code: string; name: string }> }>).forEach(a => {
+    m[String(a.code)] = a.name
+    ;(a.children || []).forEach(c => { m[String(c.code)] = c.name })
+  })
+  return m
+})()
+
+// Resolve a transaction's disaggregation-dimension label.
+function getTxDimLabel(tx: any, mode: DisaggregateMode): string {
+  if (mode === 'finance_type') {
+    const c = tx.finance_type != null ? String(tx.finance_type) : ''
+    return c ? (FINANCE_TYPE_NAMES[c] || `Finance type ${c}`) : 'Unspecified finance type'
   }
-  
-  // For transaction types, use remaining palette colors in order
-  // Skip colors already used by fixed categories
-  const usedColors = Object.values(FIXED_COLORS)
-  const availableColors = PALETTE_ARRAY.filter(c => !usedColors.includes(c))
-  
-  // Find the index of this key among transaction types only
-  const transactionKeys = activeKeys.filter(k => !FIXED_COLORS[k])
-  const txIndex = transactionKeys.indexOf(key)
-  
-  if (txIndex >= 0 && txIndex < availableColors.length) {
-    return availableColors[txIndex]
+  if (mode === 'aid_type') {
+    const c = tx.aid_type != null ? String(tx.aid_type) : ''
+    return c ? (AID_TYPE_NAMES[c] || `Aid type ${c}`) : 'Unspecified aid type'
   }
-  
-  // Fallback if we run out of colors (shouldn't happen with 3 transaction types max recommended)
-  return availableColors[txIndex % availableColors.length] || BRAND_PALETTE.blueSlate
+  if (mode === 'donor') {
+    const n = (tx.provider_org_name || '').trim()
+    return n || 'Unattributed'
+  }
+  return ''
+}
+
+// stackId for a series key: composite sub-series of the same transaction type
+// share a stack so each year shows one stacked bar per transaction type.
+function disaggStackId(key: string, mode: DisaggregateMode): string | undefined {
+  if (mode === 'none') return undefined
+  if (key === 'Budgets' || key === 'Planned Disbursements') return undefined
+  const idx = key.indexOf(DISAGG_SEP)
+  return idx > 0 ? key.slice(0, idx) : undefined
+}
+
+// Safe SVG id from a series key (gradient defs) — strips whitespace and any
+// non-alphanumerics so composite labels (em-dash, spaces) stay valid ids.
+const sanitizeId = (k: string): string => k.replace(/[^a-zA-Z0-9]/g, '')
+
+// --- Monochrome ramp for stacked disaggregation sub-series ------------------
+// Each transaction type keeps its canonical hue; sub-series are shades of it
+// (darkest = largest), echoing the app's "darker = more" ranked palette.
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  const v = h.length === 3 ? h.split('').map(x => x + x).join('') : h
+  return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)]
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  const c = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')
+  return `#${c(r)}${c(g)}${c(b)}`
+}
+function mixRgb(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
+}
+// t: 0 = darkest (largest segment) … 1 = lightest (smallest segment).
+function rampShade(baseHex: string, t: number): string {
+  const base = hexToRgb(baseHex)
+  const dark = mixRgb(base, [0, 0, 0], 0.35)
+  const light = mixRgb(base, [255, 255, 255], 0.6)
+  const [r, g, b] = mixRgb(dark, light, t)
+  return rgbToHex(r, g, b)
 }
 
 // Generate list of available years
@@ -183,6 +253,7 @@ export function FinancialTotalsBarChart({
   } | null>(null)
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursements
   const [chartType, setChartType] = useState<ChartType>('bar')
+  const [disaggregateBy, setDisaggregateBy] = useState<DisaggregateMode>('none')
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
   const toggleSeries = (key: string) => {
     setHiddenSeries(prev => {
@@ -472,7 +543,7 @@ export function FinancialTotalsBarChart({
         // (provider, receiver, or activity-reporting-org).
         let txQuery = supabase
           .from('transactions')
-          .select('transaction_date, transaction_type, value, value_usd, currency')
+          .select('transaction_date, transaction_type, value, value_usd, currency, finance_type, aid_type, provider_org_name, provider_org_id')
           .eq('status', 'actual')
           .not('transaction_date', 'is', null)
         if (effectiveActivityId) {
@@ -597,6 +668,20 @@ export function FinancialTotalsBarChart({
     })
 
     // Process transactions
+    // Accumulate a transaction amount into a year. Always tracks the plain
+    // transaction-type total (drives the type selector + "available types"),
+    // and — when disaggregating — also the composite "<Type> — <Dimension>"
+    // sub-series the stacked chart renders.
+    const addTx = (yearData: YearlyData, typeName: string, amount: number, tx: any) => {
+      if (!yearData[typeName]) yearData[typeName] = 0
+      ;(yearData[typeName] as number) += amount
+      if (disaggregateBy !== 'none') {
+        const key = `${typeName}${DISAGG_SEP}${getTxDimLabel(tx, disaggregateBy)}`
+        if (!yearData[key]) yearData[key] = 0
+        ;(yearData[key] as number) += amount
+      }
+    }
+
     rawData.transactions.forEach(tx => {
       const type = tx.transaction_type
       if (!type) return
@@ -606,18 +691,14 @@ export function FinancialTotalsBarChart({
 
       if (useFiscalYear && customYear && tx.transaction_date) {
         // Use fiscal year for transaction
-        const value = parseFloat(String(tx.value_usd)) || 
+        const value = parseFloat(String(tx.value_usd)) ||
                      (tx.currency === 'USD' ? parseFloat(String(tx.value)) || 0 : 0)
         if (value > 0) {
           const date = parseISO(tx.transaction_date)
           if (!isNaN(date.getTime())) {
             const fiscalYear = getFiscalYearForDate(date, customYear)
             ensureYearEntry(fiscalYear)
-            const yearData = yearlyDataMap.get(fiscalYear)!
-            if (!yearData[typeName]) {
-              yearData[typeName] = 0
-            }
-            (yearData[typeName] as number) += value
+            addTx(yearlyDataMap.get(fiscalYear)!, typeName, value, tx)
           }
         }
       } else {
@@ -625,11 +706,7 @@ export function FinancialTotalsBarChart({
         const yearAllocations = splitTransactionAcrossYears(tx)
         yearAllocations.forEach(({ year, amount }) => {
           ensureYearEntry(year)
-          const yearData = yearlyDataMap.get(year)!
-          if (!yearData[typeName]) {
-            yearData[typeName] = 0
-          }
-          (yearData[typeName] as number) += amount
+          addTx(yearlyDataMap.get(year)!, typeName, amount, tx)
         })
       }
     })
@@ -654,8 +731,37 @@ export function FinancialTotalsBarChart({
         .sort((a, b) => a.year - b.year)
     }
 
+    // Cap disaggregated sub-series per transaction type — keep the largest
+    // MAX_DISAGGREGATE_SEGMENTS and merge the long tail into "<Type> — Other".
+    if (disaggregateBy !== 'none' && filteredData.length) {
+      Object.values(TRANSACTION_TYPES).forEach(typeName => {
+        const prefix = `${typeName}${DISAGG_SEP}`
+        const otherKey = `${typeName}${DISAGG_SEP}Other`
+        const totals = new Map<string, number>()
+        filteredData.forEach(row => {
+          Object.keys(row).forEach(k => {
+            if (k.startsWith(prefix)) totals.set(k, (totals.get(k) || 0) + (Number(row[k]) || 0))
+          })
+        })
+        const ranked = [...totals.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+        if (ranked.length > MAX_DISAGGREGATE_SEGMENTS) {
+          const keep = new Set(ranked.slice(0, MAX_DISAGGREGATE_SEGMENTS).map(([k]) => k))
+          filteredData.forEach(row => {
+            let otherSum = 0
+            Object.keys(row).forEach(k => {
+              if (k.startsWith(prefix) && !keep.has(k) && k !== otherKey) {
+                otherSum += Number(row[k]) || 0
+                delete (row as Record<string, unknown>)[k]
+              }
+            })
+            if (otherSum > 0) row[otherKey] = (Number(row[otherKey]) || 0) + otherSum
+          })
+        }
+      })
+    }
+
     return filteredData
-  }, [rawData, customYears, calendarType, effectiveDateRange, selectedYears])
+  }, [rawData, customYears, calendarType, effectiveDateRange, selectedYears, disaggregateBy])
 
   // Get available transaction types (those with data)
   const availableTransactionTypes = useMemo(() => {
@@ -678,24 +784,70 @@ export function FinancialTotalsBarChart({
     })
   }
 
-  // Build active data keys for the bars
+  // Build active data keys for the bars. Without disaggregation: Budgets,
+  // Planned Disbursements + each selected transaction type. With it: each
+  // selected type expands into its composite sub-series, ordered by total
+  // descending (the "Other" bucket always sorts last).
   const activeDataKeys = useMemo(() => {
     const keys = ['Budgets', 'Planned Disbursements']
     selectedTransactionTypes.forEach(code => {
       const name = TRANSACTION_TYPES[code]
-      if (name) keys.push(name)
+      if (!name) return
+      if (disaggregateBy === 'none') {
+        keys.push(name)
+        return
+      }
+      const prefix = `${name}${DISAGG_SEP}`
+      const otherKey = `${name}${DISAGG_SEP}Other`
+      const totals = new Map<string, number>()
+      chartData.forEach(row => {
+        Object.keys(row).forEach(k => {
+          if (k.startsWith(prefix)) totals.set(k, (totals.get(k) || 0) + (Number(row[k]) || 0))
+        })
+      })
+      const ordered = [...totals.entries()]
+        .filter(([, v]) => v > 0)
+        .sort((a, b) => {
+          if (a[0] === otherKey) return 1
+          if (b[0] === otherKey) return -1
+          return b[1] - a[1]
+        })
+        .map(([k]) => k)
+      keys.push(...ordered)
     })
     return keys
-  }, [selectedTransactionTypes])
+  }, [selectedTransactionTypes, disaggregateBy, chartData])
 
-  // Build color map for active keys - no duplicate colors
+  // Build color map for active keys. Budgets / Planned Disbursements + plain
+  // transaction types keep their canonical hues; disaggregated sub-series are
+  // a darkest→lightest ramp of their transaction type's hue ("Other" = grey).
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {}
-    activeDataKeys.forEach((key, index) => {
-      map[key] = getColorForKey(key, activeDataKeys, index)
+    map['Budgets'] = BUDGET_COLOR
+    map['Planned Disbursements'] = PLANNED_DISBURSEMENT_COLOR
+    if (disaggregateBy === 'none') {
+      activeDataKeys.forEach((key, index) => {
+        if (!map[key]) map[key] = getColorForKey(key, activeDataKeys, index)
+      })
+      return map
+    }
+    selectedTransactionTypes.forEach(code => {
+      const name = TRANSACTION_TYPES[code]
+      if (!name) return
+      const prefix = `${name}${DISAGG_SEP}`
+      const otherKey = `${name}${DISAGG_SEP}Other`
+      const base = getColorForKey(name)
+      const comps = activeDataKeys.filter(k => k.startsWith(prefix))
+      const nonOther = comps.filter(k => k !== otherKey)
+      nonOther.forEach((k, idx) => {
+        // Single sub-series → keep the type's exact hue; otherwise spread a
+        // darkest→lightest ramp across the sub-series.
+        map[k] = nonOther.length <= 1 ? base : rampShade(base, idx / (nonOther.length - 1))
+      })
+      if (comps.includes(otherKey)) map[otherKey] = OTHERS_COLOR
     })
     return map
-  }, [activeDataKeys])
+  }, [activeDataKeys, disaggregateBy, selectedTransactionTypes])
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -923,6 +1075,7 @@ export function FinancialTotalsBarChart({
                 dot={{ fill: colorMap[key], r: 4 }}
                 activeDot={{ r: 6 }}
                 hide={hiddenSeries.has(key)}
+                isAnimationActive={!isExpanded}
               />
             ))}
           </LineChart>
@@ -936,7 +1089,7 @@ export function FinancialTotalsBarChart({
           <AreaChart {...commonProps}>
             <defs>
               {activeDataKeys.map(key => (
-                <linearGradient key={`gradient-${key}`} id={`color-${key.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient key={`gradient-${key}`} id={`color-${sanitizeId(key)}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={colorMap[key]} stopOpacity={0.8}/>
                   <stop offset="95%" stopColor={colorMap[key]} stopOpacity={0.1}/>
                 </linearGradient>
@@ -953,11 +1106,13 @@ export function FinancialTotalsBarChart({
                 type="monotone"
                 dataKey={key}
                 name={key}
+                stackId={disaggStackId(key, disaggregateBy)}
                 stroke={colorMap[key]}
                 strokeWidth={2}
-                fill={`url(#color-${key.replace(/\s+/g, '')})`}
+                fill={`url(#color-${sanitizeId(key)})`}
                 fillOpacity={0.6}
                 hide={hiddenSeries.has(key)}
+                isAnimationActive={!isExpanded}
               />
             ))}
           </AreaChart>
@@ -978,7 +1133,7 @@ export function FinancialTotalsBarChart({
               {areaKeys.map((key) => (
                 <linearGradient
                   key={`combo-gradient-${key}`}
-                  id={`combo-area-${key.replace(/\s+/g, '')}`}
+                  id={`combo-area-${sanitizeId(key)}`}
                   x1="0"
                   y1="0"
                   x2="0"
@@ -1002,22 +1157,27 @@ export function FinancialTotalsBarChart({
                 name={key}
                 stroke={colorMap[key]}
                 strokeWidth={2}
-                fill={`url(#combo-area-${key.replace(/\s+/g, '')})`}
+                fill={`url(#combo-area-${sanitizeId(key)})`}
                 fillOpacity={1}
                 hide={hiddenSeries.has(key)}
-                isAnimationActive={false}
+                isAnimationActive={!isExpanded}
               />
             ))}
-            {barKeys.map((key) => (
-              <Bar
-                key={key}
-                dataKey={key}
-                name={key}
-                fill={colorMap[key]}
-                radius={[4, 4, 0, 0]}
-                hide={hiddenSeries.has(key)}
-              />
-            ))}
+            {barKeys.map((key) => {
+              const stackId = disaggStackId(key, disaggregateBy)
+              return (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  name={key}
+                  stackId={stackId}
+                  fill={colorMap[key]}
+                  radius={stackId ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+                  hide={hiddenSeries.has(key)}
+                  isAnimationActive={!isExpanded}
+                />
+              )
+            })}
           </ComposedChart>
         </ResponsiveContainer>
       )
@@ -1032,16 +1192,21 @@ export function FinancialTotalsBarChart({
           <YAxis {...yAxisProps} />
           <Tooltip content={<CustomTooltip />} />
           {!isCompact && !isExpanded && <Legend content={renderLegend} />}
-          {activeDataKeys.map(key => (
-            <Bar
-              key={key}
-              dataKey={key}
-              name={key}
-              fill={colorMap[key]}
-              radius={[4, 4, 0, 0]}
-              hide={hiddenSeries.has(key)}
-            />
-          ))}
+          {activeDataKeys.map(key => {
+            const stackId = disaggStackId(key, disaggregateBy)
+            return (
+              <Bar
+                key={key}
+                dataKey={key}
+                name={key}
+                stackId={stackId}
+                fill={colorMap[key]}
+                radius={stackId ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+                hide={hiddenSeries.has(key)}
+                isAnimationActive={!isExpanded}
+              />
+            )
+          })}
         </BarChart>
       </ResponsiveContainer>
     )
@@ -1070,27 +1235,34 @@ export function FinancialTotalsBarChart({
             <XAxis dataKey="displayYear" stroke="#64748B" fontSize={11} tickLine={false} />
             <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
             <Tooltip content={<CustomTooltip />} />
-            {activeDataKeys.map(key => (
-              <Bar
-                key={key}
-                dataKey={key}
-                name={key}
-                fill={colorMap[key]}
-                radius={[4, 4, 0, 0]}
-              />
-            ))}
+            {activeDataKeys.map(key => {
+              const stackId = disaggStackId(key, disaggregateBy)
+              return (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  name={key}
+                  stackId={stackId}
+                  fill={colorMap[key]}
+                  radius={stackId ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+                />
+              )
+            })}
           </BarChart>
         </ResponsiveContainer>
       </div>
     )
   }
 
-  // Full view
-  if (loading || customYearsLoading) {
+  // Full view. Only blank to a placeholder on the very first load; once we
+  // have data, a refresh (e.g. refreshKey bump) keeps the existing chart and
+  // controls mounted so the expanded modal never appears to "reload".
+  if ((loading || customYearsLoading) && !rawData) {
     return (
       <ChartLoadingPlaceholder />
     )
   }
+  const isRefreshing = loading && !!rawData
 
   if (error) {
     return (
@@ -1216,6 +1388,30 @@ export function FinancialTotalsBarChart({
 
         {/* Right side controls */}
         <div className="flex items-center gap-2 ml-auto">
+          {/* Disaggregate-by Dropdown — splits each selected transaction type
+              into stacked sub-series by finance type / aid type / donor. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <LayersIcon className="mr-2 h-4 w-4" />
+                {disaggregateBy === 'none'
+                  ? 'Disaggregate'
+                  : `By ${DISAGGREGATE_OPTIONS.find(o => o.value === disaggregateBy)?.label}`}
+                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {DISAGGREGATE_OPTIONS.map(o => (
+                <DropdownMenuItem
+                  key={o.value}
+                  className={disaggregateBy === o.value ? 'bg-muted font-medium' : ''}
+                  onClick={() => setDisaggregateBy(o.value)}
+                >
+                  {o.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {/* Transaction Types Dropdown - stays open for multi-select */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1229,7 +1425,9 @@ export function FinancialTotalsBarChart({
                 {availableTransactionTypes.map(({ code, name }) => {
                   const isSelected = selectedTransactionTypes.includes(code)
                   const typeName = TRANSACTION_TYPES[code]
-                  const displayColor = isSelected && typeName ? colorMap[typeName] : BRAND_PALETTE.paleSlate
+                  const displayColor = isSelected && typeName
+                    ? (colorMap[typeName] || getColorForKey(typeName))
+                    : BRAND_PALETTE.paleSlate
                   return (
                     <div
                       key={code}
@@ -1331,7 +1529,7 @@ export function FinancialTotalsBarChart({
       {/* Chart — when filling the card, use absolute positioning so the
           ResponsiveContainer always sees an explicit pixel height. flex-1 on
           its own doesn't reliably propagate through to Recharts. */}
-      <div className={cn(fillsCard ? "flex-1 min-h-0 relative" : "h-[500px]")}>
+      <div className={cn(fillsCard ? "flex-1 min-h-0 relative" : "h-[500px]", isRefreshing && "opacity-50 pointer-events-none transition-opacity")}>
         {chartData.length > 0 ? (
           fillsCard ? (
             <div className="absolute inset-0">

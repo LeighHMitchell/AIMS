@@ -21,6 +21,16 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Calendar, CalendarDays, TrendingUp } from "lucide-react";
 import { format, parseISO, getYear, startOfYear, endOfYear } from "date-fns";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
+import { getTransactionTypeColor, BUDGET_COLOR, TOTAL_SPENDING_COLOR } from "@/lib/chart-colors";
+
+// Canonical financial-series colors (single source of truth — see lib/chart-colors)
+const SERIES_COLORS = {
+  budget: BUDGET_COLOR,
+  commitments: getTransactionTypeColor("2"),
+  disbursements: getTransactionTypeColor("3"),
+  expenditures: getTransactionTypeColor("4"),
+  total: TOTAL_SPENDING_COLOR,
+};
 
 interface Transaction {
   transaction_type: string;
@@ -342,10 +352,10 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <YAxis tickFormatter={formatCurrency} />
                   <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
                   <Legend />
-                  <Bar dataKey="plannedBudget" fill="#8884d8" name="Planned Budget" />
-                  <Bar dataKey="commitments" fill="#82ca9d" name="Commitments" />
-                  <Bar dataKey="disbursements" fill="#ffc658" name="Disbursements" />
-                  <Bar dataKey="expenditures" fill="#ff7300" name="Expenditures" />
+                  <Bar dataKey="plannedBudget" fill={SERIES_COLORS.budget} name="Planned Budget" />
+                  <Bar dataKey="commitments" fill={SERIES_COLORS.commitments} name="Commitments" />
+                  <Bar dataKey="disbursements" fill={SERIES_COLORS.disbursements} name="Disbursements" />
+                  <Bar dataKey="expenditures" fill={SERIES_COLORS.expenditures} name="Expenditures" />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
@@ -367,10 +377,10 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   <YAxis tickFormatter={formatCurrency} />
                   <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
                   <Legend />
-                  <Bar dataKey="plannedBudget" fill="#8884d8" name="Planned Budget" />
-                  <Bar dataKey="commitments" fill="#82ca9d" name="Commitments" />
-                  <Bar dataKey="disbursements" fill="#ffc658" name="Disbursements" />
-                  <Bar dataKey="expenditures" fill="#ff7300" name="Expenditures" />
+                  <Bar dataKey="plannedBudget" fill={SERIES_COLORS.budget} name="Planned Budget" />
+                  <Bar dataKey="commitments" fill={SERIES_COLORS.commitments} name="Commitments" />
+                  <Bar dataKey="disbursements" fill={SERIES_COLORS.disbursements} name="Disbursements" />
+                  <Bar dataKey="expenditures" fill={SERIES_COLORS.expenditures} name="Expenditures" />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
@@ -389,20 +399,20 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <AreaChart data={cumulativeData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="budget" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={SERIES_COLORS.budget} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={SERIES_COLORS.budget} stopOpacity={0.1}/>
                     </linearGradient>
                     <linearGradient id="commitments" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={SERIES_COLORS.commitments} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={SERIES_COLORS.commitments} stopOpacity={0.1}/>
                     </linearGradient>
                     <linearGradient id="disbursements" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ffc658" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ffc658" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={SERIES_COLORS.disbursements} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={SERIES_COLORS.disbursements} stopOpacity={0.1}/>
                     </linearGradient>
                     <linearGradient id="expenditures" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ff7300" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ff7300" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={SERIES_COLORS.expenditures} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={SERIES_COLORS.expenditures} stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -414,7 +424,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                     type="monotone"
                     dataKey="cumulativeBudget"
                     stackId="1"
-                    stroke="#8884d8"
+                    stroke={SERIES_COLORS.budget}
                     fill="url(#budget)"
                     name="Cumulative Budget"
                   />
@@ -422,7 +432,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                     type="monotone"
                     dataKey="cumulativeCommitments"
                     stackId="2"
-                    stroke="#82ca9d"
+                    stroke={SERIES_COLORS.commitments}
                     fill="url(#commitments)"
                     name="Cumulative Commitments"
                   />
@@ -430,7 +440,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                     type="monotone"
                     dataKey="cumulativeDisbursements"
                     stackId="3"
-                    stroke="#ffc658"
+                    stroke={SERIES_COLORS.disbursements}
                     fill="url(#disbursements)"
                     name="Cumulative Disbursements"
                   />
@@ -438,7 +448,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                     type="monotone"
                     dataKey="cumulativeExpenditures"
                     stackId="4"
-                    stroke="#ff7300"
+                    stroke={SERIES_COLORS.expenditures}
                     fill="url(#expenditures)"
                     name="Cumulative Expenditures"
                   />
@@ -474,7 +484,7 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                       : 0;
                     return Math.min(rate, 100);
                   }}
-                  stroke="#8884d8" 
+                  stroke={SERIES_COLORS.total}
                   strokeWidth={2}
                   name="Execution Rate (%)"
                 />
@@ -507,8 +517,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <YAxis tickFormatter={formatCurrency} />
                 <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
                 <Legend />
-                <Bar dataKey="budget" fill="#8884d8" name="Planned Budget" />
-                <Bar dataKey="actual" fill="#82ca9d" name="Actual Spending" />
+                <Bar dataKey="budget" fill={SERIES_COLORS.budget} name="Planned Budget" />
+                <Bar dataKey="actual" fill={SERIES_COLORS.disbursements} name="Actual Spending" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

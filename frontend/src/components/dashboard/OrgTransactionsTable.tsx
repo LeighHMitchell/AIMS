@@ -26,6 +26,7 @@ import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { TableRowActionMenu } from './TableRowActionMenu';
 import { apiFetch } from '@/lib/api-fetch';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
+import { formatCurrencyCompact } from '@/lib/format';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 
 interface OrgTransactionsTableProps {
@@ -80,13 +81,6 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   '12': 'Outgoing Pledge',
   '13': 'Incoming Pledge',
 };
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
-}
 
 function capitalizeFirst(str: string): string {
   if (!str) return str;
@@ -347,7 +341,7 @@ export function OrgTransactionsTable({
                           <span className="text-helper text-muted-foreground mr-1 font-normal">
                             {transaction.currency}
                           </span>
-                          {formatCurrency(transaction.value)}
+                          {formatCurrencyCompact(transaction.value, transaction.currency)}
                         </span>
                       </div>
                     </TableCell>
@@ -363,7 +357,7 @@ export function OrgTransactionsTable({
                             <span className="text-helper text-muted-foreground mr-1 font-normal">
                               USD
                             </span>
-                            {formatCurrency(transaction.valueUsd)}
+                            {formatCurrencyCompact(transaction.valueUsd, 'USD')}
                           </span>
                         </div>
                       ) : (

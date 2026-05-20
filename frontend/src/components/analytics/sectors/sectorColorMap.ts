@@ -10,6 +10,8 @@
  * - Platinum: #f1f4f8 (background)
  */
 
+import { TRANSACTION_TYPE_COLORS, getFinancialSeriesColor } from '@/lib/chart-colors'
+
 // Brand color constants
 export const BRAND_COLORS = {
   primaryScarlet: '#dc2625',
@@ -214,16 +216,19 @@ export const CHART_BAR_COLORS = {
  * - Platinum: #f1f4f8
  * - Teal: #5f7f7a
  */
-export const FINANCIAL_OVERVIEW_COLORS = {
-  'Incoming Commitments': '#4c5568',    // Blue Slate - incoming promises
-  'Incoming Funds': '#5f7f7a',          // Teal - actual funds received
-  'Outgoing Commitments': '#7b95a7',    // Cool Steel - outgoing promises
-  'Credit Guarantee': '#8a9199',        // Neutral accent - guarantees
-  'Disbursements': '#dc2625',           // Primary Scarlet - money out (actual/highlight)
-  'Expenditures': '#a85a52',            // Warm accent - spent money
-  'Planned Disbursements': '#c9a24d',   // Gold - planned
-  'Budgets': '#5f7f7a',                 // Teal - budgets
-} as const
+// DELEGATED to the single source of truth in @/lib/chart-colors. Every value
+// resolves through getFinancialSeriesColor() so this chart shares the exact
+// same colors as every other financial chart in the app.
+export const FINANCIAL_OVERVIEW_COLORS: Record<string, string> = {
+  'Incoming Commitments': getFinancialSeriesColor('Incoming Commitments'),
+  'Incoming Funds': getFinancialSeriesColor('Incoming Funds'),
+  'Outgoing Commitments': getFinancialSeriesColor('Outgoing Commitments'),
+  'Credit Guarantee': getFinancialSeriesColor('Credit Guarantee'),
+  'Disbursements': getFinancialSeriesColor('Disbursements'),
+  'Expenditures': getFinancialSeriesColor('Expenditures'),
+  'Planned Disbursements': getFinancialSeriesColor('Planned Disbursements'),
+  'Budgets': getFinancialSeriesColor('Budgets'),
+}
 
 /**
  * Flow Type base colors for Finance Type Flow Chart
@@ -248,20 +253,11 @@ export const FLOW_TYPE_COLORS: Record<string, string> = {
  */
 // Distinct transaction type colors - designed for maximum visual differentiation
 // Each transaction type gets a unique hue for easy identification in charts
+// DELEGATED to the single source of truth in @/lib/chart-colors so the
+// Finance Type Flow chart uses the exact same per-type colors as every
+// other transaction-type chart in the app.
 export const TRANSACTION_TYPE_CHART_COLORS: Record<string, string> = {
-  '1': '#2563eb',   // Incoming Funds - Blue
-  '2': '#7c3aed',   // Outgoing Commitment - Purple
-  '3': '#dc2626',   // Disbursement - Red (primary action)
-  '4': '#ea580c',   // Expenditure - Orange
-  '5': '#ca8a04',   // Interest Payment - Amber
-  '6': '#16a34a',   // Loan Repayment - Green
-  '7': '#0891b2',   // Reimbursement - Cyan
-  '8': '#6366f1',   // Purchase of Equity - Indigo
-  '9': '#db2777',   // Sale of Equity - Pink
-  '10': '#0d9488',  // Credit Guarantee - Teal
-  '11': '#4f46e5',  // Incoming Commitment - Violet
-  '12': '#059669',  // Outgoing Pledge - Emerald
-  '13': '#64748b'   // Incoming Pledge - Slate
+  ...TRANSACTION_TYPE_COLORS,
 }
 
 

@@ -29,37 +29,28 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CustomYear, crossesCalendarYear, getCustomYearLabel } from '@/types/custom-years'
 import { cn } from '@/lib/utils'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, getTransactionTypeColor } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 type ViewMode = 'bar' | 'line' | 'table'
 
-// Brand color palette
-const CHART_COLORS = {
-  primaryScarlet: '#dc2625',
-  paleSlate: '#cfd0d5',
-  blueSlate: '#4c5568',
-  coolSteel: '#7b95a7',
-  platinum: '#f1f4f8',
-}
-
-// Transaction type configuration
+// Transaction type configuration — labels are local, colors come from the
+// single source of truth in @/lib/chart-colors (TRANSACTION_TYPE_COLORS).
 export const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  // IATI Standard v2.03 transaction types
-  '1': { label: 'Incoming Funds', color: CHART_COLORS.blueSlate },
-  '2': { label: 'Outgoing Commitment', color: CHART_COLORS.coolSteel },
-  '3': { label: 'Disbursement', color: CHART_COLORS.primaryScarlet },
-  '4': { label: 'Expenditure', color: CHART_COLORS.paleSlate },
-  '5': { label: 'Interest Payment', color: CHART_COLORS.blueSlate },
-  '6': { label: 'Loan Repayment', color: CHART_COLORS.coolSteel },
-  '7': { label: 'Reimbursement', color: CHART_COLORS.primaryScarlet },
-  '8': { label: 'Purchase of Equity', color: CHART_COLORS.blueSlate },
-  '9': { label: 'Sale of Equity', color: CHART_COLORS.coolSteel },
-  '10': { label: 'Credit Guarantee', color: CHART_COLORS.paleSlate },
-  '11': { label: 'Incoming Commitment', color: CHART_COLORS.blueSlate },
-  '12': { label: 'Outgoing Pledge', color: CHART_COLORS.coolSteel },
-  '13': { label: 'Incoming Pledge', color: CHART_COLORS.primaryScarlet },
+  '1': { label: 'Incoming Funds', color: getTransactionTypeColor('1') },
+  '2': { label: 'Outgoing Commitment', color: getTransactionTypeColor('2') },
+  '3': { label: 'Disbursement', color: getTransactionTypeColor('3') },
+  '4': { label: 'Expenditure', color: getTransactionTypeColor('4') },
+  '5': { label: 'Interest Payment', color: getTransactionTypeColor('5') },
+  '6': { label: 'Loan Repayment', color: getTransactionTypeColor('6') },
+  '7': { label: 'Reimbursement', color: getTransactionTypeColor('7') },
+  '8': { label: 'Purchase of Equity', color: getTransactionTypeColor('8') },
+  '9': { label: 'Sale of Equity', color: getTransactionTypeColor('9') },
+  '10': { label: 'Credit Guarantee', color: getTransactionTypeColor('10') },
+  '11': { label: 'Incoming Commitment', color: getTransactionTypeColor('11') },
+  '12': { label: 'Outgoing Pledge', color: getTransactionTypeColor('12') },
+  '13': { label: 'Incoming Pledge', color: getTransactionTypeColor('13') },
 }
 
 // Single series data point (for budgets, planned disbursements)
@@ -801,7 +792,7 @@ export function YearlyTotalsBarChart({
 
       {/* Expanded View Dialog */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto">
+        <DialogContent chart className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">

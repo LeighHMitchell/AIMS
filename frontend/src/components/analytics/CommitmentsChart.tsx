@@ -16,7 +16,7 @@ import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, getTransactionTypeColor } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
@@ -257,21 +257,21 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
             }}
             iconType="line"
           />
-          <Line 
-            type="monotone" 
-            dataKey="commitments" 
-            stroke="#475569" 
+          <Line
+            type="monotone"
+            dataKey="commitments"
+            stroke={getTransactionTypeColor('2')}
             strokeWidth={2}
-            dot={{ fill: '#475569', r: 4 }}
+            dot={{ fill: getTransactionTypeColor('2'), r: 4 }}
             activeDot={{ r: 6 }}
             name="Commitments"
           />
-          <Line 
-            type="monotone" 
-            dataKey="disbursements" 
-            stroke="#94a3b8" 
+          <Line
+            type="monotone"
+            dataKey="disbursements"
+            stroke={getTransactionTypeColor('3')}
             strokeWidth={2}
-            dot={{ fill: '#94a3b8', r: 4 }}
+            dot={{ fill: getTransactionTypeColor('3'), r: 4 }}
             activeDot={{ r: 6 }}
             name="Disbursements"
           />

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
+import { getOrganizationReferences } from '@/lib/organization-references';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -312,87 +313,119 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
+    // Determine target ids: bulk via JSON body { ids: [] }, or single via ?id=
     const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get('id');
-    
-    if (!id) {
+    const singleId = searchParams.get('id');
+
+    let ids: string[] = [];
+    let isBulk = false;
+    try {
+      const body = await request.json();
+      if (body && Array.isArray(body.ids)) {
+        ids = body.ids.filter((v: unknown) => typeof v === 'string' && v.length > 0);
+        isBulk = true;
+      }
+    } catch {
+      // No/invalid body — fall back to the single ?id= path
+    }
+
+    if (!isBulk) {
+      if (!singleId) {
+        return NextResponse.json(
+          { error: 'Organization ID is required' },
+          { status: 400 }
+        );
+      }
+      ids = [singleId];
+    }
+
+    if (ids.length === 0) {
       return NextResponse.json(
-        { error: 'Organization ID is required' },
+        { error: 'No organization IDs provided' },
         { status: 400 }
       );
     }
-    
-    // Comprehensive check for all references
-    const references: string[] = [];
-    
-    // Check users
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, email', { count: 'exact' })
-      .eq('organization_id', id);
-    
-    if (usersError) {
-      console.error('[AIMS] Error checking users:', usersError);
-      return NextResponse.json({ error: 'Failed to check organization references' }, { status: 500 });
-    }
-    
-    if (users && users.length > 0) {
-      references.push(`${users.length} user${users.length > 1 ? 's' : ''} (${users.map((u: any) => u.email).join(', ')})`);
-    }
-    
-    // Check activities as reporting organization
-    const { count: reportingCount } = await supabase
-      .from('activities')
-      .select('id', { count: 'exact', head: true })
-      .eq('reporting_org_id', id);
-    
-    if (reportingCount && reportingCount > 0) {
-      references.push(`${reportingCount} activities as reporting organization`);
-    }
-    
-    // Check activity contributors
-    const { count: contributorCount } = await supabase
-      .from('activity_contributors')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', id);
-    
-    if (contributorCount && contributorCount > 0) {
-      references.push(`${contributorCount} activity contributor entries`);
-    }
-    
-    // Check transactions
-    const { count: transactionCount } = await supabase
-      .from('transactions')
-      .select('id', { count: 'exact', head: true })
-      .or(`provider_org_id.eq.${id},receiver_org_id.eq.${id}`);
-    
-    if (transactionCount && transactionCount > 0) {
-      references.push(`${transactionCount} transactions`);
-    }
-    
-    // If there are any references, prevent deletion
-    if (references.length > 0) {
+
+    // Cap bulk size to keep the per-id reference scan bounded
+    const MAX_BULK = 200;
+    if (ids.length > MAX_BULK) {
       return NextResponse.json(
-        { 
-          error: 'Cannot delete organization with existing references',
-          details: `This organization is referenced by: ${references.join(', ')}. Please remove or reassign these references before deleting.`
-        },
+        { error: `Cannot delete more than ${MAX_BULK} organizations at once` },
         { status: 400 }
       );
     }
-    
-    // Proceed with deletion
-    const { error } = await supabase
+
+    // Look up names so blocked entries can be reported back with a label
+    const { data: orgRows } = await supabase
       .from('organizations')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('[AIMS] Error deleting organization:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      .select('id, name, acronym')
+      .in('id', ids);
+    const nameById = new Map<string, string>(
+      (orgRows || []).map((o: any) => [o.id, o.acronym || o.name || o.id])
+    );
+
+    const deleted: string[] = [];
+    const blocked: Array<{ id: string; name: string; references: string[] }> = [];
+    const failed: Array<{ id: string; error: string }> = [];
+
+    for (const id of ids) {
+      const refResult = await getOrganizationReferences(supabase, id);
+
+      if ('error' in refResult) {
+        failed.push({ id, error: refResult.error });
+        continue;
+      }
+
+      if (refResult.references.length > 0) {
+        blocked.push({
+          id,
+          name: nameById.get(id) || id,
+          references: refResult.references,
+        });
+        continue;
+      }
+
+      const { error } = await supabase
+        .from('organizations')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('[AIMS] Error deleting organization:', error);
+        failed.push({ id, error: error.message });
+        continue;
+      }
+
+      deleted.push(id);
     }
-    
-    return NextResponse.json({ success: true });
+
+    // Preserve the original single-delete contract: 400 with `details` when
+    // the one targeted org is referenced, so existing callers keep working.
+    if (!isBulk) {
+      if (blocked.length > 0) {
+        return NextResponse.json(
+          {
+            error: 'Cannot delete organization with existing references',
+            details: `This organization is referenced by: ${blocked[0].references.join(
+              ', '
+            )}. Please remove or reassign these references before deleting.`,
+            blocked,
+          },
+          { status: 400 }
+        );
+      }
+      if (failed.length > 0) {
+        return NextResponse.json({ error: failed[0].error }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, deleted });
+    }
+
+    return NextResponse.json({
+      success: true,
+      deleted,
+      blocked,
+      failed,
+    });
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(

@@ -16,51 +16,91 @@ interface ChartFullscreenProps {
 }
 
 export function ChartFullscreen({ children, className }: ChartFullscreenProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const toggle = () => setIsFullscreen((v) => !v)
+  // `open` is the user intent. `rendering` keeps the overlay mounted through
+  // the close animation so it can fade + zoom OUT — Radix Dialog gets this
+  // free via presence; here we replicate it with a short timeout so this
+  // matches the analytics-dashboard Dialog exactly (open AND close animate).
+  const [open, setOpen] = useState(false)
+  const [rendering, setRendering] = useState(false)
+  const closing = rendering && !open
+  const toggle = () => setOpen((v) => !v)
+
+  // Mount immediately on open; on close, stay mounted for the exit animation
+  // (220ms ≳ the 200ms animate-out) then drop the overlay.
+  useEffect(() => {
+    if (open) {
+      setRendering(true)
+      return
+    }
+    if (!rendering) return
+    const t = setTimeout(() => setRendering(false), 220)
+    return () => clearTimeout(t)
+  }, [open, rendering])
 
   // ESC closes fullscreen
   useEffect(() => {
-    if (!isFullscreen) return
+    if (!open) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsFullscreen(false)
+      if (e.key === "Escape") setOpen(false)
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [isFullscreen])
+  }, [open])
 
-  // Lock body scroll while fullscreen
+  // Lock body scroll while the overlay is on screen (incl. during close anim)
   useEffect(() => {
-    if (!isFullscreen) return
+    if (!rendering) return
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
     return () => {
       document.body.style.overflow = prev
     }
-  }, [isFullscreen])
+  }, [rendering])
 
   return (
     <>
-      {/* Dim backdrop — clicking it closes the fullscreen view, matching the
-          analytics-dashboard Dialog behaviour. */}
-      {isFullscreen && (
+      {/* Dim backdrop — clicking it closes. Matches the analytics-dashboard
+          Dialog overlay exactly (bg-black/50 + blur, fades in AND out). */}
+      {rendering && (
         <div
-          className="fixed inset-0 z-[999] bg-black/60 animate-in fade-in-0"
+          className={cn(
+            "fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm",
+            closing
+              ? "animate-out fade-out-0 duration-200"
+              : "animate-in fade-in-0 duration-200",
+          )}
           onClick={toggle}
           aria-hidden
         />
       )}
+      {/*
+        Outer wrapper centres the panel by LAYOUT while on screen, so the zoom
+        is a pure scale with no transform-based centring to fight (no corner
+        slide). When inline it is display:contents — it adds no box and the
+        chart subtree is NOT remounted on toggle (preserves DOM identity).
+      */}
       <div
         className={cn(
-          isFullscreen
-            ? "fixed left-1/2 top-1/2 z-[1000] w-[95vw] max-w-[1400px] h-[85vh] -translate-x-1/2 -translate-y-1/2 overflow-auto bg-background border border-border rounded-lg shadow-2xl"
-            : "",
-          className,
+          rendering
+            ? "fixed inset-0 z-[1000] grid place-items-center p-4 pointer-events-none"
+            : "contents",
         )}
       >
-        <ChartExpansionProvider isExpanded={isFullscreen}>
-          {children({ isFullscreen, toggle })}
-        </ChartExpansionProvider>
+        <div
+          className={cn(
+            rendering
+              ? "pointer-events-auto w-[95vw] max-w-[1400px] h-[85vh] overflow-auto bg-background border border-border rounded-lg shadow-2xl ease-out-expo " +
+                  (closing
+                    ? "animate-out fade-out-0 zoom-out-95 duration-200"
+                    : "animate-in fade-in-0 zoom-in-95 duration-300")
+              : "",
+            className,
+          )}
+        >
+          <ChartExpansionProvider isExpanded={rendering}>
+            {children({ isFullscreen: rendering, toggle })}
+          </ChartExpansionProvider>
+        </div>
       </div>
     </>
   )

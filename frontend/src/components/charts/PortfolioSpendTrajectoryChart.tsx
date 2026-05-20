@@ -28,17 +28,19 @@ import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCale
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, PLANNED_DISBURSEMENT_COLOR, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 
-// Colour palette as specified
+// Series colours resolve through the single source of truth (lib/chart-colors)
+// so disbursements / planned / commitments / perfect-spend match every other
+// financial chart. Structural greys (grid/axis/bg) stay local.
 const COLOURS = {
-  primaryScarlet: '#dc2625',  // Cumulative disbursements line (solid)
-  paleSlate: '#cfd0d5',       // Grid lines
-  blueSlate: '#4c5568',       // Axis text
-  coolSteel: '#7b95a7',       // Perfect spend trajectory line (dashed)
-  platinum: '#f1f4f8',        // Background/tooltips
+  primaryScarlet: getTransactionTypeColor('3'), // Cumulative disbursements (= Disbursement scarlet)
+  paleSlate: '#cfd0d5',                          // Grid lines
+  blueSlate: '#4c5568',                          // Axis text
+  coolSteel: PERFECT_SPEND_COLOR,                // Perfect spend trajectory (reference line)
+  platinum: '#f1f4f8',                           // Background/tooltips
 }
 
 // Generate list of available years (from 2010 to current year + 10 to cover all possible data)
@@ -603,8 +605,8 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   const getComparisonColor = () => {
     switch (comparisonSeries) {
       case 'cumulativeDisbursements': return COLOURS.primaryScarlet
-      case 'cumulativePlannedDisbursements': return '#4c5568'
-      case 'cumulativeCommitments': return '#5f7f7a'
+      case 'cumulativePlannedDisbursements': return PLANNED_DISBURSEMENT_COLOR
+      case 'cumulativeCommitments': return getTransactionTypeColor('2')
       default: return COLOURS.primaryScarlet
     }
   }
@@ -1091,7 +1093,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               type="stepAfter"
               dataKey="cumulativePlannedDisbursements"
               name="Cumulative Aggregated Planned Disbursements (USD)"
-              stroke={hiddenSeries.has('cumulativePlannedDisbursements') ? '#cbd5e1' : '#4c5568'}
+              stroke={hiddenSeries.has('cumulativePlannedDisbursements') ? '#cbd5e1' : PLANNED_DISBURSEMENT_COLOR}
               strokeWidth={hiddenSeries.has('cumulativePlannedDisbursements') ? 1 : 2}
               strokeDasharray="4 2"
               dot={false}
@@ -1105,7 +1107,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               type="stepAfter"
               dataKey="cumulativeCommitments"
               name="Cumulative Aggregated Commitments (USD)"
-              stroke={hiddenSeries.has('cumulativeCommitments') ? '#cbd5e1' : '#5f7f7a'}
+              stroke={hiddenSeries.has('cumulativeCommitments') ? '#cbd5e1' : getTransactionTypeColor('2')}
               strokeWidth={hiddenSeries.has('cumulativeCommitments') ? 1 : 2}
               dot={false}
               connectNulls
@@ -1145,13 +1147,13 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
             {comparisonSeries === 'cumulativeCommitments' && latestCommitmentTimestamp && (
               <ReferenceLine
                 x={latestCommitmentTimestamp}
-                stroke="#5f7f7a"
+                stroke={getTransactionTypeColor('2')}
                 strokeDasharray="4 4"
                 strokeOpacity={0.6}
                 label={{
                   value: 'Latest commitment',
                   position: 'insideTopRight',
-                  fill: '#5f7f7a',
+                  fill: getTransactionTypeColor('2'),
                   fontSize: 10,
                 }}
               />

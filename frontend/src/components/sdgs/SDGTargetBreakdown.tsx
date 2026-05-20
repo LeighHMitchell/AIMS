@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import { formatCurrency } from '@/lib/chart-utils'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
+import { getTransactionTypeColor } from '@/lib/chart-colors'
 
 interface TargetData {
   targetId: string
@@ -62,8 +63,8 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="commitments" name="Commitments" fill="#4c5568" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="disbursements" name="Disbursements" fill="#7b95a7" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="commitments" name="Commitments" fill={getTransactionTypeColor('2')} radius={[0, 4, 4, 0]} />
+              <Bar dataKey="disbursements" name="Disbursements" fill={getTransactionTypeColor('3')} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

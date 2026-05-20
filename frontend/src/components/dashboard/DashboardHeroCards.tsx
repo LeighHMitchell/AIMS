@@ -15,10 +15,6 @@ import { useDashboardHeroStats } from '@/hooks/useDashboardHeroStats';
 import {
   Activity,
   ClipboardCheck,
-  FileText,
-  DollarSign,
-  Wallet,
-  CalendarClock,
   HelpCircle,
 } from 'lucide-react';
 
@@ -29,7 +25,6 @@ interface DashboardHeroCardsProps {
 
 interface DualMetricCardProps {
   title: string;
-  icon: React.ElementType;
   helpText: string;
   leftMetric: {
     value: number;
@@ -49,7 +44,6 @@ interface DualMetricCardProps {
 
 function DualMetricCard({
   title,
-  icon: Icon,
   helpText,
   leftMetric,
   rightMetric,
@@ -66,7 +60,6 @@ function DualMetricCard({
               className={`flex items-center gap-2 ${onTitleClick ? 'cursor-pointer hover:text-primary' : ''}`}
               onClick={onTitleClick}
             >
-              <Icon className="h-4 w-4 text-muted-foreground" />
               <span className="text-body font-medium text-muted-foreground">{title}</span>
             </div>
             <Tooltip>
@@ -188,7 +181,6 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       <StaggerItem>
         <DualMetricCard
           title="Financial Transactions"
-          icon={DollarSign}
           helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
           leftMetric={{
             value: stats?.orgTransactionCount ?? 0,
@@ -210,7 +202,6 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
                   <span className="text-body font-medium text-muted-foreground">Budgets</span>
                 </div>
                 <Tooltip>
@@ -235,7 +226,6 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       <StaggerItem>
         <DualMetricCard
           title="Planned Disbursements"
-          icon={CalendarClock}
           helpText="Planned disbursement records across all your organisation's activities. These define expected fund transfers."
           leftMetric={{
             value: stats?.orgPlannedDisbursementCount ?? 0,
@@ -256,7 +246,6 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
           <Card className="bg-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.06)] transition-shadow h-full">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-4 w-4 text-muted-foreground" />
                 <span className="text-body font-medium text-muted-foreground">Activities</span>
                 <Tooltip>
                   <TooltipTrigger asChild>

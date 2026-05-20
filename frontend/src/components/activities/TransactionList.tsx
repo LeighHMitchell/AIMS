@@ -93,6 +93,7 @@ import {
   type TransactionRow,
 } from '@/lib/exports/entities/transactions';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyPrecise } from '@/lib/format';
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
@@ -1040,28 +1041,7 @@ export default function TransactionList({
   };
 
   const formatCurrency = (value: number, curr: string = currency) => {
-    // Ensure currency is a valid 3-letter code, fallback to USD
-    const safeCurrency = curr && curr.length === 3 && /^[A-Z]{3}$/.test(curr.toUpperCase()) 
-      ? curr.toUpperCase() 
-      : "USD";
-    
-    try {
-      // Format number with commas
-      const formattedValue = new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value);
-      
-      // Return format: "EUR 3,000"
-      return `${safeCurrency} ${formattedValue}`;
-    } catch (error) {
-      console.warn(`[TransactionList] Invalid currency "${curr}", using USD:`, error);
-      const formattedValue = new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value);
-      return `USD ${formattedValue}`;
-    }
+    return formatCurrencyPrecise(value, curr);
   };
 
   const getTransactionTypeColor = (type: string) => {

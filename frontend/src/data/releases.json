@@ -1,7 +1,36 @@
 {
-  "currentVersion": "3.40.0",
-  "narrativeSummary": "Version 3.40.0 reworks v3.39.0's location-anchored <b>Field Reports</b> into standalone <b>Field Trips</b> &mdash; a field trip now belongs to an activity and carries its own coordinates and place name, so it no longer has to point at an existing activity location. A new idempotent migration, dedicated <code>/api/activities/[id]/field-trips</code> routes (with attachment handling), and rebuilt <code>FieldTripModal</code> / <code>FieldTripsSection</code> / map markers layer replace the old Field Report components. Authorisation is enforced consistently at the API layer (requireAuth on every call), matching the sibling Activity-Editor tables rather than bolting on mismatched RLS. The Organization Profile gains an <b>OrganizationFundingFlowsSankey</b>, the dashboard gains a <b>Data Quality summary</b> card backed by a new <code>/api/data-clinic/summary</code> endpoint, and the Recycle Bin gets a clearer banner + an \"activity is in the recycle bin\" dialog. Charts gain a shared <code>ChartMethodology</code> note and a <code>ChartViewToggle</code>, and the Financial Analytics tab and Organization Finances pane are substantially reworked. This release also includes a large dead-code sweep: the legacy IATI import wizard UI, the old <code>InterventionTreeMap</code>, the unenhanced <code>GovernmentInputsSection</code>, and the demo/test import pages are removed &mdash; a net reduction of roughly 6,500 lines.",
+  "currentVersion": "3.41.0",
+  "narrativeSummary": "Version 3.41.0 makes the charts easier to trust and organisations safer to delete. Every chart across the Analytics Dashboard, the Activity profile and the Organisation profile now shows a small <b>ƒ</b> button next to its title &mdash; hover it and a tooltip explains, in plain language, how the number on screen is being calculated. Deleting an organisation that is still being used somewhere (in activities, transactions, or by users) no longer fails with a confusing error: a clear dialog now lists exactly which organisations can't be deleted and why, and in a bulk delete it removes the ones that <i>can</i> go and tells you what was skipped. Chart colours are now consistent across the whole app &mdash; a \"Disbursement\" is the same colour on the dashboard, on the activity page, and on the organisation profile &mdash; and the expand-to-fullscreen view on every chart now opens with a smoother zoom animation. The Organisations list page has been refreshed, number and currency formatting is tidier across tables and chart labels, and search is a little faster.",
   "releases": [
+    {
+      "version": "3.41.0",
+      "date": "2026-05-20",
+      "narrativeSummary": "Every chart now has a small ƒ button next to its title that explains, in plain language, how the number is calculated &mdash; rolled out across the Analytics Dashboard, the Activity profile, and the Organisation profile. Deleting an organisation now checks first whether it's still being used; if it is, a clear \"can't delete\" dialog lists which organisations are blocked and why (bulk deletes still remove the ones that can be removed and report what was skipped). Chart colours are now consistent app-wide (one colour per transaction type / budget / planned disbursement / sector, wherever it appears). The expand-to-fullscreen chart view has a smoother animation. The Organisations list page has been refreshed. Number and currency formatting tidied. Search is slightly faster.",
+      "changes": [
+        "<b>Charts now explain how they're calculated</b>",
+        "&nbsp;&nbsp;Every chart shows a small <i>ƒ</i> icon next to its title &mdash; hover it to see, in plain language, exactly what is being added together, divided, or filtered to produce the number on screen",
+        "&nbsp;&nbsp;Rolled out consistently across the Analytics Dashboard, the Activity profile, and the Organisation profile &mdash; the same chart now shows the same explanation wherever it appears",
+        "&nbsp;&nbsp;The explainer is purely about the maths &mdash; it doesn't repeat any \"what this means\" interpretation the chart already shows alongside it",
+        "<b>Safer organisation deletion</b>",
+        "&nbsp;&nbsp;Before deleting an organisation, the system now checks whether it is still being used &mdash; in activities, in transactions, or by user accounts",
+        "&nbsp;&nbsp;If it is, a clear dialog appears listing which organisations can't be deleted and exactly which links are holding them in place",
+        "&nbsp;&nbsp;Bulk deletes still work: the ones that <i>can</i> be deleted are deleted, and you see a summary of which ones were skipped and why &mdash; no more silent failures",
+        "<b>One palette across every chart</b>",
+        "&nbsp;&nbsp;Transaction types, budgets, planned disbursements and sectors all use a single shared set of colours now",
+        "&nbsp;&nbsp;A \"Disbursement\" is the same colour on the dashboard as on the activity page; a sector keeps its colour as you move between charts",
+        "<b>Smoother chart expand-to-fullscreen</b>",
+        "&nbsp;&nbsp;Clicking the expand button on a chart now zooms it up into a fullscreen view with a smoother animation",
+        "&nbsp;&nbsp;Only the chart you expanded animates &mdash; the rest of the page stays still, so the motion feels intentional rather than busy",
+        "<b>Organisations page refresh</b>",
+        "&nbsp;&nbsp;Cleaner organisations list page and organisation cards",
+        "&nbsp;&nbsp;Refinements to the IATI Budget Manager view inside the organisation profile",
+        "<b>Other polish</b>",
+        "&nbsp;&nbsp;Number and currency formatting tidied up across tables, chart labels and tooltips",
+        "&nbsp;&nbsp;Search is a little quicker thanks to refreshed Supabase search functions",
+        "&nbsp;&nbsp;Quieter, more consistent visuals across the Analytics Dashboard charts (Disbursements over time, Disbursements by sector, All donors bar chart, Commitments, Policy markers, Planned-vs-Actual, Funding source breakdown, Yearly totals, Transaction type, Sector analysis, Budget vs Actual)",
+        "&nbsp;&nbsp;Small refinements to the Activity Spend Trajectory, the Portfolio Spend Trajectory, the dashboard Hero cards, the activity Linked Transactions tab, the Financial Analytics tab, the Financing Terms tab, the Transaction Calendar Heatmap, and the v2 map markers"
+      ]
+    },
     {
       "version": "3.40.0",
       "date": "2026-05-18",

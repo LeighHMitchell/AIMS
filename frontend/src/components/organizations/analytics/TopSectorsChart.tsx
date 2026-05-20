@@ -17,6 +17,7 @@ import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisua
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { PieChart, BarChart3, GitBranch } from 'lucide-react';
 import { formatAxisCurrency } from '@/lib/format';
+import { getTransactionTypeColor } from '@/lib/chart-colors';
 
 interface SectorData {
   code: string;
@@ -156,8 +157,8 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Bar yAxisId="right" dataKey="Projects" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                <Bar yAxisId="left" dataKey="Commitments" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar yAxisId="left" dataKey="Disbursements" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="left" dataKey="Commitments" fill={getTransactionTypeColor('2')} radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="left" dataKey="Disbursements" fill={getTransactionTypeColor('3')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

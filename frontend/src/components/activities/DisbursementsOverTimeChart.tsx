@@ -43,6 +43,8 @@ interface DisbursementsOverTimeChartProps {
     sectors: SectorData[];
   };
   loading?: boolean;
+  /** Passed by CompactChartCard (true in card preview, false when expanded). */
+  compact?: boolean;
 }
 
 type ViewMode = 'area' | 'line' | 'table';
@@ -126,38 +128,57 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">Disbursements Over Time by Sector</CardTitle>
-        </CardHeader>
-        <CardContent className="h-96">
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
-    );
+    return <ChartLoadingPlaceholder />;
   }
 
   if (data.sectors.length === 0 || timeSeriesData.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">Disbursements Over Time by Sector</CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">No data available</CardDescription>
-        </CardHeader>
-        <CardContent className="h-96 flex items-center justify-center">
-          <div className="text-muted-foreground">No disbursement data to display</div>
-        </CardContent>
-      </Card>
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+        <p className="text-body">No disbursement data to display</p>
+      </div>
+    );
+  }
+
+  // Minimal card preview: stacked area chart only, no controls / title
+  // (CompactChartCard supplies the title, ƒ and expand button).
+  if (!isExpanded) {
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={timeSeriesData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="year" type="number" domain={['dataMin', 'dataMax']} fontSize={10} />
+            <YAxis tickFormatter={formatAxisCurrency} fontSize={10} />
+            <Tooltip
+              formatter={(value: number, name: string) => {
+                const sector = data.sectors.find(s => s.sectorCode === name);
+                return [formatCurrency(value), sector?.sectorName || name];
+              }}
+              labelFormatter={(year) => `Year: ${year}`}
+            />
+            {data.sectors.map((sector, idx) => (
+              <Area
+                key={sector.sectorCode}
+                type="monotone"
+                dataKey={sector.sectorCode}
+                stackId="1"
+                stroke={sectorColors[idx % sectorColors.length]}
+                fill={sectorColors[idx % sectorColors.length]}
+                fillOpacity={0.6}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="space-y-4">
+      <div>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-start gap-3">
-            {isExpanded && availableYearsForChip.length > 0 && (
+            {availableYearsForChip.length > 0 && (
               <YearRangeChip
                 selectedYears={selectedYears}
                 onYearsChange={setSelectedYears}
@@ -172,12 +193,6 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                 }
               />
             )}
-            <div>
-              <CardTitle className="text-base font-medium text-foreground">Disbursements Over Time by Sector</CardTitle>
-              <CardDescription className="text-helper text-muted-foreground mt-0.5">
-                Track {dataMode === 'planned' ? 'planned' : 'actual'} disbursements across sectors over time
-              </CardDescription>
-            </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
@@ -218,9 +233,8 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
             </div>
           </div>
         </div>
-      </CardHeader>
-      
-      <CardContent>
+      </div>
+      <div>
         {viewMode === 'area' ? (
           <ResponsiveContainer width="100%" height={450}>
             <AreaChart data={timeSeriesData}>
@@ -366,8 +380,8 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
             </Table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

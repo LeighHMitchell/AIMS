@@ -26,13 +26,17 @@ import { getCustomYearLabel } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { formatAxisCurrency } from '@/lib/format';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { PLANNED_DISBURSEMENT_COLOR, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 
+// Series colours resolve through the single source of truth (lib/chart-colors)
+// so disbursements / planned / commitments / perfect-spend match every other
+// financial chart. Structural greys (grid/axis/bg) stay local.
 const COLOURS = {
-  primaryScarlet: '#dc2625',
-  paleSlate: '#cfd0d5',
-  blueSlate: '#4c5568',
-  coolSteel: '#7b95a7',
-  platinum: '#f1f4f8',
+  primaryScarlet: getTransactionTypeColor('3'), // Cumulative disbursements (= Disbursement scarlet)
+  paleSlate: '#cfd0d5',                          // Grid lines
+  blueSlate: '#4c5568',                          // Axis text
+  coolSteel: PERFECT_SPEND_COLOR,                // Perfect spend trajectory (reference line)
+  platinum: '#f1f4f8',                           // Background/tooltips
 }
 
 interface MonthlyDisbursement {
@@ -334,8 +338,8 @@ export function OrganizationSpendTrajectoryChart({
   const getComparisonColor = () => {
     switch (comparisonSeries) {
       case 'cumulativeDisbursements': return COLOURS.primaryScarlet
-      case 'cumulativePlannedDisbursements': return '#4c5568'
-      case 'cumulativeCommitments': return '#5f7f7a'
+      case 'cumulativePlannedDisbursements': return PLANNED_DISBURSEMENT_COLOR
+      case 'cumulativeCommitments': return getTransactionTypeColor('2')
       default: return COLOURS.primaryScarlet
     }
   }
@@ -817,7 +821,7 @@ export function OrganizationSpendTrajectoryChart({
                   type="stepAfter"
                   dataKey="cumulativePlannedDisbursements"
                   name="Planned Disbursements"
-                  stroke={hiddenSeries.has('cumulativePlannedDisbursements') ? '#cbd5e1' : '#4c5568'}
+                  stroke={hiddenSeries.has('cumulativePlannedDisbursements') ? '#cbd5e1' : PLANNED_DISBURSEMENT_COLOR}
                   strokeWidth={hiddenSeries.has('cumulativePlannedDisbursements') ? 1 : 2}
                   strokeDasharray="4 2"
                   dot={false}
@@ -830,7 +834,7 @@ export function OrganizationSpendTrajectoryChart({
                   type="stepAfter"
                   dataKey="cumulativeCommitments"
                   name="Commitments"
-                  stroke={hiddenSeries.has('cumulativeCommitments') ? '#cbd5e1' : '#5f7f7a'}
+                  stroke={hiddenSeries.has('cumulativeCommitments') ? '#cbd5e1' : getTransactionTypeColor('2')}
                   strokeWidth={hiddenSeries.has('cumulativeCommitments') ? 1 : 2}
                   dot={false}
                   connectNulls

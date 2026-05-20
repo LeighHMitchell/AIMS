@@ -215,6 +215,7 @@ export function CompactChartCard({
       {/* Expanded Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent
+          chart
           className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-visible"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >

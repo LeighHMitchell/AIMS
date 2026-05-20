@@ -205,12 +205,12 @@ BEGIN
     SELECT * FROM fuzzy_results
   )
   
-  SELECT 
+  SELECT
     cr.id,
     cr.entity_type,
     cr.title,
     cr.subtitle,
-    cr.rank,
+    cr.rank::REAL,
     cr.metadata
   FROM combined_results cr
   WHERE cr.title IS NOT NULL AND cr.title != ''
@@ -230,7 +230,7 @@ CREATE OR REPLACE FUNCTION search_suggestions(
   result_limit INTEGER DEFAULT 8
 )
 RETURNS TABLE (
-  id UUID,
+  id TEXT,
   entity_type TEXT,
   title TEXT,
   subtitle TEXT,
@@ -266,34 +266,34 @@ BEGIN
   RETURN QUERY
   WITH suggestions AS (
     -- Activities
-    SELECT 
-      a.id,
+    (SELECT
+      a.id::TEXT,
       'activity'::TEXT as entity_type,
       a.title_narrative::TEXT as title,
       COALESCE(a.other_identifier, a.iati_identifier)::TEXT as subtitle,
       ts_rank_cd(a.search_vector, prefix_query, 32)::REAL as rank
     FROM activities a
     WHERE a.search_vector @@ prefix_query
-    LIMIT 4
-    
+    LIMIT 4)
+
     UNION ALL
-    
+
     -- Organizations
-    SELECT 
-      o.id,
+    (SELECT
+      o.id::TEXT,
       'organization'::TEXT,
       o.name::TEXT,
       COALESCE(o.acronym, o.country)::TEXT,
       ts_rank_cd(o.search_vector, prefix_query, 32)::REAL
     FROM organizations o
     WHERE o.search_vector @@ prefix_query
-    LIMIT 3
-    
+    LIMIT 3)
+
     UNION ALL
-    
+
     -- Sectors (using ILIKE since they don't have search_vector)
-    SELECT 
-      s.sector_code::UUID as id,
+    (SELECT
+      s.sector_code::TEXT as id,
       'sector'::TEXT,
       s.sector_name::TEXT,
       s.sector_code::TEXT,
@@ -301,7 +301,7 @@ BEGIN
     FROM activity_sectors s
     WHERE s.sector_name ILIKE '%' || clean_query || '%'
     GROUP BY s.sector_code, s.sector_name
-    LIMIT 2
+    LIMIT 2)
   )
   
   SELECT DISTINCT ON (s.title)

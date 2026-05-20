@@ -45,6 +45,8 @@ interface DisbursementsBySectorChartProps {
     sectors: SectorData[];
   };
   loading?: boolean;
+  /** Passed by CompactChartCard (true in card preview, false when expanded). */
+  compact?: boolean;
 }
 
 export function DisbursementsBySectorChart({ data, loading = false }: DisbursementsBySectorChartProps) {
@@ -125,38 +127,70 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">Disbursements by Sector</CardTitle>
-        </CardHeader>
-        <CardContent className="h-96">
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
-    );
+    return <ChartLoadingPlaceholder />;
   }
 
   if (data.sectors.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">Disbursements by Sector</CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">No sector data available</CardDescription>
-        </CardHeader>
-        <CardContent className="h-96 flex items-center justify-center">
-          <div className="text-muted-foreground">No disbursement data to display</div>
-        </CardContent>
-      </Card>
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+        <p className="text-body">No disbursement data to display</p>
+      </div>
+    );
+  }
+
+  // Minimal card preview: chart only, no controls / title (CompactChartCard
+  // supplies the title, ƒ and expand button). Controls appear on expand.
+  if (!isExpanded) {
+    return (
+      <div className="h-full w-full">
+        {selectedYears.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground">
+            <p className="text-body">No year data available</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="sectorName" angle={-45} textAnchor="end" height={70} fontSize={10} />
+              <YAxis tickFormatter={formatAxisCurrency} fontSize={10} />
+              <Tooltip
+                content={({ active, payload, label }: any) => {
+                  if (!active || !payload || !payload.length) return null
+                  const datum = payload[0]?.payload
+                  const filtered = payload.filter((e: any) => e.value)
+                  const rows: ChartTooltipRow[] = filtered.map((entry: any) => ({
+                    label: entry.name,
+                    value: formatCurrency(entry.value),
+                    color: entry.color || entry.fill,
+                  }))
+                  return (
+                    <ChartTooltipCard
+                      title={label || datum?.sectorName || ''}
+                      subtitle={datum?.sectorCode ? `Code: ${datum.sectorCode}` : undefined}
+                      rows={rows}
+                    />
+                  )
+                }}
+              />
+              {selectedYears.map((year, idx) => (
+                <React.Fragment key={year}>
+                  <Bar dataKey={`planned_${year}`} name={`${year} Planned`} fill={plannedColors[idx % plannedColors.length]} stackId={`year-${year}`} />
+                  <Bar dataKey={`actual_${year}`} name={`${year} Actual`} fill={actualColors[idx % actualColors.length]} stackId={`year-${year}`} />
+                </React.Fragment>
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="space-y-4">
+      <div>
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
-            {isExpanded && availableYears.length > 0 && (
+            {availableYears.length > 0 && (
               <YearRangeChip
                 selectedYears={chipSelectedYears}
                 onYearsChange={setChipSelectedYears}
@@ -168,12 +202,6 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                 }
               />
             )}
-            <div>
-              <CardTitle className="text-base font-medium text-foreground">Planned and Actual Disbursements by Sector</CardTitle>
-              <CardDescription className="text-helper text-muted-foreground mt-0.5">
-                Compare planned vs actual disbursements across sectors
-              </CardDescription>
-            </div>
           </div>
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
@@ -258,9 +286,8 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
             </div>
           </CollapsibleContent>
         </Collapsible>
-      </CardHeader>
-      
-      <CardContent>
+      </div>
+      <div>
         {selectedYears.length === 0 ? (
           <div className="h-96 flex items-center justify-center">
             <div className="text-center text-muted-foreground">
@@ -384,8 +411,8 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
             </Table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

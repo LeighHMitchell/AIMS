@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, BarChart3, TrendingUpIcon, Table as TableIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, PLANNED_DISBURSEMENT_COLOR, getTransactionTypeColor } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
@@ -524,18 +524,18 @@ export function PlannedVsActualDisbursements({
                   type="monotone"
                   dataKey="planned"
                   name="Planned"
-                  stroke="DATA_COLORS.actual"
+                  stroke={PLANNED_DISBURSEMENT_COLOR}
                   strokeWidth={2}
-                  dot={{ fill: 'DATA_COLORS.actual', r: 4 }}
+                  dot={{ fill: PLANNED_DISBURSEMENT_COLOR, r: 4 }}
                   animationDuration={300}
                 />
                 <Line
                   type="monotone"
                   dataKey="actual"
                   name="Actual"
-                  stroke="#64748B"
+                  stroke={getTransactionTypeColor('3')}
                   strokeWidth={2}
-                  dot={{ fill: '#64748B', r: 4 }}
+                  dot={{ fill: getTransactionTypeColor('3'), r: 4 }}
                   animationDuration={300}
                 />
               </LineChart>
@@ -562,8 +562,8 @@ export function PlannedVsActualDisbursements({
                 <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                 <Legend />
-                <Bar dataKey="planned" name="Planned" fill="DATA_COLORS.actual" radius={[4, 4, 0, 0]} animationDuration={300} />
-                <Bar dataKey="actual" name="Actual" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />
+                <Bar dataKey="planned" name="Planned" fill={PLANNED_DISBURSEMENT_COLOR} radius={[4, 4, 0, 0]} animationDuration={300} />
+                <Bar dataKey="actual" name="Actual" fill={getTransactionTypeColor('3')} radius={[4, 4, 0, 0]} animationDuration={300} />
               </BarChart>
             )}
           </ResponsiveContainer>
