@@ -1560,8 +1560,8 @@ function OrganizationsPageContent() {
       ? ` ${blocked.length} selected ${blocked.length === 1 ? 'organisation is' : 'organisations are'} linked to activities, transactions or people and will be skipped.`
       : ''
     const description = isSingle
-      ? `Delete "${nameOf(clean[0])}"? You can undo this for a few seconds.${skippedNote}`
-      : `Delete ${clean.length} organisations? You can undo this for a few seconds.${skippedNote}`
+      ? `"${nameOf(clean[0])}" will be removed. You can undo this for a few seconds.${skippedNote}`
+      : `You can undo this for a few seconds.${skippedNote}`
 
     const ok = await confirm({
       title,
