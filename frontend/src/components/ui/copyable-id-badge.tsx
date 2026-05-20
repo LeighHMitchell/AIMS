@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
@@ -47,28 +48,33 @@ export function CopyableIdBadge({
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={handleCopy}
-          aria-label={`Copy ${label} to clipboard`}
-          className={cn(
-            "text-xs font-mono text-muted-foreground bg-muted",
-            "hover:bg-muted/80 hover:text-foreground",
-            "transition-colors px-1.5 py-0.5 rounded",
-            "inline-flex items-center gap-1 align-middle cursor-pointer max-w-full",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            className,
-          )}
-        >
-          <span className="break-all text-left">{value}</span>
-          {showCheckOnCopy && copied && (
-            <Check className="h-3 w-3 text-[hsl(var(--success-icon))] flex-shrink-0" />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
+    // Self-contained TooltipProvider so the badge can be used anywhere —
+    // including inside CardShell banner overlays and other contexts that don't
+    // sit under a parent provider. Nested providers are tolerated by Radix.
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={`Copy ${label} to clipboard`}
+            className={cn(
+              "text-xs font-mono text-muted-foreground bg-muted",
+              "hover:bg-muted/80 hover:text-foreground",
+              "transition-colors px-1.5 py-0.5 rounded",
+              "inline-flex items-center gap-1 align-middle cursor-pointer max-w-full",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              className,
+            )}
+          >
+            <span className="break-all text-left">{value}</span>
+            {showCheckOnCopy && copied && (
+              <Check className="h-3 w-3 text-[hsl(var(--success-icon))] flex-shrink-0" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
