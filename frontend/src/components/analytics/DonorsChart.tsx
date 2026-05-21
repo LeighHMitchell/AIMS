@@ -41,10 +41,12 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
   const [data, setData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('disbursements')
+  // Top N selector — mirrors the Top 3/5/10 shortcut on SectorDisbursementOverTime.
+  const [topN, setTopN] = useState<number>(10)
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, refreshKey, viewMode])
+  }, [dateRange, refreshKey, viewMode, topN])
 
   const fetchData = async () => {
     try {
@@ -193,7 +195,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
           }
         })
         .sort((a, b) => b.value - a.value)
-        .slice(0, 10) // Top 10
+        .slice(0, topN)
 
       setData(sortedDonors)
       onDataChange?.(sortedDonors)
@@ -322,31 +324,50 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
           {getViewIcon()}
           <span>Viewing by:</span>
         </div>
-        <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
-          <SelectTrigger className="w-[220px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="budgets">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                <span>Total Budgets</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="disbursements">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                <span>Total Disbursements</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="planned">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>Total Planned Disbursements</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          {/* Top N quick picker — same set used in SectorDisbursementOverTime. */}
+          <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-card">
+            {[3, 5, 10].map(n => (
+              <button
+                key={n}
+                onClick={() => setTopN(n)}
+                className={
+                  topN === n
+                    ? 'text-xs font-medium px-2 py-1 rounded bg-muted text-foreground'
+                    : 'text-xs px-2 py-1 rounded text-muted-foreground hover:bg-muted'
+                }
+                title={`Show top ${n} development partners`}
+              >
+                Top {n}
+              </button>
+            ))}
+          </div>
+          <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="budgets">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  <span>Total Budgets</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="disbursements">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  <span>Total Disbursements</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="planned">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Total Planned Disbursements</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <ResponsiveContainer width="100%" height={400}>

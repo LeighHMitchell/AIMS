@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
     const metric = (searchParams.get('metric') || 'commitments') as MetricType;
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    // Top-N override — defaults to 5 to preserve the historic
+    // "top 5 + Others" response shape. Clamped to a small range so the
+    // grouped "Others" segment stays meaningful.
+    const topNRaw = parseInt(searchParams.get('topN') || '5', 10);
+    const topN = Number.isFinite(topNRaw) ? Math.min(Math.max(topNRaw, 1), 25) : 5;
 
     // Restrict all activity-derived data to published activities only.
     const { data: publishedActivitiesAll } = await supabase
@@ -219,18 +224,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Sort by value descending and get top 5
+    // Sort by value descending, then slice off the Top N requested by the client.
     const sortedDonors = Array.from(donorMap.entries())
       .sort((a, b) => b[1].value - a[1].value);
 
-    const top5 = sortedDonors.slice(0, 5);
-    const othersData = sortedDonors.slice(5);
+    const topSlice = sortedDonors.slice(0, topN);
+    const othersData = sortedDonors.slice(topN);
 
     // Calculate grand total
     const grandTotal = sortedDonors.reduce((sum, [, data]) => sum + data.value, 0);
 
     // Build result array
-    const result: DonorData[] = top5.map(([id, data]) => ({
+    const result: DonorData[] = topSlice.map(([id, data]) => ({
       id,
       name: data.name,
       acronym: data.acronym,
@@ -238,7 +243,7 @@ export async function GET(request: NextRequest) {
       activityCount: data.activityCount
     }));
 
-    // Add "OTHERS" if there are more than 5 donors
+    // Add "OTHERS" if there are more donors than the requested Top N.
     if (othersData.length > 0) {
       const othersValue = othersData.reduce((sum, [, data]) => sum + data.value, 0);
       const othersCount = othersData.reduce((sum, [, data]) => sum + data.activityCount, 0);

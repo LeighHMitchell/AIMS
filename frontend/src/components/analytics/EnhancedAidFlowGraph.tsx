@@ -3,9 +3,34 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3'
 import { Button } from '@/components/ui/button'
-import { Info, Maximize2, Minimize2, X, ArrowRight, Shrink, Expand } from 'lucide-react'
+import { Info, Maximize2, Minimize2, X, ArrowRight, Shrink, Expand, Plus, Minus, RotateCcw } from 'lucide-react'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+// Plain-language definitions used in the badge hover tooltips. Centralised so
+// the same wording appears next to a "Recipient" badge in the popup header
+// and a "Recipient" tag in the partner list.
+const BADGE_DEFINITIONS: Record<string, string> = {
+  donor: 'An organisation that provides funding — typically a bilateral, multilateral, or foundation.',
+  recipient: 'An organisation that ultimately benefits from the funding (often a government or community).',
+  implementer: 'An organisation that delivers the activity on the ground — often an NGO or contractor.',
+  intermediary: 'An organisation that channels funds onward — receiving from one organisation and disbursing to another.',
+  'net receiver': 'This organisation has received more funding than it has sent during the selected period.',
+  'net provider': 'This organisation has sent more funding than it has received during the selected period.',
+  organisation: 'A party in the aid flow (no specific role detected for the selected period).',
+  organization: 'A party in the aid flow (no specific role detected for the selected period).',
+  sector: 'A thematic grouping of activities by sector (e.g. health, education).',
+  activity: 'An individual activity or project — the unit of work being funded or delivered.',
+  inflow: 'The total value of funding this organisation received during the selected period.',
+  outflow: 'The total value of funding this organisation sent during the selected period.',
+  other: 'Transaction types other than the highlighted ones (e.g. reimbursements, interest, equity).',
+}
+
+function capitalise(s?: string): string {
+  if (!s) return ''
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
 
 export interface GraphNode {
   id: string
@@ -75,6 +100,14 @@ export default function EnhancedAidFlowGraph({
   const containerRef = useRef<HTMLDivElement>(null)
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null)
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
+  // Persist the zoom transform across data refreshes so toggling view mode
+  // or changing the time period doesn't snap the user back to the default
+  // pan/zoom — the visualization refreshes in place.
+  const savedZoomRef = useRef<d3.ZoomTransform | null>(null)
+  // Persist x/y positions of previously seen nodes so surviving nodes stay
+  // where they were across a data refresh; only brand-new nodes need to
+  // settle from scratch.
+  const nodePositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
   const [fullscreen, setFullscreen] = useState(false)
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [selectedNodePosition, setSelectedNodePosition] = useState<{ x: number; y: number } | null>(null)
@@ -84,6 +117,24 @@ export default function EnhancedAidFlowGraph({
     type: 'partners' | 'transactions' | 'incoming' | 'outgoing'
     data: any[]
   } | null>(null)
+
+  // If the selected node disappears after a data refresh, close the popup.
+  // Otherwise keep it open — the same node is still rendered, just with
+  // potentially updated stats. This implements "keep popup if node still
+  // exists" across the Transactions↔Activities toggle and time changes.
+  useEffect(() => {
+    if (!selectedNode) return
+    const stillExists = graphData.nodes.some(n => n.id === selectedNode.id)
+    if (!stillExists) {
+      setSelectedNode(null)
+      setSelectedNodePosition(null)
+      setNestedPopup(null)
+    } else {
+      // Refresh the bound node object so connection stats reflect new data.
+      const fresh = graphData.nodes.find(n => n.id === selectedNode.id)
+      if (fresh && fresh !== selectedNode) setSelectedNode(fresh)
+    }
+  }, [graphData])
 
   // Helper to get connection stats for a node
   const getNodeConnectionStats = (nodeId: string) => {
@@ -330,26 +381,49 @@ export default function EnhancedAidFlowGraph({
       .domain([0, maxValue])
       .range([2, 12])
 
-    // Create zoom behavior with filter to allow page scrolling
+    // Create zoom behavior. In expanded mode (the chart-card dialog or the
+    // standalone fullscreen view) the user has explicit control over the
+    // viewport — let the wheel and trackpad pan-scroll zoom directly. In the
+    // embedded compact card we still gate wheel events behind ctrlKey so
+    // ordinary page scrolling works while the cursor is over the chart.
+    const allowFreeWheelZoom = isExpanded || fullscreen
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 10])
       .filter((event) => {
-        // Allow pinch-to-zoom (ctrlKey is true for pinch gestures on trackpad)
-        // Block regular wheel scrolling so page can scroll normally
         if (event.type === 'wheel') {
-          return event.ctrlKey
+          return allowFreeWheelZoom || event.ctrlKey
         }
         return true
       })
       .on('zoom', (event) => {
         g.attr('transform', event.transform.toString())
+        savedZoomRef.current = event.transform
       })
 
     svg.call(zoom)
     zoomRef.current = zoom
 
+    // Seed nodes that survived the data refresh with their last known
+    // positions, so the simulation perturbs them only gently instead of
+    // re-tumbling the whole layout.
+    graphData.nodes.forEach(n => {
+      const prev = nodePositionsRef.current.get(n.id)
+      if (prev) {
+        n.x = prev.x
+        n.y = prev.y
+      }
+    })
+
     // Create main group
     const g = svg.append('g')
+
+    // Restore any previously-saved zoom/pan from before this rebuild so the
+    // user doesn't lose their viewport on toggle / time-period change. This
+    // must run AFTER `g` is declared, because applying the transform fires
+    // the zoom handler which reads from `g`.
+    if (savedZoomRef.current) {
+      svg.call(zoom.transform as any, savedZoomRef.current)
+    }
 
     // Create arrow markers
     const defs = svg.append('defs')
@@ -407,12 +481,68 @@ export default function EnhancedAidFlowGraph({
     // Store simulation reference for external control
     simulationRef.current = simulation
 
-    // Create links
+    // Pre-compute parallel-link bundles: when two organisations have more
+    // than one link between them (e.g. Disbursement + Expenditure, or A→B
+    // alongside B→A) we want to offset each line perpendicular to the
+    // source→target axis so they don't overlap into a single muddy stroke.
+    // We bundle by an unordered pair key so reverse-direction links bend the
+    // opposite way and remain distinguishable.
+    const linkBundles = new Map<string, GraphLink[]>()
+    validLinks.forEach((l) => {
+      const sId = typeof l.source === 'object' ? l.source.id : l.source
+      const tId = typeof l.target === 'object' ? l.target.id : l.target
+      const key = sId < tId ? `${sId}__${tId}` : `${tId}__${sId}`
+      const bucket = linkBundles.get(key) || []
+      bucket.push(l)
+      linkBundles.set(key, bucket)
+    })
+    const linkLayout = new Map<GraphLink, { index: number; count: number; reversed: boolean }>()
+    linkBundles.forEach((bucket) => {
+      const count = bucket.length
+      const canonicalSource =
+        (typeof bucket[0].source === 'object' ? bucket[0].source.id : bucket[0].source)
+      bucket.forEach((l, i) => {
+        const sId = typeof l.source === 'object' ? l.source.id : l.source
+        linkLayout.set(l, { index: i, count, reversed: sId !== canonicalSource })
+      })
+    })
+
+    // Path generator for curved (parallel-offset) links. The control point
+    // is offset perpendicular to the chord; offsets are spaced symmetrically
+    // around zero so the bundle splays out evenly.
+    const linkPath = (d: GraphLink) => {
+      const s = d.source as GraphNode
+      const t = d.target as GraphNode
+      const sx = s.x || 0, sy = s.y || 0
+      const tx = t.x || 0, ty = t.y || 0
+      const layout = linkLayout.get(d)
+      const count = layout?.count ?? 1
+      if (count <= 1) {
+        return `M${sx},${sy}L${tx},${ty}`
+      }
+      const dx = tx - sx
+      const dy = ty - sy
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1
+      // Perpendicular unit vector
+      const nx = -dy / dist
+      const ny = dx / dist
+      // Distribute offsets symmetrically (e.g. count=3 → -1, 0, +1).
+      const idx = (layout!.index) - (count - 1) / 2
+      const spread = 18 // pixels between adjacent parallel links
+      const offset = idx * spread
+      const cx = (sx + tx) / 2 + nx * offset
+      const cy = (sy + ty) / 2 + ny * offset
+      return `M${sx},${sy}Q${cx},${cy} ${tx},${ty}`
+    }
+
+    // Create links as curved paths so parallel links between the same pair
+    // of organisations remain visually distinct.
     const link = g.append('g')
       .attr('class', 'links')
-      .selectAll('line')
+      .selectAll('path')
       .data(validLinks)
-      .enter().append('line')
+      .enter().append('path')
+      .attr('fill', 'none')
       .attr('stroke', (d, i) => `url(#gradient-${i})`)
       .attr('stroke-width', d => linkWidthScale(d.value || 1) || 2) // Default width for links without value (e.g., activity relationships)
       .attr('stroke-opacity', d => {
@@ -522,16 +652,50 @@ export default function EnhancedAidFlowGraph({
       .attr('fill', '#ffffff')
       .style('pointer-events', 'none')
 
-    // Add labels below nodes
+    // Add labels below nodes — wrap onto multiple lines instead of
+    // truncating with an ellipsis. We split on word boundaries and start a
+    // new tspan whenever the running width would exceed maxCharsPerLine.
+    const maxCharsPerLine = 22
     const labels = node.append('text')
-      .text(d => d.name.length > 20 ? d.name.substring(0, 20) + '...' : d.name)
       .attr('text-anchor', 'middle')
-      .attr('dy', d => radiusScale(
-        (d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)
-      ) + 15)
       .attr('font-size', '12px')
       .attr('fill', '#334155')
       .attr('font-weight', d => d.id === highlightedNodeId ? 'bold' : 'normal')
+      .attr('y', d => radiusScale(
+        (d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)
+      ) + 15)
+
+    labels.each(function(d) {
+      const text = d3.select(this)
+      const words = (d.name || '').split(/\s+/).filter(Boolean)
+      const lines: string[] = []
+      let current = ''
+      for (const w of words) {
+        if (!current) {
+          current = w
+        } else if ((current.length + 1 + w.length) <= maxCharsPerLine) {
+          current = `${current} ${w}`
+        } else {
+          lines.push(current)
+          current = w
+        }
+      }
+      if (current) lines.push(current)
+      // Single very-long word with no spaces: hard-wrap.
+      if (lines.length === 1 && lines[0].length > maxCharsPerLine) {
+        const w = lines[0]
+        lines.length = 0
+        for (let i = 0; i < w.length; i += maxCharsPerLine) {
+          lines.push(w.slice(i, i + maxCharsPerLine))
+        }
+      }
+      lines.forEach((line, i) => {
+        text.append('tspan')
+          .attr('x', 0)
+          .attr('dy', i === 0 ? 0 : '1.1em')
+          .text(line)
+      })
+    })
 
     // Add hover interactions (highlight only, no tooltip)
     node.on('mouseenter', function(event, d) {
@@ -580,13 +744,14 @@ export default function EnhancedAidFlowGraph({
 
     // Simulation tick
     simulation.on('tick', () => {
-      link
-        .attr('x1', d => (d.source as GraphNode).x || 0)
-        .attr('y1', d => (d.source as GraphNode).y || 0)
-        .attr('x2', d => (d.target as GraphNode).x || 0)
-        .attr('y2', d => (d.target as GraphNode).y || 0)
-
+      link.attr('d', linkPath)
       node.attr('transform', d => `translate(${d.x || 0},${d.y || 0})`)
+      // Persist positions for surviving nodes across the next refresh.
+      graphData.nodes.forEach(n => {
+        if (typeof n.x === 'number' && typeof n.y === 'number') {
+          nodePositionsRef.current.set(n.id, { x: n.x, y: n.y })
+        }
+      })
     })
 
     // Auto-focus on highlighted node
@@ -630,11 +795,31 @@ export default function EnhancedAidFlowGraph({
       simulation.stop()
       simulationRef.current = null
     }
-  }, [graphData, fullscreen, height, highlightedNodeId, onNodeClick, dateRange])
+  }, [graphData, fullscreen, height, highlightedNodeId, onNodeClick, dateRange, isExpanded])
 
   const toggleFullscreen = () => {
     setFullscreen(!fullscreen)
   }
+
+  // Programmatic zoom controls — drive the same d3-zoom behavior that the
+  // wheel / pinch gestures use, so the visible transform and savedZoomRef
+  // stay in sync.
+  const handleZoomIn = useCallback(() => {
+    if (!zoomRef.current || !svgRef.current) return
+    d3.select(svgRef.current).transition().duration(200)
+      .call(zoomRef.current.scaleBy as any, 1.3)
+  }, [])
+  const handleZoomOut = useCallback(() => {
+    if (!zoomRef.current || !svgRef.current) return
+    d3.select(svgRef.current).transition().duration(200)
+      .call(zoomRef.current.scaleBy as any, 1 / 1.3)
+  }, [])
+  const handleZoomReset = useCallback(() => {
+    if (!zoomRef.current || !svgRef.current) return
+    savedZoomRef.current = null
+    d3.select(svgRef.current).transition().duration(300)
+      .call(zoomRef.current.transform as any, d3.zoomIdentity)
+  }, [])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -664,6 +849,40 @@ export default function EnhancedAidFlowGraph({
       >
         {/* Controls */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
+          {/* Zoom controls */}
+          <div className="flex gap-1 bg-white/90 backdrop-blur rounded-lg border p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomIn}
+              className="h-8 w-8 p-0"
+              title="Zoom in"
+              aria-label="Zoom in"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomOut}
+              className="h-8 w-8 p-0"
+              title="Zoom out"
+              aria-label="Zoom out"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomReset}
+              className="h-8 w-8 p-0"
+              title="Reset zoom"
+              aria-label="Reset zoom"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+
           {/* Cluster/Spread Controls */}
           <div className="flex gap-1 bg-white/90 backdrop-blur rounded-lg border p-1">
             <Button
@@ -752,21 +971,57 @@ export default function EnhancedAidFlowGraph({
           const netFlow = inflow - outflow
           const totalFlow = inflow + outflow
           const connectionStats = getNodeConnectionStats(selectedNode.id)
-          const nodeTypeColor = selectedNode.type === 'donor' ? '#4c5568' : 
-                               selectedNode.type === 'recipient' ? '#7b95a7' : 
-                               selectedNode.type === 'implementer' ? '#dc2625' : '#cfd0d5'
-          
+          // Use a single monochrome shade for the role-avatar background;
+          // the role itself is communicated by the (capitalised) badge text
+          // below, not by colour. Keeps the popup chrome consistent with the
+          // monochrome treatment of Inflow / Outflow / Other.
+          const nodeAvatarColor = '#4c5568' // Blue Slate
+
           // Determine role based on flow direction
           const flowRole = inflow > 0 && outflow > 0 ? 'Intermediary' :
-                          inflow > outflow ? 'Net Receiver' : 
+                          inflow > outflow ? 'Net Receiver' :
                           outflow > inflow ? 'Net Provider' : 'Organisation'
-          
+
+          const POPUP_WIDTH = 320
+          const PANEL_WIDTH = 320
+          const GAP = 12
+          const containerWidth = containerRef.current?.clientWidth || 800
+          const containerHeight = containerRef.current?.clientHeight || 600
+
+          // Position the main popup, clamping to the container.
+          const popupLeft = Math.min(
+            Math.max(selectedNodePosition.x + 15, 8),
+            containerWidth - POPUP_WIDTH - 8
+          )
+          const popupTop = Math.min(selectedNodePosition.y + 15, containerHeight - 200)
+
+          // Side panel anchors to the main popup: incoming goes to its left,
+          // everything else (outgoing, partners, transactions) goes to the
+          // right. Clamp to container so it never disappears off-screen.
+          let panelLeft = popupLeft + POPUP_WIDTH + GAP
+          if (nestedPopup?.type === 'incoming') {
+            panelLeft = popupLeft - PANEL_WIDTH - GAP
+          }
+          if (panelLeft < 8) panelLeft = 8
+          if (panelLeft + PANEL_WIDTH > containerWidth - 8) {
+            panelLeft = containerWidth - PANEL_WIDTH - 8
+          }
+
+          // Type and role tooltip lookups (case-insensitive against the
+          // BADGE_DEFINITIONS map, which is keyed by lowercase term).
+          const typeKey = (selectedNode.type || 'organisation').toLowerCase()
+          const roleKey = flowRole.toLowerCase()
+          const typeDef = BADGE_DEFINITIONS[typeKey] || BADGE_DEFINITIONS['organisation']
+          const roleDef = BADGE_DEFINITIONS[roleKey]
+
           return (
-            <div 
-              className="absolute z-20 bg-white text-foreground p-4 rounded-xl shadow-xl border border-border min-w-[280px] max-w-[320px]"
+            <TooltipProvider delayDuration={200}>
+            <div
+              className="absolute z-20 bg-white text-foreground p-4 rounded-xl shadow-xl border border-border"
               style={{
-                left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 340),
-                top: selectedNodePosition.y + 15
+                left: popupLeft,
+                top: popupTop,
+                width: POPUP_WIDTH,
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -777,82 +1032,110 @@ export default function EnhancedAidFlowGraph({
                   setSelectedNodePosition(null)
                   setNestedPopup(null)
                 }}
-                className="absolute top-3 right-3 text-muted-foreground hover:text-muted-foreground transition-colors"
+                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close"
               >
                 <X className="h-4 w-4" />
               </button>
-              
+
               {/* Header */}
               <div className="flex items-start gap-3 pr-6">
                 {selectedNode.logo ? (
-                  <img 
-                    src={selectedNode.logo} 
+                  <img
+                    src={selectedNode.logo}
                     alt={`${selectedNode.name} logo`}
                     className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-border"
                     onError={(e) => {
-                      // Fallback to initials if image fails to load
                       const target = e.target as HTMLImageElement
                       target.style.display = 'none'
                       target.nextElementSibling?.classList.remove('hidden')
                     }}
                   />
                 ) : null}
-                <div 
+                <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${selectedNode.logo ? 'hidden' : ''}`}
-                  style={{ backgroundColor: nodeTypeColor }}
+                  style={{ backgroundColor: nodeAvatarColor }}
                 >
                   {selectedNode.acronym?.substring(0, 2) || selectedNode.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-foreground leading-tight">{selectedNode.name}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span 
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      style={{ backgroundColor: `${nodeTypeColor}20`, color: nodeTypeColor }}
-                    >
-                      {selectedNode.type || 'Organization'}
-                    </span>
-                    {flowRole !== 'Organization' && (
-                      <span className="text-helper text-muted-foreground">{flowRole}</span>
+                  {/* Name wraps; do not truncate. Acronym is appended in
+                      parentheses in the same weight/size so it reads as part
+                      of the name (matches the search combobox). */}
+                  <div className="font-semibold text-foreground leading-tight whitespace-normal break-words">
+                    {selectedNode.name}
+                    {selectedNode.acronym && selectedNode.acronym !== selectedNode.name && (
+                      <> ({selectedNode.acronym})</>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          tabIndex={0}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground cursor-help"
+                        >
+                          {capitalise(selectedNode.type || 'Organisation')}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{typeDef}</TooltipContent>
+                    </Tooltip>
+                    {flowRole !== 'Organisation' && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span tabIndex={0} className="text-helper text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
+                            {flowRole}
+                          </span>
+                        </TooltipTrigger>
+                        {roleDef && <TooltipContent side="top">{roleDef}</TooltipContent>}
+                      </Tooltip>
                     )}
                   </div>
                 </div>
               </div>
-              
-              {/* Financial Summary */}
+
+              {/* Financial Summary — white background, monochrome shades. */}
               {(inflow > 0 || outflow > 0) && (
-                <div className="mt-4 p-3 bg-muted rounded-lg space-y-2">
+                <div className="mt-4 p-3 bg-white border border-border rounded-lg space-y-2">
                   <div className="text-section-label font-medium text-muted-foreground uppercase">Financial Summary</div>
-                  
+
                   {inflow > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-body text-muted-foreground flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Inflow
-                      </span>
-                      <span className="font-semibold text-emerald-600">{formatTooltipCurrency(inflow, isExpanded)}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span tabIndex={0} className="text-body text-muted-foreground flex items-center gap-1.5 cursor-help">
+                            <span className="w-2 h-2 rounded-full bg-gray-900"></span>
+                            Inflow
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{BADGE_DEFINITIONS.inflow}</TooltipContent>
+                      </Tooltip>
+                      <span className="font-semibold text-gray-900">{formatTooltipCurrency(inflow, isExpanded)}</span>
                     </div>
                   )}
                   {outflow > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-body text-muted-foreground flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                        Outflow
-                      </span>
-                      <span className="font-semibold text-blue-600">{formatTooltipCurrency(outflow, isExpanded)}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span tabIndex={0} className="text-body text-muted-foreground flex items-center gap-1.5 cursor-help">
+                            <span className="w-2 h-2 rounded-full bg-gray-600"></span>
+                            Outflow
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{BADGE_DEFINITIONS.outflow}</TooltipContent>
+                      </Tooltip>
+                      <span className="font-semibold text-gray-700">{formatTooltipCurrency(outflow, isExpanded)}</span>
                     </div>
                   )}
                   {inflow > 0 && outflow > 0 && (
-                    <>
-                      <div className="border-t border-border pt-2 mt-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-body font-medium text-foreground">Net Flow</span>
-                          <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                            {netFlow >= 0 ? '+' : ''}{formatTooltipCurrency(netFlow, isExpanded)}
-                          </span>
-                        </div>
+                    <div className="border-t border-border pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-body font-medium text-foreground">Net Flow</span>
+                        <span className="font-bold text-foreground">
+                          {netFlow >= 0 ? '+' : ''}{formatTooltipCurrency(netFlow, isExpanded)}
+                        </span>
                       </div>
-                    </>
+                    </div>
                   )}
                   {totalFlow > 0 && (
                     <div className="flex justify-between items-center text-helper text-muted-foreground pt-1">
@@ -862,11 +1145,11 @@ export default function EnhancedAidFlowGraph({
                   )}
                 </div>
               )}
-              
+
               {/* Connection Stats - Clickable */}
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <button 
-                  className="bg-muted hover:bg-muted rounded-lg p-3 text-center transition-colors cursor-pointer"
+                <button
+                  className="bg-muted hover:bg-muted/70 rounded-lg p-3 text-center transition-colors cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setNestedPopup({ type: 'partners', data: connectionStats.partners })
@@ -875,8 +1158,8 @@ export default function EnhancedAidFlowGraph({
                   <div className="text-2xl font-bold text-foreground">{connectionStats.partnerCount}</div>
                   <div className="text-helper text-muted-foreground">Partners</div>
                 </button>
-                <button 
-                  className="bg-muted hover:bg-muted rounded-lg p-3 text-center transition-colors cursor-pointer"
+                <button
+                  className="bg-muted hover:bg-muted/70 rounded-lg p-3 text-center transition-colors cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setNestedPopup({ type: 'transactions', data: connectionStats.allTransactions })
@@ -886,133 +1169,171 @@ export default function EnhancedAidFlowGraph({
                   <div className="text-helper text-muted-foreground">Transactions</div>
                 </button>
               </div>
-              
+
               {/* Flow Direction Breakdown - Clickable */}
               {(connectionStats.incomingCount > 0 || connectionStats.outgoingCount > 0) && (
                 <div className="mt-3 flex items-center justify-center gap-4 text-helper text-muted-foreground">
                   {connectionStats.incomingCount > 0 && (
-                    <button 
-                      className="flex items-center gap-1 hover:text-emerald-600 transition-colors cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setNestedPopup({ type: 'incoming', data: connectionStats.incomingTransactions })
-                      }}
-                    >
-                      <span className="text-emerald-500">↓</span> {connectionStats.incomingCount} incoming
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setNestedPopup({ type: 'incoming', data: connectionStats.incomingTransactions })
+                          }}
+                        >
+                          <span className="text-gray-900">↓</span> {connectionStats.incomingCount} incoming
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{BADGE_DEFINITIONS.inflow}</TooltipContent>
+                    </Tooltip>
                   )}
                   {connectionStats.outgoingCount > 0 && (
-                    <button 
-                      className="flex items-center gap-1 hover:text-blue-600 transition-colors cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setNestedPopup({ type: 'outgoing', data: connectionStats.outgoingTransactions })
-                      }}
-                    >
-                      <span className="text-blue-500">↑</span> {connectionStats.outgoingCount} outgoing
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setNestedPopup({ type: 'outgoing', data: connectionStats.outgoingTransactions })
+                          }}
+                        >
+                          <span className="text-gray-600">↑</span> {connectionStats.outgoingCount} outgoing
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{BADGE_DEFINITIONS.outflow}</TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
               )}
-              
-              {/* Nested Popup for Partners/Transactions */}
-              {nestedPopup && (
-                <div className="mt-3 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  <div className="sticky top-0 bg-white border-b border-border px-3 py-2 flex items-center justify-between">
-                    <span className="text-body font-medium text-foreground capitalize">
-                      {nestedPopup.type === 'partners' ? 'Partners' : 
-                       nestedPopup.type === 'incoming' ? 'Incoming Transactions' :
-                       nestedPopup.type === 'outgoing' ? 'Outgoing Transactions' : 'All Transactions'}
-                    </span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setNestedPopup(null)
-                      }}
-                      className="text-muted-foreground hover:text-muted-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  
-                  {nestedPopup.type === 'partners' ? (
-                    <div className="divide-y divide-slate-100">
-                      {nestedPopup.data.map((partner: any, idx: number) => (
-                        <div key={idx} className="px-3 py-2 flex items-center gap-2">
+            </div>
+
+            {/* Side panel — renders to the left of the main popup for Incoming
+                transactions, and to the right for Outgoing / Partners / All
+                Transactions. Replaces the old inline "stacked below" layout. */}
+            {nestedPopup && (
+              <div
+                className="absolute z-20 bg-white border border-border rounded-xl shadow-xl overflow-hidden flex flex-col"
+                style={{
+                  left: panelLeft,
+                  top: popupTop,
+                  width: PANEL_WIDTH,
+                  maxHeight: Math.max(160, containerHeight - popupTop - 24),
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="border-b border-border px-3 py-2 flex items-center justify-between">
+                  <span className="text-body font-medium text-foreground">
+                    {nestedPopup.type === 'partners' ? 'Partners' :
+                     nestedPopup.type === 'incoming' ? 'Incoming Transactions' :
+                     nestedPopup.type === 'outgoing' ? 'Outgoing Transactions' : 'All Transactions'}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setNestedPopup(null)
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Close"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto">
+                {nestedPopup.type === 'partners' ? (
+                  <div className="divide-y divide-slate-100">
+                    {nestedPopup.data.map((partner: any, idx: number) => {
+                      const pTypeKey = (partner.type || 'organisation').toLowerCase()
+                      const pTypeDef = BADGE_DEFINITIONS[pTypeKey] || BADGE_DEFINITIONS['organisation']
+                      return (
+                        <div key={idx} className="px-3 py-2 flex items-start gap-2">
                           {partner.logo ? (
-                            <img 
-                              src={partner.logo} 
+                            <img
+                              src={partner.logo}
                               alt={partner.name}
-                              className="w-6 h-6 rounded-full object-cover border border-border"
+                              className="w-6 h-6 rounded-full object-cover border border-border flex-shrink-0 mt-0.5"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
                               }}
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0 mt-0.5">
                               {partner.name.substring(0, 2).toUpperCase()}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-body text-foreground truncate">{partner.name}</div>
+                            {/* Wrap full org name, do not truncate. */}
+                            <div className="text-body text-foreground whitespace-normal break-words">{partner.name}</div>
                             <div className="text-helper text-muted-foreground flex items-center gap-1">
-                              <span className="capitalize">{partner.type || 'Organization'}</span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span tabIndex={0} className="cursor-help underline decoration-dotted underline-offset-2">
+                                    {capitalise(partner.type || 'Organisation')}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{pTypeDef}</TooltipContent>
+                              </Tooltip>
                               <span>•</span>
-                              <span className={partner.direction === 'incoming' ? 'text-emerald-500' : partner.direction === 'outgoing' ? 'text-blue-500' : 'text-purple-500'}>
+                              <span className="text-muted-foreground">
                                 {partner.direction === 'both' ? '↓↑' : partner.direction === 'incoming' ? '↓' : '↑'}
                               </span>
                             </div>
                           </div>
                         </div>
-                      ))}
-                      {nestedPopup.data.length === 0 && (
-                        <div className="px-3 py-4 text-center text-body text-muted-foreground">No partners</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-100">
-                      {nestedPopup.data.map((tx: any, idx: number) => (
-                        <div key={idx} className="px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            {tx.partnerLogo ? (
-                              <img 
-                                src={tx.partnerLogo} 
-                                alt={tx.partnerName}
-                                className="w-6 h-6 rounded-full object-cover border border-border"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement
-                                  target.style.display = 'none'
-                                }}
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
-                                {tx.partnerName.substring(0, 2).toUpperCase()}
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-body text-foreground truncate">{tx.partnerName}</div>
-                              <div className="text-helper text-muted-foreground">{tx.typeName}</div>
+                      )
+                    })}
+                    {nestedPopup.data.length === 0 && (
+                      <div className="px-3 py-4 text-center text-body text-muted-foreground">No partners</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {nestedPopup.data.map((tx: any, idx: number) => (
+                      <div key={idx} className="px-3 py-2">
+                        <div className="flex items-start gap-2">
+                          {tx.partnerLogo ? (
+                            <img
+                              src={tx.partnerLogo}
+                              alt={tx.partnerName}
+                              className="w-6 h-6 rounded-full object-cover border border-border flex-shrink-0 mt-0.5"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0 mt-0.5">
+                              {tx.partnerName.substring(0, 2).toUpperCase()}
                             </div>
-                            <div className="text-right">
-                              <div className={`text-sm font-medium ${tx.direction === 'incoming' ? 'text-emerald-600' : 'text-blue-600'}`}>
-                                {tx.direction === 'incoming' ? '+' : '-'}{formatTooltipCurrency(tx.value, isExpanded)}
-                              </div>
-                              <div className="text-helper text-muted-foreground">
-                                {tx.direction === 'incoming' ? '↓ In' : '↑ Out'}
-                              </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            {/* Wrap activity / partner name; do not truncate. */}
+                            <div className="text-body text-foreground whitespace-normal break-words">{tx.partnerName}</div>
+                            <div className="text-helper text-muted-foreground">{tx.typeName}</div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className={`text-sm font-medium ${tx.direction === 'incoming' ? 'text-gray-900' : 'text-gray-700'}`}>
+                              {tx.direction === 'incoming' ? '+' : '-'}{formatTooltipCurrency(tx.value, isExpanded)}
+                            </div>
+                            <div className="text-helper text-muted-foreground">
+                              {tx.direction === 'incoming' ? '↓ In' : '↑ Out'}
                             </div>
                           </div>
                         </div>
-                      ))}
-                      {nestedPopup.data.length === 0 && (
-                        <div className="px-3 py-4 text-center text-body text-muted-foreground">No transactions</div>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                    {nestedPopup.data.length === 0 && (
+                      <div className="px-3 py-4 text-center text-body text-muted-foreground">No transactions</div>
+                    )}
+                  </div>
+                )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+            </TooltipProvider>
           )
         })()}
 
@@ -1022,7 +1343,7 @@ export default function EnhancedAidFlowGraph({
         {/* Help Text */}
         <div className="absolute bottom-4 right-4 flex items-center gap-2 text-helper text-muted-foreground">
           <Info className="h-3 w-3" />
-          <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
+          <span>Drag to pan • Scroll / pinch / +- to zoom • Click nodes for details</span>
         </div>
       </div>
     </div>

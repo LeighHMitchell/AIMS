@@ -151,9 +151,6 @@ interface ProjectOrgCountsBySectorProps {
   compact?: boolean
 }
 
-// Top N sectors to show before "All Other Sectors"
-const TOP_SECTORS_COUNT = 10
-
 // Generate list of available years (from 2010 to current year + 10)
 const currentYear = new Date().getFullYear()
 const AVAILABLE_YEARS = Array.from(
@@ -172,6 +169,9 @@ export function ProjectOrgCountsBySector({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [groupByLevel, setGroupByLevel] = useState<'1' | '3' | '5'>('3')
+  // Top N sectors to show before grouping the remainder into "All Other Sectors".
+  // Mirrors the Top 3/5/10 shortcut on SectorDisbursementOverTime.
+  const [topN, setTopN] = useState<number>(10)
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
     new Set(['numberOfProjects', 'numberOfOrganisations'])
   )
@@ -391,6 +391,7 @@ export function ProjectOrgCountsBySector({
       setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
     }
     setGroupByLevel('3')
+    setTopN(10)
     const calendarYear = customYears.find(cy =>
       cy.name.toLowerCase().includes('calendar') ||
       cy.name.toLowerCase().includes('gregorian')
@@ -404,8 +405,8 @@ export function ProjectOrgCountsBySector({
   const chartData = useMemo(() => {
     if (sectors.length === 0) return []
 
-    const topSectors = sectors.slice(0, TOP_SECTORS_COUNT)
-    const otherSectors = sectors.slice(TOP_SECTORS_COUNT)
+    const topSectors = sectors.slice(0, topN)
+    const otherSectors = sectors.slice(topN)
 
     const result = [...topSectors]
     if (otherSectors.length > 0) {
@@ -434,7 +435,7 @@ export function ProjectOrgCountsBySector({
         ? sector.sectorName.substring(0, 17) + '...'
         : sector.sectorName
     }))
-  }, [sectors])
+  }, [sectors, topN])
 
   const formatCount = (value: number) => {
     if (!Number.isInteger(value)) return ''
@@ -764,6 +765,24 @@ export function ProjectOrgCountsBySector({
               >
                 Sub-sector
               </Button>
+            </div>
+
+            {/* Top N quick picker — same set used in SectorDisbursementOverTime. */}
+            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+              {[3, 5, 10].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setTopN(n)}
+                  className={
+                    topN === n
+                      ? 'text-xs font-medium px-2 h-8 rounded bg-muted text-foreground'
+                      : 'text-xs px-2 h-8 rounded text-muted-foreground hover:bg-muted'
+                  }
+                  title={`Show top ${n} sectors`}
+                >
+                  Top {n}
+                </button>
+              ))}
             </div>
 
             {/* Chart/Table Toggle */}

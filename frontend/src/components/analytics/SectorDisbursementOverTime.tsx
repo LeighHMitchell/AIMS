@@ -23,6 +23,8 @@ import {
   Area,
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -30,38 +32,25 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, SlidersHorizontal, Check, Search } from 'lucide-react'
+import {
+  TrendingUp,
+  LineChart as LineChartIcon,
+  BarChart3 as BarChartIcon,
+  Table as TableIcon,
+  CalendarIcon,
+  SlidersHorizontal,
+  Check,
+  Search,
+} from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, getSectorColor } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
-
-// Slate-only palette aligned with the rest of the analytics dashboard.
-const SECTOR_COLORS = [
-  '#1e293b', // slate-800
-  '#334155', // slate-700
-  '#475569', // slate-600
-  '#4c5568', // Blue Slate
-  '#3a4050', // Blue Slate dark
-  '#5d6b7a', // medium slate
-  '#64748b', // slate-500
-  '#6b7789', // Blue Slate light
-  '#5f7a8c', // Cool Steel dark
-  '#7b95a7', // Cool Steel
-  '#6a8494', // steel blue
-  '#7d8891', // cool gray
-  '#94a3b8', // slate-400
-  '#9bb0bf', // Cool Steel light
-  '#a3b5c2', // light steel
-  '#cbd5e1', // slate-300
-  '#cfd0d5', // Pale Slate
-  '#e2e8f0', // slate-200
-  '#8a9199', // neutral accent
-  '#4a5966', // deep slate
-]
+import { MetricMultiSelect } from './shared/MetricMultiSelect'
+import { METRIC_LABEL, type Metric } from './shared/metric-options'
 
 // Generate list of available years (from 2010 to current year + 10 to cover all possible data)
 const AVAILABLE_YEARS = Array.from(
@@ -69,11 +58,17 @@ const AVAILABLE_YEARS = Array.from(
   (_, i) => 2010 + i
 )
 
+// Per-year-per-sector record from /api/analytics/disbursements-by-sector.
+// `planned` and `actual` are preserved for back-compat; `budgets` and
+// `tx_1`…`tx_13` are the additive fields wired up alongside the multi-metric
+// dropdown. (`actual` and `tx_3` carry the same value.)
 interface YearData {
   year: number
   label?: string
   planned: number
   actual: number
+  budgets?: number
+  [txKey: string]: number | string | undefined // tx_1..tx_13
 }
 
 interface SectorData {
@@ -85,8 +80,6 @@ interface SectorData {
   categoryName: string
   years: YearData[]
 }
-
-
 
 interface DateRange {
   from: Date
@@ -100,9 +93,35 @@ interface SectorDisbursementOverTimeProps {
   organizationId?: string
 }
 
-type DataMode = 'planned' | 'actual'
-type ViewMode = 'area' | 'line' | 'table'
+type ViewMode = 'area' | 'line' | 'bar' | 'table'
 type AggregationLevel = 'group' | 'category' | 'sector'
+
+// Lighten a hex colour towards white by `amount` (0–1). Used in the Bar view
+// to render metric segments within each sector's stack as opacity-style
+// variants of the sector's base colour, so the colour family still reads as
+// "this sector" while each metric stays distinguishable.
+const lightenHex = (hex: string, amount: number): string => {
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i)
+  if (!m) return hex
+  const mix = (c: number) => Math.round(c + (255 - c) * amount)
+  const r = mix(parseInt(m[1], 16))
+  const g = mix(parseInt(m[2], 16))
+  const b = mix(parseInt(m[3], 16))
+  const hh = (n: number) => n.toString(16).padStart(2, '0')
+  return `#${hh(r)}${hh(g)}${hh(b)}`
+}
+
+// Sum across the user-selected metrics for a single year record. Used by every
+// view (area / line / table) where the chart presents one number per sector
+// per year — the Bar view goes deeper and reads each metric individually.
+const sumSelectedMetrics = (year: YearData | undefined, metrics: Metric[]): number => {
+  if (!year) return 0
+  let total = 0
+  for (const m of metrics) {
+    total += Number(year[m] ?? 0) || 0
+  }
+  return total
+}
 
 export function SectorDisbursementOverTime({
   dateRange: initialDateRange,
@@ -111,7 +130,30 @@ export function SectorDisbursementOverTime({
   organizationId
 }: SectorDisbursementOverTimeProps) {
   const isExpanded = useChartExpansion()
-  const [dataMode, setDataMode] = useState<DataMode>('actual')
+  // Multi-select financial metrics. Mirrors AllDonorsHorizontalBarChart — the
+  // External Development Partners Financial Overview chart uses the same
+  // 15-option dropdown and the same Disbursements (tx_3) default.
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>(['tx_3'])
+
+  // Metrics are partitioned into three mutually exclusive groups:
+  //  - 'pb'     → Total Planned Disbursements ('planned')
+  //  - 'budget' → Total Budgets ('budgets')
+  //  - 'tx'     → IATI transaction types (tx_1..tx_13), multi-select allowed
+  // Selecting from a different group than the current selection replaces the
+  // selection rather than mixing groups; transactions still combine freely
+  // with each other.
+  const metricGroup = (m: Metric): 'pb' | 'budget' | 'tx' =>
+    m === 'planned' ? 'pb' : m === 'budgets' ? 'budget' : 'tx'
+
+  const handleMetricsChange = (next: Metric[]) => {
+    setSelectedMetrics(prev => {
+      const added = next.filter(m => !prev.includes(m))
+      if (added.length === 0) return next // pure removals (incl. Clear)
+      const newest = added[added.length - 1]
+      const targetGroup = metricGroup(newest)
+      return next.filter(m => metricGroup(m) === targetGroup)
+    })
+  }
   const [viewMode, setViewMode] = useState<ViewMode>('area')
   const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>('group') // Default to Sector Categories
   const [data, setData] = useState<SectorData[]>([])
@@ -316,15 +358,14 @@ export function SectorDisbursementOverTime({
     setVisibleSectors(new Set())
   }
 
-  // Select top N items by total value
+  // Select top N items by total value across the currently-selected metrics.
   const selectTopN = (n: number) => {
-    const itemTotals = aggregatedData.map(item => {
-      const total = item.years.reduce((sum, y) => sum + (dataMode === 'planned' ? y.planned : y.actual), 0)
-      return { code: item.code, total }
-    })
+    const itemTotals = aggregatedData.map(item => ({
+      code: item.code,
+      total: item.years.reduce((sum, y) => sum + sumSelectedMetrics(y, selectedMetrics), 0),
+    }))
     itemTotals.sort((a, b) => b.total - a.total)
-    const topCodes = itemTotals.slice(0, n).map(item => item.code)
-    setVisibleSectors(new Set(topCodes))
+    setVisibleSectors(new Set(itemTotals.slice(0, n).map(item => item.code)))
   }
 
   // Fetch ALL data from API once (no date filtering - filter client-side for instant switching)
@@ -356,14 +397,23 @@ export function SectorDisbursementOverTime({
         const sectors = result.sectors || []
         setData(sectors)
 
-        // Calculate actual data range from the fetched sector data
-        // This ensures "Data" button shows only years with actual disbursement data
+        // Calculate actual data range from the fetched sector data.
+        // A year "has data" if any of the 15 metrics is non-zero — we look at
+        // budgets / planned / every tx_<code> so the Data button doesn't
+        // collapse to the historic planned+actual subset.
         let dataMinYear = Infinity
         let dataMaxYear = -Infinity
         sectors.forEach((sector: SectorData) => {
           sector.years.forEach((yearData: YearData) => {
-            // Only consider years with actual data (planned or actual > 0)
-            if (yearData.planned > 0 || yearData.actual > 0) {
+            let hasData = (yearData.planned || 0) > 0
+              || (yearData.actual || 0) > 0
+              || (Number(yearData.budgets) || 0) > 0
+            if (!hasData) {
+              for (let i = 1; i <= 13; i++) {
+                if ((Number(yearData[`tx_${i}`]) || 0) > 0) { hasData = true; break }
+              }
+            }
+            if (hasData) {
               if (yearData.year < dataMinYear) dataMinYear = yearData.year
               if (yearData.year > dataMaxYear) dataMaxYear = yearData.year
             }
@@ -392,10 +442,31 @@ export function SectorDisbursementOverTime({
     // re-bucket by fiscal year; still avoid re-fetching on date-range tweaks.
   }, [refreshKey, organizationId, calendarType])
 
-  // Aggregate data based on aggregation level (group, category, or sector)
+  // List of every numeric metric key on a YearData record. The category/group
+  // aggregations need to roll up every metric so the Bar/Area views can read
+  // any one of them downstream.
+  const METRIC_KEYS_ON_YEAR: string[] = useMemo(() => {
+    const keys = ['planned', 'actual', 'budgets']
+    for (let i = 1; i <= 13; i++) keys.push(`tx_${i}`)
+    return keys
+  }, [])
+
+  const addMetrics = (target: Record<string, number>, source: YearData) => {
+    for (const k of METRIC_KEYS_ON_YEAR) {
+      target[k] = (target[k] || 0) + (Number(source[k]) || 0)
+    }
+  }
+  const emptyMetrics = (): Record<string, number> => {
+    const o: Record<string, number> = {}
+    for (const k of METRIC_KEYS_ON_YEAR) o[k] = 0
+    return o
+  }
+
+  // Aggregate data based on aggregation level (group, category, or sector).
+  // Each rolled-up year keeps every metric so the rest of the chart can read
+  // any combination of them.
   const aggregatedData = useMemo(() => {
     if (aggregationLevel === 'sector') {
-      // Return original sector-level data
       return data.map(sector => ({
         code: sector.sectorCode,
         name: sector.sectorName,
@@ -403,10 +474,9 @@ export function SectorDisbursementOverTime({
         groupName: sector.groupName,
         categoryCode: sector.categoryCode,
         categoryName: sector.categoryName,
-        years: sector.years
+        years: sector.years as Array<YearData>,
       }))
     } else if (aggregationLevel === 'category') {
-      // Aggregate by category
       const categoryMap = new Map<string, {
         code: string
         name: string
@@ -414,7 +484,7 @@ export function SectorDisbursementOverTime({
         groupName: string
         categoryCode: string
         categoryName: string
-        yearsMap: Map<number, { planned: number; actual: number }>
+        yearsMap: Map<number, Record<string, number>>
       }>()
 
       data.forEach(sector => {
@@ -427,14 +497,13 @@ export function SectorDisbursementOverTime({
             groupName: sector.groupName || 'Other',
             categoryCode: sector.categoryCode || '998',
             categoryName: sector.categoryName || 'Unallocated',
-            yearsMap: new Map()
+            yearsMap: new Map(),
           })
         }
         const cat = categoryMap.get(key)!
         sector.years.forEach(y => {
-          const existing = cat.yearsMap.get(y.year) || { planned: 0, actual: 0 }
-          existing.planned += y.planned
-          existing.actual += y.actual
+          const existing = cat.yearsMap.get(y.year) || emptyMetrics()
+          addMetrics(existing, y)
           cat.yearsMap.set(y.year, existing)
         })
       })
@@ -446,14 +515,11 @@ export function SectorDisbursementOverTime({
         groupName: cat.groupName,
         categoryCode: cat.categoryCode,
         categoryName: cat.categoryName,
-        years: Array.from(cat.yearsMap.entries()).map(([year, data]) => ({
-          year,
-          planned: data.planned,
-          actual: data.actual
-        })).sort((a, b) => a.year - b.year)
+        years: Array.from(cat.yearsMap.entries())
+          .map(([year, metrics]) => ({ year, ...metrics } as YearData))
+          .sort((a, b) => a.year - b.year),
       }))
     } else {
-      // Aggregate by group
       const groupMap = new Map<string, {
         code: string
         name: string
@@ -461,7 +527,7 @@ export function SectorDisbursementOverTime({
         groupName: string
         categoryCode: string
         categoryName: string
-        yearsMap: Map<number, { planned: number; actual: number }>
+        yearsMap: Map<number, Record<string, number>>
       }>()
 
       data.forEach(sector => {
@@ -474,14 +540,13 @@ export function SectorDisbursementOverTime({
             groupName: sector.groupName || 'Other',
             categoryCode: sector.groupCode || '998',
             categoryName: sector.groupName || 'Other',
-            yearsMap: new Map()
+            yearsMap: new Map(),
           })
         }
         const grp = groupMap.get(key)!
         sector.years.forEach(y => {
-          const existing = grp.yearsMap.get(y.year) || { planned: 0, actual: 0 }
-          existing.planned += y.planned
-          existing.actual += y.actual
+          const existing = grp.yearsMap.get(y.year) || emptyMetrics()
+          addMetrics(existing, y)
           grp.yearsMap.set(y.year, existing)
         })
       })
@@ -493,25 +558,30 @@ export function SectorDisbursementOverTime({
         groupName: grp.groupName,
         categoryCode: grp.categoryCode,
         categoryName: grp.categoryName,
-        years: Array.from(grp.yearsMap.entries()).map(([year, data]) => ({
-          year,
-          planned: data.planned,
-          actual: data.actual
-        })).sort((a, b) => a.year - b.year)
+        years: Array.from(grp.yearsMap.entries())
+          .map(([year, metrics]) => ({ year, ...metrics } as YearData))
+          .sort((a, b) => a.year - b.year),
       }))
     }
-  }, [data, aggregationLevel])
+  }, [data, aggregationLevel, METRIC_KEYS_ON_YEAR])
 
-  // Build color map for VISIBLE items only (so colors are always distinct)
+  // Build color map by ranking *every* item (not just visible) by its total
+  // across the selected metrics, then assigning `getSectorColor(rank)`. This
+  // matches the Aid Distribution chart's palette (`@/lib/chart-colors`) so the
+  // same sector tends to land on the same colour across both cards.
   const colorMap = useMemo(() => {
     const map = new Map<string, string>()
-    // Only assign colors to visible items, ensuring they get distinct colors
-    const visibleItems = aggregatedData.filter(item => visibleSectors.has(item.code))
-    visibleItems.forEach((item, idx) => {
-      map.set(item.code, SECTOR_COLORS[idx % SECTOR_COLORS.length])
+    const ranked = aggregatedData
+      .map(item => ({
+        code: item.code,
+        total: item.years.reduce((sum, y) => sum + sumSelectedMetrics(y, selectedMetrics), 0),
+      }))
+      .sort((a, b) => b.total - a.total)
+    ranked.forEach((entry, i) => {
+      map.set(entry.code, getSectorColor(i))
     })
     return map
-  }, [aggregatedData, visibleSectors])
+  }, [aggregatedData, selectedMetrics])
 
   // Reset visible sectors when aggregation level changes (start with none selected)
   useEffect(() => {
@@ -570,42 +640,43 @@ export function SectorDisbursementOverTime({
     // Get the custom year for label formatting
     const customYear = customYears.find(cy => cy.id === calendarType)
 
-    // Create data points for each year (with calendar-appropriate labels)
+    // Create data points for each year. For non-bar views the chart reads
+    // `dataPoint[<sectorCode>]` (sum of selected metrics). For bar view it
+    // reads `dataPoint[<sectorCode>__<metric>]` so each metric becomes its
+    // own stacked segment within that sector's bar.
     return years.map(year => {
-      // Use getCustomYearLabel for proper formatting based on calendar type
       const yearLabel = customYear ? getCustomYearLabel(customYear, year) : year.toString()
 
       const dataPoint: Record<string, any> = {
         year,
-        calendarYear: yearLabel
+        calendarYear: yearLabel,
       }
 
       aggregatedData.forEach(item => {
         const yearData = item.years.find(y => y.year === year)
-        const value = dataMode === 'planned'
-          ? (yearData?.planned || 0)
-          : (yearData?.actual || 0)
-        dataPoint[item.code] = value
+        dataPoint[item.code] = sumSelectedMetrics(yearData, selectedMetrics)
+        selectedMetrics.forEach(m => {
+          dataPoint[`${item.code}__${m}`] = Number(yearData?.[m] ?? 0) || 0
+        })
       })
 
       return dataPoint
     })
-  }, [aggregatedData, dataMode, customYears, calendarType, selectedYears])
+  }, [aggregatedData, selectedMetrics, customYears, calendarType, selectedYears])
 
   // Initialize visible sectors when data first loads - select Top 5 by default
   useEffect(() => {
     if (aggregatedData.length > 0 && !hasInitialized) {
-      // Select Top 5 by value on initial load
-      const itemTotals = aggregatedData.map(item => {
-        const total = item.years.reduce((sum, y) => sum + y.actual, 0)
-        return { code: item.code, total }
-      })
+      const itemTotals = aggregatedData.map(item => ({
+        code: item.code,
+        total: item.years.reduce((sum, y) => sum + sumSelectedMetrics(y, selectedMetrics), 0),
+      }))
       itemTotals.sort((a, b) => b.total - a.total)
       const topCodes = itemTotals.slice(0, 5).map(item => item.code)
       setVisibleSectors(new Set(topCodes))
       setHasInitialized(true)
     }
-  }, [aggregatedData.length, hasInitialized])
+  }, [aggregatedData.length, hasInitialized, selectedMetrics])
 
 
   // Format currency for Y-axis (e.g., $27m)
@@ -633,7 +704,7 @@ export function SectorDisbursementOverTime({
   const formatCurrencyCompact = (value: number) => {
     const absValue = Math.abs(value)
     const sign = value < 0 ? '-' : ''
-    
+
     if (absValue >= 1000000000) {
       return `${sign}$${(absValue / 1000000000).toFixed(1)}b`
     } else if (absValue >= 1000000) {
@@ -645,14 +716,36 @@ export function SectorDisbursementOverTime({
     }
   }
 
-  // Custom tooltip with hierarchical grouping
+  // Custom tooltip with hierarchical grouping. Sector-level entries surface
+  // their sum across the selected metrics; when more than one metric is
+  // selected we add a small per-metric breakdown line under each sector row.
   const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (!active || !payload || !payload.length) return null
 
-    const filteredPayload = payload.filter((entry: any) => entry.value && entry.value > 0)
-    if (filteredPayload.length === 0) return null
+    // For bar view the payload contains one entry per (sector × metric) — we
+    // collapse them back to per-sector rows so the tooltip is readable.
+    const sectorTotals = new Map<string, number>()
+    const sectorMetricBreakdown = new Map<string, Map<Metric, number>>()
+    payload.forEach((entry: any) => {
+      const key = String(entry.dataKey || '')
+      if (!key) return
+      const [sectorCode, metric] = key.includes('__')
+        ? key.split('__') as [string, Metric]
+        : [key, null] as [string, Metric | null]
+      const value = Number(entry.value) || 0
+      if (!value) return
+      sectorTotals.set(sectorCode, (sectorTotals.get(sectorCode) || 0) + value)
+      if (metric) {
+        if (!sectorMetricBreakdown.has(sectorCode)) {
+          sectorMetricBreakdown.set(sectorCode, new Map())
+        }
+        sectorMetricBreakdown.get(sectorCode)!.set(metric, value)
+      }
+    })
 
-    const total = filteredPayload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0)
+    if (sectorTotals.size === 0) return null
+
+    const total = Array.from(sectorTotals.values()).reduce((sum, v) => sum + v, 0)
 
     const tooltipGroups = new Map<string, {
       groupCode: string
@@ -666,8 +759,8 @@ export function SectorDisbursementOverTime({
       }>
     }>()
 
-    filteredPayload.forEach((entry: any) => {
-      const item = aggregatedData.find(d => d.code === entry.dataKey)
+    sectorTotals.forEach((value, sectorCode) => {
+      const item = aggregatedData.find(d => d.code === sectorCode)
       if (!item) return
 
       const groupCode = item.groupCode || '998'
@@ -681,18 +774,18 @@ export function SectorDisbursementOverTime({
         })
       }
       const group = tooltipGroups.get(groupCode)!
-      group.groupTotal += entry.value || 0
+      group.groupTotal += value
 
       if (!group.categories.has(categoryCode)) {
         group.categories.set(categoryCode, { categoryCode, categoryName, categoryTotal: 0, items: [] })
       }
       const category = group.categories.get(categoryCode)!
-      category.categoryTotal += entry.value || 0
+      category.categoryTotal += value
       category.items.push({
         code: item.code,
         name: item.name,
-        value: entry.value || 0,
-        color: entry.color
+        value,
+        color: colorMap.get(item.code) || '#6B7280',
       })
     })
 
@@ -700,10 +793,16 @@ export function SectorDisbursementOverTime({
       .sort((a, b) => b.groupTotal - a.groupTotal)
 
     const calendarName = customYears.find(cy => cy.id === calendarType)?.name
+    const metricsBadge = selectedMetrics.length === 0
+      ? 'No metric selected'
+      : selectedMetrics.length === 1
+        ? METRIC_LABEL[selectedMetrics[0]]
+        : `${selectedMetrics.length} metrics`
 
     const subtitle = (
       <div className="space-y-0.5">
         {calendarName && <div>{calendarName}</div>}
+        <div className="text-muted-foreground">{metricsBadge}</div>
         <div>
           Total: <span className="font-bold text-foreground">{formatTooltipCurrency(total, isExpanded)}</span>
         </div>
@@ -712,17 +811,32 @@ export function SectorDisbursementOverTime({
 
     const rows: ChartTooltipRow[] = []
 
+    const pushMetricBreakdownFor = (sectorCode: string) => {
+      if (selectedMetrics.length <= 1) return
+      const breakdown = sectorMetricBreakdown.get(sectorCode)
+      if (!breakdown) return
+      selectedMetrics.forEach(m => {
+        const v = breakdown.get(m) || 0
+        if (!v) return
+        rows.push({
+          label: <span className="ml-3 text-muted-foreground text-helper">{METRIC_LABEL[m]}</span>,
+          value: formatTooltipCurrency(v, isExpanded),
+        })
+      })
+    }
+
     if (aggregationLevel === 'group') {
-      filteredPayload
-        .sort((a: any, b: any) => (b.value || 0) - (a.value || 0))
-        .forEach((entry: any) => {
-          const item = aggregatedData.find(d => d.code === entry.dataKey)
+      Array.from(sectorTotals.entries())
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([sectorCode, value]) => {
+          const item = aggregatedData.find(d => d.code === sectorCode)
           rows.push({
-            label: item?.name ?? entry.dataKey,
-            value: formatTooltipCurrency(entry.value, isExpanded),
-            color: entry.color,
-            code: entry.dataKey,
+            label: item?.name ?? sectorCode,
+            value: formatTooltipCurrency(value, isExpanded),
+            color: colorMap.get(sectorCode),
+            code: sectorCode,
           })
+          pushMetricBreakdownFor(sectorCode)
         })
     } else if (aggregationLevel === 'category') {
       sortedGroups.forEach((group) => {
@@ -740,6 +854,7 @@ export function SectorDisbursementOverTime({
               color: colorMap.get(cat.categoryCode),
               code: cat.categoryCode,
             })
+            pushMetricBreakdownFor(cat.categoryCode)
           })
       })
     } else {
@@ -765,6 +880,7 @@ export function SectorDisbursementOverTime({
                   value: formatTooltipCurrency(item.value, isExpanded),
                   color: item.color,
                 })
+                pushMetricBreakdownFor(item.code)
               })
           })
       })
@@ -788,6 +904,8 @@ export function SectorDisbursementOverTime({
   const visibleItemData = useMemo(() => {
     return aggregatedData.filter(item => visibleSectors.has(item.code))
   }, [aggregatedData, visibleSectors])
+
+  const noMetricSelected = selectedMetrics.length === 0
 
   // Compact mode check FIRST - before any Card returns
   if (compact) {
@@ -858,6 +976,30 @@ export function SectorDisbursementOverTime({
       </div>
     )
   }
+
+  const renderEmptyMetricState = () => (
+    <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
+      <SlidersHorizontal className="h-8 w-8 text-slate-300" />
+      <p>Select at least one metric</p>
+      <p className="text-helper text-muted-foreground">
+        Choose Total Budgets, Planned Disbursements, or any IATI transaction type from the metrics dropdown
+      </p>
+    </div>
+  )
+
+  const renderEmptySelectionState = () => (
+    <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
+      <SlidersHorizontal className="h-8 w-8 text-slate-300" />
+      <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
+      <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
+    </div>
+  )
+
+  const renderNoDataState = () => (
+    <div className="h-80 flex items-center justify-center text-muted-foreground">
+      No data available
+    </div>
+  )
 
   return (
     <div className="space-y-3">
@@ -983,25 +1125,13 @@ export function SectorDisbursementOverTime({
 
           {/* Controls - Right Side */}
           <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-            {/* Data Mode Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", dataMode === 'planned' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setDataMode('planned')}
-              >
-                Planned
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", dataMode === 'actual' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setDataMode('actual')}
-              >
-                Actual
-              </Button>
-            </div>
+            {/* Financial-metric multi-select — same dropdown as the External
+                Development Partners Financial Overview chart. */}
+            <MetricMultiSelect
+              selected={selectedMetrics}
+              onChange={handleMetricsChange}
+              triggerClassName="min-w-[240px] h-9 justify-between"
+            />
 
             {/* Aggregation Level Toggle */}
             <div className="flex gap-1 rounded-lg p-1 bg-muted">
@@ -1165,6 +1295,16 @@ export function SectorDisbursementOverTime({
               <Button
                 variant="ghost"
                 size="icon"
+                className={cn("h-8 w-8", viewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                onClick={() => setViewMode('bar')}
+                title="Bar"
+                aria-label="Bar"
+              >
+                <BarChartIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('table')}
                 title="Table View"
@@ -1179,17 +1319,13 @@ export function SectorDisbursementOverTime({
 
         <div className="bg-white">
           {/* Charts */}
-          {viewMode === 'area' ? (
+          {noMetricSelected ? (
+            renderEmptyMetricState()
+          ) : viewMode === 'area' ? (
             visibleItemData.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                <SlidersHorizontal className="h-8 w-8 text-slate-300" />
-                <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
-              </div>
+              renderEmptySelectionState()
             ) : timeSeriesData.length === 0 ? (
-              <div className="h-80 flex items-center justify-center text-muted-foreground">
-                No data available
-              </div>
+              renderNoDataState()
             ) : (
               <ResponsiveContainer width="100%" height={400}>
                 <AreaChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 50, bottom: 20 }}>
@@ -1226,15 +1362,9 @@ export function SectorDisbursementOverTime({
             )
           ) : viewMode === 'line' ? (
             visibleItemData.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                <SlidersHorizontal className="h-8 w-8 text-slate-300" />
-                <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
-              </div>
+              renderEmptySelectionState()
             ) : timeSeriesData.length === 0 ? (
-              <div className="h-80 flex items-center justify-center text-muted-foreground">
-                No data available
-              </div>
+              renderNoDataState()
             ) : (
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 50, bottom: 20 }}>
@@ -1269,14 +1399,61 @@ export function SectorDisbursementOverTime({
                 </LineChart>
               </ResponsiveContainer>
             )
+          ) : viewMode === 'bar' ? (
+            visibleItemData.length === 0 ? (
+              renderEmptySelectionState()
+            ) : timeSeriesData.length === 0 ? (
+              renderNoDataState()
+            ) : (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 50, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+                  <XAxis
+                    dataKey="calendarYear"
+                    fontSize={11}
+                    tick={{ fill: '#6B7280' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tickLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis
+                    tickFormatter={formatAxisCurrency}
+                    fontSize={12}
+                    tick={{ fill: '#6B7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} wrapperStyle={{ pointerEvents: 'auto' }} />
+                  {/* One bar per (sector × metric). recharts groups bars that
+                      share an x-tick and stacks those that share a stackId, so
+                      `stackId={sectorCode}` produces grouped bars per sector
+                      per year, each stacked by metric. Lightened tints of the
+                      sector's base color separate metrics within the stack. */}
+                  {visibleItemData.map(item => {
+                    const base = colorMap.get(item.code) || '#6B7280'
+                    return selectedMetrics.map((metric, mi) => {
+                      const lighten = selectedMetrics.length > 1
+                        ? (mi / Math.max(selectedMetrics.length - 1, 1)) * 0.55
+                        : 0
+                      return (
+                        <Bar
+                          key={`${item.code}__${metric}`}
+                          dataKey={`${item.code}__${metric}`}
+                          name={`${item.name} · ${METRIC_LABEL[metric]}`}
+                          stackId={item.code}
+                          fill={lightenHex(base, lighten)}
+                          stroke={base}
+                          strokeWidth={mi === selectedMetrics.length - 1 ? 0.5 : 0}
+                        />
+                      )
+                    })
+                  })}
+                </BarChart>
+              </ResponsiveContainer>
+            )
           ) : (
             /* Table View */
             visibleItemData.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                <SlidersHorizontal className="h-8 w-8 text-slate-300" />
-                <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
-              </div>
+              renderEmptySelectionState()
             ) : (
             <div className="overflow-auto max-h-[500px]">
               <Table>
@@ -1364,12 +1541,9 @@ export function SectorDisbursementOverTime({
 
         {/* Explanatory text */}
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart shows how sector disbursements have changed over time. Toggle between planned and actual disbursements, and view data at Sector Category, Sector, or Sub-sector levels.
-          Use the stacked area chart to see cumulative totals across sectors, or switch to line view to compare individual sector trends. Hover over any point to see a detailed breakdown by sector for that year.
+          This chart shows how sector financial flows have changed over time. Pick any combination of the 15 IATI-aligned metrics — Total Budgets, Planned Disbursements, and the 13 transaction types — and view the result at Sector Category, Sector, or Sub-sector level.
+          Use the stacked area or bar chart to see cumulative totals across sectors, switch to line view to compare individual sector trends, or open the table for the underlying numbers.
         </p>
     </div>
   )
 }
-
-
-

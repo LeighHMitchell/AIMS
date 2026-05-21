@@ -253,11 +253,18 @@ export async function PUT(
       // Keep country_represented so it also gets saved to the database
     }
     
-    if ('organisation_type' in updates) {
-      // Save to both type and organisation_type columns for compatibility
-      updates.type = updates.organisation_type;
-      updates.organisation_type = updates.organisation_type;
+    // Organisation type — accept either `Organisation_Type_Code` (canonical column
+    // name after rename_organisation_type_column.sql) or the legacy `organisation_type`
+    // key from older clients. Mirror to the legacy `type` column for backward
+    // compatibility with older queries that still read it. The renamed-away
+    // `organisation_type` key must be stripped, otherwise Supabase 400s on the
+    // missing column.
+    const incomingTypeCode = updates.Organisation_Type_Code ?? updates.organisation_type;
+    if (incomingTypeCode !== undefined && incomingTypeCode !== null && incomingTypeCode !== '') {
+      updates.Organisation_Type_Code = incomingTypeCode;
+      updates.type = incomingTypeCode;
     }
+    delete updates.organisation_type;
     
     const { data, error } = await supabase
       .from('organizations')

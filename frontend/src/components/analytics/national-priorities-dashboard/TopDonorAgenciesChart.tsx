@@ -157,6 +157,8 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
   const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
   const [grandTotal, setGrandTotal] = useState(0);
+  // Top N selector — defaults to 5 to match the API's historic shape.
+  const [topN, setTopN] = useState<number>(5);
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
   const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
     setOpenFilter(prev => open ? key : (prev === key ? null : prev));
@@ -166,7 +168,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({ metric });
+      const params = new URLSearchParams({ metric, topN: String(topN) });
       const { from, to } = getDateRangeFromTimeRange(timeRange);
       if (from) {
         params.set("dateFrom", from.toISOString());
@@ -190,7 +192,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
     } finally {
       setLoading(false);
     }
-  }, [metric, timeRange]);
+  }, [metric, timeRange, topN]);
 
   useEffect(() => {
     fetchData();
@@ -408,6 +410,23 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
       </Select>
 
       <div className="flex items-center gap-1">
+        {/* Top N quick picker — same set used in SectorDisbursementOverTime. */}
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+          {[3, 5, 10].map(n => (
+            <button
+              key={n}
+              onClick={() => setTopN(n)}
+              className={
+                topN === n
+                  ? 'text-xs font-medium px-2 h-8 rounded bg-muted text-foreground'
+                  : 'text-xs px-2 h-8 rounded text-muted-foreground hover:bg-muted'
+              }
+              title={`Show top ${n} development partners`}
+            >
+              Top {n}
+            </button>
+          ))}
+        </div>
         {/* View mode toggles */}
         <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
           <Button
@@ -485,7 +504,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
       {!compact && renderControls()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart shows the top 5 individual development partner organizations by financial contribution, with remaining donors aggregated. Use the metric and time range selectors to analyze funding patterns across different measures and periods.
+          This chart shows the top {topN} individual development partner organizations by financial contribution, with remaining donors aggregated. Use the Top N selector, metric, and time range to analyze funding patterns across different measures and periods.
         </p>
       )}
     </div>

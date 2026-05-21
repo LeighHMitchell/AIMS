@@ -13,9 +13,12 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
-    const statusFilter = searchParams.get('status') || 'both'; // 'actual', 'draft', or 'both'
-    const transactionTypeFilter = searchParams.get('transactionType') || 'all'; // specific type or 'all'
-    
+    const statusFilter = searchParams.get('status') || 'actual'; // 'actual', 'draft', or 'both'
+    // The UI now sends `transactionTypes` (comma-separated). Fall back to the
+    // legacy single-value `transactionType` for back-compat.
+    const transactionTypesParam = searchParams.get('transactionTypes');
+    const legacyTypeParam = searchParams.get('transactionType') || 'all';
+
     // Validate date parameters
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -23,7 +26,7 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Validate status filter
     if (!['actual', 'draft', 'both'].includes(statusFilter)) {
       return NextResponse.json(
@@ -31,38 +34,43 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Validate date format
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return NextResponse.json(
         { error: 'Invalid date format. Use YYYY-MM-DD' },
         { status: 400 }
       );
     }
-    
+
     if (start > end) {
       return NextResponse.json(
         { error: 'Start date must be before end date' },
         { status: 400 }
       );
     }
-    
-    // Determine transaction types to filter
+
+    // Determine transaction types to filter.
+    // Real IATI codes are 1-13. We also accept the synthetic 'PD' code for
+    // Planned Disbursements, which are merged in separately from the
+    // planned_disbursements table.
     const validTransactionTypes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
-    let transactionTypesToFilter: string[];
-    
-    if (transactionTypeFilter === 'all') {
-      // Include key transaction types for flow visualization:
-      // 1 = Incoming Commitment, 2 = Outgoing Commitment, 3 = Disbursement, 4 = Expenditure, 11 = Incoming Funds
-      transactionTypesToFilter = ['1', '2', '3', '4', '11'];
-    } else if (validTransactionTypes.includes(transactionTypeFilter)) {
-      transactionTypesToFilter = [transactionTypeFilter];
+    let requestedTypes: string[];
+    if (transactionTypesParam) {
+      requestedTypes = transactionTypesParam.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (legacyTypeParam === 'all') {
+      requestedTypes = ['1', '2', '3', '4', '11'];
+    } else if (validTransactionTypes.includes(legacyTypeParam) || legacyTypeParam === 'PD') {
+      requestedTypes = [legacyTypeParam];
     } else {
-      transactionTypesToFilter = ['1', '2', '3', '4', '11'];
+      requestedTypes = ['1', '2', '3', '4', '11'];
     }
+
+    const includePlannedDisbursements = requestedTypes.includes('PD');
+    const transactionTypesToFilter = requestedTypes.filter(t => validTransactionTypes.includes(t));
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },
@@ -89,52 +97,100 @@ export async function GET(request: NextRequest) {
       withBothOrgNames: totalWithBothNames
     });
     
-    // Build the query
-    let query = supabase
-      .from('transactions')
-      .select(`
-        uuid,
-        activity_id,
-        transaction_type,
-        value,
-        provider_org_id,
-        receiver_org_id,
-        provider_org_name,
-        receiver_org_name,
-        flow_type,
-        aid_type,
-        status,
-        transaction_date
-      `)
-      .gte('transaction_date', startDate)
-      .lte('transaction_date', endDate)
-      .not('value', 'is', null)
-      .in('transaction_type', transactionTypesToFilter)
-      .order('value', { ascending: false })
-      .limit(5000); // Reasonable limit for performance
-    
-    // Apply status filter
-    // Note: We use OR conditions to also include transactions with null status
-    if (statusFilter === 'actual') {
-      query = query.eq('status', 'actual');
-    } else if (statusFilter === 'draft') {
-      query = query.eq('status', 'draft');
+    // Build the query — skip entirely if the user selected only Planned
+    // Disbursements (no real transaction types requested).
+    let transactions: any[] = [];
+    if (transactionTypesToFilter.length > 0) {
+      let query = supabase
+        .from('transactions')
+        .select(`
+          uuid,
+          activity_id,
+          transaction_type,
+          value,
+          provider_org_id,
+          receiver_org_id,
+          provider_org_name,
+          receiver_org_name,
+          flow_type,
+          aid_type,
+          status,
+          transaction_date
+        `)
+        .gte('transaction_date', startDate)
+        .lte('transaction_date', endDate)
+        .not('value', 'is', null)
+        .in('transaction_type', transactionTypesToFilter)
+        .order('value', { ascending: false })
+        .limit(5000);
+
+      if (statusFilter === 'actual') {
+        query = query.eq('status', 'actual');
+      } else if (statusFilter === 'draft') {
+        query = query.eq('status', 'draft');
+      }
+
+      const { data, error: transactionsError } = await query;
+
+      if (transactionsError) {
+        console.error('[Aid Flow API] Error fetching transactions:', transactionsError);
+        return NextResponse.json(
+          {
+            error: 'Failed to fetch transaction data',
+            details: transactionsError.message,
+            hint: transactionsError.hint || 'Check if the transactions table exists and has the expected columns'
+          },
+          { status: 500 }
+        );
+      }
+      transactions = data || [];
     }
-    // For 'both', don't filter by status at all - include all transactions
-    
-    // Execute the query
-    const { data: transactions, error: transactionsError } = await query;
-    
-    if (transactionsError) {
-      console.error('[Aid Flow API] Error fetching transactions:', transactionsError);
-      return NextResponse.json(
-        { 
-          error: 'Failed to fetch transaction data',
-          details: transactionsError.message,
-          hint: transactionsError.hint || 'Check if the transactions table exists and has the expected columns'
-        },
-        { status: 500 }
-      );
+
+    // Fold Planned Disbursements into the same transaction shape so the
+    // existing graph builder can handle them uniformly. We use the
+    // synthetic transaction_type code 'PD' and read usd_amount as the
+    // graph value (falls back to amount if usd_amount is null).
+    if (includePlannedDisbursements) {
+      const { data: pdData, error: pdError } = await supabase
+        .from('planned_disbursements')
+        .select(`
+          id,
+          activity_id,
+          amount,
+          usd_amount,
+          provider_org_id,
+          receiver_org_id,
+          provider_org_name,
+          receiver_org_name,
+          period_start,
+          period_end
+        `)
+        .gte('period_start', startDate)
+        .lte('period_start', endDate)
+        .limit(5000);
+
+      if (pdError) {
+        console.error('[Aid Flow API] Error fetching planned disbursements:', pdError);
+      } else if (pdData) {
+        for (const pd of pdData) {
+          const v = (pd as any).usd_amount ?? (pd as any).amount;
+          if (v === null || v === undefined) continue;
+          transactions.push({
+            uuid: `pd-${pd.id}`,
+            activity_id: pd.activity_id,
+            transaction_type: 'PD',
+            value: v,
+            provider_org_id: pd.provider_org_id,
+            receiver_org_id: pd.receiver_org_id,
+            provider_org_name: pd.provider_org_name,
+            receiver_org_name: pd.receiver_org_name,
+            flow_type: null,
+            aid_type: null,
+            status: 'actual',
+            transaction_date: pd.period_start,
+          });
+        }
+      }
     }
     
     
@@ -176,7 +232,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch organizations (including logo for visualization)
-    let organizations = [];
+    let organizations: any[] = [];
     if (orgIds.size > 0) {
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
@@ -206,7 +262,9 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Build graph data
+    // Build graph data. Pass the full requested type list (including 'PD'
+    // when present) so the helper doesn't drop the planned-disbursement rows
+    // we appended.
     const graphData = buildAidFlowGraphData(
       transactions || [],
       organizations || [],
@@ -214,7 +272,7 @@ export async function GET(request: NextRequest) {
       {
         limit: 100, // Top 100 organizations by flow
         minValue: 0, // Include all transactions regardless of value
-        transactionTypes: transactionTypesToFilter
+        transactionTypes: requestedTypes
       }
     );
     

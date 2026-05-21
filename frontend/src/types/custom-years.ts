@@ -138,7 +138,18 @@ export function formatMonthDay(month: number, day: number): string {
  * (e.g., July to June crosses from one year to the next)
  */
 export function crossesCalendarYear(customYear: CustomYear | CustomYearInput): boolean {
-  return customYear.endMonth < customYear.startMonth;
+  // A custom year wraps the calendar boundary if its end month is before its
+  // start month (e.g. Apr → Mar) — OR, if start and end share a month, its end
+  // day is before its start day (e.g. UK tax year: Apr 6 → Apr 5, which spans
+  // ~12 months across two calendar years).
+  if (customYear.endMonth < customYear.startMonth) return true;
+  if (
+    customYear.endMonth === customYear.startMonth &&
+    customYear.endDay < customYear.startDay
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /**

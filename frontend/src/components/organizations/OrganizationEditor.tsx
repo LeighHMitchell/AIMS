@@ -95,7 +95,7 @@ export function OrganizationEditor({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to create organisation')
+        throw new Error(error.error || error.message || 'Failed to create organisation')
       }
 
       const newOrg = await response.json()
@@ -136,7 +136,7 @@ export function OrganizationEditor({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to save organisation')
+        throw new Error(error.error || error.message || 'Failed to save organisation')
       }
 
       const updatedOrg = await response.json()

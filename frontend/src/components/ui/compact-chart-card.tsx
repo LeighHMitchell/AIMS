@@ -1,23 +1,33 @@
 "use client"
 
-import React, { useState, cloneElement, isValidElement, ReactElement } from 'react'
+import React, { useState, cloneElement, isValidElement, ReactElement, createContext, useContext } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Maximize2, Download, Table as TableIcon, BarChart3 } from 'lucide-react'
+import { Maximize2, Download, Table as TableIcon, BarChart3, X } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ChartExpansionProvider } from '@/lib/chart-expansion-context'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { formatCurrencyPrecise } from '@/lib/format'
+
+// Toolbar context — when CompactChartCard is rendering with `inlineToolbar`,
+// it suppresses its own header table/CSV buttons and provides their handlers
+// here so the child chart can render them inline (e.g. on the same row as
+// its own filter controls). Returns null when the chart is not inside a
+// toolbar-aware card, so `useChartCardToolbar()` callers can no-op safely.
+interface ChartCardToolbarValue {
+  viewMode: 'chart' | 'table'
+  setViewMode: (mode: 'chart' | 'table') => void
+  handleExport: () => void
+  hasExportData: boolean
+  hasTableView: boolean
+}
+const ChartCardToolbarContext = createContext<ChartCardToolbarValue | null>(null)
+export function useChartCardToolbar(): ChartCardToolbarValue | null {
+  return useContext(ChartCardToolbarContext)
+}
 
 interface CompactChartCardProps {
   title: string
@@ -44,6 +54,13 @@ interface CompactChartCardProps {
    * the explanation in a tooltip.
    */
   mathTooltip?: React.ReactNode
+  /**
+   * When true, hide the table-view + CSV-download buttons from the dialog
+   * header. The child chart is expected to call `useChartCardToolbar()` and
+   * render those controls itself (e.g. next to its own filter controls).
+   * The math (ƒ) and close (×) buttons stay in the header either way.
+   */
+  inlineToolbar?: boolean
 }
 
 /**
@@ -67,6 +84,7 @@ export function CompactChartCard({
   compactHeight = 250,
   tableView,
   mathTooltip,
+  inlineToolbar = false,
 }: CompactChartCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
@@ -95,9 +113,15 @@ export function CompactChartCard({
       )
     }
 
-    // Currency-suffix headers (e.g. "Total Value (USD)") are split into a
-    // clean header label and a small gray currency-code prefix on each cell,
-    // matching the activity-list styling.
+    // Canonical table layout — matches FinancialTotalsBarChart so every chart
+    // on the analytics dashboard, activity profile and org profile reads the
+    // same way: sticky bg-surface-muted header, hover rows, right-aligned
+    // currency, tabular-nums, footer with column + grand totals.
+    //
+    // Numeric columns are formatted as full USD amounts with 2 decimals via
+    // formatCurrencyPrecise. Headers ending in (XXX) are treated as that
+    // currency code — the suffix is hidden in the header and used to format
+    // the cell value (e.g. "Value (EUR)" → cells formatted in EUR).
     const headers = Object.keys(exportData[0])
     const currencyMatch = (h: string) => h.match(/\(([A-Z]{3})\)\s*$/)
     const stripCurrency = (h: string) => h.replace(/\s*\([A-Z]{3}\)\s*$/, '')
@@ -107,41 +131,86 @@ export function CompactChartCard({
         ? cleaned
         : cleaned.charAt(0).toUpperCase() + cleaned.slice(1).replace(/([A-Z])/g, ' $1')
     }
+    const isNumericColumn = (h: string) =>
+      exportData.some(row => typeof row[h] === 'number')
+    const columnTotal = (h: string) =>
+      exportData.reduce((sum, row) => sum + (typeof row[h] === 'number' ? row[h] : 0), 0)
+    const anyNumeric = headers.some(isNumericColumn)
 
     return (
-      <div className="overflow-auto max-h-[500px]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {headers.map((header) => (
-                <TableHead key={header} className="font-medium">
-                  {formatHeader(header)}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <div className="overflow-auto max-h-[500px] rounded-md border">
+        <table className="w-full text-body">
+          <thead className="bg-surface-muted sticky top-0">
+            <tr>
+              {headers.map((header) => {
+                const numeric = isNumericColumn(header)
+                return (
+                  <th
+                    key={header}
+                    className={cn(
+                      "px-4 py-3 font-medium text-foreground border-b whitespace-nowrap",
+                      numeric ? "text-right" : "text-left"
+                    )}
+                  >
+                    {formatHeader(header)}
+                  </th>
+                )
+              })}
+            </tr>
+          </thead>
+          <tbody>
             {exportData.map((row, idx) => (
-              <TableRow key={idx}>
+              <tr key={idx} className="border-b border-border hover:bg-muted/50">
                 {headers.map((header) => {
                   const value = row[header]
-                  const ccy = currencyMatch(header)?.[1]
+                  const ccy = currencyMatch(header)?.[1] || 'USD'
                   if (typeof value === 'number') {
                     return (
-                      <TableCell key={header}>
-                        {ccy && (
-                          <span className="text-helper text-muted-foreground font-normal mr-1">{ccy}</span>
-                        )}
-                        {value.toLocaleString()}
-                      </TableCell>
+                      <td
+                        key={header}
+                        className="text-right px-4 py-2.5 text-foreground tabular-nums"
+                      >
+                        {formatCurrencyPrecise(value, ccy)}
+                      </td>
                     )
                   }
-                  return <TableCell key={header}>{String(value ?? '')}</TableCell>
+                  return (
+                    <td key={header} className="px-4 py-2.5 text-foreground">
+                      {String(value ?? '')}
+                    </td>
+                  )
                 })}
-              </TableRow>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+          {anyNumeric && (
+            <tfoot className="bg-muted">
+              <tr>
+                {headers.map((header, i) => {
+                  const numeric = isNumericColumn(header)
+                  if (!numeric) {
+                    return (
+                      <td
+                        key={header}
+                        className="px-4 py-3 font-semibold text-foreground border-t-2 border-border"
+                      >
+                        {i === 0 ? 'Total' : ''}
+                      </td>
+                    )
+                  }
+                  return (
+                    <td
+                      key={header}
+                      className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border tabular-nums"
+                    >
+                      {formatCurrencyPrecise(columnTotal(header), currencyMatch(header)?.[1] || 'USD')}
+                    </td>
+                  )
+                })}
+              </tr>
+            </tfoot>
+          )}
+        </table>
       </div>
     )
   }
@@ -248,7 +317,7 @@ export function CompactChartCard({
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                {!hideViewToggle && (tableView || (exportData && exportData.length > 0)) && (
+                {!inlineToolbar && !hideViewToggle && (tableView || (exportData && exportData.length > 0)) && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -263,7 +332,7 @@ export function CompactChartCard({
                     )}
                   </Button>
                 )}
-                {(exportData || onExport) && (
+                {!inlineToolbar && (exportData || onExport) && (
                   <Button
                     variant="outline"
                     size="icon"
@@ -275,6 +344,20 @@ export function CompactChartCard({
                     <Download className="h-4 w-4" />
                   </Button>
                 )}
+                {/* Explicit close button. Radix Dialog already supports click-
+                    outside and Escape to close, but a visible X is the
+                    convention users expect on a chart-expand modal — esp. on
+                    touch devices where there is no Escape key. */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsExpanded(false)}
+                  className="h-9 w-9"
+                  title="Close"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </DialogHeader>
@@ -289,9 +372,25 @@ export function CompactChartCard({
           {/* Chart content */}
           <div className="mt-6">
             <ChartExpansionProvider isExpanded={true}>
-              {viewMode === 'chart'
-                ? renderChart(false)
-                : tableView ?? renderTableView()}
+              <ChartCardToolbarContext.Provider
+                value={{
+                  viewMode,
+                  setViewMode,
+                  handleExport,
+                  hasExportData: !!(exportData && exportData.length > 0) || !!onExport,
+                  hasTableView: !!(tableView || (exportData && exportData.length > 0)),
+                }}
+              >
+                {viewMode === 'chart' && renderChart(false)}
+                {viewMode === 'table' && inlineToolbar && (
+                  /* Inline-toolbar charts render their own controls row even
+                     in table mode — when viewMode === 'table' the chart hides
+                     its plot body, leaving the controls (including the back-
+                     to-chart button) intact above the table. */
+                  <div className="mb-4">{renderChart(false)}</div>
+                )}
+                {viewMode === 'table' && (tableView ?? renderTableView())}
+              </ChartCardToolbarContext.Provider>
             </ChartExpansionProvider>
           </div>
         </DialogContent>

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import sectorGroupData from '@/data/SectorGroup.json'
 import { parseISO, differenceInDays, max as dateMax, min as dateMin } from 'date-fns'
 import { fetchCustomYearById } from '@/lib/custom-year-server'
+import { getOrganizationTypeCode } from '@/data/iati-organization-types'
 
 /**
  * Compute what portion of a period-spanning record falls inside the requested
@@ -79,7 +80,10 @@ interface CacheEntry {
   expiresAt: number
 }
 const analyticsCache = new Map<string, CacheEntry>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+// 60s TTL — short enough that org-type / org-name edits surface quickly
+// (the chart depends on `organizations.type` for grouping & tooltips, and
+// users expect their edits to be visible in the chart within a minute).
+const CACHE_TTL = 60 * 1000
 
 function getCached(key: string): any | null {
   const entry = analyticsCache.get(key)
@@ -137,7 +141,9 @@ export async function GET(request: Request) {
     // exclusion was introduced — old v1 entries (without the filter) would
     // still surface MOALI etc. v4 adds per-transaction-type aggregation
     // (`byTxType`) so all 13 IATI transaction types are exposed to the chart.
-    const cacheKey = `all-donors:v5:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}:${sectorGroups}:${sectorCategories}:${sectorSubSectors}:${customYearId}`
+    // v6 bumped after org-type normalization landed (name → code) so any old
+    // v5 entries don't leak un-normalized types into the chart.
+    const cacheKey = `all-donors:v6:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}:${sectorGroups}:${sectorCategories}:${sectorSubSectors}:${customYearId}`
     const cached = getCached(cacheKey)
     if (cached) {
       return NextResponse.json(cached)
@@ -165,7 +171,19 @@ export async function GET(request: Request) {
       throw orgsError
     }
 
-    const orgMap = new Map(orgsData?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym, type: o.type, country: o.country }]) || [])
+    // Normalize `type` to an IATI code string. The organizations table is
+    // populated from heterogeneous sources (IATI imports, manual entry, CSV
+    // bulk imports) so the column can hold either the code ("40") or the
+    // name ("Multilateral"). Downstream grouping/colouring in the chart is
+    // keyed on the code, so we resolve here once and pass a clean code (or
+    // null) through. Falls back to the raw value when neither path resolves
+    // so we never silently lose a custom value.
+    const normalizeOrgType = (raw: string | null | undefined): string | null => {
+      if (!raw) return null
+      const code = getOrganizationTypeCode(String(raw).trim())
+      return code ?? String(raw).trim() ?? null
+    }
+    const orgMap = new Map(orgsData?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym, type: normalizeOrgType(o.type), country: o.country }]) || [])
 
     // Diagnostic: log how MOALI is stored so the filter can be tightened
     // if the country field uses an unexpected value.

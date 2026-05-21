@@ -155,6 +155,8 @@ export function TopSectorsChart({ refreshKey = 0, compact = false }: TopSectorsC
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
   const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
   const [grandTotal, setGrandTotal] = useState(0);
+  // Top N selector — defaults to 5 to match the API's historic shape.
+  const [topN, setTopN] = useState<number>(5);
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
   const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
     setOpenFilter(prev => open ? key : (prev === key ? null : prev));
@@ -164,7 +166,7 @@ export function TopSectorsChart({ refreshKey = 0, compact = false }: TopSectorsC
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({ metric });
+      const params = new URLSearchParams({ metric, topN: String(topN) });
       const { from, to } = getDateRangeFromTimeRange(timeRange);
       if (from) {
         params.set("dateFrom", from.toISOString());
@@ -188,7 +190,7 @@ export function TopSectorsChart({ refreshKey = 0, compact = false }: TopSectorsC
     } finally {
       setLoading(false);
     }
-  }, [metric, timeRange]);
+  }, [metric, timeRange, topN]);
 
   useEffect(() => {
     fetchData();
@@ -493,6 +495,23 @@ export function TopSectorsChart({ refreshKey = 0, compact = false }: TopSectorsC
       </Select>
 
       <div className="flex items-center gap-1">
+        {/* Top N quick picker — same set used in SectorDisbursementOverTime. */}
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+          {[3, 5, 10].map(n => (
+            <button
+              key={n}
+              onClick={() => setTopN(n)}
+              className={
+                topN === n
+                  ? 'text-xs font-medium px-2 h-8 rounded bg-muted text-foreground'
+                  : 'text-xs px-2 h-8 rounded text-muted-foreground hover:bg-muted'
+              }
+              title={`Show top ${n} sectors`}
+            >
+              Top {n}
+            </button>
+          ))}
+        </div>
         {/* View mode toggles */}
         <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
           <Button
@@ -570,7 +589,7 @@ export function TopSectorsChart({ refreshKey = 0, compact = false }: TopSectorsC
       {!compact && renderControls()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart shows the top 5 DAC sectors by financial allocation, with remaining sectors aggregated into an &quot;Others&quot; category. Use the metric selector to switch between budgets, planned disbursements, commitments, and disbursements to see different views of sector-level funding.
+          This chart shows the top {topN} DAC sectors by financial allocation, with remaining sectors aggregated into an &quot;Others&quot; category. Use the Top N selector and the metric selector to switch between budgets, planned disbursements, commitments, and disbursements to see different views of sector-level funding.
         </p>
       )}
     </div>

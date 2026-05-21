@@ -750,7 +750,7 @@ export function EditOrganizationModal({
                   id="acronym"
                   value={formData.acronym || ''}
                   onChange={(e) => handleInputChange('acronym', e.target.value)}
-                  placeholder="DANIDA"
+                  placeholder="ABC"
                   className={validationErrors.some(e => e.includes('Acronym')) ? 'border-destructive' : ''}
                 />
               </div>

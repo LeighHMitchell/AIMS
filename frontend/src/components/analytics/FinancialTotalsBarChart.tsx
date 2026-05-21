@@ -17,7 +17,8 @@ import {
   Legend,
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table as TableIcon, Layers as LayersIcon } from 'lucide-react'
+import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table as TableIcon, Layers as LayersIcon, Search, Filter, Users } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 import {
   DropdownMenu,
@@ -30,7 +31,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, getFinancialSeriesColor, BUDGET_COLOR, PLANNED_DISBURSEMENT_COLOR, OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
-import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyPrecise } from '@/lib/format'
 import financeTypesData from '@/data/finance-types.json'
 import aidTypesData from '@/data/aid-types.json'
 // Brand color palette - 5 distinct colors, no duplicates
@@ -90,22 +91,7 @@ function getColorForKey(key: string, _activeKeys?: string[], _index?: number): s
   return getFinancialSeriesColor(key)
 }
 
-// --- Disaggregation (Finance Type / Aid Type / Donor) ----------------------
-
-type DisaggregateMode = 'none' | 'finance_type' | 'aid_type' | 'donor'
-
-const DISAGGREGATE_OPTIONS: { value: DisaggregateMode; label: string }[] = [
-  { value: 'none', label: 'No disaggregation' },
-  { value: 'finance_type', label: 'Finance Type' },
-  { value: 'aid_type', label: 'Aid Type' },
-  { value: 'donor', label: 'Donor' },
-]
-
-// Composite series key separator, e.g. "Disbursements — World Bank".
-const DISAGG_SEP = ' — '
-// Cap segments per transaction type so the chart stays legible; the long
-// tail is merged into an "Other" segment.
-const MAX_DISAGGREGATE_SEGMENTS = 12
+// --- Transaction filters (Finance Type / Aid Type / Development Partner) ---
 
 // IATI Finance Type code → name (full OECD DAC codelist).
 const FINANCE_TYPE_NAMES: Record<string, string> = Object.fromEntries(
@@ -122,8 +108,54 @@ const AID_TYPE_NAMES: Record<string, string> = (() => {
   return m
 })()
 
-// Resolve a transaction's disaggregation-dimension label.
-function getTxDimLabel(tx: any, mode: DisaggregateMode): string {
+// Sentinel keys for transactions with no finance type / aid type / provider
+// org. They show up in each filter dropdown so the user can include/exclude
+// the unattributed slice explicitly.
+const UNSPECIFIED_FINANCE_KEY = '__unspecified__'
+const UNSPECIFIED_AID_KEY = '__unspecified__'
+const UNATTRIBUTED_PARTNER_KEY = '__unattributed__'
+
+// Stable key for a transaction's provider org: prefer the FK id, fall back to
+// the lowercased text name so providers without ids still bucket consistently.
+function getPartnerKey(tx: { provider_org_id?: string | null; provider_org_name?: string | null }): string {
+  if (tx.provider_org_id) return tx.provider_org_id
+  const n = (tx.provider_org_name || '').trim()
+  return n ? `name:${n.toLowerCase()}` : UNATTRIBUTED_PARTNER_KEY
+}
+
+// Safe SVG id from a series key (gradient defs) — strips whitespace and any
+// non-alphanumerics so composite labels stay valid ids.
+const sanitizeId = (k: string): string => k.replace(/[^a-zA-Z0-9]/g, '')
+
+// --- "Stack by" (visual breakdown layered on top of the filters) -----------
+// Independent from the three filter dropdowns: filters narrow which
+// transactions count, "Stack by" picks the dimension along which each
+// transaction-type bar is split into stacked sub-series.
+
+type StackByMode = 'none' | 'finance_type' | 'aid_type' | 'donor'
+
+const STACK_BY_OPTIONS: { value: StackByMode; label: string }[] = [
+  { value: 'none', label: 'No stacking' },
+  { value: 'finance_type', label: 'Finance Type' },
+  { value: 'aid_type', label: 'Aid Type' },
+  { value: 'donor', label: 'Development Partner' },
+]
+
+// Composite series key separator, e.g. "Disbursements — World Bank".
+const DISAGG_SEP = ' — '
+// Cap segments per transaction type so the chart stays legible; the long
+// tail is merged into an "Other" segment.
+const MAX_STACK_SEGMENTS = 12
+
+// Resolve a transaction's stack-by dimension label. Uses the same shared
+// label maps as the filter dropdowns + partner lookup so labels stay
+// consistent. The partner lookup falls back to the text name when the org
+// id isn't in `partnerOrgs` yet.
+function getTxStackLabel(
+  tx: { finance_type?: string | null; aid_type?: string | null; provider_org_id?: string | null; provider_org_name?: string | null },
+  mode: StackByMode,
+  partnerOrgs: Record<string, { name: string; acronym: string | null }>,
+): string {
   if (mode === 'finance_type') {
     const c = tx.finance_type != null ? String(tx.finance_type) : ''
     return c ? (FINANCE_TYPE_NAMES[c] || `Finance type ${c}`) : 'Unspecified finance type'
@@ -133,6 +165,10 @@ function getTxDimLabel(tx: any, mode: DisaggregateMode): string {
     return c ? (AID_TYPE_NAMES[c] || `Aid type ${c}`) : 'Unspecified aid type'
   }
   if (mode === 'donor') {
+    if (tx.provider_org_id && partnerOrgs[tx.provider_org_id]) {
+      const o = partnerOrgs[tx.provider_org_id]
+      return o.acronym ? `${o.name} (${o.acronym})` : o.name
+    }
     const n = (tx.provider_org_name || '').trim()
     return n || 'Unattributed'
   }
@@ -141,18 +177,14 @@ function getTxDimLabel(tx: any, mode: DisaggregateMode): string {
 
 // stackId for a series key: composite sub-series of the same transaction type
 // share a stack so each year shows one stacked bar per transaction type.
-function disaggStackId(key: string, mode: DisaggregateMode): string | undefined {
+function disaggStackId(key: string, mode: StackByMode): string | undefined {
   if (mode === 'none') return undefined
   if (key === 'Budgets' || key === 'Planned Disbursements') return undefined
   const idx = key.indexOf(DISAGG_SEP)
   return idx > 0 ? key.slice(0, idx) : undefined
 }
 
-// Safe SVG id from a series key (gradient defs) — strips whitespace and any
-// non-alphanumerics so composite labels (em-dash, spaces) stay valid ids.
-const sanitizeId = (k: string): string => k.replace(/[^a-zA-Z0-9]/g, '')
-
-// --- Monochrome ramp for stacked disaggregation sub-series ------------------
+// --- Monochrome ramp for stacked sub-series ---------------------------------
 // Each transaction type keeps its canonical hue; sub-series are shades of it
 // (darkest = largest), echoing the app's "darker = more" ranked palette.
 function hexToRgb(hex: string): [number, number, number] {
@@ -167,7 +199,6 @@ function rgbToHex(r: number, g: number, b: number): string {
 function mixRgb(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
 }
-// t: 0 = darkest (largest segment) … 1 = lightest (smallest segment).
 function rampShade(baseHex: string, t: number): string {
   const base = hexToRgb(baseHex)
   const dark = mixRgb(base, [0, 0, 0], 0.35)
@@ -223,14 +254,10 @@ interface YearlyData {
 // Currency formatter for axis labels — delegate to shared helper.
 const formatCurrency = formatAxisCurrency
 
-const formatCurrencyFull = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
-}
+// Table-view amounts use the shared 2-decimal full-amount formatter so every
+// table view in the app (analytics dashboard, activity profile, org profile)
+// ties out identically. See lib/format.ts.
+const formatCurrencyFull = (value: number): string => formatCurrencyPrecise(value)
 
 export function FinancialTotalsBarChart({
   dateRange,
@@ -253,7 +280,23 @@ export function FinancialTotalsBarChart({
   } | null>(null)
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursements
   const [chartType, setChartType] = useState<ChartType>('bar')
-  const [disaggregateBy, setDisaggregateBy] = useState<DisaggregateMode>('none')
+  // Visual breakdown of each tx-type bar into stacked sub-series by one
+  // dimension. Independent from the three filter dropdowns below.
+  const [stackBy, setStackBy] = useState<StackByMode>('none')
+  // Transaction filters. `null` = "no filter yet" (pass-through) so the chart
+  // doesn't briefly render zeros before defaults are seeded once data lands.
+  // Once data arrives the init effect materialises each one to its full set.
+  const [selectedFinanceTypeCodes, setSelectedFinanceTypeCodes] = useState<string[] | null>(null)
+  const [selectedAidTypeCodes, setSelectedAidTypeCodes] = useState<string[] | null>(null)
+  const [selectedPartnerKeys, setSelectedPartnerKeys] = useState<string[] | null>(null)
+  // provider_org_id -> { name, acronym } for partners present in the
+  // transactions (joined from organizations so the dropdown can show acronyms).
+  const [partnerOrgs, setPartnerOrgs] = useState<Record<string, { name: string; acronym: string | null }>>({})
+  // activity_id -> reporting_org_id, so the partner filter can apply to
+  // Budgets and Planned Disbursements (they're activity-level — the
+  // activity's reporting org is the development partner that owns them).
+  const [activityReportingOrgs, setActivityReportingOrgs] = useState<Record<string, string | null>>({})
+  const [partnerSearch, setPartnerSearch] = useState('')
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
   const toggleSeries = (key: string) => {
     setHiddenSeries(prev => {
@@ -502,7 +545,7 @@ export function FinancialTotalsBarChart({
         // Build budgets query
         let budgetsQuery = supabase
           .from('activity_budgets')
-          .select('period_start, period_end, value, usd_value, currency')
+          .select('activity_id, period_start, period_end, value, usd_value, currency')
           .not('period_start', 'is', null)
         if (effectiveActivityId) {
           budgetsQuery = budgetsQuery.eq('activity_id', effectiveActivityId)
@@ -522,7 +565,7 @@ export function FinancialTotalsBarChart({
         // Build planned disbursements query
         let pdQuery = supabase
           .from('planned_disbursements')
-          .select('period_start, period_end, amount, usd_amount, currency')
+          .select('activity_id, period_start, period_end, amount, usd_amount, currency')
           .not('period_start', 'is', null)
         if (effectiveActivityId) {
           pdQuery = pdQuery.eq('activity_id', effectiveActivityId)
@@ -569,6 +612,30 @@ export function FinancialTotalsBarChart({
           plannedDisbursements: plannedDisbursements || [],
           transactions: transactions || [],
         })
+
+        // Resolve each activity's reporting org so the partner filter can
+        // also narrow Budgets / Planned Disbursements (they're activity-level
+        // and the activity's reporting org is the partner that owns them).
+        const activityIds = new Set<string>()
+        ;(budgets || []).forEach((b: { activity_id?: string | null }) => { if (b.activity_id) activityIds.add(b.activity_id) })
+        ;(plannedDisbursements || []).forEach((pd: { activity_id?: string | null }) => { if (pd.activity_id) activityIds.add(pd.activity_id) })
+        if (activityIds.size > 0) {
+          const { data: acts, error: actsErr } = await supabase
+            .from('activities')
+            .select('id, reporting_org_id')
+            .in('id', Array.from(activityIds))
+          if (actsErr) {
+            console.error('[FinancialTotalsBarChart] Error fetching activity reporting orgs:', actsErr)
+          } else if (acts) {
+            const map: Record<string, string | null> = {}
+            acts.forEach((a: { id: string; reporting_org_id: string | null }) => {
+              map[a.id] = a.reporting_org_id
+            })
+            setActivityReportingOrgs(map)
+          }
+        } else {
+          setActivityReportingOrgs({})
+        }
       } catch (err) {
         console.error('[FinancialTotalsBarChart] Unexpected error:', err)
         setError('Failed to load financial data')
@@ -579,6 +646,157 @@ export function FinancialTotalsBarChart({
 
     fetchData()
   }, [refreshKey, effectiveActivityId, effectiveOrgId])
+
+  // ---- Filter-dropdown plumbing ------------------------------------------
+  // Available finance-type / aid-type / partner options are derived from the
+  // transactions currently in scope so the dropdowns only show values that
+  // could plausibly appear in the chart.
+  const availableFinanceTypes = useMemo(() => {
+    if (!rawData) return [] as Array<{ code: string; name: string }>
+    const codes = new Set<string>()
+    rawData.transactions.forEach(tx => {
+      codes.add(tx.finance_type != null ? String(tx.finance_type) : UNSPECIFIED_FINANCE_KEY)
+    })
+    return Array.from(codes)
+      .map(c => ({
+        code: c,
+        name: c === UNSPECIFIED_FINANCE_KEY
+          ? 'Unspecified'
+          : (FINANCE_TYPE_NAMES[c] || `Finance type ${c}`),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [rawData])
+
+  const availableAidTypes = useMemo(() => {
+    if (!rawData) return [] as Array<{ code: string; name: string }>
+    const codes = new Set<string>()
+    rawData.transactions.forEach(tx => {
+      codes.add(tx.aid_type != null ? String(tx.aid_type) : UNSPECIFIED_AID_KEY)
+    })
+    return Array.from(codes)
+      .map(c => ({
+        code: c,
+        name: c === UNSPECIFIED_AID_KEY
+          ? 'Unspecified'
+          : (AID_TYPE_NAMES[c] || `Aid type ${c}`),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [rawData])
+
+  const availablePartners = useMemo(() => {
+    if (!rawData) return [] as Array<{ key: string; name: string; acronym: string | null }>
+    const map = new Map<string, { key: string; name: string; acronym: string | null }>()
+    const upsertById = (id: string, fallbackName?: string) => {
+      if (map.has(id)) return
+      const o = partnerOrgs[id]
+      if (o) {
+        map.set(id, { key: id, name: o.name || fallbackName || id, acronym: o.acronym })
+      } else if (fallbackName) {
+        map.set(id, { key: id, name: fallbackName, acronym: null })
+      } else {
+        // We know an id but haven't loaded its name yet — show the id so the
+        // row is still selectable. Will refresh to a real name when the
+        // organizations fetch completes.
+        map.set(id, { key: id, name: id, acronym: null })
+      }
+    }
+    rawData.transactions.forEach(tx => {
+      const key = getPartnerKey(tx)
+      if (map.has(key)) return
+      if (key === UNATTRIBUTED_PARTNER_KEY) {
+        map.set(key, { key, name: 'Unattributed', acronym: null })
+        return
+      }
+      if (tx.provider_org_id) {
+        upsertById(tx.provider_org_id, tx.provider_org_name || undefined)
+        return
+      }
+      const n = (tx.provider_org_name || '').trim()
+      map.set(key, { key, name: n || 'Unattributed', acronym: null })
+    })
+    // Also surface reporting-org partners from Budgets / Planned Disbursements
+    // so the user can pick them in the filter — those flows would otherwise
+    // be invisible to the partner dropdown (they're activity-level, not
+    // transaction-level).
+    Object.values(activityReportingOrgs).forEach(orgId => {
+      if (!orgId) return
+      upsertById(orgId)
+    })
+    // If any activities have no reporting org, expose an "Unattributed"
+    // bucket so the user can include/exclude those budget/PD records.
+    if (Object.values(activityReportingOrgs).some(v => !v)) {
+      if (!map.has(UNATTRIBUTED_PARTNER_KEY)) {
+        map.set(UNATTRIBUTED_PARTNER_KEY, { key: UNATTRIBUTED_PARTNER_KEY, name: 'Unattributed', acronym: null })
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }, [rawData, partnerOrgs, activityReportingOrgs])
+
+  // Seed each filter to "everything" the first time data lands. Subsequent
+  // refetches leave the user's selection alone (we only initialise when the
+  // state is still null).
+  useEffect(() => {
+    if (!rawData) return
+    if (selectedFinanceTypeCodes === null && availableFinanceTypes.length > 0) {
+      setSelectedFinanceTypeCodes(availableFinanceTypes.map(t => t.code))
+    }
+    if (selectedAidTypeCodes === null && availableAidTypes.length > 0) {
+      setSelectedAidTypeCodes(availableAidTypes.map(t => t.code))
+    }
+    if (selectedPartnerKeys === null && availablePartners.length > 0) {
+      setSelectedPartnerKeys(availablePartners.map(p => p.key))
+    }
+  }, [rawData, availableFinanceTypes, availableAidTypes, availablePartners, selectedFinanceTypeCodes, selectedAidTypeCodes, selectedPartnerKeys])
+
+  // Fetch acronyms for any org ids we haven't resolved yet so the partner
+  // dropdown can show "Full Name (ACR)". Includes transaction provider orgs
+  // AND the reporting orgs of activities behind Budgets / Planned
+  // Disbursements (those flows would otherwise show up as bare ids).
+  useEffect(() => {
+    if (!rawData || !supabase) return
+    const idSet = new Set<string>()
+    rawData.transactions.forEach(t => { if (t.provider_org_id) idSet.add(t.provider_org_id) })
+    Object.values(activityReportingOrgs).forEach(orgId => { if (orgId) idSet.add(orgId) })
+    if (idSet.size === 0) return
+    const missing = Array.from(idSet).filter(id => !partnerOrgs[id])
+    if (missing.length === 0) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error: orgErr } = await supabase!
+        .from('organizations')
+        .select('id, name, acronym')
+        .in('id', missing)
+      if (cancelled || orgErr || !data) return
+      setPartnerOrgs(prev => {
+        const next = { ...prev }
+        data.forEach((o: { id: string; name: string; acronym: string | null }) => {
+          next[o.id] = { name: o.name, acronym: o.acronym ?? null }
+        })
+        return next
+      })
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawData, activityReportingOrgs])
+
+  const toggleFinanceType = (code: string) => {
+    setSelectedFinanceTypeCodes(prev => {
+      const cur = prev ?? availableFinanceTypes.map(t => t.code)
+      return cur.includes(code) ? cur.filter(c => c !== code) : [...cur, code]
+    })
+  }
+  const toggleAidType = (code: string) => {
+    setSelectedAidTypeCodes(prev => {
+      const cur = prev ?? availableAidTypes.map(t => t.code)
+      return cur.includes(code) ? cur.filter(c => c !== code) : [...cur, code]
+    })
+  }
+  const togglePartner = (key: string) => {
+    setSelectedPartnerKeys(prev => {
+      const cur = prev ?? availablePartners.map(p => p.key)
+      return cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key]
+    })
+  }
 
   // Process data into yearly chart data
   const chartData = useMemo(() => {
@@ -601,8 +819,20 @@ export function FinancialTotalsBarChart({
       }
     }
 
+    // The development-partner filter also narrows Budgets / Planned
+    // Disbursements: each B/PD belongs to an activity, and the activity's
+    // reporting_org is the partner that owns it. Records whose activity isn't
+    // in `activityReportingOrgs` fall into the "Unattributed" bucket.
+    const passesPartnerFilter = (activityId: string | null | undefined): boolean => {
+      if (!selectedPartnerKeys) return true
+      const orgId = activityId ? activityReportingOrgs[activityId] : null
+      const key = orgId || UNATTRIBUTED_PARTNER_KEY
+      return selectedPartnerKeys.includes(key)
+    }
+
     // Process budgets
     rawData.budgets.forEach(budget => {
+      if (!passesPartnerFilter(budget.activity_id)) return
       if (useFiscalYear && customYear && budget.period_start && budget.period_end) {
         // Use fiscal year allocation
         const value = parseFloat(String(budget.usd_value)) || 
@@ -631,6 +861,7 @@ export function FinancialTotalsBarChart({
 
     // Process planned disbursements
     rawData.plannedDisbursements.forEach(pd => {
+      if (!passesPartnerFilter(pd.activity_id)) return
       if (useFiscalYear && customYear && pd.period_start) {
         // Use fiscal year allocation
         const value = parseFloat(String(pd.usd_amount)) || 
@@ -667,16 +898,17 @@ export function FinancialTotalsBarChart({
       }
     })
 
-    // Process transactions
-    // Accumulate a transaction amount into a year. Always tracks the plain
-    // transaction-type total (drives the type selector + "available types"),
-    // and — when disaggregating — also the composite "<Type> — <Dimension>"
-    // sub-series the stacked chart renders.
+    // Process transactions. Each tx accumulates its USD-converted value into
+    // its bucketed year's plain transaction-type total. The three filter sets
+    // (finance/aid type, development partner) gate which transactions are
+    // counted; when `stackBy` is set, we ALSO accumulate a composite
+    // "<Type> — <Dimension>" key so the chart can render the breakdown as
+    // stacked sub-series within each transaction-type bar.
     const addTx = (yearData: YearlyData, typeName: string, amount: number, tx: any) => {
       if (!yearData[typeName]) yearData[typeName] = 0
       ;(yearData[typeName] as number) += amount
-      if (disaggregateBy !== 'none') {
-        const key = `${typeName}${DISAGG_SEP}${getTxDimLabel(tx, disaggregateBy)}`
+      if (stackBy !== 'none') {
+        const key = `${typeName}${DISAGG_SEP}${getTxStackLabel(tx, stackBy, partnerOrgs)}`
         if (!yearData[key]) yearData[key] = 0
         ;(yearData[key] as number) += amount
       }
@@ -688,6 +920,15 @@ export function FinancialTotalsBarChart({
 
       const typeName = TRANSACTION_TYPES[type]
       if (!typeName) return
+
+      // Apply Finance Type / Aid Type / Development Partner filters. Each
+      // is null until first-data init, treated as pass-through.
+      const financeCode = tx.finance_type != null ? String(tx.finance_type) : UNSPECIFIED_FINANCE_KEY
+      if (selectedFinanceTypeCodes && !selectedFinanceTypeCodes.includes(financeCode)) return
+      const aidCode = tx.aid_type != null ? String(tx.aid_type) : UNSPECIFIED_AID_KEY
+      if (selectedAidTypeCodes && !selectedAidTypeCodes.includes(aidCode)) return
+      const partnerKey = getPartnerKey(tx)
+      if (selectedPartnerKeys && !selectedPartnerKeys.includes(partnerKey)) return
 
       if (useFiscalYear && customYear && tx.transaction_date) {
         // Use fiscal year for transaction
@@ -731,9 +972,9 @@ export function FinancialTotalsBarChart({
         .sort((a, b) => a.year - b.year)
     }
 
-    // Cap disaggregated sub-series per transaction type — keep the largest
-    // MAX_DISAGGREGATE_SEGMENTS and merge the long tail into "<Type> — Other".
-    if (disaggregateBy !== 'none' && filteredData.length) {
+    // Cap stacked sub-series per transaction type — keep the largest
+    // MAX_STACK_SEGMENTS and merge the long tail into "<Type> — Other".
+    if (stackBy !== 'none' && filteredData.length) {
       Object.values(TRANSACTION_TYPES).forEach(typeName => {
         const prefix = `${typeName}${DISAGG_SEP}`
         const otherKey = `${typeName}${DISAGG_SEP}Other`
@@ -744,8 +985,8 @@ export function FinancialTotalsBarChart({
           })
         })
         const ranked = [...totals.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
-        if (ranked.length > MAX_DISAGGREGATE_SEGMENTS) {
-          const keep = new Set(ranked.slice(0, MAX_DISAGGREGATE_SEGMENTS).map(([k]) => k))
+        if (ranked.length > MAX_STACK_SEGMENTS) {
+          const keep = new Set(ranked.slice(0, MAX_STACK_SEGMENTS).map(([k]) => k))
           filteredData.forEach(row => {
             let otherSum = 0
             Object.keys(row).forEach(k => {
@@ -761,7 +1002,7 @@ export function FinancialTotalsBarChart({
     }
 
     return filteredData
-  }, [rawData, customYears, calendarType, effectiveDateRange, selectedYears, disaggregateBy])
+  }, [rawData, customYears, calendarType, effectiveDateRange, selectedYears, selectedFinanceTypeCodes, selectedAidTypeCodes, selectedPartnerKeys, stackBy, partnerOrgs, activityReportingOrgs])
 
   // Get available transaction types (those with data)
   const availableTransactionTypes = useMemo(() => {
@@ -784,16 +1025,16 @@ export function FinancialTotalsBarChart({
     })
   }
 
-  // Build active data keys for the bars. Without disaggregation: Budgets,
-  // Planned Disbursements + each selected transaction type. With it: each
-  // selected type expands into its composite sub-series, ordered by total
-  // descending (the "Other" bucket always sorts last).
+  // Active data keys: Budgets, Planned Disbursements + each selected
+  // transaction type. When `stackBy` is set, each selected transaction type
+  // expands into its composite sub-series (ordered by total desc, with the
+  // "Other" bucket sorted last).
   const activeDataKeys = useMemo(() => {
     const keys = ['Budgets', 'Planned Disbursements']
     selectedTransactionTypes.forEach(code => {
       const name = TRANSACTION_TYPES[code]
       if (!name) return
-      if (disaggregateBy === 'none') {
+      if (stackBy === 'none') {
         keys.push(name)
         return
       }
@@ -816,16 +1057,16 @@ export function FinancialTotalsBarChart({
       keys.push(...ordered)
     })
     return keys
-  }, [selectedTransactionTypes, disaggregateBy, chartData])
+  }, [selectedTransactionTypes, stackBy, chartData])
 
   // Build color map for active keys. Budgets / Planned Disbursements + plain
-  // transaction types keep their canonical hues; disaggregated sub-series are
-  // a darkest→lightest ramp of their transaction type's hue ("Other" = grey).
+  // transaction types keep their canonical hues; stacked sub-series are a
+  // darkest→lightest ramp of their transaction type's hue ("Other" = grey).
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {}
     map['Budgets'] = BUDGET_COLOR
     map['Planned Disbursements'] = PLANNED_DISBURSEMENT_COLOR
-    if (disaggregateBy === 'none') {
+    if (stackBy === 'none') {
       activeDataKeys.forEach((key, index) => {
         if (!map[key]) map[key] = getColorForKey(key, activeDataKeys, index)
       })
@@ -840,14 +1081,12 @@ export function FinancialTotalsBarChart({
       const comps = activeDataKeys.filter(k => k.startsWith(prefix))
       const nonOther = comps.filter(k => k !== otherKey)
       nonOther.forEach((k, idx) => {
-        // Single sub-series → keep the type's exact hue; otherwise spread a
-        // darkest→lightest ramp across the sub-series.
         map[k] = nonOther.length <= 1 ? base : rampShade(base, idx / (nonOther.length - 1))
       })
       if (comps.includes(otherKey)) map[otherKey] = OTHERS_COLOR
     })
     return map
-  }, [activeDataKeys, disaggregateBy, selectedTransactionTypes])
+  }, [activeDataKeys, stackBy, selectedTransactionTypes])
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -1106,7 +1345,7 @@ export function FinancialTotalsBarChart({
                 type="monotone"
                 dataKey={key}
                 name={key}
-                stackId={disaggStackId(key, disaggregateBy)}
+                stackId={disaggStackId(key, stackBy)}
                 stroke={colorMap[key]}
                 strokeWidth={2}
                 fill={`url(#color-${sanitizeId(key)})`}
@@ -1164,7 +1403,7 @@ export function FinancialTotalsBarChart({
               />
             ))}
             {barKeys.map((key) => {
-              const stackId = disaggStackId(key, disaggregateBy)
+              const stackId = disaggStackId(key, stackBy)
               return (
                 <Bar
                   key={key}
@@ -1193,7 +1432,7 @@ export function FinancialTotalsBarChart({
           <Tooltip content={<CustomTooltip />} />
           {!isCompact && !isExpanded && <Legend content={renderLegend} />}
           {activeDataKeys.map(key => {
-            const stackId = disaggStackId(key, disaggregateBy)
+            const stackId = disaggStackId(key, stackBy)
             return (
               <Bar
                 key={key}
@@ -1236,7 +1475,7 @@ export function FinancialTotalsBarChart({
             <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
             <Tooltip content={<CustomTooltip />} />
             {activeDataKeys.map(key => {
-              const stackId = disaggStackId(key, disaggregateBy)
+              const stackId = disaggStackId(key, stackBy)
               return (
                 <Bar
                   key={key}
@@ -1388,28 +1627,210 @@ export function FinancialTotalsBarChart({
 
         {/* Right side controls */}
         <div className="flex items-center gap-2 ml-auto">
-          {/* Disaggregate-by Dropdown — splits each selected transaction type
-              into stacked sub-series by finance type / aid type / donor. */}
+          {/* Stack-by dropdown — visual breakdown of each tx-type bar into
+              stacked sub-series by one dimension. Independent from the
+              filter dropdowns (which decide which values count). */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
                 <LayersIcon className="mr-2 h-4 w-4" />
-                {disaggregateBy === 'none'
-                  ? 'Disaggregate'
-                  : `By ${DISAGGREGATE_OPTIONS.find(o => o.value === disaggregateBy)?.label}`}
+                {stackBy === 'none'
+                  ? 'Stack by'
+                  : `Stack: ${STACK_BY_OPTIONS.find(o => o.value === stackBy)?.label}`}
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {DISAGGREGATE_OPTIONS.map(o => (
+              {STACK_BY_OPTIONS.map(o => (
                 <DropdownMenuItem
                   key={o.value}
-                  className={disaggregateBy === o.value ? 'bg-muted font-medium' : ''}
-                  onClick={() => setDisaggregateBy(o.value)}
+                  className={stackBy === o.value ? 'bg-muted font-medium' : ''}
+                  onClick={() => setStackBy(o.value)}
                 >
                   {o.label}
                 </DropdownMenuItem>
               ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Finance Type filter — narrows transactions to the picked codes. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <Filter className="mr-2 h-4 w-4" />
+                Finance Types ({selectedFinanceTypeCodes?.length ?? availableFinanceTypes.length}/{availableFinanceTypes.length})
+                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-border">
+                <span className="text-helper font-semibold text-foreground">Finance Types</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setSelectedFinanceTypeCodes(availableFinanceTypes.map(t => t.code))}
+                    className="text-xs font-medium text-primary hover:text-primary/80 px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    onClick={() => setSelectedFinanceTypeCodes([])}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1 max-h-[320px] overflow-auto">
+                {availableFinanceTypes.length === 0 ? (
+                  <div className="px-2 py-3 text-body text-muted-foreground text-center">No finance types in data</div>
+                ) : availableFinanceTypes.map(({ code, name }) => {
+                  const isSelected = (selectedFinanceTypeCodes ?? availableFinanceTypes.map(t => t.code)).includes(code)
+                  return (
+                    <div
+                      key={code}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                      onClick={() => toggleFinanceType(code)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleFinanceType(code)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {code !== UNSPECIFIED_FINANCE_KEY && (
+                        <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[40px] text-center">{code}</code>
+                      )}
+                      <span className="text-body truncate">{name}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Aid Type filter — narrows transactions to the picked aid types. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <Filter className="mr-2 h-4 w-4" />
+                Aid Types ({selectedAidTypeCodes?.length ?? availableAidTypes.length}/{availableAidTypes.length})
+                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-border">
+                <span className="text-helper font-semibold text-foreground">Aid Types</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setSelectedAidTypeCodes(availableAidTypes.map(t => t.code))}
+                    className="text-xs font-medium text-primary hover:text-primary/80 px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    onClick={() => setSelectedAidTypeCodes([])}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1 max-h-[320px] overflow-auto">
+                {availableAidTypes.length === 0 ? (
+                  <div className="px-2 py-3 text-body text-muted-foreground text-center">No aid types in data</div>
+                ) : availableAidTypes.map(({ code, name }) => {
+                  const isSelected = (selectedAidTypeCodes ?? availableAidTypes.map(t => t.code)).includes(code)
+                  return (
+                    <div
+                      key={code}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                      onClick={() => toggleAidType(code)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleAidType(code)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {code !== UNSPECIFIED_AID_KEY && (
+                        <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[40px] text-center">{code}</code>
+                      )}
+                      <span className="text-body truncate">{name}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Development Partner filter — searchable combo. Renders each
+              partner as "Full Name (Acronym)" in a single body-weight run. */}
+          <DropdownMenu onOpenChange={(open) => { if (!open) setPartnerSearch('') }}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <Users className="mr-2 h-4 w-4" />
+                Partners ({selectedPartnerKeys?.length ?? availablePartners.length}/{availablePartners.length})
+                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-96 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-border">
+                <span className="text-helper font-semibold text-foreground">Development Partners</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setSelectedPartnerKeys(availablePartners.map(p => p.key))}
+                    className="text-xs font-medium text-primary hover:text-primary/80 px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    onClick={() => setSelectedPartnerKeys([])}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="relative mb-2">
+                <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                  placeholder="Search partners..."
+                  className="h-8 pl-8 text-body"
+                  // Stop the dropdown's typeahead from stealing keystrokes.
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div className="space-y-1 max-h-[320px] overflow-auto">
+                {(() => {
+                  const q = partnerSearch.trim().toLowerCase()
+                  const filtered = q
+                    ? availablePartners.filter(p =>
+                        p.name.toLowerCase().includes(q) ||
+                        (p.acronym || '').toLowerCase().includes(q))
+                    : availablePartners
+                  if (filtered.length === 0) {
+                    return <div className="px-2 py-3 text-body text-muted-foreground text-center">No matching partners</div>
+                  }
+                  return filtered.map(p => {
+                    const isSelected = (selectedPartnerKeys ?? availablePartners.map(x => x.key)).includes(p.key)
+                    return (
+                      <div
+                        key={p.key}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                        onClick={() => togglePartner(p.key)}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => togglePartner(p.key)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="text-body text-foreground truncate">
+                          {p.acronym ? `${p.name} (${p.acronym})` : p.name}
+                        </span>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
           {/* Transaction Types Dropdown - stays open for multi-select */}

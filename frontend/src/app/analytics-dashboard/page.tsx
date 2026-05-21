@@ -13,23 +13,6 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { 
-  Activity, 
-  DollarSign, 
-  Users, 
-  Building2,
-  Calendar as CalendarIcon,
-  Filter,
-  TrendingUp,
-  Target,
-  AlertCircle,
-  CheckCircle2,
-  BarChart3,
-  LineChart,
-  MapPin,
-  Network,
-  Info,
-} from 'lucide-react'
 import { format, startOfYear, endOfYear } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { AnalyticsDashboardSkeleton } from '@/components/skeletons'
@@ -40,7 +23,7 @@ import { toast } from 'sonner'
 // Chart components
 import { CommitmentsChart } from '@/components/analytics/CommitmentsChart'
 import { AllDonorsHorizontalBarChart } from '@/components/analytics/AllDonorsHorizontalBarChart'
-import { SectorPieChart } from '@/components/analytics/SectorPieChart'
+import { SectorDistributionChart } from '@/components/analytics/SectorDistributionChart'
 import { HumanitarianChart } from '@/components/analytics/HumanitarianChart'
 import { HumanitarianShareChart } from '@/components/analytics/HumanitarianShareChart'
 import { AidMap } from '@/components/analytics/AidMap'
@@ -81,9 +64,10 @@ import { EnhancedAidOnBudgetChart } from '@/components/analytics/EnhancedAidOnBu
 // Participating Orgs Sankey
 import { ParticipatingOrgsSankey } from '@/components/analytics/ParticipatingOrgsSankey'
 
-// Coordination Circle Pack
-import { CoordinationCirclePack } from '@/components/analytics/CoordinationCirclePack'
-import type { CoordinationView, CoordinationResponse } from '@/types/coordination'
+// Coordination — bundled filter bar + chart so the expanded modal exposes
+// calendar / aid type / finance type / partner / sector / measure controls
+// (mirrors the External Development Partners Financial Overview).
+import { CoordinationChartWithControls } from '@/components/analytics/CoordinationChartWithControls'
 
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
@@ -269,10 +253,11 @@ export default function AnalyticsDashboardPage() {
     publicationStatus: 'all'
   })
 
-  // Coordination state
-  const [coordinationView, setCoordinationView] = useState<CoordinationView>('sectors')
-  const [coordinationData, setCoordinationData] = useState<CoordinationResponse | null>(null)
-  const [coordinationLoading, setCoordinationLoading] = useState(false)
+  // Coordination state is now owned by CoordinationChartWithControls (the
+  // dashboard card embeds it directly, including its own filter bar and
+  // data fetching). We mirror the table rows up to the dashboard purely so
+  // CompactChartCard can offer its built-in table view + CSV export buttons.
+  const [coordinationTableRows, setCoordinationTableRows] = useState<Array<Record<string, string | number>>>([])
 
   // Dropdown options for Comprehensive tab
   const [aidTypes, setAidTypes] = useState<Array<{code: string, name: string}>>([])
@@ -551,117 +536,8 @@ export default function AnalyticsDashboardPage() {
     fetchSectorAnalyticsData()
   }, [sectorAnalyticsFilters, refreshKey])
 
-  // Fetch Coordination data
-  const fetchCoordinationData = async () => {
-    try {
-      setCoordinationLoading(true)
-      const response = await apiFetch(`/api/analytics/coordination?view=${coordinationView}`)
-      const result = await response.json()
-
-      if (result.success) {
-        setCoordinationData(result)
-      } else {
-        console.error('[Coordination] Error:', result.error)
-      }
-    } catch (error) {
-      console.error('[Coordination] Error:', error)
-    } finally {
-      setCoordinationLoading(false)
-    }
-  }
-
-  // Fetch Coordination data when view changes
-  useEffect(() => {
-    fetchCoordinationData()
-  }, [coordinationView, refreshKey])
-
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '0'
-      }
-      // Additional safety check
-      if (safeValue === 0) return '0'
-      
-      try {
-        return new Intl.NumberFormat('en-US', {
-          notation: 'compact',
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 0
-        }).format(safeValue)
-      } catch (formatError) {
-        console.error('[Analytics] NumberFormat error:', formatError)
-        return safeValue.toFixed(0)
-      }
-    } catch (error) {
-      console.error('[Analytics] Error formatting currency:', error, value)
-      return '0'
-    }
-  }
-
-  // KPI Cards Configuration
-  const kpiCards = [
-    {
-      title: 'TOTAL BUDGETED',
-      value: loading ? '...' : `$${formatCurrency(kpiData.totalBudget)}`,
-      description: kpiData.totalBudget < 1000000 ? 'Limited budget data available' : 'Approved budget for period',
-      icon: Target,
-      trend: kpiData.totalBudget < 1000000 ? 'warning' : 'up'
-    },
-    {
-      title: 'TOTAL DISBURSED',
-      value: loading ? '...' : `$${formatCurrency(kpiData.totalDisbursed)}`,
-      description: 'Actual disbursements',
-      icon: DollarSign,
-      trend: 'up'
-    },
-    {
-      title: 'TOTAL EXPENDITURE',
-      value: loading ? '...' : `$${formatCurrency(kpiData.totalExpenditure)}`,
-      description: 'Funds spent',
-      icon: TrendingUp,
-      trend: 'up'
-    },
-    {
-      title: 'BUDGET UTILIZATION',
-      value: loading ? '...' : kpiData.totalBudget < 1000000 ? 'N/A' : `${kpiData.budgetUtilization}%`,
-      description: kpiData.totalBudget < 1000000 ? 'Insufficient budget data' : 'Budget spent to date',
-      icon: Activity,
-      trend: kpiData.totalBudget < 1000000 ? 'warning' : kpiData.budgetUtilization > 80 ? 'warning' : 'good'
-    },
-    {
-      title: 'DISBURSEMENT RATE',
-      value: loading ? '...' : `${kpiData.commitmentsDisbursedPercent}%`,
-      description: 'Commitments disbursed',
-      icon: Activity,
-      trend: kpiData.commitmentsDisbursedPercent > 50 ? 'good' : 'warning'
-    },
-    {
-      title: 'ACTIVE PROJECTS',
-      value: loading ? '...' : kpiData.activeProjects.toString(),
-      description: 'Currently implementing',
-      icon: Activity,
-      trend: 'good'
-    },
-    {
-      title: 'COMPLETED PROJECTS',
-      value: loading ? '...' : kpiData.completedProjects.toString(),
-      description: 'Successfully finished',
-      icon: CheckCircle2,
-      trend: 'good'
-    },
-    {
-      title: 'REPORTING PARTNERS',
-      value: loading ? '...' : kpiData.donorsReporting.toString(),
-      description: 'Active organizations',
-      icon: Users,
-      trend: 'up'
-    }
-  ]
+  // Coordination data is fetched inside CoordinationChartWithControls now,
+  // so the dashboard no longer needs its own fetch loop here.
 
   // Show skeleton loader during initial load
   if (loading && !kpiData.totalDisbursed && !kpiData.activeProjects) {
@@ -694,39 +570,11 @@ export default function AnalyticsDashboardPage() {
             </Card>
           )}
 
-          {/* Headline KPI tile (F3.1.b) — at-a-glance numbers for executives */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {kpiCards.slice(0, 4).map((kpi) => {
-              const Icon = kpi.icon;
-              return (
-                <Card key={kpi.title} className="border-border">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
-                          {kpi.title}
-                        </p>
-                        <p className="text-2xl font-bold text-foreground mt-1 truncate">
-                          {kpi.value}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {kpi.description}
-                        </p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-muted shrink-0">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                 <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
                   {[
                     { value: 'overview', label: 'Overview' },
+                    { value: 'aid-flow-map', label: 'Aid Flow Map' },
                     { value: 'trends-performance', label: 'Trends & Performance' },
                     { value: 'sectors-sdgs', label: 'Sectors & Policy Markers' },
                     { value: 'sdgs', label: 'SDGs' },
@@ -773,8 +621,8 @@ export default function AnalyticsDashboardPage() {
 
                       <CompactChartCard
                         title="External Development Partners Financial Overview"
-                        shortDescription="External development partners ranked by budgets, planned & actual disbursements"
-                        fullDescription="Complete ranking of external development partners by total budgets, planned disbursements, or actual disbursements. Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
+                        shortDescription="External development partners ranked by the selected metric — defaults to actual disbursements"
+                        fullDescription="Ranks external development partners by the metric(s) selected — Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types (defaults to actual disbursements). Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
                         mathTooltip="Aggregates totals per partner from the chosen view (budgets, planned disbursements, commitments, or actual disbursements), credited to the provider organisation on each transaction. Period-spanning budgets and planned disbursements are allocated proportionally by overlap days within the selected year window. Organisations whose country is Myanmar are excluded from this chart so recipient-government ministries (e.g. MOALI) don't appear as funders."
                         className="w-full"
                         compactHeight={300}
@@ -788,7 +636,8 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-4">Top Partners & Sectors</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Top Partners & Sectors</h2>
+                      <p className="text-muted-foreground mb-4">Which partners contribute the most, and which sectors absorb the bulk of the funding</p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <CompactChartCard
                           className="w-full"
@@ -798,6 +647,7 @@ export default function AnalyticsDashboardPage() {
                           mathTooltip="Sums USD-converted outgoing commitments (transaction type 2) and disbursements (type 3) per provider organisation, then ranks the top 10. Internal pooled-fund transfers are excluded so providers aren't credited for shuffling money between their own accounts. Organisations whose country is Myanmar are excluded so recipient-government ministries (e.g. MOALI, MoHS, MoE) don't appear as funders. Remaining partners beyond the top 10 are aggregated into an 'All Others' bucket. If fewer than 10 partners have transactions in the selected period, only the available rows are shown."
                           exportData={top10TotalFinancialData}
                           compactHeight={300}
+                          inlineToolbar
                         >
                           <Top10TotalFinancialValueChart
                             dateRange={dateRange}
@@ -811,11 +661,12 @@ export default function AnalyticsDashboardPage() {
                           title="Aid Distribution by Sector"
                           shortDescription="Breakdown of funding across sectors"
                           fullDescription="Breakdown of funding across sectors"
-                          mathTooltip="Sums actual disbursements (type 3) per published activity, then allocates each activity's total across its declared sectors using the sector percentage on the activity. Top 7 sectors are shown; the remainder is grouped into 'Others'. Activities with no sector assignment fall into 'Unspecified'."
+                          mathTooltip="Sums actual disbursements (type 3) per activity, allocating each activity's total across its declared sectors using the sector percentage on the activity. View the breakdown by Sector Category (DAC group), Sector (3-digit category), or Sub-Sector (5-digit code). Pie shows the top 10 plus an Others bucket; bar, sunburst, and sankey views show every sector at the chosen level."
                           exportData={sectorPieData}
                           compactHeight={300}
+                          inlineToolbar
                         >
-                          <SectorPieChart
+                          <SectorDistributionChart
                             dateRange={dateRange}
                             refreshKey={refreshKey}
                             onDataChange={setSectorPieData}
@@ -824,31 +675,24 @@ export default function AnalyticsDashboardPage() {
                       </div>
                     </div>
 
-                    <div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <CompactChartCard
-                        title="Coordination"
-                        shortDescription="Network visualization of organisations and their sector focus"
-                        fullDescription={coordinationView === 'sectors'
-                          ? "Who's working in each sector? Each circle represents a sector with partners shown as smaller circles."
-                          : "What is each partner working on? Each circle represents a partner with sectors shown as smaller circles."}
-                        mathTooltip="Counts distinct organisation–sector pairs across activities. Each parent circle is sized by the sum of its child values (e.g. number of partners working in a sector, or number of sectors a partner touches), giving a visual measure of where coordination is concentrated."
+                        title="Aid Distribution by Sector"
+                        shortDescription="Each sector as a bubble, partners shown as smaller circles inside, sized by the selected measure"
+                        fullDescription="Each sector is a bubble, with funding partners shown as smaller circles inside. Use the filter bar to switch the bubble-size measure (e.g. Disbursements, Budgets, # Activities), narrow by aid type, finance type, partner, or sector, and pick the hierarchy depth (Sector Category / Sector / Sub-Sector)."
+                        mathTooltip="Aggregates the chosen measure per sector at the chosen hierarchy level. For financial measures only the funding-role organisation on each activity is credited (so an implementing partner doesn't dilute the funder's commitment); inner bubbles represent attributed funder value. For count measures every participating org is shown, sized by the number of activities they touch in that sector."
                         className="w-full"
                         compactHeight={300}
+                        exportData={coordinationTableRows}
+                        exportFilename="aid-distribution-by-sector"
                       >
-                        {coordinationLoading ? (
-                          <Skeleton className="h-full w-full" />
-                        ) : (
-                          <CoordinationCirclePack
-                            view={coordinationView}
-                            data={coordinationData?.data || null}
-                            width={400}
-                            height={250}
-                          />
-                        )}
+                        <CoordinationChartWithControls
+                          width={400}
+                          height={250}
+                          onDataChange={setCoordinationTableRows}
+                        />
                       </CompactChartCard>
-                    </div>
 
-                    <div>
                       <CompactChartCard
                         title="Sector Disbursements Over Time"
                         shortDescription="Track sector disbursement patterns and trends over time"
@@ -864,17 +708,26 @@ export default function AnalyticsDashboardPage() {
                       </CompactChartCard>
                     </div>
 
+                  </div>
+                </TabsContent>
+
+                {/* ==================== AID FLOW MAP TAB ==================== */}
+                {/* Audience: general users. Answers: how does funding flow from partners to recipients? */}
+                <TabsContent value="aid-flow-map">
+                  <div className="space-y-8">
                     <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Flow Map</h2>
+                      <p className="text-muted-foreground mb-4">How funding flows from external development partners through to implementing organisations and recipients</p>
                       <CompactChartCard
                         title="Aid Flow Map"
                         shortDescription="How funding flows from development partners to recipients"
                         fullDescription="Sankey view of how funding flows from external development partners through to implementing organisations and recipients"
                         mathTooltip="Aggregates USD-converted disbursements and commitments along provider → receiver organisation links, then draws a flow diagram whose ribbon widths are proportional to the total value moving along each link."
                         className="w-full"
-                        compactHeight={500}
+                        compactHeight={760}
                         hideViewToggle
                       >
-                        <AidFlowMap height={500} />
+                        <AidFlowMap height={760} />
                       </CompactChartCard>
                     </div>
                   </div>

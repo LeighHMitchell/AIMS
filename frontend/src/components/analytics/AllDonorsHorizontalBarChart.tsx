@@ -14,7 +14,8 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DollarSign, Wallet, Calendar, Download, Table as TableIcon, AlertCircle, CalendarIcon, SlidersHorizontal, Check, Search, ChevronDown, AlignLeft, Layers } from 'lucide-react'
+import { DollarSign, Wallet, Calendar, Download, Table as TableIcon, AlertCircle, CalendarIcon, SlidersHorizontal, Check, Search, ChevronDown, AlignLeft, Layers, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import {
@@ -30,7 +31,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, BUDGET_COLOR, PLANNED_DISBURSEMENT_COLOR } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
-import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyPrecise } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 // Inline currency formatter to avoid initialization issues
@@ -174,6 +175,9 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const primaryMetric: Metric | null = selectedMetrics[0] ?? null
   const [chartViewMode, setChartViewMode] = useState<ChartViewMode>('bar')
   const [showPercentage, setShowPercentage] = useState(false)
+  // Optional Top-N narrowing — null means show every donor (the chart's
+  // default). Mirrors the Top 3/5/10 shortcut used by SectorDisbursementOverTime.
+  const [topN, setTopN] = useState<number | null>(null)
   // Empty array = "All organization types"; any non-empty selection narrows the chart.
   const [orgTypeFilter, setOrgTypeFilter] = useState<string[]>([])
   const toggleOrgType = (code: string) => {
@@ -217,6 +221,27 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
   // Coordinate which filter dropdown is open (only one at a time)
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
+
+  // Per-dropdown search queries. Both the Organisation Types and the Metric
+  // dropdowns can have long lists (15 org types, 15 metrics) so a search
+  // input matches the pattern used in the Sector filter. Filter is
+  // case-insensitive and matches against both the IATI code and the label.
+  const [orgTypeSearch, setOrgTypeSearch] = useState('')
+  const [metricSearch, setMetricSearch] = useState('')
+  const filteredOrgTypes = useMemo(() => {
+    const q = orgTypeSearch.trim().toLowerCase()
+    if (!q) return IATI_ORGANIZATION_TYPES
+    return IATI_ORGANIZATION_TYPES.filter(t =>
+      t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
+    )
+  }, [orgTypeSearch])
+  const filteredMetricDefs = useMemo(() => {
+    const q = metricSearch.trim().toLowerCase()
+    if (!q) return METRIC_DEFS
+    return METRIC_DEFS.filter(d =>
+      (d.code ?? '').toLowerCase().includes(q) || d.label.toLowerCase().includes(q)
+    )
+  }, [metricSearch])
   const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
     setOpenFilter(prev => open ? key : (prev === key ? null : prev))
   }
@@ -404,6 +429,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     setOrgTypeFilter([])
     setSelectedMetrics(['tx_3'])
     setChartViewMode('bar')
+    setTopN(null)
     setSectorFilter({ sectorCategories: [], sectors: [], subSectors: [] })
     const calendarYear = customYears.find(cy =>
       cy.name.toLowerCase().includes('calendar') ||
@@ -494,16 +520,19 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     selectedMetrics.reduce((s, m) => s + getMetricValue(d, m), 0)
 
   // Filter and sort data by the summed value across selected metrics.
-  // Donors whose sum is 0 fall out of the chart entirely.
+  // Donors whose sum is 0 fall out of the chart entirely. When `topN` is set
+  // we slice after sorting so the Top N picker narrows from the same ranking
+  // the user sees on screen.
   const displayData = useMemo(() => {
     if (selectedMetrics.length === 0) return []
-    return [...allData]
+    const ranked = [...allData]
       .map(d => ({ donor: d, sum: sumForDonor(d) }))
       .filter(({ sum }) => sum > 0)
       .sort((a, b) => b.sum - a.sum)
       .map(({ donor }) => donor)
+    return topN != null ? ranked.slice(0, topN) : ranked
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allData, selectedMetrics])
+  }, [allData, selectedMetrics, topN])
 
   // Grand total of the selected-metric sum across all visible donors —
   // used for the percentage column in tooltips/CSV.
@@ -537,6 +566,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       // Use acronym if available, otherwise use truncated name
       const displayName = donor.acronym || (donor.name.length > 30 ? donor.name.substring(0, 30) + '...' : donor.name)
 
+      // Normalize `donor.type` to an IATI code so downstream grouping,
+      // tooltip and table lookups all key on the same value. The API
+      // normalizes too, but a defensive resolve here means the chart is
+      // resilient to old cache entries or any caller passing a name string.
+      const typeCode = donor.type ? (getOrganizationTypeCode(donor.type) || donor.type) : null
+
       return {
         name: displayName,
         fullName: donor.name,
@@ -551,8 +586,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         totalActualDisbursement: donor.totalActualDisbursement,
         byTxType: donor.byTxType,
         percentage: total > 0 ? ((value / total) * 100) : 0,
-        type: donor.type,
-        typeName: donor.type ? getOrganizationTypeName(donor.type) : null
+        type: typeCode,
+        typeName: typeCode ? getOrganizationTypeName(typeCode) : null
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -644,22 +679,16 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     )
   }
 
-  // Single Blue Slate fill for all bars in the non-stacked view —
-  // keeps this chart visually consistent with other ranked breakdown
-  // charts on the dashboard.
-  const barColor = '#4c5568'
+  // Bar fill in the single-metric (non-stacked) view follows the canonical
+  // Financial Totals palette so "Disbursements" bars are red, "Budget" bars
+  // are blue, etc. — same colour the equivalent series uses everywhere else
+  // in the app (see lib/chart-colors.ts). Falls back to neutral Blue Slate
+  // when no metric is selected (defensive — the empty state covers this).
+  const barColor = primaryMetric ? metricColor(primaryMetric) : '#4c5568'
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
-
-      // Single label that always reflects the current metric selection.
-      // For one selected metric we use that metric's name; for two or more
-      // we use a generic "Selected Total" so the per-metric breakdown
-      // doesn't bloat the tooltip (out of scope per spec).
-      const tooltipLabel = selectedMetrics.length === 1
-        ? METRIC_LABEL[selectedMetrics[0]]
-        : 'Selected Total'
 
       // Format org name with acronym
       const orgDisplay = data.acronym
@@ -677,15 +706,42 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         </span>
       ) : undefined
 
-      const rows: any[] = [
-        {
+      const rows: any[] = []
+
+      if (selectedMetrics.length <= 1) {
+        // Single metric (or none): show one row labelled with the metric name.
+        // Swatch colour tracks the bar fill (which now follows the canonical
+        // Financial Totals palette via metricColor()).
+        const tooltipLabel = selectedMetrics.length === 1
+          ? METRIC_LABEL[selectedMetrics[0]]
+          : 'Selected Total'
+        rows.push({
           label: tooltipLabel,
           value: formatTooltipCurrency(data.value, isExpanded),
-          color: '#4c5568',
-        },
-      ]
+          color: barColor,
+        })
+      } else {
+        // Multi-metric: list every selected metric with its own value and
+        // matching segment colour, then a bordered Total row beneath. The
+        // colour swatch on each row matches the segment colour the bar uses
+        // (metricColor — same source of truth as the Financial Totals chart).
+        selectedMetrics.forEach(m => {
+          rows.push({
+            label: METRIC_LABEL[m],
+            value: formatTooltipCurrency(getMetricValue(data as unknown as DonorData, m), isExpanded),
+            color: metricColor(m),
+          })
+        })
+        rows.push({
+          label: 'Total',
+          value: formatTooltipCurrency(data.value, isExpanded),
+          bordered: true,
+        })
+      }
+
       if (showPercentage) {
-        rows[0].bordered = true
+        const last = rows[rows.length - 1]
+        if (last) last.bordered = true
         rows.push({
           label: '% of Total',
           value: formatPercentage(data.value),
@@ -962,29 +1018,51 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 className="w-[360px] max-h-[400px] overflow-y-auto p-1"
                 onCloseAutoFocus={(e) => e.preventDefault()}
               >
-                <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
-                  <span className="text-helper font-semibold text-foreground">Organisation Types</span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={selectAllOrgTypes}
-                      disabled={orgTypeFilter.length === IATI_ORGANIZATION_TYPES.length}
-                      className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                    >
-                      Select all
-                    </button>
-                    <span className="text-muted-foreground/40">·</span>
-                    <button
-                      type="button"
-                      onClick={clearOrgTypes}
-                      disabled={orgTypeFilter.length === 0}
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                    >
-                      Clear
-                    </button>
+                <div className="sticky top-0 z-10 bg-card border-b border-border mb-1">
+                  <div className="flex items-center justify-between gap-2 px-2 py-2">
+                    <span className="text-helper font-semibold text-foreground">Organisation Types</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={selectAllOrgTypes}
+                        disabled={orgTypeFilter.length === IATI_ORGANIZATION_TYPES.length}
+                        className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                      >
+                        Select all
+                      </button>
+                      <span className="text-muted-foreground/40">·</span>
+                      <button
+                        type="button"
+                        onClick={clearOrgTypes}
+                        disabled={orgTypeFilter.length === 0}
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center px-3 py-2 border-t border-border">
+                    <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+                    <Input
+                      placeholder="Search types..."
+                      value={orgTypeSearch}
+                      onChange={(e) => setOrgTypeSearch(e.target.value)}
+                      className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                    />
+                    {orgTypeSearch && (
+                      <X
+                        className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
+                        onClick={() => setOrgTypeSearch('')}
+                      />
+                    )}
                   </div>
                 </div>
-                {IATI_ORGANIZATION_TYPES.map(type => {
+                {filteredOrgTypes.length === 0 && (
+                  <div className="px-3 py-4 text-helper text-muted-foreground text-center">
+                    No matching organisation types.
+                  </div>
+                )}
+                {filteredOrgTypes.map(type => {
                   const checked = orgTypeFilter.includes(type.code)
                   return (
                     <button
@@ -1027,31 +1105,58 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 className="w-[320px] max-h-[400px] overflow-y-auto p-1"
                 onCloseAutoFocus={(e) => e.preventDefault()}
               >
-                <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
-                  <span className="text-helper font-semibold text-foreground">Metrics</span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={selectAllMetrics}
-                      disabled={selectedMetrics.length === ALL_METRIC_KEYS.length}
-                      className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                    >
-                      Select all
-                    </button>
-                    <span className="text-muted-foreground/40">·</span>
-                    <button
-                      type="button"
-                      onClick={clearMetrics}
-                      disabled={selectedMetrics.length === 0}
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                    >
-                      Clear
-                    </button>
+                <div className="sticky top-0 z-10 bg-card border-b border-border mb-1">
+                  <div className="flex items-center justify-between gap-2 px-2 py-2">
+                    <span className="text-helper font-semibold text-foreground">Metrics</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={selectAllMetrics}
+                        disabled={selectedMetrics.length === ALL_METRIC_KEYS.length}
+                        className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                      >
+                        Select all
+                      </button>
+                      <span className="text-muted-foreground/40">·</span>
+                      <button
+                        type="button"
+                        onClick={clearMetrics}
+                        disabled={selectedMetrics.length === 0}
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center px-3 py-2 border-t border-border">
+                    <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+                    <Input
+                      placeholder="Search metrics..."
+                      value={metricSearch}
+                      onChange={(e) => setMetricSearch(e.target.value)}
+                      className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                    />
+                    {metricSearch && (
+                      <X
+                        className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
+                        onClick={() => setMetricSearch('')}
+                      />
+                    )}
                   </div>
                 </div>
-                {METRIC_DEFS.map((def, idx) => {
+                {filteredMetricDefs.length === 0 && (
+                  <div className="px-3 py-4 text-helper text-muted-foreground text-center">
+                    No matching metrics.
+                  </div>
+                )}
+                {filteredMetricDefs.map((def, idx) => {
                   const checked = selectedMetrics.includes(def.key)
-                  const showSeparator = idx === 2
+                  // Separator sits between the last non-transaction metric
+                  // (budgets / planned) and the first transaction-type entry
+                  // in the *filtered* list, so search results still get the
+                  // visual divider when both kinds of metrics match.
+                  const prev = idx > 0 ? filteredMetricDefs[idx - 1] : null
+                  const showSeparator = !!prev && !prev.key.startsWith('tx_') && def.key.startsWith('tx_')
                   return (
                     <React.Fragment key={def.key}>
                       {showSeparator && <div className="my-1 border-t border-border" />}
@@ -1228,29 +1333,51 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               className="w-[360px] max-h-[400px] overflow-y-auto p-1"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
-              <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
-                <span className="text-helper font-semibold text-foreground">Organisation Types</span>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={selectAllOrgTypes}
-                    disabled={orgTypeFilter.length === IATI_ORGANIZATION_TYPES.length}
-                    className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                  >
-                    Select all
-                  </button>
-                  <span className="text-muted-foreground/40">·</span>
-                  <button
-                    type="button"
-                    onClick={clearOrgTypes}
-                    disabled={orgTypeFilter.length === 0}
-                    className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                  >
-                    Clear
-                  </button>
+              <div className="sticky top-0 z-10 bg-card border-b border-border mb-1">
+                <div className="flex items-center justify-between gap-2 px-2 py-2">
+                  <span className="text-helper font-semibold text-foreground">Organisation Types</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={selectAllOrgTypes}
+                      disabled={orgTypeFilter.length === IATI_ORGANIZATION_TYPES.length}
+                      className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button
+                      type="button"
+                      onClick={clearOrgTypes}
+                      disabled={orgTypeFilter.length === 0}
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center px-3 py-2 border-t border-border">
+                  <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+                  <Input
+                    placeholder="Search types..."
+                    value={orgTypeSearch}
+                    onChange={(e) => setOrgTypeSearch(e.target.value)}
+                    className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                  />
+                  {orgTypeSearch && (
+                    <X
+                      className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
+                      onClick={() => setOrgTypeSearch('')}
+                    />
+                  )}
                 </div>
               </div>
-              {IATI_ORGANIZATION_TYPES.map(type => {
+              {filteredOrgTypes.length === 0 && (
+                <div className="px-3 py-4 text-helper text-muted-foreground text-center">
+                  No matching organisation types.
+                </div>
+              )}
+              {filteredOrgTypes.map(type => {
                 const checked = orgTypeFilter.includes(type.code)
                 return (
                   <button
@@ -1312,33 +1439,58 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               className="w-[320px] max-h-[400px] overflow-y-auto p-1"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
-              <div className="sticky top-0 z-10 bg-card flex items-center justify-between gap-2 px-2 py-2 border-b border-border mb-1">
-                <span className="text-helper font-semibold text-foreground">Metrics</span>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={selectAllMetrics}
-                    disabled={selectedMetrics.length === ALL_METRIC_KEYS.length}
-                    className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                  >
-                    Select all
-                  </button>
-                  <span className="text-muted-foreground/40">·</span>
-                  <button
-                    type="button"
-                    onClick={clearMetrics}
-                    disabled={selectedMetrics.length === 0}
-                    className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
-                  >
-                    Clear
-                  </button>
+              <div className="sticky top-0 z-10 bg-card border-b border-border mb-1">
+                <div className="flex items-center justify-between gap-2 px-2 py-2">
+                  <span className="text-helper font-semibold text-foreground">Metrics</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={selectAllMetrics}
+                      disabled={selectedMetrics.length === ALL_METRIC_KEYS.length}
+                      className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button
+                      type="button"
+                      onClick={clearMetrics}
+                      disabled={selectedMetrics.length === 0}
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center px-3 py-2 border-t border-border">
+                  <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+                  <Input
+                    placeholder="Search metrics..."
+                    value={metricSearch}
+                    onChange={(e) => setMetricSearch(e.target.value)}
+                    className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                  />
+                  {metricSearch && (
+                    <X
+                      className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
+                      onClick={() => setMetricSearch('')}
+                    />
+                  )}
                 </div>
               </div>
-              {METRIC_DEFS.map((def, idx) => {
+              {filteredMetricDefs.length === 0 && (
+                <div className="px-3 py-4 text-helper text-muted-foreground text-center">
+                  No matching metrics.
+                </div>
+              )}
+              {filteredMetricDefs.map((def, idx) => {
                 const checked = selectedMetrics.includes(def.key)
-                // Insert a visual separator between the two non-transaction
-                // metrics (budgets, planned) and the 13 IATI transaction types.
-                const showSeparator = idx === 2
+                // Separator between the last non-transaction metric and the
+                // first transaction-type entry — computed against the
+                // currently visible (filtered) list so search results still
+                // get the divider when both kinds of metrics match.
+                const prev = idx > 0 ? filteredMetricDefs[idx - 1] : null
+                const showSeparator = !!prev && !prev.key.startsWith('tx_') && def.key.startsWith('tx_')
                 return (
                   <React.Fragment key={def.key}>
                     {showSeparator && <div className="my-1 border-t border-border" />}
@@ -1358,6 +1510,29 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               })}
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* Top N quick picker — same set used in SectorDisbursementOverTime;
+              `All` clears the limit so the chart can still show every donor. */}
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+            {([
+              { label: 'Top 3', value: 3 },
+              { label: 'Top 5', value: 5 },
+              { label: 'Top 10', value: 10 },
+              { label: 'All', value: null as number | null },
+            ]).map(({ label, value }) => (
+              <button
+                key={label}
+                onClick={() => setTopN(value)}
+                className={
+                  topN === value
+                    ? 'text-xs font-medium px-2 h-8 rounded bg-muted text-foreground'
+                    : 'text-xs px-2 h-8 rounded text-muted-foreground hover:bg-muted'
+                }
+                title={value == null ? 'Show every donor' : `Show top ${value} donors`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
@@ -1415,46 +1590,49 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         className={cn(isRefreshing && 'opacity-50 pointer-events-none transition-opacity')}
       >
         {chartViewMode === 'table' ? (
-          <div className="rounded-md border overflow-auto max-h-[600px]">
-            <Table>
-              <TableHeader>
-                <TableRow className="sticky top-0 bg-white z-10">
-                  <TableHead>Organisation</TableHead>
-                  <TableHead>Type</TableHead>
-                  {/* One column per selected metric — column headers reflect
-                      the user's current selection in the metric multi-select.
-                      The code chip sits on its own line with the metric label
-                      wrapping beneath it (aligned under the code), and the
-                      cell uses the app-standard TableHead styling so this
-                      header matches every other table-view header in the app.
-                      A trailing "Total" column shows the sum across all
-                      selected metrics (only when 2+ are selected, otherwise
-                      it's redundant with the single metric column). */}
+          // Canonical table layout — sticky bg-surface-muted header,
+          // hover rows, right-aligned currency, tabular-nums, footer with
+          // per-metric column totals and a grand total. Matches the
+          // FinancialTotalsBarChart reference exactly so every table view
+          // in the app reads the same. Currency values are full USD
+          // amounts to 2 decimal places.
+          <div className="overflow-auto max-h-[600px] rounded-md border">
+            <table className="w-full text-body">
+              <thead className="bg-surface-muted sticky top-0 z-10">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-foreground border-b">Organisation</th>
+                  <th className="text-left px-4 py-3 font-medium text-foreground border-b">Type</th>
                   {selectedMetrics.map((m) => {
                     const code = METRIC_DEFS.find(d => d.key === m)?.code
                     return (
-                      <TableHead key={m} className="text-right">
-                        <span className="flex flex-col items-end gap-1">
+                      <th key={m} className="text-right px-4 py-3 font-medium text-foreground border-b whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                          <div
+                            className="w-3 h-3 rounded-sm flex-shrink-0"
+                            style={{ backgroundColor: metricColor(m) }}
+                          />
                           {code && (
                             <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                               {code}
                             </code>
                           )}
-                          <span className="whitespace-normal">{METRIC_LABEL[m]}</span>
-                        </span>
-                      </TableHead>
+                          {METRIC_LABEL[m]}
+                        </div>
+                      </th>
                     )
                   })}
                   {selectedMetrics.length > 1 && (
-                    <TableHead className="text-right">Total</TableHead>
+                    <th className="text-right px-4 py-3 font-medium text-foreground border-b">Total</th>
                   )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+                </tr>
+              </thead>
+              <tbody>
                 {chartData.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{item.fullName}</TableCell>
-                    <TableCell>
+                  <tr key={index} className="border-b border-border hover:bg-muted/50">
+                    <td className="px-4 py-2.5 font-medium text-foreground">
+                      {item.acronym ? `${item.fullName} (${item.acronym})` : item.fullName}
+                    </td>
+                    <td className="px-4 py-2.5">
                       {item.type && (
                         <span className="flex items-center gap-1.5">
                           <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
@@ -1463,21 +1641,47 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           <span className="text-body text-muted-foreground">{item.typeName}</span>
                         </span>
                       )}
-                    </TableCell>
+                    </td>
                     {selectedMetrics.map((m) => (
-                      <TableCell key={m} className="text-right">
-                        {formatCurrencyAbbreviated(getMetricValue(item as unknown as DonorData, m))}
-                      </TableCell>
+                      <td key={m} className="text-right px-4 py-2.5 text-foreground tabular-nums">
+                        {formatCurrencyPrecise(getMetricValue(item as unknown as DonorData, m))}
+                      </td>
                     ))}
                     {selectedMetrics.length > 1 && (
-                      <TableCell className="text-right font-medium">
-                        {formatCurrencyAbbreviated(item.value)}
-                      </TableCell>
+                      <td className="text-right px-4 py-2.5 text-foreground font-semibold tabular-nums">
+                        {formatCurrencyPrecise(item.value)}
+                      </td>
                     )}
-                  </TableRow>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+              <tfoot className="bg-muted">
+                <tr>
+                  <td className="px-4 py-3 font-semibold text-foreground border-t-2 border-border" colSpan={2}>
+                    Total
+                  </td>
+                  {selectedMetrics.map((m) => {
+                    const columnTotal = chartData.reduce(
+                      (sum, item) => sum + getMetricValue(item as unknown as DonorData, m),
+                      0,
+                    )
+                    return (
+                      <td
+                        key={m}
+                        className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border tabular-nums"
+                      >
+                        {formatCurrencyPrecise(columnTotal)}
+                      </td>
+                    )
+                  })}
+                  {selectedMetrics.length > 1 && (
+                    <td className="text-right px-4 py-3 font-bold text-foreground border-t-2 border-border tabular-nums">
+                      {formatCurrencyPrecise(total)}
+                    </td>
+                  )}
+                </tr>
+              </tfoot>
+            </table>
           </div>
         ) : chartViewMode === 'stacked' ? (
           <div className="p-4">
@@ -1621,8 +1825,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
       {/* Explanatory text */}
       <p className="text-body text-muted-foreground leading-relaxed">
-        This chart ranks funding organizations by their financial contributions, helping stakeholders understand the development assistance landscape. Pick any combination of metrics — Total Budgets, Total Planned Disbursements, and the 13 IATI transaction types — from the metrics dropdown; bars show the sum across every metric you select.
-        The stacked view groups development partners by organization type, showing individual organizations as segments within each bar for quick identification of major contributors.
+        This chart ranks external development partners by their financial contributions for the metric(s) you select. By default it shows actual disbursements, but you can switch to or layer in Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types from the metrics dropdown — bar lengths reflect the sum across every metric selected.
+        The stacked view groups partners by organisation type, with individual organisations shown as segments within each bar for quick identification of the largest contributors.
       </p>
     </div>
   )

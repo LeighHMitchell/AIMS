@@ -70,6 +70,43 @@ export const CHART_RANKED_PALETTE = [
 
 export const OTHERS_COLOR = '#94a3b8'  // slate-400 — "All Others" bucket
 
+// Economist-style extended palette for high-cardinality categorical breakdowns
+// (e.g. ~20+ DAC sectors on the Aid Distribution by Sector chart). Anchored on
+// the same Economist hues used by FinancialTotalsBarChart and the transaction-
+// type palette so this stays brand-coherent; tonal variants extend it to 20
+// visually distinct colors.
+export const ECONOMIST_EXTENDED_PALETTE = [
+  '#db444b', // red (anchor — disbursement)
+  '#006ba2', // blue (anchor — budget)
+  '#ebb434', // yellow (anchor — planned disbursement)
+  '#379a8b', // teal (anchor — commitment)
+  '#9a607f', // purple (anchor — expenditure)
+  '#3ebcd2', // cyan (anchor — incoming funds)
+  '#b4ba39', // olive
+  '#d1b07c', // gold/tan
+  '#758d99', // grey
+  '#a81829', // deep red
+  '#1a4f75', // deep blue
+  '#b48420', // deep yellow
+  '#266d62', // deep teal
+  '#78405f', // deep purple
+  '#00788d', // deep cyan
+  '#818a00', // dark olive
+  '#e88087', // soft red
+  '#4d94c2', // soft blue
+  '#65b6a8', // soft teal
+  '#b889a4', // soft purple
+] as const
+
+/**
+ * Resolve a color for the Nth slice of a high-cardinality sector chart.
+ * Wraps `ECONOMIST_EXTENDED_PALETTE` so charts with more than 20 slices keep
+ * cycling rather than crash.
+ */
+export function getSectorColor(index: number): string {
+  return ECONOMIST_EXTENDED_PALETTE[((index % ECONOMIST_EXTENDED_PALETTE.length) + ECONOMIST_EXTENDED_PALETTE.length) % ECONOMIST_EXTENDED_PALETTE.length]
+}
+
 // ---------------------------------------------------------------------------
 // FINANCIAL SERIES COLORS — SINGLE SOURCE OF TRUTH
 //

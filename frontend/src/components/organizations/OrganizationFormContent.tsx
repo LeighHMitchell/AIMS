@@ -990,7 +990,7 @@ export function OrganizationFormContent({
                     id="acronym"
                     value={formData.acronym || ''}
                     onChange={(e) => handleInputChange('acronym', e.target.value)}
-                    placeholder="DANIDA"
+                    placeholder="ABC"
                     className={`w-full h-12 !text-lg ${validationErrors.some(e => e.includes('Acronym')) ? 'border-destructive' : ''} ${formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 ? 'pr-10' : ''}`}
                   />
                   {formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 && (

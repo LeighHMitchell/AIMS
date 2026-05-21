@@ -1,17 +1,17 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import React, { useState, useEffect, useMemo } from 'react'
+import { CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { Download, ArrowLeftRight, Activity, Search, Info } from 'lucide-react'
-import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { Download, ArrowLeftRight, Activity, Info } from 'lucide-react'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { format, subMonths, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
 import EnhancedAidFlowGraph from './EnhancedAidFlowGraph'
 import type { GraphData } from './EnhancedAidFlowGraph'
+import { AidFlowOrgCombobox, type AidFlowOrgOption } from './AidFlowOrgCombobox'
 
 interface DateRange {
   from: Date
@@ -20,8 +20,10 @@ interface DateRange {
 
 type ViewMode = 'transaction' | 'activity'
 
-// Transaction type options for multi-select (IATI Standard v2.03)
-const TRANSACTION_TYPE_OPTIONS = [
+// Actual IATI transaction types (v2.03). Planned Disbursements are added
+// separately below a divider — they aren't a transaction type in IATI,
+// they live in their own table.
+const ACTUAL_TRANSACTION_TYPE_OPTIONS = [
   { label: 'Incoming Funds', value: '1' },
   { label: 'Outgoing Commitment', value: '2' },
   { label: 'Disbursement', value: '3' },
@@ -35,6 +37,13 @@ const TRANSACTION_TYPE_OPTIONS = [
   { label: 'Incoming Commitment', value: '11' },
   { label: 'Outgoing Pledge', value: '12' },
   { label: 'Incoming Pledge', value: '13' },
+]
+
+const PLANNED_TRANSACTION_TYPE_OPTION = { label: 'Planned Disbursement', value: 'PD' }
+
+const TRANSACTION_TYPE_OPTIONS = [
+  ...ACTUAL_TRANSACTION_TYPE_OPTIONS,
+  PLANNED_TRANSACTION_TYPE_OPTION,
 ]
 
 interface AidFlowMapProps {
@@ -55,14 +64,14 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
   const [error, setError] = useState<string | null>(null)
   const [graphData, setGraphData] = useState<GraphData | null>(null)
   const [metadata, setMetadata] = useState<any>(null)
-  const [statusFilter, setStatusFilter] = useState<'actual' | 'draft' | 'both'>('both')
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<string[]>(['3']) // Default to Disbursement
   const [stagedTransactionTypes, setStagedTransactionTypes] = useState<string[]>(['3']) // Staged selection for UI
   const [viewMode, setViewMode] = useState<ViewMode>('transaction')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('')
+  const [orgOptions, setOrgOptions] = useState<AidFlowOrgOption[]>([])
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<string>('all')
   // Coordinate filter dropdowns so only one is open at a time.
-  type OpenFilter = 'time' | 'txType' | 'txStatus' | null
+  type OpenFilter = 'time' | 'txType' | null
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null)
   const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
     setOpenFilter(prev => open ? key : (prev === key ? null : prev))
@@ -91,9 +100,12 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
       })
       
       let endpoint: string
-      
+
       if (viewMode === 'transaction') {
-        params.append('status', statusFilter)
+        // Only show actual flows — no draft transactions. The status query
+        // param is intentionally pinned to 'actual' here; the user-facing
+        // status filter was removed.
+        params.append('status', 'actual')
         if (transactionTypeFilter.length > 0) {
           params.append('transactionTypes', transactionTypeFilter.join(','))
         }
@@ -144,7 +156,39 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
   // Fetch data on mount and when filters change
   useEffect(() => {
     fetchAidFlowData()
-  }, [dateRange, statusFilter, transactionTypeFilter, viewMode])
+  }, [dateRange, transactionTypeFilter, viewMode])
+
+  // Fetch organisation list once for the search combobox. The endpoint is
+  // bounded (default 100, max 500); for now we ask for the first 500 by name.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/organizations-list?limit=500&sortField=name&sortOrder=asc')
+      .then(r => (r.ok ? r.json() : null))
+      .then(json => {
+        if (cancelled || !json) return
+        const list = Array.isArray(json) ? json : (json.data || json.organizations || [])
+        const opts: AidFlowOrgOption[] = list
+          .map((o: any) => ({
+            id: o.id,
+            name: o.name || '',
+            acronym: o.acronym || null,
+          }))
+          .filter((o: AidFlowOrgOption) => !!o.name)
+        setOrgOptions(opts)
+      })
+      .catch(() => { /* combobox falls back to graph nodes */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Resolve the selected org id back to a name the chart can match against
+  // its node labels (the chart highlights by name substring).
+  const searchQuery = useMemo(() => {
+    if (!selectedOrgId) return ''
+    const fromList = orgOptions.find(o => o.id === selectedOrgId)?.name
+    if (fromList) return fromList
+    const fromGraph = graphData?.nodes.find(n => n.id === selectedOrgId)?.name
+    return fromGraph || ''
+  }, [selectedOrgId, orgOptions, graphData])
   
   // Handle date preset selection
   const handlePresetSelect = (preset: string) => {
@@ -220,33 +264,31 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
   }
   
   return (
-    <Card className={cn("w-full", className)}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
+    <div className={cn("w-full", className)}>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="text-base font-medium text-foreground">Aid Flow Map</CardTitle>
             <CardDescription className="text-helper text-muted-foreground mt-0.5">
               {viewMode === 'transaction'
-                ? 'Interactive visualization of aid flows between development partners and recipients'
-                : 'Visualize relationships between linked activities'
+                ? 'Each node is an organisation; each link is the total value of transactions between them. Larger nodes move more money; thicker links carry more value.'
+                : 'Each node is an activity; each link is a defined relationship between two activities (parent, child, sibling, co-funded, or third-party).'
               }
             </CardDescription>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleExport}
-              disabled={!graphData || loading}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleExport}
+            disabled={!graphData || loading}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
-        
+
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-2 mt-4">
+        <div className="flex items-center gap-2">
           <div className="inline-flex rounded-lg border border-border p-1 bg-muted">
             <button
               onClick={() => setViewMode('transaction')}
@@ -276,22 +318,18 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         </div>
         
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 p-4 bg-muted rounded-lg border">
-          {/* Search */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg border">
+          {/* Search Organisation */}
           <div className="space-y-1.5">
             <label className="text-body font-medium text-foreground">Search Organisation</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10 bg-white"
-              />
-            </div>
+            <AidFlowOrgCombobox
+              organizations={orgOptions}
+              value={selectedOrgId}
+              onValueChange={setSelectedOrgId}
+              placeholder="Search organisations..."
+            />
           </div>
-          
+
           {/* Time Period */}
           <div className="space-y-1.5">
             <label className="text-body font-medium text-foreground">Time Period</label>
@@ -318,8 +356,8 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
               </SelectContent>
             </Select>
           </div>
-          
-          {/* Transaction Type - only show in transaction view */}
+
+          {/* Transaction Type — only show in transaction view */}
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
               <label className="text-body font-medium text-foreground">Transaction Type</label>
@@ -343,7 +381,16 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
                   }
                 }}
                 renderOption={(option) => (
-                  <span className="flex items-center gap-2">
+                  // Top border on the Planned Disbursement row separates it
+                  // from the actual IATI transaction types above. PD isn't a
+                  // transaction in IATI — it lives in its own table — so the
+                  // divider makes the conceptual gap visible in the picker.
+                  <span
+                    className={cn(
+                      "flex items-center gap-2 w-full",
+                      option.value === 'PD' && "pt-2 mt-1 border-t border-border"
+                    )}
+                  >
                     <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                       {option.value}
                     </code>
@@ -360,51 +407,10 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
               </div>
             </div>
           )}
-          
-          {/* Transaction Status - only show in transaction view */}
-          {viewMode === 'transaction' ? (
-            <div className="space-y-1.5">
-              <label className="text-body font-medium text-foreground">Transaction Status</label>
-              <Select
-                value={statusFilter}
-                onValueChange={(value: any) => setStatusFilter(value)}
-                open={openFilter === 'txStatus'}
-                onOpenChange={filterOpenHandler('txStatus')}
-              >
-                <SelectTrigger className="w-full h-10 bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[
-                    { code: '1', label: 'All Statuses', value: 'both' },
-                    { code: '2', label: 'Actual Only', value: 'actual' },
-                    { code: '3', label: 'Draft Only', value: 'draft' },
-                  ].map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      <span className="flex items-center gap-2">
-                        <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">
-                          {opt.code}
-                        </code>
-                        <span className="text-body">{opt.label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <label className="text-body font-medium text-foreground">Activity Status</label>
-              <div className="w-full h-10 px-3 flex items-center text-body text-muted-foreground bg-white border rounded-md">
-                All statuses
-              </div>
-            </div>
-          )}
         </div>
-        
-      </CardHeader>
-      
-      <CardContent>
+      </div>
+
+      <div className="mt-4">
         {loading && (
           <ChartLoadingPlaceholder />
         )}
@@ -446,13 +452,13 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             />
           </>
         )}
-        
+
         {!loading && !error && !graphData && (
           <div className="flex items-center justify-center h-[400px]">
             <p className="text-muted-foreground">No data available for the selected date range</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
-} 
+}

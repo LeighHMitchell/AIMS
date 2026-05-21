@@ -1,390 +1,574 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import type {
-  CoordinationView,
+  CoordinationLevel,
+  CoordinationMeasure,
   CoordinationHierarchy,
   CoordinationParentNode,
-  CoordinationBubble,
-  CoordinationSummary,
-  CoordinationResponse
+  CoordinationTopDonor,
+  CoordinationResponse,
 } from '@/types/coordination';
+import sectorGroupData from '@/data/SectorGroup.json';
 
 export const dynamic = 'force-dynamic';
 
-// DAC 3-digit sector category names
-const DAC_CATEGORY_NAMES: Record<string, string> = {
-  '111': 'Education',
-  '112': 'Basic Education',
-  '113': 'Secondary Education',
-  '114': 'Post-Secondary Education',
-  '121': 'Health, General',
-  '122': 'Basic Health',
-  '123': 'Non-communicable diseases',
-  '130': 'Population & Reproductive Health',
-  '140': 'Water & Sanitation',
-  '151': 'Government & Civil Society',
-  '152': 'Conflict, Peace & Security',
-  '160': 'Social Infrastructure',
-  '210': 'Transport & Storage',
-  '220': 'Communications',
-  '230': 'Energy',
-  '240': 'Banking & Financial Services',
-  '250': 'Business & Other Services',
-  '311': 'Agriculture',
-  '312': 'Forestry',
-  '313': 'Fishing',
-  '321': 'Industry',
-  '322': 'Mineral Resources & Mining',
-  '323': 'Construction',
-  '331': 'Trade Policy',
-  '332': 'Tourism',
-  '410': 'Environment',
-  '430': 'Other Multisector',
-  '510': 'General Budget Support',
-  '520': 'Developmental Food Aid',
-  '530': 'Other Commodity Assistance',
-  '600': 'Action Relating to Debt',
-  '720': 'Emergency Response',
-  '730': 'Reconstruction & Rehabilitation',
-  '740': 'Disaster Prevention',
-  '910': 'Administrative Costs',
-  '920': 'Support to NGOs',
-  '930': 'Refugees in Donor Countries',
-  '998': 'Unallocated / Unspecified',
+// IATI participating-org role codes. Only role 1 (Funding) is credited for
+// the dollar value attached to an activity — implementers/accountable/etc.
+// are still counted as participants for donor & activity counts but do not
+// claim a share of the funder's commitment. This is the fix for activities
+// where, e.g., UNFPA appears as an implementing partner and was previously
+// diluted across every participating org regardless of role.
+const ROLE_FUNDING = 1;
+const ROLE_TYPE_TO_CODE: Record<string, number> = {
+  funding: 1,
+  funder: 1,
+  accountable: 2,
+  extending: 3,
+  implementing: 4,
+  implementer: 4,
+  responsible: 4,
 };
 
-function getCategoryName(code: string): string {
-  return DAC_CATEGORY_NAMES[code] || `Sector ${code}`;
+// Build sector lookups once at module load — small data (~200 rows),
+// purely static. Lets us map 5-digit purpose code → 3-digit category →
+// 3-digit group, in any direction, without re-walking the JSON.
+type SectorRow = {
+  code: string;
+  name: string;
+  'codeforiati:category-code': string;
+  'codeforiati:category-name': string;
+  'codeforiati:group-code': string;
+  'codeforiati:group-name': string;
+  status?: string;
+};
+const sectorRows = (sectorGroupData as { data: SectorRow[] }).data;
+
+const categoryToGroup = new Map<string, { code: string; name: string }>();
+const categoryNameByCode = new Map<string, string>();
+const subSectorMeta = new Map<string, { categoryCode: string; categoryName: string; groupCode: string; groupName: string; name: string }>();
+sectorRows.forEach((r) => {
+  const catCode = r['codeforiati:category-code'];
+  const catName = r['codeforiati:category-name'];
+  const groupCode = r['codeforiati:group-code'];
+  const groupName = r['codeforiati:group-name'];
+  if (catCode && !categoryToGroup.has(catCode)) {
+    categoryToGroup.set(catCode, { code: groupCode, name: groupName });
+  }
+  if (catCode && !categoryNameByCode.has(catCode)) {
+    categoryNameByCode.set(catCode, catName);
+  }
+  if (r.code) {
+    subSectorMeta.set(r.code, {
+      categoryCode: catCode,
+      categoryName: catName,
+      groupCode,
+      groupName,
+      name: r.name,
+    });
+  }
+});
+
+const MEASURE_LABEL: Record<CoordinationMeasure, string> = {
+  budgets: 'Total Budgets',
+  planned: 'Planned Disbursements',
+  tx_1: 'Incoming Funds',
+  tx_2: 'Commitments',
+  tx_3: 'Disbursements',
+  tx_4: 'Expenditures',
+  tx_5: 'Interest Payments',
+  tx_6: 'Loan Repayments',
+  tx_7: 'Reimbursements',
+  tx_8: 'Purchases of Equity',
+  tx_9: 'Sales of Equity',
+  tx_10: 'Credit Guarantees',
+  tx_11: 'Incoming Commitments',
+  tx_12: 'Outgoing Pledges',
+  tx_13: 'Incoming Pledges',
+  activities: 'Number of Activities',
+  donors: 'Number of Development Partners',
+  avgSize: 'Average Activity Size (Disbursed)',
+};
+
+function parseCsv(value: string | null): string[] {
+  if (!value) return [];
+  return value.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+function periodLabel(from: Date | null, to: Date | null): string | undefined {
+  if (!from || !to) return undefined;
+  const fy = from.getUTCFullYear();
+  const ty = to.getUTCFullYear();
+  return fy === ty ? `${fy}` : `${fy} – ${ty}`;
+}
+
+function num(v: unknown): number {
+  if (v === null || v === undefined) return 0;
+  const n = parseFloat(String(v));
+  return Number.isFinite(n) ? n : 0;
+}
+
+// Pro-rate a period-spanning amount across the requested date window by
+// overlap days. Returns the portion of `value` that falls inside [winFrom, winTo].
+function prorate(value: number, periodFrom: Date, periodTo: Date, winFrom: Date | null, winTo: Date | null): number {
+  if (!winFrom || !winTo) return value;
+  const from = periodFrom.getTime();
+  const to = periodTo.getTime();
+  const wf = winFrom.getTime();
+  const wt = winTo.getTime();
+  if (to < wf || from > wt) return 0;
+  const overlapStart = Math.max(from, wf);
+  const overlapEnd = Math.min(to, wt);
+  const totalDays = Math.max(1, (to - from) / 86400000);
+  const overlapDays = Math.max(0, (overlapEnd - overlapStart) / 86400000);
+  return (value * overlapDays) / totalDays;
 }
 
 export async function GET(request: NextRequest) {
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
-
   if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
   }
 
   try {
     const { searchParams } = new URL(request.url);
-    const view = (searchParams.get('view') || 'sectors') as CoordinationView;
+    const level = (searchParams.get('level') || 'category') as CoordinationLevel;
+    const measure = (searchParams.get('measure') || 'tx_3') as CoordinationMeasure;
+    const dateFromStr = searchParams.get('dateFrom');
+    const dateToStr = searchParams.get('dateTo');
+    const dateFrom = dateFromStr ? new Date(dateFromStr) : null;
+    const dateTo = dateToStr ? new Date(dateToStr) : null;
 
-    const supabaseAdmin = supabase;
+    const aidTypeFilter = new Set(parseCsv(searchParams.get('aidType')));
+    const financeTypeFilter = new Set(parseCsv(searchParams.get('financeType')));
+    const donorFilter = new Set(parseCsv(searchParams.get('donor')));
+    const sectorGroupFilter = new Set(parseCsv(searchParams.get('sectorGroups')));
+    const sectorCategoryFilter = new Set(parseCsv(searchParams.get('sectorCategories')));
+    const sectorSubFilter = new Set(parseCsv(searchParams.get('sectorSubSectors')));
 
-    // Get published activities only
-    const { data: publishedActivities, error: activitiesError } = await supabaseAdmin
+    const hasSectorFilter = sectorGroupFilter.size + sectorCategoryFilter.size + sectorSubFilter.size > 0;
+    const hasAidTypeFilter = aidTypeFilter.size > 0;
+    const hasFinanceTypeFilter = financeTypeFilter.size > 0;
+    const hasDonorFilter = donorFilter.size > 0;
+
+    // 1. Published activities + their defaults (for fallback aid/finance/flow type).
+    const { data: activities, error: activitiesError } = await supabase
       .from('activities')
-      .select('id')
+      .select('id, default_aid_type, default_finance_type, reporting_org_id')
       .eq('publication_status', 'published');
 
     if (activitiesError) {
-      console.error('Error fetching published activities:', activitiesError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch activities data' },
-        { status: 500 }
-      );
+      console.error('[coordination] activities query failed:', activitiesError);
+      return NextResponse.json({ success: false, error: 'Failed to fetch activities' }, { status: 500 });
     }
 
-    const publishedActivityIds = publishedActivities?.map(a => a.id) || [];
+    const activityIds = (activities || []).map((a: any) => a.id);
+    const activityDefaults = new Map<string, { aid: string | null; finance: string | null; reportingOrg: string | null }>();
+    (activities || []).forEach((a: any) => {
+      activityDefaults.set(a.id, {
+        aid: a.default_aid_type ?? null,
+        finance: a.default_finance_type ?? null,
+        reportingOrg: a.reporting_org_id ?? null,
+      });
+    });
 
-    if (publishedActivityIds.length === 0) {
-      const emptyResponse: CoordinationResponse = {
+    if (activityIds.length === 0) {
+      const empty: CoordinationResponse = {
         success: true,
-        view,
-        data: { name: 'Coordination', children: [] },
-        summary: { totalBudget: 0, sectorCount: 0, organizationCount: 0, activityCount: 0 }
+        level,
+        measure,
+        measureLabel: MEASURE_LABEL[measure],
+        periodLabel: periodLabel(dateFrom, dateTo),
+        data: { name: 'Aid Distribution by Sector', children: [] },
+        summary: {
+          totalValue: 0,
+          measureLabel: MEASURE_LABEL[measure],
+          categoryCount: 0,
+          sectorCount: 0,
+          subSectorCount: 0,
+          organizationCount: 0,
+          activityCount: 0,
+        },
       };
-      return NextResponse.json(emptyResponse);
+      return NextResponse.json(empty);
     }
 
-    // Get activity sectors (we'll aggregate to 3-digit)
-    const { data: activitySectors, error: sectorsError } = await supabaseAdmin
+    // 2. Activity sectors with percentages.
+    const { data: actSectors, error: sectorsError } = await supabase
       .from('activity_sectors')
-      .select('sector_code, sector_name, category_code, category_name, percentage, activity_id')
-      .in('activity_id', publishedActivityIds);
-
+      .select('activity_id, sector_code, sector_name, category_code, category_name, percentage')
+      .in('activity_id', activityIds);
     if (sectorsError) {
-      console.error('Error fetching activity sectors:', sectorsError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch activity sectors' },
-        { status: 500 }
-      );
+      console.error('[coordination] activity_sectors query failed:', sectorsError);
+      return NextResponse.json({ success: false, error: 'Failed to fetch activity sectors' }, { status: 500 });
     }
 
-    // Get participating organizations
-    const { data: participatingOrgs, error: orgsError } = await supabaseAdmin
+    // 3. Participating orgs with roles.
+    const { data: pOrgs, error: pOrgsError } = await supabase
       .from('activity_participating_organizations')
-      .select('activity_id, organization_id, role_type')
-      .in('activity_id', publishedActivityIds);
-
-    if (orgsError) {
-      console.error('Error fetching participating orgs:', orgsError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch participating organizations' },
-        { status: 500 }
-      );
+      .select('activity_id, organization_id, role_type, iati_role_code')
+      .in('activity_id', activityIds);
+    if (pOrgsError) {
+      console.error('[coordination] participating orgs query failed:', pOrgsError);
+      return NextResponse.json({ success: false, error: 'Failed to fetch participating orgs' }, { status: 500 });
     }
 
-    // Get organization names
-    const orgIds = Array.from(new Set(participatingOrgs?.map(o => o.organization_id).filter(Boolean) || []));
-
-    let organizationsMap = new Map<string, string>();
-    if (orgIds.length > 0) {
-      const { data: organizations } = await supabaseAdmin
+    // 4. Organisation directory (id, name, acronym) for all participants and reporting orgs.
+    const orgIds = new Set<string>();
+    (pOrgs || []).forEach((p: any) => { if (p.organization_id) orgIds.add(p.organization_id); });
+    activityDefaults.forEach((d) => { if (d.reportingOrg) orgIds.add(d.reportingOrg); });
+    const orgMap = new Map<string, { name: string; acronym: string | null }>();
+    if (orgIds.size > 0) {
+      const { data: orgsData } = await supabase
         .from('organizations')
-        .select('id, name')
-        .in('id', orgIds);
-
-      organizations?.forEach(org => {
-        organizationsMap.set(org.id, org.name || 'Unknown Organization');
+        .select('id, name, acronym')
+        .in('id', Array.from(orgIds));
+      (orgsData || []).forEach((o: any) => {
+        orgMap.set(o.id, { name: o.name || 'Unknown Organisation', acronym: o.acronym || null });
       });
     }
 
-    // Get transactions for budget values
-    const { data: transactions, error: transactionsError } = await supabaseAdmin
-      .from('transactions')
-      .select('activity_id, transaction_type, value_usd')
-      .in('transaction_type', ['2', '3']) // Commitments and Disbursements
-      .in('activity_id', publishedActivityIds)
-      .not('value_usd', 'is', null);
+    // 5. Build activity → { funders[], allParticipants[] }. Funder = role 1.
+    //    Resolve role from iati_role_code first, fall back to role_type text.
+    const activityFunders = new Map<string, string[]>();
+    const activityParticipants = new Map<string, Set<string>>();
+    (pOrgs || []).forEach((p: any) => {
+      if (!p.organization_id) return;
+      let role: number | null = null;
+      if (typeof p.iati_role_code === 'number') role = p.iati_role_code;
+      else if (typeof p.iati_role_code === 'string' && /^[0-9]+$/.test(p.iati_role_code)) role = parseInt(p.iati_role_code, 10);
+      if (!role && p.role_type) role = ROLE_TYPE_TO_CODE[String(p.role_type).toLowerCase()] || null;
+      if (!activityParticipants.has(p.activity_id)) activityParticipants.set(p.activity_id, new Set());
+      activityParticipants.get(p.activity_id)!.add(p.organization_id);
+      if (role === ROLE_FUNDING) {
+        if (!activityFunders.has(p.activity_id)) activityFunders.set(p.activity_id, []);
+        const arr = activityFunders.get(p.activity_id)!;
+        if (!arr.includes(p.organization_id)) arr.push(p.organization_id);
+      }
+    });
+    // Reporting org is the last-resort funder for activities with no explicit funding role.
+    const fundersForActivity = (activityId: string): string[] => {
+      const explicit = activityFunders.get(activityId);
+      if (explicit && explicit.length > 0) return explicit;
+      const reporting = activityDefaults.get(activityId)?.reportingOrg;
+      return reporting ? [reporting] : [];
+    };
 
-    if (transactionsError) {
-      console.error('Error fetching transactions:', transactionsError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch transactions' },
-        { status: 500 }
-      );
+    // 6. Compute activity-level value for the chosen measure, with date/aid/finance filters.
+    //    Returns activity_id → financial value (USD-equivalent).
+    const activityValue = new Map<string, number>();
+
+    if (measure.startsWith('tx_')) {
+      const code = measure.slice(3);
+      const { data: txs, error: txError } = await supabase
+        .from('transactions')
+        .select('activity_id, value, value_usd, transaction_date, transaction_type, aid_type, finance_type')
+        .in('activity_id', activityIds)
+        .eq('transaction_type', code);
+      if (txError) {
+        console.error('[coordination] transactions query failed:', txError);
+        return NextResponse.json({ success: false, error: 'Failed to fetch transactions' }, { status: 500 });
+      }
+      (txs || []).forEach((t: any) => {
+        const date = t.transaction_date ? new Date(t.transaction_date) : null;
+        if (dateFrom && date && date < dateFrom) return;
+        if (dateTo && date && date > dateTo) return;
+        const defaults = activityDefaults.get(t.activity_id);
+        const effAid = t.aid_type || defaults?.aid || null;
+        const effFin = t.finance_type || defaults?.finance || null;
+        if (hasAidTypeFilter && (!effAid || !aidTypeFilter.has(String(effAid)))) return;
+        if (hasFinanceTypeFilter && (!effFin || !financeTypeFilter.has(String(effFin)))) return;
+        const v = num(t.value_usd) || num(t.value);
+        if (v <= 0) return;
+        activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
+      });
+    } else if (measure === 'budgets') {
+      const { data: budgets, error: budgetsError } = await supabase
+        .from('activity_budgets')
+        .select('activity_id, value, usd_value, period_start, period_end')
+        .in('activity_id', activityIds);
+      if (budgetsError) {
+        console.error('[coordination] activity_budgets query failed:', budgetsError);
+      }
+      (budgets || []).forEach((b: any) => {
+        const defaults = activityDefaults.get(b.activity_id);
+        if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
+        if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
+        const raw = num(b.usd_value) || num(b.value);
+        if (raw <= 0) return;
+        const ps = b.period_start ? new Date(b.period_start) : null;
+        const pe = b.period_end ? new Date(b.period_end) : null;
+        const portion = ps && pe ? prorate(raw, ps, pe, dateFrom, dateTo) : raw;
+        if (portion <= 0) return;
+        activityValue.set(b.activity_id, (activityValue.get(b.activity_id) || 0) + portion);
+      });
+    } else if (measure === 'planned') {
+      // planned_disbursements uses `amount` / `usd_amount` (not value / usd_value).
+      const { data: pds, error: pdError } = await supabase
+        .from('planned_disbursements')
+        .select('activity_id, amount, usd_amount, period_start, period_end')
+        .in('activity_id', activityIds);
+      if (pdError) {
+        console.error('[coordination] planned_disbursements query failed:', pdError);
+      }
+      (pds || []).forEach((pd: any) => {
+        const defaults = activityDefaults.get(pd.activity_id);
+        if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
+        if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
+        const raw = num(pd.usd_amount) || num(pd.amount);
+        if (raw <= 0) return;
+        const ps = pd.period_start ? new Date(pd.period_start) : null;
+        const pe = pd.period_end ? new Date(pd.period_end) : null;
+        const portion = ps && pe ? prorate(raw, ps, pe, dateFrom, dateTo) : raw;
+        if (portion <= 0) return;
+        activityValue.set(pd.activity_id, (activityValue.get(pd.activity_id) || 0) + portion);
+      });
+    } else if (measure === 'avgSize') {
+      // Use disbursements for the dollar component; the average is computed per bucket below.
+      const { data: txs } = await supabase
+        .from('transactions')
+        .select('activity_id, value, value_usd, transaction_date, transaction_type, aid_type, finance_type')
+        .in('activity_id', activityIds)
+        .eq('transaction_type', '3');
+      (txs || []).forEach((t: any) => {
+        const date = t.transaction_date ? new Date(t.transaction_date) : null;
+        if (dateFrom && date && date < dateFrom) return;
+        if (dateTo && date && date > dateTo) return;
+        const defaults = activityDefaults.get(t.activity_id);
+        const effAid = t.aid_type || defaults?.aid || null;
+        const effFin = t.finance_type || defaults?.finance || null;
+        if (hasAidTypeFilter && (!effAid || !aidTypeFilter.has(String(effAid)))) return;
+        if (hasFinanceTypeFilter && (!effFin || !financeTypeFilter.has(String(effFin)))) return;
+        const v = num(t.value_usd) || num(t.value);
+        if (v <= 0) return;
+        activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
+      });
     }
+    // For 'activities' / 'donors' measures we don't need a dollar value per activity.
 
-    // Build activity → total budget map
-    const activityBudgetMap = new Map<string, number>();
-    transactions?.forEach(t => {
-      const value = parseFloat(t.value_usd?.toString() || '0') || 0;
-      if (value > 0) {
-        activityBudgetMap.set(t.activity_id, (activityBudgetMap.get(t.activity_id) || 0) + value);
+    // 7. Apply donor filter — drop activities whose participants don't intersect the filter.
+    const donorFilterList = Array.from(donorFilter);
+    const passesDonorFilter = (activityId: string): boolean => {
+      if (!hasDonorFilter) return true;
+      const parts = activityParticipants.get(activityId);
+      if (!parts) return false;
+      for (let i = 0; i < donorFilterList.length; i++) {
+        if (parts.has(donorFilterList[i])) return true;
+      }
+      return false;
+    };
+
+    // 8. Decide the bucket key/name/code for an activity_sectors row at the chosen level,
+    //    and whether the row passes the sector filter.
+    const bucketFor = (row: { sector_code: string | null; sector_name: string | null; category_code: string | null; category_name: string | null }): { key: string; code: string; name: string } | null => {
+      const subCode = row.sector_code || '';
+      const subMeta = subCode ? subSectorMeta.get(subCode) : undefined;
+      const catCode = row.category_code || subMeta?.categoryCode || (subCode ? subCode.substring(0, 3) : '');
+      const catName = row.category_name || subMeta?.categoryName || categoryNameByCode.get(catCode) || (catCode ? `Sector ${catCode}` : 'Unspecified');
+      const groupInfo = catCode ? categoryToGroup.get(catCode) : undefined;
+      const groupCode = groupInfo?.code || (subMeta?.groupCode ?? '');
+      const groupName = groupInfo?.name || subMeta?.groupName || 'Unspecified';
+
+      // Sector filter: a row passes if ANY of its hierarchy levels are explicitly in the filter,
+      // OR if no filter is set at all.
+      if (hasSectorFilter) {
+        const matches =
+          (sectorGroupFilter.size > 0 && groupCode && sectorGroupFilter.has(groupCode)) ||
+          (sectorCategoryFilter.size > 0 && catCode && sectorCategoryFilter.has(catCode)) ||
+          (sectorSubFilter.size > 0 && subCode && sectorSubFilter.has(subCode));
+        if (!matches) return null;
+      }
+
+      if (level === 'subSector') {
+        if (!subCode) return null;
+        const name = row.sector_name || subMeta?.name || `Purpose ${subCode}`;
+        return { key: subCode, code: subCode, name };
+      }
+      if (level === 'sector') {
+        if (!catCode) return null;
+        return { key: catCode, code: catCode, name: catName };
+      }
+      // 'category' (DAC group, e.g. 110 Education)
+      if (!groupCode) return null;
+      return { key: groupCode, code: groupCode, name: groupName };
+    };
+
+    // 9. Walk activity_sectors, allocating each activity's value across its sector rows.
+    type BucketState = {
+      code: string;
+      name: string;
+      value: number;
+      activityIds: Set<string>;
+      donorIds: Set<string>;
+      // Funder org → attributed value, used both for Top Donors in the tooltip
+      // and to size the inner partner bubbles in financial-measure views.
+      donorValues: Map<string, number>;
+      // Participating org → distinct activity ids in this bucket. Powers the
+      // inner partner bubbles when a count-based measure is selected.
+      donorActivityIds: Map<string, Set<string>>;
+    };
+    const buckets = new Map<string, BucketState>();
+    const ensure = (key: string, code: string, name: string): BucketState => {
+      let b = buckets.get(key);
+      if (!b) {
+        b = {
+          code,
+          name,
+          value: 0,
+          activityIds: new Set(),
+          donorIds: new Set(),
+          donorValues: new Map(),
+          donorActivityIds: new Map(),
+        };
+        buckets.set(key, b);
+      }
+      return b;
+    };
+
+    (actSectors || []).forEach((row: any) => {
+      if (!passesDonorFilter(row.activity_id)) return;
+      const bucket = bucketFor(row);
+      if (!bucket) return;
+      const pct = num(row.percentage) || 0;
+      const fraction = pct > 0 ? pct / 100 : 0;
+      const actVal = activityValue.get(row.activity_id) || 0;
+      const allocated = actVal * fraction;
+
+      const b = ensure(bucket.key, bucket.code, bucket.name);
+      b.activityIds.add(row.activity_id);
+      const parts = activityParticipants.get(row.activity_id);
+      if (parts) {
+        parts.forEach((id) => {
+          b.donorIds.add(id);
+          if (!b.donorActivityIds.has(id)) b.donorActivityIds.set(id, new Set());
+          b.donorActivityIds.get(id)!.add(row.activity_id);
+        });
+      }
+
+      if (allocated > 0) {
+        b.value += allocated;
+        const funders = fundersForActivity(row.activity_id);
+        if (funders.length > 0) {
+          const each = allocated / funders.length;
+          funders.forEach((fid) => {
+            b.donorValues.set(fid, (b.donorValues.get(fid) || 0) + each);
+          });
+        }
       }
     });
 
-    // Build activity → sectors map (3-digit category)
-    const activitySectorMap = new Map<string, Array<{ code: string; name: string; percentage: number }>>();
-    activitySectors?.forEach(sector => {
-      const activityId = sector.activity_id;
-      // Get 3-digit category code
-      const categoryCode = sector.category_code || (sector.sector_code?.substring(0, 3) || '998');
-      // Always prefer our lookup table for consistent naming
-      const categoryName = getCategoryName(categoryCode);
+    // 10. Resolve per-bucket display value based on measure, and build the inner
+    //     "partner" bubbles users see inside each sector. For financial measures
+    //     the inner bubbles are sized by attributed funder value (so non-funder
+    //     participants don't pollute the view); for count measures they're sized
+    //     by per-org activity count in this sector (so every participant shows).
+    const isCountMeasure = measure === 'activities' || measure === 'donors';
 
-      if (!activitySectorMap.has(activityId)) {
-        activitySectorMap.set(activityId, []);
-      }
+    const buildBubble = (state: BucketState): CoordinationParentNode => {
+      const topDonorIds = Array.from(state.donorValues.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+      const topDonors: CoordinationTopDonor[] = topDonorIds.map(([id, v]) => {
+        const meta = orgMap.get(id);
+        return { id, name: meta?.name || 'Unknown Organisation', acronym: meta?.acronym ?? null, value: v };
+      });
 
-      // Check if this category is already in the list
-      const existingSector = activitySectorMap.get(activityId)!.find(s => s.code === categoryCode);
-      if (existingSector) {
-        existingSector.percentage += sector.percentage || 0;
+      let value = state.value;
+      if (measure === 'activities') value = state.activityIds.size;
+      else if (measure === 'donors') value = state.donorIds.size;
+      else if (measure === 'avgSize') value = state.activityIds.size > 0 ? state.value / state.activityIds.size : 0;
+
+      // Build inner bubbles (the "partners shown as smaller circles" in the
+      // dashboard description). Sized by funder attribution for financial
+      // measures, or by per-org activity count for count measures. Capped at
+      // 30 per sector so the pack stays readable; remaining partners stay
+      // counted in donorCount and accessible via tooltip top-donors.
+      const partnerEntries: Array<{ id: string; value: number; activityCount: number }> = [];
+      if (isCountMeasure) {
+        state.donorActivityIds.forEach((set, id) => {
+          if (set.size > 0) partnerEntries.push({ id, value: set.size, activityCount: set.size });
+        });
       } else {
-        activitySectorMap.get(activityId)!.push({
-          code: categoryCode,
-          name: categoryName,
-          percentage: sector.percentage || 0
-        });
-      }
-    });
-
-    // Build activity → organizations map
-    const activityOrgMap = new Map<string, Array<{ id: string; name: string }>>();
-    participatingOrgs?.forEach(po => {
-      if (!po.organization_id) return;
-      const activityId = po.activity_id;
-
-      if (!activityOrgMap.has(activityId)) {
-        activityOrgMap.set(activityId, []);
-      }
-
-      const orgName = organizationsMap.get(po.organization_id) || 'Unknown Organization';
-
-      // Check if org already exists for this activity
-      const existingOrg = activityOrgMap.get(activityId)!.find(o => o.id === po.organization_id);
-      if (!existingOrg) {
-        activityOrgMap.get(activityId)!.push({
-          id: po.organization_id,
-          name: orgName
-        });
-      }
-    });
-
-    // Aggregate data based on view
-    let hierarchyData: CoordinationHierarchy;
-    let summary: CoordinationSummary;
-
-    if (view === 'sectors') {
-      // View A: Sectors → Organizations
-      const sectorOrgMap = new Map<string, {
-        name: string;
-        orgs: Map<string, { name: string; value: number; activityCount: number }>;
-      }>();
-
-      publishedActivityIds.forEach(activityId => {
-        const sectors = activitySectorMap.get(activityId) || [];
-        const orgs = activityOrgMap.get(activityId) || [];
-        const activityBudget = activityBudgetMap.get(activityId) || 0;
-
-        sectors.forEach(sector => {
-          if (!sectorOrgMap.has(sector.code)) {
-            sectorOrgMap.set(sector.code, {
-              name: sector.name,
-              orgs: new Map()
-            });
+        state.donorValues.forEach((v, id) => {
+          if (v > 0) {
+            const ac = state.donorActivityIds.get(id)?.size || 0;
+            partnerEntries.push({ id, value: v, activityCount: ac });
           }
-
-          const sectorData = sectorOrgMap.get(sector.code)!;
-          const allocatedBudget = activityBudget * (sector.percentage / 100);
-
-          orgs.forEach(org => {
-            if (!sectorData.orgs.has(org.id)) {
-              sectorData.orgs.set(org.id, {
-                name: org.name,
-                value: 0,
-                activityCount: 0
-              });
-            }
-
-            const orgData = sectorData.orgs.get(org.id)!;
-            // Divide budget equally among orgs in the activity
-            orgData.value += allocatedBudget / orgs.length;
-            orgData.activityCount += 1;
-          });
         });
+      }
+      partnerEntries.sort((a, b) => b.value - a.value);
+      const children = partnerEntries.slice(0, 30).map((p) => {
+        const meta = orgMap.get(p.id);
+        const name = meta?.acronym ? `${meta.name} (${meta.acronym})` : (meta?.name || 'Unknown Organisation');
+        return {
+          id: p.id,
+          name,
+          value: p.value,
+          activityCount: p.activityCount,
+          donorCount: 1,
+          topDonors: [] as CoordinationTopDonor[],
+        };
       });
 
-      // Convert to hierarchy structure
-      const children: CoordinationParentNode[] = Array.from(sectorOrgMap.entries())
-        .map(([code, data]) => {
-          const orgChildren: CoordinationBubble[] = Array.from(data.orgs.entries())
-            .map(([orgId, orgData]) => ({
-              id: orgId,
-              name: orgData.name,
-              value: orgData.value,
-              activityCount: orgData.activityCount
-            }))
-            .filter(o => o.value > 0)
-            .sort((a, b) => b.value - a.value);
-
-          return {
-            id: code,
-            name: data.name,
-            code,
-            totalValue: orgChildren.reduce((sum, o) => sum + o.value, 0),
-            children: orgChildren
-          };
-        })
-        .filter(s => s.children.length > 0 && s.totalValue > 0)
-        .sort((a, b) => b.totalValue - a.totalValue);
-
-      hierarchyData = { name: 'Coordination', children };
-
-      const allOrgIds = new Set<string>();
-      children.forEach(s => s.children.forEach(o => allOrgIds.add(o.id)));
-
-      summary = {
-        totalBudget: children.reduce((sum, s) => sum + s.totalValue, 0),
-        sectorCount: children.length,
-        organizationCount: allOrgIds.size,
-        activityCount: publishedActivityIds.length
+      return {
+        id: state.code,
+        name: state.name,
+        code: state.code,
+        value,
+        totalValue: value,
+        activityCount: state.activityIds.size,
+        donorCount: state.donorIds.size,
+        topDonors,
+        children,
       };
+    };
 
-    } else {
-      // View B: Organizations → Sectors
-      const orgSectorMap = new Map<string, {
-        name: string;
-        sectors: Map<string, { code: string; name: string; value: number; activityCount: number }>;
-      }>();
+    const children: CoordinationParentNode[] = Array.from(buckets.values())
+      .map(buildBubble)
+      .filter((b) => b.value > 0)
+      .sort((a, b) => b.value - a.value);
 
-      publishedActivityIds.forEach(activityId => {
-        const sectors = activitySectorMap.get(activityId) || [];
-        const orgs = activityOrgMap.get(activityId) || [];
-        const activityBudget = activityBudgetMap.get(activityId) || 0;
+    const allActivityIds = new Set<string>();
+    const allDonorIds = new Set<string>();
+    const uniqueCategoryCodes = new Set<string>();
+    const uniqueSectorCodes = new Set<string>();
+    const uniqueSubSectorCodes = new Set<string>();
+    buckets.forEach((s) => {
+      s.activityIds.forEach((id) => allActivityIds.add(id));
+      s.donorIds.forEach((id) => allDonorIds.add(id));
+    });
+    (actSectors || []).forEach((row: any) => {
+      const subCode: string | null = row.sector_code;
+      const subMeta = subCode ? subSectorMeta.get(subCode) : undefined;
+      const catCode = row.category_code || subMeta?.categoryCode;
+      const groupInfo = catCode ? categoryToGroup.get(catCode) : undefined;
+      if (groupInfo?.code) uniqueCategoryCodes.add(groupInfo.code);
+      if (catCode) uniqueSectorCodes.add(catCode);
+      if (subCode) uniqueSubSectorCodes.add(subCode);
+    });
 
-        orgs.forEach(org => {
-          if (!orgSectorMap.has(org.id)) {
-            orgSectorMap.set(org.id, {
-              name: org.name,
-              sectors: new Map()
-            });
-          }
-
-          const orgData = orgSectorMap.get(org.id)!;
-
-          sectors.forEach(sector => {
-            const allocatedBudget = (activityBudget * (sector.percentage / 100)) / orgs.length;
-
-            if (!orgData.sectors.has(sector.code)) {
-              orgData.sectors.set(sector.code, {
-                code: sector.code,
-                name: sector.name,
-                value: 0,
-                activityCount: 0
-              });
-            }
-
-            const sectorData = orgData.sectors.get(sector.code)!;
-            sectorData.value += allocatedBudget;
-            sectorData.activityCount += 1;
-          });
-        });
-      });
-
-      // Convert to hierarchy structure
-      const children: CoordinationParentNode[] = Array.from(orgSectorMap.entries())
-        .map(([orgId, data]) => {
-          const sectorChildren: CoordinationBubble[] = Array.from(data.sectors.entries())
-            .map(([code, sectorData]) => ({
-              id: code,
-              name: sectorData.name,
-              code: sectorData.code,
-              value: sectorData.value,
-              activityCount: sectorData.activityCount
-            }))
-            .filter(s => s.value > 0)
-            .sort((a, b) => b.value - a.value);
-
-          return {
-            id: orgId,
-            name: data.name,
-            totalValue: sectorChildren.reduce((sum, s) => sum + s.value, 0),
-            children: sectorChildren
-          };
-        })
-        .filter(o => o.children.length > 0 && o.totalValue > 0)
-        .sort((a, b) => b.totalValue - a.totalValue);
-
-      hierarchyData = { name: 'Coordination', children };
-
-      const allSectorCodes = new Set<string>();
-      children.forEach(o => o.children.forEach(s => allSectorCodes.add(s.id)));
-
-      summary = {
-        totalBudget: children.reduce((sum, o) => sum + o.totalValue, 0),
-        sectorCount: allSectorCodes.size,
-        organizationCount: children.length,
-        activityCount: publishedActivityIds.length
-      };
-    }
+    const summaryTotal = children.reduce((sum, c) => sum + c.value, 0);
 
     const response: CoordinationResponse = {
       success: true,
-      view,
-      data: hierarchyData,
-      summary
+      level,
+      measure,
+      measureLabel: MEASURE_LABEL[measure],
+      periodLabel: periodLabel(dateFrom, dateTo),
+      data: { name: 'Aid Distribution by Sector', children },
+      summary: {
+        totalValue: summaryTotal,
+        measureLabel: MEASURE_LABEL[measure],
+        categoryCount: uniqueCategoryCodes.size,
+        sectorCount: uniqueSectorCodes.size,
+        subSectorCount: uniqueSubSectorCodes.size,
+        organizationCount: allDonorIds.size,
+        activityCount: allActivityIds.size,
+      },
     };
-
     return NextResponse.json(response);
-
   } catch (error) {
-    console.error('Error in coordination API:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('[coordination] unexpected error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
