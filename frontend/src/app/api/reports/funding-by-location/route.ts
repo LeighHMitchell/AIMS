@@ -29,7 +29,7 @@ export async function GET() {
       return NextResponse.json({ data: [], error: null })
     }
 
-    const activityIds = [...new Set(locations.map(l => l.activity_id).filter(Boolean))]
+    const activityIds = Array.from(new Set(locations.map(l => l.activity_id).filter(Boolean)))
 
     // Exclude internal pooled-fund transfers to avoid double counting
     let txQuery = supabase

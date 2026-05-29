@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const year = searchParams.get('year')
+    const startYear = searchParams.get('startYear')
+    const endYear = searchParams.get('endYear')
     const organizationId = searchParams.get('organizationId')
     const groupByLevel = searchParams.get('groupByLevel') || '5' // Default to 5-digit
     const publicationStatus = searchParams.get('publicationStatus') || 'all' // Default to all activities
@@ -22,10 +24,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build date filters if year is provided
+    // Build the date window from an explicit year range (startYear/endYear,
+    // driven by the chart's YearRangeChip), a single year, or neither (all time).
     let dateFrom = '1900-01-01'
     let dateTo = '2099-12-31'
-    if (year && year !== 'all') {
+    const applyDateFilter = (!!startYear && !!endYear) || (!!year && year !== 'all')
+    if (startYear && endYear) {
+      dateFrom = `${startYear}-01-01`
+      dateTo = `${endYear}-12-31`
+    } else if (!startYear && year && year !== 'all') {
       dateFrom = `${year}-01-01`
       dateTo = `${year}-12-31`
     }
@@ -77,7 +84,7 @@ export async function GET(request: NextRequest) {
       .select('activity_id, usd_value')
       .in('activity_id', activityIds)
 
-    if (year && year !== 'all') {
+    if (applyDateFilter) {
       budgetsQuery = budgetsQuery
         .gte('period_start', dateFrom)
         .lte('period_end', dateTo)
@@ -91,7 +98,7 @@ export async function GET(request: NextRequest) {
       .select('activity_id, amount, usd_amount')
       .in('activity_id', activityIds)
 
-    if (year && year !== 'all') {
+    if (applyDateFilter) {
       plannedQuery = plannedQuery
         .gte('period_start', dateFrom)
         .lte('period_end', dateTo)
@@ -115,7 +122,7 @@ export async function GET(request: NextRequest) {
       .in('transaction_type', ['2', '3']) // Commitments and Disbursements
       .eq('status', 'actual')
 
-    if (year && year !== 'all') {
+    if (applyDateFilter) {
       transactionsQuery = transactionsQuery
         .gte('transaction_date', dateFrom)
         .lte('transaction_date', dateTo)

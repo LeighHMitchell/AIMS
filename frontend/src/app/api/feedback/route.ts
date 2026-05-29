@@ -247,7 +247,8 @@ export async function POST(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { userId, category, feature, subject, message, priority, attachment_url, attachment_filename, attachment_type, attachment_size } = body;
 
     if (!userId) {
@@ -454,7 +455,8 @@ export async function PUT(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { userId, id, status, priority, feature, admin_notes, assigned_to } = body;
 
     if (!userId) {
@@ -575,7 +577,8 @@ export async function DELETE(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { userId, id, ids } = body;
 
     if (!userId) {

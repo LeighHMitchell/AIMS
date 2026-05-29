@@ -94,8 +94,7 @@ export function AskQuestionModal({ isOpen, onClose, sourcePageSlug, sourcePageTi
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5" />
+          <DialogTitle>
             Ask a Question
           </DialogTitle>
           <DialogDescription>

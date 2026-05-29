@@ -19,7 +19,8 @@ export async function POST(request: Request) {
   const { supabase, response } = await requireAuth();
   if (response) return response;
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { code, name, description, display_order } = body;
 
   if (!code || !name) {

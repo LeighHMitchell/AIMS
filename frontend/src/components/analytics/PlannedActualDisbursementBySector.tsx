@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ChartDataTable, CodeChip } from '@/components/ui/chart-data-table'
 import {
   BarChart,
   Bar,
@@ -28,7 +30,7 @@ import {
   TooltipProps,
   ReferenceLine,
 } from 'recharts'
-import { CalendarIcon, RotateCcw, BarChart3, Table as TableIcon } from 'lucide-react'
+import { CalendarIcon, BarChart3, Table as TableIcon } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { format } from 'date-fns'
@@ -68,10 +70,19 @@ const COLORS = {
 
 // Data keys configuration for financial metrics
 const FINANCIAL_DATA_KEYS = [
-  { key: 'budgets', label: 'Budgets (USDm)', color: COLORS.budgets },
-  { key: 'plannedDisbursements', label: 'Planned Disbursements (USDm)', color: COLORS.plannedDisbursements },
-  { key: 'newCommitments', label: 'Commitments (USDm)', color: COLORS.newCommitments },
-  { key: 'actualDisbursements', label: 'Disbursements (USDm)', color: COLORS.actualDisbursements },
+  { key: 'budgets', label: 'Budgets', color: COLORS.budgets },
+  { key: 'plannedDisbursements', label: 'Planned Disbursements', color: COLORS.plannedDisbursements },
+  { key: 'newCommitments', label: 'Outgoing Commitments', color: COLORS.newCommitments },
+  { key: 'actualDisbursements', label: 'Disbursements', color: COLORS.actualDisbursements },
+]
+
+// Sort options for the "sort by" dropdown — keyed to the metric the user wants
+// to rank sectors by (descending). Mirrors the financial series.
+const SORT_OPTIONS: { key: 'budgets' | 'plannedDisbursements' | 'newCommitments' | 'actualDisbursements'; label: string; code?: string }[] = [
+  { key: 'actualDisbursements', label: 'Disbursements', code: '3' },
+  { key: 'budgets', label: 'Budgets' },
+  { key: 'plannedDisbursements', label: 'Planned Disbursements' },
+  { key: 'newCommitments', label: 'Outgoing Commitments', code: '2' },
 ]
 
 
@@ -201,6 +212,7 @@ export function PlannedActualDisbursementBySector({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [groupByLevel, setGroupByLevel] = useState<'1' | '3' | '5'>('3')
+  const [sortBy, setSortBy] = useState<typeof SORT_OPTIONS[number]['key']>('actualDisbursements')
   const [visibleFinancialSeries, setVisibleFinancialSeries] = useState<Set<string>>(
     new Set(['newCommitments', 'plannedDisbursements', 'actualDisbursements', 'budgets'])
   )
@@ -377,12 +389,16 @@ export function PlannedActualDisbursementBySector({
   }
 
 
-  // Process sectors data: top N + "All Other Sectors"
+  // Process sectors data: sort by the chosen metric (desc), then top N +
+  // "All Other Sectors".
   const chartData = useMemo(() => {
     if (sectors.length === 0) return []
 
-    const topSectors = sectors.slice(0, TOP_SECTORS_COUNT)
-    const otherSectors = sectors.slice(TOP_SECTORS_COUNT)
+    const sortedSectors = [...sectors].sort(
+      (a, b) => (b[sortBy] as number) - (a[sortBy] as number)
+    )
+    const topSectors = sortedSectors.slice(0, TOP_SECTORS_COUNT)
+    const otherSectors = sortedSectors.slice(TOP_SECTORS_COUNT)
 
     const result = [...topSectors]
     if (otherSectors.length > 0) {
@@ -415,7 +431,7 @@ export function PlannedActualDisbursementBySector({
         ? sector.sectorName.substring(0, 17) + '...'
         : sector.sectorName
     }))
-  }, [sectors])
+  }, [sectors, sortBy])
 
   // Calculate Y-axis domain for financial chart
   const financialYAxisDomain = useMemo(() => {
@@ -606,26 +622,6 @@ export function PlannedActualDisbursementBySector({
     return `${year}`
   }
 
-  // Reset to defaults: Data range years, Calendar Year (Gregorian), Sector view
-  const handleReset = () => {
-    // Reset to data range (or fallback to all years)
-    if (actualDataRange) {
-      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
-    } else {
-      setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
-    }
-    // Reset to Sector level (3-digit)
-    setGroupByLevel('3')
-    // Reset to Calendar Year (look for one with name containing "Calendar" or first one)
-    const calendarYear = customYears.find(cy =>
-      cy.name.toLowerCase().includes('calendar') ||
-      cy.name.toLowerCase().includes('gregorian')
-    ) || customYears[0]
-    if (calendarYear) {
-      setCalendarType(calendarYear.id)
-    }
-  }
-
   const chartHeight = compact ? 200 : 500
 
   // Compact mode
@@ -694,7 +690,7 @@ export function PlannedActualDisbursementBySector({
   // Non-compact mode: loading state
   if (loading && sectors.length === 0) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="border-0 shadow-none bg-transparent">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Planned and Actual Disbursement by Sector
@@ -710,7 +706,7 @@ export function PlannedActualDisbursementBySector({
   // Non-compact mode: error state
   if (error) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="border-0 shadow-none bg-transparent">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Planned and Actual Disbursement by Sector
@@ -724,12 +720,10 @@ export function PlannedActualDisbursementBySector({
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="border-0 shadow-none bg-transparent">
       <CardHeader className="pb-2">
-        {/* Controls Row */}
-        <div className="flex items-start justify-between flex-wrap gap-2">
-          {/* Calendar & Year Selectors - Left Side */}
-          <div className="flex items-start gap-2 flex-wrap">
+        {/* Calendar + year selector on its own row at the top */}
+        <div className="flex items-start gap-2 mb-4">
             {customYears.length > 0 && (
               <>
                 {/* Calendar Type Selector */}
@@ -841,9 +835,9 @@ export function PlannedActualDisbursementBySector({
                 </div>
               </>
             )}
-          </div>
-
-          {/* Controls - Right Side */}
+        </div>
+        {/* Controls row — dimension toggle left; view toggle + reset + CSV right. */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Group By Toggle Buttons */}
             <div className="flex gap-1 border rounded-lg p-1 bg-card">
@@ -873,6 +867,32 @@ export function PlannedActualDisbursementBySector({
               </Button>
             </div>
 
+            {/* Sort-by dropdown — ranks sectors by the chosen metric (desc). */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  Sort: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
+                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {SORT_OPTIONS.map(opt => (
+                  <DropdownMenuItem
+                    key={opt.key}
+                    className={sortBy === opt.key ? 'bg-muted font-medium' : ''}
+                    onClick={() => setSortBy(opt.key)}
+                  >
+                    {opt.code && <CodeChip className="mr-1.5">{opt.code}</CodeChip>}{opt.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {/* View toggle + reset + CSV, right-aligned. */}
+          <div className="flex items-center gap-2 flex-wrap">
+
             {/* Chart/Table Toggle */}
             <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
               <Button
@@ -897,19 +917,16 @@ export function PlannedActualDisbursementBySector({
               </Button>
             </div>
 
-            {/* Reset Button */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-card">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2"
-                onClick={handleReset}
-                title="Reset to defaults"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-
+          <CsvExportButton
+            rows={chartData.map((s) => {
+              const row: Record<string, unknown> = { Sector: s.sectorName }
+              FINANCIAL_DATA_KEYS.forEach(({ key, label }) => {
+                row[label] = (s as Record<string, unknown>)[key]
+              })
+              return row
+            })}
+            title="Financial Summary by Sector"
+          />
           </div>
         </div>
       </CardHeader>
@@ -918,31 +935,6 @@ export function PlannedActualDisbursementBySector({
         <div className="bg-card" style={{ minHeight: chartHeight + 60 }}>
           {viewMode === 'chart' ? (
             <>
-              {/* Legend */}
-                <div className="flex flex-wrap justify-center gap-4 mb-4">
-                  {FINANCIAL_DATA_KEYS.map(({ key, label, color }) => {
-                    const isVisible = visibleFinancialSeries.has(key)
-                    return (
-                      <div
-                        key={key}
-                        className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded transition-all ${
-                          isVisible ? 'opacity-100' : 'opacity-40'
-                        } hover:bg-muted/50`}
-                        onClick={() => toggleFinancialSeries(key)}
-                        title={isVisible ? `Click to hide ${label}` : `Click to show ${label}`}
-                      >
-                        <div
-                          className="w-4 h-4 rounded-sm"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className={`text-sm ${isVisible ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
-                          {label}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-
                 {/* Financial Chart */}
                 {selectedYears.length === 0 ? (
                   <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
@@ -994,86 +986,75 @@ export function PlannedActualDisbursementBySector({
                     </BarChart>
                   </ResponsiveContainer>
                 )}
-
+                {/* Legend — below the chart */}
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
+                  {FINANCIAL_DATA_KEYS.map(({ key, label, color }) => {
+                    const isVisible = visibleFinancialSeries.has(key)
+                    return (
+                      <div
+                        key={key}
+                        className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded transition-all ${
+                          isVisible ? 'opacity-100' : 'opacity-40'
+                        } hover:bg-muted/50`}
+                        onClick={() => toggleFinancialSeries(key)}
+                        title={isVisible ? `Click to hide ${label}` : `Click to show ${label}`}
+                      >
+                        <div
+                          className="w-4 h-4 rounded-sm"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className={`text-sm ${isVisible ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                          {label}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
             </>
           ) : (
-            /* Table View */
-            <div className="overflow-auto" style={{ height: chartHeight }}>
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 bg-muted z-10 [&>th]:align-bottom">
-                    <TableHead className="font-medium text-foreground sticky left-0 bg-muted">Sector</TableHead>
-                    <TableHead className="text-right font-medium text-foreground whitespace-normal">Budgets (USDm)</TableHead>
-                    <TableHead className="text-right font-medium text-foreground whitespace-normal">Planned Disbursements (USDm)</TableHead>
-                    <TableHead className="text-right font-medium text-foreground whitespace-normal">Commitments (USDm)</TableHead>
-                    <TableHead className="text-right font-medium text-foreground whitespace-normal">Disbursements (USDm)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedYears.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        Select one or more years to view data
-                      </TableCell>
-                    </TableRow>
-                  ) : chartData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No data available for the selected date range
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    chartData.map((sector, idx) => (
-                      <TableRow key={idx} className="hover:bg-muted/50">
-                        <TableCell className="font-medium sticky left-0 bg-card">
-                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
-                            {sector.sectorCode}
-                          </span>
-                          {sector.sectorName}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(sector.budgets / 1000000).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(sector.plannedDisbursements / 1000000).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(sector.newCommitments / 1000000).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(sector.actualDisbursements / 1000000).toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-                {chartData.length > 0 && selectedYears.length > 0 && (
-                  <tfoot>
-                    <TableRow className="bg-muted font-semibold border-t-2">
-                      <TableCell className="sticky left-0 bg-muted">Total</TableCell>
-                      <TableCell className="text-right">
-                        {(chartData.reduce((sum, s) => sum + s.budgets, 0) / 1000000).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {(chartData.reduce((sum, s) => sum + s.plannedDisbursements, 0) / 1000000).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {(chartData.reduce((sum, s) => sum + s.newCommitments, 0) / 1000000).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {(chartData.reduce((sum, s) => sum + s.actualDisbursements, 0) / 1000000).toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  </tfoot>
-                )}
-              </Table>
-            </div>
+            /* Table View — shared ChartDataTable (sticky header, sortable
+               columns, color squares, footer column totals, h+v scroll). Money
+               columns use full-precision currency for parity with the gold-
+               standard Financial Totals table; the per-column colors mirror the
+               bar series. */
+            selectedYears.length === 0 ? (
+              <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
+                Select one or more years to view data
+              </div>
+            ) : (
+              <ChartDataTable
+                rows={chartData}
+                columns={[
+                  {
+                    key: 'sectorName',
+                    label: 'Sector',
+                    numeric: false,
+                    format: (_v, row) => (
+                      <span className="flex items-center gap-2">
+                        <code className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground flex-shrink-0">
+                          {(row as any).sectorCode}
+                        </code>
+                        <span>{(row as any).sectorName}</span>
+                      </span>
+                    ),
+                  },
+                  { key: 'budgets', label: 'Budgets', numeric: true, currency: 'USD', color: COLORS.budgets },
+                  { key: 'plannedDisbursements', label: 'Planned Disbursements', numeric: true, currency: 'USD', color: COLORS.plannedDisbursements },
+                  { key: 'newCommitments', label: 'Outgoing Commitments', numeric: true, currency: 'USD', color: COLORS.newCommitments },
+                  { key: 'actualDisbursements', label: 'Disbursements', numeric: true, currency: 'USD', color: COLORS.actualDisbursements },
+                ]}
+                currency="USD"
+                maxHeight={chartHeight}
+                emptyMessage="No data available for the selected date range"
+              />
+            )
           )}
         </div>
 
         {/* Explanatory text */}
+
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart compares budgets, planned disbursements, commitments, and actual disbursements by sector.
+          This chart compares budgets, planned disbursements, outgoing commitments, and actual disbursements by sector.
           Toggle metrics on or off using the legend above, and switch between Sector Category, Sector, or Sub-sector groupings to view data at different DAC code levels.
           Compare planned versus actual figures to identify funding gaps or over-delivery across sectors.
         </p>

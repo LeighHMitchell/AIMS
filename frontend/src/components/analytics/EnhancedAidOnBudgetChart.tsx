@@ -48,6 +48,7 @@ import {
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { CsvExportButton } from '@/components/ui/csv-export-button';
 import { formatTooltipCurrency } from '@/lib/format';
 
 interface EnhancedAidOnBudgetChartProps {
@@ -984,36 +985,27 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   }, [zoomTarget, chartWidth, chartHeight]);
 
   if (loading) {
-    return (
-      <Card className="bg-card border-border">
-        <CardContent className="pt-6">
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
-    );
+    return <ChartLoadingPlaceholder />;
   }
 
   if (error) {
     return (
-      <Card className="bg-card border-border">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center h-[700px] text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-            <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
-            <p className="text-body text-muted-foreground mb-4">{error}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center h-[700px] text-center">
+        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+        <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
+        <p className="text-body text-muted-foreground mb-4">{error}</p>
+      </div>
     );
   }
 
   const summary = data?.summary;
 
   return (
-    <Card className="bg-card border-border">
-      <CardHeader>
-        {chartIsExpanded && (
-        <div className="flex items-end justify-end gap-3">
+    <>
+      {chartIsExpanded && (
+        <div className="space-y-3 mb-3">
+          {/* Calendar + year selector on its own row at the top */}
+          <div className="flex items-start gap-2">
           {/* Year Range Selector */}
           <div className="flex gap-1 border rounded-lg p-1 bg-white">
             <DropdownMenu>
@@ -1084,6 +1076,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          </div>
+          {/* Controls row — filters + toggles left, CSV right. */}
+          <div className="flex items-end justify-between gap-3">
+          <div className="flex items-end gap-3">
           <div className="flex flex-col gap-1">
             <Label htmlFor="type-select" className="text-helper text-muted-foreground">Type</Label>
             <Select
@@ -1101,6 +1097,9 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </SelectContent>
             </Select>
           </div>
+          </div>
+          {/* Button groups + CSV, right-aligned. */}
+          <div className="flex items-end gap-3">
           <Button
             onClick={() => {
               setZoomTarget(null);
@@ -1141,13 +1140,11 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={exportToCSV} variant="outline" size="icon" className="h-9 w-9" title="Export CSV" aria-label="Export CSV">
-            <Download className="h-4 w-4" />
-          </Button>
+          <CsvExportButton onExport={exportToCSV} title="Aid on Budget" />
+          </div>
+          </div>
         </div>
         )}
-      </CardHeader>
-      <CardContent>
         {/* Summary Cards - Monochrome with white background */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -1460,7 +1457,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           This chart analyses how aid spending aligns with government budget classifications, distinguishing between on-budget aid that flows through national systems, off-budget aid managed outside them, and domestic expenditure. Use the classification selector to switch between COFOG, programme, and other frameworks, and expand individual rows to see which activities contribute to each category.
         </p>
       )}
-      </CardContent>
-    </Card>
+    </>
   );
 }

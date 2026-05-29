@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -39,10 +39,12 @@ import { AidPredictabilityPoint } from "@/types/national-priorities";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
 import { useCustomYears } from "@/hooks/useCustomYears";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { useYearRangeDefault } from "@/hooks/useYearRangeDefault";
+import { YearRangeChip } from "@/components/ui/year-range-chip";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
-import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
+import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyPrecise } from "@/lib/format";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
+import { ChartDataTable } from "@/components/ui/chart-data-table";
 
 type ChartType = "bar" | "line" | "area";
 type ViewMode = "chart" | "table";
@@ -85,6 +87,25 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
     loading: customYearsLoading,
   } = useCustomYears();
 
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
+
+  // Default the year picker to the full span of years that actually have data
+  // (min → max), rather than an empty selection / rolling window.
+  const dataYears = useMemo(
+    () => data.map((d) => d.year).filter((y): y is number => Number.isFinite(y)),
+    [data]
+  );
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears);
+
+  // Filter the fetched series to the picked year range (from YearRangeChip).
+  // An empty selection means "all years".
+  const displayData = useMemo(() => {
+    if (selectedYears.length === 0) return data;
+    const min = Math.min(...selectedYears);
+    const max = Math.max(...selectedYears);
+    return data.filter((d) => d.year >= min && d.year <= max);
+  }, [data, selectedYears]);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -116,19 +137,24 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
     }
   }, [selectedCustomYearId, organizationId]);
 
+  // Wait until the custom-year selection is resolved before fetching, so the
+  // first request uses the chosen calendar id (not a null → system-default
+  // fallback that races the resolved fetch and leaves the X-axis labelled by a
+  // different calendar than the dropdown shows).
   useEffect(() => {
+    if (customYearsLoading) return;
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, customYearsLoading]);
 
   const handleExport = () => {
-    if (!data || data.length === 0) {
+    if (!displayData || displayData.length === 0) {
       toast.error("No data to export");
       return;
     }
 
     const csvContent = [
       ["Year", "Year Label", "Planned Disbursements (USD)", "Actual Disbursements (USD)"],
-      ...data.map((d) => [d.year, d.yearLabel, d.plannedDisbursements, d.actualDisbursements]),
+      ...displayData.map((d) => [d.year, d.yearLabel, d.plannedDisbursements, d.actualDisbursements]),
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -158,7 +184,7 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
   const renderBarChart = () => (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
-        data={data}
+        data={displayData}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
@@ -205,7 +231,7 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
   const renderLineChart = () => (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
-        data={data}
+        data={displayData}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
@@ -256,7 +282,7 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
   const renderAreaChart = () => (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
-        data={data}
+        data={displayData}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
         <defs>
@@ -312,38 +338,37 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
     </ResponsiveContainer>
   );
 
-  const renderTable = () => (
-    <div className="overflow-auto h-full">
-      <Table>
-        <TableHeader>
-          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-            <TableHead className="text-helper font-medium">Year</TableHead>
-            <TableHead className="text-helper font-medium text-right whitespace-normal">Planned Disbursements</TableHead>
-            <TableHead className="text-helper font-medium text-right whitespace-normal">Actual Disbursements</TableHead>
-            <TableHead className="text-helper font-medium text-right">Variance</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((row) => {
-            const variance = row.actualDisbursements - row.plannedDisbursements;
-            return (
-              <TableRow key={row.year}>
-                <TableCell className="text-body font-medium">{row.yearLabel}</TableCell>
-                <TableCell className="text-body text-right">{formatCurrency(row.plannedDisbursements)}</TableCell>
-                <TableCell className="text-body text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
-                <TableCell className={cn(
-                  "text-body text-right font-medium",
-                  variance > 0 ? "text-green-600" : variance < 0 ? "text-destructive" : "text-muted-foreground"
-                )}>
-                  {variance > 0 ? "+" : ""}{formatCurrency(variance)}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  const renderTable = () => {
+    const rows = displayData.map((d) => ({
+      ...d,
+      variance: d.actualDisbursements - d.plannedDisbursements,
+    }));
+    return (
+      <ChartDataTable
+        rows={rows}
+        columns={[
+          { key: 'yearLabel', label: 'Year', numeric: false },
+          { key: 'plannedDisbursements', label: 'Planned Disbursements', numeric: true, currency: 'USD', color: CHART_COLORS.planned },
+          { key: 'actualDisbursements', label: 'Actual Disbursements', numeric: true, currency: 'USD', color: CHART_COLORS.actual },
+          {
+            key: 'variance',
+            label: 'Variance',
+            numeric: true,
+            format: (v) => {
+              const n = Number(v) || 0;
+              return (
+                <span className={cn('font-medium', n > 0 ? 'text-green-600' : n < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                  {n > 0 ? '+' : ''}{formatCurrencyPrecise(n)}
+                </span>
+              );
+            },
+          },
+        ]}
+        currency="USD"
+        maxHeight="100%"
+      />
+    );
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -359,7 +384,7 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
       );
     }
 
-    if (!data || data.length === 0) {
+    if (!displayData || displayData.length === 0) {
       return (
         <div className="flex-1 flex items-center justify-center text-muted-foreground">
           No predictability data available
@@ -383,28 +408,34 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
   };
 
   const renderControls = () => (
-    <div className={cn("flex items-center justify-end gap-2", !compact && "mt-2 pt-2 border-t")}>
-      {/* Custom Year Selector (only in expanded view) */}
+    <div className="space-y-3">
+      {/* Calendar + year selector on its own row at the top (expanded only) */}
       {!compact && (
-        <CustomYearSelector
-          customYears={customYears}
-          selectedId={selectedCustomYearId}
-          onSelect={setSelectedCustomYearId}
-          loading={customYearsLoading}
-          placeholder="Year type"
-        />
+        <div className="flex items-start gap-2">
+          <YearRangeChip
+            selectedYears={selectedYears}
+            onYearsChange={setSelectedYears}
+            actualDataRange={actualDataRange}
+            customYears={customYears}
+            calendarType={selectedCustomYearId ?? undefined}
+            onCalendarTypeChange={setSelectedCustomYearId}
+          />
+        </div>
       )}
 
-      {/* Chart controls */}
-      <div className="flex items-center gap-1">
-        {/* Chart type toggles - only show in expanded view when in chart mode */}
-        {!compact && viewMode === "chart" && (
+      {/* Controls row — no dropdowns here, so the button groups + CSV are all
+          right-aligned. */}
+      <div className={cn("flex items-center justify-end gap-2 flex-wrap", !compact && "mb-3")}>
+        {/* Chart-style + table view toggle in ONE group, so a chart type or
+            table is a single click. Bar/line/area also switch back to chart
+            view; table switches to table view. */}
+        {!compact && (
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-8 w-8", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setChartType("bar")}
+              className={cn("h-8 w-8", viewMode === "chart" && chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => { setChartType("bar"); setViewMode("chart") }}
               title="Bar Chart"
               aria-label="Bar Chart"
             >
@@ -413,8 +444,8 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-8 w-8", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setChartType("line")}
+              className={cn("h-8 w-8", viewMode === "chart" && chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => { setChartType("line"); setViewMode("chart") }}
               title="Line Chart"
               aria-label="Line Chart"
             >
@@ -423,28 +454,12 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-8 w-8", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setChartType("area")}
+              className={cn("h-8 w-8", viewMode === "chart" && chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => { setChartType("area"); setViewMode("chart") }}
               title="Area Chart"
               aria-label="Area Chart"
             >
               <TrendingUp className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-
-        {/* View mode toggles - only in expanded view */}
-        {!compact && (
-          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn("h-8 w-8", viewMode === "chart" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setViewMode("chart")}
-              title="Chart"
-              aria-label="Chart"
-            >
-              <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -458,8 +473,7 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
             </Button>
           </div>
         )}
-
-        {/* Export button - only in expanded view */}
+        {/* Export button - only in expanded view, right-aligned alone */}
         {!compact && (
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -480,10 +494,10 @@ export function AidPredictabilityChart({ organizationId, compact = false }: AidP
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 min-h-0">
+      {!compact && renderControls()}
+      <div className={compact ? "flex-1 min-h-0" : "h-[480px]"}>
         {renderContent()}
       </div>
-      {!compact && renderControls()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A close match between planned and actual amounts indicates reliable and predictable aid flows. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.

@@ -41,7 +41,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const body: CreateMappingRequest = await request.json()
+    const body: CreateMappingRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const {
       original_ref,
       original_narrative,

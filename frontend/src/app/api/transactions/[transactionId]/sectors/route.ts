@@ -256,7 +256,8 @@ export async function PUT(
 
   try {
     const { transactionId } = await params;
-    const body: UpdateTransactionSectorsRequest = await request.json();
+    const body: UpdateTransactionSectorsRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     // Get transaction details
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')

@@ -19,8 +19,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
 import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, CalendarIcon, RotateCcw } from 'lucide-react'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { 
@@ -803,7 +805,7 @@ export function FinanceTypeFlowChart({
 
   if (loading) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Financial Flows by Finance Type
@@ -821,7 +823,7 @@ export function FinanceTypeFlowChart({
 
   if (error) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Financial Flows by Finance Type
@@ -844,7 +846,7 @@ export function FinanceTypeFlowChart({
 
   if (allFlowTypes.length === 0) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Financial Flows by Finance Type
@@ -867,12 +869,10 @@ export function FinanceTypeFlowChart({
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card">
       <CardHeader className="pb-2">
-        {/* Controls Row */}
-        <div className="flex flex-wrap items-start gap-2">
-          {/* Calendar & Year Selectors */}
-          <div className="flex items-start gap-2 flex-shrink-0">
+      {/* Calendar + year selector on its own row at the top */}
+      <div className="flex items-start gap-2 mb-4">
             {customYears.length > 0 && (
               <>
                 {/* Calendar Type Selector */}
@@ -984,9 +984,9 @@ export function FinanceTypeFlowChart({
                   </div>
                 </>
               )}
-            </div>
-
-            {/* All Other Controls */}
+      </div>
+        {/* Controls row — filters + toggles left, CSV right. */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {/* Flow Type Multi-Select */}
               <div className="min-w-[280px]">
@@ -1071,25 +1071,20 @@ export function FinanceTypeFlowChart({
                   )}
                 />
               </div>
+            </div>
+            {/* Button groups + CSV, right-aligned. */}
+            <div className="flex flex-wrap items-center gap-2">
               {/* Time Mode Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTimeMode('periodic')}
-                  className={cn("h-8", timeMode === 'periodic' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Periodic
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTimeMode('cumulative')}
-                  className={cn("h-8", timeMode === 'cumulative' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Cumulative
-                </Button>
-              </div>
+              <ChartViewToggle
+                ariaLabel="Time mode"
+                variant="text"
+                value={timeMode}
+                onValueChange={setTimeMode}
+                options={[
+                  { value: 'periodic', label: 'Periodic' },
+                  { value: 'cumulative', label: 'Cumulative' },
+                ]}
+              />
 
               {/* View Mode Toggle */}
               <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -1149,19 +1144,19 @@ export function FinanceTypeFlowChart({
                 </Button>
               </div>
 
-              {/* Export Button */}
-              <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleExportCSV}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  title="Export CSV"
-                  aria-label="Export CSV"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
+            {/* Export Button */}
+            <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleExportCSV}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Export CSV"
+                aria-label="Export CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
             </div>
           </div>
       </CardHeader>
@@ -1369,69 +1364,35 @@ export function FinanceTypeFlowChart({
               </ResponsiveContainer>
             )}
 
-            {/* Table View */}
+            {/* Table View — shared ChartDataTable. Dynamic money columns, one
+                per flowType × transactionType × financeType combination, keyed
+                identically to the chart's `uniqueKey`. Per-column color matches
+                the bar/line/area series shade. */}
             {viewMode === 'table' && (
-              <div className="rounded-md border max-h-[500px] overflow-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="sticky top-0 bg-card z-10 [&>th]:align-bottom">
-                      <TableHead>Year</TableHead>
-                      {selectedFlowTypes.map(flowType => (
-                        <React.Fragment key={flowType}>
-                          {selectedTransactionTypes.map(transactionType => {
-                            const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
-                            return (
-                              <React.Fragment key={`${flowType}_${transactionType}`}>
-                                {allFinanceTypes.map(financeType => (
-                                  <TableHead key={`${flowType}_${transactionType}_${financeType.code}`} className="text-right whitespace-normal">
-                                    <div className="flex flex-col items-end gap-1">
-                                      <div className="flex items-center gap-1">
-                                        <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                                          {transactionType}
-                                        </code>
-                                        <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                                          {flowType}
-                                        </code>
-                                        <code className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono text-xs">
-                                          {financeType.code}
-                                        </code>
-                                      </div>
-                                      <span className="text-helper text-muted-foreground">{txTypeName} - {financeType.name}</span>
-                                    </div>
-                                  </TableHead>
-                                ))}
-                              </React.Fragment>
-                            )
-                          })}
-                        </React.Fragment>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {chartData.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{row.year}</TableCell>
-                        {selectedFlowTypes.map(flowType => (
-                          <React.Fragment key={flowType}>
-                            {selectedTransactionTypes.map(transactionType => (
-                              <React.Fragment key={`${flowType}_${transactionType}`}>
-                                {allFinanceTypes.map(financeType => {
-                                  const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
-                                  return (
-                                    <TableCell key={uniqueKey} className="text-right">
-                                      {formatTooltipValue(row[uniqueKey] || 0)}
-                                    </TableCell>
-                                  )
-                                })}
-                              </React.Fragment>
-                            ))}
-                          </React.Fragment>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <ChartDataTable
+                rows={chartData}
+                columns={[
+                  { key: 'year', label: 'Year', numeric: false },
+                  ...selectedFlowTypes.flatMap(flowType => {
+                    const financeTypesToShow = selectedFinanceTypes.length > 0
+                      ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code))
+                      : allFinanceTypes
+                    return selectedTransactionTypes.flatMap(transactionType => {
+                      const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || '#64748b'
+                      return financeTypesToShow.map((financeType, index) => ({
+                        key: `${flowType}_${transactionType}_${financeType.code}`,
+                        label: `${transactionType} · ${flowType} · ${financeType.code} ${txTypeName} - ${financeType.name}`,
+                        numeric: true as const,
+                        currency: 'USD',
+                        color: generateFinanceTypeShades(transactionTypeColor, financeType.code, index, financeTypesToShow.length),
+                      }))
+                    })
+                  }),
+                ]}
+                currency="USD"
+                maxHeight={500}
+              />
             )}
           </>
         ) : (
@@ -1576,6 +1537,7 @@ export function FinanceTypeFlowChart({
       )}
 
       {/* Explanatory text */}
+
       <p className="text-body text-muted-foreground leading-relaxed px-6 pb-6">
         This chart visualises financial flows by finance type (such as ODA grants, loans, and equity), showing how different instruments are used across your portfolio over time. Use the transaction type filter to focus on specific flow types, and switch between chart styles to compare trends or cumulative totals.
       </p>

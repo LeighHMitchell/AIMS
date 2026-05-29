@@ -261,8 +261,7 @@ export default function SubGroupsSection({
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 py-4 rounded-t-lg border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <GitBranch className="h-5 w-5" />
+            <DialogTitle>
               Create Sub-Working Group
             </DialogTitle>
             <DialogDescription>

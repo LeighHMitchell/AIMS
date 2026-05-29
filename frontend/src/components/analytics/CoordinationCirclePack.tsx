@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
+import { getSectorColor } from "@/lib/chart-colors";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
 import { formatTooltipCurrency } from "@/lib/format";
 import type {
@@ -52,6 +53,9 @@ interface TooltipState {
     valueSubLabel: string;
     activityCount: number;
     donorCount: number;
+    /** Sectors show the "N activities · M donors" line; partners don't (those
+     *  counts aren't computed per-partner, and a partner is itself the donor). */
+    showCounts?: boolean;
     topDonors: CoordinationTopDonor[];
   } | null;
 }
@@ -231,10 +235,18 @@ export function CoordinationCirclePack({
     const pack = d3.pack<HierarchyDatum>().size([w - margin * 2, h - margin * 2]).padding(8);
     const packedRoot = pack(root);
 
-    const colorScale = d3
-      .scaleOrdinal<string>()
-      .domain((data?.children || []).map((d) => d.id))
-      .range(COORDINATION_COLORS);
+    // Rank sectors by value and colour them with the shared sector palette, so
+    // the same sector reads the same colour as in the Sector Disbursements Over
+    // Time chart (both use getSectorColor by rank).
+    const sectorColorById = new Map<string, string>();
+    [...(data?.children || [])]
+      .sort((a, b) => (b.value || 0) - (a.value || 0))
+      .forEach((s, i) => {
+        const c = getSectorColor(i);
+        if (s.id) sectorColorById.set(s.id, c);
+        if (s.name) sectorColorById.set(s.name, c);
+      });
+    const colorScale = (key: string) => sectorColorById.get(key) || getSectorColor(0);
 
     const g = svg.append('g').attr('transform', `translate(${margin}, ${margin})`);
 
@@ -281,6 +293,7 @@ export function CoordinationCirclePack({
               valueSubLabel: `${measureLabel}${period}`.trim(),
               activityCount: d.data.activityCount || 0,
               donorCount: d.data.donorCount || 0,
+              showCounts: true,
               topDonors: d.data.topDonors || [],
             },
           });
@@ -328,6 +341,7 @@ export function CoordinationCirclePack({
               valueSubLabel: `${measureLabel}${period} · in ${d.parent?.data.name ?? ''}`.trim(),
               activityCount: d.data.activityCount || 0,
               donorCount: 0,
+              showCounts: false,
               topDonors: [],
             },
           });
@@ -346,8 +360,9 @@ export function CoordinationCirclePack({
 
     // Label partner bubbles with the acronym whenever one exists; only
     // fall back to the truncated full name when the org has no acronym.
-    g.selectAll('.partner-label')
-      .data(partnerNodes.filter((d) => d.r > 18))
+    const partnerLabels = g
+      .selectAll<SVGTextElement, d3.HierarchyCircularNode<HierarchyDatum>>('.partner-label')
+      .data(partnerNodes)
       .join('text')
       .attr('class', 'partner-label')
       .attr('x', (d) => d.x)
@@ -358,6 +373,9 @@ export function CoordinationCirclePack({
       .attr('font-weight', 600)
       .attr('fill', '#fff')
       .attr('pointer-events', 'none')
+      // Hidden when the bubble is too small to read; revealed on zoom once the
+      // bubble's on-screen size grows (see updateLabels below).
+      .attr('opacity', (d) => (d.r > 15 ? 1 : 0))
       .text((d) => {
         const name = d.data.name || '';
         const acronymMatch = name.match(/\(([^)]+)\)\s*$/);
@@ -422,6 +440,35 @@ export function CoordinationCirclePack({
         const maxLen = Math.floor(d.r / 4);
         return d.data.name.length > maxLen ? d.data.name.substring(0, maxLen) + '…' : d.data.name;
       });
+
+    // Click-to-zoom: clicking a sector (or a partner bubble inside it) centres
+    // and zooms the SVG viewBox on that sector; clicking empty space resets it.
+    // The zoom viewBox matches the SVG aspect ratio so the target stays centred,
+    // and partner labels are revealed once their on-screen size is legible.
+    const ZOOM_PAD = 16;
+    const aspect = w / h;
+    svg.attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', 'xMidYMid meet');
+    const updateLabels = (vw: number) => {
+      const k = w / vw; // on-screen scale factor
+      partnerLabels.transition().duration(600).attr('opacity', (d) => (d.r * k > 15 ? 1 : 0));
+    };
+    const zoomTo = (cx: number, cy: number, r: number) => {
+      const R = r + ZOOM_PAD;
+      const vw = aspect >= 1 ? R * 2 * aspect : R * 2;
+      const vh = aspect >= 1 ? R * 2 : (R * 2) / aspect;
+      svg.transition().duration(600).attr('viewBox', `${cx - vw / 2} ${cy - vh / 2} ${vw} ${vh}`);
+      updateLabels(vw);
+    };
+    g.selectAll<SVGCircleElement, d3.HierarchyCircularNode<HierarchyDatum>>('.sector-circle, .partner-circle')
+      .on('click', function (event, d) {
+        event.stopPropagation();
+        const target = d.depth === 1 ? d : d.parent || d;
+        zoomTo(target.x + margin, target.y + margin, target.r);
+      });
+    svg.on('click', () => {
+      svg.transition().duration(600).attr('viewBox', `0 0 ${w} ${h}`);
+      updateLabels(w);
+    });
   }, [hierarchyData, dimensions, data, isExpanded, measure, measureLabel, periodLabel]);
 
   if (!data || data.children.length === 0) {
@@ -461,12 +508,14 @@ export function CoordinationCirclePack({
               <div className="font-semibold text-foreground">{tooltip.content.valueDisplay}</div>
               <div className="text-helper text-muted-foreground">{tooltip.content.valueSubLabel}</div>
             </div>
-            <div className="text-helper text-muted-foreground">
-              {tooltip.content.activityCount}{' '}
-              {tooltip.content.activityCount === 1 ? 'activity' : 'activities'} ·{' '}
-              {tooltip.content.donorCount}{' '}
-              {tooltip.content.donorCount === 1 ? 'donor' : 'donors'}
-            </div>
+            {tooltip.content.showCounts && (
+              <div className="text-helper text-muted-foreground">
+                {tooltip.content.activityCount}{' '}
+                {tooltip.content.activityCount === 1 ? 'activity' : 'activities'} ·{' '}
+                {tooltip.content.donorCount}{' '}
+                {tooltip.content.donorCount === 1 ? 'donor' : 'donors'}
+              </div>
+            )}
             {tooltip.content.topDonors.length > 0 && (
               <div className="pt-1 border-t border-border">
                 <div className="text-helper font-medium text-foreground mb-0.5">Top donors</div>

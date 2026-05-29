@@ -54,7 +54,7 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
 
       {/* Comment */}
       {comment && (
-        <Card className="border-border">
+        <Card>
           <CardContent className="pt-4">
             <div className="text-section-label text-muted-foreground uppercase mb-2">
               Comment
@@ -67,7 +67,7 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
 
       {/* Documents */}
       {hasDocuments && (
-        <Card className="border-border">
+        <Card>
           <CardContent className="pt-4">
             <div className="text-section-label text-muted-foreground uppercase mb-2 flex items-center gap-1">
               <FileText className="h-3 w-3" />

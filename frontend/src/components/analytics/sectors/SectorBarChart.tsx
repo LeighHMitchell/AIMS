@@ -22,8 +22,9 @@ import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatCurrencyPrecise } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -92,42 +93,44 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
     return (
       <g transform={`translate(${x},${y})`}>
         <foreignObject x={-345} y={-25} width={340} height={50}>
-          <div 
-            style={{ 
-              display: 'flex', 
+          <div
+            style={{
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
               height: '100%',
               paddingRight: '5px',
-              gap: '6px'
             }}
           >
-            <span 
-              style={{ 
-                fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
+            {/* Code badge inline, immediately before the name (single wrapping
+                block) so they read on one line with no gap between them. */}
+            <div
+              style={{
                 fontSize: '11px',
-                backgroundColor: '#e2e8f0',
-                padding: '2px 6px',
-                borderRadius: '3px',
-                color: '#475569',
-                flexShrink: 0
-              }}
-            >
-              {item.code}
-            </span>
-            <span 
-              style={{ 
-                fontSize: '11px', 
                 color: '#64748B',
                 textAlign: 'right',
-                lineHeight: '1.3',
+                lineHeight: '1.4',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
-                whiteSpace: 'normal'
+                whiteSpace: 'normal',
               }}
             >
+              <span
+                style={{
+                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
+                  fontSize: '11px',
+                  backgroundColor: '#e2e8f0',
+                  padding: '1px 5px',
+                  borderRadius: '3px',
+                  color: '#475569',
+                  marginRight: '5px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {item.code}
+              </span>
               {item.name}
-            </span>
+            </div>
           </div>
         </foreignObject>
       </g>
@@ -459,7 +462,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
 
   if (!data || data.length === 0) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <CardTitle>
             Sector Analysis
@@ -480,128 +483,122 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
   }
 
   return (
-    <Card className="border-border">
+    <Card className="border-0 shadow-none bg-transparent">
       <CardHeader>
-        <div className="flex flex-col gap-4">
-          <div>
-            <CardTitle>
-              Sector Analysis by {getLevelLabel()}
-            </CardTitle>
-            <CardDescription>
-              Financial flows and project distribution across sectors
-            </CardDescription>
+        {/* Controls — Top-N (or table search) left; button groups + CSV right,
+            all on one line. Button groups match the Financial Totals styling. */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {viewType === 'bar' ? (
+              <Select value={topN.toString()} onValueChange={(value) => setTopN(parseInt(value))}>
+                <SelectTrigger className="w-[120px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">Top 5</SelectItem>
+                  <SelectItem value="10">Top 10</SelectItem>
+                  <SelectItem value="15">Top 15</SelectItem>
+                  <SelectItem value="20">Top 20</SelectItem>
+                  <SelectItem value="50">Top 50</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="relative flex-1 max-w-sm min-w-[180px]">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search sectors..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-8"
+                />
+              </div>
+            )}
           </div>
 
-          {/* Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* View Type Toggle */}
-              <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewType('bar')}
-                  className={cn("h-8 w-8", viewType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                  title="Bar Chart"
-                  aria-label="Bar Chart"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewType('table')}
-                  className={cn("h-8 w-8", viewType === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                  title="Table View"
-                  aria-label="Table View"
-                >
-                  <TableIcon className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Bar Chart specific controls */}
-              {viewType === 'bar' && (
-                <>
-                  {/* Orientation Toggle Buttons */}
-                  <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setOrientation('horizontal')}
-                      className={cn("h-8", orientation === 'horizontal' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                      title="Horizontal"
-                    >
-                      <AlignLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setOrientation('vertical')}
-                      className={cn("h-8", orientation === 'vertical' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                      title="Vertical"
-                    >
-                      <AlignVerticalSpaceAround className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Top N Selector */}
-                  <Select value={topN.toString()} onValueChange={(value) => setTopN(parseInt(value))}>
-                    <SelectTrigger className="w-[120px] h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">Top 5</SelectItem>
-                      <SelectItem value="10">Top 10</SelectItem>
-                      <SelectItem value="15">Top 15</SelectItem>
-                      <SelectItem value="20">Top 20</SelectItem>
-                      <SelectItem value="50">Top 50</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Project/Partner Toggle Buttons */}
-                  <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowProjectCount(!showProjectCount)}
-                      className={cn("h-8", showProjectCount ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                      title="Projects"
-                    >
-                      <FolderKanban className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowPartnerCount(!showPartnerCount)}
-                      className={cn("h-8", showPartnerCount ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                      title="Partners"
-                    >
-                      <Users className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {/* Table specific controls */}
-              {viewType === 'table' && (
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search sectors..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-8"
-                  />
+          {/* Right: button groups + CSV. */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {viewType === 'bar' && (
+              <>
+                {/* Orientation toggle */}
+                <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setOrientation('horizontal')}
+                    className={cn("h-8 w-8", orientation === 'horizontal' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Horizontal"
+                    aria-label="Horizontal bars"
+                  >
+                    <AlignLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setOrientation('vertical')}
+                    className={cn("h-8 w-8", orientation === 'vertical' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Vertical"
+                    aria-label="Vertical bars"
+                  >
+                    <AlignVerticalSpaceAround className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
+
+                {/* Projects / Partners toggle */}
+                <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowProjectCount(!showProjectCount)}
+                    className={cn("h-8 w-8", showProjectCount ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Projects"
+                    aria-label="Toggle projects"
+                  >
+                    <FolderKanban className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPartnerCount(!showPartnerCount)}
+                    className={cn("h-8 w-8", showPartnerCount ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Partners"
+                    aria-label="Toggle partners"
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* View toggle (bar/table) */}
+            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewType('bar')}
+                className={cn("h-8 w-8", viewType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Bar Chart"
+                aria-label="Bar Chart"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewType('table')}
+                className={cn("h-8 w-8", viewType === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                title="Table View"
+                aria-label="Table View"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Export Button */}
+            {/* Export */}
             <Button
               variant="outline"
               size="icon"
               onClick={handleExportCSV}
-              className="h-9 w-9"
+              className="h-8 w-8"
               title="Export CSV"
               aria-label="Export CSV"
             >
@@ -781,110 +778,55 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
             )}
           </ResponsiveContainer>
         ) : (
-          /* Table View */
-          <div className="rounded-md border overflow-auto max-h-[600px]">
-            <Table>
-              <TableHeader className="sticky top-0 z-10">
-                <TableRow>
-                  <TableHead className="min-w-[200px]">
-                    <SortButton field="name" label="Sector" />
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <SortButton field="planned" label="Planned" />
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <SortButton field="actual" label="Actual" />
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <SortButton field="commitments" label="Commitments" />
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <SortButton field="budgets" label="Budgets" />
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <SortButton field="projects" label="Projects" />
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <SortButton field="partners" label="Partners" />
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No sectors found matching your search
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <>
-                    {tableData.map((item, index) => (
-                      <TableRow key={index} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                                {item.sectorCode}
-                              </code>
-                              <span className="font-semibold text-foreground">{item.sectorName}</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div>
-                            <div className="font-medium">{formatCurrency(item.plannedDisbursements)}</div>
-                            <div className="text-helper text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div>
-                            <div className="font-semibold" style={{ color: CHART_BAR_COLORS.actual }}>{formatCurrency(item.actualDisbursements)}</div>
-                            <div className="text-helper text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(item.outgoingCommitments)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(item.budgets)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.projectCount.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.partnerCount.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {/* Totals Row */}
-                    <TableRow className="bg-muted font-semibold sticky bottom-0">
-                      <TableCell>
-                        <div className="font-bold text-foreground">Total</div>
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {formatCurrency(totals.planned)}
-                      </TableCell>
-                      <TableCell className="text-right font-bold" style={{ color: CHART_BAR_COLORS.actual }}>
-                        {formatCurrency(totals.actual)}
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {formatCurrency(totals.commitments)}
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {formatCurrency(totals.budgets)}
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {totals.projects.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        -
-                      </TableCell>
-                    </TableRow>
-                  </>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          /* Table View — shared ChartDataTable (sticky header, sortable
+             columns, color squares, footer totals, h+v scroll). Money columns
+             use full-precision currency for parity with the gold-standard
+             Financial Totals table; project/partner counts are excluded from
+             the footer totals (summing them across sectors double-counts). */
+          <ChartDataTable
+            rows={tableData}
+            columns={[
+              {
+                key: 'sectorName',
+                label: 'Sector',
+                numeric: false,
+                format: (_v, row) => (
+                  <span className="flex items-center gap-2">
+                    <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">
+                      {(row as any).sectorCode}
+                    </code>
+                    <span className="font-semibold text-foreground">{(row as any).sectorName}</span>
+                  </span>
+                ),
+              },
+              {
+                key: 'plannedDisbursements',
+                label: 'Planned',
+                numeric: true,
+                currency: 'USD',
+                color: CHART_BAR_COLORS.planned,
+              },
+              {
+                key: 'actualDisbursements',
+                label: 'Actual',
+                numeric: true,
+                currency: 'USD',
+                color: CHART_BAR_COLORS.actual,
+                format: (v) => (
+                  <span className="font-semibold" style={{ color: CHART_BAR_COLORS.actual }}>
+                    {formatCurrencyPrecise(Number(v) || 0)}
+                  </span>
+                ),
+              },
+              { key: 'outgoingCommitments', label: 'Commitments', numeric: true, currency: 'USD', color: CHART_BAR_COLORS.commitments },
+              { key: 'budgets', label: 'Budgets', numeric: true, currency: 'USD', color: CHART_BAR_COLORS.budgets },
+              { key: 'projectCount', label: 'Projects', numeric: true, includeInTotal: false, format: (v) => (Number(v) || 0).toLocaleString() },
+              { key: 'partnerCount', label: 'Partners', numeric: true, includeInTotal: false, format: (v) => (Number(v) || 0).toLocaleString() },
+            ]}
+            currency="USD"
+            maxHeight={600}
+            emptyMessage="No sectors found matching your search"
+          />
         )}
       </CardContent>
     </Card>

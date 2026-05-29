@@ -24,7 +24,7 @@ export function NewsletterSection() {
       />
 
       <div className="relative mx-auto max-w-4xl">
-        <Card className="overflow-hidden border-border bg-white/80 shadow-lg backdrop-blur-sm">
+        <Card className="overflow-hidden bg-white/80 shadow-lg backdrop-blur-sm">
           <div className="grid gap-8 p-8 md:grid-cols-2 md:p-12">
             <motion.div
               initial={{ opacity: 0, x: -20 }}

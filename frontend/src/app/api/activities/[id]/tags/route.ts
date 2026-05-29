@@ -74,7 +74,9 @@ export async function POST(
 
   try {
     const { id: activityId } = await params;
-    const { tag_id } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { tag_id } = body;
 
     if (!activityId || !tag_id) {
       return NextResponse.json(

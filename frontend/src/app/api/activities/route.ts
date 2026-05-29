@@ -65,7 +65,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const transactionWarnings: string[] = [];
     
     // Enhanced debugging
@@ -2449,7 +2450,8 @@ export async function DELETE(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { id, ids, user } = body;
     
     // Handle bulk deletion

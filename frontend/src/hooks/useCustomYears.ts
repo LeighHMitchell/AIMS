@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { CustomYear } from "@/types/custom-years";
+import { CustomYear, pickDefaultCalendarYearId } from "@/types/custom-years";
 import { apiFetch } from '@/lib/api-fetch';
 
 interface UseCustomYearsResult {
@@ -43,11 +43,14 @@ export function useCustomYears(): UseCustomYearsResult {
         throw new Error(result.error || "Failed to fetch custom years");
       }
 
-      setCustomYears(result.data || []);
+      const years: CustomYear[] = result.data || [];
+      setCustomYears(years);
 
-      // Auto-select the system default on first load
-      if (!initialized && result.defaultId) {
-        setSelectedId(result.defaultId);
+      // Auto-select the Gregorian Calendar Year on first load, regardless of
+      // which row the database flags as default.
+      if (!initialized) {
+        const defaultId = pickDefaultCalendarYearId(years, result.defaultId);
+        if (defaultId) setSelectedId(defaultId);
       }
       setInitialized(true);
     } catch (err: any) {

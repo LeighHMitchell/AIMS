@@ -120,7 +120,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
   const hasDetails = hasTargetDetails || hasActualDetails;
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-body font-medium text-foreground">
@@ -318,7 +318,7 @@ export function PeriodsDetailPanel({ periods = [], measure, className }: Periods
   return (
     <div className={cn("space-y-6", className)}>
       {/* Timeline visualization */}
-      <Card className="border-border">
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-body font-medium text-foreground">
             Progress Timeline

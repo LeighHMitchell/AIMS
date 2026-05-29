@@ -16,7 +16,8 @@ export async function POST(
 
   try {
     const { transactionId } = await params;
-    const body: CopyFromActivityRequest = await request.json();
+    const body: CopyFromActivityRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     // Get transaction details
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')

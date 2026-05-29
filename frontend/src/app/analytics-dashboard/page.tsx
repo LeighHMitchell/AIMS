@@ -4,9 +4,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ExpandableCard } from '@/components/ui/expandable-card'
 import { CompactChartCard } from '@/components/ui/compact-chart-card'
 import { ChartGrid } from '@/components/ui/chart-grid'
+import { BUDGET_COLOR, getTransactionTypeColor } from '@/lib/chart-colors'
 import { getFiveYearDateRange } from '@/lib/date-utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ import { AllDonorsHorizontalBarChart } from '@/components/analytics/AllDonorsHor
 import { SectorDistributionChart } from '@/components/analytics/SectorDistributionChart'
 import { HumanitarianChart } from '@/components/analytics/HumanitarianChart'
 import { HumanitarianShareChart } from '@/components/analytics/HumanitarianShareChart'
+import { HumanitarianActivitiesChart } from '@/components/analytics/HumanitarianActivitiesChart'
 import { AidMap } from '@/components/analytics/AidMap'
 import { AidFlowMap } from '@/components/analytics/AidFlowMap'
 import { SankeyFlow } from '@/components/analytics/SankeyFlow'
@@ -52,8 +53,10 @@ import { Top10DisbursementCommitmentRatioChart } from '@/components/analytics/To
 import { Top10GovernmentValidatedChart } from '@/components/analytics/Top10GovernmentValidatedChart'
 import { Top10SectorFocusedChart } from '@/components/analytics/Top10SectorFocusedChart'
 import { TopLikedActivitiesChart } from '@/components/analytics/TopLikedActivitiesChart'
+import { TopEngagedActivitiesChart } from '@/components/analytics/TopEngagedActivitiesChart'
+import { TopExecutionGapChart } from '@/components/analytics/TopExecutionGapChart'
 import { ODAByFlowTypeChart } from '@/components/analytics/ODAByFlowTypeChart'
-import { PolicyMarkersChart } from '@/components/analytics/PolicyMarkersChart'
+import { PolicyMarkersTab } from '@/components/analytics/policy-markers/PolicyMarkersTab'
 
 // SDGs Analytics
 import { SDGAnalytics } from '@/components/analytics/sdgs/SDGAnalytics'
@@ -81,7 +84,6 @@ import { SectorAnalysisChart } from '@/components/charts/SectorAnalysisChart'
 
 // Sector Analytics components
 import { SectorBarChart } from '@/components/analytics/sectors/SectorBarChart'
-import { SectorTimeSeriesPanel } from '@/components/analytics/sectors/SectorTimeSeriesPanel'
 import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
 
 // National Priorities charts (dissolved into per-tab placement)
@@ -237,6 +239,11 @@ export default function AnalyticsDashboardPage() {
   const [financeTypeFlowData, setFinanceTypeFlowData] = useState<any[]>([])
   const [humanitarianShareData, setHumanitarianShareData] = useState<any[]>([])
   const [topLikedActivitiesData, setTopLikedActivitiesData] = useState<any[]>([])
+  const [topViewedActivitiesData, setTopViewedActivitiesData] = useState<any[]>([])
+  const [topCommentedActivitiesData, setTopCommentedActivitiesData] = useState<any[]>([])
+  const [topBookmarkedActivitiesData, setTopBookmarkedActivitiesData] = useState<any[]>([])
+  const [topPartnersActivitiesData, setTopPartnersActivitiesData] = useState<any[]>([])
+  const [topExecutionGapData, setTopExecutionGapData] = useState<any[]>([])
   const [fundingSourceData, setFundingSourceData] = useState<any[]>([])
   const [plannedVsActualDisbursementsData, setPlannedVsActualDisbursementsData] = useState<any[]>([])
   const [cumulativeSpendingData, setCumulativeSpendingData] = useState<any[]>([])
@@ -252,6 +259,8 @@ export default function AnalyticsDashboardPage() {
     groupByLevel: '5',
     publicationStatus: 'all'
   })
+  // Sector Analysis year-range selection (the chart's YearRangeChip). Empty = all years.
+  const [sectorAnalyticsYears, setSectorAnalyticsYears] = useState<number[]>([])
 
   // Coordination state is now owned by CoordinationChartWithControls (the
   // dashboard card embeds it directly, including its own filter bar and
@@ -513,6 +522,10 @@ export default function AnalyticsDashboardPage() {
       if (sectorAnalyticsFilters.publicationStatus) {
         params.append('publicationStatus', sectorAnalyticsFilters.publicationStatus)
       }
+      if (sectorAnalyticsYears.length > 0) {
+        params.append('startYear', String(Math.min(...sectorAnalyticsYears)))
+        params.append('endYear', String(Math.max(...sectorAnalyticsYears)))
+      }
 
       const response = await apiFetch(`/api/analytics/sectors-analytics?${params}`)
       const result: SectorAnalyticsResponse = await response.json()
@@ -531,10 +544,10 @@ export default function AnalyticsDashboardPage() {
     }
   }
 
-  // Fetch Sector Analytics when filters change
+  // Fetch Sector Analytics when filters or the chart's year range change
   useEffect(() => {
     fetchSectorAnalyticsData()
-  }, [sectorAnalyticsFilters, refreshKey])
+  }, [sectorAnalyticsFilters, sectorAnalyticsYears, refreshKey])
 
   // Coordination data is fetched inside CoordinationChartWithControls now,
   // so the dashboard no longer needs its own fetch loop here.
@@ -576,13 +589,16 @@ export default function AnalyticsDashboardPage() {
                     { value: 'overview', label: 'Overview' },
                     { value: 'aid-flow-map', label: 'Aid Flow Map' },
                     { value: 'trends-performance', label: 'Trends & Performance' },
-                    { value: 'sectors-sdgs', label: 'Sectors & Policy Markers' },
+                    { value: 'sectors-sdgs', label: 'Sectors' },
+                    { value: 'policy-markers', label: 'Policy Markers' },
                     { value: 'sdgs', label: 'SDGs' },
                     { value: 'humanitarian-spend', label: 'Humanitarian Spend' },
                     { value: 'capital-spend', label: 'Capital Spend' },
                     { value: 'government-view', label: 'Government View' },
-                    { value: 'networks-fragmentation', label: 'Networks & Fragmentation' },
+                    { value: 'networks-fragmentation', label: 'Networks' },
+                    { value: 'fragmentation', label: 'Fragmentation' },
                     { value: 'operations', label: 'Operations' },
+                    { value: 'transaction-calendar', label: 'Transaction Calendar' },
                     { value: 'rankings', label: 'Rankings' },
                   ].map((t) => (
                     <TabsTrigger
@@ -685,6 +701,7 @@ export default function AnalyticsDashboardPage() {
                         compactHeight={300}
                         exportData={coordinationTableRows}
                         exportFilename="aid-distribution-by-sector"
+                        inlineToolbar
                       >
                         <CoordinationChartWithControls
                           width={400}
@@ -706,6 +723,31 @@ export default function AnalyticsDashboardPage() {
                           refreshKey={refreshKey}
                         />
                       </CompactChartCard>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Top Development Partner Agencies & Groups</h2>
+                      <p className="text-muted-foreground mb-4">Technical development partner breakdowns by agency and group</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <CompactChartCard
+                          title="Funding by Development Partner"
+                          shortDescription="Top 5 development partners by contribution"
+                          fullDescription="Top 5 individual development partner organisations by financial contribution, with remaining development partners aggregated."
+                          mathTooltip="Sums USD value of the selected metric (commitments or disbursements) per individual provider organisation. Top 5 partners are shown individually; the rest are rolled into 'Others'."
+                          compactHeight={300}
+                        >
+                          <NPTopDonorAgenciesChart />
+                        </CompactChartCard>
+                        <CompactChartCard
+                          title="Top Development Partner Groups"
+                          shortDescription="Top 5 development partners grouped by country or multilateral institution"
+                          fullDescription="Top 5 development partner groups by financial contribution, grouped by country of origin or multilateral institution."
+                          mathTooltip="Sums USD value of the selected metric per partner group, where individual provider agencies are rolled up to their parent country (e.g. all US bilateral agencies) or multilateral institution (e.g. UN agencies → UN). Top 5 groups are shown; the rest are aggregated into 'Others'."
+                          compactHeight={300}
+                        >
+                          <NPTopDonorGroupsChart />
+                        </CompactChartCard>
+                      </div>
                     </div>
 
                   </div>
@@ -770,45 +812,56 @@ export default function AnalyticsDashboardPage() {
                       <h2 className="text-2xl font-bold text-foreground mb-2">Performance & Predictability</h2>
                       <p className="text-muted-foreground mb-4">Are development partners delivering what they promised? How predictable is aid?</p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border lg:col-span-2"
                           title="Commitments vs Disbursements Over Time"
-                          description="Track funding commitments and actual disbursements by period"
+                          shortDescription="Track funding commitments and actual disbursements by period"
+                          fullDescription="Track funding commitments and actual disbursements by period"
                           mathTooltip="For each period (year or quarter), sums actual commitments (transaction type 2) and actual disbursements (type 3) separately, then plots both series side-by-side. Amounts are USD-converted using the transaction-date exchange rate."
                           exportData={commitmentsData}
+                          tableColorMap={{ commitments: getTransactionTypeColor('2'), disbursements: getTransactionTypeColor('3') }}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <CommitmentsChart
                             dateRange={dateRange}
                             refreshKey={refreshKey}
                             onDataChange={setCommitmentsData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <PlannedVsActualDisbursements
-                          dateRange={dateRange}
-                          refreshKey={refreshKey}
-                          onDataChange={setPlannedVsActualDisbursementsData}
-                        />
+                        <CompactChartCard
+                          className="bg-card border-border"
+                          title="Cumulative Spending Over Time"
+                          shortDescription="Track accumulated spending progression across all activities"
+                          fullDescription="Track accumulated spending progression across all activities"
+                          mathTooltip="Running cumulative total per selected metric. Each transaction is added on its transaction date (budgets and planned disbursements on their period start date), and each line is the USD-normalised running sum up to that point. Default metrics are actual Disbursements + Expenditures."
+                          compactHeight={300}
+                        >
+                          <CumulativeSpendingOverTime
+                            dateRange={dateRange}
+                            refreshKey={refreshKey}
+                            onDataChange={setCumulativeSpendingData}
+                          />
+                        </CompactChartCard>
 
-                        <CumulativeSpendingOverTime
-                          dateRange={dateRange}
-                          refreshKey={refreshKey}
-                          onDataChange={setCumulativeSpendingData}
-                        />
-
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs Actual Spending"
-                          description="Compare planned budgets with actual expenditures"
+                          shortDescription="Compare planned budgets with actual expenditures"
+                          fullDescription="Compare planned budgets with actual expenditures"
                           mathTooltip="For each period, compares the published budget total against actual disbursements + expenditures. Multi-period budgets are split proportionally so the period totals reconcile across calendar/financial year views. Variance is shown as the absolute and percentage difference between actual and budgeted."
                           exportData={budgetVsActualData}
+                          tableColorMap={{ budget: BUDGET_COLOR, disbursed: getTransactionTypeColor('3'), expenditure: getTransactionTypeColor('4') }}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <BudgetVsActualChart
                             dateRange={dateRange}
                             refreshKey={refreshKey}
                             onDataChange={setBudgetVsActualData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
                         <CompactChartCard
                           title="Aid Predictability"
@@ -847,6 +900,8 @@ export default function AnalyticsDashboardPage() {
                             <SectorBarChart
                               data={sectorAnalyticsData}
                               filters={sectorAnalyticsFilters}
+                              selectedYears={sectorAnalyticsYears}
+                              onYearsChange={setSectorAnalyticsYears}
                             />
                           )}
                         </CompactChartCard>
@@ -876,43 +931,20 @@ export default function AnalyticsDashboardPage() {
                             refreshKey={refreshKey}
                           />
                         </CompactChartCard>
+
                       </ChartGrid>
-
-                      <div className="mt-6">
-                        <CompactChartCard
-                          title="Sector Disbursements Over Time"
-                          shortDescription="Track planned and actual disbursements by sector across years"
-                          fullDescription="Track planned and actual disbursements by sector across years"
-                          mathTooltip="Sums USD-converted disbursements per year and DAC sector (planned or actual, selectable when expanded). Activities tagged with multiple sectors are split using the declared sector percentage; sectors are grouped at the chosen DAC level."
-                          className="w-full"
-                          compactHeight={340}
-                        >
-                          <SectorTimeSeriesPanel />
-                        </CompactChartCard>
-                      </div>
-
-                      <div className="mt-6">
-                        <DashboardDisbursementsBySection
-                          dateRange={dateRange}
-                          refreshKey={refreshKey}
-                          onDataChange={setDisbursementsBySectionData}
-                        />
-                      </div>
                     </div>
+                  </div>
+                </TabsContent>
 
+                {/* ==================== POLICY MARKERS TAB ==================== */}
+                {/* Audience: policy teams, line ministries. Answers: how is each policy objective represented across the portfolio? */}
+                <TabsContent value="policy-markers">
+                  <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
-                      <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
-                      <CompactChartCard
-                        title="Policy Markers Analytics"
-                        shortDescription="Activities by policy marker and significance level"
-                        fullDescription="Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation."
-                        mathTooltip="Counts distinct activities per policy marker, split by significance (Not targeted / Significant / Principal). The value chart sums activity budgets (USD) for activities where the marker is Significant or Principal. Policy markers reflect policy intent, not a financial allocation."
-                        className="w-full"
-                        compactHeight={320}
-                      >
-                        <PolicyMarkersChart refreshKey={refreshKey} />
-                      </CompactChartCard>
+                      <p className="text-muted-foreground mb-4">How OECD/DAC policy markers (gender equality, environment, climate, etc.) are represented across the portfolio, by significance level and over time. Policy markers reflect policy intent, not financial allocation.</p>
+                      <PolicyMarkersTab refreshKey={refreshKey} />
                     </div>
                   </div>
                 </TabsContent>
@@ -946,7 +978,6 @@ export default function AnalyticsDashboardPage() {
                           shortDescription="Humanitarian portion as percentage of total international aid"
                           fullDescription="Share of humanitarian aid compared to total international aid"
                           mathTooltip="Sums USD value of all actual transactions (commitments, disbursements, expenditures) and splits them into humanitarian vs development. A transaction is humanitarian if it has the IATI humanitarian flag, an emergency aid type (01/02/03), or humanitarian/emergency keywords in its description. Share is humanitarian total divided by overall total."
-                          exportData={humanitarianShareData}
                           compactHeight={300}
                         >
                           <HumanitarianShareChart
@@ -961,13 +992,26 @@ export default function AnalyticsDashboardPage() {
                           shortDescription="Year-over-year comparison of humanitarian and development flows"
                           fullDescription="Historical comparison of humanitarian and development aid flows over time"
                           mathTooltip="For each year, sums USD-value transactions classified as humanitarian (via IATI humanitarian flag, emergency aid type, or humanitarian keywords) separately from development flows. Lets you see the relative scale and trend of each over time."
-                          exportData={humanitarianData}
                           compactHeight={300}
                         >
                           <HumanitarianChart
                             dateRange={fiveYearRange}
                             refreshKey={refreshKey}
                             onDataChange={setHumanitarianData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Activities with Humanitarian Components"
+                          shortDescription="Per-activity financials, split into humanitarian vs development"
+                          fullDescription="Every activity that has a humanitarian component, shown as a horizontal bar. View selected financial metrics (budgets, planned disbursements, transaction types) — stacked or grouped — or switch to the humanitarian-vs-development split of actual spend."
+                          mathTooltip="Lists published activities flagged humanitarian (IATI humanitarian flag, emergency aid type 01/02/03, or any humanitarian-flagged transaction). 'By metric' sums the chosen metrics per activity over the selected window (budgets/PDs pro-rated by period overlap). 'Humanitarian split' divides actual spend (disbursements + expenditures) into humanitarian vs development by the transaction-level humanitarian flag."
+                          compactHeight={300}
+                          inlineToolbar
+                        >
+                          <HumanitarianActivitiesChart
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
                           />
                         </CompactChartCard>
                       </ChartGrid>
@@ -984,15 +1028,6 @@ export default function AnalyticsDashboardPage() {
                       <p className="text-muted-foreground mb-4">Where capital investment is concentrated</p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <CompactChartCard
-                          title="Top Sectors"
-                          shortDescription="Top 5 DAC sectors by financial allocation"
-                          fullDescription="Top 5 DAC sectors by financial allocation, with remaining sectors aggregated into an Others category."
-                          mathTooltip="Sums USD value (commitments or disbursements depending on the selected metric) per DAC sector, with multi-sector activities split by their declared sector percentage. Top 5 sectors are shown individually; the remainder is rolled into 'Others'."
-                          compactHeight={300}
-                        >
-                          <NPTopSectorsChart />
-                        </CompactChartCard>
-                        <CompactChartCard
                           title="Top Activities by Capital Spend"
                           shortDescription="Ranked by capital spend value"
                           fullDescription="Activities ranked by capital spend value, with selectable metric and time range."
@@ -1001,7 +1036,6 @@ export default function AnalyticsDashboardPage() {
                         >
                           <NPTopCapitalSpendChart />
                         </CompactChartCard>
-                        <div className="lg:col-span-2">
                           <CompactChartCard
                             title="Capital vs Non-Capital Spend"
                             shortDescription="Yearly breakdown of spending types"
@@ -1011,7 +1045,6 @@ export default function AnalyticsDashboardPage() {
                           >
                             <NPCapitalSpendOverTimeChart />
                           </CompactChartCard>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1024,7 +1057,16 @@ export default function AnalyticsDashboardPage() {
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Aid on Budget</h2>
                       <p className="text-muted-foreground mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
-                      <EnhancedAidOnBudgetChart refreshKey={refreshKey} />
+                      <CompactChartCard
+                        title="Aid on Budget"
+                        shortDescription="Domestic spending vs on-budget and off-budget aid by fiscal year"
+                        fullDescription="Compare domestic government spending with on-budget and off-budget aid by fiscal year"
+                        mathTooltip="Classifies aid by whether it flows through government budget systems (on-budget) or outside them (off-budget), shown against domestic expenditure and grouped by the selected classification framework (functional/COFOG, line ministry, economic, programme). Sums USD amounts per category and fiscal year."
+                        className="w-full"
+                        compactHeight={460}
+                      >
+                        <EnhancedAidOnBudgetChart refreshKey={refreshKey} />
+                      </CompactChartCard>
                     </div>
 
                     <div>
@@ -1102,112 +1144,152 @@ export default function AnalyticsDashboardPage() {
                         </CompactChartCard>
                       </ChartGrid>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                        <FundingByModalityChart />
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 items-start">
+                        <CompactChartCard
+                          title="Funding Over Time"
+                          shortDescription="Funding by aid modality type over time"
+                          fullDescription="Funding over time broken down by aid modality (grant, loan, technical assistance, etc.)"
+                          mathTooltip="Sums USD transaction values (commitments or disbursements) per period and aid modality (grant, loan, technical assistance, reimbursable grant, investment/guarantee). Each transaction's modality comes from its activity's reported finance type."
+                          className="w-full"
+                          compactHeight={320}
+                        >
+                          <FundingByModalityChart />
+                        </CompactChartCard>
 
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="ODA by Flow Type"
-                          description="Composition of Official Development Assistance (ODA) flows by type of financial flow"
+                          shortDescription="Composition of Official Development Assistance (ODA) flows by type of financial flow"
+                          fullDescription="Composition of Official Development Assistance (ODA) flows by type of financial flow"
                           mathTooltip="Sums USD transaction values per IATI flow type (ODA grant, ODA loan, OOF, private, etc.). Limited to actual transactions; each transaction's flow type is inherited from its activity or the transaction-level override."
                           exportData={odaByFlowTypeData}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <ODAByFlowTypeChart
                             dateRange={dateRange}
                             refreshKey={refreshKey}
                             onDataChange={setOdaByFlowTypeData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <FundingSourceBreakdown
-                          dateRange={dateRange}
-                          refreshKey={refreshKey}
-                          onDataChange={setFundingSourceData}
-                        />
+                        <CompactChartCard
+                          title="Funding Source Breakdown"
+                          shortDescription="Distribution of funding by development partner/provider"
+                          fullDescription="Distribution of funding by development partner/provider across all activities"
+                          mathTooltip="Sums USD per funding-source organisation for the metrics you pick. Transactions and planned disbursements use their reported provider org; budgets (which have no provider) are attributed to the activity's reporting org. Sources beyond the top seven are grouped as 'Others'."
+                          className="w-full"
+                          compactHeight={360}
+                        >
+                          <FundingSourceBreakdown
+                            dateRange={dateRange}
+                            refreshKey={refreshKey}
+                            onDataChange={setFundingSourceData}
+                          />
+                        </CompactChartCard>
                       </div>
                     </div>
 
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Budget vs Spending — Detailed Cuts</h2>
                       <p className="text-muted-foreground mb-4">Compare budget allocations with actual spending across categories</p>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ExpandableCard
+                      {/* items-start: cards size to their own content so a tall card
+                          (e.g. an error/no-data state) doesn't stretch its row-mates
+                          and leave empty space below their charts. */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <CompactChartCard
                           className="bg-card border-border lg:col-span-2"
                           title="Budget vs. Spending Over Time"
-                          description="Compare total budget allocations with actual spending (disbursements + expenditures) over time"
+                          shortDescription="Compare total budget allocations with actual spending (disbursements + expenditures) over time"
+                          fullDescription="Compare total budget allocations with actual spending (disbursements + expenditures) over time"
                           mathTooltip="For each period, sums published activity budgets and actual spending (disbursements + expenditures, transaction types 3+4). Multi-year budgets are split proportionally across periods so totals reconcile. Variance shows how much spending lagged or exceeded budget."
                           exportData={budgetVsSpendingData}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <BudgetVsSpendingChart
                             filters={filters}
                             onDataChange={setBudgetVsSpendingData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs. Spending by Reporting Organisation"
-                          description="Compare budget and spending across different reporting organisations"
+                          shortDescription="Compare budget and spending across different reporting organisations"
+                          fullDescription="Compare budget and spending across different reporting organisations"
                           mathTooltip="For each reporting organisation (the publisher of the IATI activity), sums the activity's budgets and actual spending (disbursements + expenditures) in USD. Lets you compare which publishers have the largest gap between planned and actual."
-                          exportData={reportingOrgData}
+                          compactHeight={300}
                         >
                           <ReportingOrgChart
                             filters={filters}
                             onDataChange={setReportingOrgData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs. Spending by Aid Type"
-                          description="Analyze budget and spending patterns across different aid types"
+                          shortDescription="Analyze budget and spending patterns across different aid types"
+                          fullDescription="Analyze budget and spending patterns across different aid types"
                           mathTooltip="Groups budgets and actual spending (disbursements + expenditures) by IATI aid type (project-type, budget support, technical assistance, etc.). Each transaction's aid type comes from the activity default or transaction-level override; values are USD-converted."
                           exportData={aidTypeData}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <AidTypeChart
                             filters={filters}
                             onDataChange={setAidTypeData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs. Spending by Finance Type"
-                          description="Compare budget and spending across different finance types"
+                          shortDescription="Compare budget and spending across different finance types"
+                          fullDescription="Compare budget and spending across different finance types"
                           mathTooltip="Groups budgets and actual spending (disbursements + expenditures) by IATI finance type (grant, loan, equity, debt relief, etc.). Each transaction's finance type comes from the activity default or transaction-level override; values are USD-converted."
                           exportData={financeTypeData}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <FinanceTypeChart
                             filters={filters}
                             onDataChange={setFinanceTypeData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs. Spending by Organisation Type"
-                          description="Analyze budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
+                          shortDescription="Analyze budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
+                          fullDescription="Analyze budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
                           mathTooltip="Groups budgets and actual spending by the IATI organisation type of the providing organisation (Government, NGO, Multilateral, Foundation, etc.). All values are USD-converted and aggregated per type."
                           exportData={orgTypeData}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <OrgTypeChart
                             filters={filters}
                             onDataChange={setOrgTypeData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
 
-                        <ExpandableCard
+                        <CompactChartCard
                           className="bg-card border-border"
                           title="Sector Analysis"
-                          description="Analyze activity distribution across different sectors with percentage allocations"
+                          shortDescription="Analyze activity distribution across different sectors with percentage allocations"
+                          fullDescription="Analyze activity distribution across different sectors with percentage allocations"
                           mathTooltip="For each DAC sector, counts distinct activities and sums the activity-level financial totals weighted by the declared sector percentage. Top N sectors are shown; the remainder is grouped into 'Others'."
                           exportData={sectorAnalysisData}
+                          inlineToolbar
+                          compactHeight={300}
                         >
                           <SectorAnalysisChart
                             filters={filters}
                             onDataChange={setSectorAnalysisData}
                           />
-                        </ExpandableCard>
+                        </CompactChartCard>
                       </div>
                     </div>
                   </div>
@@ -1222,11 +1304,6 @@ export default function AnalyticsDashboardPage() {
                       <p className="text-muted-foreground mb-4">Relationships and roles between organisations across the aid system</p>
                       <div className="space-y-6">
                         <div>
-                          <h2 className="text-2xl font-bold text-foreground mb-2">Participating Organisations Flow</h2>
-                          <p className="text-muted-foreground mb-4">
-                            4-tier Sankey visualization showing the flow of organisations across IATI participating-org roles:
-                            Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
-                          </p>
                           <ParticipatingOrgsSankey refreshKey={refreshKey} />
                         </div>
 
@@ -1258,76 +1335,46 @@ export default function AnalyticsDashboardPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Top Development Partner Agencies & Groups</h2>
-                      <p className="text-muted-foreground mb-4">Technical development partner breakdowns by agency and group</p>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <CompactChartCard
-                          title="Funding by Development Partner"
-                          shortDescription="Top 5 development partners by contribution"
-                          fullDescription="Top 5 individual development partner organisations by financial contribution, with remaining development partners aggregated."
-                          mathTooltip="Sums USD value of the selected metric (commitments or disbursements) per individual provider organisation. Top 5 partners are shown individually; the rest are rolled into 'Others'."
-                          compactHeight={300}
-                        >
-                          <NPTopDonorAgenciesChart />
-                        </CompactChartCard>
-                        <CompactChartCard
-                          title="Top Development Partner Groups"
-                          shortDescription="Top 5 development partners grouped by country or multilateral institution"
-                          fullDescription="Top 5 development partner groups by financial contribution, grouped by country of origin or multilateral institution."
-                          mathTooltip="Sums USD value of the selected metric per partner group, where individual provider agencies are rolled up to their parent country (e.g. all US bilateral agencies) or multilateral institution (e.g. UN agencies → UN). Top 5 groups are shown; the rest are aggregated into 'Others'."
-                          compactHeight={300}
-                        >
-                          <NPTopDonorGroupsChart />
-                        </CompactChartCard>
-                      </div>
-                    </div>
+                  </div>
+                </TabsContent>
 
+                {/* ==================== FRAGMENTATION TAB ==================== */}
+                {/* Audience: planners, coordination leads. Answers: how concentrated is partner support? */}
+                <TabsContent value="fragmentation">
+                  <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Fragmentation Analysis</h2>
                       <p className="text-muted-foreground mb-4">How concentrated or fragmented development partner portfolios are across programs, sectors, and locations</p>
                       <div className="space-y-6">
-                        <Card className="border-border">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-medium text-foreground">
-                              Program Fragmentation
-                            </CardTitle>
-                            <CardDescription className="text-helper text-muted-foreground mt-0.5">
-                              How development partners distribute aid across National Priorities. Each cell shows the percentage of that category's total funding contributed by each development partner.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <ProgramFragmentationChart />
-                          </CardContent>
-                        </Card>
+                        <CompactChartCard
+                          title="Program Fragmentation"
+                          shortDescription="How development partners distribute aid across National Priorities"
+                          fullDescription="How development partners distribute aid across National Priorities. Each cell shows the percentage of that category's total funding contributed by each development partner."
+                          mathTooltip="For each National Priority, shows the percentage of that category's total funding contributed by each development partner — a heatmap of concentration vs fragmentation. A larger share from a single partner means more concentrated support."
+                          compactHeight={400}
+                        >
+                          <ProgramFragmentationChart />
+                        </CompactChartCard>
 
-                        <Card className="border-border">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-medium text-foreground">
-                              Sector Fragmentation
-                            </CardTitle>
-                            <CardDescription className="text-helper text-muted-foreground mt-0.5">
-                              How development partners distribute aid across DAC Sectors. Each cell shows the percentage of that sector's total funding contributed by each development partner.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <SectorFragmentationChart />
-                          </CardContent>
-                        </Card>
+                        <CompactChartCard
+                          title="Sector Fragmentation"
+                          shortDescription="How development partners distribute aid across DAC Sectors"
+                          fullDescription="How development partners distribute aid across DAC Sectors. Each cell shows the percentage of that sector's total funding contributed by each development partner."
+                          mathTooltip="For each DAC sector, shows the percentage of that sector's total funding contributed by each development partner — highlighting where support is concentrated in one partner versus spread across many."
+                          compactHeight={400}
+                        >
+                          <SectorFragmentationChart />
+                        </CompactChartCard>
 
-                        <Card className="border-border">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-medium text-foreground">
-                              Location Fragmentation
-                            </CardTitle>
-                            <CardDescription className="text-helper text-muted-foreground mt-0.5">
-                              How development partners distribute aid across geographic regions. Each cell shows the percentage of that location's total funding contributed by each development partner.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <LocationFragmentationChart />
-                          </CardContent>
-                        </Card>
+                        <CompactChartCard
+                          title="Location Fragmentation"
+                          shortDescription="How development partners distribute aid across geographic regions"
+                          fullDescription="How development partners distribute aid across geographic regions. Each cell shows the percentage of that location's total funding contributed by each development partner."
+                          mathTooltip="For each geographic region, shows the percentage of that location's total funding contributed by each development partner — highlighting geographic concentration versus fragmentation of partner support."
+                          compactHeight={400}
+                        >
+                          <LocationFragmentationChart />
+                        </CompactChartCard>
                       </div>
                     </div>
                   </div>
@@ -1345,8 +1392,7 @@ export default function AnalyticsDashboardPage() {
                           shortDescription="Distribution of activities by publication & submission status"
                           fullDescription="Analyze the distribution of activities by their status (activity, publication, and submission status)"
                           mathTooltip="Counts distinct activities grouped by activity status (Pipeline, Implementation, Finalisation, Closed, Cancelled, Suspended) and publication/submission status. Each activity contributes once per category."
-                          exportData={activityStatusData}
-                          compactHeight={300}
+                          compactHeight={340}
                         >
                           <ActivityStatusChart
                             filters={filters}
@@ -1360,7 +1406,8 @@ export default function AnalyticsDashboardPage() {
                           fullDescription="Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)"
                           mathTooltip="For each IATI transaction type (Commitment, Disbursement, Expenditure, Incoming Funds, etc.), counts the number of transactions and sums their USD value. Lets you see both volume and dollar weight per type."
                           exportData={transactionTypeData}
-                          compactHeight={300}
+                          inlineToolbar
+                          compactHeight={340}
                         >
                           <TransactionTypeChart
                             filters={filters}
@@ -1370,14 +1417,28 @@ export default function AnalyticsDashboardPage() {
                       </ChartGrid>
                     </div>
 
-                    {/* Transaction Calendar Section */}
+                  </div>
+                </TabsContent>
+
+                {/* ==================== TRANSACTION CALENDAR TAB ==================== */}
+                {/* Audience: data managers. Answers: when is activity reported? */}
+                <TabsContent value="transaction-calendar">
+                  <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Transaction Calendar</h2>
                       <p className="text-muted-foreground mb-4">Daily transaction activity heatmap showing patterns and trends over time</p>
-                      <TransactionActivityCalendar
-                        dateRange={dateRange}
-                        refreshKey={refreshKey}
-                      />
+                      <CompactChartCard
+                        title="Transaction Activity Calendar"
+                        shortDescription="Daily transaction activity coloured by transaction type"
+                        fullDescription="Daily transaction activity coloured by transaction type. Hover over days for details."
+                        mathTooltip="Plots each day's transaction count as a calendar heatmap — colour intensity reflects the number of transactions on that day. Switch between heatmap, timeline, and monthly-summary views to spot reporting cycles and activity spikes."
+                        compactHeight={200}
+                      >
+                        <TransactionActivityCalendar
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                        />
+                      </CompactChartCard>
                     </div>
                   </div>
                 </TabsContent>
@@ -1390,20 +1451,110 @@ export default function AnalyticsDashboardPage() {
                       <h2 className="text-2xl font-bold text-foreground mb-2">Activity Rankings</h2>
                       <p className="text-muted-foreground mb-4">Top activities and partners based on user voting and engagement</p>
 
-                      <CompactChartCard
-                        title="Top Voted Activities"
-                        shortDescription="Activities ranked by vote score (upvotes - downvotes)"
-                        fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
-                        mathTooltip="For each activity, computes net vote score = total upvotes minus total downvotes from registered users. Activities are ranked descending and the top 10 are shown. Activities with no votes are excluded."
-                        className="w-full"
-                        compactHeight={300}
-                        exportData={topLikedActivitiesData}
-                      >
-                        <TopLikedActivitiesChart
-                          refreshKey={refreshKey}
-                          onDataChange={setTopLikedActivitiesData}
-                        />
-                      </CompactChartCard>
+                      {/* Activity rankings — two-column grid: voted, then the
+                          engagement metrics. items-start so a tall card doesn't
+                          stretch its row-mate. */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <CompactChartCard
+                          title="Top Voted Activities"
+                          shortDescription="Activities ranked by vote score (upvotes - downvotes)"
+                          fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
+                          mathTooltip="For each activity, computes net vote score = total upvotes minus total downvotes from registered users. Activities are ranked descending and the top 10 are shown. Activities with no votes are excluded."
+                          className="bg-card border-border"
+                          compactHeight={300}
+                          exportData={topLikedActivitiesData}
+                          inlineToolbar
+                        >
+                          <TopLikedActivitiesChart
+                            refreshKey={refreshKey}
+                            onDataChange={setTopLikedActivitiesData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Most Viewed Activities"
+                          shortDescription="Activities ranked by number of unique page views"
+                          fullDescription="Top 10 activities ranked by the number of unique users who have viewed them"
+                          mathTooltip="Ranks published activities by unique_view_count — the number of distinct registered users who have opened the activity (one view counted per user). Activities with no views are excluded."
+                          className="bg-card border-border"
+                          compactHeight={300}
+                          exportData={topViewedActivitiesData}
+                          inlineToolbar
+                        >
+                          <TopEngagedActivitiesChart
+                            metric="views"
+                            refreshKey={refreshKey}
+                            onDataChange={setTopViewedActivitiesData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Most Discussed Activities"
+                          shortDescription="Activities ranked by number of comments"
+                          fullDescription="Top 10 activities ranked by the number of comments they have received"
+                          mathTooltip="Ranks published activities by the count of rows in activity_comments per activity. Higher counts indicate activities generating the most discussion among users."
+                          className="bg-card border-border"
+                          compactHeight={300}
+                          exportData={topCommentedActivitiesData}
+                          inlineToolbar
+                        >
+                          <TopEngagedActivitiesChart
+                            metric="comments"
+                            refreshKey={refreshKey}
+                            onDataChange={setTopCommentedActivitiesData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Most Bookmarked Activities"
+                          shortDescription="Activities ranked by number of user bookmarks"
+                          fullDescription="Top 10 activities ranked by the number of users who have bookmarked them"
+                          mathTooltip="Ranks published activities by the count of rows in activity_bookmarks per activity — how many users have saved the activity for later. A signal of sustained interest beyond a single view."
+                          className="bg-card border-border"
+                          compactHeight={300}
+                          exportData={topBookmarkedActivitiesData}
+                          inlineToolbar
+                        >
+                          <TopEngagedActivitiesChart
+                            metric="bookmarks"
+                            refreshKey={refreshKey}
+                            onDataChange={setTopBookmarkedActivitiesData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Most Collaborative Activities"
+                          shortDescription="Activities ranked by number of participating organisations"
+                          fullDescription="Top 10 activities ranked by the number of distinct participating organisations"
+                          mathTooltip="Ranks published activities by the count of distinct organisations in activity_participating_organizations (an org appearing in multiple roles is counted once). A proxy for how many partners are involved in delivering the activity."
+                          className="bg-card border-border"
+                          compactHeight={300}
+                          exportData={topPartnersActivitiesData}
+                          inlineToolbar
+                        >
+                          <TopEngagedActivitiesChart
+                            metric="partners"
+                            refreshKey={refreshKey}
+                            onDataChange={setTopPartnersActivitiesData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Biggest Execution Gap"
+                          shortDescription="Activities with the most committed-but-undelivered funding"
+                          fullDescription="Top 10 activities ranked by execution gap — value committed but not yet disbursed or spent"
+                          mathTooltip="For each published activity, committed = sum of outgoing commitments (transaction type 2); spent = sum of disbursements + expenditures (types 3 + 4); execution gap = committed − spent (clamped at 0). Ranked by largest gap. Each bar shows total commitment split into spent and the remaining gap."
+                          className="bg-card border-border"
+                          compactHeight={300}
+                          exportData={topExecutionGapData}
+                          inlineToolbar
+                        >
+                          <TopExecutionGapChart
+                            refreshKey={refreshKey}
+                            onDataChange={setTopExecutionGapData}
+                          />
+                        </CompactChartCard>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>

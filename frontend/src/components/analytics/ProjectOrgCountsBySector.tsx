@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ChartDataTable, CodeChip } from '@/components/ui/chart-data-table'
 import {
   BarChart,
   Bar,
@@ -27,7 +30,7 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { CalendarIcon, RotateCcw, BarChart3, Table as TableIcon } from 'lucide-react'
+import { CalendarIcon, BarChart3, Table as TableIcon } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { format } from 'date-fns'
@@ -172,6 +175,8 @@ export function ProjectOrgCountsBySector({
   // Top N sectors to show before grouping the remainder into "All Other Sectors".
   // Mirrors the Top 3/5/10 shortcut on SectorDisbursementOverTime.
   const [topN, setTopN] = useState<number>(10)
+  // Rank sectors by project count or organisation count (descending).
+  const [sortBy, setSortBy] = useState<'numberOfProjects' | 'numberOfOrganisations'>('numberOfProjects')
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
     new Set(['numberOfProjects', 'numberOfOrganisations'])
   )
@@ -382,31 +387,14 @@ export function ProjectOrgCountsBySector({
     return `${year}`
   }
 
-  // Reset to defaults: Data range years, Calendar Year (Gregorian), Sector view
-  const handleReset = () => {
-    // Reset to data range (or fallback to all years)
-    if (actualDataRange) {
-      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
-    } else {
-      setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
-    }
-    setGroupByLevel('3')
-    setTopN(10)
-    const calendarYear = customYears.find(cy =>
-      cy.name.toLowerCase().includes('calendar') ||
-      cy.name.toLowerCase().includes('gregorian')
-    ) || customYears[0]
-    if (calendarYear) {
-      setCalendarType(calendarYear.id)
-    }
-  }
-
-  // Process sectors data: top N + "All Other Sectors"
+  // Process sectors data: sort by the chosen count (desc), then top N +
+  // "All Other Sectors".
   const chartData = useMemo(() => {
     if (sectors.length === 0) return []
 
-    const topSectors = sectors.slice(0, topN)
-    const otherSectors = sectors.slice(topN)
+    const sortedSectors = [...sectors].sort((a, b) => b[sortBy] - a[sortBy])
+    const topSectors = sortedSectors.slice(0, topN)
+    const otherSectors = sortedSectors.slice(topN)
 
     const result = [...topSectors]
     if (otherSectors.length > 0) {
@@ -435,7 +423,7 @@ export function ProjectOrgCountsBySector({
         ? sector.sectorName.substring(0, 17) + '...'
         : sector.sectorName
     }))
-  }, [sectors, topN])
+  }, [sectors, topN, sortBy])
 
   const formatCount = (value: number) => {
     if (!Number.isInteger(value)) return ''
@@ -588,7 +576,7 @@ export function ProjectOrgCountsBySector({
   // Loading state
   if (loading && sectors.length === 0) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="border-0 shadow-none bg-transparent">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Projects & Organisations by Sector
@@ -604,7 +592,7 @@ export function ProjectOrgCountsBySector({
   // Error state
   if (error) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="border-0 shadow-none bg-transparent">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Projects & Organisations by Sector
@@ -618,12 +606,10 @@ export function ProjectOrgCountsBySector({
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="border-0 shadow-none bg-transparent">
       <CardHeader className="pb-2">
-        {/* Controls Row */}
-        <div className="flex items-start justify-between flex-wrap gap-2">
-          {/* Calendar & Year Selectors - Left Side */}
-          <div className="flex items-start gap-2 flex-wrap">
+        {/* Calendar + year selector on its own row at the top */}
+        <div className="flex items-start gap-2 mb-4">
             {customYears.length > 0 && (
               <>
                 {/* Calendar Type Selector */}
@@ -735,37 +721,22 @@ export function ProjectOrgCountsBySector({
                 </div>
               </>
             )}
-          </div>
-
-          {/* Controls - Right Side */}
+        </div>
+        {/* Controls row — dimension toggle + Top-N left; view toggle + reset + CSV right. */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Group By Toggle Buttons */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", groupByLevel === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setGroupByLevel('1')}
-              >
-                Sector Category
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", groupByLevel === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setGroupByLevel('3')}
-              >
-                Sector
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", groupByLevel === '5' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setGroupByLevel('5')}
-              >
-                Sub-sector
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="Group by level"
+              variant="text"
+              value={groupByLevel}
+              onValueChange={setGroupByLevel}
+              options={[
+                { value: '1', label: 'Sector Category' },
+                { value: '3', label: 'Sector' },
+                { value: '5', label: 'Sub-sector' },
+              ]}
+            />
 
             {/* Top N quick picker — same set used in SectorDisbursementOverTime. */}
             <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -784,6 +755,35 @@ export function ProjectOrgCountsBySector({
                 </button>
               ))}
             </div>
+
+            {/* Sort-by dropdown — ranks sectors by projects or organisations. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  Sort: {sortBy === 'numberOfProjects' ? 'Projects' : 'Organisations'}
+                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  className={sortBy === 'numberOfProjects' ? 'bg-muted font-medium' : ''}
+                  onClick={() => setSortBy('numberOfProjects')}
+                >
+                  <CodeChip className="mr-1.5">1</CodeChip>Projects
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className={sortBy === 'numberOfOrganisations' ? 'bg-muted font-medium' : ''}
+                  onClick={() => setSortBy('numberOfOrganisations')}
+                >
+                  <CodeChip className="mr-1.5">2</CodeChip>Organisations
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {/* View toggle + reset + CSV, right-aligned. */}
+          <div className="flex items-center gap-2 flex-wrap">
 
             {/* Chart/Table Toggle */}
             <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -809,19 +809,16 @@ export function ProjectOrgCountsBySector({
               </Button>
             </div>
 
-            {/* Reset Button */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-card">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2"
-                onClick={handleReset}
-                title="Reset to defaults"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-
+          <CsvExportButton
+            rows={chartData.map((s) => {
+              const row: Record<string, unknown> = { Sector: s.sectorName }
+              COUNT_DATA_KEYS.forEach(({ key, label }) => {
+                row[label] = (s as Record<string, unknown>)[key]
+              })
+              return row
+            })}
+            title="Projects & Organisations by Sector"
+          />
           </div>
         </div>
       </CardHeader>
@@ -830,31 +827,6 @@ export function ProjectOrgCountsBySector({
         <div className="bg-card" style={{ minHeight: chartHeight + 60 }}>
           {viewMode === 'chart' ? (
             <>
-              {/* Legend */}
-              <div className="flex flex-wrap justify-center gap-4 mb-4">
-                {COUNT_DATA_KEYS.map(({ key, label, color }) => {
-                  const isVisible = visibleSeries.has(key)
-                  return (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded transition-all ${
-                        isVisible ? 'opacity-100' : 'opacity-40'
-                      } hover:bg-muted/50`}
-                      onClick={() => toggleSeries(key)}
-                      title={isVisible ? `Click to hide ${label}` : `Click to show ${label}`}
-                    >
-                      <div
-                        className="w-4 h-4 rounded-sm"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span className={`text-sm ${isVisible ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
-                        {label}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-
               {/* Chart */}
               {selectedYears.length === 0 ? (
                 <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
@@ -905,65 +877,71 @@ export function ProjectOrgCountsBySector({
                   </BarChart>
                 </ResponsiveContainer>
               )}
+              {/* Legend — below the chart */}
+              <div className="flex flex-wrap justify-center gap-4 mt-4">
+                {COUNT_DATA_KEYS.map(({ key, label, color }) => {
+                  const isVisible = visibleSeries.has(key)
+                  return (
+                    <div
+                      key={key}
+                      className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded transition-all ${
+                        isVisible ? 'opacity-100' : 'opacity-40'
+                      } hover:bg-muted/50`}
+                      onClick={() => toggleSeries(key)}
+                      title={isVisible ? `Click to hide ${label}` : `Click to show ${label}`}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-sm"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className={`text-sm ${isVisible ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                        {label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </>
           ) : (
-            /* Table View */
-            <div className="overflow-auto" style={{ height: chartHeight }}>
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 bg-muted z-10 [&>th]:align-bottom">
-                    <TableHead className="font-medium text-foreground sticky left-0 bg-muted">Sector</TableHead>
-                    <TableHead className="text-right font-medium text-foreground">Projects</TableHead>
-                    <TableHead className="text-right font-medium text-foreground">Orgs</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedYears.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                        Select one or more years to view data
-                      </TableCell>
-                    </TableRow>
-                  ) : chartData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                        No data available for the selected date range
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    chartData.map((sector, idx) => (
-                      <TableRow key={idx} className="hover:bg-muted/50">
-                        <TableCell className="font-medium sticky left-0 bg-card">
-                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
-                            {sector.sectorCode}
-                          </span>
-                          {sector.sectorName}
-                        </TableCell>
-                        <TableCell className="text-right">{sector.numberOfProjects.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{sector.numberOfOrganisations.toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-                {chartData.length > 0 && selectedYears.length > 0 && (
-                  <tfoot>
-                    <TableRow className="bg-muted font-semibold border-t-2">
-                      <TableCell className="sticky left-0 bg-muted">Total (Unique)</TableCell>
-                      <TableCell className="text-right">
-                        {uniqueTotals.uniqueProjects.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {uniqueTotals.uniqueOrganisations.toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  </tfoot>
-                )}
-              </Table>
-            </div>
+            /* Table View — shared ChartDataTable (sticky header, sortable
+               columns, color squares, h+v scroll). Projects/Organisations are
+               COUNT columns: excluded from any footer total (summing them
+               across overlapping sectors double-counts), so the auto totals row
+               is suppressed. */
+            selectedYears.length === 0 ? (
+              <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
+                Select one or more years to view data
+              </div>
+            ) : (
+              <ChartDataTable
+                rows={chartData}
+                columns={[
+                  {
+                    key: 'sectorName',
+                    label: 'Sector',
+                    numeric: false,
+                    format: (_v, row) => (
+                      <span className="flex items-center gap-2">
+                        <code className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground flex-shrink-0">
+                          {(row as any).sectorCode}
+                        </code>
+                        <span>{(row as any).sectorName}</span>
+                      </span>
+                    ),
+                  },
+                  { key: 'numberOfProjects', label: 'Projects', numeric: true, includeInTotal: false, color: COLORS.numberOfProjects, format: (v) => (Number(v) || 0).toLocaleString() },
+                  { key: 'numberOfOrganisations', label: 'Orgs', numeric: true, includeInTotal: false, color: COLORS.numberOfOrganisations, format: (v) => (Number(v) || 0).toLocaleString() },
+                ]}
+                totalsRow={false}
+                maxHeight={chartHeight}
+                emptyMessage="No data available for the selected date range"
+              />
+            )
           )}
         </div>
 
         {/* Explanatory text */}
+
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows the number of projects and unique organisations involved in each {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'}.
           Since activities can be tagged with multiple sectors, the same project or organisation may appear across different groupings.

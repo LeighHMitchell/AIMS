@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle';
 import { exportToCSV } from '@/lib/exports';
 import { cn } from '@/lib/utils';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
@@ -1660,41 +1660,25 @@ export default function SectorSankeyVisualization({
           {/* Left side: bar grouping pills only when bar view is active */}
           <div className="flex flex-wrap items-center gap-4">
             {viewMode === 'bar' && (
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBarGroupingMode('group')}
-                  className={cn("h-7 text-helper px-3", barGroupingMode === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Sector Category
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBarGroupingMode('category')}
-                  className={cn("h-7 text-helper px-3", barGroupingMode === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Sector
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBarGroupingMode('sector')}
-                  className={cn("h-7 text-helper px-3", barGroupingMode === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Sub Sector
-                </Button>
-              </div>
+              <ChartViewToggle<BarGroupingMode>
+                ariaLabel="Bar grouping"
+                variant="text"
+                value={barGroupingMode}
+                onValueChange={(value) => setBarGroupingMode(value)}
+                options={[
+                  { value: 'group', label: 'Sector Category' },
+                  { value: 'category', label: 'Sector' },
+                  { value: 'sector', label: 'Sub Sector' },
+                ]}
+              />
             )}
           </div>
 
           {/* Right side: view-mode toggle (icons only) + CSV download */}
           <div className="flex items-center gap-2">
-            <SegmentedControl
+            <ChartViewToggle
               ariaLabel="Visualization type"
               variant="icon"
-              size="sm"
               value={viewMode}
               onValueChange={(value) => setViewMode(value as ViewMode)}
               options={[

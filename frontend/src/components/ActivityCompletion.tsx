@@ -61,7 +61,7 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
   const missingFields = fieldMappings.filter(field => !isFieldFilled(field.value));
 
   return (
-    <Card className="w-full shadow-sm border-border">
+    <Card className="w-full">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold text-foreground">
           Activity Completion

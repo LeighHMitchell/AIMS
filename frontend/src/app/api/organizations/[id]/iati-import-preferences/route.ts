@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const supabase = getSupabaseAdmin();
     const { data: org, error } = await supabase
       .from('organizations')
       .select('iati_import_preferences')
@@ -64,7 +66,8 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Basic validation: require version and fields map
     if (!body || typeof body !== 'object' || typeof body.version !== 'number' || typeof body.fields !== 'object') {

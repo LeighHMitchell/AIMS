@@ -146,7 +146,9 @@ export async function GET(request: Request) {
     const cacheKey = `all-donors:v6:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}:${sectorGroups}:${sectorCategories}:${sectorSubSectors}:${customYearId}`
     const cached = getCached(cacheKey)
     if (cached) {
-      return NextResponse.json(cached)
+      return NextResponse.json(cached, {
+        headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+      })
     }
 
 
@@ -583,7 +585,9 @@ export async function GET(request: Request) {
     // Cache the result
     setCache(cacheKey, result)
 
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+    })
 
   } catch (error) {
     console.error('[AllDonors API] Unexpected error:', error)

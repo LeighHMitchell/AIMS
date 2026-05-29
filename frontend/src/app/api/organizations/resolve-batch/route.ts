@@ -41,7 +41,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<BatchReso
   }
 
   try {
-    const body: BatchResolveRequest = await request.json()
+    const body: BatchResolveRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' } as any, { status: 400 });
     const { organizations } = body
 
     if (!organizations || organizations.length === 0) {

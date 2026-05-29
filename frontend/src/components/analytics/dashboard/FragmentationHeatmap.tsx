@@ -53,6 +53,13 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
   const rows = swapAxes ? data.categories : data.donors;
   const columns = swapAxes ? data.donors : data.categories;
 
+  // Each column gets a minimum legible width. When the columns don't fill the
+  // card the table stretches to 100% (columns widen to fill); when there are
+  // too many to fit at the minimum width, minWidth forces a horizontal scroll
+  // rather than crushing them.
+  const colWidth = isExpanded ? 56 : 44;
+  const heatmapWidth = 100 + (columns.length + 1) * colWidth;
+
   // Create a map for quick cell lookup
   const cellMap = new Map<string, FragmentationCell>();
   data.cells.forEach((cell) => {
@@ -131,8 +138,9 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
       // Columns are donors
       return col.acronym || col.name.slice(0, 15);
     } else {
-      // Columns are categories
-      return col.code ? `${col.code} - ${col.name}` : col.name;
+      // Columns are categories — show just the short code (full name is in the
+      // tooltip); name truncates via CSS when there's no code.
+      return col.code ? col.code : col.name;
     }
   };
 
@@ -152,7 +160,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
       <div className="space-y-4">
         {/* Heatmap table */}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse" style={{ borderSpacing: 0, tableLayout: 'fixed' }}>
+          <table className="border-collapse" style={{ borderSpacing: 0, tableLayout: 'fixed', width: '100%', minWidth: heatmapWidth }}>
             <thead className="bg-surface-muted">
               <tr>
                 {/* Empty corner cell - fixed width for row labels */}
@@ -165,10 +173,11 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   <th
                     key={col.id}
                     className="border-b border-border px-1 py-3 align-bottom text-center"
+                    style={{ width: colWidth }}
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="text-helper font-medium text-muted-foreground cursor-help block leading-tight whitespace-normal">
+                        <span className="text-helper font-medium text-muted-foreground cursor-help block leading-tight truncate">
                           {getColumnLabel(col)}
                         </span>
                       </TooltipTrigger>
@@ -189,8 +198,9 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   </th>
                 ))}
                 {/* Totals header - same width as data columns */}
-                <th 
+                <th
                   className="border-b border-border p-1 align-bottom text-center"
+                  style={{ width: colWidth }}
                 >
                   <span className="text-helper font-bold text-foreground">
                     Totals

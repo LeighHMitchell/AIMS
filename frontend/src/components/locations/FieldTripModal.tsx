@@ -537,8 +537,7 @@ export const FieldTripModal: React.FC<FieldTripModalProps> = ({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-7xl max-h-[90vh] p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
+          <DialogTitle>
             {trip ? 'Edit Field Trip' : 'Add Field Trip'}
           </DialogTitle>
           <DialogDescription>

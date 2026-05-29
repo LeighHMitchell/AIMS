@@ -306,6 +306,7 @@ function CommentItem({
                   size="icon"
                   type="button"
                   className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                  aria-label="Comment actions"
                 >
                   <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                 </Button>

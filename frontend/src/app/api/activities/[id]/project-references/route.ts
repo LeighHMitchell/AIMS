@@ -79,7 +79,8 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const {
       referenceType,
       code,
@@ -192,7 +193,8 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const {
       referenceId,
       referenceType,

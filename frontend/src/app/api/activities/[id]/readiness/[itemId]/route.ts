@@ -27,7 +27,8 @@ export async function PATCH(
       );
     }
 
-    const body: UpdateReadinessResponseRequest = await request.json();
+    const body: UpdateReadinessResponseRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Validate status
     const validStatuses = ['completed', 'not_completed', 'not_required', 'in_progress'];

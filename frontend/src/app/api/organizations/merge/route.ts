@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
     
     
     
-    const body: MergeRequest = await request.json();
+    const body: MergeRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { sourceOrgId, targetOrgId, mergeNameAliases = true } = body;
     
     // Validate request

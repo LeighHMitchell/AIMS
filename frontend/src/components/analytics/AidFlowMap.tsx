@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Download, ArrowLeftRight, Activity, Info } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { format, subMonths, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
 import EnhancedAidFlowGraph from './EnhancedAidFlowGraph'
@@ -67,6 +68,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<string[]>(['3']) // Default to Disbursement
   const [stagedTransactionTypes, setStagedTransactionTypes] = useState<string[]>(['3']) // Staged selection for UI
   const [viewMode, setViewMode] = useState<ViewMode>('transaction')
+  const isExpanded = useChartExpansion()
   const [selectedOrgId, setSelectedOrgId] = useState<string>('')
   const [orgOptions, setOrgOptions] = useState<AidFlowOrgOption[]>([])
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<string>('all')
@@ -277,14 +279,16 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             </CardDescription>
           </div>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleExport}
-            disabled={!graphData || loading}
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+          {isExpanded && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleExport}
+              disabled={!graphData || loading}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* View Mode Toggle */}

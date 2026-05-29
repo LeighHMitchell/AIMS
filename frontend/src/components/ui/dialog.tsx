@@ -77,7 +77,7 @@ const DialogContent = React.forwardRef<
           <DialogPrimitive.Content
             ref={ref}
             className={cn(
-              "pointer-events-auto relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-xl sm:rounded-lg max-h-[85vh] data-[state=open]:animate-in data-[state=open]:ease-out-expo data-[state=open]:duration-300 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:ease-out-expo data-[state=closed]:duration-200 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+              "pointer-events-auto relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-xl sm:rounded-lg max-h-[85vh] overflow-y-auto data-[state=open]:animate-in data-[state=open]:ease-out-expo data-[state=open]:duration-300 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:ease-out-expo data-[state=closed]:duration-200 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
               className
             )}
             {...outsideHandlers}

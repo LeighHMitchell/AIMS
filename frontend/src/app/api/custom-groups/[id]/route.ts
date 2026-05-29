@@ -78,7 +78,8 @@ export async function PUT(
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Update the custom group
     const { data, error } = await supabase

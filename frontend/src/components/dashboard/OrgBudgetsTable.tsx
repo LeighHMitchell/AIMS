@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -22,7 +21,9 @@ import {
   sortableHeaderClasses,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wallet } from 'lucide-react';
+import { FullPagination } from '@/components/ui/full-pagination';
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { apiFetch } from '@/lib/api-fetch';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import { formatCurrencyCompact } from '@/lib/format';
@@ -63,15 +64,13 @@ const BUDGET_TYPE_LABELS: Record<number, string> = {
   2: 'Revised',
 };
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50];
-
 export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBudgetsTableProps) {
   const router = useRouter();
   const [budgets, setBudgets] = useState<BudgetRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('period_start');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -278,36 +277,16 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
             </TableBody>
           </Table>
 
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t">
-            <div className="flex items-center gap-2">
-              <span className="text-body text-muted-foreground">Rows per page:</span>
-              <Select
-                value={pageSize.toString()}
-                onValueChange={(val) => { setPageSize(parseInt(val)); setPage(1); }}
-              >
-                <SelectTrigger className="w-[70px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((size) => (
-                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-body text-muted-foreground">
-                Page {page} of {Math.max(totalPages, 1)}
-              </span>
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <FullPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            perPage={pageSize}
+            onPageChange={(p) => setPage(p)}
+            onPerPageChange={(n) => { setPageSize(n); setPage(1); }}
+            perPageOptions={PAGE_SIZE_OPTIONS}
+            itemLabel="budgets"
+          />
         </>
       )}
     </>

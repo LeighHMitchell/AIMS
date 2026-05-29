@@ -38,6 +38,7 @@ import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 
 interface PolicyMarker {
   id: string
@@ -95,6 +96,14 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
   const [sortField, setSortField] = useState<SortField>('marker')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [selectedYears, setSelectedYears] = useState<number[]>([])
+
+  // Gregorian calendar years present in the time-series data — used to default
+  // the year picker to the full span of years that actually have data.
+  const dataYears = useMemo(
+    () => timeSeriesYears.map(y => parseInt(y, 10)).filter(n => !Number.isNaN(n)),
+    [timeSeriesYears],
+  )
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears)
 
   useEffect(() => {
     if (viewMode === 'time-series') {
@@ -904,14 +913,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         ? timeSeriesYears.map(y => parseInt(y, 10)).filter(n => !Number.isNaN(n))
                         : undefined
                     }
-                    actualDataRange={
-                      timeSeriesYears.length > 0
-                        ? {
-                            minYear: parseInt(timeSeriesYears[0], 10),
-                            maxYear: parseInt(timeSeriesYears[timeSeriesYears.length - 1], 10),
-                          }
-                        : null
-                    }
+                    actualDataRange={actualDataRange}
                   />
                 )}
                 <div>

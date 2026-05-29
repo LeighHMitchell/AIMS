@@ -166,7 +166,8 @@ export async function POST(request: NextRequest) {
 
     const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
 
     // Check if user with this email already exists
@@ -315,7 +316,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const targetUserId = body.id;
 
     if (!targetUserId) {

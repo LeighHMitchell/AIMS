@@ -223,6 +223,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                         variant="ghost"
                         size="icon"
                         onClick={() => removeSector(sector.id)}
+                        aria-label="Remove sector"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

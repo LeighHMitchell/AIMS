@@ -336,8 +336,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
+            <DialogTitle>
               User Created Successfully
             </DialogTitle>
             <DialogDescription>
@@ -416,8 +415,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
+          <DialogTitle>
             Create New User
           </DialogTitle>
           <DialogDescription>

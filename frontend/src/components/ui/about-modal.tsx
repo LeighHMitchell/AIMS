@@ -16,8 +16,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[85vh] p-0">
         <DialogHeader className="mx-0 mt-0 rounded-t-lg">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Info className="h-5 w-5" />
+          <DialogTitle className="text-xl">
             About DFMIS
           </DialogTitle>
           <DialogDescription>Learn about the system, acknowledgements, and release history.</DialogDescription>

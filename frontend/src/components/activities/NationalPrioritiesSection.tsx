@@ -413,6 +413,7 @@ export function NationalPrioritiesSection({
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-foreground"
                               onClick={() => handleEditAllocation(allocation)}
+                              aria-label="Edit allocation"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -424,6 +425,7 @@ export function NationalPrioritiesSection({
                                 setSelectedAllocation(allocation);
                                 setDeleteDialogOpen(true);
                               }}
+                              aria-label="Delete allocation"
                             >
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>

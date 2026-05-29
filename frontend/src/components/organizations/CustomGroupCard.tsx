@@ -133,6 +133,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 size="icon"
                 className="h-8 w-8 backdrop-blur-sm rounded-full border-0"
                 style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                aria-label="Group actions"
               >
                 <MoreVertical className="h-4 w-4 text-white" />
               </Button>

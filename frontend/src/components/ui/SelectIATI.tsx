@@ -36,6 +36,7 @@ interface SelectIATIProps {
   copyValue?: string; // Optional value to copy to clipboard
   onCopySuccess?: () => void;
   hideGroupLabels?: boolean; // Hide group category labels
+  hideDescriptions?: boolean; // Hide the per-option description text in the dropdown
   usePortal?: boolean; // Whether to use portal for dropdown (set to false when inside modals)
 }
 
@@ -56,6 +57,7 @@ export function SelectIATI({
   copyValue,
   onCopySuccess,
   hideGroupLabels = false,
+  hideDescriptions = false,
   usePortal = true,
 }: SelectIATIProps) {
   // Use shared dropdown state if dropdownId is provided
@@ -235,7 +237,7 @@ export function SelectIATI({
                             <Check className="h-4 w-4 shrink-0" />
                           )}
                         </div>
-                        {option.description && (
+                        {!hideDescriptions && option.description && (
                           <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                             {option.description}
                           </div>

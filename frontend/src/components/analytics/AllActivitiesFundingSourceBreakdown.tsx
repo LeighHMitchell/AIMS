@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Download } from 'lucide-react'
 import { toast } from 'sonner'
@@ -205,24 +206,16 @@ export function AllActivitiesFundingSourceBreakdown({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Source Type Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFundingSourceType('transactions')}
-                className={cn("h-8", fundingSourceType === 'transactions' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-              >
-                Transactions
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFundingSourceType('planned')}
-                className={cn("h-8", fundingSourceType === 'planned' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-              >
-                Planned Disbursements
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="Funding source type"
+              variant="text"
+              value={fundingSourceType}
+              onValueChange={setFundingSourceType}
+              options={[
+                { value: 'transactions', label: 'Transactions' },
+                { value: 'planned', label: 'Planned Disbursements' },
+              ]}
+            />
 
             {/* Transaction Type Filter (only show when viewing transactions) */}
             {fundingSourceType === 'transactions' && (
@@ -257,24 +250,16 @@ export function AllActivitiesFundingSourceBreakdown({
             )}
 
             {/* View Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFundingChartType('chart')}
-                className={cn("h-8", fundingChartType === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-              >
-                Chart
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFundingChartType('table')}
-                className={cn("h-8", fundingChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-              >
-                Table
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="View"
+              variant="text"
+              value={fundingChartType}
+              onValueChange={setFundingChartType}
+              options={[
+                { value: 'chart', label: 'Chart' },
+                { value: 'table', label: 'Table' },
+              ]}
+            />
 
             {/* Export Button */}
             <Button

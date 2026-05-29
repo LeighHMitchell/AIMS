@@ -16,6 +16,7 @@ import {
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Info, CalendarIcon, Download, BarChart3, Table as TableIcon } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -24,6 +25,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { MetricsMultiSelect } from '@/components/analytics/MetricsMultiSelect'
+import { type Metric } from '@/lib/financial-metrics'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
@@ -42,6 +45,49 @@ const COLOURS = {
   coolSteel: PERFECT_SPEND_COLOR,                // Perfect spend trajectory (reference line)
   platinum: '#f1f4f8',                           // Background/tooltips
 }
+
+// All toggleable series, in render/legend order. Single source of truth for
+// the Metrics dropdown, the legend, the <Line> elements, and the tooltip rows.
+// `dashed` mirrors the existing visual treatment (baseline + planned dashed).
+type SeriesKey =
+  | 'perfectSpend'
+  | 'cumulativeDisbursements'
+  | 'cumulativeCommitments'
+  | 'cumulativePlannedDisbursements'
+
+interface SeriesDef {
+  key: SeriesKey
+  label: string
+  color: string
+  dashed?: boolean
+  cumulative?: boolean // one of the three comparison series (not the baseline)
+}
+
+const SERIES_DEFS: SeriesDef[] = [
+  { key: 'perfectSpend', label: 'Even-Spend Budget Baseline', color: PERFECT_SPEND_COLOR, dashed: true },
+  { key: 'cumulativeDisbursements', label: 'Cumulative Aggregated Disbursements', color: getTransactionTypeColor('3'), cumulative: true },
+  { key: 'cumulativeCommitments', label: 'Cumulative Aggregated Commitments', color: getTransactionTypeColor('2'), cumulative: true },
+  { key: 'cumulativePlannedDisbursements', label: 'Cumulative Aggregated Planned Disbursements', color: PLANNED_DISBURSEMENT_COLOR, dashed: true, cumulative: true },
+]
+const CUMULATIVE_KEYS: SeriesKey[] = SERIES_DEFS.filter(s => s.cumulative).map(s => s.key)
+
+// Map between the shared financial-metric model (used by the Metrics
+// dropdown, same as the Financial Totals chart) and this chart's internal
+// series keys. The chart only plots four series, so only four metrics are
+// offered: Total Budgets → the even-spend baseline (which is derived from
+// budgets), Outgoing Commitments → commitments, Disbursements, and Planned
+// Disbursements.
+const SERIES_TO_METRIC: Record<SeriesKey, Metric> = {
+  perfectSpend: 'budgets',
+  cumulativeCommitments: 'tx_2',
+  cumulativeDisbursements: 'tx_3',
+  cumulativePlannedDisbursements: 'planned',
+}
+const METRIC_TO_SERIES = Object.fromEntries(
+  Object.entries(SERIES_TO_METRIC).map(([s, m]) => [m, s as SeriesKey])
+) as Partial<Record<Metric, SeriesKey>>
+// Offered in METRIC_DEFS order: budgets, planned, then tx codes.
+const PORTFOLIO_METRIC_KEYS: Metric[] = ['budgets', 'planned', 'tx_2', 'tx_3']
 
 // Generate list of available years (from 2010 to current year + 10 to cover all possible data)
 const AVAILABLE_YEARS = Array.from(
@@ -115,42 +161,53 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   const [data, setData] = useState<PortfolioSpendData | null>(null)
   const [plannedDisbursements, setPlannedDisbursements] = useState<PlannedDisbursement[]>([])
   const [commitments, setCommitments] = useState<Commitment[]>([])
-  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set(['cumulativePlannedDisbursements', 'cumulativeCommitments']))
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
 
-  // Which series to compare against perfect spend (only one at a time)
-  const [comparisonSeries, setComparisonSeries] = useState<'cumulativeDisbursements' | 'cumulativePlannedDisbursements' | 'cumulativeCommitments'>('cumulativeDisbursements')
+  // Which series are currently visible. Multiple may be on at once — this is
+  // the single source of truth driven by both the Metrics dropdown and the
+  // (clickable) legend. Default matches the prior behaviour: baseline +
+  // actual disbursements.
+  const [visibleSeries, setVisibleSeries] = useState<Set<SeriesKey>>(
+    new Set<SeriesKey>(['perfectSpend', 'cumulativeDisbursements'])
+  )
+  const [metricsOpen, setMetricsOpen] = useState(false)
 
-  // Toggle series visibility - for comparison series, only allow one at a time
-  const comparisonSeriesKeys = ['cumulativeDisbursements', 'cumulativePlannedDisbursements', 'cumulativeCommitments']
+  const toggleSeries = (key: SeriesKey) => {
+    setVisibleSeries(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
+  // Bridge between visibleSeries (the render driver) and the shared
+  // MetricsMultiSelect, which speaks the financial-metric model.
+  const selectedMetrics = useMemo<Metric[]>(
+    () => SERIES_DEFS.filter(s => visibleSeries.has(s.key)).map(s => SERIES_TO_METRIC[s.key]),
+    [visibleSeries]
+  )
+  const handleMetricsChange = (next: Metric[]) => {
+    const keys = next
+      .map(m => METRIC_TO_SERIES[m])
+      .filter((k): k is SeriesKey => !!k)
+    setVisibleSeries(new Set(keys))
+  }
+
+  // The striped gap area + the "Gap to baseline" tooltip row are only
+  // meaningful against a single cumulative series. When the baseline and
+  // exactly one cumulative series are visible, that series is the comparison;
+  // otherwise there is none (gap hidden).
+  const visibleCumulative = CUMULATIVE_KEYS.filter(k => visibleSeries.has(k))
+  const singleComparison: SeriesKey | null =
+    visibleSeries.has('perfectSpend') && visibleCumulative.length === 1
+      ? visibleCumulative[0]
+      : null
+
+  // Legend click mirrors the Metrics dropdown — plain toggle, no exclusivity.
   const handleLegendClick = (dataKey: string) => {
-    if (comparisonSeriesKeys.includes(dataKey)) {
-      // For comparison series, switch to this one and hide the others
-      setComparisonSeries(dataKey as typeof comparisonSeries)
-      setHiddenSeries(prev => {
-        const newSet = new Set(prev)
-        // Hide all comparison series except the clicked one
-        comparisonSeriesKeys.forEach(key => {
-          if (key === dataKey) {
-            newSet.delete(key)
-          } else {
-            newSet.add(key)
-          }
-        })
-        return newSet
-      })
-    } else {
-      // For other series (perfectSpend), toggle normally
-      setHiddenSeries(prev => {
-        const newSet = new Set(prev)
-        if (newSet.has(dataKey)) {
-          newSet.delete(dataKey)
-        } else {
-          newSet.add(dataKey)
-        }
-        return newSet
-      })
+    if (SERIES_DEFS.some(s => s.key === dataKey)) {
+      toggleSeries(dataKey as SeriesKey)
     }
   }
 
@@ -545,10 +602,15 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
     return { chartData: points, yearTicks: ticks }
   }, [data, effectiveDateRange, plannedDisbursements, commitments])
 
-  // Compute display data with dynamic gap area based on selected comparison series
+  // Compute display data with the gap area only when a single cumulative
+  // series is being compared against the baseline; otherwise leave gapArea
+  // undefined so the striped <Area> draws nothing.
   const displayData = useMemo(() => {
     return chartData.map(point => {
-      const comparisonValue = point[comparisonSeries] || 0
+      if (!singleComparison) {
+        return { ...point, gapArea: undefined }
+      }
+      const comparisonValue = point[singleComparison] || 0
       const minVal = Math.min(point.perfectSpend, comparisonValue)
       const maxVal = Math.max(point.perfectSpend, comparisonValue)
       return {
@@ -556,7 +618,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         gapArea: [minVal, maxVal] as [number, number]
       }
     })
-  }, [chartData, comparisonSeries])
+  }, [chartData, singleComparison])
 
   // Find the latest reported disbursement date
   const latestDisbursementTimestamp = useMemo(() => {
@@ -592,25 +654,6 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
     return getYearLabel(year)
   }
 
-  // Get the label for the current comparison series
-  const getComparisonLabel = () => {
-    switch (comparisonSeries) {
-      case 'cumulativeDisbursements': return 'actual disbursements'
-      case 'cumulativePlannedDisbursements': return 'planned disbursements'
-      case 'cumulativeCommitments': return 'commitments'
-      default: return 'actual disbursements'
-    }
-  }
-
-  const getComparisonColor = () => {
-    switch (comparisonSeries) {
-      case 'cumulativeDisbursements': return COLOURS.primaryScarlet
-      case 'cumulativePlannedDisbursements': return PLANNED_DISBURSEMENT_COLOR
-      case 'cumulativeCommitments': return getTransactionTypeColor('2')
-      default: return COLOURS.primaryScarlet
-    }
-  }
-
   // Export to CSV
   const handleExportCSV = () => {
     const dataToExport = displayData.map(d => ({
@@ -642,30 +685,46 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
     if (active && payload && payload.length) {
       const dataPoint = payload[0]?.payload
       const date = dataPoint?.date
-      const formattedDate = date ? new Date(date).toLocaleDateString('en-AU', {
+      // Gregorian month + year, with the selected calendar's year label
+      // appended when it differs (e.g. Myanmar FY → "May 2026 · MMFY 2025/26").
+      // Under the Gregorian calendar getYearLabel returns the plain year, so
+      // no suffix is added. Keeps the tooltip consistent with the X-axis.
+      const greg = date ? new Date(date).toLocaleDateString('en-AU', {
         month: 'long',
         year: 'numeric'
       }) : ''
+      const calLabel = dataPoint ? getYearLabel(dataPoint.year) : ''
+      const title = (calLabel && calLabel !== String(dataPoint?.year)) ? `${greg} · ${calLabel}` : greg
 
       const perfectSpend = dataPoint?.perfectSpend || 0
-      const comparisonValue = dataPoint?.[comparisonSeries] || 0
-      const variance = comparisonValue - perfectSpend
-      const varianceColor = variance >= 0 ? '#16a34a' : '#dc2626'
-      const varianceValue = (
-        <span style={{ color: varianceColor }}>
-          {Math.abs(variance) < 1
-            ? '—'
-            : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
-        </span>
-      )
 
-      const rows = [
-        { label: 'Even-spend baseline', value: formatTooltipCurrency(perfectSpend), color: COLOURS.coolSteel },
-        { label: <span className="capitalize">{getComparisonLabel()}</span>, value: formatTooltipCurrency(comparisonValue), color: getComparisonColor(), bordered: true },
-        { label: 'Gap to baseline', value: varianceValue },
-      ]
+      // One row per visible series, in SERIES_DEFS order.
+      const rows: Array<{ label: React.ReactNode; value: React.ReactNode; color?: string; bordered?: boolean }> = []
+      for (const def of SERIES_DEFS) {
+        if (!visibleSeries.has(def.key)) continue
+        const value = def.key === 'perfectSpend' ? perfectSpend : (dataPoint?.[def.key] || 0)
+        rows.push({ label: def.label, value: formatTooltipCurrency(value), color: def.color })
+      }
 
-      return <ChartTooltipCard title={formattedDate} rows={rows} />
+      // Gap-to-baseline row only when a single cumulative series is compared.
+      if (singleComparison) {
+        const comparisonValue = dataPoint?.[singleComparison] || 0
+        const variance = comparisonValue - perfectSpend
+        const varianceColor = variance >= 0 ? '#16a34a' : '#dc2626'
+        rows.push({
+          label: 'Gap to baseline',
+          bordered: true,
+          value: (
+            <span style={{ color: varianceColor }}>
+              {Math.abs(variance) < 1
+                ? '—'
+                : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
+            </span>
+          ),
+        })
+      }
+
+      return <ChartTooltipCard title={title} rows={rows} />
     }
     return null
   }
@@ -814,9 +873,8 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
 
   return (
     <div className="space-y-4 overflow-visible">
-      <div className="flex items-start justify-between gap-4 overflow-visible">
-        {/* Left side - Calendar & Year Selectors */}
-        <div className="flex items-start gap-2">
+      {/* Calendar + year selector — moved below the chart */}
+      <div className="flex items-start gap-2 mb-4">
           {customYears.length > 0 && (
             <>
               {/* Calendar Type Selector */}
@@ -930,9 +988,26 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               </div>
             </>
           )}
+      </div>
+      {/* Controls row — filters + toggles left, CSV right. */}
+      <div className="flex items-center justify-between gap-4 overflow-visible">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Metrics multi-select — the shared component used by the
+              Financial Totals & External Development Partners charts. Scoped
+              via availableKeys to the four series this chart plots. Only
+              relevant in chart view. */}
+          {viewMode === 'chart' && (
+            <MetricsMultiSelect
+              selected={selectedMetrics}
+              onChange={handleMetricsChange}
+              availableKeys={PORTFOLIO_METRIC_KEYS}
+              open={metricsOpen}
+              onOpenChange={setMetricsOpen}
+              triggerClassName="h-9 min-w-[200px] justify-between"
+            />
+          )}
         </div>
-
-        {/* Right side - View Toggle & Export Buttons */}
+        {/* Button groups + CSV, right-aligned. */}
         <div className="flex items-center gap-2">
           {/* View Toggle */}
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -957,20 +1032,19 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Export Button */}
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleExportCSV}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title="Export CSV"
-              aria-label="Export CSV"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* Export Button */}
+        <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleExportCSV}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Export CSV"
+            aria-label="Export CSV"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
         </div>
       </div>
 
@@ -1027,7 +1101,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                 <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 pt-4">
                   {payload?.filter(entry => entry.value !== 'Variance').map((entry, index) => {
                     const dataKey = entry.dataKey as string
-                    const isHidden = hiddenSeries.has(dataKey)
+                    const isHidden = !visibleSeries.has(dataKey as SeriesKey)
                     const isDashed = dataKey === 'perfectSpend' || dataKey === 'cumulativePlannedDisbursements'
 
                     return (
@@ -1078,59 +1152,59 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
             <Line
               type="linear"
               dataKey="perfectSpend"
-              name="Even-Spend Budget Baseline (USD)"
-              stroke={hiddenSeries.has('perfectSpend') ? '#cbd5e1' : COLOURS.coolSteel}
-              strokeWidth={hiddenSeries.has('perfectSpend') ? 1 : 2}
+              name="Even-Spend Budget Baseline"
+              hide={!visibleSeries.has('perfectSpend')}
+              stroke={COLOURS.coolSteel}
+              strokeWidth={2}
               strokeDasharray="8 4"
               dot={false}
               connectNulls
               isAnimationActive={false}
-              opacity={hiddenSeries.has('perfectSpend') ? 0.3 : 1}
             />
 
             {/* Cumulative Planned Disbursements */}
             <Line
               type="stepAfter"
               dataKey="cumulativePlannedDisbursements"
-              name="Cumulative Aggregated Planned Disbursements (USD)"
-              stroke={hiddenSeries.has('cumulativePlannedDisbursements') ? '#cbd5e1' : PLANNED_DISBURSEMENT_COLOR}
-              strokeWidth={hiddenSeries.has('cumulativePlannedDisbursements') ? 1 : 2}
+              name="Cumulative Aggregated Planned Disbursements"
+              hide={!visibleSeries.has('cumulativePlannedDisbursements')}
+              stroke={PLANNED_DISBURSEMENT_COLOR}
+              strokeWidth={2}
               strokeDasharray="4 2"
               dot={false}
               connectNulls
               isAnimationActive={false}
-              opacity={hiddenSeries.has('cumulativePlannedDisbursements') ? 0.3 : 1}
             />
 
             {/* Cumulative Commitments */}
             <Line
               type="stepAfter"
               dataKey="cumulativeCommitments"
-              name="Cumulative Aggregated Commitments (USD)"
-              stroke={hiddenSeries.has('cumulativeCommitments') ? '#cbd5e1' : getTransactionTypeColor('2')}
-              strokeWidth={hiddenSeries.has('cumulativeCommitments') ? 1 : 2}
+              name="Cumulative Aggregated Commitments"
+              hide={!visibleSeries.has('cumulativeCommitments')}
+              stroke={getTransactionTypeColor('2')}
+              strokeWidth={2}
               dot={false}
               connectNulls
               isAnimationActive={false}
-              opacity={hiddenSeries.has('cumulativeCommitments') ? 0.3 : 1}
             />
 
             {/* Cumulative Disbursements - stepped solid line */}
             <Line
               type="stepAfter"
               dataKey="cumulativeDisbursements"
-              name="Cumulative Aggregated Disbursements (USD)"
-              stroke={hiddenSeries.has('cumulativeDisbursements') ? '#cbd5e1' : COLOURS.primaryScarlet}
-              strokeWidth={hiddenSeries.has('cumulativeDisbursements') ? 1 : 2.5}
+              name="Cumulative Aggregated Disbursements"
+              hide={!visibleSeries.has('cumulativeDisbursements')}
+              stroke={COLOURS.primaryScarlet}
+              strokeWidth={2.5}
               dot={false}
-              activeDot={hiddenSeries.has('cumulativeDisbursements') ? false : { r: 5, strokeWidth: 0, fill: COLOURS.primaryScarlet }}
+              activeDot={{ r: 5, strokeWidth: 0, fill: COLOURS.primaryScarlet }}
               connectNulls
               isAnimationActive={false}
-              opacity={hiddenSeries.has('cumulativeDisbursements') ? 0.3 : 1}
             />
 
-            {/* Latest Data Markers - show based on selected comparison series */}
-            {comparisonSeries === 'cumulativeDisbursements' && latestDisbursementTimestamp && (
+            {/* Latest Data Markers - show for each visible cumulative series */}
+            {visibleSeries.has('cumulativeDisbursements') && latestDisbursementTimestamp && (
               <ReferenceLine
                 x={latestDisbursementTimestamp}
                 stroke={COLOURS.primaryScarlet}
@@ -1144,7 +1218,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                 }}
               />
             )}
-            {comparisonSeries === 'cumulativeCommitments' && latestCommitmentTimestamp && (
+            {visibleSeries.has('cumulativeCommitments') && latestCommitmentTimestamp && (
               <ReferenceLine
                 x={latestCommitmentTimestamp}
                 stroke={getTransactionTypeColor('2')}
@@ -1162,33 +1236,30 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
           </ComposedChart>
         </ResponsiveContainer>
         ) : (
-          /* Table View */
-          <div className="rounded-md border overflow-auto max-h-[500px]">
-            <Table>
-              <TableHeader>
-                <TableRow className="sticky top-0 bg-white z-10">
-                  <TableHead>Month</TableHead>
-                  <TableHead className="text-right">Even-Spend Budget Baseline (USD)</TableHead>
-                  <TableHead className="text-right">Planned Disbursements (USD)</TableHead>
-                  <TableHead className="text-right">Commitments (USD)</TableHead>
-                  <TableHead className="text-right">Disbursements (USD)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayData.map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{format(new Date(row.timestamp), 'MMMM yyyy')}</TableCell>
-                    <TableCell className="text-right">{formatTooltipCurrency(row.perfectSpend || 0)}</TableCell>
-                    <TableCell className="text-right">{formatTooltipCurrency(row.cumulativePlannedDisbursements || 0)}</TableCell>
-                    <TableCell className="text-right">{formatTooltipCurrency(row.cumulativeCommitments || 0)}</TableCell>
-                    <TableCell className="text-right">{formatTooltipCurrency(row.cumulativeDisbursements || 0)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          /* Table View — shared ChartDataTable (sticky header, sortable
+             columns, color squares, footer totals, h+v scroll). Money columns
+             use full-precision currency; the Month column reuses the existing
+             "MMMM yyyy" formatting of each row's timestamp. */
+          <ChartDataTable
+            rows={displayData}
+            columns={[
+              {
+                key: 'timestamp',
+                label: 'Month',
+                numeric: false,
+                format: (v) => format(new Date(Number(v)), 'MMMM yyyy'),
+              },
+              { key: 'perfectSpend', label: 'Even-Spend Budget Baseline', numeric: true, currency: 'USD', color: PERFECT_SPEND_COLOR },
+              { key: 'cumulativePlannedDisbursements', label: 'Planned Disbursements', numeric: true, currency: 'USD', color: PLANNED_DISBURSEMENT_COLOR },
+              { key: 'cumulativeCommitments', label: 'Commitments', numeric: true, currency: 'USD', color: getTransactionTypeColor('2') },
+              { key: 'cumulativeDisbursements', label: 'Disbursements', numeric: true, currency: 'USD', color: COLOURS.primaryScarlet },
+            ]}
+            currency="USD"
+            maxHeight={500}
+          />
         )}
       </div>
+
 
       {/* Explanatory Text */}
       <div className="text-helper text-muted-foreground mt-4 space-y-2">

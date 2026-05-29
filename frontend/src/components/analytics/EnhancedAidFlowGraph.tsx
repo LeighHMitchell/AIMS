@@ -886,20 +886,20 @@ export default function EnhancedAidFlowGraph({
           {/* Cluster/Spread Controls */}
           <div className="flex gap-1 bg-white/90 backdrop-blur rounded-lg border p-1">
             <Button
-              variant={clusterLevel === 'clustered' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={handleCluster}
-              className="h-8 px-3"
+              className={`h-8 px-3 ${clusterLevel === 'clustered' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               title="Bring nodes together"
             >
               <Shrink className="h-4 w-4 mr-1" />
               <span className="text-helper">Cluster</span>
             </Button>
             <Button
-              variant={clusterLevel === 'spread' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={handleSpread}
-              className="h-8 px-3"
+              className={`h-8 px-3 ${clusterLevel === 'spread' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               title="Spread nodes apart"
             >
               <Expand className="h-4 w-4 mr-1" />

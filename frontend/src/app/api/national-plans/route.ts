@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database not available' }, { status: 500 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { name, acronym, nameLocal, description, planType = 'national', level1Label = 'Goal', level2Label = 'Objective', level3Label = 'Action', isPrimary = false, startDate, endDate, isActive = true } = body;
 
     if (!name?.trim()) {

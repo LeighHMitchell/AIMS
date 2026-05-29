@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
+import { codeAndName } from '@/lib/iati/codelist-resolver'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest) {
 
       const balance = contributions - disbursements
       const utilisation = contributions > 0 ? ((disbursements / contributions) * 100).toFixed(1) : '0.0'
+      const status = codeAndName('activity_status', fund.activity_status)
 
       return {
         fund_name: fund.title_narrative,
@@ -109,7 +111,8 @@ export async function GET(request: NextRequest) {
         balance: balance.toFixed(2),
         utilisation_percent: utilisation,
         child_activities: childCounts[fund.id] || 0,
-        status: fund.activity_status || 'Unknown',
+        activity_status_code: status.code,
+        activity_status_name: status.name,
       }
     })
 

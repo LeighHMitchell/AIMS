@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build count query
-    let countQuery = supabase.from('activities').select('*', { count: 'exact', head: true });
+    let countQuery = supabase.from('activities').select('*', { count: 'estimated', head: true });
 
     // SLIM SELECT: Only essential fields for list view
     let dataQuery = supabase

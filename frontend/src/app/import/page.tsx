@@ -64,7 +64,7 @@ export default function ImportPage() {
             return (
               <Card
                 key={option.id}
-                className={`p-6 hover:shadow-lg transition-shadow cursor-pointer ${option.color}`}
+                className={`p-6 hover:shadow-card-hover transition-shadow cursor-pointer ${option.color}`}
               >
                 <Link href={option.href}>
                   <div className="space-y-4">

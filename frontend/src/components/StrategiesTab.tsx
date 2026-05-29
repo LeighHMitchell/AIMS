@@ -288,7 +288,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
           ) : (
             <div className="space-y-4">
               {strategies.map((strategy) => (
-                <Card key={strategy.id} className="hover:shadow-md transition-shadow">
+                <Card key={strategy.id} className="hover:shadow-card-hover transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

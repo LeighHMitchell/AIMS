@@ -180,7 +180,7 @@ export default function BulkImportExecutionStep({
   return (
     <div className="space-y-6">
       {/* Progress - Monochrome */}
-      <Card className="border-border">
+      <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ export default function BulkImportExecutionStep({
       )}
 
       {/* Per-activity status table - Monochrome */}
-      <Card className="border-border">
+      <Card>
         <CardContent className="p-0">
           <ScrollArea className="h-80">
             <Table>

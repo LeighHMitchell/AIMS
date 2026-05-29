@@ -201,7 +201,7 @@ export default function PolicyMarkerProfilePage() {
           ]} />
 
           {/* Hero Banner */}
-          <Card className="mb-6 border-0 shadow-sm overflow-hidden" style={{ borderTop: `4px solid ${themeColor}` }}>
+          <Card className="mb-6 border-0 overflow-hidden" style={{ borderTop: `4px solid ${themeColor}` }}>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ backgroundColor: `${themeColor}15`, border: `2px solid ${themeColor}40` }}>
@@ -231,7 +231,7 @@ export default function PolicyMarkerProfilePage() {
           {/* Mini Chart Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Funding Trends */}
-            <Card className="border-border">
+            <Card>
               <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Funding Trends</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {transactionsByYear.length > 0 ? (
@@ -262,7 +262,7 @@ export default function PolicyMarkerProfilePage() {
             </Card>
 
             {/* Significance Distribution mini */}
-            <Card className="border-border">
+            <Card>
               <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Significance Distribution</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 <SignificanceDistribution distribution={significanceDistribution} themeColor={themeColor} compact />
@@ -270,7 +270,7 @@ export default function PolicyMarkerProfilePage() {
             </Card>
 
             {/* Top Donors mini */}
-            <Card className="border-border">
+            <Card>
               <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Top Development Partners</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {donorRankings.length > 0 ? (
@@ -291,7 +291,7 @@ export default function PolicyMarkerProfilePage() {
             </Card>
 
             {/* Geographic Spread mini */}
-            <Card className="border-border">
+            <Card>
               <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Geographic Spread</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {geographicDistribution.length > 0 ? (
@@ -502,7 +502,7 @@ export default function PolicyMarkerProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedActivities.map(activity => (
                     <Link key={activity.id} href={`/activities/${activity.id}`}>
-                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+                      <Card className="h-full hover:shadow-card-hover transition-shadow cursor-pointer">
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-2">
                             <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
@@ -576,7 +576,7 @@ export default function PolicyMarkerProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredOrgs.map(org => (
                     <Link key={org.id} href={`/organizations/${org.id}`}>
-                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-6">
+                      <Card className="h-full hover:shadow-card-hover transition-shadow cursor-pointer"><CardContent className="p-6">
                         <div className="flex items-start gap-3">
                           {org.logo ? <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" /> : (
                             <div className="w-10 h-10 rounded flex items-center justify-center text-white text-helper font-bold flex-shrink-0" style={{ backgroundColor: `${themeColor}CC` }}>

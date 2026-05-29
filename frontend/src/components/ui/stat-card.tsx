@@ -35,7 +35,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        onClick && "cursor-pointer hover:shadow-md transition-shadow",
+        onClick && "cursor-pointer hover:shadow-card-hover transition-shadow",
         className
       )}
       onClick={onClick}

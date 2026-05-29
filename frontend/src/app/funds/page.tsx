@@ -310,7 +310,7 @@ export default function FundsPage() {
               return (
                 <Card
                   key={fund.id}
-                  className="bg-card border border-border hover:border-border hover:shadow-lg transition-all duration-300 ease-in-out shadow-sm rounded-lg relative"
+                  className="bg-card hover:border-border hover:shadow-card-hover transition-all duration-300 ease-in-out shadow-sm rounded-lg relative"
                 >
                   {fund.banner && (
                     <div className="relative h-32 w-full overflow-hidden rounded-t-lg">

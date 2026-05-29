@@ -169,7 +169,7 @@ export default function FinancialCompletenessPage() {
 
           {/* Error State */}
           {error && (
-            <Card className="border-border bg-surface-muted mb-6">
+            <Card className="bg-surface-muted mb-6">
               <CardContent className="flex items-center gap-3 py-6">
                 <div>
                   <p className="font-medium text-foreground">Unable to load financial completeness data.</p>

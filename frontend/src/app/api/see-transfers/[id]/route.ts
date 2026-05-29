@@ -43,7 +43,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const allowedFields = [
     'see_name', 'see_sector', 'see_ministry', 'description', 'status', 'transfer_mode',

@@ -1113,7 +1113,7 @@ export default function PartnersPage() {
             {viewMode === 'table' && (<><TabsContent value="type">
               <div className="space-y-4">
                 {/* Bilateral Partners Table */}
-                <Card className="bg-white border border-border">
+                <Card className="bg-white">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-semibold text-foreground">
                       Bilateral Partners
@@ -1222,7 +1222,7 @@ export default function PartnersPage() {
                 {getOrganizationsByInstitutionalGroup()
                   .filter(institutionalGroup => filterOrganizations(institutionalGroup.organizations).length > 0)
                   .map((institutionalGroup) => (
-                  <Card key={institutionalGroup.name} className="bg-white border border-border">
+                  <Card key={institutionalGroup.name} className="bg-white">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg font-semibold text-foreground">
                         {institutionalGroup.name}
@@ -1441,7 +1441,7 @@ export default function PartnersPage() {
             <TabsContent value="custom">
               <div className="space-y-4">
                 {summaryData.customGroups.length === 0 ? (
-                  <Card className="bg-white border border-border">
+                  <Card className="bg-white">
                     <CardContent className="py-12 text-center">
                       <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-foreground mb-2">No Custom Groups</h3>
@@ -1461,7 +1461,7 @@ export default function PartnersPage() {
                     const sortedOrgs = sortOrganizations(filteredOrgs);
 
                     return (
-                      <Card key={group.id} className="bg-white border border-border">
+                      <Card key={group.id} className="bg-white">
                         <CardHeader 
                           className="cursor-pointer hover:bg-muted/50 transition-colors py-4"
                           onClick={() => toggleGroup(group.id)}

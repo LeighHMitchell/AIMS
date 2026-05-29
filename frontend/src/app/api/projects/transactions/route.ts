@@ -84,7 +84,8 @@ export async function GET(request: NextRequest) {
 // POST /api/projects/transactions - Create a new transaction
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Validate required fields
     const requiredFields = [
@@ -145,7 +146,8 @@ export async function POST(request: NextRequest) {
 // PATCH /api/projects/transactions - Update a transaction
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { id, ...updates } = body;
 
     if (!id) {
@@ -224,7 +226,8 @@ export async function DELETE(request: NextRequest) {
 // PUT /api/projects/transactions/submit - Submit transactions for approval
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { projectId, contributorOrgId } = body;
 
     if (!projectId || !contributorOrgId) {

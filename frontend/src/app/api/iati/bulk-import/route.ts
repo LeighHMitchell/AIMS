@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const data: BulkImportRequest = await request.json();
+    const data: BulkImportRequest = await request.json().catch(() => null);
+    if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { activities, selectedActivityIds, importRules, meta, organizationId } = data;
 
     // Fetch user's role using admin client to bypass RLS (users table has recursive policy)

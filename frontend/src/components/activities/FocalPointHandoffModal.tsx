@@ -142,8 +142,7 @@ export function FocalPointHandoffModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ArrowRight className="h-5 w-5" />
+          <DialogTitle>
             Handoff Focal Point Role
           </DialogTitle>
           <DialogDescription>

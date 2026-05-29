@@ -316,7 +316,7 @@ export function ActivityFreshnessChart() {
   // Loading state
   if (loading) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5" />
@@ -336,7 +336,7 @@ export function ActivityFreshnessChart() {
   // Error state
   if (error) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5" />
@@ -357,7 +357,7 @@ export function ActivityFreshnessChart() {
   }
 
   return (
-    <Card className="bg-white border-border">
+    <Card className="bg-white">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

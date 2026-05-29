@@ -83,8 +83,7 @@ export function EmailChangeConfirmDialog({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+          <DialogTitle>
             Change Email Address
           </DialogTitle>
           <DialogDescription>

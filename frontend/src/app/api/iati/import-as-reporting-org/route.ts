@@ -9,6 +9,7 @@ import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 import { getSystemHomeCountry } from '@/lib/system-settings';
+import { extractAcronymFromTitle } from '@/lib/text-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,9 @@ export async function POST(request: NextRequest) {
 
   const homeCountryCode = await getSystemHomeCountry(supabase);
   try {
-    const { xmlContent, userId, userRole, replaceActivityIds, activityId, fields, iati_data, selectedReportingOrgId, acronyms } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { xmlContent, userId, userRole, replaceActivityIds, activityId, fields, iati_data, selectedReportingOrgId, acronyms } = body;
     console.log('[Import as Reporting Org] Request received:', { 
       hasXmlContent: !!xmlContent, 
       userId, 
@@ -369,19 +372,27 @@ export async function POST(request: NextRequest) {
           existingTitle: existing.title_narrative || 'Untitled Activity'
         });
         
-        // If this activity ID is in the replace list, delete it first
-        if (replaceActivityIds && Array.isArray(replaceActivityIds) && replaceActivityIds.includes(existing.id)) {
+        // Decide whether to supersede the existing activity that owns this IATI ID:
+        //  - it's in the explicit replace list (re-import into the same activity), OR
+        //  - we're importing into a specific draft (activityId) while a DIFFERENT activity owns this
+        //    IATI ID. Without this, the import silently SKIPS and the draft is left with child records
+        //    (transactions/budgets) but no title/reporting-org. iati_identifier is unique, so the old
+        //    owner must be removed before the draft can take the identifier.
+        const isExplicitReplace = Array.isArray(replaceActivityIds) && replaceActivityIds.includes(existing.id);
+        const supersedeForDraftImport = !!activityId && existing.id !== activityId;
+        if (isExplicitReplace || supersedeForDraftImport) {
           const { error: deleteError } = await supabase
             .from('activities')
             .delete()
             .eq('id', existing.id);
 
           if (deleteError) {
-            console.error(`[Import as Reporting Org] Error deleting activity ${existing.id}:`, deleteError);
+            console.error(`[Import as Reporting Org] Error deleting existing activity ${existing.id}:`, deleteError);
             // If deletion failed, don't add to import list - it will be skipped
             skippedIdentifiers.push(iatiIdentifier);
             continue;
           } else {
+            console.log(`[Import as Reporting Org] Superseded existing activity ${existing.id} for IATI ID ${iatiIdentifier} (importing into ${activityId || 'new activity'})`);
             // Now we can import this one
             activitiesToImport.push({ iatiIdentifier, activityData });
             continue;
@@ -894,10 +905,16 @@ export async function POST(request: NextRequest) {
               }
             });
 
-            // ALWAYS overwrite title with server-parsed value (don't check if already set)
+            // ALWAYS overwrite title with server-parsed value (don't check if already set).
+            // If the user kept a detected acronym (it arrives in `acronyms`), strip it from the
+            // title here so the acronym lives only in the acronym field and the title stays clean.
             if (activityData.title) {
-              const oldTitle = activityInsert.title_narrative;
-              activityInsert.title_narrative = activityData.title;
+              if (userProvidedAcronym) {
+                const { cleanTitle } = extractAcronymFromTitle(activityData.title);
+                activityInsert.title_narrative = cleanTitle || activityData.title;
+              } else {
+                activityInsert.title_narrative = activityData.title;
+              }
             }
 
             // ALWAYS overwrite description with server-parsed value
@@ -981,9 +998,13 @@ export async function POST(request: NextRequest) {
           const sanitizedDesc = activityData.description
             ? sanitizeIatiDescriptionServerSafe(activityData.description)
             : null;
+          // If the user kept a detected acronym, strip it from the title.
+          const cleanedTitle = userProvidedAcronym && activityData.title
+            ? (extractAcronymFromTitle(activityData.title).cleanTitle || activityData.title)
+            : activityData.title;
           activityInsert = {
             ...activityInsert,
-            title_narrative: activityData.title || `Imported Activity: ${iatiIdentifier}`,
+            title_narrative: cleanedTitle || `Imported Activity: ${iatiIdentifier}`,
             acronym: userProvidedAcronym || null,
             description_narrative: sanitizedDesc,
             activity_status: activityData.activityStatus || 'implementation',
@@ -2189,6 +2210,16 @@ export async function POST(request: NextRequest) {
       console.error('[Import as Reporting Org] Error logging import:', logError);
       // Don't fail the request if logging fails
     }
+
+    // 🧭 One-line outcome summary for diagnosing why an activity record may not get updated
+    console.log('[Import as Reporting Org] 🧭 IMPORT OUTCOME SUMMARY:', {
+      activityIdReceived: activityId || null,
+      replaceActivityIds: replaceActivityIds || null,
+      duplicatesFound: duplicates.map(d => ({ iatiId: d.iatiIdentifier, existingId: d.existingId })),
+      skippedIdentifiers,
+      importedActivityIds: importedActivities.map((a: any) => a.id),
+      importErrors,
+    });
 
     // Track analytics
     iatiAnalytics.optionSelected('reporting_org', meta.iatiId, reportingOrgRef);

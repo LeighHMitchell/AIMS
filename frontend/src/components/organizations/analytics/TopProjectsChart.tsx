@@ -113,7 +113,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
 
   if (projects.length === 0) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Top 10 Projects by Budget
@@ -129,7 +129,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
   }
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-foreground">
           Top 10 Projects by Budget

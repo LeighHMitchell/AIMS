@@ -11,7 +11,8 @@ export async function PATCH(
   if (authResponse) return authResponse;
 
   const { id, docId } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const updates: Record<string, string> = {};
 
   if (body.file_name && typeof body.file_name === 'string') {

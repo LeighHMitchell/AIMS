@@ -8,7 +8,8 @@ export async function POST(request: NextRequest) {
   if (authResponse) return authResponse;
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
 
     // Validate required fields
@@ -91,7 +92,8 @@ export async function PUT(request: NextRequest) {
   if (authResponse) return authResponse;
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
 
     if (!body.id) {

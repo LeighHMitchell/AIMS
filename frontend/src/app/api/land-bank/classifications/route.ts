@@ -35,7 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Only super users can manage classifications' }, { status: 403 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   if (!body.name?.trim()) {
     return NextResponse.json({ error: 'Classification name is required' }, { status: 400 });

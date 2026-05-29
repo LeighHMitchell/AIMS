@@ -21,6 +21,8 @@ import {
   ProfileTabs,
   type ProfileTabSpec,
   type HeroAccent,
+  HERO_HEIGHT_WITH_IMAGE,
+  HERO_HEIGHT_WITHOUT_IMAGE,
   RailIdentity,
   useShrinkOnScroll,
   type IdentityRow,
@@ -183,7 +185,11 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
   const accent = deriveOrgAccent(organization)
   // Shrink-on-scroll progress drives both the hero fade and the compact-strip
   // appearance so the org name + IATI ref + actions stay pinned at the top.
-  const shrinkProgress = useShrinkOnScroll(200)
+  // Threshold = hero height so the fade finishes exactly as the hero scrolls
+  // off (no empty gap between the fading hero and the sticky strip).
+  const shrinkProgress = useShrinkOnScroll(
+    organization?.banner ? HERO_HEIGHT_WITH_IMAGE : HERO_HEIGHT_WITHOUT_IMAGE
+  )
 
   // Pre-mount every tab so switching is instant. Same pattern as the activity
   // profile: hidden tabs sit under display:none but their data fetches still
@@ -311,7 +317,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 text-slate-900 bg-slate-200 hover:bg-slate-300 hover:text-slate-900"
+        className="h-9 w-9 text-foreground bg-white/90 shadow-sm hover:bg-white"
         onClick={toggleBookmark}
         title={isBookmarked ? "Saved" : "Save"}
         aria-label={isBookmarked ? "Saved" : "Save"}
@@ -323,7 +329,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-slate-900 bg-slate-200 hover:bg-slate-300 hover:text-slate-900"
+            className="h-9 w-9 text-foreground bg-white/90 shadow-sm hover:bg-white"
             title="Export"
             aria-label="Export"
           >
@@ -343,7 +349,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       </DropdownMenu>
       <Link
         href={`/organizations/${organization.id}/edit`}
-        className="ml-1 inline-flex items-center h-9 rounded-md bg-white/95 px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
+        className="ml-1 inline-flex items-center h-9 rounded-md bg-white/90 shadow-sm px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
       >
         <Pencil className="w-3.5 h-3.5 mr-1.5" />
         Edit
@@ -355,7 +361,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
     <button
       type="button"
       onClick={() => router.push("/organizations")}
-      className="inline-flex items-center gap-1.5 h-9 text-slate-900 text-[12px] px-3 rounded-md bg-slate-200 hover:bg-slate-300 transition-colors"
+      className="inline-flex items-center gap-1.5 h-9 text-foreground text-[12px] px-3 rounded-md bg-white/90 shadow-sm hover:bg-white transition-colors"
     >
       <ArrowLeft className="w-3.5 h-3.5" />
       All organisations
@@ -585,6 +591,7 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       hero={
         <ProfileHero
           prefix={heroPrefix}
+          prefixBelowTitle
           title={heroTitle}
           subtitle={heroSubtitle}
           accent={accent}
@@ -842,7 +849,7 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
 
   if (loading) {
     return (
-      <Card className="border-border bg-card p-6">
+      <Card className="bg-card p-6">
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-10 bg-muted/40 rounded animate-pulse" />
@@ -854,14 +861,14 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
 
   if (activities.length === 0) {
     return (
-      <Card className="border-border bg-card p-8 text-center">
+      <Card className="bg-card p-8 text-center">
         <p className="text-helper text-muted-foreground">No activities found for this organisation.</p>
       </Card>
     )
   }
 
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activities</h2>
         <p className="text-body text-muted-foreground">
@@ -1084,7 +1091,7 @@ function OrganizationPartnershipsTab({ organizationId }: { organizationId: strin
   }, [organizationId])
 
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Partnerships</h2>
         <p className="text-body text-muted-foreground">
@@ -1202,7 +1209,7 @@ function OrganizationPeopleTab({ organizationId }: { organizationId: string }) {
   }, [organizationId])
 
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">People</h2>
         <p className="text-body text-muted-foreground">
@@ -1296,7 +1303,7 @@ function OrganizationDocumentsTab({ organizationId }: { organizationId: string }
   }, [organizationId])
 
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Documents</h2>
         <p className="text-body text-muted-foreground">

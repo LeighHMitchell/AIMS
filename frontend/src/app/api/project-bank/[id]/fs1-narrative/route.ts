@@ -42,7 +42,8 @@ export async function POST(
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   // Validate required fields and minimum character counts
   for (const field of REQUIRED_FIELDS) {
@@ -129,7 +130,8 @@ export async function PUT(
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   if (!body.narrative_id) {
     return NextResponse.json({ error: 'narrative_id is required' }, { status: 400 });

@@ -10,6 +10,7 @@ import {
   Tooltip,
   Cell,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
@@ -44,22 +45,45 @@ import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { ChartDataTable } from '@/components/ui/chart-data-table';
+import { YearRangeChip } from '@/components/ui/year-range-chip';
+import { MetricsMultiSelect } from '@/components/analytics/MetricsMultiSelect';
+import { type Metric } from '@/lib/financial-metrics';
+
+// The capital APIs support these four sources; map the shared Metric keys to the
+// API's metric tokens (tx_2 = commitments, tx_3 = disbursements).
+const CAPITAL_METRIC_KEYS: Metric[] = ['budgets', 'planned', 'tx_2', 'tx_3'];
+const METRIC_TO_API: Partial<Record<Metric, string>> = {
+  budgets: 'budgets',
+  planned: 'planned',
+  tx_2: 'commitments',
+  tx_3: 'disbursements',
+};
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "table";
 
+// Full span of years the picker can offer (2010 → current + 10), used to default
+// the selection to the entire available range rather than a rolling window.
+const AVAILABLE_YEARS = Array.from(
+  { length: new Date().getFullYear() - 2010 + 11 },
+  (_, i) => 2010 + i
+);
+
 interface ActivityCapitalSpend {
   id: string;
   title: string;
+  acronym: string;
   iatiIdentifier: string;
   capitalSpendPercentage: number;
   baseValue: number;
   capitalSpendValue: number;
 }
 
-// Single Blue Slate fill for all bars — bar length already encodes
-// ranking, so a varying ramp would just add noise.
+// Capital portion in Blue Slate; the rest of the activity's value in Pale Slate
+// so the full bar reads as the activity's total value (stacked).
 const BAR_COLOR = '#4c5568';
+const NON_CAPITAL_COLOR = '#cfd0d5';
 
 const METRIC_OPTIONS = [
   { value: "budgets", label: "Total Budgets" },
@@ -145,9 +169,11 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
   const isExpanded = useChartExpansion();
   const [data, setData] = useState<ActivityCapitalSpend[]>([]);
   const [loading, setLoading] = useState(true);
-  const [metric, setMetric] = useState<MetricType>("disbursements");
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>(['tx_3']);
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
-  const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
+  // Standard calendar + year-range selection (replaces the old time-range filter).
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
+  const [dateWindow, setDateWindow] = useState<{ from: Date; to: Date } | null>(null);
   const [grandTotal, setGrandTotal] = useState(0);
   const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
   const filterOpenHandler = (key: Exclude<OpenFilter, null>) => (open: boolean) => {
@@ -158,14 +184,10 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({ metric });
-      const { from, to } = getDateRangeFromTimeRange(timeRange);
-      if (from) {
-        params.set("dateFrom", from.toISOString());
-      }
-      if (to) {
-        params.set("dateTo", to.toISOString());
-      }
+      const apiMetrics = selectedMetrics.map(m => METRIC_TO_API[m]).filter(Boolean) as string[];
+      const params = new URLSearchParams({ metrics: apiMetrics.join(',') || 'disbursements' });
+      if (dateWindow?.from) params.set("dateFrom", dateWindow.from.toISOString());
+      if (dateWindow?.to) params.set("dateTo", dateWindow.to.toISOString());
 
       const response = await apiFetch(`/api/analytics/top-capital-spend-activities?${params}`);
       const result = await response.json();
@@ -182,11 +204,21 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
     } finally {
       setLoading(false);
     }
-  }, [metric, timeRange]);
+  }, [selectedMetrics, dateWindow]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData, refreshKey]);
+
+  // Default the year picker to the full available span (min → max) on first
+  // mount; later user selections stick. Aggregated data has no per-year field,
+  // so we default to the picker's full range rather than a derived data range.
+  useEffect(() => {
+    if (selectedYears.length === 0) setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // (fetchData is recreated when metric/dateWindow change via useCallback deps.)
 
   const handleExport = () => {
     if (!data || data.length === 0) {
@@ -200,7 +232,7 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
       "Base Value (USD)": d.baseValue,
       "Capital Spend (USD)": d.capitalSpendValue,
     }));
-    exportChartToCSV(exportData, `top-capital-spend-activities-${metric}`);
+    exportChartToCSV(exportData, `top-capital-spend-activities`);
     toast.success("Data exported successfully");
   };
 
@@ -212,13 +244,14 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
       ) : undefined;
       return (
         <ChartTooltipCard
-          title={item.title}
+          title={item.acronym ? `${item.title} (${item.acronym})` : item.title}
           subtitle={subtitle}
           maxWidth={320}
           rows={[
             { label: 'Capital Spend %', value: `${item.capitalSpendPercentage.toFixed(1)}%` },
-            { label: 'Base Value', value: formatTooltipCurrency(item.baseValue, isExpanded) },
+            { label: 'Total Value', value: formatTooltipCurrency(item.baseValue, isExpanded) },
             { label: 'Capital Spend', value: formatTooltipCurrency(item.capitalSpendValue, isExpanded), color: BAR_COLOR },
+            { label: 'Non-Capital', value: formatTooltipCurrency(item.baseValue - item.capitalSpendValue, isExpanded), color: NON_CAPITAL_COLOR },
           ]}
         />
       );
@@ -226,11 +259,12 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
     return null;
   };
 
-  // Prepare chart data with just the title (no acronym)
-  const chartData = data.map((item, index) => ({
+  // Prepend the acronym to the activity name (when present); the stacked bar
+  // shows the capital portion plus the remainder of the activity's total value.
+  const chartData = data.map((item) => ({
     ...item,
-    displayName: item.title,
-    fill: BAR_COLOR,
+    displayName: item.acronym ? `${item.acronym} — ${item.title}` : item.title,
+    nonCapital: Math.max(0, item.baseValue - item.capitalSpendValue),
   }));
 
   // Custom Y-axis tick component for wrapping text (max 4 lines)
@@ -296,7 +330,9 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
   };
 
   const renderBarChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
+    // Explicit height when expanded — the dialog body is auto-height, so a
+    // height="100%" container would collapse to 0 and the chart wouldn't show.
+    <ResponsiveContainer width="100%" height={isExpanded ? 480 : "100%"}>
       <BarChart
         data={chartData}
         layout="vertical"
@@ -322,49 +358,49 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
           tick={<CustomYAxisTick />}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
-        <Bar dataKey="capitalSpendValue" radius={[0, 4, 4, 0]} maxBarSize={40}>
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
-          ))}
-        </Bar>
+        <Legend
+          wrapperStyle={{ fontSize: 11 }}
+          formatter={(value) => (
+            <span className="text-muted-foreground">{value === 'capitalSpendValue' ? 'Capital spend' : 'Other value'}</span>
+          )}
+        />
+        {/* Stacked: capital portion + the remainder of the activity's total value. */}
+        <Bar dataKey="capitalSpendValue" stackId="a" fill={BAR_COLOR} name="capitalSpendValue" maxBarSize={40} radius={[0, 0, 0, 0]} />
+        <Bar dataKey="nonCapital" stackId="a" fill={NON_CAPITAL_COLOR} name="nonCapital" maxBarSize={40} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
 
   const renderTable = () => (
-    <div className="overflow-auto h-full">
-      <Table>
-        <TableHeader>
-          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-            <TableHead>Activity</TableHead>
-            <TableHead className="text-right">Capital %</TableHead>
-            <TableHead className="text-right whitespace-normal">Capital Spend (USD)</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((activity) => (
-            <TableRow key={activity.id}>
-              <TableCell>
-                <div>
-                  <div className="font-medium truncate max-w-[200px]" title={activity.title}>
-                    {activity.title}
-                  </div>
-                  {activity.iatiIdentifier && (
-                    <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded inline-block">{activity.iatiIdentifier}</span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                {activity.capitalSpendPercentage.toFixed(1)}%
-              </TableCell>
-              <TableCell className="text-right font-mono">
-                {formatCurrencyFull(activity.capitalSpendValue)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <ChartDataTable
+      rows={data}
+      columns={[
+        {
+          key: 'title',
+          label: 'Activity',
+          numeric: false,
+          format: (_v, row) => (
+            <span>
+              {row.title}
+              {(row as any).iatiIdentifier && (
+                <span className="block font-normal text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded mt-1 w-fit">
+                  {(row as any).iatiIdentifier}
+                </span>
+              )}
+            </span>
+          ),
+        },
+        {
+          key: 'capitalSpendPercentage',
+          label: 'Capital %',
+          numeric: true,
+          includeInTotal: false,
+          format: (v) => `${(Number(v) || 0).toFixed(1)}%`,
+        },
+        { key: 'capitalSpendValue', label: 'Capital Spend (USD)', numeric: true, currency: 'USD' },
+      ]}
+      maxHeight="100%"
+    />
   );
 
   const renderContent = () => {
@@ -391,50 +427,19 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
   };
 
   const renderControls = () => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
-      <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)} open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
-        <SelectTrigger className="min-w-[280px]">
-          <span className="flex items-center gap-2 truncate">
-            {metric === 'budgets' && <Wallet className="h-4 w-4 flex-shrink-0" />}
-            {metric === 'planned' && <Calendar className="h-4 w-4 flex-shrink-0" />}
-            {metric === 'commitments' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
-            {metric === 'disbursements' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
-            <span className="truncate">
-              {metric === 'budgets' && 'Total Budgets'}
-              {metric === 'planned' && 'Total Planned Disbursements'}
-              {metric === 'commitments' && 'Total Commitments'}
-              {metric === 'disbursements' && 'Total Disbursements'}
-            </span>
-          </span>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="budgets">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              <span>Total Budgets</span>
-            </div>
-          </SelectItem>
-          <SelectItem value="planned">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>Total Planned Disbursements</span>
-            </div>
-          </SelectItem>
-          <SelectItem value="commitments">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span>Total Commitments</span>
-            </div>
-          </SelectItem>
-          <SelectItem value="disbursements">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span>Total Disbursements</span>
-            </div>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-
+    <div className="flex items-center justify-between gap-2 mb-3 flex-shrink-0">
+        {/* Filters + toggles (left) — shared metrics multi-select (Budgets,
+            Planned Disbursements, Outgoing Commitments, Disbursements). */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <MetricsMultiSelect
+            selected={selectedMetrics}
+            onChange={setSelectedMetrics}
+            availableKeys={CAPITAL_METRIC_KEYS}
+            triggerClassName="h-8 justify-between min-w-[240px]"
+          />
+        </div>
+        {/* Button groups + CSV, right-aligned. */}
+        <div className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1">
         {/* View mode toggles */}
         <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -460,7 +465,8 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
           </Button>
         </div>
 
-        {/* Export button - only in expanded view */}
+        </div>
+        {/* Export button - only in expanded view, right-aligned alone */}
         {!compact && (
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -475,35 +481,29 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
             </Button>
           </div>
         )}
-      </div>
+        </div>
     </div>
   );
 
-  const renderTimeRangeFilter = () => (
+  // Standard calendar + year-range picker (replaces the old time-range select).
+  const renderCalendarYear = () => (
     <div className="mb-4">
-      <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)} open={openFilter === 'timeRange'} onOpenChange={filterOpenHandler('timeRange')}>
-        <SelectTrigger className="w-[140px] h-8 text-helper">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {TIME_RANGE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.value === "all" ? "All Time" : `Last ${option.label}`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <YearRangeChip
+        selectedYears={selectedYears}
+        onYearsChange={setSelectedYears}
+        onDateRangeChange={setDateWindow}
+      />
     </div>
   );
 
   return (
     <div className="h-full flex flex-col">
-      {!compact && renderTimeRangeFilter()}
-      {renderContent()}
+      {!compact && renderCalendarYear()}
       {!compact && renderControls()}
+      {renderContent()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart ranks the top activities by their capital spend value. Each bar shows the absolute capital expenditure amount, calculated by applying the activity&apos;s capital spend percentage to its base financial value. Use the metric and time range selectors to adjust the view.
+          This chart ranks the top activities by capital spend value. Each bar is stacked to show the activity&apos;s total value, with the capital portion highlighted (capital % applied to the selected metric). Use the calendar/year and metric selectors to adjust the view.
         </p>
       )}
     </div>

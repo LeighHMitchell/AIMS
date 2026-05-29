@@ -395,8 +395,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 py-4 mx-0 mt-0">
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+            <DialogTitle>
               Comments
               {comments.length > 0 && (
                 <span className="text-body text-muted-foreground font-normal">({comments.length})</span>

@@ -46,10 +46,12 @@ import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { useCustomYears } from "@/hooks/useCustomYears";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { YearRangeChip } from "@/components/ui/year-range-chip";
+import { getCustomYearLabel } from "@/types/custom-years";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 
 // Color palette for modalities — slate-only for dashboard consistency.
 const MODALITY_COLORS: Record<string, string> = {
@@ -117,23 +119,32 @@ export function FundingByModalityChart() {
   const [chartMode, setChartMode] = useState<ChartMode>('stacked');
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [transactionType, setTransactionType] = useState<TransactionType>('disbursements');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const isExpanded = useChartExpansion();
   const [viewMode, setViewMode] = useState<ViewMode>('chart');
 
-  // Custom year selection
+  // Custom year selection + calendar/year-range picker
   const {
     customYears,
     selectedId: selectedCustomYearId,
     setSelectedId: setSelectedCustomYearId,
-    loading: customYearsLoading,
   } = useCustomYears();
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
+  const [dateWindow, setDateWindow] = useState<{ from: Date; to: Date } | null>(null);
+
+  // X-axis labels follow the selected calendar (e.g. fiscal-year labels).
+  const selectedCustomYear = customYears?.find((c: any) => c.id === selectedCustomYearId);
+  const formatYearTick = (v: any) =>
+    selectedCustomYear ? getCustomYearLabel(selectedCustomYear, Number(v)) : String(v);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await apiFetch(`/api/analytics/funding-by-modality?type=${transactionType}`);
+      const params = new URLSearchParams({ type: transactionType });
+      if (dateWindow?.from) params.set('dateFrom', dateWindow.from.toISOString());
+      if (dateWindow?.to) params.set('dateTo', dateWindow.to.toISOString());
+      const response = await apiFetch(`/api/analytics/funding-by-modality?${params.toString()}`);
       const result = await response.json();
 
       if (!result.success) {
@@ -148,7 +159,7 @@ export function FundingByModalityChart() {
     } finally {
       setLoading(false);
     }
-  }, [transactionType]);
+  }, [transactionType, dateWindow]);
 
   useEffect(() => {
     fetchData();
@@ -187,13 +198,13 @@ export function FundingByModalityChart() {
       rows[rows.length - 1].bordered = true;
       rows.push({ label: 'Total', value: formatTooltipCurrency(yearTotal, isExpanded) });
 
-      return <ChartTooltipCard title={`Year ${label}`} rows={rows} />;
+      return <ChartTooltipCard title={formatYearTick(label)} rows={rows} />;
     }
     return null;
   };
 
   const renderLegend = (expanded: boolean = false) => (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2">
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-3">
       {ALL_MODALITIES.map((modality) => (
         <div key={modality} className="flex items-center gap-1.5">
           <div
@@ -220,7 +231,7 @@ export function FundingByModalityChart() {
           dataKey="year"
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
-          tickFormatter={(v) => v.toString()}
+          tickFormatter={formatYearTick}
         />
         <YAxis
           tickFormatter={formatAxisCurrency}
@@ -257,7 +268,7 @@ export function FundingByModalityChart() {
           dataKey="year"
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
-          tickFormatter={(v) => v.toString()}
+          tickFormatter={formatYearTick}
         />
         <YAxis
           tickFormatter={formatAxisCurrency}
@@ -303,7 +314,7 @@ export function FundingByModalityChart() {
           dataKey="year"
           tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
           stroke={CHART_STRUCTURE_COLORS.axis}
-          tickFormatter={(v) => v.toString()}
+          tickFormatter={formatYearTick}
         />
         <YAxis
           tickFormatter={formatAxisCurrency}
@@ -411,18 +422,34 @@ export function FundingByModalityChart() {
 
     return (
       <div className="flex flex-col flex-1 min-h-0">
-        {expanded && renderLegend(expanded)}
         <div className={expanded ? "h-[500px]" : "h-[280px]"}>
           {renderChart()}
         </div>
+        {/* Legend below the chart (expanded view). */}
+        {expanded && renderLegend(expanded)}
       </div>
     );
   };
 
   const renderControls = (expanded: boolean = false) => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-      {/* Left side controls */}
-      <div className="flex items-center gap-2">
+    <div className="space-y-3 mb-3">
+      {/* Calendar + year-range picker on its own row at the top (expanded only) */}
+      {expanded && (
+        <div className="flex items-start gap-2">
+          <YearRangeChip
+            selectedYears={selectedYears}
+            onYearsChange={setSelectedYears}
+            customYears={customYears}
+            calendarType={selectedCustomYearId ?? undefined}
+            onCalendarTypeChange={setSelectedCustomYearId}
+            onDateRangeChange={setDateWindow}
+          />
+        </div>
+      )}
+      {/* Controls row — filters + toggles left, CSV right. */}
+      <div className="flex items-center justify-between gap-2">
+        {/* Filters + toggles (left) */}
+        <div className="flex items-center gap-2 flex-wrap">
         {/* Transaction type dropdown */}
         <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
           <SelectTrigger className="min-w-[280px] h-8 text-helper">
@@ -436,20 +463,9 @@ export function FundingByModalityChart() {
             ))}
           </SelectContent>
         </Select>
-
-        {/* Custom Year Selector (only in expanded view) */}
-        {expanded && (
-          <CustomYearSelector
-            customYears={customYears}
-            selectedId={selectedCustomYearId}
-            onSelect={setSelectedCustomYearId}
-            loading={customYearsLoading}
-            placeholder="Year type"
-          />
-        )}
-      </div>
-
-      <div className="flex items-center gap-1">
+        </div>
+        {/* Button groups + CSV, right-aligned. */}
+        <div className="flex items-center gap-2 flex-wrap">
         {/* Chart type toggle - only show when in chart view */}
         {(!expanded || viewMode === 'chart') && (
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -538,7 +554,7 @@ export function FundingByModalityChart() {
           </div>
         )}
 
-        {/* Export button - only in expanded view */}
+        {/* Export button - only in expanded view, right-aligned alone */}
         {expanded && (
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -553,68 +569,23 @@ export function FundingByModalityChart() {
             </Button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
 
+  // Bare body — CompactChartCard (in page.tsx) provides the card chrome, ƒ + ×,
+  // and the expand affordance. Controls sit above the chart (expanded only),
+  // CSV furthest-right; collapsed shows just the chart.
   return (
-    <>
-      {/* Compact Card View */}
-      <Card className="bg-white border-border h-full flex flex-col">
-        <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-foreground truncate">
-                Funding Over Time
-              </CardTitle>
-              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
-                By aid modality type
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
-              title="Expand to full screen"
-            >
-              <Maximize2 className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
-          {renderContent(false)}
-        </CardContent>
-      </Card>
-
-      {/* Expanded Dialog View */}
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-semibold text-foreground">
-                  Funding Over Time
-                </DialogTitle>
-                <DialogDescription className="text-base mt-2">
-                  {METRIC_OPTIONS.find((o) => o.value === transactionType)?.label} by aid modality type over time
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Chart or Table content based on viewMode */}
-          <div className="mt-4 flex-1 min-h-0 flex flex-col">{renderContent(true)}</div>
-
-          {/* Controls */}
-          <div className="flex-shrink-0">{renderControls(true)}</div>
-
-          {/* Explanatory text */}
-          <p className="text-body text-muted-foreground leading-relaxed mt-4">
-            This chart breaks down funding over time by aid modality (grant, loan, technical assistance, etc.). Use the stacked view to see total volumes and the grouped view to compare modalities side by side. Switch between bar, line, and area chart types for different perspectives.
-          </p>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="h-full flex flex-col">
+      {isExpanded && renderControls(true)}
+      {renderContent(isExpanded)}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
+          This chart breaks down funding over time by aid modality (grant, loan, technical assistance, etc.). Use the stacked view to see total volumes and the grouped view to compare modalities side by side. Switch between bar, line, and area chart types for different perspectives.
+        </p>
+      )}
+    </div>
   );
 }

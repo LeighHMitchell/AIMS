@@ -95,7 +95,8 @@ export async function PATCH(
 
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
-    const body: Partial<UpsertChecklistItemRequest> = await request.json();
+    const body: Partial<UpsertChecklistItemRequest> = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Get current item to check template_id
     const { data: currentItem } = await supabase

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Step 1: Get all policy markers (for reference, including visibility settings)
     const { data: allMarkers, error: markersError } = await supabase
       .from('policy_markers')
-      .select('id, code, name, default_visibility, is_iati_standard')
+      .select('id, uuid, code, name, default_visibility, is_iati_standard')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
 
@@ -67,7 +67,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const relevantMarkerIds = relevantMarkers.map(m => m.id)
+    // activity_policy_markers.policy_marker_id is a FK to policy_markers.uuid
+    // (FK activity_policy_markers_policy_marker_uuid_fkey), NOT the `id` column —
+    // so match markers on uuid throughout.
+    const relevantMarkerIds = relevantMarkers.map(m => m.uuid)
 
     // Restrict all activity-derived data to published activities only.
     const { data: publishedActivitiesAll } = await supabase
@@ -83,7 +86,6 @@ export async function GET(request: NextRequest) {
       .select(`
         activity_id,
         policy_marker_id,
-        score,
         significance,
         visibility
       `)
@@ -101,7 +103,7 @@ export async function GET(request: NextRequest) {
     // Create a lookup map for policy marker visibility settings
     const markerVisibilityMap = new Map<string, { default_visibility: string, is_iati_standard: boolean }>()
     relevantMarkers.forEach(m => {
-      markerVisibilityMap.set(m.id, {
+      markerVisibilityMap.set(m.uuid, {
         default_visibility: (m as any).default_visibility || 'public',
         is_iati_standard: (m as any).is_iati_standard ?? true
       })
@@ -151,7 +153,7 @@ export async function GET(request: NextRequest) {
     }>()
 
     activityMarkers.forEach((am: any) => {
-      const marker = relevantMarkers.find(m => m.id === am.policy_marker_id)
+      const marker = relevantMarkers.find(m => m.uuid === am.policy_marker_id)
       if (!marker) return
 
       // Get visibility settings from our lookup map
@@ -164,8 +166,9 @@ export async function GET(request: NextRequest) {
         return // Skip non-public custom markers
       }
 
-      // Use significance if available, otherwise fall back to score
-      const significance = am.significance !== undefined ? am.significance : am.score
+      // activity_policy_markers stores significance directly (0/1/2) — there is
+      // no separate `score` column on this table.
+      const significance = am.significance
       
       // Filter by significance level
       if (!significanceLevels.includes(significance)) return

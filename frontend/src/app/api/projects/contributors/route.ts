@@ -79,7 +79,8 @@ export async function GET(request: NextRequest) {
 // POST /api/projects/contributors - Nominate a contributor
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Validate required fields
     if (!body.projectId || !body.organizationId || !body.nominatedBy) {
@@ -139,7 +140,8 @@ export async function POST(request: NextRequest) {
 // PATCH /api/projects/contributors - Update contributor status
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { id, status, respondedAt } = body;
 
     if (!id || !status) {

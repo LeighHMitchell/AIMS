@@ -196,7 +196,7 @@ export default function ValidationsPage() {
               />
             ) : (
               filteredActivities.map((activity) => (
-                <Card key={activity.id} className="bg-white hover:shadow-lg transition-shadow">
+                <Card key={activity.id} className="bg-white hover:shadow-card-hover transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

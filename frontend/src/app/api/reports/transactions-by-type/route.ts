@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 function safeCode(codelist: string, code: string): { code: string; name: string } {
   try {
-    return codeAndName(codelist, code)
+    return codeAndName(codelist as any, code)
   } catch {
     return { code, name: code }
   }

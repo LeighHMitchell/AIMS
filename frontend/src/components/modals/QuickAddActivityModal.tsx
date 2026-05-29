@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { SelectIATI } from '@/components/ui/SelectIATI';
+import { DatePicker } from '@/components/ui/date-picker';
+import dacSectorsData from '@/data/dac-sectors.json';
 import {
   Loader2,
   Plus,
@@ -29,11 +31,14 @@ import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { getAllCurrenciesWithPinned } from '@/data/currencies';
 import { AID_MODALITY_TYPES } from '@/data/aid-modality-types';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownProvider } from '@/contexts/DropdownContext';
 import { motion, type Variants } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/api-fetch';
+import { OrganizationSearchableSelect } from '@/components/ui/organization-searchable-select';
+import { useUser } from '@/hooks/useUser';
+import { useOrganizations } from '@/hooks/use-organizations';
+import { USER_ROLES } from '@/types/user';
 
 // ============================================================================
 // ANIMATION VARIANTS
@@ -102,6 +107,10 @@ interface FormData {
   defaultCurrency: string;
   defaultAidType: string;
   defaultFinanceType: string;
+  sectorCode: string;
+  totalBudget: string;
+  activityIdentifier: string;
+  reportingOrgId: string;
 }
 
 // ============================================================================
@@ -184,11 +193,11 @@ function ReviewItem({
   isEmpty?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border/30 bg-background/60 p-3 transition-colors hover:bg-background/80">
-      <dt className="text-body text-muted-foreground">{label}</dt>
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-border/30 bg-background/60 p-3 transition-colors hover:bg-background/80">
+      <dt className="text-body text-muted-foreground shrink-0">{label}</dt>
       <dd
         className={cn(
-          'text-body font-medium text-right max-w-[200px] truncate',
+          'text-body font-medium text-right break-words min-w-0',
           isEmpty ? 'text-muted-foreground/50 italic' : 'text-foreground'
         )}
       >
@@ -219,7 +228,36 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
     defaultCurrency: 'USD',
     defaultAidType: '',
     defaultFinanceType: '',
+    sectorCode: '',
+    totalBudget: '',
+    activityIdentifier: '',
+    reportingOrgId: '',
   });
+
+  const { user: authUser } = useUser();
+  const effectiveUser: any = authUser || user;
+  const isSuperUser = effectiveUser?.role === USER_ROLES.SUPER_USER;
+  const userOrgId: string = effectiveUser?.organizationId || effectiveUser?.organization?.id || '';
+  const userOrgName: string = effectiveUser?.organization?.name || effectiveUser?.organisation || '';
+  // Canonical org list (React Query–cached, shared across the app).
+  const { organizations } = useOrganizations();
+
+  // Always include the user's own organisation so the field can default to it
+  // even before the full list resolves or if it isn't present in the list.
+  const orgList = useMemo<any[]>(() => {
+    const list: any[] = organizations || [];
+    if (userOrgId && userOrgName && !list.some((o) => o.id === userOrgId)) {
+      return [{ id: userOrgId, name: userOrgName, acronym: effectiveUser?.organization?.acronym }, ...list];
+    }
+    return list;
+  }, [organizations, userOrgId, userOrgName, effectiveUser]);
+
+  // Default the reporting org to the logged-in user's organisation.
+  useEffect(() => {
+    if (userOrgId) {
+      setFormData((prev) => (prev.reportingOrgId ? prev : { ...prev, reportingOrgId: userOrgId }));
+    }
+  }, [userOrgId]);
 
   // Prepare country groups for SelectIATI
   const countryGroups = [
@@ -293,6 +331,32 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
       ],
     },
   ];
+
+  // Prepare OECD DAC sector groups for SelectIATI
+  const sectorGroups = Object.entries(
+    dacSectorsData as Record<string, Array<{ code: string; name: string; description?: string }>>
+  ).map(([label, options]) => ({
+    label,
+    // No `description` — the Quick Add sector picker shows code + name only.
+    // The source data prefixes each name with its own code (e.g. "11320 - Upper…"),
+    // but SelectIATI already renders a code badge, so strip the prefix to avoid
+    // showing the code twice.
+    options: options.map((o) => ({
+      code: o.code,
+      name: o.name.replace(/^\s*\d+\s*-\s*/, ''),
+    })),
+  }));
+
+  const getSectorName = (code: string): string => {
+    if (!code) return '';
+    for (const options of Object.values(
+      dacSectorsData as Record<string, Array<{ code: string; name: string }>>
+    )) {
+      const found = options.find((o) => o.code === code);
+      if (found) return found.name;
+    }
+    return code;
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -368,9 +432,11 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
         publicationStatus: 'draft',
         submissionStatus: 'draft',
         created_via: 'quick_add',
+        partnerId: formData.activityIdentifier.trim() || undefined,
+        reportingOrgId: formData.reportingOrgId || userOrgId || undefined,
         user: {
-          id: user?.id,
-          organizationId: user?.organizationId || user?.organization?.id,
+          id: effectiveUser?.id,
+          organizationId: formData.reportingOrgId || userOrgId,
         },
       };
 
@@ -390,27 +456,86 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
 
       const activity = await response.json();
 
-      // Create location record if country is selected
+      // Assign the selected country as a recipient country (100%) so it shows
+      // in the activity's Countries & Regions tab (activities.recipient_countries).
       if (formData.countryCode && activity.id) {
         try {
           const selectedCountry = IATI_COUNTRIES.find((c) => c.code === formData.countryCode);
-          const locationData = {
-            activity_id: activity.id,
-            location_type: 'coverage',
-            location_name: selectedCountry?.name || formData.countryCode,
-            admin_unit: formData.countryCode,
-            coverage_scope: 'national',
-          };
-
-          await apiFetch('/api/locations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(locationData),
+          await apiFetch(`/api/activities/${activity.id}/countries-regions`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              countries: [
+                {
+                  id:
+                    typeof crypto !== 'undefined' && crypto.randomUUID
+                      ? crypto.randomUUID()
+                      : `${activity.id}-${formData.countryCode}`,
+                  country: { code: formData.countryCode, name: selectedCountry?.name || formData.countryCode },
+                  percentage: 100,
+                },
+              ],
+              regions: [],
+              customGeographies: [],
+            }),
           });
-        } catch (locationError) {
-          console.error('Failed to create location:', locationError);
+        } catch (countryError) {
+          console.error('Failed to assign recipient country:', countryError);
+        }
+      }
+
+      // Create primary sector allocation (100%) if a sector was selected
+      if (formData.sectorCode && activity.id) {
+        try {
+          await apiFetch(`/api/activities/${activity.id}/sectors`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              replace: true,
+              sectors: [
+                {
+                  sector_code: formData.sectorCode,
+                  sector_name: getSectorName(formData.sectorCode),
+                  percentage: 100,
+                  level: 'subsector',
+                },
+              ],
+            }),
+          });
+        } catch (sectorError) {
+          console.error('Failed to create sector allocation:', sectorError);
+        }
+      }
+
+      // Create a single indicative budget entry if a total budget was entered
+      const budgetValue = Number(formData.totalBudget);
+      if (formData.totalBudget && budgetValue > 0 && activity.id) {
+        try {
+          const currentYear = new Date().getFullYear();
+          let periodStart = `${currentYear}-01-01`;
+          let periodEnd = `${currentYear}-12-31`;
+          if (
+            formData.plannedStartDate &&
+            formData.plannedEndDate &&
+            new Date(formData.plannedStartDate) < new Date(formData.plannedEndDate)
+          ) {
+            periodStart = formData.plannedStartDate;
+            periodEnd = formData.plannedEndDate;
+          }
+          await apiFetch(`/api/activities/${activity.id}/budgets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 1,
+              status: 1,
+              period_start: periodStart,
+              period_end: periodEnd,
+              value: budgetValue,
+              currency: formData.defaultCurrency,
+            }),
+          });
+        } catch (budgetError) {
+          console.error('Failed to create budget:', budgetError);
         }
       }
 
@@ -459,6 +584,10 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
       defaultCurrency: 'USD',
       defaultAidType: '',
       defaultFinanceType: '',
+      sectorCode: '',
+      totalBudget: '',
+      activityIdentifier: '',
+      reportingOrgId: userOrgId || '',
     });
     setValidationErrors({});
     setCurrentStep(1);
@@ -473,6 +602,16 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
   const getStatusName = () => {
     const allStatuses = ACTIVITY_STATUS_GROUPS.flatMap((g) => g.options);
     return allStatuses.find((s) => s.code === formData.activityStatus)?.name || '';
+  };
+
+  // Reporting org name with its acronym appended (e.g. "United States … (USAID)").
+  // Returned as a single string so the acronym renders in the same colour, weight
+  // and font as the name in the review panel.
+  const getReportingOrgName = () => {
+    const org = orgList.find((o) => o.id === formData.reportingOrgId);
+    const name = org?.name || userOrgName;
+    const acronym = org?.acronym;
+    return acronym ? `${name} (${acronym})` : name;
   };
 
   const getCountryName = () => {
@@ -521,7 +660,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
             className="relative"
           >
             {/* Header */}
-            <div className="border-b border-border/40 bg-background/80 px-6 py-4">
+            <div className="border-b border-border/40 bg-muted/30 px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                   <Zap className="h-5 w-5 text-primary" />
@@ -610,6 +749,46 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                         </div>
 
                         <div className="space-y-2">
+                          <Label htmlFor="activity-identifier">Activity Identifier</Label>
+                          <Input
+                            id="activity-identifier"
+                            value={formData.activityIdentifier}
+                            onChange={(e) => handleInputChange('activityIdentifier', e.target.value)}
+                            placeholder="e.g. PROJ-2026-001"
+                            disabled={isCreating}
+                            className="bg-background/60"
+                          />
+                          <p className="text-helper text-muted-foreground">
+                            Your organisation's own identifier for this activity (leave blank to assign later).
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Reporting Organisation</Label>
+                          {isSuperUser ? (
+                            <OrganizationSearchableSelect
+                              organizations={orgList}
+                              value={formData.reportingOrgId}
+                              onValueChange={(value) => handleInputChange('reportingOrgId', value)}
+                              placeholder="Select reporting organisation"
+                              disabled={isCreating}
+                            />
+                          ) : (
+                            <Input
+                              value={userOrgName || '—'}
+                              disabled
+                              readOnly
+                              className="bg-muted/40"
+                            />
+                          )}
+                          <p className="text-helper text-muted-foreground">
+                            {isSuperUser
+                              ? 'The organisation reporting this activity.'
+                              : 'Activities you create are reported under your organisation.'}
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
                           <Label htmlFor="activity-description">Description</Label>
                           <Textarea
                             id="activity-description"
@@ -637,9 +816,25 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             disabled={isCreating}
                             dropdownId="quick-add-status"
                             error={validationErrors.activityStatus}
+                            hideDescriptions
                           />
                           <p className="text-helper text-muted-foreground">
                             Current stage of the activity lifecycle
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Primary Sector</Label>
+                          <SelectIATI
+                            groups={sectorGroups}
+                            value={formData.sectorCode}
+                            onValueChange={(value) => handleInputChange('sectorCode', value)}
+                            placeholder="Select primary sector"
+                            disabled={isCreating}
+                            dropdownId="quick-add-sector"
+                          />
+                          <p className="text-helper text-muted-foreground">
+                            OECD DAC sector this activity primarily supports (saved as a 100% allocation)
                           </p>
                         </div>
                       </div>
@@ -669,24 +864,26 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="start-date">Planned Start Date</Label>
-                            <Input
+                            <DatePicker
                               id="start-date"
-                              type="date"
+                              dropdownId="quick-add-start-date"
                               value={formData.plannedStartDate}
-                              onChange={(e) => handleInputChange('plannedStartDate', e.target.value)}
+                              onChange={(value) => handleInputChange('plannedStartDate', value)}
                               disabled={isCreating}
+                              placeholder="Select planned start date"
                               className="bg-background/60"
                             />
                           </div>
 
                           <div className="space-y-2">
                             <Label htmlFor="end-date">Planned End Date</Label>
-                            <Input
+                            <DatePicker
                               id="end-date"
-                              type="date"
+                              dropdownId="quick-add-end-date"
                               value={formData.plannedEndDate}
-                              onChange={(e) => handleInputChange('plannedEndDate', e.target.value)}
+                              onChange={(value) => handleInputChange('plannedEndDate', value)}
                               disabled={isCreating}
+                              placeholder="Select planned end date"
                               className={cn(
                                 'bg-background/60',
                                 validationErrors.plannedEndDate && 'border-destructive'
@@ -730,6 +927,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             placeholder="Select aid modality"
                             disabled={isCreating}
                             dropdownId="quick-add-aid-type"
+                            hideDescriptions
                           />
                           <p className="text-helper text-muted-foreground">
                             Type of aid being provided
@@ -745,9 +943,33 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             placeholder="Select finance type"
                             disabled={isCreating}
                             dropdownId="quick-add-finance-type"
+                            hideDescriptions
                           />
                           <p className="text-helper text-muted-foreground">
                             Classification of financing mechanism (e.g., grant, loan)
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="total-budget">Total Budget</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="total-budget"
+                              type="number"
+                              min="0"
+                              inputMode="decimal"
+                              value={formData.totalBudget}
+                              onChange={(e) => handleInputChange('totalBudget', e.target.value)}
+                              placeholder="0"
+                              disabled={isCreating}
+                              className="bg-background/60"
+                            />
+                            <span className="text-body font-medium text-muted-foreground">
+                              {formData.defaultCurrency}
+                            </span>
+                          </div>
+                          <p className="text-helper text-muted-foreground">
+                            Optional indicative total budget, saved as a single budget entry
                           </p>
                         </div>
                       </div>
@@ -768,6 +990,21 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                               isEmpty={!formData.description}
                             />
                             <ReviewItem label="Status" value={getStatusName()} />
+                            <ReviewItem
+                              label="Primary Sector"
+                              value={getSectorName(formData.sectorCode)}
+                              isEmpty={!formData.sectorCode}
+                            />
+                            <ReviewItem
+                              label="Activity Identifier"
+                              value={formData.activityIdentifier}
+                              isEmpty={!formData.activityIdentifier}
+                            />
+                            <ReviewItem
+                              label="Reporting Organisation"
+                              value={getReportingOrgName()}
+                              isEmpty={!formData.reportingOrgId && !userOrgName}
+                            />
                           </div>
                         </div>
 
@@ -806,19 +1043,18 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                               value={getFinanceTypeName()}
                               isEmpty={!formData.defaultFinanceType}
                             />
+                            <ReviewItem
+                              label="Total Budget"
+                              value={
+                                formData.totalBudget
+                                  ? `${Number(formData.totalBudget).toLocaleString()} ${formData.defaultCurrency}`
+                                  : ''
+                              }
+                              isEmpty={!formData.totalBudget}
+                            />
                           </div>
                         </div>
 
-                        {/* Organization Info */}
-                        {(user?.organisation || user?.organization?.name) && (
-                          <Alert className="border-primary/20 bg-primary/5">
-                            <AlertDescription className="text-body">
-                              <strong>Reporting Organisation:</strong>{' '}
-                              {user.organization?.name || user.organisation}
-                              {user.organization?.acronym && ` (${user.organization.acronym})`}
-                            </AlertDescription>
-                          </Alert>
-                        )}
                       </div>
                     )}
                   </motion.div>

@@ -99,7 +99,8 @@ export async function POST(request: NextRequest) {
     // Branch: JSON body import (used by URL import tool and stepwise imports)
     if (contentType.includes('application/json')) {
       try {
-        const data: ImportRequest & { organizationId?: string } = await request.json();
+        const data: ImportRequest & { organizationId?: string } = await request.json().catch(() => null);
+        if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
         const { activities, organizations, transactions, organizationId } = data as any;
 
         console.log('[IATI Import] JSON import detected:', {
@@ -606,7 +607,8 @@ export async function POST(request: NextRequest) {
 // Legacy POST handler for bulk import (backward compatibility) - REMOVED FOR SECURITY
 export async function POST_LEGACY(request: NextRequest) {
   try {
-    const data: ImportRequest = await request.json();
+    const data: ImportRequest = await request.json().catch(() => null);
+    if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { activities, organizations, transactions } = data;
     
     console.log('[IATI Import] Importing:', {

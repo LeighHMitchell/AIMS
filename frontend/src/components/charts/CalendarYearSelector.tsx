@@ -13,6 +13,7 @@ import {
   CustomYear,
   getCustomYearRange,
   getCustomYearLabel,
+  pickDefaultCalendarYearId,
   sortCustomYearsCalendarFirst,
 } from '@/types/custom-years'
 import { format } from 'date-fns'
@@ -57,10 +58,9 @@ export function useCalendarYearSelector(dataDates: Date[]): CalendarYearState {
         if (cancelled || !result) return
         const years: CustomYear[] = result.data || []
         setCustomYears(years)
-        let selected: CustomYear | undefined
-        if (result.defaultId) selected = years.find((cy) => cy.id === result.defaultId)
-        if (!selected && years.length > 0) selected = years[0]
-        if (selected) setCalendarType(selected.id)
+        // Default to the Gregorian Calendar Year regardless of the DB default.
+        const defaultId = pickDefaultCalendarYearId(years, result.defaultId)
+        if (defaultId) setCalendarType(defaultId)
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setCustomYearsLoading(false) })
@@ -148,6 +148,9 @@ export function CalendarYearSelector(state: CalendarYearState) {
       setSelectedYears([year])
     }
   }
+  const selectAllYears = () => {
+    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+  }
   const selectDataRange = () => {
     if (actualDataRange) setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
   }
@@ -214,17 +217,26 @@ export function CalendarYearSelector(state: CalendarYearState) {
           <DropdownMenuContent align="start" className="p-3 w-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-helper font-medium text-foreground">Select Year Range</span>
-              <button
-                onClick={selectDataRange}
-                className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
-                title={
-                  actualDataRange
-                    ? `Select years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}`
-                    : 'Select years with data'
-                }
-              >
-                Data Range
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={selectAllYears}
+                  className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
+                  title="Select all available years"
+                >
+                  All
+                </button>
+                <button
+                  onClick={selectDataRange}
+                  className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
+                  title={
+                    actualDataRange
+                      ? `Select years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}`
+                      : 'Select years with data'
+                  }
+                >
+                  Data Range
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-1">
               {AVAILABLE_YEARS.map((year) => {

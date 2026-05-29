@@ -11,7 +11,7 @@ const PAGE_SIZE = 1000
 function safeCode(codelist: string, code: unknown): { code: string; name: string } {
   if (code == null || code === '') return { code: '', name: '' }
   try {
-    return codeAndName(codelist, String(code))
+    return codeAndName(codelist as any, String(code))
   } catch {
     return { code: String(code), name: '' }
   }
@@ -53,7 +53,7 @@ export async function GET() {
     }
 
     // Resolve activity IATI id + title for context
-    const activityIds = [...new Set(transactions.map(t => t.activity_id).filter(Boolean))] as string[]
+    const activityIds = Array.from(new Set(transactions.map(t => t.activity_id).filter(Boolean))) as string[]
     const activityById = new Map<string, { iati: string; title: string }>()
     for (let i = 0; i < activityIds.length; i += PAGE_SIZE) {
       const slice = activityIds.slice(i, i + PAGE_SIZE)
@@ -70,6 +70,7 @@ export async function GET() {
       const aid = safeCode('aid_type', t.aid_type ?? t.default_aid_type)
       const finance = safeCode('finance_type', t.finance_type ?? t.default_finance_type)
       const flow = safeCode('flow_type', t.flow_type ?? t.default_flow_type)
+      const tied = safeCode('tied_status', t.tied_status ?? t.default_tied_status)
       return {
         activity_iati_id: act?.iati || '',
         activity_title: act?.title || '',
@@ -84,7 +85,8 @@ export async function GET() {
         aid_type_code: aid.code,
         finance_type_code: finance.code,
         flow_type_code: flow.code,
-        description: t.description || t.narrative || '',
+        tied_status_code: tied.code,
+        reference: t.transaction_reference || '',
       }
     })
 

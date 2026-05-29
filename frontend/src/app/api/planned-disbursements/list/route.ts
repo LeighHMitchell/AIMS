@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Build query - fetch disbursements first
     let query = supabase
       .from('planned_disbursements')
-      .select('*', { count: 'exact' });
+      .select('*', { count: 'estimated' });
 
     // Apply type filter - support both array and single value
     if (types.length > 0) {

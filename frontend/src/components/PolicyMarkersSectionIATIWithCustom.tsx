@@ -581,10 +581,10 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                           {!readOnly && (
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => openEditModal(markerUuid)} className="hover:bg-blue-50 hover:text-blue-600">
+                                <Button variant="ghost" size="icon" onClick={() => openEditModal(markerUuid)} className="hover:bg-blue-50 hover:text-blue-600" aria-label="Edit policy marker">
                                   <Pencil className="h-4 w-4 text-muted-foreground" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label="Remove policy marker">
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>

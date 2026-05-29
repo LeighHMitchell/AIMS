@@ -79,7 +79,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { xmlContent } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { xmlContent } = body;
 
     if (!xmlContent || !xmlContent.trim()) {
       return NextResponse.json(

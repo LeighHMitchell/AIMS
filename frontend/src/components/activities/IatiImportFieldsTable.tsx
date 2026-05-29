@@ -2488,7 +2488,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                         <TableCell className="text-body text-foreground">
                           {field.fieldName}
                         </TableCell>
-                        <TableCell className={`text-sm text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
+                        <TableCell className={`text-body text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
                           {renderValue(field.importValue, rowId, 'import', field.fieldName, field)}
                         </TableCell>
                         <TableCell className={`text-body text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>

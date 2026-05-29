@@ -93,7 +93,7 @@ export default function BulkImportResultsStep({
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="border-border">
+        <Card>
           <CardContent className="pt-6">
             <div className="text-center">
               <Plus className="h-6 w-6 mx-auto mb-1 text-foreground" />
@@ -102,7 +102,7 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border">
+        <Card>
           <CardContent className="pt-6">
             <div className="text-center">
               <RefreshCw className="h-6 w-6 mx-auto mb-1 text-foreground" />
@@ -111,7 +111,7 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border">
+        <Card>
           <CardContent className="pt-6">
             <div className="text-center">
               <SkipForward className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
@@ -120,7 +120,7 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border">
+        <Card>
           <CardContent className="pt-6">
             <div className="text-center">
               <XCircle className="h-6 w-6 mx-auto mb-1 text-foreground" />

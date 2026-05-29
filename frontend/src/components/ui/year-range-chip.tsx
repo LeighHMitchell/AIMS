@@ -13,6 +13,7 @@ import {
   CustomYear,
   getCustomYearLabel,
   getCustomYearRange,
+  pickDefaultCalendarYearId,
   sortCustomYearsCalendarFirst,
 } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch'
@@ -68,6 +69,8 @@ export interface YearRangeChipProps {
   buttonClassName?: string
   /** When true, hides the calendar-type dropdown even if multiple custom years are loaded. */
   hideCalendarSelector?: boolean
+  /** When true, clicking a year selects exactly that one year (no start→end range). */
+  singleYear?: boolean
 }
 
 /**
@@ -94,6 +97,7 @@ export function YearRangeChip({
   className,
   buttonClassName,
   hideCalendarSelector,
+  singleYear = false,
 }: YearRangeChipProps) {
   const [internalCustomYears, setInternalCustomYears] = useState<CustomYear[]>([])
   const [internalCalendarType, setInternalCalendarType] = useState<string>('')
@@ -114,12 +118,9 @@ export function YearRangeChip({
         const years = (result.data || []) as CustomYear[]
         if (cancelled) return
         setInternalCustomYears(years)
-        let selected: CustomYear | undefined
-        if (result.defaultId) {
-          selected = years.find(cy => cy.id === result.defaultId)
-        }
-        if (!selected && years.length > 0) selected = years[0]
-        if (selected) setInternalCalendarType(selected.id)
+        // Default to the Gregorian Calendar Year regardless of the DB default.
+        const defaultId = pickDefaultCalendarYearId(years, result.defaultId)
+        if (defaultId) setInternalCalendarType(defaultId)
       } catch {
         /* swallow */
       }
@@ -130,18 +131,26 @@ export function YearRangeChip({
     }
   }, [providedCustomYears])
 
-  // Default selectedYears from initialDateRange when empty
+  // Default selectedYears when empty. Prefer the actual data range (so the
+  // chip opens on the full span of years that have data); fall back to the
+  // supplied initialDateRange for callers that don't pass a data range.
   useEffect(() => {
     if (selectedYears.length > 0) return
+    // Single-year mode defaults to the most recent year; range mode spans the
+    // full data range.
+    if (actualDataRange) {
+      onYearsChange(singleYear ? [actualDataRange.maxYear] : [actualDataRange.minYear, actualDataRange.maxYear])
+      return
+    }
     if (initialDateRange?.from && initialDateRange?.to) {
       const fromYear = initialDateRange.from.getFullYear()
       const toYear = initialDateRange.to.getFullYear()
       if (!Number.isNaN(fromYear) && !Number.isNaN(toYear)) {
-        onYearsChange([fromYear, toYear])
+        onYearsChange(singleYear ? [toYear] : [fromYear, toYear])
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialDateRange?.from, initialDateRange?.to])
+  }, [actualDataRange?.minYear, actualDataRange?.maxYear, initialDateRange?.from, initialDateRange?.to, singleYear])
 
   // Notify parent of effective date range
   useEffect(() => {
@@ -173,6 +182,11 @@ export function YearRangeChip({
   }
 
   const handleYearClick = (year: number, shiftKey: boolean) => {
+    if (singleYear) {
+      // Single-year mode: clicking a year selects exactly that year.
+      onYearsChange([year])
+      return
+    }
     if (shiftKey && selectedYears.length === 1) {
       const start = Math.min(selectedYears[0], year)
       const end = Math.max(selectedYears[0], year)
@@ -317,8 +331,9 @@ export function YearRangeChip({
           <DropdownMenuContent align="start" className="p-3 w-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-helper font-medium text-foreground">
-                Select Year Range
+                {singleYear ? 'Select Year' : 'Select Year Range'}
               </span>
+              {!singleYear && (
               <div className="flex gap-1">
                 <button
                   onClick={selectAllYears}
@@ -341,6 +356,7 @@ export function YearRangeChip({
                   Data
                 </button>
               </div>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-1">
               {availableYears.map(year => {
@@ -360,16 +376,18 @@ export function YearRangeChip({
                           ? 'bg-primary/20 text-primary'
                           : 'text-muted-foreground hover:bg-muted'
                     }`}
-                    title="Click to select start, then click another to select end"
+                    title={singleYear ? 'Click to select this year' : 'Click to select start, then click another to select end'}
                   >
                     {getYearLabel(year)}
                   </button>
                 )
               })}
             </div>
+            {!singleYear && (
             <p className="text-[10px] text-muted-foreground mt-2 text-center">
               Click start year, then click end year
             </p>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

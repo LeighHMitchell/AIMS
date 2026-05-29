@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     // Get disbursements for child activities
     const { data: childTxns } = await supabase
       .from('transactions')
-      .select('activity_id, value, value_usd, usd_value, currency')
+      .select('activity_id, value, value_usd, currency')
       .in('activity_id', allChildIds)
       .in('transaction_type', ['3'])
 
@@ -78,7 +78,6 @@ export async function GET(request: NextRequest) {
     childTxns?.forEach(t => {
       // Currency-safe: only fall back to raw value when currency === 'USD'.
       const usd = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
-        : (t.usd_value != null && Number.isFinite(Number(t.usd_value))) ? Number(t.usd_value)
         : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0)
       childDisbursements[t.activity_id] = (childDisbursements[t.activity_id] || 0) + usd
     })
@@ -86,7 +85,8 @@ export async function GET(request: NextRequest) {
     // Aggregate by fund + sector
     const aggregated: Record<string, {
       fund_name: string
-      sector: string
+      sector_code: string
+      sector_name: string
       disbursed_amount: number
       activity_count: number
     }> = {}
@@ -100,17 +100,18 @@ export async function GET(request: NextRequest) {
       if (sectors.length === 0) {
         const key = `${fundId}|Unclassified`
         if (!aggregated[key]) {
-          aggregated[key] = { fund_name: fundName, sector: 'Unclassified', disbursed_amount: 0, activity_count: 0 }
+          aggregated[key] = { fund_name: fundName, sector_code: '', sector_name: 'Unclassified', disbursed_amount: 0, activity_count: 0 }
         }
         aggregated[key].disbursed_amount += totalDisbursed
         aggregated[key].activity_count++
       } else {
         sectors.forEach(s => {
-          const sectorName = s.sector_name || s.sector_code || 'Unknown'
+          const sectorCode = s.sector_code || ''
+          const sectorName = s.sector_name || ''
           const share = (s.percentage || 100) / 100
-          const key = `${fundId}|${sectorName}`
+          const key = `${fundId}|${sectorCode || sectorName || 'Unknown'}`
           if (!aggregated[key]) {
-            aggregated[key] = { fund_name: fundName, sector: sectorName, disbursed_amount: 0, activity_count: 0 }
+            aggregated[key] = { fund_name: fundName, sector_code: sectorCode, sector_name: sectorName, disbursed_amount: 0, activity_count: 0 }
           }
           aggregated[key].disbursed_amount += totalDisbursed * share
           aggregated[key].activity_count++
@@ -129,7 +130,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.disbursed_amount - a.disbursed_amount)
       .map(r => ({
         fund_name: r.fund_name,
-        sector: r.sector,
+        sector_code: r.sector_code,
+        sector_name: r.sector_name,
         disbursed_amount: r.disbursed_amount.toFixed(2),
         percent_of_fund: fundTotals[r.fund_name] > 0
           ? ((r.disbursed_amount / fundTotals[r.fund_name]) * 100).toFixed(1)

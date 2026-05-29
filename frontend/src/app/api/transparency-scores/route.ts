@@ -22,10 +22,9 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('[Transparency Scores] RPC error:', error)
       return NextResponse.json(
-        { 
-          data: null, 
-          error: error.message,
-          details: error
+        {
+          data: null,
+          error: error.message
         },
         { status: 500 }
       )

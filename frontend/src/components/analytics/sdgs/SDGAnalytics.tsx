@@ -35,7 +35,9 @@ export function SDGAnalytics({ dateRange, onDateRangeChange, refreshKey }: SDGAn
           title="SDG Coverage"
           shortDescription="Activities by SDG goal"
           fullDescription="Number of activities and financial weight mapped to each SDG"
+          mathTooltip="Counts the activities mapped to each SDG goal and their USD financial weight. An activity tagged with multiple SDGs contributes to each goal it touches. Use the metric control to switch between activity count and financial value."
           tableView={sdgTable}
+          inlineToolbar
         >
           <SDGCoverageChart
             organizationId={organizationId}
@@ -50,6 +52,7 @@ export function SDGAnalytics({ dateRange, onDateRangeChange, refreshKey }: SDGAn
           title="SDG Concentration"
           shortDescription="SDG trends over time"
           fullDescription="Assess whether activities are becoming more concentrated or dispersed across SDGs over time"
+          mathTooltip="Tracks how concentrated or dispersed activities are across the SDGs over time — whether the portfolio is spreading across more goals or focusing on fewer. Computed per period from the share of activities (or financial value) mapped to each goal."
         >
           <SDGConcentrationChart
             organizationId={organizationId}

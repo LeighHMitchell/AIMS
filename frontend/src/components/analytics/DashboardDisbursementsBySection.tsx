@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { DisbursementsBySectorChart } from '@/components/activities/DisbursementsBySectorChart'
-import { DisbursementsOverTimeChart } from '@/components/activities/DisbursementsOverTimeChart'
 import { Card, CardContent } from '@/components/ui/card'
 import { CompactChartCard } from '@/components/ui/compact-chart-card'
 import { apiFetch } from '@/lib/api-fetch';
@@ -16,6 +15,23 @@ interface DashboardDisbursementsBySectionProps {
   dateRange: DateRange;
   refreshKey?: number;
   onDataChange?: (data: Array<Record<string, string | number>>) => void;
+}
+
+// Child of CompactChartCard: renders the expanded-only CSV toolbar row above
+// the sector chart so the download sits furthest-right in the controls line.
+// (A component, not a fragment/div, so the card's cloneElement(compact) is a no-op.)
+function DisbursementsBySectionBody({
+  data,
+  loading,
+  exportRows,
+}: {
+  data: any
+  loading: boolean
+  exportRows: Array<Record<string, string | number>>
+}) {
+  return (
+    <DisbursementsBySectorChart data={data} loading={loading} csvRows={exportRows} />
+  )
 }
 
 export function DashboardDisbursementsBySection({
@@ -85,6 +101,20 @@ export function DashboardDisbursementsBySection({
     );
   }
 
+  // Export rows — same shape emitted via onDataChange, reused for the CSV button.
+  const exportRows = ((data?.sectors ?? []) as any[]).map((s: any) => {
+    const years = Array.isArray(s.years) ? s.years : [];
+    const planned = years.reduce((sum: number, y: any) => sum + Number(y.planned || 0), 0);
+    const actual = years.reduce((sum: number, y: any) => sum + Number(y.actual || 0), 0);
+    return {
+      "Sector Code": String(s.sectorCode ?? ''),
+      Sector: s.sectorName ?? 'Unknown',
+      Category: s.categoryName ?? '',
+      "Planned (USD)": Math.round(planned),
+      "Actual (USD)": Math.round(actual),
+    };
+  });
+
   return (
     <div className="space-y-6">
       <CompactChartCard
@@ -95,23 +125,10 @@ export function DashboardDisbursementsBySection({
         className="w-full"
         compactHeight={320}
       >
-        <DisbursementsBySectorChart
+        <DisbursementsBySectionBody
           data={data || { sectors: [] }}
           loading={loading}
-        />
-      </CompactChartCard>
-
-      <CompactChartCard
-        title="Disbursements Over Time by Sector"
-        shortDescription="Track disbursements across sectors over time"
-        fullDescription="Track planned or actual disbursements across sectors over time"
-        mathTooltip="Sums USD-converted disbursements per year and sector (planned or actual, selectable when expanded). Activities tagged with multiple sectors are split using the declared sector percentage."
-        className="w-full"
-        compactHeight={320}
-      >
-        <DisbursementsOverTimeChart
-          data={data || { sectors: [] }}
-          loading={loading}
+          exportRows={exportRows}
         />
       </CompactChartCard>
     </div>

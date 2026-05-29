@@ -1,27 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { codeAndName } from '@/lib/iati/codelist-resolver';
 
 export const dynamic = 'force-dynamic'
-
-// Organization type mapping
-const ORG_TYPE_MAP: Record<string, string> = {
-  '10': 'Government',
-  '11': 'Local Government',
-  '15': 'Other Public Sector',
-  '21': 'International NGO',
-  '22': 'National NGO',
-  '23': 'Regional NGO',
-  '24': 'Partner Country based NGO',
-  '30': 'Public Private Partnership',
-  '40': 'Multilateral',
-  '60': 'Foundation',
-  '70': 'Private Sector',
-  '71': 'Private Sector in Provider Country',
-  '72': 'Private Sector in Aid Recipient Country',
-  '73': 'Private Sector in Third Country',
-  '80': 'Academic, Training and Research',
-  '90': 'Other',
-}
 
 export async function GET() {
   const { supabase, response: authResponse } = await requireAuth();
@@ -63,7 +44,7 @@ export async function GET() {
     const { data: budgets } = activityIds.length > 0
       ? await supabase
           .from('activity_budgets')
-          .select('activity_id, value')
+          .select('activity_id, value, usd_value, currency')
           .in('activity_id', activityIds)
       : { data: [] }
 
@@ -102,9 +83,13 @@ export async function GET() {
     // Budget totals by activity
     const budgetByActivity = new Map<string, number>()
     budgets?.forEach(b => {
+      // Currency-safe: prefer converted USD; only fall back to raw value when currency is USD.
+      const usd = (b.usd_value != null && Number.isFinite(Number(b.usd_value)))
+        ? Number(b.usd_value)
+        : ((b.currency ?? '').toString().toUpperCase() === 'USD' ? Number(b.value) || 0 : 0)
       budgetByActivity.set(
         b.activity_id,
-        (budgetByActivity.get(b.activity_id) || 0) + (b.value || 0)
+        (budgetByActivity.get(b.activity_id) || 0) + usd
       )
     })
 
@@ -131,14 +116,18 @@ export async function GET() {
     })
 
     // Transform data for export
-    const reportData = organizations.map(org => ({
-      organization_name: org.acronym || org.name,
-      organization_type: org.type ? (ORG_TYPE_MAP[org.type] || org.type) : '',
-      iati_ref: org.iati_org_id || '',
-      active_activities: activeActivityCountByOrg.get(org.id) || 0,
-      total_budget: Math.round(budgetByOrg.get(org.id) || 0),
-      total_disbursed: Math.round(disbursementByOrg.get(org.id) || 0),
-    }))
+    const reportData = organizations.map(org => {
+      const orgType = codeAndName('organization_type', org.type)
+      return {
+        organization_name: org.acronym || org.name,
+        organization_type_code: orgType.code,
+        organization_type_name: orgType.name,
+        iati_ref: org.iati_org_id || '',
+        active_activities: activeActivityCountByOrg.get(org.id) || 0,
+        total_budget: Math.round(budgetByOrg.get(org.id) || 0),
+        total_disbursed: Math.round(disbursementByOrg.get(org.id) || 0),
+      }
+    })
     .filter(org => org.active_activities > 0 || org.total_budget > 0 || org.total_disbursed > 0)
     .sort((a, b) => b.total_disbursed - a.total_disbursed)
 

@@ -111,7 +111,8 @@ export async function POST(
 
   try {
     const { id: activityId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     const { 
       organization_id, 
@@ -239,7 +240,8 @@ export async function PUT(
 
   try {
     const { id: activityId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     const { 
       participating_org_id,  // ID of the participating org record to update

@@ -119,7 +119,8 @@ export async function POST(
     }
 
     const { id: activityId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Acting user comes from requireAuth(); enforce it explicitly so the
     // permission checks and `uploaded_by` attribution below use the real user.
@@ -269,7 +270,8 @@ export async function PUT(
     }
 
     const { id: activityId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Acting user comes from requireAuth(); enforce it explicitly so the
     // permission checks and `uploaded_by` attribution below use the real user.

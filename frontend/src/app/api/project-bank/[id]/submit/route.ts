@@ -13,7 +13,8 @@ export async function POST(
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { phase } = body; // 'intake', 'fs1', 'fs2', or 'fs3'
 
   if (!phase || !['intake', 'fs1', 'fs2', 'fs3'].includes(phase)) {

@@ -37,8 +37,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
   const allStagesSigned = progress.stagesSignedOff === progress.totalStages;
 
   return (
-    <Card className={cn(
-      "border-2",
+    <Card className={cn("border-2",
       isComplete && allStagesSigned
         ? "border-green-200 bg-green-50"
         : isComplete

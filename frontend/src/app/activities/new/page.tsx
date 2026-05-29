@@ -1013,6 +1013,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 bg-muted hover:bg-muted"
+                        aria-label="Generate acronym from title"
                         onClick={() => {
                           const acronym = generateAcronym(general.title || '');
                           setGeneral((g: any) => ({ ...g, acronym }));

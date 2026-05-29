@@ -265,8 +265,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageSquareIcon className="h-5 w-5" />
+          <DialogTitle>
             Share Your Feedback
           </DialogTitle>
           <DialogDescription>

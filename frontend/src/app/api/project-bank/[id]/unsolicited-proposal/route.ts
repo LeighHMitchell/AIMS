@@ -33,7 +33,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const { data, error } = await supabase!
     .from('unsolicited_proposals')
@@ -61,7 +62,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const allowedFields = [
     'proponent_name', 'proponent_contact', 'proponent_company', 'proposal_date',

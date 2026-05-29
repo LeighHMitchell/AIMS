@@ -24,7 +24,7 @@ export const budgetColumns: ColumnConfig<BudgetColumnId>[] = [
   { id: "period", label: "Period", group: "default", defaultVisible: true },
   { id: "type", label: "Type", group: "default", defaultVisible: true },
   { id: "status", label: "Status", group: "default", defaultVisible: true },
-  { id: "value", label: "Currency Value", group: "default", defaultVisible: true },
+  { id: "value", label: "Original Value", group: "default", defaultVisible: true },
   { id: "valueDate", label: "Value Date", group: "details", defaultVisible: false },
   { id: "valueUsd", label: "USD Value", group: "default", defaultVisible: true },
 ];

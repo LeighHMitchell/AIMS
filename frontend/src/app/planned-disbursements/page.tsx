@@ -5,13 +5,13 @@ import { exportPlannedDisbursementsCsv, type PlannedDisbursementRow } from "@/li
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager";
-import { Download, ChevronLeft, ChevronRight, FileText, Building2, CalendarClock, AlignLeft, Search, X } from "lucide-react";
+import { Download, FileText, Building2, AlignLeft, Search, X } from "lucide-react";
+import { FullPagination } from "@/components/ui/full-pagination";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -104,7 +104,7 @@ export default function PlannedDisbursementsPage() {
     const saved = localStorage.getItem("planned-disbursements-page-limit");
     if (saved) {
       const savedLimit = Number(saved);
-      if (savedLimit > 0) {
+      if (PAGE_SIZE_OPTIONS.includes(savedLimit)) {
         setPageLimit(savedLimit);
       }
     }
@@ -167,8 +167,6 @@ export default function PlannedDisbursementsPage() {
 
   // Pagination logic
   const totalPages = Math.ceil(totalDisbursements / pageLimit);
-  const startIndex = (currentPage - 1) * pageLimit;
-  const endIndex = Math.min(startIndex + pageLimit, totalDisbursements);
 
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit);
@@ -449,109 +447,16 @@ export default function PlannedDisbursementsPage() {
         )}
 
         {/* Pagination */}
-        {!loading && totalDisbursements > 0 && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="text-body text-muted-foreground">
-                  Showing {Math.min(startIndex + 1, totalDisbursements)} to {Math.min(endIndex, totalDisbursements)} of {totalDisbursements} planned disbursements
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newPage = Math.max(1, currentPage - 1);
-                      setCurrentPage(newPage);
-                    }}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newPage = Math.min(totalPages, currentPage + 1);
-                      setCurrentPage(newPage);
-                    }}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Last
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <label className="text-body text-muted-foreground">Items per page:</label>
-                  <Select
-                    value={pageLimit.toString()}
-                    onValueChange={(value) => handlePageLimitChange(Number(value))}
-                  >
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <FullPagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={totalDisbursements}
+          perPage={pageLimit}
+          onPageChange={(p) => setCurrentPage(p)}
+          onPerPageChange={handlePageLimitChange}
+          perPageOptions={PAGE_SIZE_OPTIONS}
+          itemLabel="planned disbursements"
+        />
 
         {/* Bulk Action Toolbar */}
         <BulkActionToolbar

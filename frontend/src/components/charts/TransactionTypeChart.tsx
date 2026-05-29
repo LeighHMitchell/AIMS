@@ -5,7 +5,6 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
   BarChart,
   Bar,
   XAxis,
@@ -15,11 +14,14 @@ import {
 import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ChartViewToggle } from "@/components/ui/chart-view-toggle";
+import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, getTransactionTypeColor } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { useChartExpansion } from '@/lib/chart-expansion-context';
 
 interface TransactionTypeData {
   transactionType: string;
@@ -42,6 +44,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   compact = false,
 }) => {
   const [data, setData] = useState<TransactionTypeData[]>([]);
+  const tableMode = useChartCardTableMode();
+  const isExpanded = useChartExpansion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chartType, setChartType] = useState<'pie' | 'bar'>('pie');
@@ -108,7 +112,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
         <ChartTooltipCard
           title={data.typeName}
           rows={[
-            { label: 'Count', value: data.count.toLocaleString(), color, code: data.transactionType },
+            { label: `# of ${data.typeName} Transactions`, value: data.count.toLocaleString(), color },
             { label: 'Total Value', value: `${currency} ${data.totalValue.toLocaleString()}` },
             { label: 'Average', value: `${currency} ${data.averageValue.toLocaleString()}` },
             { label: 'Percentage', value: `${data.percentage.toFixed(1)}%` },
@@ -139,8 +143,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               data={data}
               cx="50%"
               cy="50%"
-              outerRadius={70}
-              innerRadius={40}
+              outerRadius={90}
+              innerRadius={52}
               dataKey="count"
               nameKey="typeName"
               paddingAngle={2}
@@ -189,54 +193,52 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     displayValue: metric === 'count' ? item.count : item.totalValue
   }));
 
+  // Leader-line label for the expanded donut: bold the type name (e.g.
+  // Disbursement) before the percentage. Replaces the plain-string label so
+  // the legend is no longer needed.
+  const renderTxLabel = (props: any) => {
+    const { x, y, cx, textAnchor, typeName, percentage, transactionType } = props;
+    const anchor = textAnchor || (x >= cx ? 'start' : 'end');
+    const color = getTransactionTypeColor(transactionType);
+    return (
+      <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={12} fontWeight={700} fill={color}>
+        {`${typeName} ${Number(percentage).toFixed(1)}%`}
+      </text>
+    );
+  };
+
   return (
     <div className="w-full">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <Button
-              variant={metric === 'count' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMetric('count')}
-            >
-              Transaction Count
-            </Button>
-            <Button
-              variant={metric === 'value' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMetric('value')}
-            >
-              Total Value
-            </Button>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ChartViewToggle
+            ariaLabel="Metric"
+            variant="text"
+            value={metric}
+            onValueChange={setMetric}
+            options={[
+              { value: 'count', label: 'Transaction Count' },
+              { value: 'value', label: 'Total Value' },
+            ]}
+          />
+          <ChartViewToggle
+            ariaLabel="Chart type"
+            variant="icon"
+            value={chartType}
+            onValueChange={setChartType}
+            options={[
+              { value: 'pie', label: 'Donut Chart', icon: PieChartIcon },
+              { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
+            ]}
+          />
+          <InlineViewToggle />
         </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <Button
-              variant={chartType === 'pie' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('pie')}
-              title="Donut Chart"
-            >
-              <PieChartIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={chartType === 'bar' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('bar')}
-              title="Bar Chart"
-            >
-              <BarChart3 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <InlineCsvButton />
       </div>
 
       {/* Chart */}
+      {!tableMode && (
       <ResponsiveContainer width="100%" height={400}>
         {chartType === 'pie' ? (
           <PieChart>
@@ -244,8 +246,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               data={chartData}
               cx="50%"
               cy="50%"
-              labelLine={false}
-              label={({ typeName, percentage }) => `${typeName}: ${percentage.toFixed(1)}%`}
+              labelLine={{ stroke: '#cfd0d5' }}
+              label={renderTxLabel}
               outerRadius={140}
               innerRadius={70}
               fill="#8884d8"
@@ -257,7 +259,6 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend formatter={(value, entry: any) => entry.payload.typeName} />
           </PieChart>
         ) : (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -283,6 +284,14 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
           </BarChart>
         )}
       </ResponsiveContainer>
+      )}
+
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-6">
+          This chart groups every reported transaction by its IATI transaction type — commitments, disbursements, expenditures and the rest — so you can see where financial activity is concentrated. Toggle between transaction count and total value to compare how often each type is reported against how much money it represents, and switch to the bar view to read the magnitudes directly. Disbursements are usually the clearest signal of money actually reaching the ground, so a healthy portfolio typically shows disbursements and expenditures making up a substantial share of total value.
+        </p>
+      )}
     </div>
   );
 };

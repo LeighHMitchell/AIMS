@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ChartViewToggle } from "@/components/ui/chart-view-toggle";
+import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CalendarIcon, ChevronDown, DollarSign, Search, X } from "lucide-react";
+import { CalendarIcon, ChevronDown, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { apiFetch } from "@/lib/api-fetch";
 import {
@@ -27,11 +29,17 @@ import aidTypesJson from "@/data/aid-types.json";
 import financeTypesJson from "@/data/finance-types.json";
 import { CoordinationCirclePack } from "@/components/analytics/CoordinationCirclePack";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
+import { MetricMultiSelect } from "@/components/analytics/shared/MetricMultiSelect";
+import type { Metric } from "@/components/analytics/shared/metric-options";
 import type {
   CoordinationLevel,
   CoordinationMeasure,
   CoordinationResponse,
 } from "@/types/coordination";
+
+// All Metric keys are financial CoordinationMeasure values, so a Metric is a
+// valid measure to hand the circle-pack for currency formatting.
+const isFinancialMeasure = (m: string) => m === 'budgets' || m === 'planned' || m.startsWith('tx_');
 
 // ── Static option lists ──────────────────────────────────────────────────────
 const AID_TYPE_OPTIONS: Array<{ code: string; name: string }> = (() => {
@@ -140,10 +148,21 @@ export function CoordinationChartWithControls({
   // hide controls in the dashboard tile but show them in the expanded modal.
   const isExpanded = useChartExpansion();
   const showControls = compactProp === false || isExpanded || compactProp === undefined;
+  const tableMode = useChartCardTableMode();
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [level, setLevel] = useState<CoordinationLevel>(initialLevel);
-  const [measure, setMeasure] = useState<CoordinationMeasure>(initialMeasure);
+  // Financial metric multi-select (sum of selected metrics drives bubble size).
+  // Mirrors the External Development Partners Financial Overview chart.
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>(
+    isFinancialMeasure(initialMeasure) ? [initialMeasure as Metric] : ['tx_3'],
+  );
+  // Primary metric (first selected) — handed to the circle-pack purely for
+  // currency formatting; the displayed value is the summed total.
+  const primaryMetric = (selectedMetrics[0] ?? 'tx_3') as CoordinationMeasure;
+  const metricsLabel = selectedMetrics.length === 1
+    ? (MEASURE_LABEL[primaryMetric] || 'Disbursements')
+    : `${selectedMetrics.length} metrics`;
   const [calendarType, setCalendarType] = useState<string>('');
   const [customYears, setCustomYears] = useState<CustomYear[]>([]);
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
@@ -165,7 +184,6 @@ export function CoordinationChartWithControls({
   const [aidTypeSearch, setAidTypeSearch] = useState('');
   const [financeTypeSearch, setFinanceTypeSearch] = useState('');
   const [donorSearch, setDonorSearch] = useState('');
-  const [measureSearch, setMeasureSearch] = useState('');
 
   const [orgList, setOrgList] = useState<OrgRow[]>([]);
   const [sectorActivityCounts, setSectorActivityCounts] = useState<Record<string, number>>({});
@@ -242,7 +260,9 @@ export function CoordinationChartWithControls({
     (async () => {
       try {
         setLoading(true);
-        const params = new URLSearchParams({ level, measure });
+        const params = new URLSearchParams({ level });
+        // Multi-measure: the API sums the selected financial metrics per sector.
+        params.set('measures', selectedMetrics.join(','));
         if (dateRange.from) params.set('dateFrom', dateRange.from.toISOString());
         if (dateRange.to) params.set('dateTo', dateRange.to.toISOString());
         if (aidTypes.length > 0) params.set('aidType', aidTypes.join(','));
@@ -256,8 +276,8 @@ export function CoordinationChartWithControls({
         if (!cancelled && response.ok && result.success) {
           setData(result);
           if (onDataChange) {
-            const measureCol = result.measureLabel || MEASURE_LABEL[measure];
-            const isCount = measure === 'activities' || measure === 'donors';
+            const measureCol = result.measureLabel || metricsLabel;
+            const isCount = false; // multi-select is financial only
             const rows: Array<Record<string, string | number>> = (result.data?.children || []).map((c: any) => {
               const topDonor = (c.topDonors && c.topDonors[0]) || null;
               const topDonorLabel = topDonor
@@ -287,7 +307,7 @@ export function CoordinationChartWithControls({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, measure, dateRange?.from, dateRange?.to, aidTypes.join(','), financeTypes.join(','), donorIds.join(','), sectorFilterKey]);
+  }, [level, selectedMetrics.join(','), dateRange?.from, dateRange?.to, aidTypes.join(','), financeTypes.join(','), donorIds.join(','), sectorFilterKey]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const handleYearClick = (year: number, shiftKey: boolean) => {
@@ -326,17 +346,19 @@ export function CoordinationChartWithControls({
     if (!q) return orgList;
     return orgList.filter((o) => o.name.toLowerCase().includes(q) || (o.acronym || '').toLowerCase().includes(q));
   }, [donorSearch, orgList]);
-  const filteredMeasures = useMemo(() => {
-    const q = measureSearch.trim().toLowerCase();
-    if (!q) return MEASURE_DEFS;
-    return MEASURE_DEFS.filter((m) => m.label.toLowerCase().includes(q) || (m.code ?? '').toLowerCase().includes(q));
-  }, [measureSearch]);
 
   // Short labels so all six controls (hierarchy toggle + five dropdowns) fit
   // on a single right-aligned line in the dashboard modal at typical widths.
   const aidTypeLabel = aidTypes.length === 0 ? 'Aid type' : aidTypes.length === 1 ? AID_TYPE_OPTIONS.find((t) => t.code === aidTypes[0])?.code || aidTypes[0] : `${aidTypes.length} aid`;
-  const financeTypeLabel = financeTypes.length === 0 ? 'Finance' : financeTypes.length === 1 ? FINANCE_TYPE_OPTIONS.find((t) => t.code === financeTypes[0])?.code || financeTypes[0] : `${financeTypes.length} finance`;
+  const financeTypeLabel = financeTypes.length === 0 ? 'Finance type' : financeTypes.length === 1 ? FINANCE_TYPE_OPTIONS.find((t) => t.code === financeTypes[0])?.code || financeTypes[0] : `${financeTypes.length} finance`;
   const donorLabel = donorIds.length === 0 ? 'Partners' : donorIds.length === 1 ? orgList.find((o) => o.id === donorIds[0])?.acronym || orgList.find((o) => o.id === donorIds[0])?.name || 'Partner' : `${donorIds.length} partners`;
+
+  // Tooltip period label prefixed with the selected calendar's code so a range
+  // like "2020 - 2026" reads as "CY2020 - CY2026" (Gregorian) / "FY…" (fiscal).
+  const calendarShort = customYears.find((c) => c.id === calendarType)?.shortName?.trim() || '';
+  const periodLabelWithCalendar = calendarShort && data?.periodLabel
+    ? data.periodLabel.replace(/\b(\d{4})\b/g, `${calendarShort}$1`)
+    : data?.periodLabel;
 
   // ── Render ───────────────────────────────────────────────────────────────
   if (!showControls) {
@@ -344,9 +366,9 @@ export function CoordinationChartWithControls({
     return (
       <CoordinationCirclePack
         data={data?.data || null}
-        measure={measure}
-        measureLabel={data?.measureLabel || MEASURE_LABEL[measure]}
-        periodLabel={data?.periodLabel}
+        measure={primaryMetric}
+        measureLabel={data?.measureLabel || metricsLabel}
+        periodLabel={periodLabelWithCalendar}
         width={width}
         height={height}
         compact
@@ -447,22 +469,12 @@ export function CoordinationChartWithControls({
           )}
         </div>
 
-        {/* Filter row A — hierarchy toggle + the three narrow dropdowns,
-            right-aligned. */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
-            {HIERARCHY_LEVELS.map((l) => (
-              <Button
-                key={l.key}
-                variant={level === l.key ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setLevel(l.key)}
-                className="h-8"
-              >
-                {l.short}
-              </Button>
-            ))}
-          </div>
+        {/* Controls row — filter dropdowns on the left; all button groups
+            (hierarchy level, Chart/Table view) + Download-CSV on the right.
+            Scrolls horizontally rather than wrapping. */}
+        <div className="flex items-center gap-2 justify-between overflow-x-auto">
+          {/* Filter dropdowns (left). */}
+          <div className="flex items-center gap-2 flex-nowrap">
           <FilterDropdown
             open={openFilter === 'aidType'}
             onOpenChange={filterOpenHandler('aidType')}
@@ -522,11 +534,6 @@ export function CoordinationChartWithControls({
                 setDonorIds((prev) => (prev.includes(o.id) ? prev.filter((x) => x !== o.id) : [...prev, o.id])),
             }))}
           />
-        </div>
-
-        {/* Filter row B — the two wider controls (sector picker + measure),
-            kept together right-aligned underneath row A. */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
           <SectorHierarchyFilter
             selected={sectorFilter}
             onChange={setSectorFilter}
@@ -537,88 +544,45 @@ export function CoordinationChartWithControls({
             onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
             className="h-9 shrink-0"
           />
-          <DropdownMenu open={openFilter === 'measure'} onOpenChange={filterOpenHandler('measure')}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 justify-between shrink-0">
-                <span className="flex items-center gap-2 truncate text-body">
-                  <DollarSign className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{MEASURE_LABEL[measure]}</span>
-                </span>
-                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-[320px] max-h-[420px] overflow-y-auto p-1"
-              onCloseAutoFocus={(e) => e.preventDefault()}
-            >
-              <div className="sticky top-0 z-10 bg-card border-b border-border mb-1">
-                <div className="flex items-center justify-between gap-2 px-2 py-2">
-                  <span className="text-helper font-semibold text-foreground">Measure</span>
-                </div>
-                <div className="flex items-center px-3 py-2 border-t border-border">
-                  <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
-                  <Input
-                    placeholder="Search measures..."
-                    value={measureSearch}
-                    onChange={(e) => setMeasureSearch(e.target.value)}
-                    className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
-                  />
-                  {measureSearch && (
-                    <X
-                      className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
-                      onClick={() => setMeasureSearch('')}
-                    />
-                  )}
-                </div>
-              </div>
-              {filteredMeasures.length === 0 && (
-                <div className="px-3 py-4 text-helper text-muted-foreground text-center">No matching measures.</div>
-              )}
-              {filteredMeasures.map((m, idx) => {
-                const prev = idx > 0 ? filteredMeasures[idx - 1] : null;
-                const showSep = !!prev && prev.group !== m.group;
-                return (
-                  <React.Fragment key={m.key}>
-                    {showSep && <div className="my-1 border-t border-border" />}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMeasure(m.key);
-                        setOpenFilter(null);
-                      }}
-                      className={`flex items-center gap-2 w-full px-2 py-1.5 text-left hover:bg-muted rounded text-body ${
-                        measure === m.key ? 'bg-muted font-medium' : ''
-                      }`}
-                    >
-                      {m.code && (
-                        <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">
-                          {m.code}
-                        </code>
-                      )}
-                      <span className="text-foreground truncate">{m.label}</span>
-                    </button>
-                  </React.Fragment>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <MetricMultiSelect
+            selected={selectedMetrics}
+            onChange={setSelectedMetrics}
+            triggerClassName="h-9 min-w-[240px] justify-between shrink-0"
+          />
+          {/* Hierarchy level (dimension) toggle — a data selector, kept left. */}
+          <ChartViewToggle
+            ariaLabel="Hierarchy level"
+            variant="text"
+            value={level}
+            onValueChange={setLevel}
+            options={HIERARCHY_LEVELS.map((l) => ({ value: l.key, label: l.short }))}
+          />
+          </div>
+          {/* Chart/Table view toggle + CSV, right-aligned. */}
+          <div className="flex items-center gap-2 flex-nowrap">
+            <InlineViewToggle />
+            <InlineCsvButton />
+          </div>
         </div>
       </div>
 
-      {/* Chart */}
-      {loading && !data ? (
+      {/* Chart — hidden when the inline toolbar switches to table view. Wrapped
+          in a vertically-scrollable area because the packed-circle layout can be
+          taller than the card/viewport. */}
+      {!tableMode && (loading && !data ? (
         <div className="flex items-center justify-center h-[500px] text-muted-foreground">Loading…</div>
       ) : (
-        <CoordinationCirclePack
-          data={data?.data || null}
-          measure={measure}
-          measureLabel={data?.measureLabel || MEASURE_LABEL[measure]}
-          periodLabel={data?.periodLabel}
-          width={width}
-          height={height}
-        />
-      )}
+        <div className="overflow-y-auto max-h-[70vh]">
+          <CoordinationCirclePack
+            data={data?.data || null}
+            measure={primaryMetric}
+            measureLabel={data?.measureLabel || metricsLabel}
+            periodLabel={periodLabelWithCalendar}
+            width={width}
+            height={height}
+          />
+        </div>
+      ))}
     </div>
   );
 }

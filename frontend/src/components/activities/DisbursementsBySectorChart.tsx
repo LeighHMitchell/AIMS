@@ -27,6 +27,8 @@ import { formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 
 interface YearData {
   year: number;
@@ -47,13 +49,14 @@ interface DisbursementsBySectorChartProps {
   loading?: boolean;
   /** Passed by CompactChartCard (true in card preview, false when expanded). */
   compact?: boolean;
+  /** Flat rows for the Download-CSV button (expanded view). */
+  csvRows?: Array<Record<string, string | number>>;
 }
 
-export function DisbursementsBySectorChart({ data, loading = false }: DisbursementsBySectorChartProps) {
+export function DisbursementsBySectorChart({ data, loading = false, csvRows }: DisbursementsBySectorChartProps) {
   const isExpanded = useChartExpansion();
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
-  const [isYearSelectorOpen, setIsYearSelectorOpen] = useState(false);
-  // Range state used only by the YearRangeChip — does NOT replace the existing per-year checkbox selection.
+  // The YearRangeChip's selected range; the chart's per-year columns derive from it.
   const [chipSelectedYears, setChipSelectedYears] = useState<number[]>([]);
 
   // Extract all available years
@@ -67,32 +70,25 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
     return Array.from(yearsSet).sort((a, b) => a - b);
   }, [data.sectors]);
 
-  const [selectedYears, setSelectedYears] = useState<number[]>(
-    availableYears.length > 0 ? [availableYears[availableYears.length - 1]] : []
-  );
+  // Gregorian years present in this activity's sector data — drives the year
+  // picker's full-span default (min → max of years that have data), and seeds
+  // the chip selection once so it opens on the full data range instead of just
+  // the latest year.
+  const dataYears = availableYears;
+  const actualDataRange = useYearRangeDefault(dataYears, chipSelectedYears, setChipSelectedYears);
 
-  // Update selected years when available years change
-  React.useEffect(() => {
-    if (availableYears.length > 0 && selectedYears.length === 0) {
-      setSelectedYears([availableYears[availableYears.length - 1]]);
+  // The chart's per-year columns derive directly from the YearRangeChip's
+  // selected range; the old separate per-year checkbox panel was redundant and
+  // has been removed.
+  const selectedYears = useMemo<number[]>(() => {
+    if (availableYears.length === 0) return [];
+    if (chipSelectedYears.length === 0) {
+      return availableYears;
     }
-  }, [availableYears, selectedYears.length]);
-
-  const toggleYear = (year: number) => {
-    setSelectedYears(prev => 
-      prev.includes(year) 
-        ? prev.filter(y => y !== year)
-        : [...prev, year].sort((a, b) => a - b)
-    );
-  };
-
-  const toggleAllYears = () => {
-    if (selectedYears.length === availableYears.length) {
-      setSelectedYears(availableYears.length > 0 ? [availableYears[availableYears.length - 1]] : []);
-    } else {
-      setSelectedYears(availableYears);
-    }
-  };
+    const min = Math.min(...chipSelectedYears);
+    const max = Math.max(...chipSelectedYears);
+    return availableYears.filter(y => y >= min && y <= max);
+  }, [chipSelectedYears, availableYears]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
@@ -187,22 +183,20 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
 
   return (
     <div className="space-y-4">
-      <div>
-        <div className="flex items-center justify-between">
+      <div className="space-y-3">
+        {/* Calendar + year selector on its own row at the top */}
+        {availableYears.length > 0 && (
           <div className="flex items-start gap-3">
-            {availableYears.length > 0 && (
-              <YearRangeChip
-                selectedYears={chipSelectedYears}
-                onYearsChange={setChipSelectedYears}
-                availableYears={availableYears}
-                actualDataRange={
-                  availableYears.length > 0
-                    ? { minYear: availableYears[0], maxYear: availableYears[availableYears.length - 1] }
-                    : null
-                }
-              />
-            )}
+            <YearRangeChip
+              selectedYears={chipSelectedYears}
+              onYearsChange={setChipSelectedYears}
+              availableYears={availableYears}
+              actualDataRange={actualDataRange}
+            />
           </div>
+        )}
+        {/* View toggle + Download-CSV, right-aligned on one row */}
+        <div className="flex items-center justify-end gap-2">
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
               variant="ghost"
@@ -229,63 +223,10 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
+          {csvRows && csvRows.length > 0 && (
+            <CsvExportButton rows={csvRows} title="Planned and Actual Disbursements by Sector" />
+          )}
         </div>
-        
-        {/* Year Selector */}
-        <Collapsible open={isYearSelectorOpen} onOpenChange={setIsYearSelectorOpen} className="mt-4">
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-between">
-              <span className="flex items-center gap-2">
-                <span className="font-medium">Selected Years:</span>
-                {selectedYears.length === 0 ? (
-                  <Badge variant="secondary">None</Badge>
-                ) : selectedYears.length === availableYears.length ? (
-                  <Badge variant="secondary">All Years</Badge>
-                ) : (
-                  <div className="flex gap-1">
-                    {selectedYears.map(year => (
-                      <Badge key={year} variant="secondary">{year}</Badge>
-                    ))}
-                  </div>
-                )}
-              </span>
-              {isYearSelectorOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3 p-4 border rounded-lg bg-muted/30">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="text-body font-medium">Select years to display</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleAllYears}
-              >
-                {selectedYears.length === availableYears.length ? 'Deselect All' : 'Select All'}
-              </Button>
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-              {availableYears.map(year => (
-                <div key={year} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`year-${year}`}
-                    checked={selectedYears.includes(year)}
-                    onCheckedChange={() => toggleYear(year)}
-                  />
-                  <Label
-                    htmlFor={`year-${year}`}
-                    className="text-body cursor-pointer"
-                  >
-                    {year}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
       </div>
       <div>
         {selectedYears.length === 0 ? (

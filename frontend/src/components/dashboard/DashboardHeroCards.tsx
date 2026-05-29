@@ -52,7 +52,7 @@ function DualMetricCard({
 }: DualMetricCardProps) {
   return (
     <TooltipProvider>
-      <Card className={`bg-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.06)] transition-shadow h-full ${className || ''}`}>
+      <Card className={`bg-white hover:shadow-card-hover transition-shadow h-full ${className || ''}`}>
         <CardContent className="p-5">
           {/* Card Title */}
           <div className="flex items-center gap-2 mb-4">
@@ -198,7 +198,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       {/* Card 2: Budgets */}
       <StaggerItem>
         <TooltipProvider>
-          <Card className="bg-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.06)] transition-shadow h-full">
+          <Card className="bg-white hover:shadow-card-hover transition-shadow h-full">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
       {/* Card 3: Activities Overview (Validation + Publication + Status) */}
       <StaggerItem className="col-span-2 lg:col-span-1">
         <TooltipProvider>
-          <Card className="bg-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.06)] transition-shadow h-full">
+          <Card className="bg-white hover:shadow-card-hover transition-shadow h-full">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-body font-medium text-muted-foreground">Activities</span>

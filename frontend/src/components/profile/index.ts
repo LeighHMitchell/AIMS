@@ -1,5 +1,11 @@
 export { ProfileLayout } from "./ProfileLayout"
-export { ProfileHero, ProfileHeroCompactStrip, type HeroAccent } from "./ProfileHero"
+export {
+  ProfileHero,
+  ProfileHeroCompactStrip,
+  HERO_HEIGHT_WITH_IMAGE,
+  HERO_HEIGHT_WITHOUT_IMAGE,
+  type HeroAccent,
+} from "./ProfileHero"
 export { useShrinkOnScroll } from "./useShrinkOnScroll"
 export { ProfileTabs, type ProfileTabSpec } from "./ProfileTabs"
 export { RailBlock } from "./RailBlock"

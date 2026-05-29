@@ -31,7 +31,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
 
   try {
     
-    const body: BulkImportRequest = await request.json();
+    const body: BulkImportRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' } as any, { status: 400 });
     const { xmlContent, activityIndices, createNew } = body;
 
     // Validate request

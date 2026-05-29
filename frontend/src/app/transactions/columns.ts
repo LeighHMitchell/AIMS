@@ -48,12 +48,12 @@ export const transactionColumns: ColumnConfig<TransactionColumnId>[] = [
   // Default columns (8 default visible + 2 always visible)
   { id: "checkbox", label: "Select", group: "default", alwaysVisible: true, defaultVisible: true },
   { id: "activity", label: "Activity", group: "default", defaultVisible: true },
-  { id: "systemId", label: "Transaction ID", group: "default", defaultVisible: true },
+  { id: "systemId", label: "Transaction ID", group: "default", defaultVisible: false },
   { id: "transactionDate", label: "Date", group: "default", defaultVisible: true },
   { id: "transactionType", label: "Type", group: "default", defaultVisible: true },
   { id: "organizations", label: "Provider → Receiver", group: "default", defaultVisible: true },
-  { id: "amount", label: "Amount", group: "default", defaultVisible: true },
-  { id: "valueDate", label: "Value Date", group: "default", defaultVisible: true },
+  { id: "amount", label: "Original Value", group: "default", defaultVisible: false },
+  { id: "valueDate", label: "Value Date", group: "default", defaultVisible: false },
   { id: "usdValue", label: "USD Value", group: "default", defaultVisible: true },
   { id: "financeType", label: "Finance Type", group: "default", defaultVisible: true },
 
@@ -111,9 +111,9 @@ export const defaultVisibleTransactionColumns: TransactionColumnId[] = transacti
 /**
  * localStorage key for persisting column visibility
  */
-export const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = "aims_transaction_list_visible_columns_v2";
+export const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = "aims_transaction_list_visible_columns_v5";
 
 /**
  * localStorage key for persisting column order
  */
-export const TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_transaction_list_column_order_v2";
+export const TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_transaction_list_column_order_v5";

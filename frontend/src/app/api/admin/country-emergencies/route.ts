@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { name, code, startDate, endDate, location, description, isActive } = body;
 
     // Validate required fields

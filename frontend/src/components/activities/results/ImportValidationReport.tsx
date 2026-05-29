@@ -48,37 +48,47 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
   const baselineElementsTotal = 6; // value, year, iso-date, comment, location, dimension, document-link
   const periodElementsTotal = 10; // start, end, target value/comment/location/dimension/document, actual value/comment/location/dimension/document
 
-  const resultCoverage = Math.round((new Set(summary.coverage.result_elements_found).size / resultElementsTotal) * 100);
-  const indicatorCoverage = Math.round((new Set(summary.coverage.indicator_elements_found).size / indicatorElementsTotal) * 100);
-  const baselineCoverage = Math.round((new Set(summary.coverage.baseline_elements_found).size / baselineElementsTotal) * 100);
-  const periodCoverage = Math.round((new Set(summary.coverage.period_elements_found).size / periodElementsTotal) * 100);
+  // Defensive defaults — the results-import API response may omit coverage/errors/warnings.
+  // Without these guards the report crashes with
+  // "undefined is not an object (evaluating 'summary.coverage.result_elements_found')".
+  const resultElementsFound = summary?.coverage?.result_elements_found ?? [];
+  const indicatorElementsFound = summary?.coverage?.indicator_elements_found ?? [];
+  const baselineElementsFound = summary?.coverage?.baseline_elements_found ?? [];
+  const periodElementsFound = summary?.coverage?.period_elements_found ?? [];
+  const errors = summary?.errors ?? [];
+  const warnings = summary?.warnings ?? [];
+
+  const resultCoverage = Math.round((new Set(resultElementsFound).size / resultElementsTotal) * 100);
+  const indicatorCoverage = Math.round((new Set(indicatorElementsFound).size / indicatorElementsTotal) * 100);
+  const baselineCoverage = Math.round((new Set(baselineElementsFound).size / baselineElementsTotal) * 100);
+  const periodCoverage = Math.round((new Set(periodElementsFound).size / periodElementsTotal) * 100);
   const overallCoverage = Math.round((resultCoverage + indicatorCoverage + baselineCoverage + periodCoverage) / 4);
 
   // Coverage data for table
   const coverageData = [
-    { 
-      category: 'Result Elements', 
-      coverage: resultCoverage, 
+    {
+      category: 'Result Elements',
+      coverage: resultCoverage,
       elements: ['title', 'description', 'aggregation-status', 'reference', 'document-link'],
-      found: summary.coverage.result_elements_found
+      found: resultElementsFound
     },
-    { 
-      category: 'Indicator Elements', 
-      coverage: indicatorCoverage, 
+    {
+      category: 'Indicator Elements',
+      coverage: indicatorCoverage,
       elements: ['title', 'description', 'measure', 'ascending', 'aggregation-status', 'reference', 'document-link'],
-      found: summary.coverage.indicator_elements_found
+      found: indicatorElementsFound
     },
-    { 
-      category: 'Baseline Elements', 
-      coverage: baselineCoverage, 
+    {
+      category: 'Baseline Elements',
+      coverage: baselineCoverage,
       elements: ['value', 'year', 'iso-date', 'comment', 'location', 'dimension', 'document-link'],
-      found: summary.coverage.baseline_elements_found
+      found: baselineElementsFound
     },
-    { 
-      category: 'Period Elements', 
-      coverage: periodCoverage, 
+    {
+      category: 'Period Elements',
+      coverage: periodCoverage,
       elements: ['period-start', 'period-end', 'target/value', 'target/comment', 'target/location', 'target/dimension', 'target/document-link', 'actual/value', 'actual/comment', 'actual/location', 'actual/dimension', 'actual/document-link'],
-      found: summary.coverage.period_elements_found
+      found: periodElementsFound
     },
   ];
 
@@ -136,12 +146,12 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
       </div>
 
       {/* Errors Display */}
-      {summary.errors.length > 0 && (
+      {errors.length > 0 && (
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="bg-muted px-4 py-3 border-b border-border">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <XCircle className="h-4 w-4" />
-              Import Errors ({summary.errors.length})
+              Import Errors ({errors.length})
             </h3>
           </div>
           <Table>
@@ -153,7 +163,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
               </TableRow>
             </TableHeader>
             <TableBody>
-              {summary.errors.map((error, index) => (
+              {errors.map((error, index) => (
                 <TableRow key={index} className="border-b border-border">
                   <TableCell className="text-muted-foreground border-r border-border">{index + 1}</TableCell>
                   <TableCell className="font-medium text-foreground border-r border-border">{error.message}</TableCell>
@@ -169,12 +179,12 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
       )}
 
       {/* Warnings Display */}
-      {summary.warnings && summary.warnings.length > 0 && (
+      {warnings && warnings.length > 0 && (
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="bg-muted px-4 py-3 border-b border-border">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
-              Warnings ({summary.warnings.length})
+              Warnings ({warnings.length})
             </h3>
           </div>
           <Table>
@@ -186,7 +196,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
               </TableRow>
             </TableHeader>
             <TableBody>
-              {summary.warnings.map((warning, index) => (
+              {warnings.map((warning, index) => (
                 <TableRow key={index} className="border-b border-border">
                   <TableCell className="text-muted-foreground border-r border-border">{index + 1}</TableCell>
                   <TableCell className="text-foreground border-r border-border">{warning.message}</TableCell>
@@ -199,7 +209,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
       )}
 
       {/* Success Message */}
-      {summary.errors.length === 0 && (
+      {errors.length === 0 && (
         <Alert className="border-border bg-muted">
           <CheckCircle className="h-4 w-4 text-muted-foreground" />
           <AlertDescription className="text-foreground">

@@ -145,7 +145,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -158,7 +158,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -171,7 +171,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -208,7 +208,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             </ResponsiveContainer>
           )
           return (
-            <Card className="bg-card border-border">
+            <Card className="bg-card">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
@@ -261,7 +261,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             </ResponsiveContainer>
           )
           return (
-            <Card className="bg-card border-border">
+            <Card className="bg-card">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
@@ -286,7 +286,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       </div>
 
       {/* Detailed Indicator Breakdown */}
-      <Card className="bg-card border-border">
+      <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">Detailed Indicator Analysis</CardTitle>
         </CardHeader>

@@ -60,6 +60,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { ChartDataTable } from '@/components/ui/chart-data-table';
 
 type ViewMode = "bar" | "pie" | "table";
 type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
@@ -358,68 +359,41 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, co
   );
 
   const renderTable = () => (
-    <div className="overflow-auto h-full">
-      <Table>
-        <TableHeader>
-          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-            <TableHead className="whitespace-normal">
-              <button
-                className="flex items-center hover:text-foreground transition-colors"
-                onClick={() => handleSort("name")}
-              >
-                State/Region
-                <SortIcon field="name" />
-              </button>
-            </TableHead>
-            <TableHead className="text-right whitespace-normal">
-              <button
-                className="flex items-center justify-end w-full hover:text-foreground transition-colors"
-                onClick={() => handleSort("value")}
-              >
-                Value (USD)
-                <SortIcon field="value" />
-              </button>
-            </TableHead>
-            <TableHead className="text-right">
-              <button
-                className="flex items-center justify-end w-full hover:text-foreground transition-colors"
-                onClick={() => handleSort("percentage")}
-              >
-                %
-                <SortIcon field="percentage" />
-              </button>
-            </TableHead>
-            <TableHead className="text-right">
-              <button
-                className="flex items-center justify-end w-full hover:text-foreground transition-colors"
-                onClick={() => handleSort("activityCount")}
-              >
-                Activities
-                <SortIcon field="activityCount" />
-              </button>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedTableData.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>
-                <div className="font-medium">{item.name}</div>
-              </TableCell>
-              <TableCell className="text-right font-mono">
-                {formatCurrencyFull(item.value)}
-              </TableCell>
-              <TableCell className="text-right">
-                {item.percentage.toFixed(1)}%
-              </TableCell>
-              <TableCell className="text-right">
-                {item.activityCount}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <ChartDataTable
+      rows={chartData}
+      columns={[
+        {
+          key: 'name',
+          label: 'State/Region',
+          numeric: false,
+          format: (_v, row) => (
+            <span className="flex items-center gap-2">
+              <span
+                className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: (row as any).color }}
+              />
+              <span>{row.name}</span>
+            </span>
+          ),
+        },
+        { key: 'value', label: 'Value (USD)', numeric: true, currency: 'USD' },
+        {
+          key: 'percentage',
+          label: '%',
+          numeric: true,
+          includeInTotal: false,
+          format: (v) => `${(Number(v) || 0).toFixed(1)}%`,
+        },
+        {
+          key: 'activityCount',
+          label: 'Activities',
+          numeric: true,
+          includeInTotal: false,
+          format: (v) => Number(v).toLocaleString(),
+        },
+      ]}
+      maxHeight="100%"
+    />
   );
 
   const renderContent = () => {
@@ -448,7 +422,9 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, co
   };
 
   const renderControls = () => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
+    <div className="flex items-center justify-between gap-2 mb-3 flex-shrink-0">
+        {/* Filters + toggles (left) */}
+        <div className="flex items-center gap-2 flex-wrap">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
         <SelectTrigger className="min-w-[280px]">
           <span className="flex items-center gap-2 truncate">
@@ -491,7 +467,9 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, co
           </SelectItem>
         </SelectContent>
       </Select>
-
+        </div>
+        {/* Button groups + CSV, right-aligned. */}
+        <div className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1">
         {/* View mode toggles */}
         <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -527,7 +505,8 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, co
           </Button>
         </div>
 
-        {/* Export button - only in expanded view */}
+        </div>
+        {/* Export button - only in expanded view, right-aligned alone */}
         {!compact && (
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -542,20 +521,20 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, co
             </Button>
           </div>
         )}
-      </div>
+        </div>
     </div>
   );
 
   return (
     <div className="h-full flex flex-col">
-      {renderContent()}
       {!compact && renderControls()}
+      {renderContent()}
 
       {!compact && (
         <>
           {/* Allocation Details Table - only shown in expanded view */}
           {!loading && data && data.length > 0 && (
-            <Card className="bg-white border-border mt-4 flex flex-col">
+            <Card className="bg-white mt-4 flex flex-col">
               <CardHeader className="pb-2 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <CardTitle>

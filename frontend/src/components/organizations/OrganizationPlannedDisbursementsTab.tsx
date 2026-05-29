@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { DollarSign, Download, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, ArrowRight, X } from 'lucide-react';
+import { DollarSign, Download, ChevronUp, ChevronDown, ChevronsUpDown, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,8 @@ import {
   type PlannedDisbursementRow,
 } from '@/lib/exports/entities/planned-disbursements';
 import { apiFetch } from '@/lib/api-fetch';
+import { FullPagination } from '@/components/ui/full-pagination';
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -689,104 +691,17 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
       </Card>
 
       {/* Pagination - Hide in grouped view */}
-      {sortedDisbursements.length > 0 && !groupedView && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-body text-muted-foreground">
-                Showing {Math.min(startIndex + 1, sortedDisbursements.length)} to {Math.min(endIndex, sortedDisbursements.length)} of {sortedDisbursements.length} planned disbursements
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  First
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  Last
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-body text-muted-foreground">Items per page:</label>
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={(value) => {
-                    setItemsPerPage(Number(value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {!groupedView && (
+        <FullPagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={sortedDisbursements.length}
+          perPage={itemsPerPage}
+          onPageChange={(p) => setCurrentPage(p)}
+          onPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+          perPageOptions={PAGE_SIZE_OPTIONS}
+          itemLabel="planned disbursements"
+        />
       )}
     </div>
   );

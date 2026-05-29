@@ -487,7 +487,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     // Return JSX with grey, smaller currency code
     return (
       <>
-        <span className="text-helper text-muted-foreground">{currencyCode}</span> {formattedValue}
+        <span className="text-xs text-muted-foreground">{currencyCode}</span> {formattedValue}
       </>
     );
   };
@@ -570,9 +570,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 </h3>
               </div>
               {/* Import Button */}
-              <Button 
-                size="sm" 
-                variant="outline"
+              <Button
+                size="sm"
+                variant="default"
                 onClick={() => onSelect(activity)}
                 disabled={isLoading}
                 className="shrink-0"
@@ -795,7 +795,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           </code>
                           <span className="text-muted-foreground">{roleName}</span>
                           <span className="text-muted-foreground">|</span>
-                          <span>{org.name}</span>
+                          <span className="text-xs">{org.name}</span>
                           {(() => {
                             const refDisplay = getOrgRefDisplay(org.ref);
                             if (!refDisplay.normalized) return null;
@@ -8956,17 +8956,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     setSnippetContent('');
                   }}
                   className="flex-1"
-                  style={importMethod === 'file' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'file') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'file') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   <FileCode className="h-4 w-4 mr-2" />
                   Upload File
@@ -8979,17 +8968,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     setSnippetContent('');
                   }}
                   className="flex-1"
-                  style={importMethod === 'url' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'url') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'url') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   From URL
@@ -9001,17 +8979,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     setXmlUrl('');
                   }}
                   className="flex-1"
-                  style={importMethod === 'snippet' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'snippet') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'snippet') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   <ClipboardPaste className="h-4 w-4 mr-2" />
                   Paste Snippet
@@ -9097,17 +9064,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       onClick={parseXmlFile}
                       disabled={!xmlUrl.trim() || isParsing}
                       className="w-full"
-                      style={{ backgroundColor: '#135667' }}
-                      onMouseEnter={(e) => {
-                        if (!(!xmlUrl.trim() || isParsing)) {
-                          e.currentTarget.style.backgroundColor = '#0f4552';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!(!xmlUrl.trim() || isParsing)) {
-                          e.currentTarget.style.backgroundColor = '#135667';
-                        }
-                      }}
                     >
                       {isParsing ? (
                         <>
@@ -9156,17 +9112,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   disabled={!snippetContent.trim() || isParsing}
                   className="w-full"
                   data-action="parse-xml"
-                  style={{ backgroundColor: '#135667' }}
-                  onMouseEnter={(e) => {
-                    if (!(!snippetContent.trim() || isParsing)) {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!(!snippetContent.trim() || isParsing)) {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   {isParsing ? (
                     <>
@@ -9694,8 +9639,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
+              <DialogTitle>
                 Select Fields for {selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)} {selectedItem.index + 1}
               </DialogTitle>
               <DialogDescription>
@@ -9901,8 +9845,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       <Dialog open={showDebugConsole} onOpenChange={setShowDebugConsole}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bug className="h-5 w-5" />
+            <DialogTitle>
               Debug Console
               <Badge variant="secondary" className="ml-2">
                 {debugLogs.length} logs
@@ -10665,8 +10608,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+          <DialogTitle>
             Refine Sector Classifications
           </DialogTitle>
           <DialogDescription>

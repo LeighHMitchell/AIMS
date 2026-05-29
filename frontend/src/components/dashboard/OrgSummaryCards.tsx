@@ -98,7 +98,7 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       {cards.map((card) => (
         <StaggerItem key={card.title}>
         <Card
-          className={`bg-white cursor-pointer ${card.bgColor} hover:shadow-md`}
+          className={`bg-white cursor-pointer ${card.bgColor} hover:shadow-card-hover`}
           onClick={card.onClick}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

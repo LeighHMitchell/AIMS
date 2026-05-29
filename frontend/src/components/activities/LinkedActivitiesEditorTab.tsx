@@ -532,9 +532,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 displayActivities.map((activity) => (
                   <Card
                     key={activity.id}
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-md hover:border-gray-400",
-                      "border-border"
+                    className={cn("cursor-pointer transition-all hover:shadow-card-hover hover:border-gray-400",
+                      ""
                     )}
                     onClick={() => canEdit && handleActivitySelect(activity)}
                   >

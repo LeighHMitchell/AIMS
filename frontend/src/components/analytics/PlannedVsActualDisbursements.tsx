@@ -15,14 +15,20 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, BarChart3, TrendingUpIcon, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, BarChart3, Download, Maximize2, TrendingUpIcon, Table as TableIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { CHART_STRUCTURE_COLORS, PLANNED_DISBURSEMENT_COLOR, getTransactionTypeColor } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
-import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
+import { useChartExpansion, ChartExpansionProvider } from '@/lib/chart-expansion-context'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { exportChartToCSV } from '@/lib/chart-export'
+import { toast } from 'sonner'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 import { cn } from '@/lib/utils'
 import {
   Table,
@@ -32,6 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -68,12 +75,13 @@ interface PlannedVsActualDisbursementsProps {
   onDataChange?: (data: Array<{ Period: string; "Planned (USD)": number; "Actual (USD)": number }>) => void
 }
 
-export function PlannedVsActualDisbursements({
+function PlannedVsActualDisbursementsInner({
   dateRange,
   filters,
   refreshKey,
-  onDataChange
-}: PlannedVsActualDisbursementsProps) {
+  onDataChange,
+  onExpand,
+}: PlannedVsActualDisbursementsProps & { onExpand?: () => void }) {
   const isExpanded = useChartExpansion()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,12 +106,10 @@ export function PlannedVsActualDisbursements({
           .eq('status', 'actual')
           .order('transaction_date', { ascending: true })
 
-        // Apply date range filter
-        if (dateRange) {
-          disbursementsQuery = disbursementsQuery
-            .gte('transaction_date', dateRange.from.toISOString())
-            .lte('transaction_date', dateRange.to.toISOString())
-        }
+        // Fetch the full available span so the year picker reflects all years that have data.
+        disbursementsQuery = disbursementsQuery
+          .gte('transaction_date', new Date(2010, 0, 1).toISOString())
+          .lte('transaction_date', new Date(new Date().getFullYear() + 10, 11, 31).toISOString())
 
         // Apply donor filter
         if (filters?.donor) {
@@ -124,11 +130,10 @@ export function PlannedVsActualDisbursements({
           .select('period_start, amount, usd_amount, activity_id')
           .order('period_start', { ascending: true })
 
-        if (dateRange) {
-          plannedQuery = plannedQuery
-            .gte('period_start', dateRange.from.toISOString())
-            .lte('period_start', dateRange.to.toISOString())
-        }
+        // Fetch the full available span so the year picker reflects all years that have data.
+        plannedQuery = plannedQuery
+          .gte('period_start', new Date(2010, 0, 1).toISOString())
+          .lte('period_start', new Date(new Date().getFullYear() + 10, 11, 31).toISOString())
 
         const { data: plannedDisbursements, error: plannedError } = await plannedQuery
 
@@ -199,6 +204,14 @@ export function PlannedVsActualDisbursements({
 
     fetchData()
   }, [dateRange, filters, refreshKey])
+
+  // Gregorian calendar years present in the loaded data — used to default the
+  // year picker to the full span of years that actually have data.
+  const dataYears = useMemo(
+    () => rawData.map((item: any) => item.year as number),
+    [rawData],
+  )
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears)
 
   // Group data by year or month
   const groupedData = useMemo(() => {
@@ -290,6 +303,21 @@ export function PlannedVsActualDisbursements({
     )
   }, [filteredData, onDataChange])
 
+  // CSV export — Period / Planned / Actual, matching the table view.
+  const handleExportCSV = () => {
+    if ((filteredData as any[]).length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+    const rows = (filteredData as any[]).map((item) => ({
+      Period: item.period,
+      "Planned (USD)": Math.round(item.planned || 0),
+      "Actual (USD)": Math.round(item.actual || 0),
+    }))
+    exportChartToCSV(rows, 'Planned vs Actual Disbursements')
+    toast.success('Chart data exported successfully')
+  }
+
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
       return `$${(value / 1000000).toFixed(1)}m`
@@ -325,54 +353,28 @@ export function PlannedVsActualDisbursements({
     ]
 
     return (
-      <div className="flex gap-1">
-        {periods.map(period => (
-          <Button
-            key={period.value}
-            variant={timePeriod === period.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTimePeriod(period.value)}
-            className={`h-7 px-3 text-xs ${
-              timePeriod === period.value
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-white text-muted-foreground border-input hover:bg-muted'
-            }`}
-          >
-            {period.label}
-          </Button>
-        ))}
-      </div>
+      <ChartViewToggle
+        ariaLabel="Time period"
+        variant="text"
+        value={timePeriod}
+        onValueChange={setTimePeriod}
+        options={periods}
+      />
     )
   }
 
   const GroupByToggle = () => {
     return (
-      <div className="flex gap-1">
-        <Button
-          variant={groupBy === 'year' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setGroupBy('year')}
-          className={`h-7 px-3 text-helper ${
-            groupBy === 'year'
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-white text-muted-foreground border-input hover:bg-muted'
-          }`}
-        >
-          Year
-        </Button>
-        <Button
-          variant={groupBy === 'month' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setGroupBy('month')}
-          className={`h-7 px-3 text-helper ${
-            groupBy === 'month'
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-white text-muted-foreground border-input hover:bg-muted'
-          }`}
-        >
-          Month
-        </Button>
-      </div>
+      <ChartViewToggle
+        ariaLabel="Group by"
+        variant="text"
+        value={groupBy}
+        onValueChange={setGroupBy}
+        options={[
+          { value: 'year', label: 'Year' },
+          { value: 'month', label: 'Month' },
+        ]}
+      />
     )
   }
 
@@ -384,12 +386,12 @@ export function PlannedVsActualDisbursements({
 
   if (error) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Planned vs Actual Disbursements
           </CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">
+          <CardDescription className="text-body text-muted-foreground mt-0.5">
             Compare planned and actual disbursements across all activities
           </CardDescription>
         </CardHeader>
@@ -406,95 +408,100 @@ export function PlannedVsActualDisbursements({
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <CardTitle className="text-base font-medium text-foreground">
-              Planned vs Actual Disbursements by {groupBy === 'year' ? 'Year' : 'Month'}
-            </CardTitle>
-            <CardDescription className="text-helper text-muted-foreground mt-0.5">
-              Compare planned and actual disbursements across all activities
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {isExpanded && (
-              <>
-                <YearRangeChip
-                  selectedYears={selectedYears}
-                  onYearsChange={setSelectedYears}
-                  initialDateRange={dateRange ?? null}
-                />
+    <div className="h-full flex flex-col">
+        {/* Calendar + year selector on its own row at the top (expanded only). */}
+        {isExpanded && (
+          <YearRangeChip
+            selectedYears={selectedYears}
+            onYearsChange={setSelectedYears}
+            actualDataRange={actualDataRange}
+            className="mb-4"
+          />
+        )}
+        {isExpanded && (
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <GroupByToggle />
+              <TimePeriodFilter />
+            </div>
+            {/* Button groups + CSV, right-aligned. */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Chart-style toggle — Lines vs Columns, as a two-button group. */}
+              <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setChartType(chartType === 'line' ? 'bar' : 'line')}
-                  className="h-7 px-3 text-helper"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setChartType('line')}
+                  className={cn("h-8 w-8", chartType === 'line' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                  title="Lines"
+                  aria-label="Lines"
                 >
-                  {chartType === 'line' ? <BarChart3 className="h-3 w-3" /> : <TrendingUpIcon className="h-3 w-3" />}
+                  <TrendingUpIcon className="h-4 w-4" />
                 </Button>
-                <GroupByToggle />
-                <TimePeriodFilter />
-              </>
-            )}
-            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8",
-                  viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setViewMode('chart')}
-                title="Chart View"
-                aria-label="Chart View"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8",
-                  viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setViewMode('table')}
-                title="Table View"
-                aria-label="Table View"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setChartType('bar')}
+                  className={cn("h-8 w-8", chartType === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                  title="Columns"
+                  aria-label="Columns"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8",
+                    viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setViewMode('chart')}
+                  title="Chart View"
+                  aria-label="Chart View"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8",
+                    viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setViewMode('table')}
+                  title="Table View"
+                  aria-label="Table View"
+                >
+                  <TableIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleExportCSV}
+              className="h-8 w-8"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+            </Button>
             </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
+        )}
         {filteredData.length > 0 ? (
           viewMode === 'table' ? (
-            <div className="overflow-auto max-h-[480px]">
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-                    <TableHead>Period</TableHead>
-                    <TableHead className="text-right whitespace-normal">Planned (USD)</TableHead>
-                    <TableHead className="text-right whitespace-normal">Actual (USD)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(filteredData as any[]).map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-medium">{item.period}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(item.planned || 0)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(item.actual || 0)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <ChartDataTable
+              rows={filteredData as any[]}
+              columns={[
+                { key: 'period', label: 'Period', numeric: false },
+                { key: 'planned', label: 'Planned', numeric: true, currency: 'USD', color: PLANNED_DISBURSEMENT_COLOR },
+                { key: 'actual', label: 'Actual', numeric: true, currency: 'USD', color: getTransactionTypeColor('3') },
+              ]}
+              currency="USD"
+              maxHeight={480}
+            />
           ) : (
           <ResponsiveContainer width="100%" height={400} key={`disbursement-${groupBy}-${chartType}`}>
             {chartType === 'line' ? (
@@ -517,7 +524,7 @@ export function PlannedVsActualDisbursements({
                   textAnchor={groupBy === 'month' ? 'end' : 'middle'}
                   height={groupBy === 'month' ? 80 : 30}
                 />
-                <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
+                <YAxis tickFormatter={(value) => formatAxisCurrency(value)} stroke="#64748B" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Line
@@ -559,7 +566,7 @@ export function PlannedVsActualDisbursements({
                   textAnchor={groupBy === 'month' ? 'end' : 'middle'}
                   height={groupBy === 'month' ? 80 : 30}
                 />
-                <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
+                <YAxis tickFormatter={(value) => formatAxisCurrency(value)} stroke="#64748B" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                 <Legend />
                 <Bar dataKey="planned" name="Planned" fill={PLANNED_DISBURSEMENT_COLOR} radius={[4, 4, 0, 0]} animationDuration={300} />
@@ -584,7 +591,10 @@ export function PlannedVsActualDisbursements({
             This chart compares planned disbursement schedules against actual disbursement transactions across all activities. Use the time period buttons to zoom into recent months or view the full history, and toggle between monthly and yearly grouping. Significant gaps between planned and actual lines may indicate forecasting issues or implementation delays.
           </p>
         )}
-      </CardContent>
-    </Card>
+    </div>
   )
+}
+
+export function PlannedVsActualDisbursements(props: PlannedVsActualDisbursementsProps) {
+  return <PlannedVsActualDisbursementsInner {...props} />
 }

@@ -16,7 +16,8 @@ export async function PUT(
 
   try {
     const { transactionId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Handle value_date logic - only store if different from transaction_date
     const value_date = body.value_date && body.value_date !== body.transaction_date 

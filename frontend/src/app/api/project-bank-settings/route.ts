@@ -23,7 +23,8 @@ export async function PUT(request: Request) {
   const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { key, value, enforcement } = body;
 
   if (!key) {

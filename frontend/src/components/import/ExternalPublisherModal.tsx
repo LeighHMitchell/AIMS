@@ -1035,8 +1035,7 @@ export function ExternalPublisherModal({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ExternalLink className="h-5 w-5" />
+            <DialogTitle>
               {iatiImportStrings.modalTitle}
             </DialogTitle>
             <DialogDescription>
@@ -1243,8 +1242,7 @@ export function ExternalPublisherModal({
     <Dialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <DialogTitle>
             Replace Existing Activities?
           </DialogTitle>
           <DialogDescription>

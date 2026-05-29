@@ -14,7 +14,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Info, CalendarIcon, ChevronDown } from 'lucide-react'
+import { AlertCircle, Info, CalendarIcon, ChevronDown, BarChart3, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
@@ -24,7 +24,7 @@ import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/Char
 import { FormulaTooltip } from '@/components/ui/formula-tooltip';
 import { cn } from '@/lib/utils';
 import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector';
-import { ChartViewToggle, type ChartView } from '@/components/charts/ChartViewToggle';
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle';
 
 // Series colours resolve through the single source of truth (lib/chart-colors)
 // so the actual-spend line and perfect-spend reference line match every
@@ -105,7 +105,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   const [noBudget, setNoBudget] = useState(false)
   const [noDisbursements, setNoDisbursements] = useState(false)
   const [timeRange, setTimeRange] = useState<TimeRangeKey>('all')
-  const [view, setView] = useState<ChartView>('chart')
+  const [view, setView] = useState<'chart' | 'table'>('chart')
 
   // Calendar / year selectors — shared component used by every finance chart.
   const calendarYearDates = useMemo(
@@ -381,7 +381,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
 
   if (noBudget) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Spend Trajectory
@@ -404,7 +404,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
 
   if (loading) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Spend Trajectory
@@ -422,7 +422,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
 
   if (error) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Spend Trajectory
@@ -448,7 +448,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   return (
     <ChartFullscreen>
       {({ isFullscreen, toggle }) => (
-    <Card className={cn("bg-white border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+    <Card className={cn("bg-white", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
       <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
@@ -474,7 +474,16 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
           <CalendarYearSelector {...calendarYearState} />
           <div className="ml-auto flex items-center gap-2">
-            <ChartViewToggle view={view} setView={setView} />
+            <ChartViewToggle
+              ariaLabel="View"
+              variant="icon"
+              value={view}
+              onValueChange={setView}
+              options={[
+                { value: 'chart', label: 'Chart', icon: BarChart3 },
+                { value: 'table', label: 'Table', icon: TableIcon },
+              ]}
+            />
           </div>
         </div>
       )}

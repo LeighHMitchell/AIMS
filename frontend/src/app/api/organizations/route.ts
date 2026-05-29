@@ -99,7 +99,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { name, acronym, type, country, ...otherFields } = body;
     
     
@@ -200,7 +201,8 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { id, ...updates } = body;
     
     if (!id) {
@@ -320,7 +322,8 @@ export async function DELETE(request: NextRequest) {
     let ids: string[] = [];
     let isBulk = false;
     try {
-      const body = await request.json();
+      const body = await request.json().catch(() => null);
+      if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
       if (body && Array.isArray(body.ids)) {
         ids = body.ids.filter((v: unknown) => typeof v === 'string' && v.length > 0);
         isBulk = true;

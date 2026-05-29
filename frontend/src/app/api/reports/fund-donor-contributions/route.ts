@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const { data: transactions, error: txnError } = await supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, usd_value, currency, provider_org_name, provider_org_ref, transaction_date')
+      .select('activity_id, transaction_type, value, value_usd, currency, provider_org_name, provider_org_ref, transaction_date')
       .in('activity_id', fundIds)
       .in('transaction_type', ['1', '11', '13'])
       .order('transaction_date', { ascending: true })
@@ -43,7 +43,6 @@ export async function GET(request: NextRequest) {
     const rows = (transactions || []).map(t => {
       // Currency-safe: only fall back to raw value when currency === 'USD'.
       const usd = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
-        : (t.usd_value != null && Number.isFinite(Number(t.usd_value))) ? Number(t.usd_value)
         : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0)
       const date = t.transaction_date
       const year = date ? new Date(date).getFullYear().toString() : 'Unknown'

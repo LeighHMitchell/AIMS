@@ -11,7 +11,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { meta, userId } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { meta, userId } = body;
 
     if (!meta || !userId) {
       return NextResponse.json(

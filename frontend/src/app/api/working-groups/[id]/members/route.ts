@@ -95,7 +95,8 @@ export async function POST(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     if (!body.person_name) {
       return NextResponse.json({ error: 'person_name is required' }, { status: 400 });

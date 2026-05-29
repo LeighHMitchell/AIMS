@@ -56,9 +56,8 @@ export function SystemFieldItem({
       {...(isDraggable ? sortable.listeners : {})}
     >
       <Card
-        className={cn(
-          "p-3 transition-all",
-          isMapped ? "bg-green-50 border-green-300" : field.required ? "border-destructive/30" : "border-border",
+        className={cn("p-3 transition-all",
+          isMapped ? "bg-green-50 border-green-300" : field.required ? "border-destructive/30" : "",
           droppable.isOver && "ring-2 ring-primary shadow-lg"
         )}
       >

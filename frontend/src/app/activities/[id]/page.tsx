@@ -1414,7 +1414,7 @@ export default function ActivityDetailPage() {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="max-w-md mx-auto border-border bg-card">
+          <Card className="max-w-md mx-auto bg-card">
             <CardContent className="pt-6">
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -1694,7 +1694,7 @@ export default function ActivityDetailPage() {
           {/* ── Charts Row ──────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Budget by Year Chart */}
-            <Card className="border-border bg-card flex flex-col">
+            <Card className="bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <CardTitle className="text-helper font-semibold text-foreground">
@@ -1906,7 +1906,7 @@ export default function ActivityDetailPage() {
             </Card>
 
             {/* Planned vs Actual */}
-            <Card className="border-border bg-card flex flex-col">
+            <Card className="bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <CardTitle className="text-helper font-semibold text-foreground">
@@ -2198,7 +2198,7 @@ export default function ActivityDetailPage() {
             </Card>
 
             {/* Finance Type Breakdown */}
-            <Card className="border-border bg-card">
+            <Card className="bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-helper font-semibold text-foreground">Finance Types</CardTitle>
               </CardHeader>
@@ -2491,7 +2491,7 @@ export default function ActivityDetailPage() {
                   {activity.sectors && activity.sectors.length > 0 ? (
                     <div className="space-y-6">
                       {/* Sector Flow Visualization - Full Width */}
-                      <Card className="border-border">
+                      <Card>
                         <CardHeader>
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div>
@@ -2679,7 +2679,7 @@ export default function ActivityDetailPage() {
 
                     </div>
                   ) : (
-                    <Card className="border-border">
+                    <Card>
                       <CardContent className="text-center py-12">
                         <PieChartIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No sectors have been allocated for this activity.</p>
@@ -2870,7 +2870,7 @@ export default function ActivityDetailPage() {
                 <div className="space-y-6">
                   {/* Reporting Organisation */}
                   {reportingOrg && (
-                  <Card className="border-border">
+                  <Card>
                     <CardHeader>
                       <CardTitle className="text-foreground flex items-center gap-2">
                           <Building2 className="h-5 w-5" />
@@ -2965,7 +2965,7 @@ export default function ActivityDetailPage() {
                   )}
                   {/* Participating Organizations Table */}
                   {participatingOrgs.length > 0 && (
-                  <Card className="border-border">
+                  <Card>
                     <CardHeader>
                       <CardTitle className="text-foreground flex items-center gap-2">
                         <Users className="h-5 w-5" />
@@ -3099,7 +3099,7 @@ export default function ActivityDetailPage() {
 
                   {/* Organizational Network Graph */}
                   {(reportingOrg || participatingOrgs.length > 0) && (
-                    <Card className="border-border">
+                    <Card>
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>
@@ -3607,7 +3607,7 @@ export default function ActivityDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Map Section - Takes first 2 columns */}
                   <div className="md:col-span-2">
-                    <Card className="border-border h-full">
+                    <Card className="h-full">
                       <CardHeader>
                         <CardTitle className="text-foreground flex items-center gap-2">
                           <MapPin className="h-5 w-5" />
@@ -3645,7 +3645,7 @@ export default function ActivityDetailPage() {
 
                   {/* Location Cards Section - Takes last 2 columns */}
                   <div className="md:col-span-2">
-                    <Card className="border-border h-full">
+                    <Card className="h-full">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-foreground flex items-center gap-2">
@@ -3783,7 +3783,7 @@ export default function ActivityDetailPage() {
                     />
                   </div>
                 ) : (
-                  <Card className="border-border">
+                  <Card>
                     <CardHeader>
                       <CardTitle className="text-foreground flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
@@ -3821,7 +3821,7 @@ export default function ActivityDetailPage() {
               {/* SDG Alignment Tab */}
               <TabsContent value="sdg" className="p-6 border-0">
                 {activeTab === "sdg" && (
-                  <Card className="border-border">
+                  <Card>
                   <CardHeader>
                     <CardTitle className="text-foreground">SDG Alignment</CardTitle>
                     <CardDescription>

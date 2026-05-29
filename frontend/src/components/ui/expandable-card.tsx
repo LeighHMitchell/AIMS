@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Maximize2, Download, Table as TableIcon, BarChart3 } from 'lucide-react'
+import { Maximize2, Download, Table as TableIcon, BarChart3, X } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
@@ -136,7 +136,7 @@ export function ExpandableCard({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {typeof title === 'string' ? (
-                <CardTitle className="text-base font-medium text-foreground">
+                <CardTitle className="text-lg font-semibold text-foreground">
                   {title}
                 </CardTitle>
               ) : (
@@ -144,7 +144,7 @@ export function ExpandableCard({
               )}
               {description && (
                 typeof description === 'string' ? (
-                  <CardDescription className="text-helper mt-0.5">{description}</CardDescription>
+                  <CardDescription className="text-body text-muted-foreground mt-0.5">{description}</CardDescription>
                 ) : (
                   description
                 )
@@ -201,7 +201,7 @@ export function ExpandableCard({
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
                 {typeof title === 'string' ? (
-                  <DialogTitle className="text-2xl font-semibold text-foreground">
+                  <DialogTitle className="text-lg font-semibold text-foreground">
                     {title}
                   </DialogTitle>
                 ) : (
@@ -209,7 +209,7 @@ export function ExpandableCard({
                 )}
                 {description && (
                   typeof description === 'string' ? (
-                    <DialogDescription className="text-base mt-2">
+                    <DialogDescription className="text-body mt-2">
                       {description}
                     </DialogDescription>
                   ) : (
@@ -236,12 +236,33 @@ export function ExpandableCard({
                     </Tooltip>
                   </TooltipProvider>
                 )}
+                {/* Explicit close button — the `chart` Dialog variant hides the
+                    default close, so surface a visible X like other chart cards. */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsExpanded(false)}
+                  className="h-9 w-9"
+                  title="Close"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="mt-6">
+            {/* Table-view toggle + CSV download — placed above the chart body
+                (away from the title header) so they read as chart controls. */}
+            {((!hideViewToggle && exportData && exportData.length > 0) || exportData || onExport) && (
+              <div className="flex items-center justify-end gap-2 mb-3">
                 {!hideViewToggle && exportData && exportData.length > 0 && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
                     className="h-9"
+                    title={viewMode === 'chart' ? 'View as table' : 'View as chart'}
                   >
                     {viewMode === 'chart' ? (
                       <TableIcon className="h-4 w-4" />
@@ -263,9 +284,7 @@ export function ExpandableCard({
                   </Button>
                 )}
               </div>
-            </div>
-          </DialogHeader>
-          <div className="mt-6">
+            )}
             <ChartExpansionProvider isExpanded={true}>
               {viewMode === 'chart' ? children : renderTableView()}
             </ChartExpansionProvider>

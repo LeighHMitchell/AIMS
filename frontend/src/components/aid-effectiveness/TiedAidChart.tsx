@@ -165,7 +165,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -178,7 +178,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -191,7 +191,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -223,7 +223,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </ResponsiveContainer>
           )
           return (
-            <Card className="bg-card border-border">
+            <Card className="bg-card">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg font-medium text-foreground">Overall Distribution</CardTitle>
@@ -246,7 +246,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
 
         {/* Breakdown by Category */}
         {groupBy !== 'overall' && (
-          <Card className="bg-card border-border">
+          <Card className="bg-card">
             <CardHeader>
               <CardTitle className="text-lg font-medium text-foreground">
                 Breakdown by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
@@ -284,7 +284,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       {/* Performance Insights */}
       {summary && summary.best_performer && summary.needs_improvement && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardHeader>
               <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
@@ -302,7 +302,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardHeader>
               <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />

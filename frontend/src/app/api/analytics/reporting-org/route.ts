@@ -41,9 +41,9 @@ export async function GET(request: NextRequest) {
         reporting_org_id,
         created_by_org_name,
         created_by_org_acronym,
-        reporting_org:organizations!activities_reporting_org_id_fkey (
+        reporting_org:organizations!reporting_org_id (
           iati_org_id,
-          org_type
+          type
         ),
         transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       const orgName = activity.created_by_org_name || activity.created_by_org_acronym || 'Unknown Organization';
       const orgAcronym = activity.created_by_org_acronym || orgName;
       const iatiId = activity.reporting_org?.iati_org_id;
-      const orgType = activity.reporting_org?.org_type;
+      const orgType = activity.reporting_org?.type;
 
       // Initialize organization data if not exists
       if (!orgMap.has(orgName)) {

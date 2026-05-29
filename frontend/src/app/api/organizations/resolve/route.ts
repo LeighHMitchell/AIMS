@@ -41,7 +41,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResolveRe
   }
 
   try {
-    const body: ResolveRequest = await request.json()
+    const body: ResolveRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' } as any, { status: 400 });
     const { ref, narrative } = body
 
     if (!ref && !narrative) {

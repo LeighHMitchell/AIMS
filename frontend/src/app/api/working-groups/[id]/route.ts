@@ -169,7 +169,8 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Build update object with only provided fields
     const updateData: Record<string, any> = { updated_at: new Date().toISOString() };

@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         receiver_activity_uuid,
         created_at,
         auto_ref
-      `, { count: 'exact' });
+      `, { count: 'estimated' });
 
     // Apply filters
     if (transactionTypes.length > 0) {

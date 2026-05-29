@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { LucideIcon, Download, Loader2 } from "lucide-react"
+import { Download, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { exportTableToCSV } from '@/lib/exports'
@@ -15,7 +15,6 @@ export interface ReportHeader {
 export interface ReportCardProps {
   title: string
   description: string
-  icon: LucideIcon
   apiEndpoint: string
   filename: string
   headers: ReportHeader[]
@@ -24,7 +23,6 @@ export interface ReportCardProps {
 export function ReportCard({
   title,
   description,
-  icon: Icon,
   apiEndpoint,
   filename,
   headers,
@@ -71,27 +69,22 @@ export function ReportCard({
   }
 
   return (
-    <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
+    <Card className="flex flex-col h-full hover:shadow-card-hover transition-shadow">
       <CardHeader className="pb-3">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-muted rounded-lg">
-            <Icon className="h-5 w-5 text-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base font-semibold">{title}</CardTitle>
-            <CardDescription className="mt-1 text-body line-clamp-2">
-              {description}
-            </CardDescription>
-          </div>
+        <div className="min-w-0">
+          <CardTitle className="text-base font-semibold">{title}</CardTitle>
+          <CardDescription className="mt-1 text-body line-clamp-2">
+            {description}
+          </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="pt-0 mt-auto">
+      <CardContent className="pt-0 mt-auto flex justify-end">
         <Button
           onClick={handleDownload}
           disabled={isLoading}
           variant="outline"
           size="icon"
-          className="h-9 w-9 ml-auto"
+          className="h-9 w-9"
           title="Download CSV"
           aria-label="Download CSV"
         >

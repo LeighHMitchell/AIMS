@@ -32,3 +32,14 @@ export function ChartExpansionProvider({
 export function useChartExpansion(): boolean {
   return useContext(ChartExpansionContext).isExpanded
 }
+
+/**
+ * Renders its children only when inside an expanded (modal) chart card.
+ * Lets a chart that renders its OWN card wrapper keep filters/controls out of
+ * the collapsed view — collapsed then shows just the chart plus the card's
+ * ƒ / expand buttons. Must be rendered as a descendant of the card (inside its
+ * ChartExpansionProvider) to read the right value.
+ */
+export function ExpandedOnly({ children }: { children: React.ReactNode }) {
+  return useChartExpansion() ? <>{children}</> : null
+}

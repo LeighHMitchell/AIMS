@@ -166,7 +166,8 @@ export async function PUT(
     const { id } = await params;
     const supabaseAdmin = supabase;
     const homeCountry = await getSystemHomeCountry(supabaseAdmin);
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { user, ...updates } = body;  // Extract user separately so it's not included in updates
 
 

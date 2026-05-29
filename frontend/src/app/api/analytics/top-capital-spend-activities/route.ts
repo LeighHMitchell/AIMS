@@ -8,6 +8,7 @@ type MetricType = 'budgets' | 'planned' | 'commitments' | 'disbursements';
 interface ActivityCapitalSpend {
   id: string;
   title: string;
+  acronym: string;
   iatiIdentifier: string;
   capitalSpendPercentage: number;
   baseValue: number;
@@ -32,7 +33,13 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const metric = (searchParams.get('metric') || 'disbursements') as MetricType;
+    // `metrics` (comma list) sums multiple sources; `metric` kept for back-compat.
+    const VALID_METRICS = ['budgets', 'planned', 'commitments', 'disbursements'];
+    const metricsParam = searchParams.get('metrics');
+    let metrics: MetricType[] = metricsParam
+      ? (metricsParam.split(',').filter(m => VALID_METRICS.includes(m)) as MetricType[])
+      : [(searchParams.get('metric') || 'disbursements') as MetricType];
+    if (metrics.length === 0) metrics = ['disbursements'];
     const topN = parseInt(searchParams.get('topN') || '5', 10);
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
@@ -40,7 +47,7 @@ export async function GET(request: NextRequest) {
     // First, fetch all activities with their capital_spend_percentage
     const { data: activitiesData, error: activitiesError } = await supabase
       .from('activities')
-      .select('id, title_narrative, iati_identifier, capital_spend_percentage')
+      .select('id, title_narrative, acronym, iati_identifier, capital_spend_percentage')
       .not('capital_spend_percentage', 'is', null)
       .gt('capital_spend_percentage', 0)
       .eq('publication_status', 'published');
@@ -51,100 +58,77 @@ export async function GET(request: NextRequest) {
     }
 
     // Create a map of activity data
-    const activityMap = new Map<string, { 
-      title: string; 
-      iatiIdentifier: string; 
+    const activityMap = new Map<string, {
+      title: string;
+      acronym: string;
+      iatiIdentifier: string;
       capitalSpendPercentage: number;
     }>();
-    
+
     activitiesData?.forEach((activity: any) => {
       activityMap.set(activity.id, {
         title: activity.title_narrative || 'Untitled Activity',
+        acronym: activity.acronym || '',
         iatiIdentifier: activity.iati_identifier || '',
         capitalSpendPercentage: parseFloat(activity.capital_spend_percentage) || 0
       });
     });
 
-    // Map to accumulate financial values per activity
+    // Map to accumulate financial values per activity, summed across every
+    // selected metric (budgets + planned + commitments + disbursements).
     const activityFinancials = new Map<string, number>();
+    const addValue = (activityId: string, value: number) => {
+      if (!activityId || !value || !activityMap.has(activityId)) return;
+      activityFinancials.set(activityId, (activityFinancials.get(activityId) || 0) + value);
+    };
 
-    if (metric === 'budgets') {
-      // Total Budgets: Sum of activity_budgets.value_usd (or usd_value)
+    if (metrics.includes('budgets')) {
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
         .select('activity_id, usd_value, value, period_start, period_end');
-
       if (budgetError) {
         console.error('[TopCapitalSpend] Error fetching budgets:', budgetError);
         throw new Error('Failed to fetch budget data');
       }
-
       budgetData?.forEach((budget: any) => {
-        // Apply date filter if provided
         if (dateFrom && budget.period_start && new Date(budget.period_start) < new Date(dateFrom)) return;
         if (dateTo && budget.period_end && new Date(budget.period_end) > new Date(dateTo)) return;
-
-        if (!activityMap.has(budget.activity_id)) return;
-
-        const value = parseFloat(budget.usd_value?.toString() || budget.value?.toString() || '0') || 0;
-        if (value === 0) return;
-
-        const existing = activityFinancials.get(budget.activity_id) || 0;
-        activityFinancials.set(budget.activity_id, existing + value);
+        addValue(budget.activity_id, parseFloat(budget.usd_value?.toString() || budget.value?.toString() || '0') || 0);
       });
+    }
 
-    } else if (metric === 'planned') {
-      // Planned Disbursements: Sum of planned_disbursements.usd_amount
+    if (metrics.includes('planned')) {
       const { data: plannedData, error: plannedError } = await supabase
         .from('planned_disbursements')
         .select('activity_id, usd_amount, amount, period_start, period_end');
-
       if (plannedError) {
         console.error('[TopCapitalSpend] Error fetching planned disbursements:', plannedError);
         throw new Error('Failed to fetch planned disbursements data');
       }
-
       plannedData?.forEach((pd: any) => {
-        // Apply date filter if provided
         if (dateFrom && pd.period_start && new Date(pd.period_start) < new Date(dateFrom)) return;
         if (dateTo && pd.period_end && new Date(pd.period_end) > new Date(dateTo)) return;
-
-        if (!activityMap.has(pd.activity_id)) return;
-
-        const value = parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0;
-        if (value === 0) return;
-
-        const existing = activityFinancials.get(pd.activity_id) || 0;
-        activityFinancials.set(pd.activity_id, existing + value);
+        addValue(pd.activity_id, parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0);
       });
+    }
 
-    } else {
-      // Commitments or Disbursements: From transactions table
-      const transactionType = metric === 'commitments' ? '2' : '3';
-
+    const txTypes: string[] = [];
+    if (metrics.includes('commitments')) txTypes.push('2');
+    if (metrics.includes('disbursements')) txTypes.push('3');
+    if (txTypes.length > 0) {
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('activity_id, value_usd, value, transaction_date')
-        .eq('transaction_type', transactionType)
+        .in('transaction_type', txTypes)
         .eq('status', 'actual');
-
       if (txError) {
         console.error('[TopCapitalSpend] Error fetching transactions:', txError);
         throw new Error('Failed to fetch transaction data');
       }
-
       txData?.forEach((tx: any) => {
-        // Apply date filter if provided
         if (dateFrom && tx.transaction_date && new Date(tx.transaction_date) < new Date(dateFrom)) return;
         if (dateTo && tx.transaction_date && new Date(tx.transaction_date) > new Date(dateTo)) return;
-
-        if (!activityMap.has(tx.activity_id)) return;
-
-        const value = parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0;
-        if (value === 0) return;
-
-        const existing = activityFinancials.get(tx.activity_id) || 0;
-        activityFinancials.set(tx.activity_id, existing + value);
+        addValue(tx.activity_id, parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0);
       });
     }
 
@@ -161,6 +145,7 @@ export async function GET(request: NextRequest) {
         results.push({
           id: activityId,
           title: activityInfo.title,
+          acronym: activityInfo.acronym,
           iatiIdentifier: activityInfo.iatiIdentifier,
           capitalSpendPercentage: activityInfo.capitalSpendPercentage,
           baseValue,
@@ -180,7 +165,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: topActivities,
       grandTotal,
-      metric,
+      metrics,
       dateRange: {
         from: dateFrom || 'all',
         to: dateTo || 'all'

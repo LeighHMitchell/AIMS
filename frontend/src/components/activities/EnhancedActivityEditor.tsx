@@ -565,7 +565,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         </div>
 
         {/* Activity Information Header */}
-        <Card className="border-border shadow-sm">
+        <Card>
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -1045,7 +1045,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   ) : (
                     <div className="space-y-4">
                       {otherIdentifiers.map((identifier, index) => (
-                        <Card key={index} className="border-border">
+                        <Card key={index}>
                           <CardContent className="pt-6">
                             <div className="space-y-4">
                               <div className="flex items-center justify-between mb-2">

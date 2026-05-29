@@ -191,7 +191,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
   }), [filteredAndSortedData])
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div>

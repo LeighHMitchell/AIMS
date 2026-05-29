@@ -92,7 +92,7 @@ export default function BuildHistoryPage() {
         <div className="p-6">
           {/* This release — non-technical narrative (latest push) */}
           {releaseList.length > 0 && releaseList[0].narrativeSummary && (
-            <Card className="mb-6 border-primary/30 bg-primary/[0.04] shadow-sm">
+            <Card className="mb-6 border-primary/30 bg-primary/[0.04]">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 mt-0.5">

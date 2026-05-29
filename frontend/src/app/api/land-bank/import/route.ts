@@ -22,7 +22,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { parcels } = body;
 
   if (!Array.isArray(parcels) || parcels.length === 0) {

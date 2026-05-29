@@ -318,7 +318,9 @@ export async function PATCH(
 
   try {
     const { id: activityId } = await params;
-    const { documentId, file_name } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { documentId, file_name } = body;
 
     if (!documentId || !file_name) {
       return NextResponse.json(

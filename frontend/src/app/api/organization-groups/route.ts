@@ -22,7 +22,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
+    const data = await request.json().catch(() => null);
+    if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     
     // Validate required fields
     if (!data.name || !data.organizationIds || data.organizationIds.length === 0) {
@@ -93,7 +94,8 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const data = await request.json();
+    const data = await request.json().catch(() => null);
+    if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     
     // Check if group exists
     const existingGroup = getOrganizationGroupById(id);

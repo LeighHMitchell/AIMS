@@ -17,11 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table as TableIcon, Maximize2, CalendarIcon } from 'lucide-react'
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -504,37 +501,17 @@ export function YearlyTotalsBarChart({
 
   // View mode toggle component
   const ViewModeToggle = () => (
-    <ToggleGroup
-      type="single"
+    <ChartViewToggle
+      ariaLabel="View mode"
+      variant="icon"
       value={viewMode}
-      onValueChange={(value) => value && setViewMode(value as ViewMode)}
-      className="bg-muted p-0.5 rounded-md"
-    >
-      <ToggleGroupItem
-        value="bar"
-        aria-label="Bar Chart"
-        className="h-7 w-7 p-0 data-[state=on]:bg-white data-[state=on]:shadow-sm"
-        title="Bar Chart"
-      >
-        <BarChart3 className="h-3.5 w-3.5" />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="line"
-        aria-label="Line Chart"
-        className="h-7 w-7 p-0 data-[state=on]:bg-white data-[state=on]:shadow-sm"
-        title="Line Chart"
-      >
-        <LineChartIcon className="h-3.5 w-3.5" />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="table"
-        aria-label="Table View"
-        className="h-7 w-7 p-0 data-[state=on]:bg-white data-[state=on]:shadow-sm"
-        title="Table View"
-      >
-        <TableIcon className="h-3.5 w-3.5" />
-      </ToggleGroupItem>
-    </ToggleGroup>
+      onValueChange={(value) => setViewMode(value as ViewMode)}
+      options={[
+        { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
+        { value: 'line', label: 'Line Chart', icon: LineChartIcon },
+        { value: 'table', label: 'Table View', icon: TableIcon },
+      ]}
+    />
   )
 
   // Generate year options (ascending order for grid display)
@@ -696,7 +673,7 @@ export function YearlyTotalsBarChart({
 
   if (loading) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <Button
@@ -740,7 +717,7 @@ export function YearlyTotalsBarChart({
 
   return (
     <>
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <Button

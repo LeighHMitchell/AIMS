@@ -168,8 +168,7 @@ export function RecurrenceSelector({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Repeat className="h-5 w-5" />
+          <DialogTitle>
             Configure Recurrence
           </DialogTitle>
           <DialogDescription>Set the frequency, interval, and schedule for this recurring task.</DialogDescription>

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Calendar, ChevronDown, DollarSign, Search, Wallet, X } from 'lucide-react'
-import { ALL_METRIC_KEYS, METRIC_DEFS, METRIC_LABEL, type Metric } from './metric-options'
+import { METRIC_DEFS, METRIC_LABEL, type Metric } from './metric-options'
 
 interface MetricMultiSelectProps {
   selected: Metric[]
@@ -21,6 +21,12 @@ interface MetricMultiSelectProps {
   /** Width override for the trigger; defaults match the AllDonors chart. */
   triggerClassName?: string
   align?: 'start' | 'center' | 'end'
+  /**
+   * Optional whitelist of metric keys to expose. When provided, only these
+   * options render and Select-all / Clear operate on this subset. Omit to show
+   * all 15 metrics (default).
+   */
+  allowedMetrics?: Metric[]
 }
 
 // Multi-select metric dropdown shared by the External Development Partners
@@ -33,16 +39,25 @@ export function MetricMultiSelect({
   onOpenChange,
   triggerClassName,
   align = 'end',
+  allowedMetrics,
 }: MetricMultiSelectProps) {
   const [search, setSearch] = useState('')
 
+  // Restrict the option list (and Select-all / Clear scope) to the whitelist
+  // when one is supplied; otherwise expose all metrics.
+  const baseDefs = useMemo(
+    () => (allowedMetrics ? METRIC_DEFS.filter(m => allowedMetrics.includes(m.key)) : METRIC_DEFS),
+    [allowedMetrics]
+  )
+  const selectableKeys = useMemo(() => baseDefs.map(m => m.key), [baseDefs])
+
   const filteredDefs = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return METRIC_DEFS
-    return METRIC_DEFS.filter(m =>
+    if (!q) return baseDefs
+    return baseDefs.filter(m =>
       m.label.toLowerCase().includes(q) || (m.code ?? '').toLowerCase().includes(q)
     )
-  }, [search])
+  }, [search, baseDefs])
 
   const primary: Metric | null = selected[0] ?? null
   const label = selected.length === 0
@@ -55,7 +70,7 @@ export function MetricMultiSelect({
     onChange(selected.includes(m) ? selected.filter(x => x !== m) : [...selected, m])
   }
   const clear = () => onChange([])
-  const selectAll = () => onChange([...ALL_METRIC_KEYS])
+  const selectAll = () => onChange([...selectableKeys])
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
@@ -92,7 +107,7 @@ export function MetricMultiSelect({
               <button
                 type="button"
                 onClick={selectAll}
-                disabled={selected.length === ALL_METRIC_KEYS.length}
+                disabled={selected.length === selectableKeys.length}
                 className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
               >
                 Select all

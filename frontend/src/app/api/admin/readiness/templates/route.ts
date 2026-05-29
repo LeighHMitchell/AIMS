@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: adminError.error }, { status: adminError.status });
     }
 
-    const body: UpsertTemplateRequest = await request.json();
+    const body: UpsertTemplateRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Validate required fields
     if (!body.code || !body.name || body.stage_order === undefined) {

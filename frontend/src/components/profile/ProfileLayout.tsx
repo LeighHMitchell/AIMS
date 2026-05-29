@@ -45,7 +45,7 @@ export function ProfileLayout({
     <div className={cn("min-h-screen", className)}>
       {hero}
       <div
-        className="sticky z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border"
+        className="sticky z-30 bg-background border-b border-border"
         style={{ top: TOP_NAV_HEIGHT }}
       >
         {compactStrip}

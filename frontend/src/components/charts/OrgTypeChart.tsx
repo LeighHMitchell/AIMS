@@ -16,6 +16,29 @@ import { toast } from "sonner";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 import { apiFetch } from '@/lib/api-fetch';
+import { ChartCardToolbarRow, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
+
+// IATI organisation-type code → name. When `orgType` already holds a name
+// (not a code), the tick falls back to showing it as-is.
+const ORG_TYPE_NAMES: Record<string, string> = {
+  '10': 'Government',
+  '11': 'Local Government',
+  '15': 'Other Public Sector',
+  '21': 'International NGO',
+  '22': 'National NGO',
+  '23': 'Regional NGO',
+  '24': 'Partner Country based NGO',
+  '30': 'Public Private Partnership',
+  '40': 'Multilateral',
+  '60': 'Foundation',
+  '70': 'Private Sector',
+  '71': 'Private Sector in Provider Country',
+  '72': 'Private Sector in Aid Recipient Country',
+  '73': 'Private Sector in Third Country',
+  '80': 'Academic, Training and Research',
+  '90': 'Other',
+}
 
 interface AnalyticsFilters {
   donor: string;
@@ -44,6 +67,8 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
   onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const tableMode = useChartCardTableMode();
+  const isExpanded = useChartExpansion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('USD');
@@ -157,60 +182,61 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
     );
   }
 
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-body font-medium">Budget</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
-          <span className="text-body font-medium">Disbursements</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-          <span className="text-body font-medium">Expenditures</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-body font-medium">Total Spending</span>
-        </div>
-      </div>
+  // X-axis tick — org-type code as a monospace gray badge, inline before the
+  // name (when the value is a known IATI code), wrapping as one centred block.
+  const OrgXTick = ({ x, y, payload }: any) => {
+    const raw = String(payload.value ?? '')
+    const name = ORG_TYPE_NAMES[raw]
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <foreignObject x={-70} y={6} width={140} height={72}>
+          <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', lineHeight: 1.3, overflowWrap: 'break-word' }}>
+            {name ? (
+              <>
+                <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '9px', backgroundColor: '#e2e8f0', color: '#475569', padding: '1px 5px', borderRadius: '3px', marginRight: '4px', whiteSpace: 'nowrap' }}>
+                  {raw}
+                </span>
+                {name}
+              </>
+            ) : (
+              raw
+            )}
+          </div>
+        </foreignObject>
+      </g>
+    )
+  }
 
-      <ResponsiveContainer width="100%" height={500}>
+  return (
+    <div className="w-full h-full">
+      <ChartCardToolbarRow />
+
+      {!tableMode && (
+      <ResponsiveContainer width="100%" height={isExpanded ? 480 : 300}>
         <BarChart
           data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 8 }}
           barCategoryGap="20%"
         >
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
-          <XAxis 
-            dataKey="orgType" 
-            stroke={CHART_STRUCTURE_COLORS.axis} 
-            fontSize={12}
-            angle={-30}
-            textAnchor="end"
-            height={80}
+          <XAxis
+            dataKey="orgType"
+            stroke={CHART_STRUCTURE_COLORS.axis}
+            height={76}
             interval={0}
+            tick={<OrgXTick />}
           />
           <YAxis
             tickFormatter={formatAxisCurrency}
             stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
-            label={{ 
-              value: `Amount (${currency})`, 
-              angle: -90, 
-              position: 'insideLeft',
-              style: { textAnchor: 'middle' }
-            }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          
-          <Bar 
-            dataKey="budget" 
-            name="Budget" 
+          {isExpanded && <Legend />}
+
+          <Bar
+            dataKey="budget"
+            name="Budget"
             fill={DATA_COLORS.budget}
             radius={[2, 2, 0, 0]}
           />
@@ -234,14 +260,18 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
           />
         </BarChart>
       </ResponsiveContainer>
+      )}
 
-      <div className="mt-4 text-body text-muted-foreground">
-        <p>
-          <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organization types by total budget | 
-          <strong> Currency:</strong> {currency} | 
-          <strong> Organisation Types:</strong> {data.length}
+      {isExpanded && (
+      <div className="mt-6">
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart compares planned budgets with actual spending (disbursements and expenditures) by
+          organisation type — government, NGO, multilateral, private sector and so on. Use it to see which
+          kinds of actors channel the most resources and how their spending tracks against budget,
+          highlighting where particular delivery channels are over- or under-performing. All amounts are USD.
         </p>
       </div>
+      )}
     </div>
   );
 };

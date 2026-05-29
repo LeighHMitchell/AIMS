@@ -345,6 +345,7 @@ export function DocumentForm({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeNarrative('title', index)}
+                            aria-label="Remove title language"
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
@@ -396,6 +397,7 @@ export function DocumentForm({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeNarrative('description', index)}
+                          aria-label="Remove description language"
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>

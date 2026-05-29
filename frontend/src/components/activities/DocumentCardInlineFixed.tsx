@@ -191,9 +191,8 @@ export function DocumentCardInlineFixed({
   };
 
   return (
-    <Card className={cn(
-      "group relative overflow-hidden transition-all duration-200",
-      "bg-white hover:shadow-md border border-border"
+    <Card className={cn("group relative overflow-hidden transition-all duration-200",
+      "bg-white hover:shadow-card-hover"
     )}>
       <CardContent className="p-6">
         <div className="flex gap-3">

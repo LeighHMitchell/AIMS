@@ -37,7 +37,8 @@ export async function POST(
 
     const resolvedParams = await Promise.resolve(params)
     const organizationId = resolvedParams.id
-    const body: ImportRequest = await request.json()
+    const body: ImportRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { fields, iati_data, selectedFields } = body
     const updatedFields: string[] = []
     const errors: string[] = []

@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeftRight, BarChart3, Table } from "lucide-react";
 import { MeasureType, FragmentationData } from "@/types/national-priorities";
 import { FragmentationHeatmap } from "./FragmentationHeatmap";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ export function SectorFragmentationChart({
   const [measure, setMeasure] = useState<MeasureType>(initialMeasure);
   const [swapAxes, setSwapAxes] = useState(false);
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
+  const isExpanded = useChartExpansion();
 
   const fetchData = useCallback(async () => {
     try {
@@ -62,33 +64,73 @@ export function SectorFragmentationChart({
 
   return (
     <div className="space-y-4">
-      {/* View Toggle - Top Right */}
-      <div className="flex items-center justify-end">
-        <div className="flex items-center border rounded-md overflow-hidden">
+      {/* Controls row — filters + view toggle left (expanded view only). */}
+      {isExpanded && (
+        <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+          {/* Dropdowns (left). */}
+          <div className="flex items-center gap-2 flex-wrap">
+          {/* Measure Dropdown */}
+          <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
+            <SelectTrigger className="w-[140px] h-9 text-body bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="commitments">Commitments</SelectItem>
+              <SelectItem value="disbursements">Disbursements</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Dimension Dropdown - Sector levels */}
+          <Select defaultValue="primary">
+            <SelectTrigger className="w-[180px] h-9 text-body bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="primary">Primary Sector</SelectItem>
+            </SelectContent>
+          </Select>
+          </div>
+          {/* Button groups (right). */}
+          <div className="flex items-center gap-2">
+          {/* Swap Axes Button */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => setViewMode('chart')}
-            className={cn(
-              "h-8 px-3 rounded-none",
-              viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground"
-            )}
+            onClick={() => setSwapAxes(!swapAxes)}
+            className="h-9"
           >
-            <BarChart3 className="h-4 w-4" />
+            <ArrowLeftRight className="h-4 w-4 mr-1" />
+            Swap Axes
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode('table')}
-            className={cn(
-              "h-8 px-3 rounded-none",
-              viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground"
-            )}
-          >
-            <Table className="h-4 w-4" />
-          </Button>
+
+          {/* View toggle */}
+          <div className="flex items-center border rounded-md overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('chart')}
+              className={cn(
+                "h-8 px-3 rounded-none",
+                viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className={cn(
+                "h-8 px-3 rounded-none",
+                viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <Table className="h-4 w-4" />
+            </Button>
+          </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Chart Content */}
       {loading ? (
@@ -105,41 +147,6 @@ export function SectorFragmentationChart({
       ) : (
         <FragmentationHeatmap data={data} swapAxes={swapAxes} viewMode={viewMode} />
       )}
-
-      {/* Controls Row - Below Chart */}
-      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
-        {/* Measure Dropdown */}
-        <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
-          <SelectTrigger className="w-[140px] h-9 text-body bg-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="commitments">Commitments</SelectItem>
-            <SelectItem value="disbursements">Disbursements</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Dimension Dropdown - Sector levels */}
-        <Select defaultValue="primary">
-          <SelectTrigger className="w-[180px] h-9 text-body bg-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="primary">Primary Sector</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Swap Axes Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSwapAxes(!swapAxes)}
-          className="h-9"
-        >
-          <ArrowLeftRight className="h-4 w-4 mr-1" />
-          Swap Axes
-        </Button>
-      </div>
 
       {/* Explanatory text */}
       <p className="text-body text-muted-foreground leading-relaxed">

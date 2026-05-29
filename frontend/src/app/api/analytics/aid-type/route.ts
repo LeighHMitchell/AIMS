@@ -45,19 +45,25 @@ export async function GET(request: NextRequest) {
     const financeType = searchParams.get('financeType') || 'all';
     const flowType = searchParams.get('flowType') || 'all';
     const topN = searchParams.get('topN') || '10';
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
 
     const supabaseAdmin = supabase;
 
-    // Get activities with transactions
+    // Get activities with transactions. Aid type comes from the transaction's
+    // own aid_type, falling back to the activity's default_aid_type (real data —
+    // no longer simulated).
     const { data: activities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select(`
         id,
-        title_narrative,
+        default_aid_type,
         transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
           value_usd,
-          receiver_activity_uuid
+          receiver_activity_uuid,
+          aid_type,
+          transaction_date
         )
       `)
       .eq('publication_status', 'published');
@@ -70,57 +76,53 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Process the data by aid type (simulate since aid_type field doesn't exist in current schema)
+    // Process the data by REAL aid type: each transaction's aid_type, falling
+    // back to the activity's default_aid_type. Untagged transactions are grouped
+    // under "Unspecified".
     const aidTypeMap = new Map<string, ChartDataPoint>();
     const defaultCurrency = 'USD';
+    const fromD = dateFrom ? new Date(dateFrom) : null;
+    const toD = dateTo ? new Date(dateTo) : null;
 
-    // Simulate aid type distribution for demo purposes
-    // In production, this would use actual aid_type field from activities
-    const aidTypeCodes = Object.keys(AID_TYPES);
-    
-    activities?.forEach((activity: any, index: number) => {
-      // Simulate aid type assignment (in production, use activity.aid_type)
-      const aidTypeCode = aidTypeCodes[index % aidTypeCodes.length];
-      const aidTypeName = AID_TYPES[aidTypeCode as keyof typeof AID_TYPES];
-      
-      // Initialize aid type data if not exists
-      if (!aidTypeMap.has(aidTypeCode)) {
-        aidTypeMap.set(aidTypeCode, {
-          aidType: aidTypeCode,
-          aidTypeName: aidTypeName,
-          budget: 0,
-          disbursements: 0,
-          expenditures: 0,
-          totalSpending: 0,
-        });
-      }
-
-      const aidTypeData = aidTypeMap.get(aidTypeCode)!;
-
-      // Process transactions (USD only)
+    activities?.forEach((activity: any) => {
       activity.transactions?.forEach((transaction: any) => {
         // Exclude internal transfers (pooled fund flows) to avoid double-counting
         if (transaction.receiver_activity_uuid) return;
 
-        // Parse transaction value (USD only)
-        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
-
-        if (isNaN(value) || !isFinite(value) || value === 0) {
-          return; // Skip invalid or non-USD values
+        // Date-range filter (transaction date)
+        if (transaction.transaction_date) {
+          const txDate = new Date(transaction.transaction_date);
+          if (fromD && txDate < fromD) return;
+          if (toD && txDate > toD) return;
         }
 
-        switch (transaction.transaction_type) {
+        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
+        if (isNaN(value) || !isFinite(value) || value === 0) return;
+
+        const code = String(transaction.aid_type || activity.default_aid_type || 'Unspecified');
+        const aidTypeName = AID_TYPES[code] || (code === 'Unspecified' ? 'Unspecified' : code);
+
+        if (!aidTypeMap.has(code)) {
+          aidTypeMap.set(code, {
+            aidType: code,
+            aidTypeName,
+            budget: 0,
+            disbursements: 0,
+            expenditures: 0,
+            totalSpending: 0,
+          });
+        }
+        const aidTypeData = aidTypeMap.get(code)!;
+
+        switch (String(transaction.transaction_type)) {
           case '2': // Commitment
-          case 2:
             aidTypeData.budget += value;
             break;
           case '3': // Disbursement
-          case 3:
             aidTypeData.disbursements += value;
             aidTypeData.totalSpending += value;
             break;
           case '4': // Expenditure
-          case 4:
             aidTypeData.expenditures += value;
             aidTypeData.totalSpending += value;
             break;

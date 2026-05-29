@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const supabaseAdmin = supabase;
 
-    const disbursementData = await request.json();
+    const disbursementData = await request.json().catch(() => null);
+    if (!disbursementData) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     
     // Validate required fields
     if (!disbursementData.activity_id || !disbursementData.amount || !disbursementData.period_start || !disbursementData.period_end) {
@@ -119,7 +120,9 @@ export async function PUT(request: NextRequest) {
   try {
     const supabaseAdmin = supabase;
 
-    const { id, ...updateData } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { id, ...updateData } = body;
     
     if (!id) {
       return NextResponse.json(

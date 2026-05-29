@@ -89,7 +89,8 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { code, name, description, countryCode, version, vocabularyType, vocabularyUri, isActive, isDefault } = body;
 
     // Get current vocabulary to know its type

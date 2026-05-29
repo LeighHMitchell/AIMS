@@ -261,7 +261,7 @@ export function DocumentCardInline({
 
   return (
     <Card className={cn(
-      "group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-all duration-200",
+      "group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-card-hover transition-all duration-200",
       isEditing && "ring-2 ring-blue-500/20 shadow-lg"
     )}>
       <CardContent className="p-6">
@@ -491,6 +491,7 @@ export function DocumentCardInline({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeNarrative('title', index + 1)}
+                            aria-label="Remove title language"
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>

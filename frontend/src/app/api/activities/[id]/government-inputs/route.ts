@@ -106,7 +106,8 @@ export async function POST(
   if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
 
   try {
-    body = await request.json();
+    body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });

@@ -29,7 +29,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const intervalMonths = body.interval_months || 6;
   const nextDue = new Date();
@@ -72,7 +73,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
   if (body.interval_months !== undefined) updateData.interval_months = body.interval_months;

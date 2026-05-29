@@ -8,7 +8,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
   const allowedFields = ['code', 'name', 'description', 'plan_name', 'display_order', 'is_active'];

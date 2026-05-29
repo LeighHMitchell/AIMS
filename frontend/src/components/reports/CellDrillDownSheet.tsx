@@ -250,8 +250,7 @@ export function CellDrillDownSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <DialogTitle>
             {getTitle()}
           </DialogTitle>
           <DialogDescription>

@@ -66,7 +66,8 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Validate required fields
     if (!body.url) {
@@ -130,7 +131,8 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // If updating a single document
     if (body.id) {

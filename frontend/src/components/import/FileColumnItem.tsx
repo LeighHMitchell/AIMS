@@ -53,7 +53,7 @@ export function FileColumnItem({
         className={cn(
           "p-3 transition-all",
           isMapped && "opacity-50 bg-muted",
-          isDraggable && "cursor-move hover:shadow-md",
+          isDraggable && "cursor-move hover:shadow-card-hover",
           isDragging && "shadow-lg ring-2 ring-primary"
         )}
         {...(isDraggable ? attributes : {})}

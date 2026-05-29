@@ -89,7 +89,7 @@ export function SectorMetricsCards({
         const Icon = metric.icon
         return (
           <StaggerItem key={index}>
-          <Card className="border-border">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>

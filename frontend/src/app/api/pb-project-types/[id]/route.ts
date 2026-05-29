@@ -6,7 +6,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (response) return response;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { code, name, description, display_order, is_active } = body;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };

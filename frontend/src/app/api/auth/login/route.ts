@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { email, password } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { email, password } = body;
     
     
     // Authenticate with Supabase Auth using regular client

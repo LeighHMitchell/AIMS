@@ -46,6 +46,7 @@ export function TableRowActionMenu({ activityId, entityType, entityId, onDelete 
           size="icon"
           className="h-8 w-8"
           onClick={(e) => e.stopPropagation()}
+          aria-label="Row actions"
         >
           <MoreVertical className="h-4 w-4" />
         </Button>

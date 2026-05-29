@@ -41,6 +41,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { showUndoToast, useFlushDeletesOnUnmount } from '@/lib/toast-manager'
 import { useUserRole } from '@/hooks/useUserRole'
+import { FullPagination } from "@/components/ui/full-pagination"
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from "@/lib/pagination"
 
 interface WorkingGroup {
   id: string
@@ -91,7 +93,7 @@ export default function WorkingGroupsPage() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [typeFilter, setTypeFilter] = useState<'all' | 'top-level' | 'sub-groups'>('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageLimit, setPageLimit] = useState(12)
+  const [pageLimit, setPageLimit] = useState(DEFAULT_PAGE_SIZE)
 
   const handleDeleteWorkingGroup = async () => {
     if (!wgToDelete) return
@@ -615,99 +617,16 @@ export default function WorkingGroupsPage() {
         )}
 
         {/* Pagination */}
-        {totalItems > 0 && totalPages > 1 && (
-          <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-6">
-            <div className="flex items-center justify-between">
-              <div className="text-body text-muted-foreground">
-                Showing {Math.min(startIndex + 1, totalItems)} to {Math.min(endIndex, totalItems)} of {totalItems} working groups
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  First
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-muted text-foreground' : ''}`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  Last
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-body text-muted-foreground">Items per page:</label>
-                <Select
-                  value={pageLimit.toString()}
-                  onValueChange={(value) => { setPageLimit(Number(value)); setCurrentPage(1); }}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="6">6</SelectItem>
-                    <SelectItem value="12">12</SelectItem>
-                    <SelectItem value="24">24</SelectItem>
-                    <SelectItem value="48">48</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        )}
+        <FullPagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          perPage={pageLimit}
+          onPageChange={(p) => setCurrentPage(p)}
+          onPerPageChange={(n) => { setPageLimit(n); setCurrentPage(1); }}
+          perPageOptions={PAGE_SIZE_OPTIONS}
+          itemLabel="working groups"
+        />
 
         {filteredGroups.length === 0 && (
           <EmptyState

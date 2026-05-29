@@ -40,7 +40,9 @@ export async function PUT(
 
   try {
     const { id: activityId } = await params;
-    const { sectors } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { sectors } = body;
 
     // Validate total percentage
     const total = sectors.reduce((sum: number, s: any) => sum + s.percentage, 0);
@@ -138,7 +140,9 @@ export async function POST(
 
   try {
     const { id: activityId } = await params;
-    const { sectors, replace = false } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { sectors, replace = false } = body;
 
 
     // Validate total percentage

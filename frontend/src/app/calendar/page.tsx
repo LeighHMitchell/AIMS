@@ -510,7 +510,7 @@ export default function CalendarPage() {
                   return (
                   <Card
                     key={event.id}
-                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                    className={`cursor-pointer hover:shadow-card-hover transition-shadow ${
                       event.status === 'pending' ? 'border-dashed border-2' : ''
                     }`}
                     style={{ borderColor: eventColor }}

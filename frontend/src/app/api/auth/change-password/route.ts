@@ -7,7 +7,9 @@ export async function POST(request: NextRequest) {
     const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
     
-    const { currentPassword, newPassword } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { currentPassword, newPassword } = body;
     
     if (!currentPassword || !newPassword) {
       return NextResponse.json(

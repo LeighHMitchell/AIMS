@@ -14,6 +14,8 @@ import {
 } from 'recharts'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
+import { InlineToolbarButtons, useChartCardTableMode } from '@/components/ui/inline-toolbar-buttons'
 import { TrendingUp, ThumbsDown, ThumbsUp } from 'lucide-react'
 import {
   Select,
@@ -62,6 +64,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
   const [data, setData] = useState<ActivityData[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('pyramid')
+  const tableMode = useChartCardTableMode()
   const [orgType, setOrgType] = useState<string>('all')
   const [sortMode, setSortMode] = useState<SortMode>('score')
 
@@ -277,28 +280,16 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
       {!compact && (
         <div className="flex items-center justify-end gap-3 mb-4">
           {/* Sort mode toggle: Most Voted vs Most Downvoted */}
-          <div className="flex">
-            <Button
-              variant={sortMode === 'score' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortMode('score')}
-              className="h-8 rounded-r-none"
-              title="Most voted (highest net score first)"
-            >
-              <ThumbsUp className="h-4 w-4 mr-1.5" />
-              Most Voted
-            </Button>
-            <Button
-              variant={sortMode === 'downvotes' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortMode('downvotes')}
-              className="h-8 rounded-l-none"
-              title="Most downvoted (highest downvote count first)"
-            >
-              <ThumbsDown className="h-4 w-4 mr-1.5" />
-              Most Downvoted
-            </Button>
-          </div>
+          <ChartViewToggle
+            ariaLabel="Sort mode"
+            variant="icon-text"
+            value={sortMode}
+            onValueChange={setSortMode}
+            options={[
+              { value: 'score', label: 'Most Voted', icon: ThumbsUp },
+              { value: 'downvotes', label: 'Most Downvoted', icon: ThumbsDown },
+            ]}
+          />
 
           {/* Organization Type Filter */}
           <Select value={orgType} onValueChange={setOrgType}>
@@ -321,37 +312,35 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           </Select>
 
           {/* View toggle buttons */}
-          <div className="flex">
-            <Button
-              variant={viewMode === 'score' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('score')}
-              className="h-8 rounded-r-none"
-              title="Net Score"
-            >
-              <TrendingUp className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'pyramid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('pyramid')}
-              className="h-8 rounded-l-none"
-              title="Pyramid"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="6" width="8" height="3" rx="0.5" />
-                <rect x="14" y="6" width="8" height="3" rx="0.5" />
-                <rect x="4" y="11" width="6" height="3" rx="0.5" />
-                <rect x="14" y="11" width="6" height="3" rx="0.5" />
-                <rect x="6" y="16" width="4" height="3" rx="0.5" />
-                <rect x="14" y="16" width="4" height="3" rx="0.5" />
-              </svg>
-            </Button>
-          </div>
+          <ChartViewToggle
+            ariaLabel="Chart view"
+            variant="icon"
+            value={viewMode}
+            onValueChange={setViewMode}
+            options={[
+              { value: 'score', label: 'Net Score', icon: TrendingUp },
+              {
+                value: 'pyramid',
+                label: 'Pyramid',
+                iconNode: (
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="6" width="8" height="3" rx="0.5" />
+                    <rect x="14" y="6" width="8" height="3" rx="0.5" />
+                    <rect x="4" y="11" width="6" height="3" rx="0.5" />
+                    <rect x="14" y="11" width="6" height="3" rx="0.5" />
+                    <rect x="6" y="16" width="4" height="3" rx="0.5" />
+                    <rect x="14" y="16" width="4" height="3" rx="0.5" />
+                  </svg>
+                ),
+              },
+            ]}
+          />
+          <InlineToolbarButtons />
         </div>
       )}
 
       {/* Chart or Empty State */}
+      {!tableMode && (
       <div className="flex-1">
         {hasNoData ? (
           <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground min-h-[300px]">
@@ -363,9 +352,10 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           viewMode === 'score' ? renderScoreChart() : renderPyramidChart()
         )}
       </div>
+      )}
 
       {/* Legend - show below chart for pyramid view when expanded and has data */}
-      {!compact && viewMode === 'pyramid' && !hasNoData && (
+      {!compact && !tableMode && viewMode === 'pyramid' && !hasNoData && (
         <div className="flex items-center justify-center gap-6 text-helper mt-3">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.primaryScarlet }} />

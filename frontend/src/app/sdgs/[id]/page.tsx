@@ -659,7 +659,7 @@ export default function SDGProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {paginatedActivities.map(activity => (
                       <Link key={activity.id} href={`/activities/${activity.id}`}>
-                        <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+                        <Card className="h-full hover:shadow-card-hover transition-shadow cursor-pointer">
                           <CardContent className="p-6">
                             <div className="flex items-start justify-between mb-2">
                               <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
@@ -763,7 +763,7 @@ export default function SDGProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredOrgs.map(org => (
                       <Link key={org.id} href={`/organizations/${org.id}`}>
-                        <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+                        <Card className="h-full hover:shadow-card-hover transition-shadow cursor-pointer">
                           <CardContent className="p-6">
                             <div className="flex items-start gap-3">
                               {org.logo ? (

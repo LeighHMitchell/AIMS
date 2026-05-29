@@ -234,6 +234,7 @@ export function OptimizedActivityList({
               size="icon"
               onClick={handleRefresh}
               disabled={isLoadingMore}
+              aria-label="Refresh activities"
             >
               <RefreshCw className={`h-4 w-4 ${isLoadingMore ? 'animate-spin' : ''}`} />
             </Button>

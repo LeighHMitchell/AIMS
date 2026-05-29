@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Build query - fetch budgets first, then join activities separately
     let query = supabase
       .from('activity_budgets')
-      .select('*', { count: 'exact' });
+      .select('*', { count: 'estimated' });
 
     // Apply type filter - support both array and single value
     if (types.length > 0) {
@@ -147,20 +147,9 @@ export async function GET(request: NextRequest) {
         console.error('[Budgets List API] Admin activities query error:', adminErr);
       }
 
-      let merged = adminData || [];
-
-      // Fallback: if admin returned fewer than expected, try the RLS-scoped client too
-      if (merged.length < allActivityIds.size) {
-        const missing = activityIdArr.filter(id => !merged.some((a: any) => a.id === id));
-        const { data: rlsData, error: rlsErr } = await supabase
-          .from('activities')
-          .select(activitySelect)
-          .in('id', missing);
-        if (rlsErr) console.error('[Budgets List API] RLS fallback activities error:', rlsErr);
-        merged = [...merged, ...(rlsData || [])];
-      }
-
-      activitiesMap = Object.fromEntries(merged.map((a: any) => [a.id, a]));
+      // Admin client already bypasses RLS, so it returns every existing
+      // activity; any still-missing id is genuinely absent (e.g. deleted).
+      activitiesMap = Object.fromEntries((adminData || []).map((a: any) => [a.id, a]));
     }
 
     // Fetch reporting organizations for activities
@@ -209,21 +198,6 @@ export async function GET(request: NextRequest) {
         };
       }
       
-      // Debug logging for first budget
-      if (budgets.indexOf(budget) === 0) {
-        console.log('[Budgets List API] Sample budget mapping:', {
-          budgetId: budget.id,
-          activityId: budget.activity_id,
-          activity: activity,
-          reportingOrgId: activity?.reporting_org_id,
-          reportingOrg: reportingOrg,
-          createdByOrgName: activity?.created_by_org_name,
-          createdByOrgAcronym: activity?.created_by_org_acronym,
-          organizationsMapSize: Object.keys(organizationsMap).length,
-          reportingOrgIds: Array.from(reportingOrgIds)
-        });
-      }
-      
       return {
         ...budget,
         value_usd: budget.usd_value || null, // Map usd_value to value_usd for frontend consistency
@@ -233,15 +207,6 @@ export async function GET(request: NextRequest) {
         } : null,
       };
     });
-
-    console.log('[Budgets List API] Fetched data:', {
-      count: data?.length,
-      total: count,
-      sampleBudget: data?.[0],
-      sampleActivity: data?.[0]?.activity,
-      sampleReportingOrg: data?.[0]?.activity?.reporting_org
-    });
-
 
     return NextResponse.json({
       budgets: data || [],

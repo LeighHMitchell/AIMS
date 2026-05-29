@@ -51,9 +51,9 @@ import {
   Search,
   Lock,
   Unlock,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
+import { FullPagination } from "@/components/ui/full-pagination";
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import {
   CountryEmergency,
   CountryEmergencyFormData,
@@ -568,101 +568,16 @@ export function CountryEmergenciesManagement() {
             </div>
 
             {/* Pagination */}
-            <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="text-body text-muted-foreground">
-                  Showing {Math.min(startIndex + 1, totalEmergencies)} to {Math.min(endIndex, totalEmergencies)} of {totalEmergencies} emergenc{totalEmergencies !== 1 ? "ies" : "y"}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={safePage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
-                    disabled={safePage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (safePage <= 3) {
-                        pageNum = i + 1;
-                      } else if (safePage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = safePage - 2 + i;
-                      }
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${safePage === pageNum ? "bg-muted text-foreground" : ""}`}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
-                    disabled={safePage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={safePage === totalPages}
-                  >
-                    Last
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <label className="text-body text-muted-foreground">Items per page:</label>
-                  <Select
-                    value={pageLimit.toString()}
-                    onValueChange={(value) => {
-                      setPageLimit(Number(value));
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
+            <FullPagination
+              page={currentPage}
+              totalPages={totalPages}
+              totalItems={totalEmergencies}
+              perPage={pageLimit}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPerPageChange={(n) => { setPageLimit(n); setCurrentPage(1); }}
+              perPageOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="emergencies"
+            />
             </>
           )}
         </CardContent>

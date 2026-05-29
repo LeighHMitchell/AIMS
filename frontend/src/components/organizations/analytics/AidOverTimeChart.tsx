@@ -68,7 +68,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
 
   if (data.length === 0) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold text-foreground">
@@ -86,7 +86,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
   }
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-foreground">

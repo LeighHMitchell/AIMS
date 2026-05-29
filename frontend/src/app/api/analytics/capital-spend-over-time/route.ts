@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { fetchCustomYearById } from '@/lib/custom-year-server';
+import { getFiscalYearForDate } from '@/utils/year-allocation';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,9 +32,19 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const metric = (searchParams.get('metric') || 'disbursements') as MetricType;
+    // `metrics` (comma list) sums multiple sources; `metric` kept for back-compat.
+    const VALID_METRICS = ['budgets', 'planned', 'commitments', 'disbursements'];
+    const metricsParam = searchParams.get('metrics');
+    let metrics: MetricType[] = metricsParam
+      ? (metricsParam.split(',').filter(m => VALID_METRICS.includes(m)) as MetricType[])
+      : [(searchParams.get('metric') || 'disbursements') as MetricType];
+    if (metrics.length === 0) metrics = ['disbursements'];
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    // Optional fiscal/custom calendar — buckets by its fiscal year when supplied.
+    const customYearId = searchParams.get('customYearId');
+    const customYear = await fetchCustomYearById(supabase, customYearId);
+    const bucketYear = (d: Date) => (customYear ? getFiscalYearForDate(d, customYear) : d.getFullYear());
 
     // First, fetch all activities with their capital_spend_percentage
     const { data: activitiesData, error: activitiesError } = await supabase
@@ -57,113 +69,75 @@ export async function GET(request: NextRequest) {
 
     const publishedActivityIds = (activitiesData || []).map((a: any) => a.id);
 
-    // Map to accumulate values by year
+    // Map to accumulate values by year, summed across every selected metric.
     const yearlyData = new Map<number, { capitalSpend: number; nonCapitalSpend: number }>();
+    const addRecord = (activityId: string, date: Date, value: number) => {
+      if (!value) return;
+      const year = bucketYear(date);
+      const capitalPct = activityCapitalMap.get(activityId) || 0;
+      const capitalValue = value * (capitalPct / 100);
+      const existing = yearlyData.get(year) || { capitalSpend: 0, nonCapitalSpend: 0 };
+      existing.capitalSpend += capitalValue;
+      existing.nonCapitalSpend += value - capitalValue;
+      yearlyData.set(year, existing);
+    };
 
-    if (metric === 'budgets') {
-      // Total Budgets: Sum of activity_budgets
+    if (metrics.includes('budgets')) {
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
         .select('activity_id, usd_value, value, period_start')
         .in('activity_id', publishedActivityIds);
-
       if (budgetError) {
         console.error('[CapitalSpendOverTime] Error fetching budgets:', budgetError);
         throw new Error('Failed to fetch budget data');
       }
-
       budgetData?.forEach((budget: any) => {
         if (!budget.period_start) return;
-        
         const budgetDate = new Date(budget.period_start);
-        // Apply date filter if provided
         if (dateFrom && budgetDate < new Date(dateFrom)) return;
         if (dateTo && budgetDate > new Date(dateTo)) return;
-
-        const year = budgetDate.getFullYear();
-        const value = parseFloat(budget.usd_value?.toString() || budget.value?.toString() || '0') || 0;
-        if (value === 0) return;
-
-        const capitalPct = activityCapitalMap.get(budget.activity_id) || 0;
-        const capitalValue = value * (capitalPct / 100);
-        const nonCapitalValue = value - capitalValue;
-
-        const existing = yearlyData.get(year) || { capitalSpend: 0, nonCapitalSpend: 0 };
-        existing.capitalSpend += capitalValue;
-        existing.nonCapitalSpend += nonCapitalValue;
-        yearlyData.set(year, existing);
+        addRecord(budget.activity_id, budgetDate, parseFloat(budget.usd_value?.toString() || budget.value?.toString() || '0') || 0);
       });
+    }
 
-    } else if (metric === 'planned') {
-      // Planned Disbursements
+    if (metrics.includes('planned')) {
       const { data: plannedData, error: plannedError } = await supabase
         .from('planned_disbursements')
         .select('activity_id, usd_amount, amount, period_start')
         .in('activity_id', publishedActivityIds);
-
       if (plannedError) {
         console.error('[CapitalSpendOverTime] Error fetching planned disbursements:', plannedError);
         throw new Error('Failed to fetch planned disbursements data');
       }
-
       plannedData?.forEach((pd: any) => {
         if (!pd.period_start) return;
-        
         const pdDate = new Date(pd.period_start);
-        // Apply date filter if provided
         if (dateFrom && pdDate < new Date(dateFrom)) return;
         if (dateTo && pdDate > new Date(dateTo)) return;
-
-        const year = pdDate.getFullYear();
-        const value = parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0;
-        if (value === 0) return;
-
-        const capitalPct = activityCapitalMap.get(pd.activity_id) || 0;
-        const capitalValue = value * (capitalPct / 100);
-        const nonCapitalValue = value - capitalValue;
-
-        const existing = yearlyData.get(year) || { capitalSpend: 0, nonCapitalSpend: 0 };
-        existing.capitalSpend += capitalValue;
-        existing.nonCapitalSpend += nonCapitalValue;
-        yearlyData.set(year, existing);
+        addRecord(pd.activity_id, pdDate, parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0);
       });
+    }
 
-    } else {
-      // Commitments or Disbursements from transactions
-      const transactionType = metric === 'commitments' ? '2' : '3';
-
+    const txTypes: string[] = [];
+    if (metrics.includes('commitments')) txTypes.push('2');
+    if (metrics.includes('disbursements')) txTypes.push('3');
+    if (txTypes.length > 0) {
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('activity_id, value_usd, value, transaction_date')
-        .eq('transaction_type', transactionType)
+        .in('transaction_type', txTypes)
         .eq('status', 'actual')
         .in('activity_id', publishedActivityIds);
-
       if (txError) {
         console.error('[CapitalSpendOverTime] Error fetching transactions:', txError);
         throw new Error('Failed to fetch transaction data');
       }
-
       txData?.forEach((tx: any) => {
         if (!tx.transaction_date) return;
-        
         const txDate = new Date(tx.transaction_date);
-        // Apply date filter if provided
         if (dateFrom && txDate < new Date(dateFrom)) return;
         if (dateTo && txDate > new Date(dateTo)) return;
-
-        const year = txDate.getFullYear();
-        const value = parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0;
-        if (value === 0) return;
-
-        const capitalPct = activityCapitalMap.get(tx.activity_id) || 0;
-        const capitalValue = value * (capitalPct / 100);
-        const nonCapitalValue = value - capitalValue;
-
-        const existing = yearlyData.get(year) || { capitalSpend: 0, nonCapitalSpend: 0 };
-        existing.capitalSpend += capitalValue;
-        existing.nonCapitalSpend += nonCapitalValue;
-        yearlyData.set(year, existing);
+        addRecord(tx.activity_id, txDate, parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0);
       });
     }
 
@@ -190,7 +164,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: results,
       totals,
-      metric,
+      metrics,
       dateRange: {
         from: dateFrom || 'all',
         to: dateTo || 'all'

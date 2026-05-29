@@ -398,7 +398,7 @@ export function SidebarNav({
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             title: 'Imported Activity (Draft)',
-                            description: 'Activity created via IATI/XML import',
+                            description: '', // Left empty so the imported activity's real description fills it (no generic placeholder lingering)
                             status: '1',
                             created_via: 'import',
                           }),

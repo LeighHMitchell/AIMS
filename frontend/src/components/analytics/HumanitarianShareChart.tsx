@@ -11,6 +11,7 @@ import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { Button } from '@/components/ui/button'
+import { ChartToolbarRow } from '@/components/ui/chart-toolbar-row'
 import {
   BarChart,
   Bar,
@@ -153,16 +154,29 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
         </div>
       )
     }
+    const ringR = 64
+    const ringC = 2 * Math.PI * ringR
     return (
       <div className="h-full flex flex-col items-center justify-center p-4">
-        <div className="relative mb-2">
-          <svg width="120" height="120" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="70" fill="#e2e8f0" stroke="none" />
-            <circle cx="80" cy="80" r="60" fill="#cbd5e1" stroke="none" />
-            <text x="80" y="75" textAnchor="middle" fontSize="24" fontWeight="700" fill="#94a3b8">
+        <div className="relative mb-3">
+          {/* Larger donut ring; the humanitarian share is drawn in red. */}
+          <svg width="180" height="180" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r={ringR} fill="none" stroke="#e2e8f0" strokeWidth="16" />
+            <circle
+              cx="80"
+              cy="80"
+              r={ringR}
+              fill="none"
+              stroke="#dc2625"
+              strokeWidth="16"
+              strokeLinecap="round"
+              strokeDasharray={`${ringC * (data.humanitarianPercent / 100)} ${ringC}`}
+              transform="rotate(-90 80 80)"
+            />
+            <text x="80" y="76" textAnchor="middle" fontSize="30" fontWeight="700" fill="#dc2625">
               {data.humanitarianPercent}%
             </text>
-            <text x="80" y="100" textAnchor="middle" fontSize="10" fill="#64748B">
+            <text x="80" y="100" textAnchor="middle" fontSize="11" fill="#64748B">
               Humanitarian
             </text>
           </svg>
@@ -177,36 +191,14 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   }
 
   if (loading) {
-    return (
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-foreground">
-            Share of humanitarian aid
-          </CardTitle>
-          <CardDescription>Share of total international aid</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
-    )
+    return <ChartLoadingPlaceholder />
   }
 
   if (!data || data.total === 0) {
     return (
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-foreground">
-            Share of humanitarian aid
-          </CardTitle>
-          <CardDescription>Share of total international aid</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
-            <p className="text-muted-foreground">No aid data available for the selected period</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
+        <p className="text-muted-foreground">No aid data available for the selected period</p>
+      </div>
     )
   }
 
@@ -217,29 +209,34 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   // Bar chart data
   const barChartData = [
     { name: 'Development', value: data.development, percent: data.developmentPercent, color: '#4c5568' },
-    { name: 'Humanitarian', value: data.humanitarian, percent: data.humanitarianPercent, color: '#94a3b8' }
+    { name: 'Humanitarian', value: data.humanitarian, percent: data.humanitarianPercent, color: '#dc2625' }
   ]
 
+  const exportRows = [
+    { Category: 'Development cooperation', 'Amount (USD)': data.development, Share: `${data.developmentPercent}%` },
+    { Category: 'Humanitarian assistance', 'Amount (USD)': data.humanitarian, Share: `${data.humanitarianPercent}%` },
+    { Category: 'Total', 'Amount (USD)': data.total, Share: '100%' },
+  ]
+
+  const ringR = 70
+  const ringC = 2 * Math.PI * ringR
   const renderChartView = () => (
-    <div className="flex items-center gap-8 md:gap-16 py-6">
-      {/* Circle Indicator */}
+    // Centered + width-capped so the modal doesn't sprawl across the full width.
+    <div className="flex items-center justify-center gap-8 md:gap-16 py-6 max-w-2xl mx-auto">
+      {/* Circle Indicator — humanitarian share drawn in red. */}
       <div className="relative flex-shrink-0">
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          {/* Background circle */}
+        <svg width="170" height="170" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r={ringR} fill="none" stroke="#e2e8f0" strokeWidth="18" />
           <circle
             cx="80"
             cy="80"
-            r="70"
-            fill="#e2e8f0"
-            stroke="none"
-          />
-          {/* Inner lighter area */}
-          <circle
-            cx="80"
-            cy="80"
-            r="60"
-            fill="#f1f5f9"
-            stroke="none"
+            r={ringR}
+            fill="none"
+            stroke="#dc2625"
+            strokeWidth="18"
+            strokeLinecap="round"
+            strokeDasharray={`${ringC * (data.humanitarianPercent / 100)} ${ringC}`}
+            transform="rotate(-90 80 80)"
           />
         </svg>
         {/* Percentage text */}
@@ -256,19 +253,19 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
         {/* Stacked Bar */}
         <div className="relative h-64 w-16 rounded-lg overflow-hidden flex flex-col">
           {/* Development (top/larger portion) */}
-          <div 
+          <div
             className="w-full transition-all duration-500"
-            style={{ 
+            style={{
               height: `${developmentHeight}%`,
               backgroundColor: '#4c5568' // Dark teal
             }}
           />
-          {/* Humanitarian (bottom/smaller portion) */}
-          <div 
+          {/* Humanitarian (bottom/smaller portion) — red */}
+          <div
             className="w-full transition-all duration-500"
-            style={{ 
+            style={{
               height: `${humanitarianHeight}%`,
-              backgroundColor: '#94a3b8' // Red for humanitarian
+              backgroundColor: '#dc2625'
             }}
           />
         </div>
@@ -337,7 +334,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   }
 
   const renderBarView = () => (
-    <div className="py-6">
+    <div className="py-6 max-w-3xl mx-auto">
       <ResponsiveContainer width="100%" height={250}>
         <BarChart data={barChartData} layout="vertical" margin={{ left: 20, right: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={true} vertical={false} />
@@ -367,7 +364,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   )
 
   const renderTableView = () => (
-    <div className="py-6">
+    <div className="py-6 max-w-3xl mx-auto">
       <table className="w-full text-body">
         <thead className="bg-surface-muted">
           <tr className="border-b border-border">
@@ -398,17 +395,9 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   )
 
   return (
-    <Card className="bg-card border-border rounded-2xl">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-semibold text-foreground">
-              Share of humanitarian aid
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Share of total international aid
-            </CardDescription>
-          </div>
+    <>
+      <ChartToolbarRow
+        filters={
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
@@ -441,19 +430,18 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {viewMode === 'chart' && renderChartView()}
-        {viewMode === 'bar' && renderBarView()}
-        {viewMode === 'table' && renderTableView()}
+        }
+        csv={{ rows: exportRows, title: 'Share of Humanitarian Aid' }}
+      />
+      {viewMode === 'chart' && renderChartView()}
+      {viewMode === 'bar' && renderBarView()}
+      {viewMode === 'table' && renderTableView()}
 
-        {/* Explanatory text */}
-        <p className="text-body text-muted-foreground leading-relaxed">
-          This chart shows the proportion of total aid that is classified as humanitarian versus development cooperation. The percentage reflects the share of commitments, disbursements, and expenditures flagged as humanitarian within the selected date range. Use the toggle to switch between the visual indicator, bar chart, and table views.
-        </p>
-      </CardContent>
-    </Card>
+      {/* Explanatory text */}
+      <p className="text-body text-muted-foreground leading-relaxed">
+        This chart shows the proportion of total aid that is classified as humanitarian versus development cooperation. The percentage reflects the share of commitments, disbursements, and expenditures flagged as humanitarian within the selected date range. Use the toggle to switch between the visual indicator, bar chart, and table views.
+      </p>
+    </>
   )
 }
 

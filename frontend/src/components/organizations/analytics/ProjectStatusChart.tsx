@@ -84,7 +84,7 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
 
   if (data.length === 0) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Project Status Distribution
@@ -100,7 +100,7 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
   }
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-foreground">
           Project Status Distribution

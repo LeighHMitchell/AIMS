@@ -132,7 +132,7 @@ export default function BulkImportRulesStep({
       {/* Three hero cards in a row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Activity Matching */}
-        <Card className="border-border">
+        <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-muted rounded-lg">
@@ -182,7 +182,7 @@ export default function BulkImportRulesStep({
         </Card>
 
         {/* Transaction Handling */}
-        <Card className="border-border">
+        <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-muted rounded-lg">
@@ -232,7 +232,7 @@ export default function BulkImportRulesStep({
         </Card>
 
         {/* Organization Resolution */}
-        <Card className="border-border">
+        <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-muted rounded-lg">
@@ -279,7 +279,7 @@ export default function BulkImportRulesStep({
 
       {/* Auto-Sync Option - only for Datastore imports */}
       {sourceMode === 'datastore' && (
-        <Card className="border-border">
+        <Card>
           <CardContent className="p-5">
             <div
               className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${

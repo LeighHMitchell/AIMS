@@ -20,7 +20,9 @@ export async function POST(
     }
 
     const { id: activityId } = await params;
-    const { documents } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { documents } = body;
 
 
     // Validation

@@ -402,7 +402,7 @@ export function ConditionsTab({
 
       {/* Attached Status Toggle */}
       {conditions.length > 0 && (
-        <Card className="border border-border">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
@@ -497,7 +497,7 @@ export function ConditionsTab({
 
       {/* Conditions List */}
       {conditions.length === 0 ? (
-        <Card className="border border-border bg-white">
+        <Card className="bg-white">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-semibold text-foreground">Conditions</CardTitle>
@@ -526,7 +526,7 @@ export function ConditionsTab({
           </CardContent>
         </Card>
       ) : (
-        <Card className="border border-border bg-white">
+        <Card className="bg-white">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-semibold text-foreground">Conditions</CardTitle>

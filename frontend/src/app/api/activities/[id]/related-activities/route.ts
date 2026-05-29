@@ -283,7 +283,8 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const {
       related_activity_id,
       external_iati_identifier,

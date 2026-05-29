@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as d3 from 'd3'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { AlertCircle, SlidersHorizontal, Search, Check } from 'lucide-react'
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 /**
  * Aid Ecosystem Solar System
@@ -559,22 +561,26 @@ export function AidEcosystemSolarSystem({
           ))}
         </svg>
 
-        {/* Tooltip */}
+        {/* Tooltip — shaded-header card matching the rest of the dashboard;
+            header shows the org name with its acronym in the same style. */}
         {hoveredOrg && (
           <div
-            className="absolute z-50 bg-white border border-border rounded-lg shadow-lg p-2 pointer-events-none"
+            className="absolute z-50 pointer-events-none"
             style={{
               left: tooltipPos.x + 10,
               top: tooltipPos.y - 10,
               transform: tooltipPos.x > width / 2 ? 'translateX(-100%)' : undefined
             }}
           >
-            <p className="font-medium text-helper text-foreground truncate max-w-[150px]">
-              {hoveredOrg.name}
-            </p>
-            <p className="text-helper text-muted-foreground">
-              #{hoveredOrg.rank} - {formatTooltipCurrency(hoveredOrg.totalValue, isExpanded)}
-            </p>
+            <ChartTooltipCard
+              title={hoveredOrg.acronym && hoveredOrg.acronym !== hoveredOrg.name ? `${hoveredOrg.name} (${hoveredOrg.acronym})` : hoveredOrg.name}
+              subtitle={hoveredOrg.organisationType ? getOrgTypeLabel(hoveredOrg.organisationType) : undefined}
+              minWidth={180}
+              rows={[
+                { label: 'Rank', value: `#${hoveredOrg.rank}` },
+                { label: 'Total Value', value: formatTooltipCurrency(hoveredOrg.totalValue, isExpanded) },
+              ]}
+            />
           </div>
         )}
       </div>
@@ -605,32 +611,17 @@ export function AidEcosystemSolarSystem({
         {/* Sector Filter Controls */}
         <div className="flex items-center gap-2">
           {/* Aggregation Level Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-muted">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setAggregationLevel('group')}
-            >
-              Sector Category
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setAggregationLevel('category')}
-            >
-              Sector
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              onClick={() => setAggregationLevel('sector')}
-            >
-              Sub-sector
-            </Button>
-          </div>
+          <ChartViewToggle
+            ariaLabel="Aggregation level"
+            variant="text"
+            value={aggregationLevel}
+            onValueChange={setAggregationLevel}
+            options={[
+              { value: 'group', label: 'Sector Category' },
+              { value: 'category', label: 'Sector' },
+              { value: 'sector', label: 'Sub-sector' },
+            ]}
+          />
 
           {/* Filter Dropdown */}
           <DropdownMenu open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
@@ -856,46 +847,27 @@ export function AidEcosystemSolarSystem({
         </svg>
         )}
 
-        {/* Tooltip */}
+        {/* Tooltip — shaded-header card matching the rest of the dashboard. */}
         {hoveredOrg && (
           <div
-            className="absolute z-50 bg-white border border-border rounded-lg shadow-lg p-3 pointer-events-none max-w-xs"
+            className="absolute z-50 pointer-events-none"
             style={{
               left: Math.min(tooltipPos.x + 15, width - 200),
               top: Math.max(tooltipPos.y - 15, 10)
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: ORG_TYPE_COLORS[hoveredOrg.organisationType || '90'] }}
-              />
-              <span className="font-semibold text-foreground text-body truncate">
-                {hoveredOrg.name}
-              </span>
-            </div>
-            {hoveredOrg.organisationType && (
-              <p className="text-helper text-muted-foreground mb-2">
-                {getOrgTypeLabel(hoveredOrg.organisationType)}
-              </p>
-            )}
-            <div className="space-y-1 text-helper">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Rank:</span>
-                <span className="font-medium text-foreground">#{hoveredOrg.rank}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Value:</span>
-                <span className="font-medium text-foreground">{formatTooltipCurrency(hoveredOrg.totalValue, isExpanded)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ring:</span>
-                <span className="font-medium text-foreground capitalize">{hoveredOrg.ringTier}</span>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-2 pt-2 border-t border-border">
-              Click to view organization profile
-            </p>
+            <ChartTooltipCard
+              title={hoveredOrg.acronym && hoveredOrg.acronym !== hoveredOrg.name ? `${hoveredOrg.name} (${hoveredOrg.acronym})` : hoveredOrg.name}
+              subtitle={hoveredOrg.organisationType ? getOrgTypeLabel(hoveredOrg.organisationType) : undefined}
+              minWidth={200}
+              maxWidth={320}
+              rows={[
+                { label: 'Rank', value: `#${hoveredOrg.rank}`, color: ORG_TYPE_COLORS[hoveredOrg.organisationType || '90'] },
+                { label: 'Total Value', value: formatTooltipCurrency(hoveredOrg.totalValue, isExpanded) },
+                { label: 'Ring', value: <span className="capitalize">{hoveredOrg.ringTier}</span> },
+              ]}
+              footer="Click to view organization profile"
+            />
           </div>
         )}
       </div>

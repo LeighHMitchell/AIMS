@@ -45,6 +45,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { ChartDataTable } from '@/components/ui/chart-data-table';
 
 type MetricType = "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -241,7 +242,14 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
             );
           }}
         />
-        <YAxis hide />
+        <YAxis
+          stroke={CHART_STRUCTURE_COLORS.axis}
+          fontSize={11}
+          tickFormatter={formatCurrency}
+          tickLine={false}
+          axisLine={false}
+          width={56}
+        />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60}>
           {chartData.map((entry, index) => (
@@ -275,34 +283,42 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
     </ResponsiveContainer>
   );
 
-  const renderTable = () => (
-    <div className="overflow-auto h-full">
-      <Table>
-        <TableHeader>
-          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-            <TableHead>Organisation</TableHead>
-            <TableHead className="text-right whitespace-normal">Value (USD)</TableHead>
-            <TableHead className="text-right">%</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((agency) => (
-            <TableRow key={agency.id}>
-              <TableCell>
-                <div className="font-medium">{agency.name}</div>
-              </TableCell>
-              <TableCell className="text-right font-mono">
-                {formatCurrencyFull(agency.value)}
-              </TableCell>
-              <TableCell className="text-right">
-                {grandTotal > 0 ? ((agency.value / grandTotal) * 100).toFixed(1) : 0}%
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  const renderTable = () => {
+    const tableData = chartData.map((d) => ({
+      ...d,
+      percent: grandTotal > 0 ? (d.value / grandTotal) * 100 : 0,
+    }));
+    return (
+      <ChartDataTable
+        rows={tableData}
+        columns={[
+          {
+            key: 'name',
+            label: 'Organisation',
+            numeric: false,
+            format: (_v, row) => (
+              <span className="flex items-center gap-2">
+                <span
+                  className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: (row as any).fill }}
+                />
+                <span>{row.name}</span>
+              </span>
+            ),
+          },
+          { key: 'value', label: 'Value (USD)', numeric: true, currency: 'USD' },
+          {
+            key: 'percent',
+            label: '%',
+            numeric: true,
+            includeInTotal: false,
+            format: (v) => `${(Number(v) || 0).toFixed(1)}%`,
+          },
+        ]}
+        maxHeight="100%"
+      />
+    );
+  };
 
   const renderLegend = () => (
     <div className="flex flex-wrap items-center gap-3 mb-2 flex-shrink-0">
@@ -346,7 +362,9 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
   };
 
   const renderControls = () => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
+    <div className="flex items-center justify-between gap-2 mb-3 flex-shrink-0">
+        {/* Filters + toggles (left) */}
+        <div className="flex items-center gap-2 flex-wrap">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
         <SelectTrigger className="min-w-[280px]">
           <span className="flex items-center gap-2 truncate">
@@ -373,7 +391,9 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
           </SelectItem>
         </SelectContent>
       </Select>
-
+        </div>
+        {/* Button groups + CSV, right-aligned. */}
+        <div className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1">
         {/* View mode toggles */}
         <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
@@ -409,7 +429,8 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
           </Button>
         </div>
 
-        {/* Export button - only in expanded view */}
+        </div>
+        {/* Export button - only in expanded view, right-aligned alone */}
         {!compact && (
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -424,14 +445,14 @@ export function ImplementingAgenciesChart({ refreshKey = 0, compact = false }: I
             </Button>
           </div>
         )}
-      </div>
+        </div>
     </div>
   );
 
   return (
     <div className="h-full flex flex-col">
-      {renderContent()}
       {!compact && renderControls()}
+      {renderContent()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows implementing agencies -- organizations responsible for the physical delivery of assistance on the ground. Compare their relative financial shares to understand which organizations carry out the most implementation work.

@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { countrySectorId, dacSectorCode, dacSectorName, percentage, isPrimary, notes } = body;
 
     if (!countrySectorId || !dacSectorCode) {
@@ -200,7 +201,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { countrySectorId, mappings } = body;
 
     if (!countrySectorId || !Array.isArray(mappings)) {

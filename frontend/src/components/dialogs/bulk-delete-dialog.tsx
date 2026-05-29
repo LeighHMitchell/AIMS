@@ -77,8 +77,7 @@ export function BulkDeleteDialog({
     <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+          <DialogTitle>
             {titleText}
           </DialogTitle>
           <DialogDescription className="pt-2">

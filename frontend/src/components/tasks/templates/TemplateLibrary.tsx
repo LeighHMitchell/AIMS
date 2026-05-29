@@ -198,7 +198,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredTemplates.map((template) => (
-                <Card key={template.id} className="hover:shadow-md transition-shadow">
+                <Card key={template.id} className="hover:shadow-card-hover transition-shadow">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-2 flex-1 min-w-0">

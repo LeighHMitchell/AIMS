@@ -351,8 +351,7 @@ export function WorkingGroupEditor({
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+            <DialogTitle>
               Delete Working Group
             </DialogTitle>
             <DialogDescription className="pt-3">

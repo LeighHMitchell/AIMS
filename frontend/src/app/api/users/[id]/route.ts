@@ -77,7 +77,8 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // SECURITY: Build update data with explicit field allowlist (no mass assignment)
     const updateData: Record<string, any> = {

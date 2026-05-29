@@ -10,7 +10,9 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { reporting_org_id } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { reporting_org_id } = body;
     
     
     if (!id) {

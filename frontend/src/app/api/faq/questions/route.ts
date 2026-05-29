@@ -253,7 +253,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { ids } = body;
 
     // Validate IDs array
@@ -316,7 +317,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { userId, question, context, tags, relatedFaqId, sourcePageSlug, sourcePageTitle } = body;
 
     // Validation

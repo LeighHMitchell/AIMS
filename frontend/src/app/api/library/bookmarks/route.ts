@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { scope, document_url, document_title, document_format } = body;
 
   if (!scope || !document_url) {
@@ -146,7 +147,8 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { scope, document_url } = body;
 
   if (!scope || !document_url) {

@@ -137,7 +137,8 @@ export async function PUT(
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const updateData: Record<string, any> = {};
   const allowedFields = [

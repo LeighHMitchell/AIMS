@@ -306,6 +306,7 @@ export function OptimizedTransactionList({
               size="icon"
               onClick={handleRefresh}
               disabled={isLoadingMore}
+              aria-label="Refresh transactions"
             >
               <RefreshCw className={`h-4 w-4 ${isLoadingMore ? 'animate-spin' : ''}`} />
             </Button>

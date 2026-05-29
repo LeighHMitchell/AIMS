@@ -11,7 +11,9 @@ export async function GET() {
       name
     }));
 
-    return NextResponse.json(flowTypes);
+    return NextResponse.json(flowTypes, {
+      headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+    });
 
   } catch (error) {
     console.error('Error in flow-types API:', error);

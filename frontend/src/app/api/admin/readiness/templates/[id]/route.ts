@@ -98,7 +98,8 @@ export async function PATCH(
 
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
-    const body: Partial<UpsertTemplateRequest> = await request.json();
+    const body: Partial<UpsertTemplateRequest> = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Build update object with only provided fields
     const updateData: any = {};

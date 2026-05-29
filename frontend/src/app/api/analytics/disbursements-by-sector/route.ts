@@ -250,16 +250,32 @@ export async function GET(request: NextRequest) {
       return y;
     };
 
-    // Build activity sectors map
+    // Build activity sectors map. Alongside, track distinct activity ids per
+    // hierarchy level so the client can show "N activities linked to this
+    // sector category / sector / sub-sector" without double-counting an
+    // activity that spans multiple sub-sectors within the same parent.
+    // Counts are linkage-based (any activity tagged with the code), not
+    // value- or date-filtered.
     const activitySectorsMap = new Map<string, any[]>();
+    const activitiesByGroup = new Map<string, Set<string>>();
+    const activitiesByCategory = new Map<string, Set<string>>();
+    const activitiesBySector = new Map<string, Set<string>>();
+    const addActivityToLevel = (map: Map<string, Set<string>>, code: string, activityId: string) => {
+      let set = map.get(code);
+      if (!set) {
+        set = new Set();
+        map.set(code, set);
+      }
+      set.add(activityId);
+    };
     activities?.forEach(activity => {
       if (activity.activity_sectors && activity.activity_sectors.length > 0) {
         activitySectorsMap.set(activity.id, activity.activity_sectors);
 
         // Initialize sectors in our map with hierarchy info
         activity.activity_sectors.forEach((sector: any) => {
+          const hierarchy = getSectorHierarchy(sector.sector_code);
           if (!sectorDataMap.has(sector.sector_code)) {
-            const hierarchy = getSectorHierarchy(sector.sector_code);
             sectorDataMap.set(sector.sector_code, {
               sectorCode: sector.sector_code,
               sectorName: sector.sector_name,
@@ -270,6 +286,10 @@ export async function GET(request: NextRequest) {
               yearlyData: new Map()
             });
           }
+          // Distinct-activity tracking per level.
+          addActivityToLevel(activitiesByGroup, hierarchy.groupCode, activity.id);
+          addActivityToLevel(activitiesByCategory, hierarchy.categoryCode, activity.id);
+          addActivityToLevel(activitiesBySector, sector.sector_code, activity.id);
         });
       }
     });
@@ -410,6 +430,15 @@ export async function GET(request: NextRequest) {
       resultSectors = resultSectors.filter(s => s.sectorCode === sector);
     }
 
+    // Collapse the distinct-activity sets into plain count maps keyed by code,
+    // one map per hierarchy level. The client picks the map matching the
+    // currently-displayed level (group / category / sub-sector).
+    const countsFromSets = (map: Map<string, Set<string>>): Record<string, number> => {
+      const out: Record<string, number> = {};
+      map.forEach((set, code) => { out[code] = set.size; });
+      return out;
+    };
+
     // Convert to response format (with hierarchy info)
     const result = {
       sectors: resultSectors.map(sector => ({
@@ -422,7 +451,12 @@ export async function GET(request: NextRequest) {
         years: Array.from(sector.yearlyData.entries())
           .map(([year, data]) => ({ year, ...data }))
           .sort((a, b) => a.year - b.year),
-      })).filter(s => s.years.length > 0) // Only include sectors with data
+      })).filter(s => s.years.length > 0), // Only include sectors with data
+      activityCounts: {
+        byGroup: countsFromSets(activitiesByGroup),
+        byCategory: countsFromSets(activitiesByCategory),
+        bySector: countsFromSets(activitiesBySector),
+      },
     };
 
     return NextResponse.json(result);

@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ExpandableCard } from '@/components/ui/expandable-card'
+import { ExpandedOnly, useChartExpansion } from '@/lib/chart-expansion-context'
 import {
   Download,
   Users,
@@ -95,6 +97,21 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
   const [metricMode, setMetricMode] = useState<MetricMode>('count')
   const [hoveredLink, setHoveredLink] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isExpanded = useChartExpansion()
+  // Measure the chart container so the Sankey fills the available width in the
+  // expanded dialog (it was a fixed 1000px, leaving large empty side margins).
+  const [containerWidth, setContainerWidth] = useState<number>(1000)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width
+      if (w && w > 0) setContainerWidth(w)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const fetchData = useCallback(async () => {
     try {
@@ -189,7 +206,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
   const sankeyLayout = useMemo(() => {
     if (!data || data.nodes.length === 0) return null
 
-    const width = 1000
+    const width = isExpanded ? Math.max(containerWidth, 1000) : 1000
     const height = 500
     const margin = { top: 30, right: 200, bottom: 20, left: 200 }
 
@@ -335,7 +352,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
       console.error('[ParticipatingOrgsSankey] Sankey layout error:', error)
       return null
     }
-  }, [data])
+  }, [data, isExpanded, containerWidth])
 
   // Generate link path
   const linkPath = d3Sankey.sankeyLinkHorizontal()
@@ -366,89 +383,50 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
       <ExpandableCard
         title="Organisation Role Flow"
         description="Flow of participating organisations across IATI roles: Funding → Extending → Accountable → Implementing"
-        exportData={data.links}
+        mathTooltip="Counts participating organisations (or their budget value) flowing across IATI participating-org roles: Funding (1) → Extending (3) → Accountable (2) → Implementing (4). Ribbon width is proportional to the number of organisations (or USD budget) moving between roles."
       >
         <div className="space-y-4">
-          {/* Controls */}
+          {/* Controls — dropdowns/filters shown only in expanded view */}
+          <ExpandedOnly>
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
             <div className="flex items-center gap-2">
               <span className="text-body font-medium text-foreground">Metric:</span>
-              <div className="flex gap-1">
-                <Button
-                  variant={metricMode === 'count' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setMetricMode('count')}
-                >
-                  <Hash className="h-4 w-4 mr-1" />
-                  Count
-                </Button>
-                <Button
-                  variant={metricMode === 'value' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setMetricMode('value')}
-                >
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  Budget Value
-                </Button>
-              </div>
+              <ChartViewToggle
+                ariaLabel="Metric"
+                variant="icon-text"
+                value={metricMode}
+                onValueChange={setMetricMode}
+                options={[
+                  { value: 'count', label: 'Count', icon: Hash },
+                  { value: 'value', label: 'Budget Value', icon: DollarSign },
+                ]}
+              />
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewMode('sankey')}
-                  className={cn(viewMode === 'sankey' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  <Activity className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className={cn(viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-              </div>
+              <ChartViewToggle
+                ariaLabel="View mode"
+                variant="icon"
+                value={viewMode}
+                onValueChange={setViewMode}
+                options={[
+                  { value: 'sankey', label: 'Sankey', icon: Activity },
+                  { value: 'table', label: 'Table', icon: BarChart3 },
+                ]}
+              />
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="h-4 w-4 mr-1" />
-                CSV
+              <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleExportCSV} title="Download CSV" aria-label="Download CSV">
+                <Download className="h-4 w-4" />
               </Button>
             </div>
           </div>
-
-          {/* Summary Stats */}
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-            <div className="flex items-center gap-6">
-              <div>
-                <span className="text-body text-muted-foreground">Total Activities:</span>
-                <span className="ml-2 font-bold text-foreground">
-                  {formatNumber(data.summary.totalActivities)}
-                </span>
-              </div>
-              <div>
-                <span className="text-body text-muted-foreground">Organisations:</span>
-                <span className="ml-2 font-bold text-foreground">
-                  {formatNumber(data.summary.totalOrganizations)}
-                </span>
-              </div>
-              <div>
-                <span className="text-body text-muted-foreground">Total Budget:</span>
-                <span className="ml-2 font-bold text-foreground">
-                  {formatCurrency(data.summary.totalBudget)}
-                </span>
-              </div>
-            </div>
-          </div>
+          </ExpandedOnly>
 
           {/* Chart / Table */}
           {viewMode === 'sankey' ? (
-            <div className="overflow-x-auto bg-card rounded-lg border p-4">
+            <div ref={containerRef} className="overflow-x-auto bg-card rounded-lg border p-4">
               {!hasNodes ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
@@ -464,7 +442,8 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                   height={sankeyLayout.height}
                   className="mx-auto"
                 >
-                  {/* Column Headers */}
+                  {/* Column Headers — expanded only (decluttered in the small card) */}
+                  {isExpanded && (
                   <g>
                     {roleOrder.map((role) => {
                       // Find nodes with this role and calculate average x position
@@ -490,6 +469,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                       )
                     })}
                   </g>
+                  )}
 
                   {/* Links */}
                   <g fill="none">
@@ -636,7 +616,8 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
             </div>
           )}
 
-          {/* Legend */}
+          {/* Legend — expanded only (decluttered in the small card) */}
+          {isExpanded && (
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4 border-t">
             {roleOrder.map((role) => (
               <div key={role} className="flex items-center gap-2">
@@ -650,6 +631,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
               </div>
             ))}
           </div>
+          )}
         </div>
       </ExpandableCard>
     </div>

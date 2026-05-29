@@ -10,7 +10,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { user } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { user } = body;
     
     if (!user || !user.id) {
       return NextResponse.json(

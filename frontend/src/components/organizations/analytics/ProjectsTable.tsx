@@ -147,7 +147,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
   };
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <CardTitle className="text-lg font-semibold text-foreground">

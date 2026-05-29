@@ -205,7 +205,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                   readOnly={!!iatiIdentifier}
                 />
                 {iatiIdentifier && (
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" aria-label="Open in IATI registry">
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 )}

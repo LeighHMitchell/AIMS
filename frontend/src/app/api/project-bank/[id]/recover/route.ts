@@ -29,10 +29,12 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { target_stage, reason } = await request.json() as {
+  const body = await request.json().catch(() => null) as {
     target_stage?: ProjectStage;
     reason?: string;
-  };
+  } | null;
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  const { target_stage, reason } = body;
 
   if (!target_stage) {
     return NextResponse.json({ error: 'target_stage is required' }, { status: 400 });

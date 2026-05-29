@@ -115,6 +115,7 @@ export function StringArrayInput({
           variant="outline"
           disabled={disabled || !inputValue.trim()}
           className="flex-shrink-0"
+          aria-label="Add item"
         >
           <Plus className="h-4 w-4" />
         </Button>

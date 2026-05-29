@@ -112,136 +112,29 @@ export async function GET(request: NextRequest) {
     // Get org IDs for batch statistics query
     const orgIds = organizations.map((o: { id: string }) => o.id);
 
-    // Batch query for activity counts and IDs per organization
-    // Single query to get all activities for these orgs (used for both count and budget lookup)
-    const { data: orgActivities } = await supabase
-      .from('activities')
-      .select('id, reporting_org_id')
-      .in('reporting_org_id', orgIds);
-
-    // Count activities per org and build activity map
-    const activityCounts = new Map<string, number>();
-    const orgActivityMap = new Map<string, string[]>();
-    if (orgActivities) {
-      orgActivities.forEach((a: { id: string; reporting_org_id: string }) => {
-        const orgId = a.reporting_org_id;
-        // Count activities
-        activityCounts.set(orgId, (activityCounts.get(orgId) || 0) + 1);
-        // Build org -> activity ids map
-        const existing = orgActivityMap.get(orgId) || [];
-        existing.push(a.id);
-        orgActivityMap.set(orgId, existing);
-      });
+    // Server-side aggregation: a single RPC computes per-org activity counts,
+    // budget/disbursement totals and provider/receiver counts. This replaces
+    // the previous pattern of fetching every activity/budget/transaction/PD for
+    // these orgs and aggregating in Node (which scaled with whole-table size).
+    interface OrgStatsRow {
+      org_id: string;
+      activity_count: number;
+      total_budgeted: number;
+      total_disbursed: number;
+      provider_count: number;
+      receiver_count: number;
     }
 
-    // Get all activity IDs for budget query
-    const allActivityIds = orgActivities?.map((a: { id: string }) => a.id) || [];
+    const { data: statsRows, error: statsError } = await supabase
+      .rpc('get_organization_stats', { p_org_ids: orgIds });
 
-    // Fetch budgets for all activities in one query
-    const orgBudgeted = new Map<string, number>();
-    if (allActivityIds.length > 0) {
-      const { data: budgetStats } = await supabase
-        .from('activity_budgets')
-        .select('activity_id, usd_value, value, currency')
-        .in('activity_id', allActivityIds);
-
-      // Create a map of activity -> budget total
-      const activityBudgetMap = new Map<string, number>();
-      if (budgetStats) {
-        budgetStats.forEach((b: { activity_id: string; usd_value: number | null; value: number | null; currency: string | null }) => {
-          // Use usd_value, fallback to value if currency is USD
-          const amount = b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0;
-          const existing = activityBudgetMap.get(b.activity_id) || 0;
-          activityBudgetMap.set(b.activity_id, existing + amount);
-        });
-      }
-
-      // Sum budgets per organization
-      orgActivityMap.forEach((activityIds, orgId) => {
-        let total = 0;
-        activityIds.forEach(actId => {
-          total += activityBudgetMap.get(actId) || 0;
-        });
-        orgBudgeted.set(orgId, total);
-      });
+    if (statsError) {
+      // Non-fatal: fall back to zeroed stats so the list still renders.
+      console.error('[Organizations List] get_organization_stats RPC error:', statsError);
     }
 
-    // Batch query for all transactions where org is provider or receiver
-    // Used for both financial totals and provider/receiver counts
-    const quotedOrgIds = orgIds.map((id: string) => `"${id}"`).join(',');
-    const { data: allTransactions } = await supabase
-      .from('transactions')
-      .select('provider_org_id, receiver_org_id, transaction_type, value_usd')
-      .or(`provider_org_id.in.(${quotedOrgIds}),receiver_org_id.in.(${quotedOrgIds})`);
-
-    // Calculate disbursement totals and provider/receiver counts per org
-    const orgDisbursed = new Map<string, number>();
-    const providerTransactionCount = new Map<string, number>();
-    const receiverTransactionCount = new Map<string, number>();
-
-    if (allTransactions) {
-      allTransactions.forEach((t: {
-        provider_org_id: string | null;
-        receiver_org_id: string | null;
-        transaction_type: string;
-        value_usd: number | null
-      }) => {
-        const value = t.value_usd || 0;
-
-        // Count transactions as provider
-        if (t.provider_org_id && orgIds.includes(t.provider_org_id)) {
-          providerTransactionCount.set(
-            t.provider_org_id,
-            (providerTransactionCount.get(t.provider_org_id) || 0) + 1
-          );
-          // Disbursements (type 3) - add to disbursed total
-          if (t.transaction_type === '3') {
-            orgDisbursed.set(t.provider_org_id, (orgDisbursed.get(t.provider_org_id) || 0) + value);
-          }
-        }
-        
-        // Count transactions as receiver
-        if (t.receiver_org_id && orgIds.includes(t.receiver_org_id)) {
-          receiverTransactionCount.set(
-            t.receiver_org_id,
-            (receiverTransactionCount.get(t.receiver_org_id) || 0) + 1
-          );
-          // Disbursements (type 3) - add to disbursed total
-          if (t.transaction_type === '3') {
-            orgDisbursed.set(t.receiver_org_id, (orgDisbursed.get(t.receiver_org_id) || 0) + value);
-          }
-        }
-      });
-    }
-    
-    // Also fetch planned disbursements for provider/receiver counts
-    const { data: plannedDisbursements } = await supabase
-      .from('planned_disbursements')
-      .select('provider_org_id, receiver_org_id')
-      .or(`provider_org_id.in.(${quotedOrgIds}),receiver_org_id.in.(${quotedOrgIds})`);
-    
-    if (plannedDisbursements) {
-      plannedDisbursements.forEach((pd: {
-        provider_org_id: string | null;
-        receiver_org_id: string | null;
-      }) => {
-        // Count planned disbursements as provider
-        if (pd.provider_org_id && orgIds.includes(pd.provider_org_id)) {
-          providerTransactionCount.set(
-            pd.provider_org_id,
-            (providerTransactionCount.get(pd.provider_org_id) || 0) + 1
-          );
-        }
-        
-        // Count planned disbursements as receiver
-        if (pd.receiver_org_id && orgIds.includes(pd.receiver_org_id)) {
-          receiverTransactionCount.set(
-            pd.receiver_org_id,
-            (receiverTransactionCount.get(pd.receiver_org_id) || 0) + 1
-          );
-        }
-      });
-    }
+    const statsMap = new Map<string, OrgStatsRow>();
+    (statsRows as OrgStatsRow[] | null)?.forEach((s) => statsMap.set(s.org_id, s));
 
     // Transform to response with computed stats
     const transformedOrganizations = organizations.map((org: {
@@ -263,9 +156,11 @@ export async function GET(request: NextRequest) {
       created_at: string;
       updated_at: string;
     }) => {
-      const providerCount = providerTransactionCount.get(org.id) || 0;
-      const receiverCount = receiverTransactionCount.get(org.id) || 0;
-      
+      const stats = statsMap.get(org.id);
+      const activityCount = Number(stats?.activity_count) || 0;
+      const providerCount = Number(stats?.provider_count) || 0;
+      const receiverCount = Number(stats?.receiver_count) || 0;
+
       return {
         id: org.id,
         name: org.name,
@@ -285,10 +180,10 @@ export async function GET(request: NextRequest) {
         created_at: org.created_at,
         updated_at: org.updated_at,
         // Computed stats
-        activeProjects: activityCounts.get(org.id) || 0,
-        reportedActivities: activityCounts.get(org.id) || 0,
-        totalBudgeted: orgBudgeted.get(org.id) || 0,
-        totalDisbursed: orgDisbursed.get(org.id) || 0,
+        activeProjects: activityCount,
+        reportedActivities: activityCount,
+        totalBudgeted: Number(stats?.total_budgeted) || 0,
+        totalDisbursed: Number(stats?.total_disbursed) || 0,
         // Provider/Receiver transaction counts
         providerTransactionCount: providerCount,
         receiverTransactionCount: receiverCount,

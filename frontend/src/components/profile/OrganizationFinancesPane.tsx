@@ -55,7 +55,7 @@ import { createContext, useContext } from "react"
 import { TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_LABELS_PLURAL } from "@/types/transaction"
 import { formatAxisCurrency } from "@/lib/format"
 import { YearRangeChip } from "@/components/ui/year-range-chip"
-import { type CustomYear as CustomYearType, getCustomYearLabel as getCustomYearLabelFromCtx } from "@/types/custom-years"
+import { type CustomYear as CustomYearType, getCustomYearLabel as getCustomYearLabelFromCtx, pickDefaultCalendarYearId } from "@/types/custom-years"
 import {
   Select,
   SelectContent,
@@ -206,7 +206,7 @@ function ChartCard({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <Card className={`border-border bg-card p-6 ${className ?? ""}`}>
+    <Card className={`bg-card p-6 ${className ?? ""}`}>
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex flex-col space-y-1.5 min-w-0">
           <h2 className="text-lg font-semibold leading-tight tracking-tight text-foreground">
@@ -343,10 +343,9 @@ export function OrganizationFinancesPane({
         const years: CustomYearType[] = result.data || []
         setCustomYears(years)
         if (!calendarType) {
-          const def = result.defaultId
-            ? years.find((cy) => cy.id === result.defaultId)
-            : years[0]
-          if (def) setCalendarType(def.id)
+          // Default to the Gregorian Calendar Year regardless of the DB default.
+          const defaultId = pickDefaultCalendarYearId(years, result.defaultId)
+          if (defaultId) setCalendarType(defaultId)
         }
       })
       .catch(() => {})
@@ -423,7 +422,7 @@ export function OrganizationFinancesPane({
           fires immediately and the tab switch is instant — no skeleton on
           second click. Inactive panel is hidden via CSS, not unmounted. */}
       <div className={view === "tables" ? "m-0 space-y-6" : "hidden"}>
-        <Card className="border-border bg-card p-6">
+        <Card className="bg-card p-6">
           <div className="mb-4 flex flex-col space-y-1.5">
             <h2 className="text-lg font-semibold leading-tight tracking-tight text-foreground">Transactions</h2>
             <p className="text-body text-muted-foreground">
@@ -433,7 +432,7 @@ export function OrganizationFinancesPane({
           <OrganizationTransactionsTab organizationId={organizationId} />
         </Card>
 
-        <Card className="border-border bg-card p-6">
+        <Card className="bg-card p-6">
           <div className="mb-4 flex flex-col space-y-1.5">
             <h2 className="text-lg font-semibold leading-tight tracking-tight text-foreground">Planned Disbursements</h2>
             <p className="text-body text-muted-foreground">
@@ -443,7 +442,7 @@ export function OrganizationFinancesPane({
           <OrganizationPlannedDisbursementsTab organizationId={organizationId} />
         </Card>
 
-        <Card className="border-border bg-card p-6">
+        <Card className="bg-card p-6">
           <div className="mb-4 flex flex-col space-y-1.5">
             <h2 className="text-lg font-semibold leading-tight tracking-tight text-foreground">Budgets</h2>
             <p className="text-body text-muted-foreground">
@@ -479,7 +478,7 @@ export function OrganizationFinancesPane({
               chart + expand button; controls only show in the modal. */}
           <ChartFullscreen className="lg:col-span-2">
             {({ isFullscreen, toggle }) => (
-              <Card className={cn("border-border bg-card", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+              <Card className={cn("bg-card", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
                 <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>

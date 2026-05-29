@@ -13,12 +13,30 @@ import {
   Label
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { InlineViewToggle, useChartCardTableMode } from '@/components/ui/inline-toolbar-buttons'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
+
+// Metric options shared by the metric selector and the sort-by selector.
+type SDGMetric = 'activities' | 'budget' | 'planned'
+const SDG_METRIC_OPTIONS: { value: SDGMetric; label: string }[] = [
+  { value: 'activities', label: 'Activities' },
+  { value: 'budget', label: 'Total Budget' },
+  { value: 'planned', label: 'Planned Disbursement' },
+]
 
 interface SDGCoverageChartProps {
   organizationId: string
@@ -47,10 +65,16 @@ export function SDGCoverageChart({
 }: SDGCoverageChartProps) {
   const [data, setData] = useState<CoverageData[]>([])
   const [loading, setLoading] = useState(true)
+  const tableMode = useChartCardTableMode()
+  const isExpanded = useChartExpansion()
+  // Metric to plot + metric to sort by — both controlled in-chart. Each row
+  // already carries all three values, so switching is client-side.
+  const [selectedMetric, setSelectedMetric] = useState<SDGMetric>(metric)
+  const [sortBy, setSortBy] = useState<SDGMetric>(metric)
 
   useEffect(() => {
     fetchData()
-  }, [organizationId, dateRange, selectedSdgs, metric, refreshKey])
+  }, [organizationId, dateRange, selectedSdgs, selectedMetric, refreshKey])
 
   const fetchData = async () => {
     try {
@@ -95,29 +119,34 @@ export function SDGCoverageChart({
   }
 
   const formatValue = (value: number) => {
-    if (metric === 'activities') {
+    if (selectedMetric === 'activities') {
       return value.toFixed(1)
     }
     return formatCurrency(value)
   }
 
-  const getMetricValue = (item: CoverageData) => {
-    if (metric === 'activities') return item.activityCount
-    if (metric === 'budget') return item.totalBudget
+  const metricValueOf = (item: CoverageData, m: SDGMetric) => {
+    if (m === 'activities') return item.activityCount
+    if (m === 'budget') return item.totalBudget
     return item.totalPlannedDisbursements
   }
 
+  const getMetricValue = (item: CoverageData) => metricValueOf(item, selectedMetric)
+
   const getMetricLabel = () => {
-    if (metric === 'activities') return 'Number of Activities'
-    if (metric === 'budget') return 'Total Activity Budget (USD)'
+    if (selectedMetric === 'activities') return 'Number of Activities'
+    if (selectedMetric === 'budget') return 'Total Activity Budget (USD)'
     return 'Total Planned Disbursements (USD)'
   }
 
-  const chartData = data.map(item => ({
-    ...item,
-    value: getMetricValue(item),
-    label: `SDG ${item.sdgGoal}`
-  }))
+  // Sort by the chosen metric (descending) before plotting.
+  const chartData = [...data]
+    .sort((a, b) => metricValueOf(b, sortBy) - metricValueOf(a, sortBy))
+    .map(item => ({
+      ...item,
+      value: getMetricValue(item),
+      label: `SDG ${item.sdgGoal}`,
+    }))
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -144,126 +173,43 @@ export function SDGCoverageChart({
     return null
   }
 
-  // Custom Y-axis tick with SDG code and label - wraps long names
+  // Custom Y-axis tick — SDG code badge inline immediately before the name, in
+  // a single right-aligned block so they read on one line (no gap between them).
   const CustomYAxisTick = ({ x, y, payload }: any) => {
     const goal = SDG_GOALS.find(g => g.id === payload.value)
     const goalName = goal?.name || ''
-
-    // Check if we need to wrap
-    const maxLength = 25
-    const needsWrap = goalName.length > maxLength
-
-    let line1 = goalName
-    let line2 = ''
-
-    if (needsWrap) {
-      const words = goalName.split(' ')
-      let currentLine = ''
-      for (const word of words) {
-        if ((currentLine + ' ' + word).trim().length <= maxLength) {
-          currentLine = (currentLine + ' ' + word).trim()
-        } else {
-          if (!line2) {
-            line1 = currentLine
-            currentLine = word
-          } else {
-            currentLine = currentLine + ' ' + word
-          }
-        }
-      }
-      line2 = currentLine
-    }
-
-    // Calculate badge width based on SDG number
-    const badgeText = `SDG ${payload.value}`
-    const badgeWidth = badgeText.length * 6 + 8
-    const labelWidth = line1.length * 6
-
     return (
       <g transform={`translate(${x},${y})`}>
-        {/* Gray background for SDG code */}
-        <rect
-          x={-5 - labelWidth - 6 - badgeWidth}
-          y={needsWrap ? -10 : -4}
-          width={badgeWidth}
-          height={16}
-          rx={3}
-          fill="#f1f5f9"
-        />
-        <text x={-5 - labelWidth - 6 - badgeWidth + 4} y={needsWrap ? 2 : 8} textAnchor="start" fontSize={9} fontFamily="monospace" fill="#475569">
-          {badgeText}
-        </text>
-        {/* Label text */}
-        <text x={-5} y={needsWrap ? -2 : 4} textAnchor="end" fontSize={10} fill="#64748b">
-          {line1}
-        </text>
-        {needsWrap && (
-          <text x={-5} y={10} textAnchor="end" fontSize={10} fill="#64748b">
-            {line2}
-          </text>
-        )}
+        <foreignObject x={-270} y={-20} width={262} height={40}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: '100%', paddingRight: '6px' }}>
+            <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'right', lineHeight: 1.3, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+              <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '9px', backgroundColor: '#f1f5f9', color: '#475569', padding: '1px 5px', borderRadius: '3px', marginRight: '5px', whiteSpace: 'nowrap' }}>
+                SDG {payload.value}
+              </span>
+              {goalName}
+            </div>
+          </div>
+        </foreignObject>
       </g>
     )
   }
 
-  // Custom Y-axis tick for compact mode - wraps long names
+  // Compact-mode Y-axis tick — same inline code + name, smaller.
   const CompactYAxisTick = ({ x, y, payload }: any) => {
     const goal = SDG_GOALS.find(g => g.id === payload.value)
     const goalName = goal?.name || ''
-
-    // Check if we need to wrap
-    const maxLength = 18
-    const needsWrap = goalName.length > maxLength
-
-    let line1 = goalName
-    let line2 = ''
-
-    if (needsWrap) {
-      const words = goalName.split(' ')
-      let currentLine = ''
-      for (const word of words) {
-        if ((currentLine + ' ' + word).trim().length <= maxLength) {
-          currentLine = (currentLine + ' ' + word).trim()
-        } else {
-          if (!line2) {
-            line1 = currentLine
-            currentLine = word
-          } else {
-            currentLine = currentLine + ' ' + word
-          }
-        }
-      }
-      line2 = currentLine
-    }
-
-    // Calculate badge width based on SDG number
-    const badgeText = `SDG ${payload.value}`
-    const badgeWidth = badgeText.length * 4.5 + 6
-    const labelWidth = line1.length * 4.5
-
     return (
       <g transform={`translate(${x},${y})`}>
-        {/* Gray background for SDG code */}
-        <rect
-          x={-5 - labelWidth - 4 - badgeWidth}
-          y={needsWrap ? -9 : -5}
-          width={badgeWidth}
-          height={14}
-          rx={2}
-          fill="#f1f5f9"
-        />
-        <text x={-5 - labelWidth - 4 - badgeWidth + 3} y={needsWrap ? 1 : 5} textAnchor="start" fontSize={7} fontFamily="monospace" fill="#475569">
-          {badgeText}
-        </text>
-        {/* Label text */}
-        <text x={-5} y={needsWrap ? -2 : 3} textAnchor="end" fontSize={8} fill="#64748b">
-          {line1}
-        </text>
-        {needsWrap && (
-          <text x={-5} y={8} textAnchor="end" fontSize={8} fill="#64748b">
-            {line2}
-          </text>
-        )}
+        <foreignObject x={-118} y={-18} width={112} height={36}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: '100%', paddingRight: '4px' }}>
+            <div style={{ fontSize: '8px', color: '#64748b', textAlign: 'right', lineHeight: 1.25, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+              <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '7px', backgroundColor: '#f1f5f9', color: '#475569', padding: '1px 3px', borderRadius: '2px', marginRight: '3px', whiteSpace: 'nowrap' }}>
+                SDG {payload.value}
+              </span>
+              {goalName}
+            </div>
+          </div>
+        </foreignObject>
       </g>
     )
   }
@@ -293,7 +239,7 @@ export function SDGCoverageChart({
               type="number"
               fontSize={9}
               tick={{ fill: '#64748b' }}
-              tickFormatter={(v) => metric === 'activities' ? v.toFixed(1) : formatAxisCurrency(v)}
+              tickFormatter={(v) => selectedMetric === 'activities' ? v.toFixed(1) : formatAxisCurrency(v)}
               domain={[0, 'auto']}
             >
               <Label value={getMetricLabel()} position="bottom" offset={5} fontSize={9} fill="#64748b" />
@@ -323,49 +269,81 @@ export function SDGCoverageChart({
   }
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">SDG Coverage by Activities</CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">Number of activities and financial weight mapped to each SDG</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
-    )
+    return <ChartLoadingPlaceholder />
   }
 
   if (chartData.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">SDG Coverage by Activities</CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">Number of activities and financial weight mapped to each SDG</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
-              <p className="text-muted-foreground font-medium">No SDG data available</p>
-              <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+          <p className="text-muted-foreground font-medium">No SDG data available</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="border-0 bg-white shadow-none">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium text-foreground">SDG Coverage</CardTitle>
-        <CardDescription className="text-helper text-muted-foreground mt-0.5">
-          Activity distribution across Sustainable Development Goals
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={550}>
+    <>
+      {isExpanded && (
+        <div className="flex items-center justify-between gap-2 mb-3">
+          {/* Left: metric + sort dropdowns (chart view only — the table shows
+              all metrics as columns and sorts via its own headers). */}
+          <div className={`items-center gap-2 flex-wrap ${tableMode ? 'hidden' : 'flex'}`}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  Metric: {SDG_METRIC_OPTIONS.find(o => o.value === selectedMetric)?.label}
+                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {SDG_METRIC_OPTIONS.map(opt => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    className={selectedMetric === opt.value ? 'bg-muted font-medium' : ''}
+                    onClick={() => setSelectedMetric(opt.value)}
+                  >
+                    {opt.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  Sort: {SDG_METRIC_OPTIONS.find(o => o.value === sortBy)?.label}
+                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {SDG_METRIC_OPTIONS.map(opt => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    className={sortBy === opt.value ? 'bg-muted font-medium' : ''}
+                    onClick={() => setSortBy(opt.value)}
+                  >
+                    {opt.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {/* Right: view toggle + CSV. */}
+          <div className="flex items-center gap-2 ml-auto">
+            <InlineViewToggle />
+            <CsvExportButton rows={chartData} title="SDG Coverage" />
+          </div>
+        </div>
+      )}
+      {!tableMode && (
+      <ResponsiveContainer width="100%" height={550}>
           <BarChart
             data={chartData}
             layout="vertical"
@@ -374,7 +352,7 @@ export function SDGCoverageChart({
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={metric === 'activities' ? (v) => v.toFixed(1) : formatAxisCurrency}
+              tickFormatter={selectedMetric === 'activities' ? (v) => v.toFixed(1) : formatAxisCurrency}
               tick={{ fill: '#64748b', fontSize: 12 }}
               axisLine={{ stroke: '#cbd5e1' }}
               orientation="bottom"
@@ -401,8 +379,11 @@ export function SDGCoverageChart({
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+      )}
 
-        {/* Explanatory paragraph */}
+      {/* Explanatory paragraph — chart view only; in table view it renders
+          under the table (see SDGTable). */}
+      {!tableMode && (
         <div className="mt-6">
           <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows how the organization&apos;s aid activities align with the 17 UN Sustainable Development Goals.
@@ -413,8 +394,8 @@ export function SDGCoverageChart({
             while absent or low bars may represent opportunities for expanded programming.
           </p>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   )
 }
 

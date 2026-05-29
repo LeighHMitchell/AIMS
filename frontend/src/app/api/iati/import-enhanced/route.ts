@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     // Get import data
-    const data: ImportData & { organizationId?: string } = await request.json();
+    const data: ImportData & { organizationId?: string } = await request.json().catch(() => null);
+    if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { activities, transactions, fixes, orphanResolutions, codeMappings, organizationAssignments, organizationId } = data as any;
     // Load org preferences if org is provided
     let orgPrefs: any | null = null;

@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Download, TrendingUp, LineChart as LineChartIcon, BarChart3, Layers, Table as TableIcon } from 'lucide-react'
 import { SectorTimeSeriesFilters as FilterState, TimeSeriesChartType, TimeSeriesDataType } from '@/types/sector-analytics'
@@ -16,6 +17,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 
 export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
   const isExpanded = useChartExpansion()
@@ -58,6 +60,14 @@ export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
     ...filters,
     dataType
   })
+
+  // Gregorian years present in the time-series data — used to default the year
+  // picker to the full span of years that have data.
+  const dataYears = useMemo(
+    () => years.map(Number).filter(n => Number.isFinite(n)),
+    [years],
+  )
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears)
 
   // Track when we have initial data
   React.useEffect(() => {
@@ -106,7 +116,7 @@ export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
   }
 
   return (
-    <Card className={insideCard ? "border-0 shadow-none bg-transparent" : "border-border"}>
+    <Card className={insideCard ? "border-0 shadow-none bg-transparent" : ""}>
       <CardHeader className={insideCard && !showControls ? "p-0" : undefined}>
         <div className="flex flex-col gap-4">
           {/* Title — omitted inside a card; CompactChartCard supplies it. */}
@@ -128,77 +138,37 @@ export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
               <YearRangeChip
                 selectedYears={selectedYears}
                 onYearsChange={setSelectedYears}
+                actualDataRange={actualDataRange}
               />
             )}
             {/* Data Type Toggle - Planned vs Actual */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDataTypeChange('planned')}
-                className={cn("h-8", dataType === 'planned' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              >
-                Planned Disbursements
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDataTypeChange('actual')}
-                className={cn("h-8", dataType === 'actual' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              >
-                Actual Disbursements
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="Data type"
+              variant="text"
+              value={dataType}
+              onValueChange={(value) => handleDataTypeChange(value)}
+              options={[
+                { value: 'planned', label: 'Planned Disbursements' },
+                { value: 'actual', label: 'Actual Disbursements' },
+              ]}
+            />
 
             {/* Chart Type Toggle */}
             <div className="flex items-center gap-2">
-              <div className="flex gap-1 rounded-lg p-1 bg-muted flex-wrap">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType('area')}
-                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Area"
-                >
-                  <TrendingUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType('line')}
-                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Line"
-                >
-                  <LineChartIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType('bar')}
-                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Bar"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType('stacked-bar')}
-                  className={cn("h-8", chartType === 'stacked-bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Stacked Bar"
-                >
-                  <Layers className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType('table')}
-                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                  title="Table"
-                >
-                  <TableIcon className="h-4 w-4" />
-                </Button>
-              </div>
+              <ChartViewToggle
+                ariaLabel="Chart type"
+                variant="icon"
+                className="flex-wrap"
+                value={chartType}
+                onValueChange={setChartType}
+                options={[
+                  { value: 'area', label: 'Area', icon: TrendingUp },
+                  { value: 'line', label: 'Line', icon: LineChartIcon },
+                  { value: 'bar', label: 'Bar', icon: BarChart3 },
+                  { value: 'stacked-bar', label: 'Stacked Bar', icon: Layers },
+                  { value: 'table', label: 'Table', icon: TableIcon },
+                ]}
+              />
 
               {/* Export Button */}
               <Button

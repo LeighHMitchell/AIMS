@@ -76,7 +76,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
 
   if (loading) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -88,7 +88,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
   }
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Users className="h-5 w-5" />

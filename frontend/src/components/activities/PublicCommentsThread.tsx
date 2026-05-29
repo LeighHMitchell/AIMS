@@ -294,6 +294,7 @@ function CommentItem({
                     type="button"
                     className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
                     disabled={isDeleting}
+                    aria-label="Comment actions"
                   >
                     {isDeleting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

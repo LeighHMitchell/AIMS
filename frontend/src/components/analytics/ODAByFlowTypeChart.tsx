@@ -20,8 +20,17 @@ import { Label } from '@/components/ui/label'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from '@/components/ui/inline-toolbar-buttons'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
+
+// Full available span (2010 → current year + 10). The data is aggregated by
+// flow type with no per-year field, so the picker defaults to this full range.
+const AVAILABLE_YEARS = Array.from(
+  { length: new Date().getFullYear() - 2010 + 11 },
+  (_, i) => 2010 + i
+)
 
 interface ODAByFlowTypeChartProps {
   dateRange: {
@@ -50,21 +59,37 @@ export function ODAByFlowTypeChart({
   onDataChange
 }: ODAByFlowTypeChartProps) {
   const isExpanded = useChartExpansion()
+  const tableMode = useChartCardTableMode()
   const [data, setData] = useState<FlowData[]>([])
   const [loading, setLoading] = useState(true)
   const [includeNonODA, setIncludeNonODA] = useState(false)
+  // Calendar + year-range selection (filters the date window sent to the API).
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [dateWindow, setDateWindow] = useState<{ from: Date; to: Date } | null>(null)
+
+  // Default the year picker to the full available span (this chart's data is
+  // aggregated by flow type with no per-year field to derive a data span from).
+  useEffect(() => {
+    if (selectedYears.length === 0) {
+      setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey, includeNonODA])
+  }, [dateRange, dateWindow, filters, refreshKey, includeNonODA])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      
+
+      // Fetch the full available span so the picker shows all data by default.
+      const effFrom = dateWindow?.from ?? new Date(AVAILABLE_YEARS[0], 0, 1)
+      const effTo = dateWindow?.to ?? new Date(AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1], 11, 31)
       const params = new URLSearchParams({
-        dateFrom: dateRange.from.toISOString(),
-        dateTo: dateRange.to.toISOString(),
+        dateFrom: effFrom.toISOString(),
+        dateTo: effTo.toISOString(),
         includeNonODA: includeNonODA.toString()
       })
       
@@ -172,22 +197,37 @@ export function ODAByFlowTypeChart({
 
   return (
     <div className="space-y-4">
-      {/* Toggle for non-ODA flows — only in expanded view */}
+      {/* Controls — expanded only. Calendar + year picker on top; below it the
+          Non-ODA switch (left) and the view toggle + CSV (right). */}
       {isExpanded && (
-        <div className="flex items-center space-x-2 pb-2">
-          <Switch
-            id="include-non-oda"
-            checked={includeNonODA}
-            onCheckedChange={setIncludeNonODA}
+        <div className="space-y-3">
+          <YearRangeChip
+            selectedYears={selectedYears}
+            onYearsChange={setSelectedYears}
+            onDateRangeChange={setDateWindow}
           />
-          <Label htmlFor="include-non-oda" className="text-body font-medium cursor-pointer">
-            Include Non-ODA Flows (OOF, Private, etc.)
-          </Label>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Switch
+                id="include-non-oda"
+                checked={includeNonODA}
+                onCheckedChange={setIncludeNonODA}
+              />
+              <Label htmlFor="include-non-oda" className="text-body font-medium cursor-pointer">
+                Include Non-ODA Flows (OOF, Private, etc.)
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <InlineViewToggle />
+              <InlineCsvButton />
+            </div>
+          </div>
         </div>
       )}
 
+      {!tableMode && (
       <ResponsiveContainer width="100%" height={400}>
-        <BarChart 
+        <BarChart
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
@@ -209,7 +249,6 @@ export function ODAByFlowTypeChart({
             content={<CustomTooltip />}
             cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
           />
-          <Legend />
           <Bar dataKey="totalValue" radius={[4, 4, 0, 0]}>
             {data.map((entry, index) => (
               <Cell 
@@ -220,43 +259,12 @@ export function ODAByFlowTypeChart({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-
-      {/* Summary stats — only in expanded view */}
-      {isExpanded && (
-        <div className="mt-4 grid grid-cols-3 gap-4 text-body">
-          {data.length > 0 && (
-            <>
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="font-semibold text-foreground">
-                  {formatCurrency(data.filter(f => f.category === 'ODA').reduce((sum, f) => sum + f.totalValue, 0))}
-                </div>
-                <div className="text-muted-foreground text-helper">Total ODA</div>
-              </div>
-              {includeNonODA && (
-                <>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="font-semibold text-foreground">
-                      {formatCurrency(data.filter(f => f.category === 'OOF').reduce((sum, f) => sum + f.totalValue, 0))}
-                    </div>
-                    <div className="text-muted-foreground text-helper">Total OOF</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="font-semibold text-foreground">
-                      {formatCurrency(data.filter(f => f.category === 'Other').reduce((sum, f) => sum + f.totalValue, 0))}
-                    </div>
-                    <div className="text-muted-foreground text-helper">Total Other</div>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
       )}
 
       {/* Explanatory text — only in expanded view */}
       {isExpanded && (
         <p className="text-body text-muted-foreground leading-relaxed">
-          This chart breaks down Official Development Assistance by IATI flow type classification, showing how aid is categorised across grants, loans, equity, and other instruments. Toggle the non-ODA switch to include Other Official Flows and private flows for a broader picture. The summary cards below the chart show aggregate totals by category.
+          This chart breaks down Official Development Assistance by IATI flow type classification, showing how aid is categorised across grants, loans, equity, and other instruments. Toggle the non-ODA switch to include Other Official Flows and private flows for a broader picture, and use the calendar/year selector to set the period.
         </p>
       )}
     </div>

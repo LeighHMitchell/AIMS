@@ -78,7 +78,8 @@ export async function PUT(
 
     // Authorisation enforced by requireSuperUser() above.
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { question, answer, category, tags } = body
 
     if (!question || !answer || !category) {

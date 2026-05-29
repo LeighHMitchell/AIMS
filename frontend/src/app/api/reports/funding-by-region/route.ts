@@ -15,7 +15,7 @@ export async function GET() {
     // Fetch all activity locations
     const { data: locations, error: locationsError } = await supabase
       .from('activity_locations')
-      .select('activity_id, admin1_name, name, percentage')
+      .select('activity_id, state_region_name, location_name, percentage_allocation')
 
     if (locationsError) {
       console.error('[Reports API] Error fetching locations:', locationsError)
@@ -41,7 +41,7 @@ export async function GET() {
     // Fetch sectors for these activities
     const { data: sectors } = await supabase
       .from('activity_sectors')
-      .select('activity_id, sector_name')
+      .select('activity_id, sector_code, sector_name')
       .in('activity_id', activityIds)
 
     // Calculate totals per activity
@@ -62,9 +62,10 @@ export async function GET() {
     // Get sectors per activity
     const sectorsByActivity = new Map<string, Set<string>>()
     sectors?.forEach(s => {
-      if (!s.sector_name) return
+      const label = [s.sector_code, s.sector_name].filter(Boolean).join(' – ')
+      if (!label) return
       const existing = sectorsByActivity.get(s.activity_id) || new Set()
-      existing.add(s.sector_name)
+      existing.add(label)
       sectorsByActivity.set(s.activity_id, existing)
     })
 
@@ -78,9 +79,9 @@ export async function GET() {
     }>()
 
     locations.forEach(l => {
-      const regionName = l.admin1_name || l.name || 'Unspecified'
+      const regionName = l.state_region_name || l.location_name || 'Unspecified'
       const activityFinancials = activityTotals.get(l.activity_id) || { committed: 0, disbursed: 0 }
-      const percentage = (l.percentage || 100) / 100
+      const percentage = (l.percentage_allocation || 100) / 100
 
       const existing = regionAggregates.get(regionName) || {
         region: regionName,

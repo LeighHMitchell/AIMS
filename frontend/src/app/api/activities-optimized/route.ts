@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     // Build optimized query
     // Always get count for proper pagination (exclude soft-deleted)
-    let countQuery = supabase.from('activities').select('*', { count: 'exact', head: true }).is('deleted_at', null);
+    let countQuery = supabase.from('activities').select('*', { count: 'estimated', head: true }).is('deleted_at', null);
 
     let dataQuery = supabase
       .from('activities')

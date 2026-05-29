@@ -151,8 +151,7 @@ export function ExcelImportModal({
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg border-b">
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-3">
-              <FileSpreadsheet className="h-5 w-5" />
+            <DialogTitle>
               Import from Excel
               <Badge variant="outline" className="text-helper font-normal capitalize">
                 {area.replace('_', ' ')}

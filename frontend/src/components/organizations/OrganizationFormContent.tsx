@@ -1003,6 +1003,7 @@ export function OrganizationFormContent({
                               variant="outline"
                               size="icon"
                               className="h-8 w-8 bg-muted hover:bg-muted"
+                              aria-label="Generate acronym from name"
                               onClick={() => {
                                 const acronym = generateAcronym(formData.name || '');
                                 handleInputChange('acronym', acronym);

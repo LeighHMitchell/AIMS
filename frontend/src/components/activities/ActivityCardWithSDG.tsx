@@ -278,6 +278,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               variant="outline"
               size="icon"
               onClick={(e) => e.stopPropagation()}
+              aria-label="Activity actions"
             >
               <MoreVertical className="h-4 w-4" />
             </Button>

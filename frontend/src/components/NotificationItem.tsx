@@ -61,7 +61,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
   }
 
   return (
-    <Card className={`transition-all ${isArchived ? "opacity-50 bg-muted/30" : notification.isRead ? "opacity-75" : "border-border bg-muted/40"}`}>
+    <Card className={`transition-all ${isArchived ? "opacity-50 bg-muted/30" : notification.isRead ? "opacity-75" : " bg-muted/40"}`}>
       <CardContent className="p-6">
         <div className="flex items-start gap-3">
           {/* Icon */}

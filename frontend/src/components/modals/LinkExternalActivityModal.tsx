@@ -97,8 +97,7 @@ export function LinkExternalActivityModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground">
-            <ExternalLink className="h-5 w-5" />
+          <DialogTitle className="text-foreground">
             Link External Activity
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">

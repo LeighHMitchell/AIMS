@@ -11,7 +11,8 @@ export async function PUT(
 
   try {
     const { id, memberId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     const updateData: Record<string, any> = {};
     if (body.role !== undefined) updateData.role = body.role;

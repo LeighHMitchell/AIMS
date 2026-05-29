@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react'
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,23 +14,17 @@ import {
   ResponsiveContainer,
   Label
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react'
-import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
-import { format } from 'date-fns'
+import { AlertCircle, LineChart as LineChartIcon, BarChart3 as BarChartIcon } from 'lucide-react'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, pickDefaultCalendarYearId } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { useChartExpansion } from '@/lib/chart-expansion-context'
 
 // Generate list of available years
 const AVAILABLE_YEARS = Array.from(
@@ -63,13 +59,20 @@ export function SDGConcentrationChart({
 }: SDGConcentrationChartProps) {
   const [data, setData] = useState<ConcentrationData[]>([])
   const [loading, setLoading] = useState(true)
+  const isExpanded = useChartExpansion()
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line')
 
   // Calendar and year selector state
   const [calendarType, setCalendarType] = useState<string>('')
   const [selectedYears, setSelectedYears] = useState<number[]>([])
   const [customYears, setCustomYears] = useState<CustomYear[]>([])
   const [customYearsLoading, setCustomYearsLoading] = useState(true)
-  const [localDateRange, setLocalDateRange] = useState(initialDateRange)
+  // Fetch the full available span up front so the year picker can default to
+  // the true data range (all years that have data); the user narrows from there.
+  const [localDateRange, setLocalDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(AVAILABLE_YEARS[0], 0, 1),
+    to: new Date(AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1], 11, 31),
+  })
   const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
 
   // Fetch custom years on mount
@@ -82,20 +85,10 @@ export function SDGConcentrationChart({
           const years = result.data || []
           setCustomYears(years)
 
-          // Set default calendar
-          let selectedCalendar: CustomYear | undefined
-          if (result.defaultId) {
-            selectedCalendar = years.find((cy: CustomYear) => cy.id === result.defaultId)
-          }
-          if (!selectedCalendar && years.length > 0) {
-            selectedCalendar = years[0]
-          }
-          if (selectedCalendar) {
-            setCalendarType(selectedCalendar.id)
-            // Default to last 5 years
-            const currentYear = new Date().getFullYear()
-            setSelectedYears([currentYear - 5, currentYear])
-          }
+          // Default to the Gregorian Calendar Year regardless of the DB default.
+          // The year range defaults to the actual data range once data loads.
+          const defaultId = pickDefaultCalendarYearId(years, result.defaultId)
+          if (defaultId) setCalendarType(defaultId)
         }
       } catch (err) {
         console.error('Failed to fetch custom years:', err)
@@ -122,48 +115,21 @@ export function SDGConcentrationChart({
     }
   }, [calendarType, selectedYears, customYears])
 
-  // Helper functions for year selection
+  // Default the selected year range to the full span of years that have data
+  // (set once the data range is known; later user selections stick).
+  useEffect(() => {
+    if (selectedYears.length === 0 && actualDataRange) {
+      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actualDataRange?.minYear, actualDataRange?.maxYear])
+
+  // Year label in the selected calendar (used by the X-axis + tooltip).
   const getYearLabel = (year: number): string => {
     if (!calendarType || customYears.length === 0) return String(year)
     const customYear = customYears.find(cy => cy.id === calendarType)
     if (!customYear) return String(year)
     return getCustomYearLabel(customYear, year)
-  }
-
-  const handleYearClick = (year: number, shiftKey: boolean) => {
-    if (shiftKey && selectedYears.length === 1) {
-      const start = Math.min(selectedYears[0], year)
-      const end = Math.max(selectedYears[0], year)
-      setSelectedYears([start, end])
-    } else if (selectedYears.length === 0) {
-      setSelectedYears([year])
-    } else if (selectedYears.length === 1) {
-      if (selectedYears[0] === year) {
-        setSelectedYears([])
-      } else {
-        const start = Math.min(selectedYears[0], year)
-        const end = Math.max(selectedYears[0], year)
-        setSelectedYears([start, end])
-      }
-    } else {
-      setSelectedYears([year])
-    }
-  }
-
-  const isYearInRange = (year: number): boolean => {
-    if (selectedYears.length < 2) return false
-    const [start, end] = [Math.min(...selectedYears), Math.max(...selectedYears)]
-    return year > start && year < end
-  }
-
-  const selectAllYears = () => {
-    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
-  }
-
-  const selectDataRange = () => {
-    if (actualDataRange) {
-      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
-    }
   }
 
   useEffect(() => {
@@ -332,236 +298,110 @@ export function SDGConcentrationChart({
   }
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">SDG Concentration Over Time</CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">
-            Assess whether activities are becoming more concentrated or dispersed across SDGs over time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartLoadingPlaceholder />
-        </CardContent>
-      </Card>
-    )
+    return <ChartLoadingPlaceholder />
   }
 
   if (chartData.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium text-foreground">SDG Concentration Over Time</CardTitle>
-          <CardDescription className="text-helper text-muted-foreground mt-0.5">
-            Assess whether activities are becoming more concentrated or dispersed across SDGs over time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
-              <p className="text-muted-foreground font-medium">No SDG concentration data available</p>
-              <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+          <p className="text-muted-foreground font-medium">No SDG concentration data available</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
+        </div>
+      </div>
     )
   }
 
+  const filteredData = chartData.filter(d => {
+    if (selectedYears.length === 0) return true
+    const minYear = Math.min(...selectedYears)
+    const maxYear = Math.max(...selectedYears)
+    return d.year >= minYear && d.year <= maxYear
+  })
+
+  const SDG_SERIES: Array<keyof typeof lineColors> = ['1 SDG', '2 SDGs', '3 SDGs', '4 SDGs', '5+ SDGs']
+  const ChartComp = chartType === 'bar' ? BarChart : LineChart
+  const renderSeries = () =>
+    SDG_SERIES.map(key =>
+      chartType === 'bar' ? (
+        <Bar key={key} dataKey={key} fill={lineColors[key]} />
+      ) : (
+        <Line
+          key={key}
+          type="linear"
+          dataKey={key}
+          stroke={lineColors[key]}
+          strokeWidth={2}
+          dot={{ fill: lineColors[key], r: 4 }}
+          activeDot={{ r: 6 }}
+        />
+      ),
+    )
+
   return (
-    <Card className="border-0 bg-white shadow-none">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium text-foreground">SDG Concentration Over Time</CardTitle>
-        <CardDescription className="text-helper text-muted-foreground mt-0.5">
-          {getMetricLabel()} grouped by number of SDGs mapped to each activity
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Calendar & Year Selectors */}
-        {customYears.length > 0 && (
-          <div className="flex items-start gap-2 mb-4 pb-3 border-b border-border">
-            {/* Calendar Type Selector */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 gap-1">
-                    {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
-                    <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {sortCustomYearsCalendarFirst(customYears).map(cy => (
-                    <DropdownMenuItem
-                      key={cy.id}
-                      className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
-                      onClick={() => setCalendarType(cy.id)}
-                    >
-                      <span className="flex items-center gap-2">
-                        {cy.shortName && (
-                          <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                            {cy.shortName.trim()}
-                          </span>
-                        )}
-                        {cy.name}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Year Range Selector */}
-            <div className="flex flex-col gap-1">
-              <div className="flex gap-1 rounded-lg p-1 bg-muted">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1"
-                      title={localDateRange?.from && localDateRange?.to
-                        ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
-                        : undefined}
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                      {selectedYears.length === 0
-                        ? 'Select years'
-                        : selectedYears.length === 1
-                          ? getYearLabel(selectedYears[0])
-                          : `${getYearLabel(Math.min(...selectedYears))} - ${getYearLabel(Math.max(...selectedYears))}`}
-                      <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="p-3 w-auto">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-helper font-medium text-foreground">Select Year Range</span>
-                      <button
-                        onClick={selectAllYears}
-                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
-                      >
-                        All
-                      </button>
-                      <button
-                        onClick={selectDataRange}
-                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
-                        title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
-                      >
-                        Data
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {AVAILABLE_YEARS.map((year) => {
-                        const isStartOrEnd = selectedYears.length > 0 &&
-                          (year === Math.min(...selectedYears) || year === Math.max(...selectedYears))
-                        const inRange = isYearInRange(year)
-
-                        return (
-                          <button
-                            key={year}
-                            onClick={(e) => handleYearClick(year, e.shiftKey)}
-                            className={`
-                              px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
-                              ${isStartOrEnd
-                                ? 'bg-muted text-foreground'
-                                : inRange
-                                  ? 'bg-primary/20 text-primary'
-                                  : 'text-muted-foreground hover:bg-muted'
-                              }
-                            `}
-                          >
-                            {getYearLabel(year)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                      Click start year, then click end year
-                    </p>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart
-            data={chartData.filter(d => {
-              if (selectedYears.length === 0) return true
-              const minYear = Math.min(...selectedYears)
-              const maxYear = Math.max(...selectedYears)
-              return d.year >= minYear && d.year <= maxYear
-            })}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
-            <XAxis
-              dataKey="year"
-              tickFormatter={(year) => getYearLabel(year)}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              axisLine={{ stroke: '#cbd5e1' }}
-            />
-            <YAxis
-              tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatAxisCurrency}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              axisLine={{ stroke: '#cbd5e1' }}
+    <>
+      {/* Calendar/year selector (consistent with other charts) + chart-type
+          toggle on the right — expanded view only. */}
+      {isExpanded && (
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <YearRangeChip
+            selectedYears={selectedYears}
+            onYearsChange={setSelectedYears}
+            customYears={customYears}
+            calendarType={calendarType}
+            onCalendarTypeChange={setCalendarType}
+            actualDataRange={actualDataRange}
+          />
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setChartType('line')}
+              className={cn('h-8 w-8', chartType === 'line' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground')}
+              title="Line chart"
+              aria-label="Line chart"
             >
-              <Label value={getMetricLabel()} angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fontSize: 11, fill: '#64748b' }} />
-            </YAxis>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              wrapperStyle={{ paddingTop: '20px' }}
-              iconType="line"
-            />
-            <Line
-              type="linear"
-              dataKey="1 SDG"
-              stroke={lineColors['1 SDG']}
-              strokeWidth={2}
-              dot={{ fill: lineColors['1 SDG'], r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="linear"
-              dataKey="2 SDGs"
-              stroke={lineColors['2 SDGs']}
-              strokeWidth={2}
-              dot={{ fill: lineColors['2 SDGs'], r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="linear"
-              dataKey="3 SDGs"
-              stroke={lineColors['3 SDGs']}
-              strokeWidth={2}
-              dot={{ fill: lineColors['3 SDGs'], r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="linear"
-              dataKey="4 SDGs"
-              stroke={lineColors['4 SDGs']}
-              strokeWidth={2}
-              dot={{ fill: lineColors['4 SDGs'], r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="linear"
-              dataKey="5+ SDGs"
-              stroke={lineColors['5+ SDGs']}
-              strokeWidth={2}
-              dot={{ fill: lineColors['5+ SDGs'], r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+              <LineChartIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setChartType('bar')}
+              className={cn('h-8 w-8', chartType === 'bar' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground')}
+              title="Bar chart"
+              aria-label="Bar chart"
+            >
+              <BarChartIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
-        {/* Explanatory text */}
+      <ResponsiveContainer width="100%" height={isExpanded ? 400 : "100%"}>
+        <ChartComp data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
+          <XAxis
+            dataKey="year"
+            tickFormatter={(year) => getYearLabel(year)}
+            tick={{ fill: '#64748b', fontSize: 12 }}
+            axisLine={{ stroke: '#cbd5e1' }}
+          />
+          <YAxis
+            tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatAxisCurrency}
+            tick={{ fill: '#64748b', fontSize: 12 }}
+            axisLine={{ stroke: '#cbd5e1' }}
+          >
+            <Label value={getMetricLabel()} angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fontSize: 11, fill: '#64748b' }} />
+          </YAxis>
+          <Tooltip content={<CustomTooltip />} />
+          {isExpanded && <Legend wrapperStyle={{ paddingTop: '20px' }} iconType={chartType === 'bar' ? 'rect' : 'line'} />}
+          {renderSeries()}
+        </ChartComp>
+      </ResponsiveContainer>
+
+      {/* Explanatory text */}
+      {isExpanded && (
         <div className="mt-6">
           <p className="text-body text-muted-foreground leading-relaxed">
             This chart tracks how many SDGs are typically assigned to each activity over time, helping assess the
@@ -573,8 +413,8 @@ export function SDGConcentrationChart({
             broadly or narrowly to align future activities with global development goals.
           </p>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   )
 }
 

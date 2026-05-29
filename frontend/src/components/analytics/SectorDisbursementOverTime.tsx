@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ChartDataTable, CodeChip } from '@/components/ui/chart-data-table'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format } from 'date-fns'
 import {
@@ -48,6 +50,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS, getSectorColor } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { MetricMultiSelect } from './shared/MetricMultiSelect'
 import { METRIC_LABEL, type Metric } from './shared/metric-options'
@@ -1003,10 +1006,8 @@ export function SectorDisbursementOverTime({
 
   return (
     <div className="space-y-3">
-      {/* Controls Row - single line, scrollable if needed */}
-        <div className="flex items-start gap-2 overflow-x-auto pb-1">
-          {/* Calendar & Year Selectors */}
-          <div className="flex items-start gap-2 flex-shrink-0">
+        {/* Calendar + year selector on its own row at the top */}
+        <div className="flex items-start gap-2 mb-4">
             {customYears.length > 0 && (
               <>
                 {/* Calendar Type Selector */}
@@ -1121,10 +1122,10 @@ export function SectorDisbursementOverTime({
                 </div>
               </>
             )}
-          </div>
-
-          {/* Controls - Right Side */}
-          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+        </div>
+      {/* Controls row — filters + toggles left, CSV right. */}
+        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             {/* Financial-metric multi-select — same dropdown as the External
                 Development Partners Financial Overview chart. */}
             <MetricMultiSelect
@@ -1134,32 +1135,17 @@ export function SectorDisbursementOverTime({
             />
 
             {/* Aggregation Level Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-muted">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setAggregationLevel('group')}
-              >
-                Sector Category
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setAggregationLevel('category')}
-              >
-                Sector
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-                onClick={() => setAggregationLevel('sector')}
-              >
-                Sub-sector
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="Aggregation level"
+              variant="text"
+              value={aggregationLevel}
+              onValueChange={setAggregationLevel}
+              options={[
+                { value: 'group', label: 'Sector Category' },
+                { value: 'category', label: 'Sector' },
+                { value: 'sector', label: 'Sub-sector' },
+              ]}
+            />
 
             {/* Sector Filter */}
             <div className="flex gap-1 border rounded-lg p-1 bg-white">
@@ -1171,7 +1157,7 @@ export function SectorDisbursementOverTime({
                     className="h-8 gap-1"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
-                    Filter
+                    Sector Filter
                     {visibleItemData.length < aggregatedData.length && (
                       <span className="ml-1 px-1.5 py-0.5 text-xs bg-muted text-foreground rounded-full">
                         {visibleItemData.length}
@@ -1269,7 +1255,9 @@ export function SectorDisbursementOverTime({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
+            </div>
+            {/* Button groups + CSV, right-aligned. */}
+            <div className="flex items-center gap-2 flex-shrink-0">
             {/* View Mode Toggle */}
             <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
               <Button
@@ -1313,7 +1301,9 @@ export function SectorDisbursementOverTime({
                 <TableIcon className="h-4 w-4" />
               </Button>
             </div>
-
+          {isExpanded && (
+            <CsvExportButton rows={timeSeriesData} title="Sector Disbursements Over Time" />
+          )}
           </div>
         </div>
 
@@ -1451,95 +1441,40 @@ export function SectorDisbursementOverTime({
               </ResponsiveContainer>
             )
           ) : (
-            /* Table View */
+            /* Table View — shared ChartDataTable. Period (calendarYear) label
+               column + one money column per visible sector (keyed by
+               item.code, colored from colorMap), per-row Total column and
+               footer totals provided by the shared component. */
             visibleItemData.length === 0 ? (
               renderEmptySelectionState()
             ) : (
-            <div className="overflow-auto max-h-[500px]">
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 bg-muted/50 z-10 [&>th]:align-bottom">
-                    <TableHead className="font-medium text-foreground sticky left-0 bg-muted/50">
-                      Year
-                    </TableHead>
-                    {visibleItemData.map(item => (
-                      <TableHead key={item.code} className="text-right font-medium text-foreground min-w-[120px] whitespace-normal">
-                        <div className="flex flex-col items-end">
-                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground mb-1">
-                            {item.code}
-                          </span>
-                          <span className="text-helper">{item.name}</span>
-                        </div>
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-right font-medium text-foreground">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {timeSeriesData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={visibleItemData.length + 2} className="text-center text-muted-foreground py-8">
-                        No data available
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    <>
-                      {timeSeriesData.map((yearData, idx) => {
-                        const total = visibleItemData.reduce(
-                          (sum, item) => sum + (yearData[item.code] || 0),
-                          0
-                        )
-                        return (
-                          <TableRow key={idx} className="hover:bg-muted/50">
-                            <TableCell className="font-medium sticky left-0 bg-white">
-                              {yearData.calendarYear}
-                            </TableCell>
-                            {visibleItemData.map(item => (
-                              <TableCell key={item.code} className="text-right">
-                                {formatCurrencyCompact(yearData[item.code] || 0)}
-                              </TableCell>
-                            ))}
-                            <TableCell className="text-right font-semibold">
-                              {formatCurrencyCompact(total)}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                      {/* Totals row */}
-                      <TableRow className="bg-muted font-semibold">
-                        <TableCell className="sticky left-0 bg-muted">Total</TableCell>
-                        {visibleItemData.map(item => {
-                          const itemTotal = timeSeriesData.reduce(
-                            (sum, yearData) => sum + (yearData[item.code] || 0),
-                            0
-                          )
-                          return (
-                            <TableCell key={item.code} className="text-right">
-                              {formatCurrencyCompact(itemTotal)}
-                            </TableCell>
-                          )
-                        })}
-                        <TableCell className="text-right">
-                          {formatCurrencyCompact(
-                            timeSeriesData.reduce((sum, yearData) => {
-                              return sum + visibleItemData.reduce(
-                                (s, item) => s + (yearData[item.code] || 0),
-                                0
-                              )
-                            }, 0)
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    </>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <ChartDataTable
+              rows={timeSeriesData}
+              columns={[
+                { key: 'calendarYear', label: 'Year', numeric: false },
+                ...visibleItemData.map(item => ({
+                  key: item.code,
+                  label: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <CodeChip>{item.code}</CodeChip>
+                      {item.name}
+                    </span>
+                  ),
+                  numeric: true as const,
+                  currency: 'USD',
+                  color: colorMap.get(item.code),
+                })),
+              ]}
+              currency="USD"
+              totalsColumn
+              maxHeight={500}
+            />
             )
           )}
         </div>
 
         {/* Explanatory text */}
+
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows how sector financial flows have changed over time. Pick any combination of the 15 IATI-aligned metrics — Total Budgets, Planned Disbursements, and the 13 transaction types — and view the result at Sector Category, Sector, or Sub-sector level.
           Use the stacked area or bar chart to see cumulative totals across sectors, switch to line view to compare individual sector trends, or open the table for the underlying numbers.

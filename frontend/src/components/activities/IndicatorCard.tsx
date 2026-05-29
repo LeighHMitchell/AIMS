@@ -198,7 +198,7 @@ export function IndicatorCard({
 
   return (
     <>
-    <Card className="border border-border bg-white">
+    <Card className="bg-white">
       <Collapsible open={true}>
           <CardHeader className="hover:bg-muted transition-colors">
             <div className="flex items-center justify-between">

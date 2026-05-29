@@ -199,7 +199,7 @@ export function TaskCard({
   return (
     <Card
       className={cn(
-        'relative transition-all hover:shadow-md',
+        'relative transition-all hover:shadow-card-hover',
         isOverdue && 'border-destructive/30 bg-destructive/10/30',
         isDueSoon && !isOverdue && 'border-amber-300 bg-amber-50/30',
         onViewDetails && 'cursor-pointer'

@@ -1,28 +1,29 @@
 "use client"
 
-import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useMemo } from 'react'
 import { ResponsiveBar } from '@nivo/bar'
-import { getSectorColor } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { METRIC_LABEL, metricColor, type Metric } from '../shared/metric-options'
 import type { SectorSlice } from './types'
 
 interface BarViewProps {
   slices: SectorSlice[]
   height: number
+  // Selected financial metrics — one grouped bar per metric per sector.
+  metrics: Metric[]
 }
 
 interface SectorBarDatum {
   sector: string
-  value: number
-  color: string
   fullName: string
   code: string
   groupCode: string
   groupName: string
-  // Required by Nivo's BarDatum constraint (Record<string, string | number>).
+  activityCount: number
+  // One numeric field per selected metric key (e.g. tx_3, budgets) + the
+  // index/meta fields above. Required by Nivo's BarDatum constraint.
   [key: string]: string | number
 }
 
@@ -40,43 +41,29 @@ function TitleWithCode({ code, name }: { code: string; name: string }) {
 
 const truncate = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
-export function BarView({ slices, height }: BarViewProps) {
+export function BarView({ slices, height, metrics }: BarViewProps) {
   const isExpanded = useChartExpansion()
 
-  // Track cursor inside the chart so we can render the tooltip via a portal to
-  // document.body — Nivo's default tooltip lives inside the scroll container
-  // and gets clipped when hovering bars near the top of the visible area.
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    setCursor({ x: e.clientX, y: e.clientY })
-  }, [])
-  const onPointerLeave = useCallback(() => setCursor(null), [])
-
   const data = useMemo<SectorBarDatum[]>(() => {
-    // Colour by parent DAC group so e.g. every Education-* sector reads as the
-    // same hue. Group ordering is stable across renders (first-seen order).
-    const groupColor = new Map<string, string>()
-    for (const s of slices) {
-      if (!groupColor.has(s.groupCode)) {
-        groupColor.set(s.groupCode, getSectorColor(groupColor.size))
-      }
-    }
     // Nivo renders the first datum at the bottom of a horizontal chart; reverse
-    // so the largest sector ends up on top.
+    // so the largest sector ends up on top. Each datum carries one numeric
+    // field per selected metric so Nivo can draw grouped bars.
     return slices
       .filter(s => s.value > 0)
-      .map(s => ({
-        sector: s.name,
-        value: s.value,
-        color: groupColor.get(s.groupCode) ?? s.color,
-        fullName: s.name,
-        code: s.code,
-        groupCode: s.groupCode,
-        groupName: s.groupName,
-      }))
+      .map(s => {
+        const datum: SectorBarDatum = {
+          sector: s.name,
+          fullName: s.name,
+          code: s.code,
+          groupCode: s.groupCode,
+          groupName: s.groupName,
+          activityCount: s.activityCount,
+        }
+        for (const m of metrics) datum[m] = s.metrics[m] || 0
+        return datum
+      })
       .reverse()
-  }, [slices])
+  }, [slices, metrics])
 
   if (data.length === 0) {
     return (
@@ -86,88 +73,71 @@ export function BarView({ slices, height }: BarViewProps) {
     )
   }
 
-  // Internal vertical scroll: each row gets ~28 px, and we scroll within the
-  // prop height. Tooltips are portaled to <body> so the scroll container's
-  // overflow:auto can't clip them.
-  const minHeight = data.length * 28 + 80
-  const innerHeight = Math.max(height, minHeight)
-
   return (
-    <div
-      ref={scrollRef}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-      // [&_svg]:max-w-none unsets the global `svg { max-width: 100% }` rule
-      // in globals.css, which otherwise clamps Nivo's pixel-sized SVG to 0.
-      className="w-full [&_svg]:max-w-none"
-      style={{ height, overflowY: 'auto' }}
-    >
-      <div style={{ height: innerHeight, width: '100%' }}>
-        <ResponsiveBar
-          data={data}
-          keys={['value']}
-          indexBy="sector"
-          layout="horizontal"
-          margin={{ top: 8, right: 24, bottom: 40, left: 180 }}
-          padding={0.25}
-          colors={({ data: d }) => (d as SectorBarDatum).color}
-          enableGridX
-          enableGridY={false}
-          axisBottom={{
-            tickSize: 4,
-            tickPadding: 6,
-            format: (v: any) =>
-              new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                notation: 'compact',
-                maximumFractionDigits: 1,
-              }).format(Number(v) || 0),
-          }}
-          axisLeft={{
-            tickSize: 0,
-            tickPadding: 8,
-            format: (v: any) => truncate(String(v), 24),
-          }}
-          enableLabel={false}
-          theme={{
-            axis: {
-              ticks: { text: { fontSize: 11, fill: '#64748b' } },
-              legend: { text: { fontSize: 12, fill: '#475569' } },
-            },
-            grid: { line: { stroke: '#e2e8f0', strokeDasharray: '2 2' } },
-          }}
-          tooltip={({ data: d, value }) => {
-            const datum = d as SectorBarDatum
-            if (!cursor || typeof document === 'undefined') return null
-            const card = (
-              <div
-                style={{
-                  position: 'fixed',
-                  left: cursor.x + 14,
-                  top: cursor.y + 14,
-                  pointerEvents: 'none',
-                  zIndex: 9999,
-                }}
-              >
-                <ChartTooltipCard
-                  title={<TitleWithCode code={datum.code} name={datum.fullName} />}
-                  rows={[
-                    {
-                      label: 'Disbursements',
-                      value: formatTooltipCurrency(value as number, isExpanded),
-                      color: datum.color,
-                    },
-                  ]}
-                />
-              </div>
-            )
-            return createPortal(card, document.body)
-          }}
-          animate={false}
-          ariaLabel="Aid disbursements by sector"
-        />
-      </div>
+    // Match the SunburstView pattern: a single sized container (no internal
+    // overflow scroll) so Nivo's built-in tooltip — which measures its own
+    // content to position itself — is never clipped or zeroed out. All bars
+    // fit the height; at sub-sector level they get thinner, like the other
+    // views. [&_svg]:max-w-none unsets the global svg max-width:100%.
+    <div className="w-full [&_svg]:max-w-none" style={{ height, width: '100%' }}>
+      <ResponsiveBar
+        data={data}
+        keys={metrics}
+        indexBy="sector"
+        layout="horizontal"
+        groupMode="grouped"
+        margin={{ top: 8, right: 24, bottom: 40, left: 180 }}
+        padding={0.25}
+        innerPadding={metrics.length > 1 ? 1 : 0}
+        colors={({ id }) => metricColor(id as Metric)}
+        enableGridX
+        enableGridY={false}
+        axisBottom={{
+          tickSize: 4,
+          tickPadding: 6,
+          format: (v: any) =>
+            new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              notation: 'compact',
+              maximumFractionDigits: 1,
+            }).format(Number(v) || 0),
+        }}
+        axisLeft={{
+          tickSize: 0,
+          tickPadding: 8,
+          format: (v: any) => truncate(String(v), 24),
+        }}
+        enableLabel={false}
+        theme={{
+          axis: {
+            ticks: { text: { fontSize: 11, fill: '#64748b' } },
+            legend: { text: { fontSize: 12, fill: '#475569' } },
+          },
+          grid: { line: { stroke: '#e2e8f0', strokeDasharray: '2 2' } },
+        }}
+        tooltip={({ data: d }) => {
+          const datum = d as SectorBarDatum
+          const rows = metrics.map(m => ({
+            label: METRIC_LABEL[m],
+            value: formatTooltipCurrency(Number(datum[m]) || 0, isExpanded),
+            color: metricColor(m),
+          }))
+          rows.push({
+            label: 'Activities',
+            value: (datum.activityCount ?? 0).toLocaleString(),
+            color: '#94a3b8',
+          })
+          return (
+            <ChartTooltipCard
+              title={<TitleWithCode code={datum.code} name={datum.fullName} />}
+              rows={rows}
+            />
+          )
+        }}
+        animate={false}
+        ariaLabel="Aid disbursements by sector"
+      />
     </div>
   )
 }

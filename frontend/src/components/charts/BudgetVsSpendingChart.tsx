@@ -20,6 +20,8 @@ import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 import { apiFetch } from '@/lib/api-fetch';
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { ChartCardToolbarRow, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 
 interface AnalyticsFilters {
   donor: string;
@@ -47,6 +49,8 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const tableMode = useChartCardTableMode();
+  const isExpanded = useChartExpansion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('USD');
@@ -178,42 +182,29 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   }
 
   return (
-    <div className="w-full">
-      {/* Year-type selector (only meaningful in year mode; FY bucketing doesn't apply to quarters) */}
-      {filters.timePeriod === 'year' && (
-        <div className="flex items-center justify-end gap-2 mb-4">
-          <span className="text-body text-muted-foreground">Year type:</span>
-          <CustomYearSelector
-            customYears={customYears}
-            selectedId={customYearId}
-            onSelect={setCustomYearId}
-            loading={customYearsLoading}
-          />
-        </div>
-      )}
-
-      {/* Chart Legend */}
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.budget }}></div>
-          <span className="text-body font-medium text-foreground">Budget</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.disbursements }}></div>
-          <span className="text-body font-medium text-foreground">Disbursements</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.expenditures }}></div>
-          <span className="text-body font-medium text-foreground">Expenditures</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.totalSpending }}></div>
-          <span className="text-body font-medium text-foreground">Total Spending</span>
-        </div>
-      </div>
+    <div className="w-full h-full">
+      {/* Expanded controls row: LEFT = year-type selector (only meaningful in
+          year mode; FY bucketing doesn't apply to quarters); RIGHT = chart/table
+          view toggle + Download-CSV (provided by ChartCardToolbarRow). */}
+      <ChartCardToolbarRow
+        filters={
+          filters.timePeriod === 'year' ? (
+            <div className="flex items-center gap-2">
+              <span className="text-body text-muted-foreground">Year type:</span>
+              <CustomYearSelector
+                customYears={customYears}
+                selectedId={customYearId}
+                onSelect={setCustomYearId}
+                loading={customYearsLoading}
+              />
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Responsive Chart Container */}
-      <ResponsiveContainer width="100%" height={500}>
+      {!tableMode && (
+      <ResponsiveContainer width="100%" height={isExpanded ? 500 : 300}>
         <BarChart
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -232,15 +223,9 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
             tickFormatter={formatAxisCurrency}
             stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
-            label={{
-              value: `Amount (${currency})`,
-              angle: -90,
-              position: 'insideLeft',
-              style: { textAnchor: 'middle', fill: CHART_STRUCTURE_COLORS.axis }
-            }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
+          {isExpanded && <Legend />}
 
           {/* Budget Bar */}
           <Bar
@@ -275,20 +260,19 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
           />
         </BarChart>
       </ResponsiveContainer>
+      )}
 
-      {/* Mobile-friendly chart info */}
-      <div className="mt-4 text-body text-muted-foreground">
-        <p>
-          <strong>Period:</strong>{' '}
-          {filters.timePeriod === 'quarter'
-            ? 'Financial Quarter'
-            : selectedYear
-            ? selectedYear.name
-            : 'Calendar Year'}{' '}
-          | <strong>Currency:</strong> {currency} |{' '}
-          <strong>Data Points:</strong> {data.length}
+      {/* Explanatory paragraph — only in expanded view */}
+      {isExpanded && (
+      <div className="mt-6">
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart tracks planned budgets against actual spending (disbursements + expenditures) over
+          time. Use it to gauge execution: where the spending bars fall well short of the budget bar, aid
+          is committed but not yet delivered; where they meet or exceed it, delivery is on track. Switch
+          the year type to read the periods as calendar or fiscal years. All amounts are USD.
         </p>
       </div>
+      )}
     </div>
   );
 };

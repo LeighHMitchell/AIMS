@@ -10,13 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import {
   Plus,
@@ -25,8 +18,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  ChevronLeft,
-  ChevronRight,
   HelpCircle,
   Clock,
   ChevronsUpDown,
@@ -41,6 +32,8 @@ import { USER_ROLES } from '@/types/user'
 import { LoadingText } from '@/components/ui/loading-text'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
+import { FullPagination } from "@/components/ui/full-pagination";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 interface FAQItem {
   id: string
@@ -87,9 +80,10 @@ export default function FAQPage() {
   const [pageLimit, setPageLimit] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('faq-page-limit')
-      return saved ? Number(saved) : 10
+      const parsed = saved ? Number(saved) : 20
+      return [20, 50, 100].includes(parsed) ? parsed : 20
     }
-    return 10
+    return 20
   })
 
   // Follow-up question state
@@ -641,102 +635,17 @@ export default function FAQPage() {
           </div>
 
           {/* Pagination */}
-          {!loading && totalFAQs > 0 && (
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-body text-muted-foreground">
-                    Showing {Math.min(startIndex + 1, totalFAQs)} to {Math.min(endIndex, totalFAQs)} of {totalFAQs} FAQs
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      First
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                    >
-                      Last
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <label className="text-body text-muted-foreground">Items per page:</label>
-                    <Select
-                      value={pageLimit.toString()}
-                      onValueChange={(value) => handlePageLimitChange(Number(value))}
-                    >
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {!loading && (
+            <FullPagination
+              page={currentPage}
+              totalPages={totalPages}
+              totalItems={totalFAQs}
+              perPage={pageLimit}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPerPageChange={handlePageLimitChange}
+              perPageOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="questions"
+            />
           )}
 
           {/* Help Text */}
@@ -760,8 +669,7 @@ export default function FAQPage() {
       <Dialog open={!!followUpFAQ} onOpenChange={(open) => !open && setFollowUpFAQ(null)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
+            <DialogTitle>
               Ask a Follow-up Question
             </DialogTitle>
             <DialogDescription>

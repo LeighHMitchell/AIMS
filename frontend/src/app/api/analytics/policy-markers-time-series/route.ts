@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { fetchCustomYearById } from '@/lib/custom-year-server';
+import { getFiscalYearForDate } from '@/utils/year-allocation';
 
 export const dynamic = 'force-dynamic'
 
@@ -38,10 +40,14 @@ export async function GET(request: NextRequest) {
     const significanceLevels = searchParams.get('significanceLevels')?.split(',').map(Number).filter(n => !isNaN(n)) || [1, 2]
     const yearFrom = searchParams.get('yearFrom')
     const yearTo = searchParams.get('yearTo')
+    // Optional fiscal/custom calendar — when supplied, transactions are bucketed
+    // by that calendar's fiscal year instead of the Gregorian calendar year.
+    const customYearId = searchParams.get('customYearId')
+    const customYear = await fetchCustomYearById(supabase, customYearId)
     // Step 1: Get all policy markers (including visibility settings)
     const { data: allMarkers, error: markersError } = await supabase
       .from('policy_markers')
-      .select('id, code, name, default_visibility, is_iati_standard')
+      .select('id, uuid, code, name, default_visibility, is_iati_standard')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
 
@@ -66,16 +72,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const relevantMarkerIds = relevantMarkers.map(m => m.id)
+    // activity_policy_markers.policy_marker_id is a FK to policy_markers.uuid, not `id`.
+    const relevantMarkerIds = relevantMarkers.map(m => m.uuid)
 
     // Step 2: Get activity-policy marker relationships
     // Fetch without FK hint to avoid join issues
     const { data: activityMarkers, error: activityMarkersError } = await supabase
       .from('activity_policy_markers')
       .select(`
-        activity_id, 
-        policy_marker_id, 
-        score, 
+        activity_id,
+        policy_marker_id,
         significance,
         visibility
       `)
@@ -92,7 +98,7 @@ export async function GET(request: NextRequest) {
     // Create a lookup map for policy marker visibility settings
     const markerVisibilityMap = new Map<string, { default_visibility: string, is_iati_standard: boolean }>()
     relevantMarkers.forEach(m => {
-      markerVisibilityMap.set(m.id, {
+      markerVisibilityMap.set(m.uuid, {
         default_visibility: (m as any).default_visibility || 'public',
         is_iati_standard: (m as any).is_iati_standard ?? true
       })
@@ -148,7 +154,7 @@ export async function GET(request: NextRequest) {
     const activityMarkerMap = new Map<string, Array<{ markerId: string; markerCode: string; markerName: string }>>()
     
     activityMarkers.forEach((am: any) => {
-      const marker = relevantMarkers.find(m => m.id === am.policy_marker_id)
+      const marker = relevantMarkers.find(m => m.uuid === am.policy_marker_id)
       if (!marker) return
 
       // Get visibility settings from our lookup map
@@ -161,8 +167,9 @@ export async function GET(request: NextRequest) {
         return // Skip non-public custom markers
       }
 
-      // Use significance if available, otherwise fall back to score
-      const significance = am.significance !== undefined ? am.significance : am.score
+      // activity_policy_markers stores significance directly (0/1/2) — there is
+      // no separate `score` column on this table.
+      const significance = am.significance
       
       // Filter by significance level
       if (!significanceLevels.includes(significance)) return
@@ -190,7 +197,11 @@ export async function GET(request: NextRequest) {
     transactions?.forEach((tx: any) => {
       if (!tx.transaction_date) return
 
-      const year = new Date(tx.transaction_date).getFullYear().toString()
+      // Bucket by fiscal year when a custom calendar is supplied; otherwise by
+      // Gregorian calendar year. The key is the (fiscal) year number as a string;
+      // the client formats it into the calendar's label (e.g. CY2024 / FY24-25).
+      const txDate = new Date(tx.transaction_date)
+      const year = (customYear ? getFiscalYearForDate(txDate, customYear) : txDate.getFullYear()).toString()
       allYears.add(year)
 
       const txValue = parseFloat(tx.value_usd?.toString() || '0') || 0

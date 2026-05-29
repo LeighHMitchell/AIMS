@@ -23,6 +23,8 @@ import { FeedbackModal } from '@/components/ui/feedback-modal';
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { FullPagination } from "@/components/ui/full-pagination";
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 
 interface Feedback {
   id: string;
@@ -170,7 +172,7 @@ export function FeedbackManagement() {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -984,102 +986,16 @@ export function FeedbackManagement() {
       </Card>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-body text-muted-foreground">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} feedback items
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  First
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  Last
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <label className="text-body text-muted-foreground">Items per page:</label>
-                <Select value={pageSize.toString()} onValueChange={(value) => {
-                  setPageSize(parseInt(value));
-                  setCurrentPage(1);
-                }}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <FullPagination
+        page={currentPage}
+        totalPages={totalPages}
+        totalItems={totalCount}
+        perPage={pageSize}
+        onPageChange={(p) => setCurrentPage(p)}
+        onPerPageChange={(n) => { setPageSize(n); setCurrentPage(1); }}
+        perPageOptions={PAGE_SIZE_OPTIONS}
+        itemLabel="feedback items"
+      />
 
       {/* Detail Modal */}
       <FeedbackDetailModal
@@ -1168,8 +1084,7 @@ function FeedbackDetailModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CategoryIcon className="h-5 w-5" />
+          <DialogTitle>
             {feedback.subject || `${categoryInfo.name} from ${getUserDisplayName(feedback.user)}`}
           </DialogTitle>
           <DialogDescription>

@@ -30,6 +30,13 @@ module.exports = {
   		transitionTimingFunction: {
   			'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
   		},
+  		boxShadow: {
+  			// Single source of truth for card elevation. `card` is the resting
+  			// state used by the base Card component; `card-hover` is the standard
+  			// lift for interactive (clickable) cards.
+  			'card':       '0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)',
+  			'card-hover': '0 2px 4px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06)',
+  		},
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',

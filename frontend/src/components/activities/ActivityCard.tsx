@@ -210,6 +210,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               size="icon"
               className="h-8 w-8 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full"
               onClick={(e) => e.stopPropagation()}
+              aria-label="Activity actions"
             >
               <MoreVertical className="h-4 w-4 text-white" />
             </Button>

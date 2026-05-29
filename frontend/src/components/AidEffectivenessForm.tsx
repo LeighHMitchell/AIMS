@@ -48,7 +48,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import * as XLSX from 'xlsx';
+import type * as XLSXType from 'xlsx';
 import { apiFetch } from '@/lib/api-fetch';
 
 // ──────────────────────────────────────────────
@@ -1261,8 +1261,9 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   };
 
   // Export form data to XLSX
-  const handleExportXLSX = () => {
+  const handleExportXLSX = async () => {
     try {
+      const XLSX: typeof XLSXType = await import('xlsx');
       const formatValue = (val?: string | null) => {
         if (val == null) return '';
         if (val === 'yes') return 'Yes';

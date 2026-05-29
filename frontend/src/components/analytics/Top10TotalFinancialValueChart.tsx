@@ -43,8 +43,8 @@ type Top10Basis = 'total' | 'commitment' | 'disbursement'
 type BasisKey = 'commitment' | 'disbursement'
 
 const BASIS_LABEL: Record<Top10Basis, string> = {
-  total: 'Commitments + Disbursements',
-  commitment: 'Commitments',
+  total: 'Outgoing Commitments + Disbursements',
+  commitment: 'Outgoing Commitments',
   disbursement: 'Disbursements',
 }
 
@@ -53,7 +53,7 @@ const BASIS_LABEL: Record<Top10Basis, string> = {
 // select on AllDonorsHorizontalBarChart (which also code-badges every IATI
 // transaction type).
 const BASIS_DEFS: Array<{ key: BasisKey; label: string; code: string }> = [
-  { key: 'commitment', label: 'Commitments', code: '2' },
+  { key: 'commitment', label: 'Outgoing Commitments', code: '2' },
   { key: 'disbursement', label: 'Disbursements', code: '3' },
 ]
 
@@ -76,6 +76,8 @@ interface DonorData {
   name: string
   acronym: string | null
   totalValue: number
+  commitments: number
+  disbursements: number
   shortName: string
 }
 
@@ -263,14 +265,18 @@ export function Top10TotalFinancialValueChart({
       }))
 
       setData(donors)
-      // Table-friendly shape with explicit, spaced column names so the
-      // expanded dialog's table view shows "Organisation ID" with the
-      // IATI org id rather than the internal UUID.
-      onDataChange?.(donors.map((d: DonorData) => ({
-        'Organisation ID': d.organisationId ?? '',
-        'Name': d.acronym ? `${d.name} (${d.acronym})` : d.name,
-        'Total Value (USD)': d.totalValue,
-      })) as any)
+      // Table-friendly shape with explicit, spaced column names. The org-id
+      // column is intentionally omitted. Each selected transaction type gets
+      // its OWN column (Commitments = type 2, Disbursements = type 3) from the
+      // per-type amounts the API now returns.
+      onDataChange?.(donors.map((d: DonorData) => {
+        const row: Record<string, string | number> = {
+          'Name': d.acronym ? `${d.name} (${d.acronym})` : d.name,
+        }
+        if (selectedBases.has('commitment')) row['Commitments'] = d.commitments
+        if (selectedBases.has('disbursement')) row['Disbursements'] = d.disbursements
+        return row
+      }) as any)
     } catch (error) {
       console.error('[Top10TotalFinancialValueChart] Error:', error)
       setData([])
@@ -475,51 +481,54 @@ export function Top10TotalFinancialValueChart({
     </DropdownMenu>
   )
 
-  // Inline toolbar buttons (table-view toggle + CSV download). These live
-  // next to the basis dropdown on the right side of the controls row when
-  // the parent CompactChartCard has opted into `inlineToolbar`. They are
-  // intentionally always rendered together so the chart can switch view
-  // mode without leaving the dialog.
-  const inlineToolbarButtons = toolbar ? (
-    <>
-      {toolbar.hasTableView && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => toolbar.setViewMode(toolbar.viewMode === 'chart' ? 'table' : 'chart')}
-          className="h-9"
-          title={toolbar.viewMode === 'chart' ? 'View as table' : 'View as chart'}
-        >
-          {toolbar.viewMode === 'chart' ? (
-            <TableIcon className="h-4 w-4" />
-          ) : (
-            <BarChart3 className="h-4 w-4" />
-          )}
-        </Button>
+  // Table-view toggle — lives on the left of the controls row next to the
+  // basis dropdown so the chart can switch view mode without leaving the dialog.
+  const viewToggleButton = toolbar?.hasTableView ? (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => toolbar.setViewMode(toolbar.viewMode === 'chart' ? 'table' : 'chart')}
+      className="h-9"
+      title={toolbar.viewMode === 'chart' ? 'View as table' : 'View as chart'}
+    >
+      {toolbar.viewMode === 'chart' ? (
+        <TableIcon className="h-4 w-4" />
+      ) : (
+        <BarChart3 className="h-4 w-4" />
       )}
-      {toolbar.hasExportData && (
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={toolbar.handleExport}
-          className="h-9 w-9"
-          title="Export CSV"
-          aria-label="Export CSV"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
-      )}
-    </>
+    </Button>
   ) : null
 
-  // Controls row shown only in the expanded modal: calendar/year on the left,
-  // basis toggle on the right. Compact card stays clean (no controls).
+  // CSV download — right-aligned, alone, on the controls row.
+  const csvButton = toolbar?.hasExportData ? (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={toolbar.handleExport}
+      className="h-9 w-9"
+      title="Export CSV"
+      aria-label="Export CSV"
+    >
+      <Download className="h-4 w-4" />
+    </Button>
+  ) : null
+
+  // Controls shown only in the expanded modal: calendar/year on its own row at
+  // the top, then filters + toggles on the left and the CSV button on the
+  // right. Compact card stays clean (no controls).
   const expandedControls = isExpanded ? (
-    <div className="flex items-center justify-between gap-4 flex-wrap">
-      {calendarYearControls}
-      <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      {/* Calendar + year selector on its own row at the top */}
+      <div className="flex items-start gap-2">
+        {calendarYearControls}
+      </div>
+      {/* Controls row — Transaction Types dropdown left; view toggle + CSV right. */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         {basisToggle}
-        {inlineToolbarButtons}
+        <div className="flex items-center gap-2">
+          {viewToggleButton}
+          {csvButton}
+        </div>
       </div>
     </div>
   ) : null
@@ -529,7 +538,11 @@ export function Top10TotalFinancialValueChart({
   // renders below us. Early-return controls-only so the chart body, loading
   // placeholder, and empty state are all skipped in table mode.
   if (toolbar?.viewMode === 'table') {
-    return <div className="space-y-3">{expandedControls}</div>
+    return (
+      <div className="space-y-3">
+        {expandedControls}
+      </div>
+    )
   }
 
   if (loading) {
@@ -564,9 +577,12 @@ export function Top10TotalFinancialValueChart({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 h-full flex flex-col">
       {expandedControls}
-      <ResponsiveContainer width="100%" height={400}>
+      {/* Collapsed card clips a fixed 400px chart (its X-axis fell below the
+          300px card); fill the card when collapsed so the value axis shows. */}
+      <div className="flex-1 min-h-0">
+      <ResponsiveContainer width="100%" height={isExpanded ? 400 : "100%"}>
         <BarChart
           data={data}
           layout="vertical"
@@ -604,6 +620,7 @@ export function Top10TotalFinancialValueChart({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
 
       {/* Explanatory text — only in expanded view */}
       {isExpanded && (

@@ -33,6 +33,7 @@ import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, BUDGET_COLOR, PLANNED_
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyPrecise } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -1202,10 +1203,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
   return (
     <div className="space-y-4">
-      {/* Controls Row - Calendar/Year on left, Filters on right */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        {/* Left Side - Calendar and Year Selector */}
-        <div className="flex items-start gap-2">
+      {/* Calendar + year selector on its own row at the top */}
+      <div className="flex items-start gap-2 mb-4">
           {customYears.length > 0 && (
             <>
               {/* Calendar Type Selector */}
@@ -1317,13 +1316,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </div>
             </>
           )}
-        </div>
-
-        {/* Right Side - Org Type Filter, Sector Filter, Metric Selector, View Mode and Export Controls */}
-        <div className="flex items-center gap-3">
+      </div>
+      {/* Controls row — dropdowns + Top-N left on one line (scrolls if the modal
+          is too narrow), view toggle + CSV right. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-nowrap overflow-x-auto min-w-0">
           <DropdownMenu open={openFilter === 'orgType'} onOpenChange={filterOpenHandler('orgType')}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between">
+              <Button variant="outline" size="sm" className="min-w-[150px] shrink-0 h-9 justify-between">
                 <span className="truncate text-body">{orgTypeFilterLabel}</span>
                 <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
               </Button>
@@ -1408,7 +1408,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             activityCounts={sectorActivityCounts}
             showOnlyActiveSectors={showOnlyActiveSectors}
             onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-            className="min-w-[280px] h-9"
+            className="min-w-[120px] shrink-0 h-9"
           />
 
           {/* Metric multi-select. Mirrors the Organization Types dropdown
@@ -1418,7 +1418,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               the trigger label is the count summary. */}
           <DropdownMenu open={openFilter === 'metric'} onOpenChange={filterOpenHandler('metric')}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="min-w-[280px] h-9 justify-between">
+              <Button variant="outline" size="sm" className="min-w-[150px] shrink-0 h-9 justify-between">
                 <span className="flex items-center gap-2 truncate text-body">
                   {selectedMetrics.length === 1 && primaryMetric === 'budgets' && (
                     <Wallet className="h-4 w-4 flex-shrink-0" />
@@ -1510,9 +1510,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* Top N quick picker — same set used in SectorDisbursementOverTime;
-              `All` clears the limit so the chart can still show every donor. */}
-          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+          {/* Top N quick picker — a data filter, kept left with the dropdowns. */}
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card shrink-0">
             {([
               { label: 'Top 3', value: 3 },
               { label: 'Top 5', value: 5 },
@@ -1524,8 +1523,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 onClick={() => setTopN(value)}
                 className={
                   topN === value
-                    ? 'text-xs font-medium px-2 h-8 rounded bg-muted text-foreground'
-                    : 'text-xs px-2 h-8 rounded text-muted-foreground hover:bg-muted'
+                    ? 'text-xs font-medium px-2.5 h-8 rounded bg-muted text-foreground whitespace-nowrap'
+                    : 'text-xs px-2.5 h-8 rounded text-muted-foreground hover:bg-muted whitespace-nowrap'
                 }
                 title={value == null ? 'Show every donor' : `Show top ${value} donors`}
               >
@@ -1533,7 +1532,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+        </div>
+        {/* Chart view toggle + CSV, right-aligned. */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -1565,21 +1567,19 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-          {/* CSV export — wrapped in a matching bordered container so it
-              reads as a peer of the chart-type toggle group at the same
-              visual scale. */}
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleExportCSV}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title="Export CSV"
-              aria-label="Export CSV"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* CSV export, right-aligned. */}
+        <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleExportCSV}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Export CSV"
+            aria-label="Export CSV"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
         </div>
       </div>
 
@@ -1596,93 +1596,44 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           // FinancialTotalsBarChart reference exactly so every table view
           // in the app reads the same. Currency values are full USD
           // amounts to 2 decimal places.
-          <div className="overflow-auto max-h-[600px] rounded-md border">
-            <table className="w-full text-body">
-              <thead className="bg-surface-muted sticky top-0 z-10">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-foreground border-b">Organisation</th>
-                  <th className="text-left px-4 py-3 font-medium text-foreground border-b">Type</th>
-                  {selectedMetrics.map((m) => {
-                    const code = METRIC_DEFS.find(d => d.key === m)?.code
-                    return (
-                      <th key={m} className="text-right px-4 py-3 font-medium text-foreground border-b whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                          <div
-                            className="w-3 h-3 rounded-sm flex-shrink-0"
-                            style={{ backgroundColor: metricColor(m) }}
-                          />
-                          {code && (
-                            <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                              {code}
-                            </code>
-                          )}
-                          {METRIC_LABEL[m]}
-                        </div>
-                      </th>
-                    )
-                  })}
-                  {selectedMetrics.length > 1 && (
-                    <th className="text-right px-4 py-3 font-medium text-foreground border-b">Total</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {chartData.map((item, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50">
-                    <td className="px-4 py-2.5 font-medium text-foreground">
-                      {item.acronym ? `${item.fullName} (${item.acronym})` : item.fullName}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {item.type && (
-                        <span className="flex items-center gap-1.5">
-                          <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
-                            {item.type}
-                          </code>
-                          <span className="text-body text-muted-foreground">{item.typeName}</span>
-                        </span>
-                      )}
-                    </td>
-                    {selectedMetrics.map((m) => (
-                      <td key={m} className="text-right px-4 py-2.5 text-foreground tabular-nums">
-                        {formatCurrencyPrecise(getMetricValue(item as unknown as DonorData, m))}
-                      </td>
-                    ))}
-                    {selectedMetrics.length > 1 && (
-                      <td className="text-right px-4 py-2.5 text-foreground font-semibold tabular-nums">
-                        {formatCurrencyPrecise(item.value)}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-muted">
-                <tr>
-                  <td className="px-4 py-3 font-semibold text-foreground border-t-2 border-border" colSpan={2}>
-                    Total
-                  </td>
-                  {selectedMetrics.map((m) => {
-                    const columnTotal = chartData.reduce(
-                      (sum, item) => sum + getMetricValue(item as unknown as DonorData, m),
-                      0,
-                    )
-                    return (
-                      <td
-                        key={m}
-                        className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border tabular-nums"
-                      >
-                        {formatCurrencyPrecise(columnTotal)}
-                      </td>
-                    )
-                  })}
-                  {selectedMetrics.length > 1 && (
-                    <td className="text-right px-4 py-3 font-bold text-foreground border-t-2 border-border tabular-nums">
-                      {formatCurrencyPrecise(total)}
-                    </td>
-                  )}
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <ChartDataTable
+            rows={chartData}
+            columns={[
+              {
+                key: 'name',
+                label: 'Organisation',
+                numeric: false,
+                format: (_v, row) =>
+                  (row as any).acronym
+                    ? `${(row as any).fullName} (${(row as any).acronym})`
+                    : (row as any).fullName,
+              },
+              {
+                key: 'type',
+                label: 'Type',
+                numeric: false,
+                format: (_v, row) =>
+                  (row as any).type ? (
+                    <span className="flex items-center gap-1.5 font-normal">
+                      <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
+                        {(row as any).type}
+                      </code>
+                      <span className="text-body text-muted-foreground">{(row as any).typeName}</span>
+                    </span>
+                  ) : '',
+              },
+              ...selectedMetrics.map((m) => ({
+                key: m,
+                label: METRIC_LABEL[m],
+                numeric: true,
+                currency: 'USD',
+                color: metricColor(m),
+              })),
+            ]}
+            currency="USD"
+            totalsColumn={selectedMetrics.length > 1}
+            maxHeight={600}
+          />
         ) : chartViewMode === 'stacked' ? (
           <div className="p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, stackedData.rows.length * 60)}>
@@ -1824,6 +1775,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       </div>
 
       {/* Explanatory text */}
+
       <p className="text-body text-muted-foreground leading-relaxed">
         This chart ranks external development partners by their financial contributions for the metric(s) you select. By default it shows actual disbursements, but you can switch to or layer in Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types from the metrics dropdown — bar lengths reflect the sum across every metric selected.
         The stacked view groups partners by organisation type, with individual organisations shown as segments within each bar for quick identification of the largest contributors.

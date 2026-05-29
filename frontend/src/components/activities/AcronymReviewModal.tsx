@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ActivityAcronym {
@@ -118,8 +118,7 @@ export function AcronymReviewModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-blue-600" />
+          <DialogTitle>
             Review Activity Acronyms
           </DialogTitle>
           <DialogDescription>
@@ -137,7 +136,7 @@ export function AcronymReviewModal({
               onClick={handleAcceptAll}
               disabled={detectedCount === 0}
             >
-              Accept All
+              {activities.length > 1 ? 'Accept All' : 'Accept'}
             </Button>
             <Button
               variant="outline"
@@ -145,7 +144,7 @@ export function AcronymReviewModal({
               onClick={handleClearAll}
               disabled={acceptedCount === 0}
             >
-              Clear All
+              {activities.length > 1 ? 'Clear All' : 'Clear'}
             </Button>
             <div className="ml-auto text-body text-muted-foreground">
               {acceptedCount} of {activities.length} activities have acronyms
@@ -175,12 +174,7 @@ export function AcronymReviewModal({
                   <div className="flex items-start gap-2">
                     <div className="flex-1 space-y-1">
                       <Label htmlFor={`acronym-${activity.iatiIdentifier}`}>
-                        Acronym
-                        {activity.detectedAcronym && (
-                          <span className="ml-2 text-helper text-muted-foreground font-normal">
-                            (auto-detected: {activity.detectedAcronym})
-                          </span>
-                        )}
+                        Detected Acronym
                       </Label>
                       <Input
                         id={`acronym-${activity.iatiIdentifier}`}

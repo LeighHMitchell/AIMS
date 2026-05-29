@@ -31,17 +31,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, getFinancialSeriesColor, BUDGET_COLOR, PLANNED_DISBURSEMENT_COLOR, OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
-import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyPrecise } from '@/lib/format'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import financeTypesData from '@/data/finance-types.json'
 import aidTypesData from '@/data/aid-types.json'
-// Brand color palette - 5 distinct colors, no duplicates
-const BRAND_PALETTE = {
-  primaryScarlet: '#dc2625',
-  paleSlate: '#cfd0d5',
-  blueSlate: '#4c5568',
-  coolSteel: '#7b95a7',
-  platinum: '#f1f4f8',
-} as const
+import { MetricsMultiSelect } from '@/components/analytics/MetricsMultiSelect'
+import { type Metric } from '@/lib/financial-metrics'
 
 import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format, parseISO } from 'date-fns'
@@ -254,11 +249,6 @@ interface YearlyData {
 // Currency formatter for axis labels — delegate to shared helper.
 const formatCurrency = formatAxisCurrency
 
-// Table-view amounts use the shared 2-decimal full-amount formatter so every
-// table view in the app (analytics dashboard, activity profile, org profile)
-// ties out identically. See lib/format.ts.
-const formatCurrencyFull = (value: number): string => formatCurrencyPrecise(value)
-
 export function FinancialTotalsBarChart({
   dateRange,
   refreshKey,
@@ -278,7 +268,16 @@ export function FinancialTotalsBarChart({
     plannedDisbursements: any[]
     transactions: any[]
   } | null>(null)
-  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursements
+  // Metrics multiselect — Budgets, Planned Disbursements, and the 13 IATI
+  // transaction types are all selectable/hideable. Default preserves the
+  // previous behaviour: Budgets + Planned Disbursements + Disbursements.
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>(['budgets', 'planned', 'tx_3'])
+  // Just the transaction-type codes from the selection, reused by the stackBy
+  // disaggregation logic below.
+  const selectedTxCodes = useMemo(
+    () => selectedMetrics.filter(m => m.startsWith('tx_')).map(m => m.slice(3)),
+    [selectedMetrics],
+  )
   const [chartType, setChartType] = useState<ChartType>('bar')
   // Visual breakdown of each tx-type bar into stacked sub-series by one
   // dimension. Independent from the three filter dropdowns below.
@@ -489,6 +488,10 @@ export function FinancialTotalsBarChart({
     } else {
       setSelectedYears([year])
     }
+  }
+
+  const selectAllYears = () => {
+    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
   }
 
   const selectDataRange = () => {
@@ -1005,33 +1008,31 @@ export function FinancialTotalsBarChart({
   }, [rawData, customYears, calendarType, effectiveDateRange, selectedYears, selectedFinanceTypeCodes, selectedAidTypeCodes, selectedPartnerKeys, stackBy, partnerOrgs, activityReportingOrgs])
 
   // Get available transaction types (those with data)
-  const availableTransactionTypes = useMemo(() => {
+  // Metric keys that actually have data in the current view — passed to the
+  // MetricsMultiSelect so it only offers Budgets / Planned Disbursements /
+  // transaction types that have non-zero values (the prior "available types"
+  // nicety, generalised to all metrics).
+  const availableMetricKeys = useMemo<Metric[]>(() => {
     if (!chartData.length) return []
-
-    return Object.entries(TRANSACTION_TYPES)
-      .filter(([code, name]) => {
-        return chartData.some(d => (d[name] as number) > 0)
-      })
-      .map(([code, name]) => ({ code, name }))
-  }, [chartData])
-
-  // Toggle transaction type selection
-  const toggleTransactionType = (code: string) => {
-    setSelectedTransactionTypes(prev => {
-      if (prev.includes(code)) {
-        return prev.filter(c => c !== code)
-      }
-      return [...prev, code]
+    const keys: Metric[] = []
+    if (chartData.some(d => (d['Budgets'] as number) > 0)) keys.push('budgets')
+    if (chartData.some(d => (d['Planned Disbursements'] as number) > 0)) keys.push('planned')
+    Object.entries(TRANSACTION_TYPES).forEach(([code, name]) => {
+      if (chartData.some(d => (d[name] as number) > 0)) keys.push(`tx_${code}` as Metric)
     })
-  }
+    return keys
+  }, [chartData])
 
   // Active data keys: Budgets, Planned Disbursements + each selected
   // transaction type. When `stackBy` is set, each selected transaction type
   // expands into its composite sub-series (ordered by total desc, with the
   // "Other" bucket sorted last).
   const activeDataKeys = useMemo(() => {
-    const keys = ['Budgets', 'Planned Disbursements']
-    selectedTransactionTypes.forEach(code => {
+    const keys: string[] = []
+    // Planning series only when explicitly selected (previously always-on).
+    if (selectedMetrics.includes('budgets')) keys.push('Budgets')
+    if (selectedMetrics.includes('planned')) keys.push('Planned Disbursements')
+    selectedTxCodes.forEach(code => {
       const name = TRANSACTION_TYPES[code]
       if (!name) return
       if (stackBy === 'none') {
@@ -1057,7 +1058,7 @@ export function FinancialTotalsBarChart({
       keys.push(...ordered)
     })
     return keys
-  }, [selectedTransactionTypes, stackBy, chartData])
+  }, [selectedMetrics, selectedTxCodes, stackBy, chartData])
 
   // Build color map for active keys. Budgets / Planned Disbursements + plain
   // transaction types keep their canonical hues; stacked sub-series are a
@@ -1072,7 +1073,7 @@ export function FinancialTotalsBarChart({
       })
       return map
     }
-    selectedTransactionTypes.forEach(code => {
+    selectedTxCodes.forEach(code => {
       const name = TRANSACTION_TYPES[code]
       if (!name) return
       const prefix = `${name}${DISAGG_SEP}`
@@ -1086,7 +1087,7 @@ export function FinancialTotalsBarChart({
       if (comps.includes(otherKey)) map[otherKey] = OTHERS_COLOR
     })
     return map
-  }, [activeDataKeys, stackBy, selectedTransactionTypes])
+  }, [activeDataKeys, stackBy, selectedTxCodes])
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -1159,6 +1160,25 @@ export function FinancialTotalsBarChart({
     return null
   }
 
+  // Legend marker — a filled square for bar/area/combo, or a horizontal line
+  // with a centered dot for line mode (the conventional line-series glyph).
+  const renderLegendMarker = (color: string) => {
+    if (chartType === 'line') {
+      return (
+        <svg width="20" height="10" viewBox="0 0 20 10" className="flex-shrink-0" aria-hidden="true">
+          <line x1="0" y1="5" x2="20" y2="5" stroke={color} strokeWidth="2" />
+          <circle cx="10" cy="5" r="3.5" fill={color} />
+        </svg>
+      )
+    }
+    return (
+      <span
+        className="w-3 h-3 rounded-sm flex-shrink-0"
+        style={{ backgroundColor: color }}
+      />
+    )
+  }
+
   // Custom legend
   const renderLegend = (props: any) => {
     const { payload } = props
@@ -1185,10 +1205,7 @@ export function FinancialTotalsBarChart({
                 isHidden ? 'opacity-40' : 'opacity-100'
               )}
             >
-              <span
-                className="w-3 h-3 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: entry.color }}
-              />
+              {renderLegendMarker(entry.color)}
               <span className={cn('text-body text-foreground', isHidden && 'line-through')}>
                 {entry.value}
               </span>
@@ -1229,68 +1246,28 @@ export function FinancialTotalsBarChart({
     }
 
     if (chartType === 'table') {
+      // Gold-standard table — now the shared ChartDataTable so every other
+      // dashboard table matches it. Year is the row label; each active series
+      // is a numeric column with its chart color square; a per-row Total
+      // column and footer column/grand totals reproduce the original layout,
+      // and headers are click-to-sort.
       return (
-        <div className="overflow-auto" style={{ maxHeight: height }}>
-          <table className="w-full text-body">
-            <thead className="bg-surface-muted sticky top-0">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-foreground border-b">Year</th>
-                {activeDataKeys.map(key => (
-                  <th key={key} className="text-right px-4 py-3 font-medium text-foreground border-b whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: colorMap[key] }}
-                      />
-                      {key}
-                    </div>
-                  </th>
-                ))}
-                <th className="text-right px-4 py-3 font-medium text-foreground border-b">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.map((row) => {
-                const rowTotal = activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0)
-                return (
-                  <tr key={row.displayYear} className="border-b border-border hover:bg-muted/50">
-                    <td className="px-4 py-2.5 font-medium text-foreground">
-                      {row.displayYear}
-                    </td>
-                    {activeDataKeys.map(key => (
-                      <td key={key} className="text-right px-4 py-2.5 text-foreground tabular-nums">
-                        {formatCurrencyFull(Number(row[key]) || 0)}
-                      </td>
-                    ))}
-                    <td className="text-right px-4 py-2.5 text-foreground font-semibold tabular-nums">
-                      {formatCurrencyFull(rowTotal)}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-            <tfoot className="bg-muted">
-              <tr>
-                <td className="px-4 py-3 font-semibold text-foreground border-t-2 border-border">Total</td>
-                {activeDataKeys.map(key => {
-                  const columnTotal = chartData.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)
-                  return (
-                    <td key={key} className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border tabular-nums">
-                      {formatCurrencyFull(columnTotal)}
-                    </td>
-                  )
-                })}
-                <td className="text-right px-4 py-3 font-bold text-foreground border-t-2 border-border tabular-nums">
-                  {formatCurrencyFull(
-                    chartData.reduce((grandTotal, row) => 
-                      grandTotal + activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0), 0
-                    )
-                  )}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <ChartDataTable
+          rows={chartData}
+          columns={[
+            { key: 'displayYear', label: 'Year', numeric: false },
+            ...activeDataKeys.map(key => ({
+              key,
+              label: key,
+              numeric: true,
+              color: colorMap[key],
+            })),
+          ]}
+          currency="USD"
+          totalsRow
+          totalsColumn
+          maxHeight={height}
+        />
       )
     }
 
@@ -1522,9 +1499,8 @@ export function FinancialTotalsBarChart({
   const fillsCard = isExpanded && fillHeight
   return (
     <div className={cn(fillsCard ? "flex flex-col h-full pt-2" : "space-y-4")}>
-      {/* Controls Row */}
-      <div className={cn("flex items-start gap-2 flex-wrap shrink-0", fillsCard && "mb-3")}>
-        {/* Calendar & Year Selectors */}
+      {/* Calendar + year selector on its own row at the top */}
+      <div className="flex items-start gap-2 mb-4">
         {customYears.length > 0 && (
           <>
             {/* Calendar Type Selector */}
@@ -1582,13 +1558,22 @@ export function FinancialTotalsBarChart({
                   <DropdownMenuContent align="start" className="p-3 w-auto">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-helper font-medium text-foreground">Select Year Range</span>
-                      <button
-                        onClick={selectDataRange}
-                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
-                        title={actualDataRange ? `Select years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
-                      >
-                        Data Range
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={selectAllYears}
+                          className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
+                          title="Select all available years"
+                        >
+                          All
+                        </button>
+                        <button
+                          onClick={selectDataRange}
+                          className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
+                          title={actualDataRange ? `Select years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
+                        >
+                          Data Range
+                        </button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
                       {AVAILABLE_YEARS.map((year) => {
@@ -1624,23 +1609,24 @@ export function FinancialTotalsBarChart({
             </div>
           </>
         )}
-
-        {/* Right side controls */}
-        <div className="flex items-center gap-2 ml-auto">
+      </div>
+      {/* Controls row — filters + toggles left, CSV right. */}
+      <div className={cn("flex items-center justify-between gap-2 flex-wrap shrink-0", fillsCard && "mb-3")}>
+        {/* Filters + view toggle (left) */}
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Stack-by dropdown — visual breakdown of each tx-type bar into
               stacked sub-series by one dimension. Independent from the
               filter dropdowns (which decide which values count). */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <LayersIcon className="mr-2 h-4 w-4" />
                 {stackBy === 'none'
                   ? 'Stack by'
                   : `Stack: ${STACK_BY_OPTIONS.find(o => o.value === stackBy)?.label}`}
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start">
               {STACK_BY_OPTIONS.map(o => (
                 <DropdownMenuItem
                   key={o.value}
@@ -1656,12 +1642,11 @@ export function FinancialTotalsBarChart({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <Filter className="mr-2 h-4 w-4" />
                 Finance Types ({selectedFinanceTypeCodes?.length ?? availableFinanceTypes.length}/{availableFinanceTypes.length})
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DropdownMenuContent align="start" className="w-80 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
               <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-border">
                 <span className="text-helper font-semibold text-foreground">Finance Types</span>
                 <div className="flex gap-1">
@@ -1710,12 +1695,11 @@ export function FinancialTotalsBarChart({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <Filter className="mr-2 h-4 w-4" />
                 Aid Types ({selectedAidTypeCodes?.length ?? availableAidTypes.length}/{availableAidTypes.length})
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DropdownMenuContent align="start" className="w-80 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
               <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-border">
                 <span className="text-helper font-semibold text-foreground">Aid Types</span>
                 <div className="flex gap-1">
@@ -1765,12 +1749,11 @@ export function FinancialTotalsBarChart({
           <DropdownMenu onOpenChange={(open) => { if (!open) setPartnerSearch('') }}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <Users className="mr-2 h-4 w-4" />
                 Partners ({selectedPartnerKeys?.length ?? availablePartners.length}/{availablePartners.length})
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-96 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DropdownMenuContent align="start" className="w-96 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
               <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-border">
                 <span className="text-helper font-semibold text-foreground">Development Partners</span>
                 <div className="flex gap-1">
@@ -1833,50 +1816,18 @@ export function FinancialTotalsBarChart({
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* Transaction Types Dropdown - stays open for multi-select */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                Transaction Types ({selectedTransactionTypes.length})
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
-              <div className="space-y-1">
-                {availableTransactionTypes.map(({ code, name }) => {
-                  const isSelected = selectedTransactionTypes.includes(code)
-                  const typeName = TRANSACTION_TYPES[code]
-                  const displayColor = isSelected && typeName
-                    ? (colorMap[typeName] || getColorForKey(typeName))
-                    : BRAND_PALETTE.paleSlate
-                  return (
-                    <div
-                      key={code}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
-                      onClick={() => toggleTransactionType(code)}
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleTransactionType(code)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">{code}</code>
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: displayColor }}
-                      />
-                      <span className="text-body">{name}</span>
-                    </div>
-                  )
-                })}
-                {availableTransactionTypes.length === 0 && (
-                  <div className="px-2 py-3 text-body text-muted-foreground text-center">
-                    No transaction data available
-                  </div>
-                )}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Metrics multiselect — same control as the External Development
+              Partners Financial Overview. Lets the user show/hide Budgets,
+              Planned Disbursements, and any of the 13 transaction types. */}
+          <MetricsMultiSelect
+            selected={selectedMetrics}
+            onChange={setSelectedMetrics}
+            availableKeys={availableMetricKeys}
+            triggerClassName="h-8 justify-between min-w-[220px]"
+          />
+        </div>
+        {/* Button groups + CSV, right-aligned. */}
+        <div className="flex items-center gap-2">
           {/* Chart Type Toggle */}
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -1930,8 +1881,7 @@ export function FinancialTotalsBarChart({
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Export Button */}
+          {/* CSV export, right-aligned. */}
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
               variant="ghost"
@@ -1996,10 +1946,7 @@ export function FinancialTotalsBarChart({
                   isHidden ? 'opacity-40' : 'opacity-100'
                 )}
               >
-                <span
-                  className="w-3 h-3 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: colorMap[key] }}
-                />
+                {renderLegendMarker(colorMap[key])}
                 <span className={cn('text-body text-foreground', isHidden && 'line-through')}>
                   {key}
                 </span>
@@ -2011,6 +1958,7 @@ export function FinancialTotalsBarChart({
 
       {/* Explanatory text — expanded view only. Inline cards stay compact;
           the explanation is for users who've opened the modal to focus. */}
+
       {isExpanded && (
         <p className={cn("text-body text-muted-foreground leading-relaxed shrink-0", fillsCard && "mt-16")}>
           Each year pairs the activity's planned commitments — <strong>approved budgets</strong> and <strong>scheduled planned disbursements</strong> — against the actual money that moved as recorded <strong>transactions</strong> (commitments, disbursements, expenditures). Comparing the year-by-year heights surfaces when planned amounts matched delivery and when they diverged: tall budget bars with short disbursement bars mean funds were approved but not yet released, while the reverse points to spending that outpaced plan. Together this is the quickest way to gauge whether the activity is delivering its budget on schedule and which years saw the biggest slippage.

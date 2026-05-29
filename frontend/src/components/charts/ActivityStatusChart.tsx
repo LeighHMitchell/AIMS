@@ -5,7 +5,6 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
   BarChart,
   Bar,
   XAxis,
@@ -161,6 +160,20 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
 
   const currentData = getCurrentData();
 
+  // Leader-line label for the expanded donut: bold the status name (e.g.
+  // Implementation) before the percentage. Replaces the plain-string label so
+  // the legend is no longer needed.
+  const renderPieLabel = (props: any) => {
+    const { x, y, cx, textAnchor, displayStatus, percentage, index } = props;
+    const anchor = textAnchor || (x >= cx ? 'start' : 'end');
+    const color = COLORS[(index ?? 0) % COLORS.length];
+    return (
+      <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={12} fontWeight={700} fill={color}>
+        {`${displayStatus} ${Number(percentage).toFixed(1)}%`}
+      </text>
+    );
+  };
+
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
@@ -181,8 +194,8 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
               data={currentData}
               cx="50%"
               cy="50%"
-              outerRadius={70}
-              innerRadius={40}
+              outerRadius={90}
+              innerRadius={52}
               dataKey="count"
               nameKey="status"
               paddingAngle={2}
@@ -351,8 +364,8 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
                 data={currentData.map(item => ({ ...item, displayStatus: formatStatusName(item.status) }))}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ displayStatus, percentage }) => `${displayStatus}: ${percentage.toFixed(1)}%`}
+                labelLine={{ stroke: '#cfd0d5' }}
+                label={renderPieLabel}
                 outerRadius={140}
                 innerRadius={70}
                 fill="#8884d8"
@@ -364,7 +377,6 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <Legend formatter={(value, entry: any) => formatStatusName(entry.payload.status)} />
             </PieChart>
           ) : (
             <BarChart 
@@ -379,6 +391,13 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
             </BarChart>
           )}
         </ResponsiveContainer>
+      )}
+
+      {/* Explanatory text — only in expanded view */}
+      {isExpanded && (
+        <p className="text-body text-muted-foreground leading-relaxed mt-6">
+          This chart breaks the portfolio down by status, showing how many activities sit at each stage of the lifecycle. Use the toggle to switch between Activity status (Pipeline, Implementation, Completed and so on), Publication status (how much of the portfolio is published openly) and Submission status (what is still awaiting review). A portfolio weighted heavily toward Pipeline can signal a delivery backlog, while a large Implementation share points to active delivery on the ground. Switch to the bar or table view to read the exact counts.
+        </p>
       )}
     </div>
   );

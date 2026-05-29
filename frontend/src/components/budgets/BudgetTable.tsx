@@ -277,7 +277,7 @@ export function BudgetTable({
         onClick={() => onSort("value")}
       >
         <div className="flex items-center justify-end gap-1">
-          <span>Currency Value</span>
+          <span>Original Value</span>
           {getSortIcon("value", sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -316,7 +316,7 @@ export function BudgetTable({
         <Table className="min-w-full data-table-balanced">
           <TableHeader>
             <TableRow>
-              <th className="h-12 px-4 text-center align-top data-table-col-checkbox">
+              <th className="h-12 px-4 text-center align-middle [&:has([role=checkbox])]:pr-0 data-table-col-checkbox">
                 {onSelectAll && selectedIds && (
                   <div className="flex items-center justify-center" key={`select-all-wrapper-${budgets.length}`}>
                     <Checkbox
@@ -465,7 +465,7 @@ export function BudgetTable({
                     )}
                   >
                     {/* Checkbox or Expand/Collapse Button */}
-                    <TableCell className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="py-3 px-4 text-center align-middle" onClick={(e) => e.stopPropagation()}>
                       {onSelectBudget && selectedIds ? (
                         <div className="flex items-center justify-center">
                           <Checkbox

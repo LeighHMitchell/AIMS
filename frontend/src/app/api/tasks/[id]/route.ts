@@ -171,7 +171,8 @@ export async function PUT(
   try {
     const { id } = await params;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { userId, title, description, priority, deadline, reminder_days, assignees } = body;
 
     if (!userId) {
@@ -348,7 +349,8 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { userId } = body;
 
     if (!userId) {

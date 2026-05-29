@@ -1,9 +1,25 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
-import { AlertCircle, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { AlertCircle, BarChart3, Table as TableIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
+import { ChartToolbarRow } from "@/components/ui/chart-toolbar-row";
+import { ChartDataTable } from "@/components/ui/chart-data-table";
+import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
+import { formatAxisCurrency, formatTooltipCurrency } from "@/lib/format";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 
 interface AnalyticsFilters {
   donor: string;
@@ -25,9 +41,6 @@ interface ChartDataPoint {
   org_type?: string;
 }
 
-type SortField = 'organization' | 'budget' | 'disbursements' | 'expenditures' | 'totalSpending';
-type SortDirection = 'asc' | 'desc';
-
 interface ReportingOrgChartProps {
   filters: AnalyticsFilters;
   onDataChange?: (data: any[]) => void;
@@ -38,11 +51,11 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
   onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const isExpanded = useChartExpansion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('USD');
-  const [sortField, setSortField] = useState<SortField>('organization');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
 
   // Fetch chart data whenever filters change
   useEffect(() => {
@@ -63,13 +76,13 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
       });
 
       const response = await fetch(`/api/analytics/reporting-org?${queryParams}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      
+
       if (result.error) {
         throw new Error(result.error);
       }
@@ -85,66 +98,6 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
-    }
-    return sortDirection === 'asc'
-      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
-      : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
-  };
-
-  const sortedData = useMemo(() => {
-    if (!sortField) return data;
-
-    return [...data].sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
-
-      switch (sortField) {
-        case 'organization':
-          aValue = a.organization.toLowerCase();
-          bValue = b.organization.toLowerCase();
-          break;
-        case 'budget':
-          aValue = a.budget;
-          bValue = b.budget;
-          break;
-        case 'disbursements':
-          aValue = a.disbursements;
-          bValue = b.disbursements;
-          break;
-        case 'expenditures':
-          aValue = a.expenditures;
-          bValue = b.expenditures;
-          break;
-        case 'totalSpending':
-          aValue = a.totalSpending;
-          bValue = b.totalSpending;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [data, sortField, sortDirection]);
-
-  const formatCurrency = (value: number) => {
-    return `${currency} ${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   // Loading state
@@ -177,111 +130,129 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
     );
   }
 
-  return (
-    <div className="w-full">
-      <div className="rounded-md border">
-        <Table className="table-fixed w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHead
-                className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
-                style={{ width: '25%' }}
-                onClick={() => handleSort('organization')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Organisation</span>
-                  {getSortIcon('organization')}
-                </div>
-              </TableHead>
-              <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '15%' }}>
-                Organisation Type
-              </TableHead>
-              <TableHead
-                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
-                style={{ width: '15%' }}
-                onClick={() => handleSort('budget')}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Budget</span>
-                  {getSortIcon('budget')}
-                </div>
-              </TableHead>
-              <TableHead
-                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
-                style={{ width: '15%' }}
-                onClick={() => handleSort('disbursements')}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Disbursements</span>
-                  {getSortIcon('disbursements')}
-                </div>
-              </TableHead>
-              <TableHead
-                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
-                style={{ width: '15%' }}
-                onClick={() => handleSort('expenditures')}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Expenditures</span>
-                  {getSortIcon('expenditures')}
-                </div>
-              </TableHead>
-              <TableHead
-                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
-                style={{ width: '15%' }}
-                onClick={() => handleSort('totalSpending')}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Total Spending</span>
-                  {getSortIcon('totalSpending')}
-                </div>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedData.map((org, index) => (
-              <TableRow key={index} className="hover:bg-muted">
-                <TableCell className="py-3 px-3">
-                  <div className="flex flex-col">
-                    <div className="font-medium text-foreground">
-                      {org.organization} {org.acronym && org.acronym !== org.organization && `(${org.acronym})`}
-                    </div>
-                    {org.iati_id && (
-                      <div className="text-xs text-muted-foreground font-mono mt-1">
-                        {org.iati_id}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="py-3 px-3 text-body text-muted-foreground">
-                  {org.org_type || '—'}
-                </TableCell>
-                <TableCell className="py-3 px-3 text-body text-right text-foreground">
-                  {formatCurrency(org.budget)}
-                </TableCell>
-                <TableCell className="py-3 px-3 text-body text-right text-foreground">
-                  {formatCurrency(org.disbursements)}
-                </TableCell>
-                <TableCell className="py-3 px-3 text-body text-right text-foreground">
-                  {formatCurrency(org.expenditures)}
-                </TableCell>
-                <TableCell className="py-3 px-3 text-body text-right font-medium text-foreground">
-                  {formatCurrency(org.totalSpending)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+  // Ranked largest → smallest by budget; Y-axis label prefers the acronym
+  // (compact) and falls back to the full organisation name.
+  const chartData = data
+    .slice()
+    .sort((a, b) => b.budget - a.budget)
+    .map((d) => ({
+      ...d,
+      label: d.acronym && d.acronym !== d.organization ? d.acronym : d.organization,
+    }));
 
-      {/* Table info */}
-      <div className="mt-4 text-body text-muted-foreground">
-        <p>
-          <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organizations by total budget |
-          <strong> Currency:</strong> {currency} |
-          <strong> Organisations:</strong> {data.length}
+  // Horizontal grouped bars — one bar per financial series, per organisation.
+  // Height grows with the org count so labels never overlap when expanded.
+  const barHeight = Math.max(320, chartData.length * 56);
+
+  const BarTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0]?.payload as ChartDataPoint;
+    return (
+      <ChartTooltipCard
+        title={row.acronym && row.acronym !== row.organization ? `${row.organization} (${row.acronym})` : row.organization}
+        subtitle={row.iati_id ? (
+          <code className="font-mono bg-muted px-1.5 py-0.5 rounded inline-block">{row.iati_id}</code>
+        ) : undefined}
+        rows={payload.map((e: any) => ({
+          label: e.name,
+          value: formatTooltipCurrency(Number(e.value) || 0, isExpanded),
+          color: e.color || e.fill,
+        }))}
+      />
+    );
+  };
+
+  const renderChart = () => (
+    <ResponsiveContainer width="100%" height={isExpanded ? barHeight : "100%"}>
+      <BarChart
+        data={chartData}
+        layout="vertical"
+        margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
+        <XAxis type="number" tickFormatter={formatAxisCurrency} tick={{ fill: CHART_STRUCTURE_COLORS.axis, fontSize: 12 }} />
+        <YAxis type="category" dataKey="label" width={isExpanded ? 180 : 110} tick={{ fill: CHART_STRUCTURE_COLORS.axis, fontSize: 11 }} interval={0} />
+        <Tooltip content={<BarTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
+        {isExpanded && <Legend />}
+        <Bar dataKey="budget" name="Budget" fill={DATA_COLORS.budget} radius={[0, 3, 3, 0]} />
+        <Bar dataKey="disbursements" name="Disbursements" fill={DATA_COLORS.disbursements} radius={[0, 3, 3, 0]} />
+        <Bar dataKey="expenditures" name="Expenditures" fill={DATA_COLORS.expenditures} radius={[0, 3, 3, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+
+  return (
+    <div className="w-full h-full">
+      <ChartToolbarRow csv={{ rows: chartData, title: 'Budget vs Spending by Reporting Organisation' }}>
+        <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-8 w-8", viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+            onClick={() => setViewMode('chart')}
+            title="Chart View"
+            aria-label="Chart View"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+            onClick={() => setViewMode('table')}
+            title="Table View"
+            aria-label="Table View"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </ChartToolbarRow>
+
+      {/* Collapsed always shows the chart; expanded honours the view toggle. */}
+      {!isExpanded || viewMode === 'chart' ? (
+        renderChart()
+      ) : (
+        <ChartDataTable
+          rows={chartData}
+          currency={currency}
+          columns={[
+            {
+              key: 'organization',
+              label: 'Organisation',
+              numeric: false,
+              format: (_v, row) => (
+                <div className="flex flex-col">
+                  <div className="font-medium text-foreground">
+                    {row.organization}{(row as any).acronym && (row as any).acronym !== row.organization ? ` (${(row as any).acronym})` : ''}
+                  </div>
+                  {(row as any).iati_id && (
+                    <div className="text-xs font-normal text-muted-foreground font-mono mt-1">
+                      {(row as any).iati_id}
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+            { key: 'org_type', label: 'Organisation Type', numeric: false, format: (v) => (v ? String(v) : '—') },
+            { key: 'budget', label: 'Budget', numeric: true, currency, color: DATA_COLORS.budget },
+            { key: 'disbursements', label: 'Disbursements', numeric: true, currency, color: DATA_COLORS.disbursements },
+            { key: 'expenditures', label: 'Expenditures', numeric: true, currency, color: DATA_COLORS.expenditures },
+            { key: 'totalSpending', label: 'Total Spending', numeric: true, currency, color: DATA_COLORS.totalSpending },
+          ]}
+        />
+      )}
+
+      {/* Explanatory paragraph — only in expanded view */}
+      {isExpanded && (
+      <div className="mt-6">
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart compares each reporting organisation&apos;s planned budget against its actual spending
+          (disbursements and expenditures). Use it to see which organisations report the largest portfolios
+          and how fully they are executing them — a large budget with low disbursement points to commitments
+          that haven&apos;t yet been delivered. Switch to table view to read the exact figures. All amounts are USD.
         </p>
       </div>
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ArrowRight, Download, BarChart3, LineChart as LineChartIcon, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   ResponsiveContainer,
@@ -503,60 +504,32 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
           <div className="flex items-center gap-2">
-            <div className="flex">
-              <Button
-                variant={viewMode === 'periodic' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('periodic')}
-                disabled={chartType === 'sankey'}
-                className="rounded-r-none"
-              >
-                Periodic
-              </Button>
-              <Button
-                variant={viewMode === 'cumulative' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('cumulative')}
-                disabled={chartType === 'sankey'}
-                className="rounded-l-none"
-              >
-                Cumulative
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="Period mode"
+              variant="text"
+              value={viewMode}
+              onValueChange={setViewMode}
+              options={[
+                { value: 'periodic', label: 'Periodic', disabled: chartType === 'sankey' },
+                { value: 'cumulative', label: 'Cumulative', disabled: chartType === 'sankey' },
+              ]}
+            />
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-body font-medium text-foreground">Display:</span>
-            <div className="flex gap-1">
-              <Button
-                variant={chartType === 'sankey' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setChartType('sankey')}
-              >
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={chartType === 'line' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setChartType('line')}
-              >
-                <LineChartIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={chartType === 'bar' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setChartType('bar')}
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={chartType === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setChartType('table')}
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-            </div>
+            <ChartViewToggle
+              ariaLabel="Display type"
+              variant="icon"
+              value={chartType}
+              onValueChange={setChartType}
+              options={[
+                { value: 'sankey', label: 'Sankey', icon: ArrowRight },
+                { value: 'line', label: 'Line', icon: LineChartIcon },
+                { value: 'bar', label: 'Bar', icon: BarChart3 },
+                { value: 'table', label: 'Table', icon: TableIcon },
+              ]}
+            />
           </div>
 
           <div className="flex items-center gap-2">

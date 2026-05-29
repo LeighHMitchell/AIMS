@@ -299,6 +299,7 @@ export function OptimizedOrganizationList({
               size="icon"
               onClick={handleRefresh}
               disabled={isLoadingMore}
+              aria-label="Refresh organizations"
             >
               <RefreshCw className={`h-4 w-4 ${isLoadingMore ? 'animate-spin' : ''}`} />
             </Button>

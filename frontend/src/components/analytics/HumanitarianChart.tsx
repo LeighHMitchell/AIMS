@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   AreaChart,
   Area,
@@ -13,18 +13,27 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
-import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuarter } from 'date-fns'
+import { getYear } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table as TableIcon } from 'lucide-react'
+import { BarChart3, LineChart, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
+import { apiFetch } from '@/lib/api-fetch'
+import { CustomYear, getCustomYearLabel, pickDefaultCalendarYearId } from '@/types/custom-years'
+import { getFiscalYearForDate } from '@/utils/year-allocation'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
+
+// Humanitarian is shown in red across the humanitarian charts.
+const HUMANITARIAN_COLOR = '#dc2625'
+const DEVELOPMENT_COLOR = '#4c5568'
 
 interface HumanitarianChartProps {
   dateRange: {
@@ -48,143 +57,124 @@ type ViewMode = 'area' | 'bar' | 'table'
 
 export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact = false }: HumanitarianChartProps) {
   const isExpanded = useChartExpansion()
-  const [data, setData] = useState<ChartData[]>([])
+  // Raw classified rows; bucketed client-side by the selected calendar below.
+  const [rawRows, setRawRows] = useState<Array<{ date: string; value: number; humanitarian: boolean }>>([])
   const [loading, setLoading] = useState(true)
-  const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
   const [viewMode, setViewMode] = useState<ViewMode>('area')
   const [selectedYears, setSelectedYears] = useState<number[]>([])
+  // Calendar selection drives the X-axis (CY2022 / FY22-23). Owned here so the
+  // YearRangeChip is the single calendar control (no separate group-by dropdown).
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [calendarType, setCalendarType] = useState<string>('')
+
+  // Fetch custom-year calendars + default.
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      try {
+        const res = await apiFetch('/api/custom-years')
+        if (!res.ok) return
+        const result = await res.json()
+        const ys = (result.data || []) as CustomYear[]
+        if (cancelled) return
+        setCustomYears(ys)
+        // Default to the Gregorian Calendar Year regardless of the DB default.
+        const defaultId = pickDefaultCalendarYearId(ys, result.defaultId)
+        if (defaultId) setCalendarType(defaultId)
+      } catch { /* swallow */ }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, refreshKey, groupBy])
-
-  const getFiscalYear = (date: Date): string => {
-    const year = getYear(date)
-    const month = date.getMonth() + 1 // getMonth() is 0-indexed
-    
-    if (month >= 7) {
-      // July-December: fiscal year is current year to next year
-      return `${year}-${year + 1}`
-    } else {
-      // January-June: fiscal year is previous year to current year
-      return `${year - 1}-${year}`
-    }
-  }
-
-  const getQuarterLabel = (date: Date): string => {
-    const year = getYear(date)
-    const quarter = getQuarter(date)
-    return `Q${quarter} ${year}`
-  }
+  }, [dateRange, refreshKey])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      
-      // Query transactions directly - use value_usd for USD-converted amounts
+
       const { data: transactions, error: queryError } = await supabase
         .from('transactions')
         .select('value, value_usd, currency, transaction_date, is_humanitarian, transaction_type, status')
-        .in('transaction_type', ['2', '3', '4']) // Include Commitments, Disbursements, and Expenditures
+        .in('transaction_type', ['2', '3', '4']) // Commitments, Disbursements, Expenditures
         .eq('status', 'actual')
-        .gte('transaction_date', dateRange.from.toISOString())
-        .lte('transaction_date', dateRange.to.toISOString())
-      
-      console.log('[HumanitarianChart] Query results:', {
-        transactionCount: transactions?.length || 0,
-        dateRange,
-        error: queryError,
-        sampleTransactions: transactions?.slice(0, 5)
-      })
-      
-      // Count humanitarian transactions
-      const humanitarianCount = transactions?.filter((t: any) => t.is_humanitarian).length || 0
+        // Fetch the full available span so the year picker reflects all years that have data.
+        .gte('transaction_date', new Date(2010, 0, 1).toISOString())
+        .lte('transaction_date', new Date(new Date().getFullYear() + 10, 11, 31).toISOString())
 
-      // Aggregate data based on grouping mode
-      const periodMap = new Map<string, { humanitarian: number; development: number }>()
-      
-      let periodFn: (date: Date) => string
-      if (groupBy === 'calendar') {
-        periodFn = (date) => getYear(date).toString()
-      } else if (groupBy === 'fiscal') {
-        periodFn = getFiscalYear
-      } else {
-        periodFn = getQuarterLabel
+      if (queryError) {
+        console.error('[HumanitarianChart] Query error:', queryError)
+        setRawRows([])
+        return
       }
 
+      const humanitarianAidTypes = ['01', '02', '03']
+      const humanitarianKeywords = ['humanitarian', 'emergency', 'disaster', 'relief', 'crisis']
+
+      const rows: Array<{ date: string; value: number; humanitarian: boolean }> = []
       transactions?.forEach((t: any) => {
-        // Use value_usd if available, otherwise fall back to value (assuming USD if no conversion)
         let value = parseFloat(t.value_usd) || 0
-        if (!value && t.currency === 'USD' && t.value) {
-          value = parseFloat(t.value) || 0
-        }
-        if (isNaN(value) || value === 0) return
-        
-        const date = new Date(t.transaction_date)
-        const period = periodFn(date)
-        
-        if (!periodMap.has(period)) {
-          periodMap.set(period, { humanitarian: 0, development: 0 })
-        }
-        
-        const periodData = periodMap.get(period)!
-        
-        // Determine if humanitarian or development based on:
-        // 1. is_humanitarian field (if set)
-        // 2. Aid type codes (if available)
-        // 3. Activity collaboration type
-        // 4. Description containing humanitarian keywords
-        // 5. Default to development
-        
-        const isHumanitarian = t.is_humanitarian
-        const aidType = t.aid_type
-        const collaborationType = t.activities?.collaboration_type
+        if (!value && t.currency === 'USD' && t.value) value = parseFloat(t.value) || 0
+        if (isNaN(value) || value === 0 || !t.transaction_date) return
+
         const description = t.description?.toLowerCase() || ''
-        
-        // Humanitarian aid types: Emergency Response (01), Reconstruction relief (02), etc.
-        const humanitarianAidTypes = ['01', '02', '03']
-        const humanitarianCollaborationTypes = ['humanitarian', 'emergency', 'relief']
-        const humanitarianKeywords = ['humanitarian', 'emergency', 'disaster', 'relief', 'crisis']
-        
-        if (isHumanitarian || 
-            humanitarianAidTypes.includes(aidType) || 
-            humanitarianCollaborationTypes.some(type => 
-              collaborationType?.toLowerCase().includes(type)) ||
-            humanitarianKeywords.some(keyword => description.includes(keyword))) {
-          periodData.humanitarian += value
-        } else {
-          periodData.development += value
-        }
+        const isHumanitarian =
+          t.is_humanitarian ||
+          humanitarianAidTypes.includes(t.aid_type) ||
+          humanitarianKeywords.some(keyword => description.includes(keyword))
+
+        rows.push({ date: t.transaction_date, value, humanitarian: !!isHumanitarian })
       })
 
-      // Convert to array and sort
-      let chartData = Array.from(periodMap.entries())
-        .map(([period, values]) => ({
-          period,
-          humanitarian: values.humanitarian,
-          development: values.development,
-          sortKey: period
-        }))
-
-      // Sort based on grouping mode
-      if (groupBy === 'quarter') {
-        chartData.sort((a, b) => {
-          const [qA, yA] = a.sortKey!.replace('Q', '').split(' ').map(s => parseInt(s))
-          const [qB, yB] = b.sortKey!.replace('Q', '').split(' ').map(s => parseInt(s))
-          return yA !== yB ? yA - yB : qA - qB
-        })
-      } else {
-        chartData.sort((a, b) => a.sortKey!.localeCompare(b.sortKey!))
-      }
-
-      setData(chartData)
-      onDataChange?.(chartData)
+      setRawRows(rows)
     } catch (error) {
       console.error('Error fetching humanitarian data:', error)
+      setRawRows([])
     } finally {
       setLoading(false)
     }
   }
+
+  const activeCustomYear = customYears.find(cy => cy.id === calendarType)
+
+  // Gregorian calendar years present in the loaded data — used to default the
+  // year picker to the full span of years that actually have data.
+  const dataYears = useMemo(
+    () => rawRows.map(r => getYear(new Date(r.date))),
+    [rawRows],
+  )
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears)
+
+  // Bucket raw rows by the selected calendar's (fiscal) year and filter to the
+  // selected year range. X labels read e.g. "CY2022" / "FY22-23".
+  const data = useMemo<ChartData[]>(() => {
+    const minY = selectedYears.length ? Math.min(...selectedYears) : -Infinity
+    const maxY = selectedYears.length ? Math.max(...selectedYears) : Infinity
+    const byYear = new Map<number, { humanitarian: number; development: number }>()
+    for (const r of rawRows) {
+      const d = new Date(r.date)
+      if (isNaN(d.getTime())) continue
+      const fy = activeCustomYear ? getFiscalYearForDate(d, activeCustomYear) : getYear(d)
+      if (fy < minY || fy > maxY) continue
+      if (!byYear.has(fy)) byYear.set(fy, { humanitarian: 0, development: 0 })
+      const b = byYear.get(fy)!
+      if (r.humanitarian) b.humanitarian += r.value
+      else b.development += r.value
+    }
+    return Array.from(byYear.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([y, v]) => ({
+        period: activeCustomYear ? getCustomYearLabel(activeCustomYear, y) : String(y),
+        humanitarian: v.humanitarian,
+        development: v.development,
+      }))
+  }, [rawRows, activeCustomYear, selectedYears])
+
+  useEffect(() => {
+    onDataChange?.(data)
+  }, [data, onDataChange])
 
   const formatCurrency = (value: number) => {
     try {
@@ -291,8 +281,8 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
               type="monotone"
               dataKey="humanitarian"
               stackId="1"
-              stroke="#94a3b8"
-              fill="#94a3b8"
+              stroke={HUMANITARIAN_COLOR}
+              fill={HUMANITARIAN_COLOR}
               fillOpacity={0.8}
               name="Humanitarian"
             />
@@ -310,84 +300,10 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
   if (!data || data.length === 0) {
     return (
-      <div className="space-y-4">
-        {/* Controls Row */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-            <SelectTrigger className="min-w-[280px] h-9 bg-card border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="calendar">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Calendar Year
-                </div>
-              </SelectItem>
-              <SelectItem value="fiscal">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-3 w-3" />
-                  Financial Year
-                </div>
-              </SelectItem>
-              <SelectItem value="quarter">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-3 w-3" />
-                  Quarterly
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <div className="flex items-center gap-3">
-            {groupBy === 'fiscal' && (
-              <div className="text-helper text-muted-foreground">
-                Financial Year: July–June
-              </div>
-            )}
-            
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setViewMode('area')}
-                className={cn("h-8 w-8", viewMode === 'area' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                title="Area Chart"
-                aria-label="Area Chart"
-              >
-                <LineChart className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setViewMode('bar')}
-                className={cn("h-8 w-8", viewMode === 'bar' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                title="Bar Chart"
-                aria-label="Bar Chart"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setViewMode('table')}
-                className={cn("h-8 w-8", viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-                title="Table View"
-                aria-label="Table View"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Empty State */}
-        <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
-          <div className="text-center">
-            <p className="text-muted-foreground">No humanitarian/development aid data available</p>
-            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
-          </div>
+      <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
+        <div className="text-center">
+          <p className="text-muted-foreground">No humanitarian/development aid data available</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )
@@ -438,8 +354,8 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           type="monotone"
           dataKey="humanitarian"
           stackId="1"
-          stroke="#94a3b8"
-          fill="#94a3b8"
+          stroke={HUMANITARIAN_COLOR}
+          fill={HUMANITARIAN_COLOR}
           name="Humanitarian"
         />
       </AreaChart>
@@ -488,7 +404,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         <Bar
           dataKey="humanitarian"
           stackId="1"
-          fill="#94a3b8"
+          fill={HUMANITARIAN_COLOR}
           name="Humanitarian"
           radius={[4, 4, 0, 0]}
         />
@@ -497,91 +413,34 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
   )
 
   const renderTable = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full text-body">
-        <thead className="bg-surface-muted">
-          <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 font-medium text-foreground">Period</th>
-            <th className="text-right py-3 px-4 font-medium text-foreground">Development</th>
-            <th className="text-right py-3 px-4 font-medium text-destructive">Humanitarian</th>
-            <th className="text-right py-3 px-4 font-medium text-foreground">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, idx) => (
-            <tr key={idx} className="border-b border-border hover:bg-muted/50">
-              <td className="py-3 px-4 text-foreground">{row.period}</td>
-              <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrencyFull(row.development)}</td>
-              <td className="text-right py-3 px-4 text-destructive">{formatCurrencyFull(row.humanitarian)}</td>
-              <td className="text-right py-3 px-4 text-foreground font-medium">{formatCurrencyFull(row.development + row.humanitarian)}</td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="bg-muted">
-            <td className="py-3 px-4 font-semibold text-foreground">Total</td>
-            <td className="text-right py-3 px-4 font-semibold text-foreground">
-              {formatCurrencyFull(data.reduce((sum, row) => sum + row.development, 0))}
-            </td>
-            <td className="text-right py-3 px-4 font-semibold text-destructive">
-              {formatCurrencyFull(data.reduce((sum, row) => sum + row.humanitarian, 0))}
-            </td>
-            <td className="text-right py-3 px-4 font-semibold text-foreground">
-              {formatCurrencyFull(data.reduce((sum, row) => sum + row.development + row.humanitarian, 0))}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+    <ChartDataTable
+      rows={data}
+      columns={[
+        { key: 'period', label: 'Period', numeric: false },
+        { key: 'development', label: 'Development', numeric: true, currency: 'USD', color: '#4c5568' },
+        { key: 'humanitarian', label: 'Humanitarian', numeric: true, currency: 'USD', color: HUMANITARIAN_COLOR },
+      ]}
+      currency="USD"
+      totalsColumn
+    />
   )
 
   return (
     <div className="space-y-4">
-      {/* Controls Row */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          {isExpanded && (
-            <YearRangeChip
-              selectedYears={selectedYears}
-              onYearsChange={setSelectedYears}
-              initialDateRange={dateRange}
-            />
-          )}
-          {/* Aggregation Mode Selector */}
-          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="min-w-[280px] h-9 bg-card border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="calendar">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3" />
-                Calendar Year
-              </div>
-            </SelectItem>
-            <SelectItem value="fiscal">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-3 w-3" />
-                Financial Year
-              </div>
-            </SelectItem>
-            <SelectItem value="quarter">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-3 w-3" />
-                Quarterly
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {groupBy === 'fiscal' && (
-            <div className="text-helper text-muted-foreground">
-              Financial Year: July–June
-            </div>
-          )}
-          
+      {/* Calendar + year selector on its own row at the top (expanded only) —
+          the single calendar control; the X-axis follows the selected type. */}
+      {isExpanded && (
+        <YearRangeChip
+          selectedYears={selectedYears}
+          onYearsChange={setSelectedYears}
+          actualDataRange={actualDataRange}
+          customYears={customYears}
+          calendarType={calendarType}
+          onCalendarTypeChange={setCalendarType}
+        />
+      )}
+      {/* Controls row — view toggle + CSV, right-aligned. */}
+      <div className="flex items-center justify-end flex-wrap gap-2">
           {/* View Mode Toggle */}
           <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -615,7 +474,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
               <TableIcon className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+          <CsvExportButton rows={data} title="Humanitarian vs Development Aid" />
       </div>
 
       {/* Chart/Table */}

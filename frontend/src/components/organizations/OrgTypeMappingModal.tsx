@@ -135,8 +135,7 @@ export function OrgTypeMappingModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5" />
+          <DialogTitle>
             Update Organisation Type
           </DialogTitle>
           <DialogDescription>

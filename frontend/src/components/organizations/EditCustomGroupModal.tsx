@@ -319,8 +319,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+          <DialogTitle>
             Edit Custom Group
           </DialogTitle>
           <DialogDescription>
@@ -554,7 +553,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                 className="flex-1"
                 style={{ minWidth: '400px' }}
               />
-              <Button type="button" onClick={handleAddTag} size="icon" variant="outline" className="flex-shrink-0">
+              <Button type="button" onClick={handleAddTag} size="icon" variant="outline" className="flex-shrink-0" aria-label="Add tag">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>

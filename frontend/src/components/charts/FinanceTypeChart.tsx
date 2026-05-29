@@ -15,6 +15,8 @@ import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
+import { ChartCardToolbarRow, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 
 interface AnalyticsFilters {
   donor: string;
@@ -45,6 +47,8 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
   onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const tableMode = useChartCardTableMode();
+  const isExpanded = useChartExpansion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('USD');
@@ -166,57 +170,53 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
     );
   }
 
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-body font-medium">Budget</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
-          <span className="text-body font-medium">Disbursements</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-          <span className="text-body font-medium">Expenditures</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-body font-medium">Total Spending</span>
-        </div>
-      </div>
+  // X-axis tick — finance-type code as a monospace gray badge, inline before
+  // the name, wrapping as one centred block.
+  const FinanceXTick = ({ x, y, payload }: any) => {
+    const item = data.find((d: any) => d.financeTypeDisplay === payload.value)
+    const code = item?.financeType || ''
+    const name = item?.financeTypeName || String(payload.value)
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <foreignObject x={-70} y={6} width={140} height={72}>
+          <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', lineHeight: 1.3, overflowWrap: 'break-word' }}>
+            <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '9px', backgroundColor: '#e2e8f0', color: '#475569', padding: '1px 5px', borderRadius: '3px', marginRight: '4px', whiteSpace: 'nowrap' }}>
+              {code}
+            </span>
+            {name}
+          </div>
+        </foreignObject>
+      </g>
+    )
+  }
 
-      <ResponsiveContainer width="100%" height={500}>
+  return (
+    <div className="w-full h-full">
+      <ChartCardToolbarRow />
+
+      {!tableMode && (
+      <ResponsiveContainer width="100%" height={isExpanded ? 480 : 300}>
         <BarChart
           data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 8 }}
           barCategoryGap="20%"
         >
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
             dataKey="financeTypeDisplay"
             stroke={CHART_STRUCTURE_COLORS.axis}
-            fontSize={11}
-            angle={0}
-            textAnchor="middle"
-            height={80}
+            height={76}
             interval={0}
+            tick={<FinanceXTick />}
           />
           <YAxis
             tickFormatter={formatAxisCurrency}
             stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
-            label={{ 
-              value: `Amount (${currency})`, 
-              angle: -90, 
-              position: 'insideLeft',
-              style: { textAnchor: 'middle' }
-            }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          
+          {isExpanded && <Legend />}
+
           <Bar 
             dataKey="budget" 
             name="Budget" 
@@ -243,14 +243,18 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
           />
         </BarChart>
       </ResponsiveContainer>
+      )}
 
-      <div className="mt-4 text-body text-muted-foreground">
-        <p>
-          <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} finance types by total budget | 
-          <strong> Currency:</strong> {currency} | 
-          <strong> Finance Types:</strong> {data.length}
+      {isExpanded && (
+      <div className="mt-6">
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart compares planned budgets with actual spending (disbursements and expenditures)
+          across IATI finance types — grants, loans, equity and other instruments. Use it to understand
+          the financial structure of the portfolio: how much aid is grant-based versus repayable, and
+          whether spending is keeping pace with what was budgeted under each instrument. All amounts are USD.
         </p>
       </div>
+      )}
     </div>
   );
 };

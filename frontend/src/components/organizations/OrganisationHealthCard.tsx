@@ -28,7 +28,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
   const DataIcon = dataStatus.icon
 
   return (
-    <Card className="border-border bg-white">
+    <Card className="bg-white">
       <CardContent className="p-6">
         <div className="mb-3">
           <h3 className="text-body font-semibold text-foreground">Data Health</h3>

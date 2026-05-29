@@ -15,11 +15,14 @@ import {
 import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ChartViewToggle } from "@/components/ui/chart-view-toggle";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, BUDGET_COLOR, getTransactionTypeColor, OTHERS_COLOR } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
+import { useChartExpansion } from "@/lib/chart-expansion-context";
 
 interface SectorData {
   sectorCode: string;
@@ -43,6 +46,8 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
   onDataChange,
 }) => {
   const [data, setData] = useState<SectorData[]>([]);
+  const tableMode = useChartCardTableMode();
+  const isExpanded = useChartExpansion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chartType, setChartType] = useState<'pie' | 'bar'>('bar');
@@ -108,8 +113,16 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
       ];
       return (
         <ChartTooltipCard
-          title={data.sectorName}
-          subtitle={data.sectorCode ? `Code: ${data.sectorCode}` : undefined}
+          title={
+            <span className="inline-flex items-center gap-2">
+              {data.sectorCode && (
+                <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">
+                  {data.sectorCode}
+                </code>
+              )}
+              <span>{data.sectorName}</span>
+            </span>
+          }
           rows={rows}
         />
       );
@@ -171,78 +184,79 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
     };
   });
 
-  return (
-    <div className="w-full">
-      {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-muted rounded-lg">
-        <div className="flex items-center gap-2">
-          <span className="text-body font-medium">Show:</span>
-          <div className="flex gap-1">
-            {[5, 10, 15, 20].map((n) => (
-              <Button
-                key={n}
-                variant={topN === n ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTopN(n)}
-              >
-                Top {n}
-              </Button>
-            ))}
+  // X-axis tick for the bar view — DAC code as a monospace gray badge, inline
+  // before the sector name, wrapping as one centred block.
+  const SectorXTick = ({ x, y, payload }: any) => {
+    const item = chartData.find(d => d.displayName === payload.value);
+    const code = item?.sectorCode || '';
+    const name = item?.sectorName || payload.value;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <foreignObject x={-75} y={6} width={150} height={84}>
+          <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', lineHeight: 1.3, overflowWrap: 'break-word' }}>
+            <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '9px', backgroundColor: '#e2e8f0', color: '#475569', padding: '1px 5px', borderRadius: '3px', marginRight: '4px', whiteSpace: 'nowrap' }}>
+              {code}
+            </span>
+            {name}
           </div>
+        </foreignObject>
+      </g>
+    );
+  };
+
+  return (
+    <div className="w-full h-full">
+      {/* Expanded controls row — one justify-between line; LEFT = Top-N + metric
+          mode toggles, RIGHT = chart-type (pie/bar) + chart/table view toggle +
+          Download-CSV (furthest right). Only shown when expanded. */}
+      {isExpanded && (
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ChartViewToggle
+            ariaLabel="Show top N"
+            variant="text"
+            value={String(topN)}
+            onValueChange={(v) => setTopN(Number(v))}
+            options={[
+              { value: '5', label: 'Top 5' },
+              { value: '10', label: 'Top 10' },
+              { value: '15', label: 'Top 15' },
+              { value: '20', label: 'Top 20' },
+            ]}
+          />
+          <ChartViewToggle
+            ariaLabel="Metric"
+            variant="text"
+            value={metric}
+            onValueChange={setMetric}
+            options={[
+              { value: 'budget', label: 'Budget' },
+              { value: 'disbursements', label: 'Disbursements' },
+              { value: 'expenditures', label: 'Expenditures' },
+            ]}
+          />
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <Button
-              variant={metric === 'budget' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMetric('budget')}
-            >
-              Budget
-            </Button>
-            <Button
-              variant={metric === 'disbursements' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMetric('disbursements')}
-            >
-              Disbursements
-            </Button>
-            <Button
-              variant={metric === 'expenditures' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMetric('expenditures')}
-            >
-              Expenditures
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <Button
-              variant={chartType === 'pie' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('pie')}
-              title="Pie Chart"
-            >
-              <PieChartIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={chartType === 'bar' ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setChartType('bar')}
-              title="Bar Chart"
-            >
-              <BarChart3 className="h-4 w-4" />
-            </Button>
-          </div>
+          <ChartViewToggle
+            ariaLabel="Chart type"
+            variant="icon"
+            value={chartType}
+            onValueChange={setChartType}
+            options={[
+              { value: 'pie', label: 'Pie Chart', icon: PieChartIcon },
+              { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
+            ]}
+          />
+          <InlineViewToggle />
+          <InlineCsvButton />
         </div>
       </div>
+      )}
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height={500}>
+      {!tableMode && (
+      <ResponsiveContainer width="100%" height={isExpanded ? 480 : 300}>
         {chartType === 'pie' ? (
           <PieChart>
             <Pie
@@ -262,44 +276,42 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            {isExpanded && <Legend />}
           </PieChart>
         ) : (
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               dataKey="displayName"
-              stroke="#6B7280"
-              fontSize={11}
-              angle={0}
-              textAnchor="middle"
+              stroke={CHART_STRUCTURE_COLORS.axis}
               height={90}
               interval={0}
+              tick={<SectorXTick />}
             />
             <YAxis
-              stroke="#6B7280"
+              stroke={CHART_STRUCTURE_COLORS.axis}
               fontSize={12}
               tickFormatter={formatAxisCurrency}
-              label={{
-                value: `Amount (USD)`,
-                angle: -90,
-                position: 'insideLeft'
-              }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="displayValue" fill="#4c5568" radius={[4, 4, 0, 0]} />
           </BarChart>
         )}
       </ResponsiveContainer>
+      )}
 
-      {/* Summary */}
-      <div className="mt-4 text-body text-muted-foreground">
-        <p>
-          <strong>Showing:</strong> Top {topN} sectors | 
-          <strong> Total Activities:</strong> {data.reduce((sum, item) => sum + item.activityCount, 0)} | 
-          <strong> Sectors:</strong> {data.length}
+      {/* Explanatory paragraph — only in expanded view */}
+      {isExpanded && (
+      <div className="mt-6">
+        <p className="text-body text-muted-foreground leading-relaxed">
+          This chart shows how activity funding is distributed across DAC sectors, ranked by the selected
+          metric. Use it to see which sectors absorb the most resources and where coverage is thin — the
+          pie view emphasises each sector&apos;s share of the whole, while the bar view makes absolute
+          values easy to compare. Switch the Top-N control to widen or narrow the field, and use the
+          metric toggle to compare how budgets, disbursements and expenditures are spread across sectors.
         </p>
       </div>
+      )}
     </div>
   );
 };

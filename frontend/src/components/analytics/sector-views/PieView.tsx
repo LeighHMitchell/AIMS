@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
-import { formatTooltipCurrency } from '@/lib/format'
+import { formatTooltipCurrency, formatCurrencyCompact } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import type { SectorSlice } from './types'
 
@@ -18,6 +18,9 @@ interface PieViewProps {
   slices: SectorSlice[]
   height: number
   topN?: number
+  // Label for the value row in the tooltip (the pie shows the sum across the
+  // selected metrics). Defaults to "Value".
+  valueLabel?: string
 }
 
 interface PieDatum {
@@ -26,6 +29,32 @@ interface PieDatum {
   value: number
   percentage: number
   color: string
+  activityCount: number
+}
+
+// Dark/white label text for best contrast against a slice colour.
+function contrastText(color?: string): string {
+  let r = 100, g = 116, b = 139
+  if (color?.startsWith('#')) {
+    const h = color.slice(1)
+    const hex = h.length === 3 ? h.split('').map((x) => x + x).join('') : h
+    r = parseInt(hex.slice(0, 2), 16)
+    g = parseInt(hex.slice(2, 4), 16)
+    b = parseInt(hex.slice(4, 6), 16)
+  } else {
+    const m = color?.match(/\d+(\.\d+)?/g)
+    if (m && m.length >= 3) { r = +m[0]; g = +m[1]; b = +m[2] }
+  }
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return lum > 0.6 ? '#1e293b' : '#ffffff'
+}
+
+// Sub-label under the center total, e.g. "total disbursements". When the metric
+// label already starts with "Total" (the multi-metric case) it's used as-is so
+// we don't get "total total (2 metrics)".
+function metricTotalPhrase(valueLabel?: string): string {
+  if (!valueLabel || valueLabel === 'Value') return 'total'
+  return /^total/i.test(valueLabel) ? valueLabel.toLowerCase() : `total ${valueLabel.toLowerCase()}`
 }
 
 function TitleWithCode({ code, name }: { code: string; name: string }) {
@@ -40,7 +69,7 @@ function TitleWithCode({ code, name }: { code: string; name: string }) {
   )
 }
 
-export function PieView({ slices, height, topN = 10 }: PieViewProps) {
+export function PieView({ slices, height, topN = 10, valueLabel = 'Value' }: PieViewProps) {
   const isExpanded = useChartExpansion()
 
   const data = useMemo<PieDatum[]>(() => {
@@ -56,6 +85,7 @@ export function PieView({ slices, height, topN = 10 }: PieViewProps) {
       value: s.value,
       percentage: (s.value / total) * 100,
       color: s.color,
+      activityCount: s.activityCount,
     }))
 
     if (rest.length > 0) {
@@ -67,11 +97,20 @@ export function PieView({ slices, height, topN = 10 }: PieViewProps) {
           value: othersValue,
           percentage: (othersValue / total) * 100,
           color: OTHERS_COLOR,
+          // Approximate: distinct activities can't be summed exactly across the
+          // bucketed sectors, so the Others count may overstate slightly.
+          activityCount: rest.reduce((sum, s) => sum + s.activityCount, 0),
         })
       }
     }
     return out
   }, [slices, topN])
+
+  // Center summary: grand total across ALL slices (not just the visible top-N)
+  // and the count of funded sectors (non-zero slices).
+  const grandTotal = useMemo(() => slices.reduce((sum, s) => sum + s.value, 0), [slices])
+  const sectorCount = useMemo(() => slices.filter(s => s.value > 0).length, [slices])
+  const metricPhrase = metricTotalPhrase(valueLabel)
 
   if (data.length === 0) {
     return (
@@ -98,7 +137,7 @@ export function PieView({ slices, height, topN = 10 }: PieViewProps) {
       <text
         x={x}
         y={y}
-        fill="#fff"
+        fill={contrastText(props.payload?.color || props.color)}
         textAnchor="middle"
         dominantBaseline="central"
         className="text-helper font-semibold"
@@ -114,13 +153,17 @@ export function PieView({ slices, height, topN = 10 }: PieViewProps) {
     const swatch = item.payload?.color || item.color
     const rows = [
       {
-        label: 'Disbursements',
+        label: valueLabel,
         value: formatTooltipCurrency(item.value, isExpanded),
         color: swatch,
       },
       {
         label: 'Share of total',
         value: `${(item.payload?.percentage ?? 0).toFixed(1)}%`,
+      },
+      {
+        label: 'Activities',
+        value: (item.payload?.activityCount ?? 0).toLocaleString(),
       },
     ]
     return (
@@ -137,30 +180,45 @@ export function PieView({ slices, height, topN = 10 }: PieViewProps) {
 
   return (
     <div className="w-full" style={{ height }}>
-      <ResponsiveContainer width="100%" height={pieAreaHeight}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={renderLabel}
-            // Donut: hollow center via a 55% inner radius. Outer at 92% keeps
-            // plenty of room for the in-slice percentage labels at the
-            // midpoint between inner and outer.
-            innerRadius="55%"
-            outerRadius="92%"
-            paddingAngle={1}
-            dataKey="value"
-            isAnimationActive={false}
-          >
-            {data.map((entry, i) => (
-              <Cell key={`cell-${i}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-        </PieChart>
-      </ResponsiveContainer>
+      <div className="relative w-full" style={{ height: pieAreaHeight }}>
+        <ResponsiveContainer width="100%" height={pieAreaHeight}>
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderLabel}
+              // Donut: hollow center via a 55% inner radius. Outer at 92% keeps
+              // plenty of room for the in-slice percentage labels at the
+              // midpoint between inner and outer.
+              innerRadius="55%"
+              outerRadius="92%"
+              paddingAngle={1}
+              dataKey="value"
+              isAnimationActive={false}
+            >
+              {data.map((entry, i) => (
+                <Cell key={`cell-${i}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+        {/* Center summary sits in the donut hole; pointer-events-none so hover
+            still reaches the slices underneath. */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+          <span className={`font-bold leading-none text-foreground ${isExpanded ? 'text-2xl' : 'text-base'}`}>
+            {formatCurrencyCompact(grandTotal)}
+          </span>
+          <span className={`text-muted-foreground leading-tight mt-0.5 ${isExpanded ? 'text-xs' : 'text-[10px]'}`}>
+            {metricPhrase}
+          </span>
+          <span className={`text-muted-foreground leading-tight mt-1 ${isExpanded ? 'text-xs' : 'text-[10px]'}`}>
+            {sectorCount} {sectorCount === 1 ? 'sector' : 'sectors'} funded
+          </span>
+        </div>
+      </div>
       {isExpanded && (
         // Center the legend horizontally beneath the pie: outer flex centers,
         // inner ul keeps the two-column flow so long sector names don't wrap

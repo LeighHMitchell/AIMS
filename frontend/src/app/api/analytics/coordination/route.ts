@@ -151,6 +151,19 @@ export async function GET(request: NextRequest) {
     const hasFinanceTypeFilter = financeTypeFilter.size > 0;
     const hasDonorFilter = donorFilter.size > 0;
 
+    // Multi-measure support: when `measures` (comma-separated) is supplied, the
+    // bubble size is the SUM of the selected financial metrics. Falls back to
+    // the single `measure` param for back-compat (which also covers the count
+    // measures activities / donors / avgSize). Only financial keys are summed.
+    const isFinancialMeasure = (m: string) => m === 'budgets' || m === 'planned' || m.startsWith('tx_');
+    const measuresParam = parseCsv(searchParams.get('measures')).filter(isFinancialMeasure);
+    const multiMeasure = measuresParam.length > 0;
+    const selectedMeasures = multiMeasure ? measuresParam : [measure];
+    const primaryMeasure = (selectedMeasures[0] || measure) as CoordinationMeasure;
+    const measuresLabel = multiMeasure && selectedMeasures.length > 1
+      ? `${selectedMeasures.length} metrics`
+      : (MEASURE_LABEL[primaryMeasure] || MEASURE_LABEL[measure]);
+
     // 1. Published activities + their defaults (for fallback aid/finance/flow type).
     const { data: activities, error: activitiesError } = await supabase
       .from('activities')
@@ -176,13 +189,13 @@ export async function GET(request: NextRequest) {
       const empty: CoordinationResponse = {
         success: true,
         level,
-        measure,
-        measureLabel: MEASURE_LABEL[measure],
+        measure: primaryMeasure,
+        measureLabel: measuresLabel,
         periodLabel: periodLabel(dateFrom, dateTo),
         data: { name: 'Aid Distribution by Sector', children: [] },
         summary: {
           totalValue: 0,
-          measureLabel: MEASURE_LABEL[measure],
+          measureLabel: measuresLabel,
           categoryCount: 0,
           sectorCount: 0,
           subSectorCount: 0,
@@ -258,72 +271,78 @@ export async function GET(request: NextRequest) {
     //    Returns activity_id → financial value (USD-equivalent).
     const activityValue = new Map<string, number>();
 
-    if (measure.startsWith('tx_')) {
-      const code = measure.slice(3);
-      const { data: txs, error: txError } = await supabase
-        .from('transactions')
-        .select('activity_id, value, value_usd, transaction_date, transaction_type, aid_type, finance_type')
-        .in('activity_id', activityIds)
-        .eq('transaction_type', code);
-      if (txError) {
-        console.error('[coordination] transactions query failed:', txError);
-        return NextResponse.json({ success: false, error: 'Failed to fetch transactions' }, { status: 500 });
+    // Accumulate one financial measure's per-activity value into activityValue.
+    // Called once per selected measure so multi-select sums them.
+    const accumulateFinancial = async (m: string) => {
+      if (m.startsWith('tx_')) {
+        const code = m.slice(3);
+        const { data: txs, error: txError } = await supabase
+          .from('transactions')
+          .select('activity_id, value, value_usd, transaction_date, transaction_type, aid_type, finance_type')
+          .in('activity_id', activityIds)
+          .eq('transaction_type', code);
+        if (txError) {
+          console.error('[coordination] transactions query failed:', txError);
+          return;
+        }
+        (txs || []).forEach((t: any) => {
+          const date = t.transaction_date ? new Date(t.transaction_date) : null;
+          if (dateFrom && date && date < dateFrom) return;
+          if (dateTo && date && date > dateTo) return;
+          const defaults = activityDefaults.get(t.activity_id);
+          const effAid = t.aid_type || defaults?.aid || null;
+          const effFin = t.finance_type || defaults?.finance || null;
+          if (hasAidTypeFilter && (!effAid || !aidTypeFilter.has(String(effAid)))) return;
+          if (hasFinanceTypeFilter && (!effFin || !financeTypeFilter.has(String(effFin)))) return;
+          const v = num(t.value_usd) || num(t.value);
+          if (v <= 0) return;
+          activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
+        });
+      } else if (m === 'budgets') {
+        const { data: budgets, error: budgetsError } = await supabase
+          .from('activity_budgets')
+          .select('activity_id, value, usd_value, period_start, period_end')
+          .in('activity_id', activityIds);
+        if (budgetsError) {
+          console.error('[coordination] activity_budgets query failed:', budgetsError);
+        }
+        (budgets || []).forEach((b: any) => {
+          const defaults = activityDefaults.get(b.activity_id);
+          if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
+          if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
+          const raw = num(b.usd_value) || num(b.value);
+          if (raw <= 0) return;
+          const ps = b.period_start ? new Date(b.period_start) : null;
+          const pe = b.period_end ? new Date(b.period_end) : null;
+          const portion = ps && pe ? prorate(raw, ps, pe, dateFrom, dateTo) : raw;
+          if (portion <= 0) return;
+          activityValue.set(b.activity_id, (activityValue.get(b.activity_id) || 0) + portion);
+        });
+      } else if (m === 'planned') {
+        // planned_disbursements uses `amount` / `usd_amount` (not value / usd_value).
+        const { data: pds, error: pdError } = await supabase
+          .from('planned_disbursements')
+          .select('activity_id, amount, usd_amount, period_start, period_end')
+          .in('activity_id', activityIds);
+        if (pdError) {
+          console.error('[coordination] planned_disbursements query failed:', pdError);
+        }
+        (pds || []).forEach((pd: any) => {
+          const defaults = activityDefaults.get(pd.activity_id);
+          if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
+          if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
+          const raw = num(pd.usd_amount) || num(pd.amount);
+          if (raw <= 0) return;
+          const ps = pd.period_start ? new Date(pd.period_start) : null;
+          const pe = pd.period_end ? new Date(pd.period_end) : null;
+          const portion = ps && pe ? prorate(raw, ps, pe, dateFrom, dateTo) : raw;
+          if (portion <= 0) return;
+          activityValue.set(pd.activity_id, (activityValue.get(pd.activity_id) || 0) + portion);
+        });
       }
-      (txs || []).forEach((t: any) => {
-        const date = t.transaction_date ? new Date(t.transaction_date) : null;
-        if (dateFrom && date && date < dateFrom) return;
-        if (dateTo && date && date > dateTo) return;
-        const defaults = activityDefaults.get(t.activity_id);
-        const effAid = t.aid_type || defaults?.aid || null;
-        const effFin = t.finance_type || defaults?.finance || null;
-        if (hasAidTypeFilter && (!effAid || !aidTypeFilter.has(String(effAid)))) return;
-        if (hasFinanceTypeFilter && (!effFin || !financeTypeFilter.has(String(effFin)))) return;
-        const v = num(t.value_usd) || num(t.value);
-        if (v <= 0) return;
-        activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
-      });
-    } else if (measure === 'budgets') {
-      const { data: budgets, error: budgetsError } = await supabase
-        .from('activity_budgets')
-        .select('activity_id, value, usd_value, period_start, period_end')
-        .in('activity_id', activityIds);
-      if (budgetsError) {
-        console.error('[coordination] activity_budgets query failed:', budgetsError);
-      }
-      (budgets || []).forEach((b: any) => {
-        const defaults = activityDefaults.get(b.activity_id);
-        if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
-        if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
-        const raw = num(b.usd_value) || num(b.value);
-        if (raw <= 0) return;
-        const ps = b.period_start ? new Date(b.period_start) : null;
-        const pe = b.period_end ? new Date(b.period_end) : null;
-        const portion = ps && pe ? prorate(raw, ps, pe, dateFrom, dateTo) : raw;
-        if (portion <= 0) return;
-        activityValue.set(b.activity_id, (activityValue.get(b.activity_id) || 0) + portion);
-      });
-    } else if (measure === 'planned') {
-      // planned_disbursements uses `amount` / `usd_amount` (not value / usd_value).
-      const { data: pds, error: pdError } = await supabase
-        .from('planned_disbursements')
-        .select('activity_id, amount, usd_amount, period_start, period_end')
-        .in('activity_id', activityIds);
-      if (pdError) {
-        console.error('[coordination] planned_disbursements query failed:', pdError);
-      }
-      (pds || []).forEach((pd: any) => {
-        const defaults = activityDefaults.get(pd.activity_id);
-        if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
-        if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
-        const raw = num(pd.usd_amount) || num(pd.amount);
-        if (raw <= 0) return;
-        const ps = pd.period_start ? new Date(pd.period_start) : null;
-        const pe = pd.period_end ? new Date(pd.period_end) : null;
-        const portion = ps && pe ? prorate(raw, ps, pe, dateFrom, dateTo) : raw;
-        if (portion <= 0) return;
-        activityValue.set(pd.activity_id, (activityValue.get(pd.activity_id) || 0) + portion);
-      });
-    } else if (measure === 'avgSize') {
+    };
+
+    if (measure === 'avgSize' && !multiMeasure) {
       // Use disbursements for the dollar component; the average is computed per bucket below.
       const { data: txs } = await supabase
         .from('transactions')
@@ -343,8 +362,14 @@ export async function GET(request: NextRequest) {
         if (v <= 0) return;
         activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
       });
+    } else if (measure === 'activities' || measure === 'donors') {
+      // Count measures don't need a dollar value per activity.
+    } else {
+      // Financial measure(s): sum each selected metric into activityValue.
+      for (const m of selectedMeasures) {
+        await accumulateFinancial(m);
+      }
     }
-    // For 'activities' / 'donors' measures we don't need a dollar value per activity.
 
     // 7. Apply donor filter — drop activities whose participants don't intersect the filter.
     const donorFilterList = Array.from(donorFilter);
@@ -462,7 +487,7 @@ export async function GET(request: NextRequest) {
     //     the inner bubbles are sized by attributed funder value (so non-funder
     //     participants don't pollute the view); for count measures they're sized
     //     by per-org activity count in this sector (so every participant shows).
-    const isCountMeasure = measure === 'activities' || measure === 'donors';
+    const isCountMeasure = !multiMeasure && (measure === 'activities' || measure === 'donors');
 
     const buildBubble = (state: BucketState): CoordinationParentNode => {
       const topDonorIds = Array.from(state.donorValues.entries())
@@ -474,9 +499,13 @@ export async function GET(request: NextRequest) {
       });
 
       let value = state.value;
-      if (measure === 'activities') value = state.activityIds.size;
-      else if (measure === 'donors') value = state.donorIds.size;
-      else if (measure === 'avgSize') value = state.activityIds.size > 0 ? state.value / state.activityIds.size : 0;
+      // Count/avg measures only apply in single-measure mode; multi-measure is
+      // always a financial sum (state.value).
+      if (!multiMeasure) {
+        if (measure === 'activities') value = state.activityIds.size;
+        else if (measure === 'donors') value = state.donorIds.size;
+        else if (measure === 'avgSize') value = state.activityIds.size > 0 ? state.value / state.activityIds.size : 0;
+      }
 
       // Build inner bubbles (the "partners shown as smaller circles" in the
       // dashboard description). Sized by funder attribution for financial
@@ -552,13 +581,13 @@ export async function GET(request: NextRequest) {
     const response: CoordinationResponse = {
       success: true,
       level,
-      measure,
-      measureLabel: MEASURE_LABEL[measure],
+      measure: primaryMeasure,
+      measureLabel: measuresLabel,
       periodLabel: periodLabel(dateFrom, dateTo),
       data: { name: 'Aid Distribution by Sector', children },
       summary: {
         totalValue: summaryTotal,
-        measureLabel: MEASURE_LABEL[measure],
+        measureLabel: measuresLabel,
         categoryCount: uniqueCategoryCodes.size,
         sectorCount: uniqueSectorCodes.size,
         subSectorCount: uniqueSubSectorCodes.size,

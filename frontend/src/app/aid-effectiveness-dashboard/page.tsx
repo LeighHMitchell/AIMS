@@ -1067,7 +1067,7 @@ export default function AidEffectivenessDashboard() {
                     )
                   }
                   return (
-                    <Card className="bg-card border-border">
+                    <Card className="bg-card">
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
@@ -1230,7 +1230,7 @@ export default function AidEffectivenessDashboard() {
                     )
                   }
                   return (
-                    <Card className="bg-card border-border">
+                    <Card className="bg-card">
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
@@ -1372,7 +1372,7 @@ export default function AidEffectivenessDashboard() {
                     </ResponsiveContainer>
                   )
                   return (
-                    <Card className="bg-card border-border">
+                    <Card className="bg-card">
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
@@ -1446,7 +1446,7 @@ export default function AidEffectivenessDashboard() {
                     </ResponsiveContainer>
                   )
                   return (
-                    <Card className="bg-card border-border">
+                    <Card className="bg-card">
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
@@ -1517,7 +1517,7 @@ export default function AidEffectivenessDashboard() {
                     </div>
                   )
                   return (
-                    <Card className="bg-card border-border">
+                    <Card className="bg-card">
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
@@ -1563,7 +1563,7 @@ export default function AidEffectivenessDashboard() {
                 })()}
 
                 {/* Implementing Partners */}
-                <Card className="bg-card border-border">
+                <Card className="bg-card">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
@@ -1702,7 +1702,7 @@ function SectionDetail({ title, badge, fields, total, score, helpKey, descriptio
     </ResponsiveContainer>
   )
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
@@ -1819,7 +1819,7 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
     .sort((a, b) => b.count - a.count)
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card">
       <CardHeader>
         <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
           Reasons for Not Using Government Systems

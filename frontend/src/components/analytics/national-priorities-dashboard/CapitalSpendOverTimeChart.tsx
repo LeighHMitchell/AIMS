@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -50,10 +50,24 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { useCustomYears } from "@/hooks/useCustomYears";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { useYearRangeDefault } from "@/hooks/useYearRangeDefault";
+import { YearRangeChip } from "@/components/ui/year-range-chip";
+import { getCustomYearLabel } from "@/types/custom-years";
+import { MetricsMultiSelect } from "@/components/analytics/MetricsMultiSelect";
+import { type Metric } from "@/lib/financial-metrics";
+
+// Capital APIs support these four sources; map shared Metric keys → API tokens.
+const CAPITAL_METRIC_KEYS: Metric[] = ['budgets', 'planned', 'tx_2', 'tx_3'];
+const METRIC_TO_API: Partial<Record<Metric, string>> = {
+  budgets: 'budgets',
+  planned: 'planned',
+  tx_2: 'commitments',
+  tx_3: 'disbursements',
+};
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
+import { ChartDataTable } from '@/components/ui/chart-data-table';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ChartType = "bar" | "line" | "area" | "table";
@@ -152,11 +166,21 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
   const isExpanded = useChartExpansion();
   const [data, setData] = useState<YearlyCapitalSpend[]>([]);
   const [loading, setLoading] = useState(true);
-  const [metric, setMetric] = useState<MetricType>("budgets");
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>(['budgets']);
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [stackMode, setStackMode] = useState<StackMode>("stacked");
-  const [timeRange, setTimeRange] = useState<TimeRangeType>("5y");
+  // Standard calendar + year-range selection (replaces the old "Last 5Y" filter).
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
+  const [dateWindow, setDateWindow] = useState<{ from: Date; to: Date } | null>(null);
   const [totals, setTotals] = useState({ capitalSpend: 0, nonCapitalSpend: 0 });
+
+  // Default the year picker to the full span of years that actually have data
+  // (min → max), rather than an empty selection / rolling window.
+  const dataYears = useMemo(
+    () => data.map((d) => d.year).filter((y): y is number => Number.isFinite(y)),
+    [data]
+  );
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears);
   // Animation key to trigger re-render with animation
   const [animationKey, setAnimationKey] = useState(0);
 
@@ -178,14 +202,11 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({ metric });
-      const { from, to } = getDateRangeFromTimeRange(timeRange);
-      if (from) {
-        params.set("dateFrom", from.toISOString());
-      }
-      if (to) {
-        params.set("dateTo", to.toISOString());
-      }
+      const apiMetrics = selectedMetrics.map(m => METRIC_TO_API[m]).filter(Boolean) as string[];
+      const params = new URLSearchParams({ metrics: apiMetrics.join(',') || 'budgets' });
+      if (selectedCustomYearId) params.set("customYearId", selectedCustomYearId);
+      if (dateWindow?.from) params.set("dateFrom", dateWindow.from.toISOString());
+      if (dateWindow?.to) params.set("dateTo", dateWindow.to.toISOString());
 
       const response = await apiFetch(`/api/analytics/capital-spend-over-time?${params}`);
       const result = await response.json();
@@ -202,7 +223,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
     } finally {
       setLoading(false);
     }
-  }, [metric, timeRange]);
+  }, [selectedMetrics, dateWindow, selectedCustomYearId]);
 
   useEffect(() => {
     fetchData();
@@ -219,9 +240,17 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
       "Non-Capital Spend (USD)": d.nonCapitalSpend,
       "Total (USD)": d.total,
     }));
-    exportChartToCSV(exportData, `capital-spend-over-time-${metric}`);
+    exportChartToCSV(exportData, `capital-spend-over-time`);
     toast.success("Data exported successfully");
   };
+
+  // Label each year in the selected calendar (e.g. CY2024 / FY24-25). The API
+  // already buckets by the calendar's fiscal year when customYearId is sent.
+  const selectedYear = customYears.find(cy => cy.id === selectedCustomYearId)
+  const chartData = data.map(d => ({
+    ...d,
+    periodLabel: selectedYear ? getCustomYearLabel(selectedYear, d.year) : String(d.year),
+  }))
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null
@@ -260,14 +289,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
   };
 
   const renderBarChart = () => (
-    <ResponsiveContainer width="100%" height="100%" key={`bar-${animationKey}`}>
+    <ResponsiveContainer width="100%" height={isExpanded ? 440 : "100%"} key={`bar-${animationKey}`}>
       <BarChart
-        data={data}
+        data={chartData}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
-          dataKey="year"
+          dataKey="periodLabel"
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
           tickLine={false}
@@ -316,14 +345,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
   );
 
   const renderLineChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={isExpanded ? 440 : "100%"}>
       <LineChart
-        data={data}
+        data={chartData}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
-          dataKey="year"
+          dataKey="periodLabel"
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
           tickLine={false}
@@ -374,9 +403,9 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
   );
 
   const renderAreaChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={isExpanded ? 440 : "100%"}>
       <AreaChart
-        data={data}
+        data={chartData}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
       >
         <defs>
@@ -391,7 +420,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
-          dataKey="year"
+          dataKey="periodLabel"
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
           tickLine={false}
@@ -439,40 +468,31 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
     </ResponsiveContainer>
   );
 
-  const renderTable = () => (
-    <div className="overflow-auto h-full">
-      <Table>
-        <TableHeader>
-          <TableRow className="sticky top-0 bg-white z-10 [&>th]:align-bottom">
-            <TableHead>Year</TableHead>
-            <TableHead className="text-right">Capital</TableHead>
-            <TableHead className="text-right whitespace-normal">Non-Capital</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">Capital %</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((row) => (
-            <TableRow key={row.year}>
-              <TableCell className="font-medium">{row.year}</TableCell>
-              <TableCell className="text-right font-mono">
-                {formatCurrencyFull(row.capitalSpend)}
-              </TableCell>
-              <TableCell className="text-right font-mono">
-                {formatCurrencyFull(row.nonCapitalSpend)}
-              </TableCell>
-              <TableCell className="text-right font-mono">
-                {formatCurrencyFull(row.total)}
-              </TableCell>
-              <TableCell className="text-right">
-                {row.total > 0 ? ((row.capitalSpend / row.total) * 100).toFixed(1) : 0}%
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  const renderTable = () => {
+    const tableData = chartData.map((row) => ({
+      ...row,
+      capitalPercentage: row.total > 0 ? (row.capitalSpend / row.total) * 100 : 0,
+    }));
+    return (
+      <ChartDataTable
+        rows={tableData}
+        columns={[
+          { key: 'periodLabel', label: 'Year', numeric: false },
+          { key: 'capitalSpend', label: 'Capital', numeric: true, currency: 'USD', color: CAPITAL_COLORS.capital },
+          { key: 'nonCapitalSpend', label: 'Non-Capital', numeric: true, currency: 'USD', color: CAPITAL_COLORS.nonCapital },
+          { key: 'total', label: 'Total', numeric: true, currency: 'USD', color: CAPITAL_COLORS.accent1 },
+          {
+            key: 'capitalPercentage',
+            label: 'Capital %',
+            numeric: true,
+            includeInTotal: false,
+            format: (v) => `${(Number(v) || 0).toFixed(1)}%`,
+          },
+        ]}
+        maxHeight="100%"
+      />
+    );
+  };
 
   const renderLegend = () => {
     // Line and area charts use accent1 for non-capital
@@ -513,7 +533,8 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
 
     return (
       <div className="flex flex-col flex-1 min-h-0">
-        {!compact && renderLegend()}
+        {/* The recharts <Legend> inside each chart already labels Capital /
+            Non-Capital, so the separate totals legend above was redundant. */}
         <div className="flex-1 min-h-0">
           {chartType === "bar" && renderBarChart()}
           {chartType === "line" && renderLineChart()}
@@ -525,64 +546,33 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
   };
 
   const renderControls = () => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
-      {/* Left side controls */}
-      <div className="flex items-center gap-2">
-        <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-          <SelectTrigger className="min-w-[280px]">
-            <span className="flex items-center gap-2 truncate">
-              {metric === 'budgets' && <Wallet className="h-4 w-4 flex-shrink-0" />}
-              {metric === 'planned' && <Calendar className="h-4 w-4 flex-shrink-0" />}
-              {metric === 'commitments' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
-              {metric === 'disbursements' && <DollarSign className="h-4 w-4 flex-shrink-0" />}
-              <span className="truncate">
-                {metric === 'budgets' && 'Total Budgets'}
-                {metric === 'planned' && 'Total Planned Disbursements'}
-                {metric === 'commitments' && 'Total Commitments'}
-                {metric === 'disbursements' && 'Total Disbursements'}
-              </span>
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="budgets">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                <span>Total Budgets</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="planned">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>Total Planned Disbursements</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="commitments">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                <span>Total Commitments</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="disbursements">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                <span>Total Disbursements</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Custom Year Selector (only in expanded view) */}
-        {!compact && (
-          <CustomYearSelector
-            customYears={customYears}
-            selectedId={selectedCustomYearId}
-            onSelect={setSelectedCustomYearId}
-            loading={customYearsLoading}
-            placeholder="Year type"
+    <div className="space-y-3">
+      {/* Calendar + year-range selector on its own row at the top (expanded
+          only) — standard control used across the dashboard. */}
+      {!compact && (
+        <YearRangeChip
+          selectedYears={selectedYears}
+          onYearsChange={setSelectedYears}
+          actualDataRange={actualDataRange}
+          customYears={customYears}
+          calendarType={selectedCustomYearId ?? ''}
+          onCalendarTypeChange={setSelectedCustomYearId}
+          onDateRangeChange={setDateWindow}
+        />
+      )}
+      {/* Controls row — filters + toggles left, CSV right. */}
+      <div className="flex items-center justify-between gap-2 mb-3 flex-shrink-0">
+        {/* Filters (left) — shared metrics multi-select. */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <MetricsMultiSelect
+            selected={selectedMetrics}
+            onChange={setSelectedMetrics}
+            availableKeys={CAPITAL_METRIC_KEYS}
+            triggerClassName="h-8 justify-between min-w-[240px]"
           />
-        )}
-      </div>
-
+        </div>
+        {/* Button groups + CSV, right-aligned. */}
+        <div className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1">
         {/* Stack mode toggles - only show when in bar view */}
         {chartType === "bar" && (
@@ -654,7 +644,8 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
           </Button>
         </div>
 
-        {/* Export button - only in expanded view */}
+        </div>
+        {/* Export button - only in expanded view, right-aligned alone */}
         {!compact && (
           <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
             <Button
@@ -669,32 +660,15 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0, compact = false }: C
             </Button>
           </div>
         )}
-      </div>
+        </div>
     </div>
-  );
-
-  const renderTimeRangeFilter = () => (
-    <div className="mb-4">
-      <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-helper">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {TIME_RANGE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.value === "all" ? "All Time" : `Last ${option.label}`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 
   return (
     <div className="h-full flex flex-col">
-      {!compact && renderTimeRangeFilter()}
-      {renderContent()}
       {!compact && renderControls()}
+      {renderContent()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.

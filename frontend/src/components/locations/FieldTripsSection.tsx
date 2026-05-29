@@ -16,7 +16,6 @@ import {
   FileText,
   Pencil,
   Trash2,
-  Footprints,
   Copy,
   MapPin,
   MoreVertical,
@@ -194,7 +193,11 @@ export const FieldTripsSection: React.FC<FieldTripsSectionProps> = ({
         </div>
       ) : trips.length === 0 ? (
         <Card className="flex flex-col items-center gap-2 p-8 text-center">
-          <Footprints className="h-7 w-7 text-muted-foreground" />
+          <img
+            src="/images/empty-field-trips.png"
+            alt="No field trips"
+            className="h-28 w-28 object-contain"
+          />
           <div className="text-body font-medium">No field trips yet</div>
           <p className="max-w-md text-helper text-muted-foreground">
             Log a workshop, site visit, or community consultation — where it happened, what happened,
@@ -214,7 +217,7 @@ export const FieldTripsSection: React.FC<FieldTripsSectionProps> = ({
             return (
               <Card
                 key={trip.id}
-                className="transition-all duration-200 hover:shadow-md w-full border border-border"
+                className="transition-all duration-200 hover:shadow-card-hover w-full"
               >
                 <CardContent className="p-5 relative">
                   <div className="flex items-start gap-5">

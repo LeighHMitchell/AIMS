@@ -107,7 +107,8 @@ const extractDateFromSolrArrays = (
 export async function POST(request: NextRequest) {
 
   try {
-    const body: SearchParams = await request.json()
+    const body: SearchParams = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { reportingOrgRef, recipientCountry, activityTitle, limit = 20 } = body
 
 

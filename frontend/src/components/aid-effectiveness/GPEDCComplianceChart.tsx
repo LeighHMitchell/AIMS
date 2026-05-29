@@ -192,7 +192,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         {/* Summary Cards */}
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -205,7 +205,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -218,7 +218,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -244,7 +244,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         {summary?.principles_summary?.map((principle: any, index: number) => {
           const IconComponent = PRINCIPLE_ICONS[principle.principle as keyof typeof PRINCIPLE_ICONS] || Shield
           return (
-            <Card key={principle.principle} className="bg-card border-border">
+            <Card key={principle.principle} className="bg-card">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <div 
@@ -295,7 +295,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           </ResponsiveContainer>
         )
         return (
-          <Card className="bg-card border-border">
+          <Card className="bg-card">
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
                 <CardTitle className="text-lg font-medium text-foreground">Detailed Indicator Compliance</CardTitle>
@@ -331,7 +331,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
       })()}
 
       {/* Detailed Indicator Breakdown */}
-      <Card className="bg-card border-border">
+      <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">Indicator Analysis</CardTitle>
         </CardHeader>
@@ -394,7 +394,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           {principles.map((principle) => {
             const IconComponent = PRINCIPLE_ICONS[principle.principleName as keyof typeof PRINCIPLE_ICONS] || Shield
             return (
-              <Card key={principle.principle} className="bg-card border-border">
+              <Card key={principle.principle} className="bg-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                     <IconComponent 
@@ -441,7 +441,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
       )}
 
       {/* Key Insights and Recommendations */}
-      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-border">
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">
             GPEDC Compliance Insights

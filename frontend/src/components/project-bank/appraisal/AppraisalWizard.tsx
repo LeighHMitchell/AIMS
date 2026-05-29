@@ -609,8 +609,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       <Dialog open={showValidationErrors} onOpenChange={setShowValidationErrors}>
         <DialogContent>
           <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg">
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
+            <DialogTitle>
               Missing Required Information
             </DialogTitle>
             <DialogDescription>
@@ -642,8 +641,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <DialogContent>
           <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg">
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5" />
+            <DialogTitle>
               Submit {currentPhase === 'intake' ? 'Intake' : currentPhase === 'fs2' ? 'Detailed Feasibility Study' : currentPhase === 'fs3' ? getFs3Label(wizard.formData.category_decision as CategoryDecision | null) : 'Preliminary Feasibility Study'} for Review
             </DialogTitle>
             <DialogDescription>

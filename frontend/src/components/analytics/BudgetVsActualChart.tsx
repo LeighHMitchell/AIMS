@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   BarChart,
   Bar,
@@ -11,20 +11,19 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts'
-import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuarter } from 'date-fns'
-import { supabase } from '@/lib/supabase'
-import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
+import { AlertCircle } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch'
+import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS, BUDGET_COLOR, getTransactionTypeColor } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
+import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from '@/components/ui/inline-toolbar-buttons'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
-import {
-  splitBudgetAcrossYears,
-  splitTransactionAcrossYears
-} from '@/utils/year-allocation'
+import { CustomYear } from '@/types/custom-years'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 
 interface BudgetVsActualChartProps {
   dateRange: {
@@ -45,185 +44,128 @@ interface ChartData {
   budget: number
   disbursed: number
   expenditure: number
-  sortKey?: string
 }
 
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 
 export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChange }: BudgetVsActualChartProps) {
   const isExpanded = useChartExpansion()
+  const tableMode = useChartCardTableMode()
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
   const [selectedYears, setSelectedYears] = useState<number[]>([])
-  const allocationMethod: 'proportional' | 'period-start' = 'proportional' // Always use proportional
+  // Custom (fiscal) years, used to drive the server's fiscal-year bucketing
+  // when groupBy === 'fiscal'. Fetched once on mount.
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+
+  useEffect(() => {
+    apiFetch('/api/custom-years')
+      .then((r) => r.json())
+      .then((result) => setCustomYears(result.data || []))
+      .catch(() => undefined)
+  }, [])
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey, groupBy, allocationMethod])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange, filters, refreshKey, groupBy, customYears])
 
-  const getFiscalYear = (date: Date): string => {
-    const year = getYear(date)
-    const month = date.getMonth() + 1 // getMonth() is 0-indexed
-    
-    if (month >= 7) {
-      // July-December: fiscal year is current year to next year
-      return `${year}-${year + 1}`
-    } else {
-      // January-June: fiscal year is previous year to current year
-      return `${year - 1}-${year}`
-    }
-  }
+  // Pick a fiscal (non-calendar) custom year to hand the server when the user
+  // switches to Financial Year grouping. Falls back to undefined → the server
+  // then buckets by calendar year, which is a safe degradation.
+  const fiscalCustomYearId = (() => {
+    const fiscal = customYears.find((cy) =>
+      cy.name?.toLowerCase().includes('financial') ||
+      cy.name?.toLowerCase().includes('fiscal') ||
+      (typeof (cy as any).startMonth === 'number' && (cy as any).startMonth !== 1)
+    )
+    return fiscal?.id
+  })()
 
-  const getQuarterLabel = (date: Date): string => {
-    const year = getYear(date)
-    const quarter = getQuarter(date)
-    return `Q${quarter} ${year}`
-  }
+  // Calendar short code (e.g. "CY") for the X-axis + tooltip labels — derived
+  // from the Gregorian custom year so a "2024" period reads as "CY2024".
+  const yearPrefix =
+    customYears.find((cy) => /gregorian/i.test(cy.name || ''))?.shortName?.trim() || 'CY'
+  const formatPeriodTick = (period: string | number) =>
+    /^\d{4}$/.test(String(period)) ? `${yearPrefix}${period}` : String(period)
 
-  const aggregateByPeriod = <T extends { period_start?: string; transaction_date?: string; value: any }>(
-    data: T[],
-    periodFn: (date: Date) => string,
-    dateField: keyof T
-  ) => {
-    const periodMap = new Map<string, number>()
-    
-    data.forEach(item => {
-      const dateValue = item[dateField] as string | undefined
-      if (!dateValue) return
-      
-      const date = new Date(dateValue)
-      const period = periodFn(date)
-      
-      const value = parseFloat(item.value?.toString() || '0') || 0
-      periodMap.set(period, (periodMap.get(period) || 0) + value)
-    })
-    
-    return periodMap
-  }
-
+  // The chart pulls from the server route (service-role access) so it isn't
+  // subject to the client RLS that hides `transactions` from the browser, and
+  // so budget USD + period-spanning allocation are handled server-side.
   const fetchData = async () => {
     try {
       setLoading(true)
-      
-      // Fetch all budgets
-      const { data: budgetData } = await supabase
-        .from('activity_budgets')
-        .select('value, period_start')
-        .gte('period_start', dateRange.from.toISOString())
-        .lte('period_start', dateRange.to.toISOString())
 
-      // Build transaction query
-      let transactionQuery = supabase
-        .from('transactions')
-        .select('value, transaction_type, transaction_date')
-        .in('transaction_type', ['3', '4']) // Disbursements and Expenditures
-        .eq('status', 'actual')
-        .gte('transaction_date', dateRange.from.toISOString())
-        .lte('transaction_date', dateRange.to.toISOString())
-
-      // Apply filters
-      if (filters?.donor && filters?.donor !== 'all') {
-        transactionQuery = transactionQuery.eq('provider_org_id', filters.donor)
+      const params = new URLSearchParams()
+      params.set('timePeriod', groupBy === 'quarter' ? 'quarter' : 'year')
+      if (groupBy === 'fiscal' && fiscalCustomYearId) {
+        params.set('customYearId', fiscalCustomYearId)
+      }
+      if (filters?.donor && filters.donor !== 'all') {
+        params.set('donor', filters.donor)
       }
 
-      const { data: transactions } = await transactionQuery
-
-      let chartData: ChartData[] = []
-      let periodFn: (date: Date) => string
-
-      if (groupBy === 'calendar') {
-        periodFn = (date) => getYear(date).toString()
-      } else if (groupBy === 'fiscal') {
-        periodFn = getFiscalYear
-      } else {
-        periodFn = getQuarterLabel
+      const response = await apiFetch(`/api/analytics/budget-vs-spending?${params}`)
+      const result = await response.json()
+      if (!response.ok || result.error) {
+        throw new Error(result.error || `HTTP ${response.status}`)
       }
 
-      // Aggregate budgets by period
-      const budgetMap = new Map<string, number>()
-      
-      if (allocationMethod === 'proportional' && groupBy === 'calendar') {
-        budgetData?.forEach((item: any) => {
-          const allocations = splitBudgetAcrossYears(item)
-          allocations.forEach(alloc => {
-            const period = alloc.year.toString()
-            budgetMap.set(period, (budgetMap.get(period) || 0) + alloc.amount)
-          })
-        })
-      } else {
-        // Default behavior (period start / standard aggregation)
-        const map = aggregateByPeriod(budgetData || [], periodFn, 'period_start')
-        map.forEach((value, key) => budgetMap.set(key, value))
-      }
+      // Map the server shape (disbursements/expenditures) to this chart's
+      // shape (disbursed/expenditure).
+      // Format the period to reflect the selected year type (e.g. "CY2023")
+      // at the source, so the chart x-axis, tooltip, table view and CSV all
+      // read consistently. formatPeriodTick only prefixes bare 4-digit years,
+      // so quarter/fiscal labels pass through unchanged.
+      // Fetch the full available span so the year picker reflects all years that have data.
+      // The server returns every year it has data for; the per-chart year picker
+      // (not the dashboard date filter) controls this chart's span.
+      const rows: ChartData[] = (result.data || []).map((d: any) => ({
+        period: formatPeriodTick(d.period),
+        budget: Number(d.budget) || 0,
+        disbursed: Number(d.disbursements) || 0,
+        expenditure: Number(d.expenditures) || 0,
+      }))
 
-      // Aggregate transactions by period and type
-      const disbursementMap = new Map<string, number>()
-      const expenditureMap = new Map<string, number>()
-      
-      transactions?.forEach((t: any) => {
-        // Check if proportional allocation applies
-        if (allocationMethod === 'proportional' && groupBy === 'calendar') {
-          const allocations = splitTransactionAcrossYears(t)
-          allocations.forEach(alloc => {
-            const period = alloc.year.toString()
-            const value = alloc.amount
-            
-            if (t.transaction_type === '3') {
-              disbursementMap.set(period, (disbursementMap.get(period) || 0) + value)
-            } else if (t.transaction_type === '4') {
-              expenditureMap.set(period, (expenditureMap.get(period) || 0) + value)
-            }
-          })
-        } else {
-          // Standard behavior
-          const date = new Date(t.transaction_date)
-          const period = periodFn(date)
-          const value = parseFloat(t.value) || 0
-          
-          if (t.transaction_type === '3') {
-            disbursementMap.set(period, (disbursementMap.get(period) || 0) + value)
-          } else if (t.transaction_type === '4') {
-            expenditureMap.set(period, (expenditureMap.get(period) || 0) + value)
-          }
-        }
-      })
-
-      // Combine all periods
-      const allPeriods = new Set([
-        ...Array.from(budgetMap.keys()),
-        ...Array.from(disbursementMap.keys()),
-        ...Array.from(expenditureMap.keys())
-      ])
-
-      chartData = Array.from(allPeriods)
-        .map(period => ({
-          period,
-          budget: budgetMap.get(period) || 0,
-          disbursed: disbursementMap.get(period) || 0,
-          expenditure: expenditureMap.get(period) || 0,
-          sortKey: period
-        }))
-
-      // Sort based on grouping mode
-      if (groupBy === 'quarter') {
-        chartData.sort((a, b) => {
-          const [qA, yA] = a.sortKey!.replace('Q', '').split(' ').map(s => parseInt(s))
-          const [qB, yB] = b.sortKey!.replace('Q', '').split(' ').map(s => parseInt(s))
-          return yA !== yB ? yA - yB : qA - qB
-        })
-      } else {
-        chartData.sort((a, b) => a.sortKey!.localeCompare(b.sortKey!))
-      }
-
-      setData(chartData)
-      onDataChange?.(chartData)
+      setData(rows)
+      onDataChange?.(rows)
     } catch (error) {
       console.error('Error fetching budget vs actual data:', error)
+      setData([])
     } finally {
       setLoading(false)
     }
   }
+
+  // Gregorian calendar years present in the loaded data (parsed from each
+  // period label) — used to default the year picker to the full span of years
+  // that actually have data.
+  const dataYears = useMemo(
+    () =>
+      data
+        .map((d) => {
+          const m = d.period.match(/\d{4}/)
+          return m ? parseInt(m[0], 10) : NaN
+        })
+        .filter((y) => Number.isFinite(y)),
+    [data],
+  )
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears)
+
+  // Narrow the displayed periods to the selected year range. The picker
+  // defaults to the full data span, so by default every period is shown.
+  const filteredData = useMemo(() => {
+    if (selectedYears.length === 0) return data
+    const minY = Math.min(...selectedYears)
+    const maxY = Math.max(...selectedYears)
+    return data.filter((d) => {
+      const m = d.period.match(/\d{4}/)
+      if (!m) return true
+      const y = parseInt(m[0], 10)
+      return y >= minY && y <= maxY
+    })
+  }, [data, selectedYears])
 
   const formatCurrency = (value: number) => {
     try {
@@ -253,7 +195,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
         value: formatTooltipCurrency(Number(entry.value) || 0, isExpanded),
         color: entry.color || entry.fill,
       }))
-      return <ChartTooltipCard title={label} rows={rows} />
+      return <ChartTooltipCard title={formatPeriodTick(label)} rows={rows} />
     }
     return null
   }
@@ -264,58 +206,45 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
     )
   }
 
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center text-muted-foreground">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p className="text-lg font-medium">No data available</p>
+          <p className="text-body">No published budgets or spending found for this period.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {/* Aggregation Mode Selector — only shown in expanded view */}
+      {/* Calendar + year selector on its own row at the top (expanded only). */}
       {isExpanded && (
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <YearRangeChip
-              selectedYears={selectedYears}
-              onYearsChange={setSelectedYears}
-              initialDateRange={dateRange}
-            />
-            <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-              <SelectTrigger className="min-w-[280px] h-9 bg-white border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="calendar">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3 w-3" />
-                    Calendar Year
-                  </div>
-                </SelectItem>
-                <SelectItem value="fiscal">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-3 w-3" />
-                    Financial Year
-                  </div>
-                </SelectItem>
-                <SelectItem value="quarter">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-3 w-3" />
-                    Quarterly
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <YearRangeChip
+          selectedYears={selectedYears}
+          onYearsChange={setSelectedYears}
+          actualDataRange={actualDataRange}
+        />
+      )}
 
-          {groupBy === 'fiscal' && (
-            <div className="text-helper text-muted-foreground">
-              Financial Year: July–June
-            </div>
-          )}
+      {/* Controls row — filters + toggles left, CSV right (expanded only). */}
+      {isExpanded && (
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          {/* No dropdowns here — view toggle + CSV are right-aligned. */}
+          <InlineViewToggle />
+          <InlineCsvButton />
         </div>
       )}
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height={400}>
+      {!tableMode && (
+      <ResponsiveContainer width="100%" height={isExpanded ? 400 : 260}>
         <BarChart
-          data={data}
+          data={filteredData}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          key={`budget-vs-actual-${allocationMethod}-${groupBy}`}
+          key={`budget-vs-actual-${groupBy}`}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -324,11 +253,12 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
           />
           <XAxis
             dataKey="period"
+            tickFormatter={formatPeriodTick}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />
           <YAxis
-            tickFormatter={formatAxisCurrency}
+            tickFormatter={(value) => formatAxisCurrency(value)}
             tick={{ fill: '#64748b', fontSize: 12 }}
             axisLine={{ stroke: '#cbd5e1' }}
           />
@@ -371,6 +301,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
           />
         </BarChart>
       </ResponsiveContainer>
+      )}
 
       {/* Explanatory text — only in expanded view */}
       {isExpanded && (

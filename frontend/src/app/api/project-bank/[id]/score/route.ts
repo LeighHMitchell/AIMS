@@ -55,7 +55,8 @@ export async function POST(
   // Allow override from body
   let allStages = false;
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     if (body.stage && ['intake', 'fs1', 'fs2', 'fs3'].includes(body.stage)) {
       stage = body.stage;
     }

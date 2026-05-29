@@ -920,7 +920,7 @@ function ImprovedSectorAllocationFormInner({
 
       {/* IATI Sector Export Level Setting */}
       {activityId && onSectorExportLevelChange && (
-        <Card className="bg-muted border-border">
+        <Card className="bg-muted">
           <CardHeader className="py-3 px-4">
             <div className="flex items-center gap-2">
               <CardTitle className="text-body font-medium text-foreground">IATI Sector Export Level</CardTitle>

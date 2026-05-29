@@ -25,7 +25,8 @@ export async function PATCH(
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     
     if (!id) {
       return NextResponse.json(

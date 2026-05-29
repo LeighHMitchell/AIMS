@@ -1120,8 +1120,7 @@ const autoPopulateIatiFields = useCallback((params: {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[90vh] p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
+          <DialogTitle>
             {location?.id ? 'Edit Location' : 'Add Location'}
           </DialogTitle>
           <DialogDescription>

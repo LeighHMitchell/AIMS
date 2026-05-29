@@ -21,6 +21,8 @@ import {
   ProfileTabs,
   type ProfileTabSpec,
   type HeroAccent,
+  HERO_HEIGHT_WITH_IMAGE,
+  HERO_HEIGHT_WITHOUT_IMAGE,
   RailFocalPoints,
   RailParticipatingOrgs,
   RailStatusTimeline,
@@ -174,10 +176,13 @@ export function ActivityProfileV2View({
   const router = useRouter()
   const accent = deriveAccent(activity)
   // Drives the shrink-on-scroll hero animation. 0 at page top → 1 once the
-  // user has scrolled past the first ~200px. Passed to both the hero (for the
+  // hero has fully scrolled off. Passed to both the hero (for the
   // fade/translate) and the layout (so the rail's sticky offset accounts for
-  // the compact strip's height).
-  const shrinkProgress = useShrinkOnScroll(200)
+  // the compact strip's height). Threshold = hero height so the fade finishes
+  // exactly as the hero leaves, leaving no empty gap above the sticky strip.
+  const shrinkProgress = useShrinkOnScroll(
+    activity?.banner ? HERO_HEIGHT_WITH_IMAGE : HERO_HEIGHT_WITHOUT_IMAGE
+  )
 
   // Once a tab is visited, keep its content mounted (hidden via CSS) so revisiting
   // it doesn't trigger a refetch / loading state.
@@ -467,7 +472,7 @@ export function ActivityProfileV2View({
     <button
       type="button"
       onClick={() => router.push("/activities")}
-      className="inline-flex items-center gap-1.5 h-9 text-slate-900 text-[12px] px-3 rounded-md bg-slate-200 hover:bg-slate-300 transition-colors"
+      className="inline-flex items-center gap-1.5 h-9 text-foreground text-[12px] px-3 rounded-md bg-white/90 shadow-sm hover:bg-white transition-colors"
     >
       <ArrowLeft className="w-3.5 h-3.5" />
       Activities
@@ -574,18 +579,18 @@ export function ActivityProfileV2View({
   const heroActions = (
     <>
       {viewCount != null && viewCount > 0 && (
-        <span className="inline-flex items-center gap-1 h-9 px-2.5 text-[12px] text-slate-900 rounded-md bg-slate-200">
+        <span className="inline-flex items-center gap-1 h-9 px-2.5 text-[12px] text-foreground rounded-md bg-white/90 shadow-sm">
           <Eye className="w-3.5 h-3.5" />
           {viewCount}
         </span>
       )}
-      <span className="inline-flex items-center h-9 px-1.5 rounded-md bg-slate-200">
+      <span className="inline-flex items-center h-9 px-1.5 rounded-md bg-white/90 shadow-sm">
         <ActivityVote activityId={activity.id} userId={user?.id} size="sm" variant="horizontal" />
       </span>
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 text-slate-900 bg-slate-200 hover:bg-slate-300 hover:text-slate-900"
+        className="h-9 w-9 text-foreground bg-white/90 shadow-sm hover:bg-white"
         onClick={onToggleBookmark}
         disabled={isToggling}
         title={isBookmarked ? "Saved" : "Save"}
@@ -598,7 +603,7 @@ export function ActivityProfileV2View({
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-slate-900 bg-slate-200 hover:bg-slate-300 hover:text-slate-900"
+            className="h-9 w-9 text-foreground bg-white/90 shadow-sm hover:bg-white"
             title="Export"
             aria-label="Export"
           >
@@ -641,7 +646,7 @@ export function ActivityProfileV2View({
       </DropdownMenu>
       <Link
         href={`/activities/new?id=${activity.id}`}
-        className="ml-1 inline-flex items-center h-9 rounded-md bg-white/95 px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
+        className="ml-1 inline-flex items-center h-9 rounded-md bg-white/90 shadow-sm px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
       >
         <Pencil className="w-3.5 h-3.5 mr-1.5" />
         Edit
@@ -938,7 +943,7 @@ function renderMainSlot(args: {
   // tab click.
 
   const fallback = (
-    <Card className="border-border bg-card p-8">
+    <Card className="bg-card p-8">
       <div className="text-center max-w-md mx-auto">
         <h2 className="text-body font-semibold text-foreground mb-2">
           {V2_TABS.find((t) => t.value === activeTab)?.label ?? activeTab}
@@ -961,7 +966,7 @@ function renderMainSlot(args: {
 
       <ProfilePane tab="sectors" activeTab={activeTab} visitedTabs={visitedTabs}>
         {sectorAllocations.length ? (
-          <Card className="border-border bg-card p-6">
+          <Card className="bg-card p-6">
             <SectorSankeyVisualization
               allocations={sectorAllocations}
               financialData={sectorFinancialData}
@@ -971,7 +976,7 @@ function renderMainSlot(args: {
             />
           </Card>
         ) : (
-          <Card className="border-border bg-card p-8 text-center">
+          <Card className="bg-card p-8 text-center">
             <p className="text-helper text-muted-foreground">No sectors allocated for this activity.</p>
           </Card>
         )}
@@ -997,7 +1002,7 @@ function renderMainSlot(args: {
       </ProfilePane>
 
       <ProfilePane tab="results" activeTab={activeTab} visitedTabs={visitedTabs}>
-        <Card className="border-border bg-card p-6">
+        <Card className="bg-card p-6">
           <ResultsReadOnlyView activityId={activity.id} />
         </Card>
       </ProfilePane>
@@ -1007,7 +1012,7 @@ function renderMainSlot(args: {
       </ProfilePane>
 
       <ProfilePane tab="library" activeTab={activeTab} visitedTabs={visitedTabs}>
-        <Card className="border-border bg-card p-6">
+        <Card className="bg-card p-6">
           <DocumentsAndImagesTabV2
             activityId={activity.id}
             documents={[]}
@@ -1018,7 +1023,7 @@ function renderMainSlot(args: {
       </ProfilePane>
 
       <ProfilePane tab="discussion" activeTab={activeTab} visitedTabs={visitedTabs}>
-        <Card className="border-border bg-card p-6">
+        <Card className="bg-card p-6">
           <PublicCommentsThread activityId={activity.id} />
         </Card>
       </ProfilePane>
@@ -1106,7 +1111,7 @@ function ActivityLocationsSection({
   }
 
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activity Locations</h2>
         <p className="text-body text-muted-foreground">
@@ -1276,7 +1281,7 @@ function FinanceSection({
   children: React.ReactNode
 }) {
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">{title}</h2>
         <p className="text-body text-muted-foreground">{description}</p>
@@ -1435,7 +1440,7 @@ function ActivityPeoplePane({ activityId }: { activityId: string }) {
   const total = govt.length + dp.length + contacts.length
 
   return (
-    <Card className="border-border bg-card p-6">
+    <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">People</h2>
         <p className="text-body text-muted-foreground">

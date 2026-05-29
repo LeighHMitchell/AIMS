@@ -116,7 +116,8 @@ export async function POST(
 
   try {
     const { id: organizationId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     if (!organizationId) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
@@ -210,7 +211,8 @@ export async function PUT(
   if (authResponse) return authResponse;
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     if (!body.id) {
       return NextResponse.json({ error: 'Envelope ID required' }, { status: 400 });

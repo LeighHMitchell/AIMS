@@ -93,15 +93,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
     }
 
-    // Aggregate by donor organization
-    const donorTotals = new Map<string, { total: number; orgId: string }>();
+    // Aggregate by donor organization — track per-transaction-type amounts so
+    // the table can show Commitments (type 2) and Disbursements (type 3) in
+    // separate columns, while `total` still drives ranking + the bar chart.
+    const donorTotals = new Map<string, { total: number; commitments: number; disbursements: number; orgId: string }>();
 
     transactions?.forEach((t: any) => {
       if (!t.provider_org_id) return;
-      
+
       const value = parseFloat(t.value_usd?.toString() || '0') || 0;
-      const current = donorTotals.get(t.provider_org_id) || { total: 0, orgId: t.provider_org_id };
+      const current = donorTotals.get(t.provider_org_id) || { total: 0, commitments: 0, disbursements: 0, orgId: t.provider_org_id };
       current.total += value;
+      if (String(t.transaction_type) === '2') current.commitments += value;
+      else if (String(t.transaction_type) === '3') current.disbursements += value;
       donorTotals.set(t.provider_org_id, current);
     });
 
@@ -142,7 +146,9 @@ export async function GET(request: NextRequest) {
           organisationId: org?.iatiOrgId || null,
           name: org?.name || 'Unknown Organization',
           acronym: org?.acronym || null,
-          totalValue: data.total
+          totalValue: data.total,
+          commitments: data.commitments,
+          disbursements: data.disbursements
         };
       })
       .sort((a, b) => b.totalValue - a.totalValue)
@@ -150,7 +156,10 @@ export async function GET(request: NextRequest) {
 
     // Calculate "Others" total if there are more donors
     const allSorted = Array.from(donorTotals.entries()).sort((a, b) => b[1].total - a[1].total);
-    const othersTotal = allSorted.slice(limit).reduce((sum, [, data]) => sum + data.total, 0);
+    const othersRows = allSorted.slice(limit);
+    const othersTotal = othersRows.reduce((sum, [, data]) => sum + data.total, 0);
+    const othersCommitments = othersRows.reduce((sum, [, data]) => sum + data.commitments, 0);
+    const othersDisbursements = othersRows.reduce((sum, [, data]) => sum + data.disbursements, 0);
 
     if (othersTotal > 0) {
       result.push({
@@ -158,7 +167,9 @@ export async function GET(request: NextRequest) {
         organisationId: null,
         name: 'All Others',
         acronym: null,
-        totalValue: othersTotal
+        totalValue: othersTotal,
+        commitments: othersCommitments,
+        disbursements: othersDisbursements
       });
     }
 

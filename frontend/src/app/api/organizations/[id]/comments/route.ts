@@ -164,7 +164,8 @@ export async function POST(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
     if (!supabase) {
@@ -305,7 +306,8 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { commentId, status, resolved } = body;
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

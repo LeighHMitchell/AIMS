@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const {
       transactionId,
       activityId,
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
       fileName,
       description,
       documentType = 'evidence'
-    } = await request.json();
+    } = body;
 
     if (!transactionId || !externalUrl || !fileName) {
       return NextResponse.json({
@@ -199,7 +201,9 @@ export async function PATCH(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('id');
-    const { fileName } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { fileName } = body;
 
     if (!documentId || !fileName) {
       return NextResponse.json({ error: 'Document ID and file name are required' }, { status: 400 });

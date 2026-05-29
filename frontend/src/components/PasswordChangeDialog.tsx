@@ -77,8 +77,7 @@ export function PasswordChangeDialog({ open, onOpenChange, userId }: PasswordCha
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
+          <DialogTitle>
             Change Password
           </DialogTitle>
           <DialogDescription>

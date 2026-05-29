@@ -27,7 +27,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   if (!body.donor_name?.trim()) {
     return NextResponse.json({ error: 'Donor name is required' }, { status: 400 });

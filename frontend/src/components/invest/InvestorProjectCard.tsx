@@ -22,7 +22,7 @@ export function InvestorProjectCard({ project, onClick }: InvestorProjectCardPro
 
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-shadow"
+      className="cursor-pointer hover:shadow-card-hover transition-shadow"
       onClick={onClick}
     >
       <CardContent className="p-6">

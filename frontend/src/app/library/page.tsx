@@ -10,13 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import {
   Search,
   LayoutGrid,
   TableIcon,
@@ -24,8 +17,6 @@ import {
   Download,
   Trash2,
   X,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   Building2,
   Receipt,
@@ -59,6 +50,8 @@ import { DocumentPreviewModal } from "@/components/library/DocumentPreviewModal"
 import { BookmarkedDocumentsView } from "@/components/library/BookmarkedDocumentsView";
 import { useDocumentBookmarks } from "@/hooks/useDocumentBookmarks";
 import { apiFetch } from '@/lib/api-fetch';
+import { FullPagination } from "@/components/ui/full-pagination";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 type ViewMode = 'card' | 'table';
 
@@ -80,7 +73,8 @@ export default function LibraryPage() {
     let limit = 20;
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('library-page-limit');
-      if (saved) limit = Number(saved);
+      const parsed = saved ? Number(saved) : 20;
+      limit = PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : 20;
     }
     return { page: 1, limit, total: 0, totalPages: 0 };
   });
@@ -644,106 +638,19 @@ export default function LibraryPage() {
               )}
 
               {/* Pagination */}
-              {pagination.total > 0 && (
-                <div className="bg-white rounded-lg border border-border shadow-sm p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-body text-muted-foreground">
-                      Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} documents
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPagination(prev => ({ ...prev, page: 1 }))}
-                        disabled={pagination.page === 1 || loading}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        First
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-                        disabled={pagination.page === 1 || loading}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                      </Button>
-
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (pagination.totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (pagination.page <= 3) {
-                            pageNum = i + 1;
-                          } else if (pagination.page >= pagination.totalPages - 2) {
-                            pageNum = pagination.totalPages - 4 + i;
-                          } else {
-                            pageNum = pagination.page - 2 + i;
-                          }
-
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                              className={`w-8 h-8 p-0 ${pagination.page === pageNum ? "bg-muted text-foreground" : ""}`}
-                              disabled={loading}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-                        disabled={pagination.page === pagination.totalPages || loading}
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPagination(prev => ({ ...prev, page: prev.totalPages }))}
-                        disabled={pagination.page === pagination.totalPages || loading}
-                      >
-                        Last
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <label className="text-body text-muted-foreground">Items per page:</label>
-                      <Select
-                        value={pagination.limit.toString()}
-                        onValueChange={(value) => {
-                          const newLimit = Number(value);
-                          setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
-                          localStorage.setItem("library-page-limit", newLimit.toString());
-                        }}
-                      >
-                        <SelectTrigger className="w-20">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="25">25</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                          <SelectItem value="100">100</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <FullPagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                perPage={pagination.limit}
+                onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
+                onPerPageChange={(newLimit) => {
+                  setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+                  localStorage.setItem("library-page-limit", newLimit.toString());
+                }}
+                perPageOptions={PAGE_SIZE_OPTIONS}
+                itemLabel="documents"
+              />
             </div>
           </TabsContent>
 

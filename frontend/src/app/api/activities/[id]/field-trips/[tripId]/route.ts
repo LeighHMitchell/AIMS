@@ -37,7 +37,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (authResponse) return authResponse;
 
   const { id: activityId, tripId } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const parsed = fieldTripFormSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

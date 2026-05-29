@@ -94,6 +94,8 @@ import {
 } from '@/lib/exports/entities/transactions';
 import { apiFetch } from '@/lib/api-fetch';
 import { formatCurrencyPrecise } from '@/lib/format';
+import { FullPagination } from "@/components/ui/full-pagination";
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
@@ -2499,109 +2501,16 @@ export default function TransactionList({
             </div>
 
             {/* Pagination Controls — show in both grouped and flat views. */}
-            {transactions.length > 0 && (
-              <div className="flex items-center justify-between mt-4 px-2">
-                <div className="flex items-center gap-4">
-                  <div className="text-body text-muted-foreground">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} transactions
-                  </div>
-                  {sortedTransactions.length > 20 && (
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="items-per-page" className="text-body text-muted-foreground">
-                        Rows per page:
-                      </Label>
-                      <Select
-                        value={itemsPerPage === sortedTransactions.length ? "all" : String(itemsPerPage)}
-                        onValueChange={(value) => {
-                          if (value === "all") {
-                            setItemsPerPage(sortedTransactions.length);
-                          } else {
-                            setItemsPerPage(Number(value));
-                          }
-                          setCurrentPage(1); // Reset to first page when changing page size
-                        }}
-                      >
-                        <SelectTrigger id="items-per-page" className="w-[100px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                          <SelectItem value="100">100</SelectItem>
-                          <SelectItem value="all">All</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-                {sortedTransactions.length > itemsPerPage && (
-                  <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Last
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  </div>
-                )}
-              </div>
-            )}
+            <FullPagination
+              page={currentPage}
+              totalPages={totalPages}
+              totalItems={sortedTransactions.length}
+              perPage={itemsPerPage}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+              perPageOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="transactions"
+            />
             </>
           )}
 

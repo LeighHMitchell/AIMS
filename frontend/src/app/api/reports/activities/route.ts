@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { codeAndName } from '@/lib/iati/codelist-resolver';
 
 export const dynamic = 'force-dynamic'
-
-// Activity status mapping
-const ACTIVITY_STATUS_MAP: Record<string, string> = {
-  '1': 'Pipeline/Identification',
-  '2': 'Implementation',
-  '3': 'Finalisation',
-  '4': 'Closed',
-  '5': 'Cancelled',
-  '6': 'Suspended',
-}
 
 export async function GET() {
   const { supabase, response: authResponse } = await requireAuth();
@@ -57,13 +48,13 @@ export async function GET() {
     // Fetch sectors for all activities
     const { data: sectors } = await supabase
       .from('activity_sectors')
-      .select('activity_id, sector_name')
+      .select('activity_id, sector_code, sector_name')
       .in('activity_id', activityIds)
 
     // Fetch locations for all activities
     const { data: locations } = await supabase
       .from('activity_locations')
-      .select('activity_id, name, admin1_name')
+      .select('activity_id, location_name, state_region_name')
       .in('activity_id', activityIds)
 
     // Fetch transactions for budget and disbursement totals
@@ -75,7 +66,7 @@ export async function GET() {
     // Fetch budgets
     const { data: budgets } = await supabase
       .from('activity_budgets')
-      .select('activity_id, value')
+      .select('activity_id, value, usd_value, currency')
       .in('activity_id', activityIds)
 
     // Fetch reporting organizations
@@ -94,8 +85,9 @@ export async function GET() {
     const sectorsByActivity = new Map<string, string[]>()
     sectors?.forEach(s => {
       const existing = sectorsByActivity.get(s.activity_id) || []
-      if (s.sector_name && !existing.includes(s.sector_name)) {
-        existing.push(s.sector_name)
+      const label = [s.sector_code, s.sector_name].filter(Boolean).join(' – ')
+      if (label && !existing.includes(label)) {
+        existing.push(label)
       }
       sectorsByActivity.set(s.activity_id, existing)
     })
@@ -103,7 +95,7 @@ export async function GET() {
     const locationsByActivity = new Map<string, string[]>()
     locations?.forEach(l => {
       const existing = locationsByActivity.get(l.activity_id) || []
-      const locationName = l.admin1_name || l.name
+      const locationName = l.state_region_name || l.location_name
       if (locationName && !existing.includes(locationName)) {
         existing.push(locationName)
       }
@@ -112,8 +104,12 @@ export async function GET() {
 
     const budgetByActivity = new Map<string, number>()
     budgets?.forEach(b => {
+      // Currency-safe: prefer converted USD; only fall back to raw value when currency is USD.
+      const usd = (b.usd_value != null && Number.isFinite(Number(b.usd_value)))
+        ? Number(b.usd_value)
+        : ((b.currency ?? '').toString().toUpperCase() === 'USD' ? Number(b.value) || 0 : 0)
       const existing = budgetByActivity.get(b.activity_id) || 0
-      budgetByActivity.set(b.activity_id, existing + (b.value || 0))
+      budgetByActivity.set(b.activity_id, existing + usd)
     })
 
     const disbursementByActivity = new Map<string, number>()
@@ -134,11 +130,13 @@ export async function GET() {
     const reportData = activities.map(activity => {
       const org = activity.reporting_org_id ? orgById.get(activity.reporting_org_id) : null
       const reportingOrg = org?.acronym || org?.name || activity.created_by_org_name || 'Unknown'
-      
+      const status = codeAndName('activity_status', activity.activity_status)
+
       return {
         iati_identifier: activity.iati_identifier || '',
         title: activity.title_narrative || '',
-        status: ACTIVITY_STATUS_MAP[activity.activity_status] || activity.activity_status || '',
+        activity_status_code: status.code,
+        activity_status_name: status.name,
         reporting_org: reportingOrg,
         start_date: activity.actual_start_date || activity.planned_start_date || '',
         end_date: activity.actual_end_date || activity.planned_end_date || '',

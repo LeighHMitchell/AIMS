@@ -675,7 +675,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
       return (
         <>
-          <span className="text-helper text-muted-foreground mr-1">{currencyCode}</span>
+          <span className="text-caption text-muted-foreground mr-1">{currencyCode}</span>
           <span>{amount}</span>
         </>
       );
@@ -1116,7 +1116,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               {/* Import Button */}
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 onClick={() => onSelect(activity)}
                 disabled={isLoading}
                 className="shrink-0"
@@ -1333,7 +1333,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <tr key={idx} className={idx > 0 ? "border-t border-border" : ""}>
                                   <td className="px-2 py-1 min-w-0">
                                     <div className="min-w-0">
-                                      <span className="text-body font-medium text-foreground">{orgName}</span>
+                                      <span className="text-caption font-medium text-foreground">{orgName}</span>
                                       {refDisplay.normalized && (
                                         <>
                                           {' '}
@@ -1708,7 +1708,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   const [activeImportTab, setActiveImportTab] = useState('overview');
   const [parsedActivity, setParsedActivity] = useState<any>(null);
   const [xmlUrl, setXmlUrl] = useState<string>('');
-  const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet' | 'iatiSearch'>('file');
+  const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet' | 'iatiSearch'>('iatiSearch');
   const [snippetContent, setSnippetContent] = useState<string>('');
   const [hierarchyFromSearchResult, setHierarchyFromSearchResult] = useState<number | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -3473,14 +3473,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           import: parsedActivity.title,
           shouldSelect: shouldSelectField(currentValue, parsedActivity.title)
         });
-        const titleShouldSelect = shouldSelectField(currentValue, parsedActivity.title);
+        // If the title carries a trailing acronym (e.g. "… (CAPRED)"), import the cleaned
+        // title; the acronym is moved into the acronym field via the review modal. If the
+        // user later clears the acronym in that modal, the original title is restored.
+        const { acronym: titleAcronym, cleanTitle: titleCleanTitle } = extractAcronymFromTitle(parsedActivity.title);
+        const titleImportValue = titleAcronym ? titleCleanTitle : parsedActivity.title;
+        const titleShouldSelect = shouldSelectField(currentValue, titleImportValue);
         fields.push({
           fieldName: 'Activity Title',
           iatiPath: 'iati-activity/title/narrative',
           currentValue: currentValue,
-          importValue: parsedActivity.title,
+          importValue: titleImportValue,
           selected: isFieldAllowedByPreferences('iati-activity/title') && getDefaultSelectedFromPreferences('iati-activity/title/narrative', titleShouldSelect),
-          hasConflict: hasConflict(currentValue, parsedActivity.title),
+          hasConflict: hasConflict(currentValue, titleImportValue),
           tab: 'other',
           description: 'Main title/name of the activity'
         });
@@ -6351,70 +6356,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   };
 
   // Enhanced Select all fields - selects main fields AND all sub-toggles
-  const selectAllFields = (select: boolean) => {
-    
-    // 1. Select all main fields (existing behavior)
-    setParsedFields(prev => prev.map(field => ({ ...field, selected: select })));
-    
-    if (select) {
-      
-      // 2. Select all financial items - set flags to import ALL items
-      if (parsedActivity?.budgets?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      if (parsedActivity?.transactions?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      if (parsedActivity?.plannedDisbursements?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 3. Select all policy markers
-      if (parsedActivity?.policyMarkers?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 4. Select all locations
-      if (parsedActivity?.locations?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 5. Select all tags
-      if (parsedActivity?.tagClassifications?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 6. Select all conditions
-      if (parsedActivity?.conditions?.conditions?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 7. Select all FSS items
-      if (parsedActivity?.forwardSpendingPlans?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 8. Select all humanitarian scopes
-      if (parsedActivity?.humanitarianScopes?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 9. Select all document links
-      if (parsedActivity?.document_links?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-      // 10. Select all results
-      if (parsedActivity?.results?.length > 0) {
-        // This will be processed in importSelectedFields as bulk import
-      }
-      
-    } else {
-    }
-  };
-
   // Helper functions for table component
   const handleFieldToggle = (field: ParsedField, checked: boolean) => {
     const index = parsedFields.findIndex(f => 
@@ -7176,13 +7117,29 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   const handleContinueWithImport = (acronyms: Record<string, string>) => {
     setUserAcronyms(acronyms);
     setShowAcronymModal(false);
-    
-    // Proceed with import, passing acronyms
-    importSelectedFields(acronyms);
+
+    // Reconcile the Activity Title with the user's acronym decision:
+    // - if the acronym is KEPT, the already-cleaned title stands and the acronym goes to the acronym field;
+    // - if the acronym is CLEARED, restore the original full title (with the acronym text intact).
+    const iatiId = parsedActivity?.iatiIdentifier || 'unknown';
+    const detected = detectedAcronyms.find(a => a.iatiIdentifier === iatiId);
+    let fieldsForImport = parsedFields;
+    if (detected?.detectedAcronym && !acronyms[iatiId]) {
+      fieldsForImport = parsedFields.map(f =>
+        f.fieldName === 'Activity Title' ? { ...f, importValue: detected.title } : f
+      );
+      setParsedFields(fieldsForImport);
+    }
+
+    // Proceed with import, passing acronyms + the reconciled fields
+    importSelectedFields(acronyms, fieldsForImport);
   };
   
   // Import selected fields
-  const importSelectedFields = async (acronyms?: Record<string, string>) => {
+  const importSelectedFields = async (acronyms?: Record<string, string>, overrideFields?: ParsedField[]) => {
+    // Use reconciled fields when provided (e.g. the acronym review may restore the original
+    // title); otherwise fall back to the current parsedFields state.
+    const effectiveFields = overrideFields ?? parsedFields;
     const importStartTime = Date.now();
     
     // CRITICAL: Log import mode at the start of import
@@ -7353,8 +7310,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     };
     
     // Enhanced: Check if this is a comprehensive selection (Select All was used)
-    const selectedFields = parsedFields.filter(f => f.selected);
-    const totalFields = parsedFields.length;
+    const selectedFields = effectiveFields.filter(f => f.selected);
+    const totalFields = effectiveFields.length;
     const selectionRatio = selectedFields.length / totalFields;
     const isComprehensiveSelection = selectionRatio > 0.8; // If more than 80% of fields are selected
     
@@ -7424,7 +7381,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Store the comprehensive selection flags
       (window as any).__comprehensiveImportFlags = updateData;
     }
-    const selectedFieldsList = parsedFields.filter(f => f.selected);
+    const selectedFieldsList = effectiveFields.filter(f => f.selected);
     
     // Track selected fields in summary
     importSummary.selectedFields = selectedFieldsList.map(f => ({
@@ -8239,7 +8196,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Build selected fields map
         const selectedFieldsMap: Record<string, boolean> = {};
-        parsedFields.forEach(field => {
+        effectiveFields.forEach(field => {
           if (field.selected) {
             selectedFieldsMap[field.iatiPath] = true;
           }
@@ -8399,6 +8356,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
 
         const result = await response.json();
+
+        // Surface server-side activity-record failures instead of silently reporting success.
+        // The route returns success:true even when the activity UPDATE/INSERT failed (it records the
+        // reason in `errors` and count:0), so without this the title/description/status can silently
+        // fail to save while child records (budgets/transactions) still import.
+        if (Array.isArray(result.errors) && result.errors.length > 0) {
+          const firstError = result.errors[0]?.error || 'Unknown error';
+          console.error('[IATI Import] ❌ Activity record was NOT saved (title/description/status). Server reason:', result.errors);
+          toast.error('Activity details could not be saved', {
+            description: `The name, description and status were not updated. Reason: ${firstError}`,
+            duration: 15000,
+          });
+        }
 
         // Check if the API returned a new/different activity ID (happens when re-importing)
         const returnedActivityId = result.createdId || result.id || (result.count > 0 && result.importedActivities?.[0]?.id);
@@ -12454,8 +12424,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               </div>
               <Progress
                 value={importStatus.progress || 0}
-                className="h-2"
+                className="h-3"
+                indicatorClassName="progress-stripes"
               />
+              {/* Live parse status — what's being processed right now (monospace) */}
+              <p className="font-mono text-caption text-muted-foreground">
+                {(() => {
+                  const p = importStatus.progress || 0;
+                  if (importStatus.stage === 'uploading') return '> uploading XML file…';
+                  if (importStatus.stage === 'importing') return `> ${importStatus.message || 'writing fields to activity…'}`;
+                  if (p <= 35) return '> reading XML document…';
+                  if (p <= 50) return '> validating IATI structure…';
+                  if (p < 70) return '> parsing activity, transactions & budgets…';
+                  if (p < 80) return '> detecting activities in file…';
+                  return '> mapping fields to the editor…';
+                })()}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -12506,18 +12490,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     setXmlUrl('');
                     setSnippetContent('');
                   }}
-                  className={`flex-1 ${importMethod === 'iatiSearch' ? 'text-white' : ''}`}
-                  style={importMethod === 'iatiSearch' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'iatiSearch') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'iatiSearch') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
+                  className="flex-1"
                 >
                   <Search className="h-4 w-4 mr-2" />
                   IATI Search
@@ -12530,17 +12503,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     setSnippetContent('');
                   }}
                   className="flex-1"
-                  style={importMethod === 'file' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'file') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'file') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   <FileCode className="h-4 w-4 mr-2" />
                   Upload File
@@ -12553,17 +12515,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     setSnippetContent('');
                   }}
                   className="flex-1"
-                  style={importMethod === 'url' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'url') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'url') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   From URL
@@ -12575,17 +12526,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     setXmlUrl('');
                   }}
                   className="flex-1"
-                  style={importMethod === 'snippet' ? { backgroundColor: '#135667' } : {}}
-                  onMouseEnter={(e) => {
-                    if (importMethod === 'snippet') {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (importMethod === 'snippet') {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   <ClipboardPaste className="h-4 w-4 mr-2" />
                   Paste Snippet
@@ -12671,17 +12611,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       onClick={parseXmlFile}
                       disabled={!xmlUrl.trim() || isParsing}
                       className="w-full"
-                      style={{ backgroundColor: '#135667' }}
-                      onMouseEnter={(e) => {
-                        if (!(!xmlUrl.trim() || isParsing)) {
-                          e.currentTarget.style.backgroundColor = '#0f4552';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!(!xmlUrl.trim() || isParsing)) {
-                          e.currentTarget.style.backgroundColor = '#135667';
-                        }
-                      }}
                     >
                       {isParsing ? (
                         <>
@@ -12730,17 +12659,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   disabled={!snippetContent.trim() || isParsing}
                   className="w-full"
                   data-action="parse-xml"
-                  style={{ backgroundColor: '#135667' }}
-                  onMouseEnter={(e) => {
-                    if (!(!snippetContent.trim() || isParsing)) {
-                      e.currentTarget.style.backgroundColor = '#0f4552';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!(!snippetContent.trim() || isParsing)) {
-                      e.currentTarget.style.backgroundColor = '#135667';
-                    }
-                  }}
                 >
                   {isParsing ? (
                     <>
@@ -12828,10 +12746,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       <Button
                         onClick={handleIatiSearch}
                         disabled={!iatiSearchFilters.activityTitle.trim() || isSearching}
-                        className="w-full text-white"
-                        style={{ backgroundColor: '#135667' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#135667'}
+                        className="w-full"
                       >
                         {isSearching ? (
                           <>
@@ -12923,14 +12838,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 // Check if we need to show the acronym modal
                 const hasNewAcronyms = detectedAcronyms.length > 0 && detectedAcronyms.some(activity => {
-                  // Only show modal if there's a detected acronym that differs from current
+                  // Only prompt when an acronym was actually detected in the title
                   if (!activity.detectedAcronym) return false;
-                  
-                  // Get current acronym from activity data
+
+                  // Only fill the acronym when it's currently empty — never overwrite an existing acronym
                   const currentAcronym = currentActivityData.acronym;
-                  
-                  // Show modal if current is empty/null or different from detected
-                  return !currentAcronym || currentAcronym !== activity.detectedAcronym;
+                  return !currentAcronym;
                 });
                 
                 if (hasNewAcronyms) {
@@ -12941,10 +12854,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 }
               }}
               disabled={parsedFields.filter(f => f.selected).length === 0}
-              className="text-white"
-              style={{ backgroundColor: '#135667' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#135667'}
             >
               <DownloadCloud className="h-4 w-4 mr-2" />
               Import Selected Fields
@@ -12954,34 +12863,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           {/* Overview Header */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileCode className="h-5 w-5" />
-                    Review Import Fields
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Fields are organized by Activity Editor tabs. Select which fields you want to import.
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => selectAllFields(true)}
-                  >
-                    Select All Fields
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => selectAllFields(false)}
-                  >
-                    Clear All Fields
-                  </Button>
-                </div>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCode className="h-5 w-5" />
+                  Review Import Fields
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Fields are organized by Activity Editor tabs. Select which fields you want to import.
+                </CardDescription>
               </div>
-              
+
               {/* Summary Stats */}
               <div className="flex items-center gap-4 mt-4 pt-4 border-t">
                 <div className="text-body text-muted-foreground">
@@ -13037,12 +12928,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 {/* Comprehensive Log Copy Button - Prominent */}
                 {comprehensiveLog && (
-                  <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F1F3', border: '2px solid #8AC4D0' }}>
-                    <h4 className="text-body font-semibold mb-2 flex items-center justify-center gap-2" style={{ color: '#145667' }}>
+                  <div className="mb-6 p-4 rounded-lg bg-muted border-2 border-border">
+                    <h4 className="text-body font-semibold mb-2 flex items-center justify-center gap-2 text-foreground">
                       <Info className="h-4 w-4" />
                       Full Import Log
                     </h4>
-                    <p className="text-helper mb-3" style={{ color: '#1A6B7A' }}>
+                    <p className="text-helper mb-3 text-muted-foreground">
                       Copy the complete log including all successes and failures
                     </p>
                     <Button 
@@ -13058,16 +12949,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           });
                         });
                       }}
-                      className="w-full text-white font-medium"
-                      style={{ backgroundColor: '#145667' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1A6B7A'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#145667'}
+                      className="w-full font-medium"
                       size="lg"
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Full Import Log
                     </Button>
-                    <p className="text-helper mt-2" style={{ color: '#145667' }}>
+                    <p className="text-helper mt-2 text-muted-foreground">
                       This includes structured summary with success/failure details
                     </p>
                   </div>
@@ -13109,10 +12997,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   {newlyCreatedActivityId && (
                     <Button
                       onClick={() => router.push(`/activities/${newlyCreatedActivityId}`)}
-                      className="text-white"
-                      style={{ backgroundColor: '#145667' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#145667'}
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       View New Activity
@@ -13125,17 +13009,17 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
           {/* Reporting Organization Hero Card */}
           {parsedActivity?.reportingOrg && (
-            <Card className="border-2" style={{ borderColor: '#8AC4D0', background: 'linear-gradient(to bottom right, #E8F1F3, #D4E8ED)' }}>
+            <Card className="border-2">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C4E0E6' }}>
-                      <Building2 className="h-8 w-8" style={{ color: '#145667' }} />
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center bg-muted">
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline" className="bg-card" style={{ borderColor: '#5A9FAD', color: '#1A6B7A' }}>
+                      <Badge variant="outline" className="bg-card">
                         Reporting Organization
                       </Badge>
                       {parsedActivity.reportingOrg.type && (
@@ -13390,8 +13274,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
+              <DialogTitle>
                 Select Fields for {selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)} {selectedItem.index + 1}
               </DialogTitle>
               <DialogDescription>
@@ -13597,8 +13480,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       <Dialog open={showDebugConsole} onOpenChange={setShowDebugConsole}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bug className="h-5 w-5" />
+            <DialogTitle>
               Debug Console
               <Badge variant="secondary" className="ml-2">
                 {debugLogs.length} logs
@@ -13654,10 +13536,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       {/* Pre-Import Reporting Organization Selection Modal */}
       <Dialog open={showReportingOrgSelectionModal} onOpenChange={setShowReportingOrgSelectionModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
+            <DialogTitle>
               Select Reporting Organisation
             </DialogTitle>
             <DialogDescription>
@@ -13678,11 +13563,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 placeholder="Select reporting organisation..."
                 searchPlaceholder="Search organisations..."
               />
-              <p className="text-helper text-muted-foreground">
-                {selectedReportingOrgId 
-                  ? 'Selected organisation will be used as the reporting organisation for this activity.'
-                  : 'If no organisation is selected, the system will attempt to match the XML reporting organisation or create a new one.'}
-              </p>
+              {!selectedReportingOrgId && (
+                <p className="text-helper text-muted-foreground">
+                  If no organisation is selected, the system will attempt to match the XML reporting organisation or create a new one.
+                </p>
+              )}
             </div>
 
             {/* Info Message */}
@@ -14307,8 +14192,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+          <DialogTitle>
             Map Sectors to Subsectors
           </DialogTitle>
           <DialogDescription>

@@ -56,7 +56,7 @@ import { FormulaTooltip } from '@/components/ui/formula-tooltip'
 import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { useCalendarYearSelector, CalendarYearSelector } from '@/components/charts/CalendarYearSelector'
-import { ChartViewToggle } from '@/components/charts/ChartViewToggle'
+import { ChartViewToggle, type ChartViewToggleOption } from '@/components/ui/chart-view-toggle'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format'
@@ -64,6 +64,13 @@ import { getFinancialSeriesColor, getTransactionTypeColor, BUDGET_COLOR } from '
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
+
+// Chart-vs-table view toggle (Style 2). Shared across this tab's charts so
+// every toggle matches the Analytics Dashboard's standard ChartViewToggle.
+const CHART_TABLE_OPTIONS: ChartViewToggleOption<'chart' | 'table'>[] = [
+  { value: 'chart', label: 'Chart', icon: BarChart3 },
+  { value: 'table', label: 'Table', icon: TableIcon },
+]
 
 function downloadCsv(content: string, filename: string) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
@@ -2685,7 +2692,7 @@ export default function FinancialAnalyticsTab({
           chart-type/export controls. */}
       <ChartFullscreen className="lg:col-span-2">
         {({ isFullscreen, toggle }) => (
-          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+          <Card className={cn("", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
             <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
@@ -2726,7 +2733,7 @@ export default function FinancialAnalyticsTab({
       {/* Budget vs Actual Spending - Full Width */}
       <ChartFullscreen>
         {({ isFullscreen, toggle }) => (
-      <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+      <Card className={cn("", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
         <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -2771,8 +2778,11 @@ export default function FinancialAnalyticsTab({
             </div>
             <div className="ml-auto flex items-center gap-2">
               <ChartViewToggle
-                view={budgetChartType === 'table' ? 'table' : 'chart'}
-                setView={(v) => setBudgetChartType(v === 'table' ? 'table' : 'bar')}
+                ariaLabel="View"
+                variant="icon"
+                value={budgetChartType === 'table' ? 'table' : 'chart'}
+                onValueChange={(v) => setBudgetChartType(v === 'table' ? 'table' : 'bar')}
+                options={CHART_TABLE_OPTIONS}
               />
               <Button
                 variant="ghost"
@@ -2979,7 +2989,7 @@ export default function FinancialAnalyticsTab({
       {/* Funding Source Breakdown */}
       <ChartFullscreen>
         {({ isFullscreen, toggle }) => (
-      <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+      <Card className={cn("", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
         <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -3059,7 +3069,7 @@ export default function FinancialAnalyticsTab({
             )}
 
             <div className="ml-auto flex items-center gap-2">
-              <ChartViewToggle view={fundingChartType} setView={setFundingChartType} />
+              <ChartViewToggle ariaLabel="View" variant="icon" value={fundingChartType} onValueChange={setFundingChartType} options={CHART_TABLE_OPTIONS} />
               <Button
                 variant="ghost"
                 size="icon"
@@ -3150,7 +3160,7 @@ export default function FinancialAnalyticsTab({
           buckets (grants / loans / equity / guarantees / other). */}
       <ChartFullscreen>
         {({ isFullscreen, toggle }) => (
-          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+          <Card className={cn("", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
             <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
@@ -3176,7 +3186,7 @@ export default function FinancialAnalyticsTab({
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...aidModalityCal} />
                 <div className="ml-auto flex items-center gap-2">
-                  <ChartViewToggle view={aidModalityView} setView={setAidModalityView} />
+                  <ChartViewToggle ariaLabel="View" variant="icon" value={aidModalityView} onValueChange={setAidModalityView} options={CHART_TABLE_OPTIONS} />
                   {/* Multi-select dropdown — pick which outgoing transaction
                       types to include in the modality mix. */}
                   <DropdownMenu>
@@ -3367,7 +3377,7 @@ export default function FinancialAnalyticsTab({
       {/* Top Providers — top 5 providers ranked by outgoing-money USD volume. */}
       <ChartFullscreen>
         {({ isFullscreen, toggle }) => (
-          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+          <Card className={cn("", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
             <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
@@ -3393,7 +3403,7 @@ export default function FinancialAnalyticsTab({
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...topProvidersCal} />
                 <div className="ml-auto flex items-center gap-2">
-                  <ChartViewToggle view={topProvidersView} setView={setTopProvidersView} />
+                  <ChartViewToggle ariaLabel="View" variant="icon" value={topProvidersView} onValueChange={setTopProvidersView} options={CHART_TABLE_OPTIONS} />
                 </div>
               </div>
             )}
@@ -3471,7 +3481,7 @@ export default function FinancialAnalyticsTab({
       {/* Top Receivers — top 5 receivers ranked by outgoing-money USD volume. */}
       <ChartFullscreen>
         {({ isFullscreen, toggle }) => (
-          <Card className={cn("border-border", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
+          <Card className={cn("", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
             <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
@@ -3497,7 +3507,7 @@ export default function FinancialAnalyticsTab({
               <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
                 <CalendarYearSelector {...topReceiversCal} />
                 <div className="ml-auto flex items-center gap-2">
-                  <ChartViewToggle view={topReceiversView} setView={setTopReceiversView} />
+                  <ChartViewToggle ariaLabel="View" variant="icon" value={topReceiversView} onValueChange={setTopReceiversView} options={CHART_TABLE_OPTIONS} />
                 </div>
               </div>
             )}

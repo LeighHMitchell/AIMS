@@ -289,7 +289,8 @@ export async function POST(
       );
     }
 
-    const body: UpdateReadinessConfigRequest = await request.json();
+    const body: UpdateReadinessConfigRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Upsert config
     const { data: config, error } = await supabase

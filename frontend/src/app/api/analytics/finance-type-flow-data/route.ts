@@ -74,7 +74,9 @@ export async function GET(request: NextRequest) {
     const cacheKey = `finance-type-flow:${dateFrom}:${dateTo}:${organizationId || 'all'}`
     const cached = getCached(cacheKey)
     if (cached) {
-      return NextResponse.json(cached)
+      return NextResponse.json(cached, {
+        headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+      })
     }
 
 
@@ -88,6 +90,8 @@ export async function GET(request: NextRequest) {
         flowTypes: [],
         financeTypes: [],
         totalCount: 0
+      }, {
+        headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
       })
     }
 
@@ -113,6 +117,8 @@ export async function GET(request: NextRequest) {
           flowTypes: [],
           financeTypes: [],
           totalCount: 0
+        }, {
+          headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
         })
       }
     }
@@ -234,7 +240,9 @@ export async function GET(request: NextRequest) {
     // Cache the result
     setCache(cacheKey, result)
 
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+    })
 
   } catch (error) {
     console.error('[FinanceTypeFlowData API] Unexpected error:', error)

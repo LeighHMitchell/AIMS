@@ -179,7 +179,7 @@ export default function ManageGroupsPage() {
         {filteredGroups.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGroups.map((group) => (
-              <Card key={group.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+              <Card key={group.id} className="hover:shadow-card-hover transition-shadow overflow-hidden">
                 {group.banner && (
                   <div className="h-24 w-full overflow-hidden">
                     <img

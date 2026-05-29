@@ -467,8 +467,10 @@ export function SectorHierarchyFilter({
                             )}
                           />
                           <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
-                          <span className={cn("min-w-0 whitespace-normal", categoryInactive && "text-muted-foreground")}>{category.name}</span>
-                          {showCounts && <span className="text-muted-foreground ml-1">({categoryCount})</span>}
+                          <span className={cn("min-w-0 whitespace-normal", categoryInactive && "text-muted-foreground")}>
+                            {category.name}
+                            {showCounts && <span className="text-muted-foreground"> ({categoryCount})</span>}
+                          </span>
                         </CommandItem>
                         
                         {/* Sub-sector Level (5-digit) */}
@@ -489,8 +491,10 @@ export function SectorHierarchyFilter({
                               )}
                             />
                             <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
-                            <span className={cn("min-w-0 whitespace-normal", sectorInactive && "text-muted-foreground")}>{sector.name}</span>
-                            {showCounts && <span className="text-muted-foreground ml-1">({sectorCount})</span>}
+                            <span className={cn("min-w-0 whitespace-normal", sectorInactive && "text-muted-foreground")}>
+                              {sector.name}
+                              {showCounts && <span className="text-muted-foreground"> ({sectorCount})</span>}
+                            </span>
                           </CommandItem>
                           );
                         })}

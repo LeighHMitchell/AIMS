@@ -257,7 +257,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
 
   if (loading) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Overspend by Activity
@@ -275,7 +275,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
 
   if (!chartData || chartData.length === 0) {
     return (
-      <Card className="bg-white border-border">
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Overspend by Activity
@@ -301,7 +301,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
   const chartHeight = Math.max(400, chartData.length * 70);
 
   return (
-    <Card className="bg-white border-border">
+    <Card className="bg-white">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

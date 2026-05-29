@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 export interface FullPaginationProps {
   /** Current page number (1-based) */
@@ -43,7 +44,7 @@ export function FullPagination({
   perPage,
   onPageChange,
   onPerPageChange,
-  perPageOptions = [10, 20, 25, 50, 100],
+  perPageOptions = PAGE_SIZE_OPTIONS,
   itemLabel = "items",
 }: FullPaginationProps) {
   if (totalItems === 0) return null;

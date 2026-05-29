@@ -85,6 +85,14 @@ async function sendToAuditLog(event: AnalyticsEvent): Promise<void> {
       return;
     }
 
+    // Skip on the server. This posts to a relative URL ('/api/audit/log'), which Node's fetch
+    // cannot resolve (it throws "Failed to parse URL from /api/audit/log") — so server-initiated
+    // analytics (e.g. from the import route) error on every call. Audit logging runs from the
+    // browser; rather than spam the logs, server-side events are skipped here.
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     await apiFetch('/api/audit/log', {
       method: 'POST',
       headers: {

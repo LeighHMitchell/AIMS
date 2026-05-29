@@ -1,11 +1,21 @@
 "use client"
 
 import React, { useMemo, useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import * as d3 from 'd3'
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, 
   isWithinInterval, startOfDay, parseISO, eachMonthOfInterval, startOfMonth } from 'date-fns'
 import { Button } from '@/components/ui/button'
-import { Grid3x3, List, BarChart3 } from 'lucide-react'
+import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Grid3x3, List, Table as TableIcon, X, ExternalLink } from 'lucide-react'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction'
 import { TRANSACTION_TYPE_COLORS } from '@/lib/chart-colors'
 import { cn } from '@/lib/utils'
@@ -17,7 +27,25 @@ interface Transaction {
   value_usd?: number
   usd_value?: number
   value_USD?: number
+  /** Development partner that reported it (set by the analytics calendar wrapper). */
+  provider?: string
+  /** Org id (for the development-partner link) and activity id/name (for the activity link). */
+  providerId?: string
+  activityId?: string
+  activityName?: string
 }
+
+// Friendly label/colour for a calendar "type" — IATI transaction codes plus the
+// synthetic 'planned' / 'budget' types the analytics calendar feeds in.
+const calTypeLabel = (type: string): string =>
+  type === 'planned' ? 'Planned Disbursements'
+    : type === 'budget' ? 'Budgets'
+      : (TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || `Type ${type}`)
+
+const calTypeColor = (type: string): string =>
+  type === 'planned' ? '#7b95a7'
+    : type === 'budget' ? '#334155'
+      : (TRANSACTION_TYPE_COLORS[type] || '#64748b')
 
 interface TransactionCalendarHeatmapProps {
   transactions: Transaction[]
@@ -27,6 +55,15 @@ interface TransactionCalendarHeatmapProps {
     activeDays: number
     avgPerDay: number
   }
+  /** When false, hides the view-mode toggle (e.g. in a collapsed analytics card). Defaults to true. */
+  showControls?: boolean
+  /** When provided, overrides the displayed window (the wrapper drives the year). */
+  dateRange?: { from: Date; to: Date } | null
+  /** Hide the built-in calendar-type / year picker (the wrapper supplies its own). */
+  hideYearPicker?: boolean
+  /** Controlled view mode (the wrapper renders its own view-mode toggle). */
+  viewMode?: 'heatmap' | 'timeline' | 'table'
+  onViewModeChange?: (mode: 'heatmap' | 'timeline' | 'table') => void
 }
 
 // Transaction-type colors now come from the single source of truth in
@@ -68,6 +105,11 @@ function blendColors(colors: Array<{ color: string; weight: number }>): string {
 
   return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`
 }
+
+// GitHub-style single-hue density ramp (empty → busiest day). Cells are
+// coloured by the NUMBER of transactions that day — not by transaction type or
+// value — so the calendar reads as an activity-density heatmap.
+const DENSITY_SCALE = ['#EBEDF0', '#C6DBEF', '#9ECAE1', '#4292C6', '#08519C']
 
 interface DayData {
   date: Date
@@ -193,16 +235,22 @@ function TimelineView({
 }
 
 // Monthly Summary View Component
-function MonthlySummaryView({ 
-  data, 
+function MonthlySummaryView({
+  data,
   intensityMode,
   onHoverMonth,
-  onLeaveMonth
-}: { 
+  onLeaveMonth,
+  compact = false,
+  maxMonths,
+}: {
   data: DayData[]
   intensityMode: 'count' | 'value'
   onHoverMonth: (days: DayData[], e: React.MouseEvent) => void
   onLeaveMonth: () => void
+  /** Tighter rows + no inner scroll (collapsed analytics card). */
+  compact?: boolean
+  /** Show only the most-recent N months (most recent first). */
+  maxMonths?: number
 }) {
   const monthlyData = useMemo(() => {
     const months = new Map<string, { count: number; value: number; days: number; daysList: DayData[] }>()
@@ -234,39 +282,49 @@ function MonthlySummaryView({
     )
   }
 
+  // Collapsed: show only the most-recent N months, newest first.
+  const displayMonths = maxMonths
+    ? [...monthlyData].slice(-maxMonths).reverse()
+    : monthlyData
+
   return (
-    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-      {monthlyData.map(month => {
+    <div className={cn(compact ? 'space-y-1.5' : 'space-y-2 max-h-[500px] overflow-y-auto pr-2')}>
+      {displayMonths.map(month => {
         const displayValue = intensityMode === 'count' ? month.count : month.value
         const percentage = (displayValue / maxValue) * 100
-        
+
         return (
           <div
             key={month.month}
-            className="w-full p-3 bg-muted hover:bg-muted rounded-lg transition-colors text-left cursor-pointer"
+            className={cn(
+              'w-full bg-muted hover:bg-muted rounded-lg transition-colors text-left cursor-pointer',
+              compact ? 'p-2' : 'p-3',
+            )}
             onMouseEnter={(e) => onHoverMonth(month.daysList, e)}
             onMouseLeave={onLeaveMonth}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className={cn('flex items-center justify-between', compact ? 'mb-1.5' : 'mb-2')}>
               <div className="font-medium text-foreground">
-                {format(parseISO(month.month + '-01'), 'MMMM yyyy')}
+                {format(parseISO(month.month + '-01'), compact ? 'MMM yyyy' : 'MMMM yyyy')}
               </div>
               <div className="text-right">
                 <div className="font-semibold text-foreground">
-                  {intensityMode === 'count' 
-                    ? `${month.count} transactions` 
+                  {intensityMode === 'count'
+                    ? `${month.count} transactions`
                     : `$${formatCurrencyAbbreviated(month.value)}`
                   }
                 </div>
-                <div className="text-helper text-muted-foreground">
-                  {month.days} active day{month.days !== 1 ? 's' : ''}
-                </div>
+                {!compact && (
+                  <div className="text-helper text-muted-foreground">
+                    {month.days} active day{month.days !== 1 ? 's' : ''}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="h-3 bg-muted rounded-full overflow-hidden">
-              <div 
+            <div className={cn('bg-slate-200 rounded-full overflow-hidden', compact ? 'h-2' : 'h-3')}>
+              <div
                 className="h-full rounded-full transition-all"
-                style={{ 
+                style={{
                   width: `${percentage}%`,
                   backgroundColor: '#dc2625'
                 }}
@@ -297,7 +355,8 @@ function MonthlySparkline({
   useEffect(() => {
     if (!sparklineTooltipRef.current) {
       sparklineTooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'absolute bg-slate-900 text-white text-helper rounded px-2 py-1 pointer-events-none z-50')
+        .attr('class', 'absolute bg-slate-900 text-white text-helper rounded px-2 py-1 pointer-events-none')
+        .style('z-index', '100000')
         .style('opacity', 0)
     }
     return () => {
@@ -446,13 +505,46 @@ function MonthlySparkline({
   )
 }
 
-export function TransactionCalendarHeatmap({ transactions, stats }: TransactionCalendarHeatmapProps) {
+export function TransactionCalendarHeatmap({ transactions, stats, showControls = true, dateRange: externalDateRange = null, hideYearPicker = false, viewMode: controlledViewMode, onViewModeChange }: TransactionCalendarHeatmapProps) {
   const [intensityMode, setIntensityMode] = useState<'count' | 'value'>('count')
-  const [viewMode, setViewMode] = useState<'heatmap' | 'timeline' | 'monthly'>('heatmap')
+  const [internalViewMode, setInternalViewMode] = useState<'heatmap' | 'timeline' | 'table'>('heatmap')
+  const viewMode = controlledViewMode ?? internalViewMode
+  const setViewMode = onViewModeChange ?? setInternalViewMode
   const [yearType, setYearType] = useState<'calendar' | 'financial'>('calendar')
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [hoveredDay, setHoveredDay] = useState<DayData | null>(null)
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
+  // Anchored to the hovered cell (centre-x, and the cell's top/bottom edges) so
+  // the tooltip can sit directly above (or below) the box, not at the cursor.
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; top: number; bottom: number } | null>(null)
+  // Click-to-pin: when true, the same tooltip stays open and expands to show the
+  // individual development partners. A ref mirrors it so the d3 cell handlers
+  // (created once in an effect) read the latest value without a stale closure.
+  const [pinned, setPinned] = useState(false)
+  const pinnedRef = useRef(false)
+  useEffect(() => { pinnedRef.current = pinned }, [pinned])
+  const tooltipBoxRef = useRef<HTMLDivElement>(null)
+
+  const closePinned = () => { setPinned(false); setHoveredDay(null); setTooltipPosition(null) }
+
+  // Close the pinned detail on Escape, or when clicking outside the popup.
+  useEffect(() => {
+    if (!pinned) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closePinned() }
+    const onDown = (e: MouseEvent) => {
+      if (tooltipBoxRef.current && !tooltipBoxRef.current.contains(e.target as Node)) {
+        closePinned()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    // Defer so the click that opened the popup doesn't immediately close it.
+    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      clearTimeout(t)
+      document.removeEventListener('mousedown', onDown)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pinned])
   
   // Refs for D3 rendering
   const svgRef = useRef<SVGSVGElement>(null)
@@ -516,16 +608,24 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
     return getAvailableYears(processedData, yearType)
   }, [processedData, yearType])
 
-  // Set default selected year when data changes or year type changes
+  // Set default selected year when data changes or year type changes.
+  // Default to the most recent year with data (a single Jan–Dec calendar year)
+  // so the heatmap reads as one clean year rather than a multi-year band.
+  // Also re-snap to the newest year if the current selection isn't valid for
+  // the active calendar (e.g. after toggling CY ↔ FY).
   useMemo(() => {
-    if (availableYears.length > 0 && selectedYear === null) {
-      // Default to "All" (-1) to show all transactions
-      setSelectedYear(-1)
+    if (availableYears.length === 0) return
+    if (selectedYear === null || (selectedYear !== -1 && !availableYears.includes(selectedYear))) {
+      setSelectedYear(availableYears[0])
     }
   }, [availableYears, selectedYear])
 
-  // Get display range for the selected year (or all data if selectedYear is -1)
+  // Get display range for the selected year (or all data if selectedYear is -1).
+  // When the wrapper drives the window (externalDateRange), use it directly.
   const displayRange = useMemo(() => {
+    if (externalDateRange) {
+      return { start: externalDateRange.from, end: externalDateRange.to }
+    }
     if (selectedYear === -1 && processedData.length > 0) {
       // Show all data - find min and max dates
       const dates = processedData.map(d => d.date.getTime())
@@ -542,11 +642,11 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
       return getYearRange(now.getFullYear(), yearType)
     }
     return getYearRange(selectedYear, yearType)
-  }, [selectedYear, yearType, processedData])
+  }, [selectedYear, yearType, processedData, externalDateRange])
 
   // Filter data by selected year range (or show all if selectedYear is -1)
   const filteredData = useMemo(() => {
-    if (selectedYear === -1) {
+    if (!externalDateRange && selectedYear === -1) {
       return processedData
     }
     return processedData.filter((day) =>
@@ -600,35 +700,15 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
   // Get color for a day
   const getDayColor = (dayData: DayData | null, intensity: number): string => {
-    if (!dayData || dayData.count === 0) {
-      return 'transparent'
-    }
-
-    const colorWeights: Array<{ color: string; weight: number }> = []
-
-    Object.entries(dayData.typeBreakdown).forEach(([type, breakdown]) => {
-      const weight = intensityMode === 'count' ? breakdown.count : breakdown.value
-      const color = TRANSACTION_TYPE_COLORS[type] || '#64748B'
-
-      if (weight > 0) {
-        colorWeights.push({ color, weight })
-      }
-    })
-
-    if (colorWeights.length === 0) {
-      return 'transparent'
-    }
-
-    const baseColor = blendColors(colorWeights)
-    const rgb = hexToRgb(baseColor)
-    if (!rgb) return baseColor
-
-    const intensityScale = 0.3 + intensity * 0.7
-    const r = Math.round(Math.min(rgb.r * intensityScale, 255))
-    const g = Math.round(Math.min(rgb.g * intensityScale, 255))
-    const b = Math.round(Math.min(rgb.b * intensityScale, 255))
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+    // GitHub-style density: one hue, darker = more transactions. `intensity` is
+    // √(count / busiest-day count), so the shade reflects the NUMBER of
+    // transactions that day, regardless of type or value. Empty days show the
+    // lightest swatch so the full calendar grid stays visible.
+    if (!dayData || dayData.count === 0) return DENSITY_SCALE[0]
+    if (intensity <= 0.25) return DENSITY_SCALE[1]
+    if (intensity <= 0.5) return DENSITY_SCALE[2]
+    if (intensity <= 0.75) return DENSITY_SCALE[3]
+    return DENSITY_SCALE[4]
   }
 
   // Get month labels with proper positioning
@@ -660,27 +740,6 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
     return months
   }, [calendarGrid.weeks])
 
-  // D3 tooltip (created once, reused)
-  const tooltipRef = useRef<d3.Selection<HTMLDivElement, unknown, null, undefined> | null>(null)
-
-  // Initialize D3 tooltip
-  useEffect(() => {
-    if (!tooltipRef.current) {
-      tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none')
-        .style('opacity', 0)
-        .style('min-width', '280px')
-        .style('max-width', '350px')
-    }
-    return () => {
-      // Cleanup on unmount
-      if (tooltipRef.current) {
-        tooltipRef.current.remove()
-        tooltipRef.current = null
-      }
-    }
-  }, [])
-
   // Render heatmap with D3
   useEffect(() => {
     if (viewMode !== 'heatmap' || !svgRef.current || calendarGrid.weeks.length === 0) {
@@ -690,7 +749,10 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
     // Clear previous render
     d3.select(svgRef.current).selectAll('*').remove()
 
-    const cellSize = 13
+    // Both views stretch to the card width (w-full + viewBox scaling). A
+    // slightly larger base cell in the collapsed card gives a taller aspect
+    // ratio, so the scaled-down cells stay legible rather than razor-thin.
+    const cellSize = showControls ? 13 : 16
     const cellGap = 1
     const weekWidth = cellSize + cellGap
     const dayHeight = cellSize + cellGap
@@ -799,88 +861,73 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
         .attr('stroke-width', 1)
         .attr('opacity', d => d.isInYearRange ? 1 : 0.2)
         .style('cursor', d => d.hasData ? 'pointer' : 'default')
+        // Hover/click drive a single React tooltip (so clicking can expand the
+        // same popup in place). pinnedRef guards against hover changing the
+        // pinned day. cursor coords feed the React tooltip's position.
+        // Hover works on every day, including empty ones (the tooltip then says
+        // "no transactions"); only days WITH data can be clicked to pin/expand.
         .on('mouseenter', function(event, d) {
-          if (d.data && d.hasData) {
-            d3.select(this)
-              .attr('stroke', '#94a3b8')
-              .attr('stroke-width', 2)
-            
-            if (tooltipRef.current) {
-              const tooltip = tooltipRef.current
-              const dateStr = format(d.data.date, 'EEEE, MMMM dd, yyyy')
-              
-              // Build type breakdown HTML
-              const typeBreakdown = Object.entries(d.data.typeBreakdown)
-                .sort((a, b) => b[1].value - a[1].value)
-                .map(([type]) => {
-                  const typeLabel = TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type
-                  const typeColor = TRANSACTION_TYPE_COLORS[type] || '#64748B'
-                  return `
-                    <div style="display: flex; align-items: center; font-size: 12px; margin-bottom: 6px;">
-                      <div style="width: 12px; height: 12px; background-color: ${typeColor}; border-radius: 2px; flex-shrink: 0; margin-right: 8px;"></div>
-                      <span style="color: #475569;">${typeLabel}</span>
-                    </div>
-                  `
-                }).join('')
-
-              tooltip.html(`
-                <p style="font-weight: 600; color: #0f172a; margin-bottom: 12px; font-size: 16px;">${dateStr}</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                  <div style="background-color: #f8fafc; padding: 8px; border-radius: 4px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #0f172a;">${d.data.count}</div>
-                    <div style="font-size: 12px; color: #64748b;">Transactions</div>
-                  </div>
-                  <div style="background-color: #f8fafc; padding: 8px; border-radius: 4px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #0f172a;">$${formatCurrencyAbbreviated(d.data.value)}</div>
-                    <div style="font-size: 12px; color: #64748b;">Total Value</div>
-                  </div>
-                </div>
-                <div style="border-top: 1px solid #e2e8f0; padding-top: 12px;">
-                  <p style="font-size: 12px; font-weight: 500; color: #334155; margin-bottom: 8px;">By Transaction Type</p>
-                  <div>${typeBreakdown}</div>
-                </div>
-              `)
-                .style('left', `${event.pageX}px`)
-                .style('top', `${event.pageY - 10}px`)
-                .style('transform', 'translate(-50%, -100%)')
-                .style('opacity', 1)
-            }
+          d3.select(this).attr('stroke', '#94a3b8').attr('stroke-width', 2)
+          if (!pinnedRef.current) {
+            const r = (this as SVGRectElement).getBoundingClientRect()
+            setHoveredDay(d.data ?? { date: d.date, transactions: [], count: 0, value: 0, typeBreakdown: {} })
+            setTooltipPosition({ x: r.left + r.width / 2, top: r.top, bottom: r.bottom })
           }
         })
-        .on('mousemove', function(event, d) {
-          if (d.data && d.hasData && tooltipRef.current) {
-            tooltipRef.current
-              .style('left', `${event.pageX}px`)
-              .style('top', `${event.pageY - 10}px`)
+        .on('click', function(event, d) {
+          if (d.data && d.hasData) {
+            const r = (this as SVGRectElement).getBoundingClientRect()
+            setHoveredDay(d.data)
+            setTooltipPosition({ x: r.left + r.width / 2, top: r.top, bottom: r.bottom })
+            setPinned(true)
           }
         })
         .on('mouseleave', function(event, d) {
-          if (d.hasData) {
-            d3.select(this)
-              .attr('stroke', d.hasData ? 'rgba(0,0,0,0.15)' : '#f1f5f9')
-              .attr('stroke-width', 1)
-          }
-          if (tooltipRef.current) {
-            tooltipRef.current.style('opacity', 0)
+          d3.select(this)
+            .attr('stroke', d.hasData ? 'rgba(0,0,0,0.15)' : '#f1f5f9')
+            .attr('stroke-width', 1)
+          if (!pinnedRef.current) {
+            setHoveredDay(null)
+            setTooltipPosition(null)
           }
         })
 
-  }, [viewMode, calendarGrid, monthLabels, displayRange, intensityMode, filteredData])
+  }, [viewMode, calendarGrid, monthLabels, displayRange, intensityMode, filteredData, showControls])
 
-  // Tooltip handlers (kept for compatibility, but D3 tooltip is used)
+  // Timeline-view hover → same anchored tooltip (above the hovered row).
   const handleDayHover = (day: DayData, e: React.MouseEvent) => {
     setHoveredDay(day)
     const rect = e.currentTarget.getBoundingClientRect()
-    setTooltipPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    })
+    setTooltipPosition({ x: rect.left + rect.width / 2, top: rect.top, bottom: rect.bottom })
   }
 
   const handleDayLeave = () => {
     setHoveredDay(null)
     setTooltipPosition(null)
   }
+
+  // Combine a month's days into one summary for the shared day tooltip.
+  const handleMonthHover = (days: DayData[], e: React.MouseEvent) => {
+    const combined: DayData = {
+      date: days[0]?.date || new Date(),
+      transactions: days.flatMap(d => d.transactions),
+      count: days.reduce((sum, d) => sum + d.count, 0),
+      value: days.reduce((sum, d) => sum + d.value, 0),
+      typeBreakdown: {}
+    }
+    days.forEach(day => {
+      Object.entries(day.typeBreakdown).forEach(([type, breakdown]) => {
+        if (!combined.typeBreakdown[type]) combined.typeBreakdown[type] = { count: 0, value: 0 }
+        combined.typeBreakdown[type].count += breakdown.count
+        combined.typeBreakdown[type].value += breakdown.value
+      })
+    })
+    handleDayHover(combined, e)
+  }
+
+  // Collapsed has no view toggle, so it follows the default viewMode (heatmap) —
+  // the same chart view as expanded, just rendered at natural size and centred.
+  const effectiveView = viewMode
 
   // Format year label
   const getYearLabel = (year: number) => {
@@ -904,163 +951,232 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
   return (
     <div className="space-y-4 relative">
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* View Mode Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-muted">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('heatmap')}
-              className={cn("h-7 px-2", viewMode === 'heatmap' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              title="Heatmap view"
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('timeline')}
-              className={cn("h-7 px-2", viewMode === 'timeline' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              title="Timeline view"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('monthly')}
-              className={cn("h-7 px-2", viewMode === 'monthly' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
-              title="Monthly summary"
-            >
-              <BarChart3 className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Controls — hidden in the collapsed analytics card. LEFT: calendar
+          (CY/FY) + year picker. RIGHT: view-mode toggle. */}
+      {showControls && (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Calendar type + year picker (left) — hidden when the wrapper supplies
+            its own calendar/year picker (hideYearPicker). */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {!hideYearPicker && (
+          <>
+          <ChartViewToggle
+            ariaLabel="Calendar type"
+            variant="text"
+            value={yearType}
+            onValueChange={(v) => setYearType(v as 'calendar' | 'financial')}
+            options={[
+              { value: 'calendar', label: 'Calendar Year' },
+              { value: 'financial', label: 'Financial Year' },
+            ]}
+          />
+          <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+            <SelectTrigger className="h-8 w-auto min-w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="-1">All years</SelectItem>
+              {availableYears.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {getYearLabel(y)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          </>
+          )}
+        </div>
+
+        {/* View Mode Toggle (right) */}
+        <div className="flex gap-1 rounded-lg p-1 bg-muted">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('heatmap')}
+            className={cn("h-7 px-2", viewMode === 'heatmap' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+            title="Heatmap view"
+          >
+            <Grid3x3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('timeline')}
+            className={cn("h-7 px-2", viewMode === 'timeline' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+            title="Timeline view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className={cn("h-7 px-2", viewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+            title="Table view"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+      )}
 
       {/* View Content */}
-      {viewMode === 'heatmap' && (
+      {effectiveView === 'heatmap' && (
         <>
-          {/* Calendar Grid - D3 rendered */}
+          {/* Calendar Grid - D3 rendered. The SVG scales to the card width via
+              its viewBox (height follows the aspect ratio), so both collapsed
+              and expanded fill the full card/modal width edge-to-edge. */}
           <div className="overflow-x-auto w-full">
             <svg ref={svgRef} className="w-full" />
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4 text-helper">
-              <span className="text-muted-foreground font-medium">Transaction types:</span>
-              {Object.entries(TRANSACTION_TYPE_COLORS)
-                .filter(([type]) => processedData.some((d) => d.typeBreakdown[type]))
-                .map(([type, color]) => (
-                  <div key={type} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-muted-foreground">
-                      {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
-                    </span>
-                  </div>
-                ))}
+          {/* Legend — GitHub-style density scale (cells are coloured by the
+              number of transactions that day, lightest = none → darkest = busiest). */}
+          <div className="flex items-center justify-end gap-2 text-helper text-muted-foreground">
+            <span>Fewer</span>
+            <div className="flex items-center gap-1">
+              {DENSITY_SCALE.map((color) => (
+                <div
+                  key={color}
+                  className="w-3 h-3 rounded-sm border border-slate-200"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
             </div>
+            <span>More</span>
           </div>
         </>
       )}
 
-      {viewMode === 'timeline' && (
-        <TimelineView 
-          data={filteredData} 
+      {effectiveView === 'timeline' && (
+        <TimelineView
+          data={filteredData}
           onHoverDay={handleDayHover}
           onLeaveDay={handleDayLeave}
         />
       )}
 
-      {viewMode === 'monthly' && (
-        <MonthlySummaryView 
-          data={filteredData} 
-          intensityMode={intensityMode}
-          onHoverMonth={(days, e) => {
-            // Aggregate all days into one summary
-            const combined: DayData = {
-              date: days[0]?.date || new Date(),
-              transactions: days.flatMap(d => d.transactions),
-              count: days.reduce((sum, d) => sum + d.count, 0),
-              value: days.reduce((sum, d) => sum + d.value, 0),
-              typeBreakdown: {}
-            }
-            days.forEach(day => {
-              Object.entries(day.typeBreakdown).forEach(([type, breakdown]) => {
-                if (!combined.typeBreakdown[type]) {
-                  combined.typeBreakdown[type] = { count: 0, value: 0 }
-                }
-                combined.typeBreakdown[type].count += breakdown.count
-                combined.typeBreakdown[type].value += breakdown.value
-              })
-            })
-            handleDayHover(combined, e)
-          }}
-          onLeaveMonth={handleDayLeave}
+      {effectiveView === 'table' && (
+        <ChartDataTable
+          rows={[...filteredData]
+            .sort((a, b) => b.date.getTime() - a.date.getTime())
+            .map((d) => ({ date: format(d.date, 'dd MMM yyyy'), count: d.count, value: Math.round(d.value) }))}
+          columns={[
+            { key: 'date', label: 'Date', numeric: false },
+            { key: 'count', label: 'Transactions', numeric: true, plainNumber: true },
+            { key: 'value', label: 'Value (USD)', numeric: true, currency: 'USD' },
+          ]}
+          currency="USD"
+          sortable
+          maxHeight={460}
         />
       )}
 
-      {/* Detailed Tooltip (for Timeline and Monthly views only) */}
-      {viewMode !== 'heatmap' && hoveredDay && tooltipPosition && (
-        <div
-          className="fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none"
-          style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)',
-            marginTop: '-8px',
-            minWidth: '280px',
-            maxWidth: '350px',
-          }}
-        >
-          <p className="font-semibold text-foreground mb-3 text-base">
-            {format(hoveredDay.date, 'EEEE, MMMM dd, yyyy')}
-          </p>
-          
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="bg-muted p-2 rounded">
-              <div className="text-lg font-bold text-foreground">{hoveredDay.count}</div>
-              <div className="text-helper text-muted-foreground">Transactions</div>
+      {/* Unified hover/click tooltip. Hover → per-type count·value. Click pins
+          it and expands the SAME popup to the development partners — each links
+          to the donor (org) and to the activity. Names wrap. */}
+      {hoveredDay && tooltipPosition && (() => {
+        const usdOf = (t: Transaction) => Math.abs(parseFloat(String(t.value_usd ?? t.usd_value ?? t.value ?? 0)) || 0)
+        type Item = { provider: string; providerId?: string; activityId?: string; activityName?: string; count: number; value: number }
+        const byType = new Map<string, { count: number; value: number; items: Map<string, Item> }>()
+        hoveredDay.transactions.forEach((t) => {
+          const type = t.transaction_type || 'unknown'
+          if (!byType.has(type)) byType.set(type, { count: 0, value: 0, items: new Map() })
+          const g = byType.get(type)!
+          const v = usdOf(t)
+          g.count += 1; g.value += v
+          // Aggregate by partner + activity so each row is one clickable pair.
+          const key = `${t.providerId || ''}|${t.activityId || ''}|${t.provider || ''}`
+          const it = g.items.get(key) || { provider: t.provider || 'Unknown partner', providerId: t.providerId, activityId: t.activityId, activityName: t.activityName, count: 0, value: 0 }
+          it.count += 1; it.value += v; g.items.set(key, it)
+        })
+        const groups = Array.from(byType.entries()).sort((a, b) => b[1].value - a[1].value)
+        const half = 165
+        const margin = 12
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+        const left = Math.min(Math.max(tooltipPosition.x, half + margin), vw - half - margin)
+        // Prefer sitting ABOVE the hovered cell; flip below only if the cell is
+        // too close to the top of the viewport to fit the popup above it.
+        const above = tooltipPosition.top > vh * 0.3
+        return (
+          <div
+            ref={tooltipBoxRef}
+            className={cn(
+              'fixed z-[100000] bg-white border border-border rounded-lg shadow-xl w-[330px] overflow-hidden',
+              pinned ? 'pointer-events-auto' : 'pointer-events-none',
+            )}
+            style={
+              above
+                ? { left, top: tooltipPosition.top - 8, transform: 'translate(-50%, -100%)' }
+                : { left, top: tooltipPosition.bottom + 8, transform: 'translate(-50%, 0)' }
+            }
+          >
+            {/* Shaded header */}
+            <div className="flex items-start justify-between gap-2 bg-surface-muted px-3 py-2 border-b border-border">
+              <p className="font-semibold text-foreground text-body">{format(hoveredDay.date, 'EEEE, dd MMM yyyy')}</p>
+              {pinned && (
+                <button onClick={closePinned} className="text-muted-foreground hover:text-foreground flex-shrink-0" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            <div className="bg-muted p-2 rounded">
-              <div className="text-lg font-bold text-foreground">${formatCurrencyAbbreviated(hoveredDay.value)}</div>
-              <div className="text-helper text-muted-foreground">Total Value</div>
-            </div>
-          </div>
-
-          {/* Type Breakdown */}
-          <div className="border-t border-border pt-3">
-            <p className="text-helper font-medium text-foreground mb-2">By Transaction Type</p>
-            <div className="space-y-1.5">
-              {Object.entries(hoveredDay.typeBreakdown)
-                .sort((a, b) => b[1].value - a[1].value)
-                .map(([type, breakdown]) => (
-                  <div key={type} className="flex items-center justify-between text-helper">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: TRANSACTION_TYPE_COLORS[type] || '#64748B' }}
-                      />
-                      <span className="text-muted-foreground truncate">
-                        {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
-                      </span>
+            {/* Body */}
+            <div className={cn('px-3 py-2.5', pinned ? 'max-h-[55vh] overflow-auto' : '')}>
+            {groups.length === 0 ? (
+              <p className="text-helper text-muted-foreground">No reported activity on this day</p>
+            ) : (
+            <>
+            <div className="space-y-2">
+              {groups.map(([type, g]) => (
+                <div key={type}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: calTypeColor(type) }} />
+                      <span className="text-body font-medium text-foreground truncate">{calTypeLabel(type)}</span>
                     </div>
-                    <div className="text-foreground font-medium ml-2">
-                      {breakdown.count} • ${formatCurrencyAbbreviated(breakdown.value)}
-                    </div>
+                    <span className="text-helper text-muted-foreground whitespace-nowrap">{g.count} • ${formatCurrencyAbbreviated(g.value)}</span>
                   </div>
-                ))}
+                  {pinned && (
+                    <div className="pl-5 mt-1 space-y-1.5">
+                      {Array.from(g.items.values()).sort((a, b) => b.value - a.value).map((it, i) => (
+                        <div key={i} className="text-helper border-b border-slate-100 last:border-0 pb-1.5 last:pb-0">
+                          {/* Development partner (→ donor page) + value */}
+                          <div className="flex items-start justify-between gap-2">
+                            {it.providerId ? (
+                              <Link href={`/organizations/${it.providerId}`} className="text-primary hover:underline break-words leading-snug font-medium">
+                                {it.provider}
+                              </Link>
+                            ) : (
+                              <span className="text-foreground break-words leading-snug font-medium">{it.provider}</span>
+                            )}
+                            <span className="text-foreground whitespace-nowrap flex-shrink-0">${formatCurrencyAbbreviated(it.value)}</span>
+                          </div>
+                          {/* Activity name (→ activity page) */}
+                          {it.activityId ? (
+                            <Link href={`/activities/${it.activityId}`} className="mt-0.5 flex items-start gap-1 text-muted-foreground hover:text-foreground hover:underline leading-snug">
+                              <ExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                              <span className="break-words">{it.activityName || 'View activity'}</span>
+                            </Link>
+                          ) : it.activityName ? (
+                            <p className="mt-0.5 text-muted-foreground break-words leading-snug">{it.activityName}</p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {!pinned && (
+              <p className="text-[11px] text-muted-foreground mt-2">Click to see the development partners ↗</p>
+            )}
+            </>
+            )}
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
     </div>
   )

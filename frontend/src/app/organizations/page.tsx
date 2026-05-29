@@ -14,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { FullPagination } from '@/components/ui/full-pagination'
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -72,7 +74,7 @@ import { apiFetch } from '@/lib/api-fetch';
 // Using Button components for view toggle instead of ToggleGroup
 
 // Performance constants
-const ITEMS_PER_PAGE = 24  // Increased from 12 to show more organizations with compact design
+const ITEMS_PER_PAGE = DEFAULT_PAGE_SIZE  // standard default; user can change via the per-page dropdown
 const IMAGE_LOADING_DELAY = 100 // ms delay between image loads
 
 // ISO 3166-1 alpha-2 country codes with names
@@ -820,7 +822,7 @@ const OrganizationCard: React.FC<{
 
   return (
     <Card
-      className="bg-card border border-border hover:border-border hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer h-full flex flex-col shadow-sm relative"
+      className="bg-card hover:border-border hover:shadow-card-hover transition-all duration-300 ease-in-out cursor-pointer h-full flex flex-col shadow-sm relative"
       onClick={handleView}
     >
       {/* Actions Dropdown - positioned at card level to avoid overflow clipping */}
@@ -834,6 +836,7 @@ const OrganizationCard: React.FC<{
               variant="outline"
               size="icon"
               className="bg-card/90 hover:bg-card"
+              aria-label="Organisation actions"
             >
               <MoreVertical className="h-4 w-4" />
             </Button>
@@ -1109,7 +1112,7 @@ function OrganizationsPageContent() {
   const [mounted, setMounted] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [filteredOrganizations, setFilteredOrganizations] = useState<Organization[]>([])
-  const [itemsPerPage] = useState(ITEMS_PER_PAGE)
+  const [itemsPerPage, setItemsPerPage] = useState<number>(ITEMS_PER_PAGE)
   const [customGroups, setCustomGroups] = useState<any[]>([])
   const [loadingCustomGroups, setLoadingCustomGroups] = useState(false)
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false)
@@ -2150,53 +2153,17 @@ function OrganizationsPageContent() {
                     />
                   )}
                   
-                  {/* Pagination Controls */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center space-x-2 mt-8">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      
-                      <div className="flex space-x-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-                          
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={currentPage === pageNum ? "bg-muted text-foreground" : ""}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  )}
+                  {/* Pagination — standard FullPagination bar (shared across all lists) */}
+                  <FullPagination
+                    page={currentPage}
+                    totalPages={totalPages}
+                    totalItems={sortedOrganizations.length}
+                    perPage={itemsPerPage}
+                    onPageChange={(p) => setCurrentPage(p)}
+                    onPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+                    perPageOptions={PAGE_SIZE_OPTIONS}
+                    itemLabel="organisations"
+                  />
 
                   <BulkActionToolbar
                     selectedCount={selectedOrgIds.size}

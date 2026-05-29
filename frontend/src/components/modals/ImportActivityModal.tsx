@@ -47,7 +47,7 @@ export function ImportActivityModal({ isOpen, onClose, user }: ImportActivityMod
         },
         body: JSON.stringify({
           title: 'Imported Activity (Draft)',
-          description: 'Activity created via IATI/XML import',
+          description: '', // Left empty so the imported activity's real description fills it (no generic placeholder lingering)
           status: '1', // Pipeline status
           user_id: user.id,
           created_via: 'import',
@@ -85,8 +85,7 @@ export function ImportActivityModal({ isOpen, onClose, user }: ImportActivityMod
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
+          <DialogTitle>
             Import Activity from IATI/XML
           </DialogTitle>
           <DialogDescription>

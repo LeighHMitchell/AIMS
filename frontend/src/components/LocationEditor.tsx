@@ -228,7 +228,7 @@ export default function LocationEditor({
 
       {/* Location Cards */}
       {localLocations.map((location, index) => (
-        <Card key={location.id} className="border border-border">
+        <Card key={location.id}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">

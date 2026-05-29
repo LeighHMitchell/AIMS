@@ -25,6 +25,7 @@ import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { formatAxisCurrency } from '@/lib/format'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
+import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 
 interface YearData {
   year: number;
@@ -66,6 +67,11 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
     });
     return Array.from(yearsSet).sort((a, b) => a - b);
   }, [data.sectors]);
+
+  // Gregorian years present in this activity's disbursement data — drives the
+  // year picker's full-span default (min → max of years that have data).
+  const dataYears = availableYearsForChip;
+  const actualDataRange = useYearRangeDefault(dataYears, selectedYears, setSelectedYears);
 
   // Prepare time series data
   const timeSeriesData = useMemo(() => {
@@ -183,14 +189,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                 selectedYears={selectedYears}
                 onYearsChange={setSelectedYears}
                 availableYears={availableYearsForChip}
-                actualDataRange={
-                  availableYearsForChip.length > 0
-                    ? {
-                        minYear: availableYearsForChip[0],
-                        maxYear: availableYearsForChip[availableYearsForChip.length - 1],
-                      }
-                    : null
-                }
+                actualDataRange={actualDataRange}
               />
             )}
           </div>

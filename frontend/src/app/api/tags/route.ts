@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { name, created_by, vocabulary, code: providedCode, vocabulary_uri } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const { name, created_by, vocabulary, code: providedCode, vocabulary_uri } = body;
 
     // === INPUT VALIDATION ===
 

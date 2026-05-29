@@ -118,7 +118,8 @@ export async function PUT(
   try {
     const { id } = await params;
     const activityId = id
-    const body: SwitchModeRequest = await request.json()
+    const body: SwitchModeRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { mode } = body
 
     if (!mode || !['activity', 'transaction'].includes(mode)) {

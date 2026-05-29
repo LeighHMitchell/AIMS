@@ -898,7 +898,7 @@ export default function BulkImportSourceStep({
   return (
     <div className="space-y-6">
       {/* Organisation Identity Banner */}
-      <Card className="bg-muted border-border">
+      <Card className="bg-muted">
         <CardContent className="p-6">
           <div className="flex items-center gap-3">
             <div className="flex-1">
@@ -1404,7 +1404,7 @@ export default function BulkImportSourceStep({
 
           {fetchStatus === 'success' && (
             <>
-              <Card className="border-border">
+              <Card>
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-muted rounded-lg">

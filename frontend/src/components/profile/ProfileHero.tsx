@@ -4,6 +4,12 @@ import React from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
+/** Hero heights in px. Exported so each profile view can tie its
+ *  shrink-on-scroll threshold to the actual hero height — that way the hero
+ *  finishes fading exactly as it scrolls off, leaving no empty gap. */
+export const HERO_HEIGHT_WITH_IMAGE = 360
+export const HERO_HEIGHT_WITHOUT_IMAGE = 260
+
 export type HeroAccent =
   | "teal"
   | "blue"
@@ -42,6 +48,10 @@ interface ProfileHeroProps {
   actions?: React.ReactNode
   breadcrumb?: React.ReactNode
   className?: string
+  /** When true, render the `prefix` row beneath the title (above the subtitle)
+   *  rather than above it. Lets a hero lead with the name and tuck identifiers
+   *  (IATI id, country…) between the name and subtitle. Defaults to false. */
+  prefixBelowTitle?: boolean
   /** Shrink-on-scroll progress in `[0, 1]`. 0 = full hero, 1 = invisible.
    *  Drives a fade + slight upward translate so the hero glides under the
    *  sticky compact strip. */
@@ -60,10 +70,11 @@ export function ProfileHero({
   actions,
   breadcrumb,
   className,
+  prefixBelowTitle = false,
   shrinkProgress = 0,
 }: ProfileHeroProps) {
   const hasImage = !!imageUrl
-  const heightClass = hasImage ? "h-[360px]" : "h-[260px]"
+  const heroHeight = hasImage ? HERO_HEIGHT_WITH_IMAGE : HERO_HEIGHT_WITHOUT_IMAGE
   // Subtle parallax — content fades and slides up as the user scrolls. The
   // hero stays in flow (its full height still occupies space) so the ramp
   // mirrors actual scroll distance.
@@ -75,8 +86,16 @@ export function ProfileHero({
 
   return (
     <section
-      className={cn("relative w-full overflow-hidden", heightClass, ACCENT_BG[accent], className)}
+      className={cn("relative w-full overflow-hidden", className)}
+      style={{ height: heroHeight }}
     >
+      {/* Accent background sits on its own layer so it fades out with the rest
+          of the hero on scroll. Painting it on the <section> itself left an
+          opaque colour block lingering after the image + content had faded. */}
+      <div
+        className={cn("absolute inset-0", ACCENT_BG[accent])}
+        style={{ opacity: 1 - shrinkProgress }}
+      />
       {hasImage && (
         <>
           <img
@@ -119,7 +138,7 @@ export function ProfileHero({
                 ))}
               </div>
             )}
-            {prefix && (
+            {!prefixBelowTitle && prefix && (
               <div className="mb-2 flex flex-wrap items-center gap-1.5">
                 {prefix}
               </div>
@@ -138,6 +157,11 @@ export function ProfileHero({
                 {title}
               </h1>
             </div>
+            {prefixBelowTitle && prefix && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {prefix}
+              </div>
+            )}
             {subtitle && <div className="mt-3 text-body-lg text-white">{subtitle}</div>}
           </div>
         </div>

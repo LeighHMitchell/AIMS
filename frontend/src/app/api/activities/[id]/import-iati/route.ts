@@ -113,7 +113,8 @@ export async function POST(
     const resolvedParams = await Promise.resolve(params);
     const activityId = resolvedParams.id;
 
-    const body: ImportRequest = await request.json();
+    const body: ImportRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { fields, iati_data } = body;
     
     // Extract acronyms from body (if provided by user after review)

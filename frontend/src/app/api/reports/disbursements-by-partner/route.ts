@@ -1,27 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { codeAndName } from '@/lib/iati/codelist-resolver';
 
 export const dynamic = 'force-dynamic'
-
-// Organization type mapping
-const ORG_TYPE_MAP: Record<string, string> = {
-  '10': 'Government',
-  '11': 'Local Government',
-  '15': 'Other Public Sector',
-  '21': 'International NGO',
-  '22': 'National NGO',
-  '23': 'Regional NGO',
-  '24': 'Partner Country based NGO',
-  '30': 'Public Private Partnership',
-  '40': 'Multilateral',
-  '60': 'Foundation',
-  '70': 'Private Sector',
-  '71': 'Private Sector in Provider Country',
-  '72': 'Private Sector in Aid Recipient Country',
-  '73': 'Private Sector in Third Country',
-  '80': 'Academic, Training and Research',
-  '90': 'Other',
-}
 
 export async function GET() {
   const { supabase, response: authResponse } = await requireAuth();
@@ -74,7 +55,7 @@ export async function GET() {
     // Aggregate by provider organization
     const aggregated = new Map<string, {
       organization_name: string
-      organization_type: string
+      organization_type_code: string
       total_committed: number
       total_disbursed: number
       activities: Set<string>
@@ -86,11 +67,10 @@ export async function GET() {
 
       const org = orgById.get(t.provider_org_id)
       const orgName = org?.acronym || org?.name || t.provider_org_name || 'Unknown'
-      const orgType = org?.type ? (ORG_TYPE_MAP[org.type] || org.type) : ''
 
       const existing = aggregated.get(t.provider_org_id) || {
         organization_name: orgName,
-        organization_type: orgType,
+        organization_type_code: org?.type || '',
         total_committed: 0,
         total_disbursed: 0,
         activities: new Set<string>(),
@@ -121,14 +101,18 @@ export async function GET() {
 
     // Transform to array and sort by total disbursed
     const reportData = Array.from(aggregated.values())
-      .map(item => ({
-        organization_name: item.organization_name,
-        organization_type: item.organization_type,
-        total_committed: Math.round(item.total_committed),
-        total_disbursed: Math.round(item.total_disbursed),
-        activity_count: item.activities.size,
-        last_transaction_date: item.last_transaction_date || '',
-      }))
+      .map(item => {
+        const orgType = codeAndName('organization_type', item.organization_type_code)
+        return {
+          organization_name: item.organization_name,
+          organization_type_code: orgType.code,
+          organization_type_name: orgType.name,
+          total_committed: Math.round(item.total_committed),
+          total_disbursed: Math.round(item.total_disbursed),
+          activity_count: item.activities.size,
+          last_transaction_date: item.last_transaction_date || '',
+        }
+      })
       .sort((a, b) => b.total_disbursed - a.total_disbursed)
 
     const response = NextResponse.json({ data: reportData, error: null })

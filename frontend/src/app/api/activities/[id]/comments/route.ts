@@ -252,7 +252,8 @@ export async function POST(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
     if (!supabase) {
@@ -434,7 +435,8 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { user, commentId, action, resolutionNote } = body;
     
     if (!supabase) {
@@ -540,7 +542,8 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { commentId, user } = body;
     
     

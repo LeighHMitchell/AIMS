@@ -59,7 +59,8 @@ export async function POST(
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     if (!body.name || !body.value || !body.dimension_type) {
       return NextResponse.json({

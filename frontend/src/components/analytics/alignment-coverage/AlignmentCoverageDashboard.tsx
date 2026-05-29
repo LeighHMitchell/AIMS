@@ -58,7 +58,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import * as XLSX from "xlsx";
+import type * as XLSXType from "xlsx";
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
@@ -386,8 +386,10 @@ export function AlignmentCoverageDashboard() {
     : 0;
 
   // Excel export
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (!coverageData) return;
+
+    const XLSX: typeof XLSXType = await import("xlsx");
 
     const rows: any[] = [];
     function flatten(nodes: AlignmentCoverageNode[], parentPath = "") {

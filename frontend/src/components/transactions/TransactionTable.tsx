@@ -619,11 +619,11 @@ export function TransactionTable({
   return (
     <TooltipProvider>
     <div>
-      <Table className="min-w-full data-table-balanced">
+      <Table className="min-w-full data-table-balanced transactions-table">
         <TableHeader>
           <TableRow>
             {/* Checkbox - always visible, locked first */}
-            <th className="h-12 px-4 text-center align-top data-table-col-checkbox">
+            <th className="h-12 px-4 text-center align-middle data-table-col-checkbox">
               {onSelectAll && selectedIds && (
                 <div className="flex items-center justify-center" key={`select-all-wrapper-${transactions.length}`}>
                   <Checkbox
@@ -1018,53 +1018,47 @@ export function TransactionTable({
                       <td key="valueDate" className="py-3 px-4 whitespace-nowrap">{formatTransactionDate(transaction.value_date || transaction.transaction_date)}</td>
                     ),
                     usdValue: (
-                      <td key="usdValue" className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
+                      <td key="usdValue" className="py-3 px-4 text-right">
+                        <div className="flex flex-col items-end gap-0.5">
                           {usdValues[transactionId]?.loading ? (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                           ) : usdValues[transactionId]?.usd != null ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="text-body cursor-help flex items-center gap-1">
-                                  <span className="w-4 shrink-0 flex items-center justify-center">
-                                    {(transaction as any).exchange_rate_manual && (
-                                      <PenLine className="h-3.5 w-3.5 text-orange-500" />
-                                    )}
-                                  </span>
-                                  {formatCurrency(usdValues[transactionId].usd!, 'USD')}
+                            <>
+                              <span className="text-body flex items-center gap-1 whitespace-nowrap">
+                                <span className="w-4 shrink-0 flex items-center justify-center">
+                                  {(transaction as any).exchange_rate_manual && (
+                                    <PenLine className="h-3.5 w-3.5 text-orange-500" />
+                                  )}
                                 </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="min-w-[200px]">
-                                <table className="text-helper w-full">
-                                  <tbody>
-                                    <tr>
-                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
-                                      <td className="text-right py-0.5">{transaction.currency} {transaction.value?.toLocaleString()}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
-                                      <td className="text-right py-0.5">{usdValues[transactionId].rate}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
-                                      <td className="text-right py-0.5">
-                                        {(() => {
-                                          const dateStr = usdValues[transactionId].date;
-                                          if (!dateStr) return '—';
-                                          const parsed = new Date(dateStr);
-                                          return isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMMM yyyy');
-                                        })()}
-                                      </td>
-                                    </tr>
-                                    {(transaction as any).exchange_rate_manual && (
-                                      <tr>
-                                        <td colSpan={2} className="pt-1 text-orange-500 font-medium">Manual exchange rate</td>
-                                      </tr>
-                                    )}
-                                  </tbody>
-                                </table>
-                              </TooltipContent>
-                            </Tooltip>
+                                {formatCurrency(usdValues[transactionId].usd!, 'USD')}
+                              </span>
+                              {transaction.currency && transaction.currency.toUpperCase() !== 'USD' && (
+                                <>
+                                  {transaction.value != null && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-helper text-muted-foreground whitespace-nowrap cursor-help">
+                                          {transaction.currency.toUpperCase()} {transaction.value.toLocaleString()}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left" className="text-helper">
+                                        <div>Rate {usdValues[transactionId].rate}</div>
+                                        {(transaction as any).exchange_rate_manual && (
+                                          <div className="text-orange-500 font-medium">Manual exchange rate</div>
+                                        )}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {(() => {
+                                    const dateStr = usdValues[transactionId].date;
+                                    if (!dateStr) return null;
+                                    const parsed = new Date(dateStr);
+                                    const display = isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMM yyyy');
+                                    return <span className="text-helper text-muted-foreground whitespace-nowrap">{display}</span>;
+                                  })()}
+                                </>
+                              )}
+                            </>
                           ) : <span className="text-muted-foreground">—</span>}
                         </div>
                       </td>

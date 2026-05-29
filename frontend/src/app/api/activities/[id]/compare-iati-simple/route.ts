@@ -116,7 +116,8 @@ export async function POST(
 
   try {
     const { id: activityId } = await params;
-    const body: CompareRequest = await request.json();
+    const body: CompareRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     
     const homeCountryCode = await getSystemHomeCountry(supabase!);
     const homeCountryEntry = IATI_COUNTRIES.find(c => c.code === homeCountryCode);

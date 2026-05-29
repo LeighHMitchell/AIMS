@@ -27,7 +27,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (authResponse) return authResponse;
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
   if (!Array.isArray(body.financials)) {
     return NextResponse.json({ error: 'financials array is required' }, { status: 400 });

@@ -38,19 +38,25 @@ export async function GET(request: NextRequest) {
     const aidType = searchParams.get('aidType') || 'all';
     const flowType = searchParams.get('flowType') || 'all';
     const topN = searchParams.get('topN') || '10';
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
 
     const supabaseAdmin = supabase;
 
-    // Get activities with transactions
+    // Get activities with transactions. Finance type comes from the transaction's
+    // own finance_type, falling back to the activity's default_finance_type
+    // (real data — no longer simulated).
     const { data: activities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select(`
         id,
-        title_narrative,
+        default_finance_type,
         transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
           value_usd,
-          receiver_activity_uuid
+          receiver_activity_uuid,
+          finance_type,
+          transaction_date
         )
       `)
       .eq('publication_status', 'published');
@@ -63,56 +69,50 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Process the data by finance type (simulate since finance_type field doesn't exist in current schema)
+    // Process the data by REAL finance type, grouping untagged under "Unspecified".
     const financeTypeMap = new Map<string, ChartDataPoint>();
     const defaultCurrency = 'USD';
+    const fromD = dateFrom ? new Date(dateFrom) : null;
+    const toD = dateTo ? new Date(dateTo) : null;
 
-    // Simulate finance type distribution for demo purposes
-    const financeTypeCodes = Object.keys(FINANCE_TYPES);
-    
-    activities?.forEach((activity: any, index: number) => {
-      // Simulate finance type assignment (in production, use activity.finance_type)
-      const financeTypeCode = financeTypeCodes[index % financeTypeCodes.length];
-      const financeTypeName = FINANCE_TYPES[financeTypeCode as keyof typeof FINANCE_TYPES];
-      
-      // Initialize finance type data if not exists
-      if (!financeTypeMap.has(financeTypeCode)) {
-        financeTypeMap.set(financeTypeCode, {
-          financeType: financeTypeCode,
-          financeTypeName: financeTypeName,
-          budget: 0,
-          disbursements: 0,
-          expenditures: 0,
-          totalSpending: 0,
-        });
-      }
-
-      const financeTypeData = financeTypeMap.get(financeTypeCode)!;
-
-      // Process transactions (USD only)
+    activities?.forEach((activity: any) => {
       activity.transactions?.forEach((transaction: any) => {
         // Exclude internal transfers (pooled fund flows) to avoid double-counting
         if (transaction.receiver_activity_uuid) return;
 
-        // Parse transaction value (USD only)
-        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
-
-        if (isNaN(value) || !isFinite(value) || value === 0) {
-          return; // Skip invalid or non-USD values
+        if (transaction.transaction_date) {
+          const txDate = new Date(transaction.transaction_date);
+          if (fromD && txDate < fromD) return;
+          if (toD && txDate > toD) return;
         }
 
-        switch (transaction.transaction_type) {
+        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
+        if (isNaN(value) || !isFinite(value) || value === 0) return;
+
+        const code = String(transaction.finance_type || activity.default_finance_type || 'Unspecified');
+        const financeTypeName = (FINANCE_TYPES as Record<string, string>)[code] || (code === 'Unspecified' ? 'Unspecified' : code);
+
+        if (!financeTypeMap.has(code)) {
+          financeTypeMap.set(code, {
+            financeType: code,
+            financeTypeName,
+            budget: 0,
+            disbursements: 0,
+            expenditures: 0,
+            totalSpending: 0,
+          });
+        }
+        const financeTypeData = financeTypeMap.get(code)!;
+
+        switch (String(transaction.transaction_type)) {
           case '2': // Commitment
-          case 2:
             financeTypeData.budget += value;
             break;
           case '3': // Disbursement
-          case 3:
             financeTypeData.disbursements += value;
             financeTypeData.totalSpending += value;
             break;
           case '4': // Expenditure
-          case 4:
             financeTypeData.expenditures += value;
             financeTypeData.totalSpending += value;
             break;

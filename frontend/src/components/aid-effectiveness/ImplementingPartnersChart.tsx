@@ -211,7 +211,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -223,7 +223,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -235,7 +235,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -247,7 +247,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -291,7 +291,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </ResponsiveContainer>
           )
           return (
-            <Card className="bg-card border-border">
+            <Card className="bg-card">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg font-medium text-foreground">{partnerTitle}</CardTitle>
@@ -313,7 +313,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
         })()}
 
         {/* Compliance vs Gov Systems Scatter */}
-        <Card className="bg-card border-border">
+        <Card className="bg-card">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-foreground">
               GPEDC Compliance vs Government Systems Usage
@@ -378,7 +378,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       {/* Partner Type Distribution */}
       {summary && summary.partner_types && (
-        <Card className="bg-card border-border">
+        <Card className="bg-card">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-foreground">Partner Types</CardTitle>
           </CardHeader>
@@ -403,7 +403,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       )}
 
       {/* Detailed Partner Performance */}
-      <Card className="bg-card border-border">
+      <Card className="bg-card">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-foreground">Partner Performance Details</CardTitle>
         </CardHeader>
@@ -477,7 +477,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       {/* Top Performers */}
       {summary && summary.best_performer && (
-        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-muted-foreground" />

@@ -13,7 +13,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  const { batchId, action } = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  const { batchId, action } = body;
 
   if (action !== 'cancel') {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -80,7 +82,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Only super users can delete import history' }, { status: 403 });
   }
 
-  const { batchId } = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  const { batchId } = body;
   if (!batchId) {
     return NextResponse.json({ error: 'batchId required' }, { status: 400 });
   }

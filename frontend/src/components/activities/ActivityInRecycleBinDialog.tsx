@@ -69,8 +69,7 @@ export const ActivityInRecycleBinDialog: React.FC<ActivityInRecycleBinDialogProp
     <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
       <DialogContent className="w-[min(92vw,540px)] max-w-[540px] p-0">
         <DialogHeader className="bg-surface-muted border-b px-6 py-4 mx-0 mt-0 rounded-t-lg">
-          <DialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-destructive" />
+          <DialogTitle>
             This activity is in the recycle bin
           </DialogTitle>
           <DialogDescription>

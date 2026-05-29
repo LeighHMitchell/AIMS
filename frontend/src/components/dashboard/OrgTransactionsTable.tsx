@@ -5,13 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { FullPagination } from '@/components/ui/full-pagination';
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import {
   Table,
   TableBody,
@@ -21,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { TableRowActionMenu } from './TableRowActionMenu';
 import { apiFetch } from '@/lib/api-fetch';
@@ -87,8 +82,6 @@ function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50];
-
 export function OrgTransactionsTable({
   organizationId,
   organizationName,
@@ -101,7 +94,7 @@ export function OrgTransactionsTable({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('transaction_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -383,51 +376,16 @@ export function OrgTransactionsTable({
               </TableBody>
             </Table>
 
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <span className="text-body text-muted-foreground">Rows per page:</span>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(val) => {
-                    setPageSize(parseInt(val));
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-[70px] h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-body text-muted-foreground">
-                  Page {page} of {Math.max(totalPages, 1)}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <FullPagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              perPage={pageSize}
+              onPageChange={(p) => setPage(p)}
+              onPerPageChange={(n) => { setPageSize(n); setPage(1); }}
+              perPageOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="transactions"
+            />
     </>
   );
 

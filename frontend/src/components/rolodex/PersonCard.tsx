@@ -366,7 +366,7 @@ export function PersonCard({
   const actionMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20">
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20" aria-label="Person actions">
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

@@ -525,7 +525,7 @@ export function ResultsReadOnlyView({
   if (!results || results.length === 0) {
     return (
       <div className={cn("space-y-6", className)}>
-        <Card className="border-border">
+        <Card>
           <CardContent className="py-12">
             <div className="text-center">
               <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -629,7 +629,7 @@ export function ResultsReadOnlyView({
               {/* Charts Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Achievement Status Pie Chart */}
-                <Card className="border-border">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold text-foreground inline-flex items-center gap-1.5">
                       Indicator Achievement Status
@@ -698,7 +698,7 @@ export function ResultsReadOnlyView({
                 </Card>
 
                 {/* Results by Type Pie Chart */}
-                <Card className="border-border">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold text-foreground inline-flex items-center gap-1.5">
                       Results by Type
@@ -772,7 +772,7 @@ export function ResultsReadOnlyView({
                 <h4 className="text-lg font-semibold text-foreground mb-4">Results Details</h4>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {resultsWithIndicators.map((result) => (
-                    <Card key={result.id} className="border-border">
+                    <Card key={result.id}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-base font-semibold text-foreground">
@@ -1033,7 +1033,7 @@ export function ResultsReadOnlyView({
 
         {/* Documents Gallery Tab */}
         <TabsContent value="documents" className="mt-4">
-          <Card className="border-border">
+          <Card>
             <CardHeader>
               <CardTitle className="text-base font-semibold text-foreground">
                 Document Links Gallery

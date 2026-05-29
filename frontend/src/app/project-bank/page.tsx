@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
+import { DEFAULT_PAGE_SIZE } from "@/lib/pagination"
 import {
   ResponsiveContainer,
   BarChart,
@@ -84,7 +85,7 @@ export default function ProjectBankDashboard() {
   const [pathwayViewMode, setPathwayViewMode] = useState<ViewMode>('value')
   const [sectorViewMode, setSectorViewMode] = useState<ViewMode>('value')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageLimit, setPageLimit] = useState(10)
+  const [pageLimit, setPageLimit] = useState(DEFAULT_PAGE_SIZE)
   const [sortField, setSortField] = useState<string>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
@@ -315,7 +316,7 @@ export default function ProjectBankDashboard() {
                     </CardTitle>
                     <div className="flex items-center gap-1.5">
                       <ViewToggle mode={pipelineViewMode} onChange={setPipelineViewMode} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportPipelineCSV}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportPipelineCSV} aria-label="Export pipeline status as CSV">
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -368,7 +369,7 @@ export default function ProjectBankDashboard() {
                     </CardTitle>
                     <div className="flex items-center gap-1.5">
                       <ViewToggle mode={pathwayViewMode} onChange={setPathwayViewMode} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportPathwayCSV}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportPathwayCSV} aria-label="Export pathway breakdown as CSV">
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -421,7 +422,7 @@ export default function ProjectBankDashboard() {
                     </CardTitle>
                     <div className="flex items-center gap-1.5">
                       <ViewToggle mode={sectorViewMode} onChange={setSectorViewMode} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportSectorCSV}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportSectorCSV} aria-label="Export sector distribution as CSV">
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                     </div>

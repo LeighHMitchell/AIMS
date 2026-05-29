@@ -27,10 +27,9 @@ export async function GET(request: NextRequest) {
         })
       }
       return NextResponse.json(
-        { 
-          data: null, 
-          error: error.message || 'Unknown database error',
-          details: error
+        {
+          data: null,
+          error: error.message || 'Unknown database error'
         },
         { status: 500 }
       )

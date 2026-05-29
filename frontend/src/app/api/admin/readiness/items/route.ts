@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: adminError.error }, { status: adminError.status });
     }
 
-    const body: UpsertChecklistItemRequest = await request.json();
+    const body: UpsertChecklistItemRequest = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // Validate required fields
     if (!body.template_id || !body.code || !body.title || body.display_order === undefined) {

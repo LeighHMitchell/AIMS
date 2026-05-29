@@ -111,7 +111,8 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { document_id, title, description, document_type } = body;
 
     if (!document_id || !title?.trim()) {
@@ -148,7 +149,8 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const documentId = body.document_id;
 
     if (!documentId) {

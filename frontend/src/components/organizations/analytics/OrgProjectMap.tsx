@@ -92,7 +92,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
 
   if (loading) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Project Locations Map
@@ -107,7 +107,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
 
   if (error) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Project Locations Map
@@ -125,7 +125,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
 
   if (locations.length === 0) {
     return (
-      <Card className="border-border">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
             Project Locations Map
@@ -145,7 +145,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
   }
 
   return (
-    <Card className="border-border">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-foreground">

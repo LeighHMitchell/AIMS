@@ -22,7 +22,7 @@ export async function POST() {
     if (error) {
       console.error('[Migration] Error:', error)
       return NextResponse.json(
-        { error: error.message, details: error },
+        { error: error.message },
         { status: 500 }
       )
     }

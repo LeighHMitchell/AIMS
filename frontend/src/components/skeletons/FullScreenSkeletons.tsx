@@ -252,7 +252,7 @@ export function PartnerFundingSummarySkeleton() {
           <TabsContent value="type" className="space-y-4">
             {/* Group Cards */}
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="bg-card border border-border">
+              <Card key={i} className="bg-card">
                 <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -314,7 +314,7 @@ export function PartnerFundingSummarySkeleton() {
 
           <TabsContent value="custom" className="space-y-4">
             {/* Custom Groups or Empty State */}
-            <Card className="bg-card border border-border">
+            <Card className="bg-card">
               <CardContent className="py-12 text-center">
                 <Skeleton variant="circular" width="48px" height="48px" className="mx-auto mb-4" />
                 <Skeleton variant="text" width="200px" height="1.125rem" className="mx-auto mb-2" />

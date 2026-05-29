@@ -10,7 +10,9 @@ import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ChartExpansionProvider } from '@/lib/chart-expansion-context'
-import { formatCurrencyPrecise } from '@/lib/format'
+import { ChartDataTable } from '@/components/ui/chart-data-table'
+import { ChartCrossfade } from '@/components/ui/chart-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 // Toolbar context — when CompactChartCard is rendering with `inlineToolbar`,
 // it suppresses its own header table/CSV buttons and provides their handlers
@@ -38,6 +40,12 @@ interface CompactChartCardProps {
   exportData?: any[]
   exportFilename?: string
   onExport?: () => void
+  /**
+   * Optional key→hex map forwarded to the generic table view so its header
+   * cells show colored series squares matching the chart's bars/lines
+   * (FinancialTotals parity). Keys must match the `exportData` column keys.
+   */
+  tableColorMap?: Record<string, string>
   className?: string
   hideViewToggle?: boolean
   compactHeight?: number // Height for compact view, defaults to 250
@@ -79,6 +87,7 @@ export function CompactChartCard({
   exportData,
   exportFilename,
   onExport,
+  tableColorMap,
   className = "",
   hideViewToggle = false,
   compactHeight = 250,
@@ -88,6 +97,7 @@ export function CompactChartCard({
 }: CompactChartCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
+  const reduceMotion = useReducedMotion()
 
   const handleExport = () => {
     if (onExport) {
@@ -104,116 +114,20 @@ export function CompactChartCard({
     toast.success('Chart data exported successfully')
   }
 
-  const renderTableView = () => {
-    if (!exportData || exportData.length === 0) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          No data available to display in table view
-        </div>
-      )
-    }
-
-    // Canonical table layout — matches FinancialTotalsBarChart so every chart
-    // on the analytics dashboard, activity profile and org profile reads the
-    // same way: sticky bg-surface-muted header, hover rows, right-aligned
-    // currency, tabular-nums, footer with column + grand totals.
-    //
-    // Numeric columns are formatted as full USD amounts with 2 decimals via
-    // formatCurrencyPrecise. Headers ending in (XXX) are treated as that
-    // currency code — the suffix is hidden in the header and used to format
-    // the cell value (e.g. "Value (EUR)" → cells formatted in EUR).
-    const headers = Object.keys(exportData[0])
-    const currencyMatch = (h: string) => h.match(/\(([A-Z]{3})\)\s*$/)
-    const stripCurrency = (h: string) => h.replace(/\s*\([A-Z]{3}\)\s*$/, '')
-    const formatHeader = (h: string) => {
-      const cleaned = stripCurrency(h)
-      return cleaned.includes(' ')
-        ? cleaned
-        : cleaned.charAt(0).toUpperCase() + cleaned.slice(1).replace(/([A-Z])/g, ' $1')
-    }
-    const isNumericColumn = (h: string) =>
-      exportData.some(row => typeof row[h] === 'number')
-    const columnTotal = (h: string) =>
-      exportData.reduce((sum, row) => sum + (typeof row[h] === 'number' ? row[h] : 0), 0)
-    const anyNumeric = headers.some(isNumericColumn)
-
-    return (
-      <div className="overflow-auto max-h-[500px] rounded-md border">
-        <table className="w-full text-body">
-          <thead className="bg-surface-muted sticky top-0">
-            <tr>
-              {headers.map((header) => {
-                const numeric = isNumericColumn(header)
-                return (
-                  <th
-                    key={header}
-                    className={cn(
-                      "px-4 py-3 font-medium text-foreground border-b whitespace-nowrap",
-                      numeric ? "text-right" : "text-left"
-                    )}
-                  >
-                    {formatHeader(header)}
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {exportData.map((row, idx) => (
-              <tr key={idx} className="border-b border-border hover:bg-muted/50">
-                {headers.map((header) => {
-                  const value = row[header]
-                  const ccy = currencyMatch(header)?.[1] || 'USD'
-                  if (typeof value === 'number') {
-                    return (
-                      <td
-                        key={header}
-                        className="text-right px-4 py-2.5 text-foreground tabular-nums"
-                      >
-                        {formatCurrencyPrecise(value, ccy)}
-                      </td>
-                    )
-                  }
-                  return (
-                    <td key={header} className="px-4 py-2.5 text-foreground">
-                      {String(value ?? '')}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-          {anyNumeric && (
-            <tfoot className="bg-muted">
-              <tr>
-                {headers.map((header, i) => {
-                  const numeric = isNumericColumn(header)
-                  if (!numeric) {
-                    return (
-                      <td
-                        key={header}
-                        className="px-4 py-3 font-semibold text-foreground border-t-2 border-border"
-                      >
-                        {i === 0 ? 'Total' : ''}
-                      </td>
-                    )
-                  }
-                  return (
-                    <td
-                      key={header}
-                      className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border tabular-nums"
-                    >
-                      {formatCurrencyPrecise(columnTotal(header), currencyMatch(header)?.[1] || 'USD')}
-                    </td>
-                  )
-                })}
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
-    )
-  }
+  // The generic table view delegates to the shared ChartDataTable so every
+  // chart on the analytics dashboard reads identically (sticky header, sortable
+  // columns, color squares, footer totals, h+v scroll). exportData flows
+  // straight through — headers are derived from its keys and "(XXX)" currency
+  // suffixes are parsed by the component. tableColorMap adds the series squares.
+  const renderTableView = () => (
+    <ChartDataTable
+      rows={exportData ?? []}
+      colorMap={tableColorMap}
+      sortable
+      stripCurrencySuffix
+      maxHeight={500}
+    />
+  )
 
   // Clone child element and pass compact prop
   const renderChart = (compact: boolean) => {
@@ -226,7 +140,7 @@ export function CompactChartCard({
   return (
     <>
       {/* Compact Card View */}
-      <Card className={cn("bg-white border-border flex flex-col", className)}>
+      <Card className={cn("bg-white flex flex-col", className)}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -381,15 +295,39 @@ export function CompactChartCard({
                   hasTableView: !!(tableView || (exportData && exportData.length > 0)),
                 }}
               >
-                {viewMode === 'chart' && renderChart(false)}
-                {viewMode === 'table' && inlineToolbar && (
-                  /* Inline-toolbar charts render their own controls row even
-                     in table mode — when viewMode === 'table' the chart hides
-                     its plot body, leaving the controls (including the back-
-                     to-chart button) intact above the table. */
-                  <div className="mb-4">{renderChart(false)}</div>
+                {inlineToolbar ? (
+                  /* Inline-toolbar charts keep their controls + plot mounted in
+                     a single stable position across the chart/table toggle (the
+                     chart hides its own plot body in table mode via
+                     useChartCardTableMode). Rendering it once — rather than in
+                     two different JSX positions — means toggling never remounts
+                     it. The table fades in below. */
+                  <>
+                    {renderChart(false)}
+                    <AnimatePresence initial={false}>
+                      {viewMode === 'table' && (
+                        <motion.div
+                          key="inline-table"
+                          initial={reduceMotion ? false : { opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+                          className="mt-4"
+                        >
+                          {tableView ?? renderTableView()}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  /* Non-inline charts swap the whole body between chart and
+                     table — crossfade the two so it doesn't hard-cut. */
+                  <ChartCrossfade transitionKey={viewMode}>
+                    {viewMode === 'chart'
+                      ? renderChart(false)
+                      : (tableView ?? renderTableView())}
+                  </ChartCrossfade>
                 )}
-                {viewMode === 'table' && (tableView ?? renderTableView())}
               </ChartCardToolbarContext.Provider>
             </ChartExpansionProvider>
           </div>

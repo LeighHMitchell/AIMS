@@ -59,7 +59,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
     // First, check if the report exists and if user has permission
     const { data: existing, error: fetchError } = await supabase

@@ -76,8 +76,7 @@ export function CreateActivityModal({ isOpen, onClose }: CreateActivityModalProp
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
+          <DialogTitle>
             Create New Activity
           </DialogTitle>
           <DialogDescription>

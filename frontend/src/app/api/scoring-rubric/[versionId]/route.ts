@@ -32,7 +32,8 @@ export async function PUT(
   if (authResponse) return authResponse;
 
   const { versionId } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   const { label, description } = body;
 
   const { data, error } = await supabase!

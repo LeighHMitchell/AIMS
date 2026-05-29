@@ -1,7 +1,27 @@
 {
-  "currentVersion": "3.42.0",
-  "narrativeSummary": "This update is all about seeing your data the way that makes sense to you, and getting to answers faster. Your sector chart can now be shown several different ways - as a pie, as bars, or as flow diagrams that trace where the money actually goes - so whichever way you like to read numbers, there's a view that just clicks. Even better, you can tap any part of it to zoom in: from a big theme like 'Health' all the way down to the individual activities underneath. The Coordination chart finally has proper filters, so instead of squinting at everything at once you can ask a real question - like 'who's working together on health grants in 2024?' - and see exactly that. The Aid Flow Map is friendlier too: you can look at several kinds of funding at the same time, zoom right into a busy patch with new buttons, and hover over any label to get a plain-English reminder of what it means, so there's no jargon to memorise. Colours stay consistent even on busy charts, lots of charts got tidied up so they're easier to read at a glance, and one confusing line in the 'delete organisation' box is gone. Less squinting, less guessing, more answers.",
+  "currentVersion": "3.43.0",
+  "narrativeSummary": "This update adds new ways to spot what matters and makes a key page noticeably faster. There are three new dashboard charts: one for humanitarian activities, one for the activities the most partners are working on together, and one that highlights where there's the biggest gap between what was planned and what's actually been spent - so the things worth a closer look come straight to you. Charts now let you filter by partner, pick exactly which figures to show, and download what you're looking at as a spreadsheet with one click. A batch of new ready-made reports covers things like activities wrapping up soon, budget vs. actual spend, and funding by location. The Organisations page now loads a lot quicker, especially when there's a lot of data behind it. And the Transparency Index export, which had stopped working, is fixed.",
   "releases": [
+    {
+      "version": "3.43.0",
+      "date": "2026-05-29",
+      "narrativeSummary": "This update adds new ways to spot what matters and makes a key page noticeably faster. There are three new dashboard charts - humanitarian activities, the activities the most partners are working on together, and where the biggest gap is between planned and actual spend - so the things worth a closer look come straight to you. Charts now let you filter by partner, pick which figures to show, and download what you're looking at as a spreadsheet in one click. A batch of new ready-made reports covers things like activities wrapping up soon, budget vs. actual spend, and funding by location. The Organisations page loads a lot quicker, and the Transparency Index export, which had stopped working, is fixed.",
+      "changes": [
+        "<b>Three new charts that point you to what matters</b>",
+        "&nbsp;&nbsp;A Humanitarian Activities chart showing how much of the work is humanitarian. Why it helps: you can see your humanitarian footprint at a glance instead of digging through activities one by one.",
+        "&nbsp;&nbsp;A Top Engaged Activities chart highlighting the activities that the most partners are working on together. Why it helps: it surfaces the big collaborative efforts so you know where the most coordination is happening.",
+        "&nbsp;&nbsp;A Top Execution Gap chart showing where the difference between what was planned and what's actually been spent is largest. Why it helps: the activities most worth a closer look come straight to you, instead of you having to hunt for them.",
+        "<b>Charts you can filter and take with you</b>",
+        "&nbsp;&nbsp;Filter charts by partner, and choose exactly which figures you want shown. Why it helps: you can narrow a chart down to the question you actually have, rather than reading around the bits you don't need.",
+        "&nbsp;&nbsp;A one-click download button to save what a chart is showing as a spreadsheet. Why it helps: the numbers behind the picture are yours to drop straight into a report or share with a colleague.",
+        "<b>New ready-made reports</b>",
+        "&nbsp;&nbsp;New reports including activities ending soon, an activity status summary, budget vs. actual spend, funding by location, an organisation's activity portfolio, and transactions broken down by type. Why it helps: common questions now have a report waiting for you, instead of you building the answer by hand each time.",
+        "<b>A much faster Organisations page</b>",
+        "&nbsp;&nbsp;The Organisations list now loads a lot quicker, especially when there's a lot of data behind it. Why it helps: less waiting and spinning, even as your data grows.",
+        "<b>A fix</b>",
+        "&nbsp;&nbsp;The Transparency Index export, which had stopped working, now runs again. Why it helps: you can pull your transparency scores out again without hitting an error."
+      ]
+    },
     {
       "version": "3.42.0",
       "date": "2026-05-21",

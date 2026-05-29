@@ -153,6 +153,34 @@ export function crossesCalendarYear(customYear: CustomYear | CustomYearInput): b
 }
 
 /**
+ * True for the Gregorian "Calendar Year" (Jan 1 → Dec 31). This is the
+ * calendar-type year that does not cross a year boundary and carries no
+ * fiscal offset.
+ */
+export function isGregorianCalendarYear(cy: CustomYear | CustomYearInput): boolean {
+  return cy.startMonth === 1 && cy.startDay === 1 && cy.endMonth === 12 && cy.endDay === 31;
+}
+
+/**
+ * Pick the calendar id charts should default to.
+ *
+ * Charts default to the Gregorian "Calendar Year" (Jan 1 → Dec 31) whenever
+ * one exists, regardless of which row the database flags as `is_default` —
+ * this keeps every analytics chart on Gregorian years by default. Falls back
+ * to the API-provided default, then the first available row, then '' (which
+ * the pickers render as plain Gregorian years).
+ */
+export function pickDefaultCalendarYearId(
+  years: CustomYear[],
+  apiDefaultId?: string | null
+): string {
+  const gregorian = years.find(isGregorianCalendarYear);
+  if (gregorian) return gregorian.id;
+  if (apiDefaultId && years.some((cy) => cy.id === apiDefaultId)) return apiDefaultId;
+  return years[0]?.id ?? '';
+}
+
+/**
  * Sort custom years so calendar-type years (Jan–Dec) appear before financial/fiscal years.
  * Within each group, preserves the original displayOrder.
  */

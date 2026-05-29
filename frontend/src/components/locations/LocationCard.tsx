@@ -165,9 +165,9 @@ export default function LocationCard({
 
   return (
     <Card
-      className={`transition-all duration-200 hover:shadow-md w-full border border-border ${
-        isDragging ? 'opacity-50 rotate-2 shadow-lg' : ''
-      }`}
+      className={`transition-all duration-200 hover:shadow-card-hover w-full ${
+ isDragging ? 'opacity-50 rotate-2 shadow-lg' : ''
+ }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

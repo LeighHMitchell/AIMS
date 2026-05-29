@@ -127,7 +127,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     
     // Validate required fields
     if (!body.title || !body.description || !body.createdByUserId || !body.createdByOrgId) {
@@ -247,7 +248,8 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { id, ...updates } = body;
 
     if (!id) {
