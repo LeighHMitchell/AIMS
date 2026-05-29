@@ -395,7 +395,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 py-4 mx-0 mt-0">
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
               Comments
               {comments.length > 0 && (
                 <span className="text-body text-muted-foreground font-normal">({comments.length})</span>
@@ -549,6 +550,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                               size="icon"
                               className="h-7 w-7"
                               onClick={() => handleArchiveComment(comment.id)}
+                              aria-label="Archive comment"
                             >
                               <Archive className="h-3.5 w-3.5" />
                             </Button>
@@ -564,6 +566,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                               size="icon"
                               className="h-7 w-7"
                               onClick={() => handleUnarchiveComment(comment.id)}
+                              aria-label="Unarchive comment"
                             >
                               <ArchiveRestore className="h-3.5 w-3.5" />
                             </Button>
@@ -579,6 +582,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                               size="icon"
                               className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => handleDeleteComment(comment.id)}
+                              aria-label="Delete comment"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>

@@ -18,9 +18,7 @@ import {
 } from "@/components/ui/tooltip"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
 import { getRoleBadgeVariant } from "@/lib/role-badge-utils"
-import { Search, UserPlus, Pencil, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Trash2, ChevronsUpDown, RefreshCw } from "lucide-react"
-import { FullPagination } from "@/components/ui/full-pagination"
-import { PAGE_SIZE_OPTIONS } from "@/lib/pagination"
+import { Search, UserPlus, Pencil, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Trash2, ChevronsUpDown, ChevronLeft, ChevronRight, Users, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Label } from "@/components/ui/label"
@@ -958,7 +956,6 @@ export function AdminUserTable() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => handleEditUser(user.id)}
-                              aria-label="Edit user details"
                             >
                               <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -976,7 +973,6 @@ export function AdminUserTable() {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => handleResetPassword(user.id)}
-                                aria-label="Reset password"
                               >
                                 <Key className="h-4 w-4" />
                               </Button>
@@ -993,7 +989,6 @@ export function AdminUserTable() {
                                 size="icon"
                                 disabled
                                 className="h-8 w-8 opacity-50 cursor-not-allowed"
-                                aria-label="OAuth user authenticates via Google"
                               >
                                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -1016,6 +1011,7 @@ export function AdminUserTable() {
                               onClick={() => setDeleteUserTarget(user)}
                               disabled={user.id === currentUser?.id}
                               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              aria-label="Delete user"
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -1041,16 +1037,101 @@ export function AdminUserTable() {
         </div>
 
         {/* Pagination */}
-        <FullPagination
-          page={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredUsers.length}
-          perPage={pageLimit}
-          onPageChange={(p) => setCurrentPage(p)}
-          onPerPageChange={handlePageLimitChange}
-          perPageOptions={PAGE_SIZE_OPTIONS}
-          itemLabel="users"
-        />
+        {filteredUsers.length > 0 && (
+          <div className="bg-white rounded-lg border border-border shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-body text-muted-foreground">
+                Showing {startIndex + 1} to {endIndex} of {filteredUsers.length} users
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label className="text-body text-muted-foreground">Items per page:</label>
+                <Select 
+                  value={pageLimit.toString()} 
+                  onValueChange={(value) => handlePageLimitChange(Number(value))}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
           </>
         )}
       </CardContent>

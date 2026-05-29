@@ -480,6 +480,7 @@ export default function SDGAlignmentSection({
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); setModalGoalId(goalId); }}
                               className="hover:bg-blue-50 hover:text-blue-600"
+                              aria-label="Edit SDG goal"
                             >
                               <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -488,6 +489,7 @@ export default function SDGAlignmentSection({
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); removeGoal(goalId); }}
                               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              aria-label="Remove SDG goal"
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
