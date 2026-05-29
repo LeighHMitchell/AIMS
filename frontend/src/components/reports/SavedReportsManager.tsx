@@ -576,6 +576,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 e.stopPropagation()
                 onEdit(report)
               }}
+              aria-label="Edit report"
             >
               <Pencil className="h-3 w-3 text-muted-foreground" />
             </Button>
@@ -589,6 +590,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 e.stopPropagation()
                 onDelete(report.id)
               }}
+              aria-label="Delete report"
             >
               <Trash2 className="h-3 w-3 text-destructive" />
             </Button>

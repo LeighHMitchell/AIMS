@@ -254,7 +254,7 @@ export function TaskTrackingView({
                 <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 mt-0.5">
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 mt-0.5" aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                         {isExpanded ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
@@ -428,6 +428,7 @@ export function TaskTrackingView({
                             e.stopPropagation();
                             setEditingTask(task);
                           }}
+                          aria-label="Edit task"
                         >
                           <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -442,6 +443,7 @@ export function TaskTrackingView({
                               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               onClick={(e) => e.stopPropagation()}
                               disabled={deletingTaskId === task.id}
+                              aria-label="Delete task"
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>

@@ -218,6 +218,7 @@ export default function FundingGapsPage() {
                                 size="icon"
                                 className="h-8 w-8 opacity-0 group-hover:opacity-100"
                                 onClick={(e) => e.stopPropagation()}
+                                aria-label="Project actions"
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>

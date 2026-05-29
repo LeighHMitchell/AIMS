@@ -457,6 +457,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => setViewMode('table')}
+                  aria-label="Table view"
                 >
                   <TableIcon className="h-4 w-4" />
                 </Button>
@@ -469,6 +470,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => setViewMode('cards')}
+                  aria-label="Card view"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>

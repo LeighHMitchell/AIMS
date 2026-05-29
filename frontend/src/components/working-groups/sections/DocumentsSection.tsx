@@ -247,6 +247,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                     variant="ghost"
                     size="icon"
                     onClick={() => window.open(doc.file_url, '_blank')}
+                    aria-label="Download document"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
@@ -263,6 +264,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                     size="icon"
                     className="text-destructive hover:text-destructive"
                     onClick={() => setDocToDelete(doc)}
+                    aria-label="Delete document"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

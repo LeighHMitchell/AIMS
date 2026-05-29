@@ -2001,7 +2001,7 @@ export default function ActivityBudgetsTab({
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="icon" className="h-8 w-8">
+                              <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Budget actions">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>

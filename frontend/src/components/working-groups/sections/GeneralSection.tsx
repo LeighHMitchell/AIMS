@@ -181,6 +181,7 @@ export default function GeneralSection({
                   variant="destructive"
                   size="icon"
                   className="absolute top-2 right-2 h-7 w-7"
+                  aria-label="Remove banner"
                   onClick={() => {
                     setBanner('')
                     bannerAutosave.triggerSave(null)
@@ -231,6 +232,7 @@ export default function GeneralSection({
                   variant="destructive"
                   size="icon"
                   className="absolute top-1 right-1 h-6 w-6"
+                  aria-label="Remove icon"
                   onClick={() => {
                     setIconUrl('')
                     iconAutosave.triggerSave(null)

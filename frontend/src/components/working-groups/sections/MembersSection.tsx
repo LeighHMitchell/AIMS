@@ -450,7 +450,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                   <td className="px-4 py-3 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
+                        <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Member actions">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -600,6 +600,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
                     onClick={clearSelectedContact}
+                    aria-label="Clear selected contact"
                   >
                     <X className="h-4 w-4" />
                   </Button>

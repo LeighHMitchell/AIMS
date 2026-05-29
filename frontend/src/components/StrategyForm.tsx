@@ -409,7 +409,7 @@ export function StrategyForm({
                   }
                 }}
               />
-              <Button type="button" variant="outline" size="icon" onClick={handleAddPillar}>
+              <Button type="button" variant="outline" size="icon" onClick={handleAddPillar} aria-label="Add pillar">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -444,7 +444,7 @@ export function StrategyForm({
                   }
                 }}
               />
-              <Button type="button" variant="outline" size="icon" onClick={handleAddCounterpart}>
+              <Button type="button" variant="outline" size="icon" onClick={handleAddCounterpart} aria-label="Add counterpart">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>

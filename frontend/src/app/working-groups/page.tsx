@@ -466,7 +466,7 @@ export default function WorkingGroupsPage() {
                             <div onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="icon" className="h-8 w-8">
+                                  <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Working group actions">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -526,7 +526,7 @@ export default function WorkingGroupsPage() {
                               <div onClick={(e) => e.stopPropagation()}>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="icon" className="h-8 w-8">
+                                    <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Sub-group actions">
                                       <MoreVertical className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -587,7 +587,7 @@ export default function WorkingGroupsPage() {
                         <div onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="icon" className="h-8 w-8">
+                              <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Sub-group actions">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>

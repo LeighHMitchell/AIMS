@@ -426,6 +426,7 @@ export function NationalPlansManagement() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleEditPlan(selectedPlan)}
+                        aria-label="Edit plan"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -434,6 +435,7 @@ export function NationalPlansManagement() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         onClick={() => handleDeletePlan(selectedPlan)}
+                        aria-label="Delete plan"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

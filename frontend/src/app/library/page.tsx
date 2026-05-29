@@ -519,6 +519,7 @@ export default function LibraryPage() {
                     size="icon"
                     onClick={() => fetchDocuments()}
                     disabled={loading}
+                    aria-label="Refresh documents"
                   >
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   </Button>

@@ -381,6 +381,7 @@ export default function FundsPage() {
                               variant="outline"
                               size="icon"
                               className="bg-card/90 hover:bg-card"
+                              aria-label="Fund actions"
                             >
                               <MoreVertical className="h-4 w-4" />
                             </Button>
