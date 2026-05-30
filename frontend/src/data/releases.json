@@ -1,7 +1,33 @@
 {
-  "currentVersion": "3.43.0",
-  "narrativeSummary": "This update adds new ways to spot what matters and makes a key page noticeably faster. There are three new dashboard charts: one for humanitarian activities, one for the activities the most partners are working on together, and one that highlights where there's the biggest gap between what was planned and what's actually been spent - so the things worth a closer look come straight to you. Charts now let you filter by partner, pick exactly which figures to show, and download what you're looking at as a spreadsheet with one click. A batch of new ready-made reports covers things like activities wrapping up soon, budget vs. actual spend, and funding by location. The Organisations page now loads a lot quicker, especially when there's a lot of data behind it. And the Transparency Index export, which had stopped working, is fixed.",
+  "currentVersion": "4.0.0",
+  "narrativeSummary": "Version 4.0.0 is a major milestone — the biggest rethink of analytics and reporting since the platform began. The entire analytics dashboard and every chart has been rebuilt to load faster, read more clearly, and behave consistently from one screen to the next. Three new charts bring the things most worth your attention straight to the surface: how much of your work is humanitarian, which activities the most partners are rallying around, and where the gap between what was planned and what's actually been spent is widest. Charts can now be filtered by partner, narrowed to just the figures you care about, switched between views, and downloaded as a spreadsheet in one click. A whole library of ready-made reports answers common questions without any setup. Behind the scenes, the Organisations page and the main list views are dramatically faster, the app is more accessible, chart colours are consistent everywhere, and a long-broken Transparency Index export works again. Less waiting, less guessing, more answers.",
   "releases": [
+    {
+      "version": "4.0.0",
+      "date": "2026-05-30",
+      "narrativeSummary": "Version 4.0.0 is a major milestone — the biggest rethink of analytics and reporting since the platform began. The entire analytics dashboard and every chart has been rebuilt to load faster, read more clearly, and behave consistently from one screen to the next. Three new charts bring the things most worth your attention straight to the surface: how much of your work is humanitarian, which activities the most partners are rallying around, and where the gap between what was planned and what's actually been spent is widest. Charts can now be filtered by partner, narrowed to just the figures you care about, switched between views, and downloaded as a spreadsheet in one click. A whole library of ready-made reports answers common questions without any setup. Behind the scenes, the Organisations page and the main list views are dramatically faster, the app is more accessible, chart colours are consistent everywhere, and a long-broken Transparency Index export works again. Less waiting, less guessing, more answers.",
+      "changes": [
+        "<b>A rebuilt analytics dashboard</b>",
+        "&nbsp;&nbsp;The whole analytics dashboard and every chart has been rebuilt from the ground up. Why it helps: charts are faster, clearer, and behave the same way everywhere, so reading your data feels effortless and looks sharp in reports and slides.",
+        "<b>Three new charts that point you to what matters</b>",
+        "&nbsp;&nbsp;A Humanitarian Activities chart showing how much of your work is humanitarian. Why it helps: you can see your humanitarian footprint at a glance instead of digging through activities one by one.",
+        "&nbsp;&nbsp;A Top Engaged Activities chart highlighting the activities the most partners are working on together. Why it helps: it surfaces the big collaborative efforts so you know where the most coordination is happening.",
+        "&nbsp;&nbsp;A Top Execution Gap chart showing where the difference between what was planned and what's actually been spent is largest. Why it helps: the activities most worth a closer look come straight to you, instead of you having to hunt for them.",
+        "<b>Charts you can shape and take with you</b>",
+        "&nbsp;&nbsp;Filter charts by partner, choose exactly which figures to show, and switch between views (such as bars, pie, or flow). Why it helps: you can narrow a chart down to the question you actually have, rather than reading around the bits you don't need.",
+        "&nbsp;&nbsp;A one-click button to download what a chart is showing as a spreadsheet. Why it helps: the numbers behind the picture are yours to drop straight into a report or share with a colleague.",
+        "<b>A library of ready-made reports</b>",
+        "&nbsp;&nbsp;New reports including activities ending soon, an activity status summary, budget vs. actual spend, funding by location, an organisation's activity portfolio, and transactions broken down by type. Why it helps: common questions now have a report waiting for you, instead of you building the answer by hand each time.",
+        "<b>A much faster platform</b>",
+        "&nbsp;&nbsp;The Organisations page and the main list views now load a lot quicker, even when there's a lot of data behind them. Why it helps: less waiting and spinning as your data grows.",
+        "<b>More consistent, easier-to-read charts</b>",
+        "&nbsp;&nbsp;Chart colours stay consistent across the whole app, and every chart has a small calculation note explaining, in plain language, how its number is worked out. Why it helps: fewer 'which colour is which?' moments, and no guessing about what a figure actually means.",
+        "<b>More accessible</b>",
+        "&nbsp;&nbsp;Icon-only buttons across the app now have clear labels for screen readers. Why it helps: the platform works better for everyone, including people using assistive technology.",
+        "<b>Fixes</b>",
+        "&nbsp;&nbsp;The Transparency Index export, which had stopped working, now runs again. Why it helps: you can pull your transparency scores out without hitting an error."
+      ]
+    },
     {
       "version": "3.43.0",
       "date": "2026-05-29",
