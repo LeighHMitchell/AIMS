@@ -905,7 +905,7 @@ function ContactFormDialog({
   };
 
   // Profile photo upload handlers
-  const handlePhotoUpload = useCallback((file: File) => {
+  const handlePhotoUpload = useCallback(async (file: File) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setErrors(prev => ({ ...prev, profilePhoto: 'Please upload a valid image file' }));
@@ -920,17 +920,27 @@ function ContactFormDialog({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData(prev => ({ ...prev, profilePhoto: base64String }));
+    // Upload to Supabase Storage and store the returned URL (NOT base64).
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file, file.name);
+      uploadData.append('type', 'contact');
+      const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Upload failed');
+      }
+      const { url } = await res.json();
+      setFormData(prev => ({ ...prev, profilePhoto: url }));
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.profilePhoto;
         return newErrors;
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setErrors(prev => ({ ...prev, profilePhoto: 'Failed to upload photo' }));
+      toast.error('Failed to upload photo');
+    }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {

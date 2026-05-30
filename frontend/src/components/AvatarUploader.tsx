@@ -88,13 +88,38 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
           canvas.width = width
           canvas.height = height
           ctx?.drawImage(img, 0, 0, width, height)
-          
-          // Convert to base64 (same as organization images)
-          const base64String = canvas.toDataURL('image/jpeg', 0.8)
-          setPreviewUrl(base64String)
-          onUpload(base64String)
-          toast.success("Profile picture updated successfully")
-          setIsUploading(false)
+
+          // Upload the resized image to Supabase Storage and store the returned
+          // URL (NOT base64) so directory/list payloads stay small.
+          canvas.toBlob(async (blob) => {
+            if (!blob) {
+              toast.error("Failed to process image")
+              setIsUploading(false)
+              return
+            }
+            try {
+              const localPreview = URL.createObjectURL(blob)
+              setPreviewUrl(localPreview)
+              const formData = new FormData()
+              formData.append('file', blob, 'avatar.jpg')
+              formData.append('type', 'avatar')
+              const res = await fetch('/api/upload', { method: 'POST', body: formData })
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}))
+                throw new Error(err.error || 'Upload failed')
+              }
+              const { url } = await res.json()
+              setPreviewUrl(url)
+              onUpload(url)
+              URL.revokeObjectURL(localPreview)
+              toast.success("Profile picture updated successfully")
+            } catch (err) {
+              console.error("Error uploading avatar:", err)
+              toast.error("Failed to upload profile picture")
+            } finally {
+              setIsUploading(false)
+            }
+          }, 'image/jpeg', 0.8)
         }
         
         img.onerror = () => {
@@ -210,7 +235,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
       {/* Storage info */}
       <Alert>
         <AlertDescription className="text-helper">
-          Images are compressed to 150x150px and stored directly in the database (same as organization logos).
+          Images are resized to 150x150px and stored in file storage.
         </AlertDescription>
       </Alert>
     </div>

@@ -178,7 +178,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
 
 
   // Profile photo upload handlers
-  const handlePhotoUpload = useCallback((file: File) => {
+  const handlePhotoUpload = useCallback(async (file: File) => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
@@ -197,19 +197,29 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
       return;
     }
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData(prev => ({ ...prev, profilePhoto: base64String }));
-      // Clear any previous errors
+    // Upload to Supabase Storage and store the returned URL (NOT base64), so the
+    // contacts directory / rolodex list payload stays small.
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file, file.name);
+      uploadData.append('type', 'contact');
+      const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Upload failed');
+      }
+      const { url } = await res.json();
+      setFormData(prev => ({ ...prev, profilePhoto: url }));
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.profilePhoto;
         return newErrors;
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      const errorMsg = 'Failed to upload photo';
+      setErrors(prev => ({ ...prev, profilePhoto: errorMsg }));
+      toast.error(errorMsg);
+    }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
