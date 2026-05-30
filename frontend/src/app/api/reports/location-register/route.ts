@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { titleWithAcronym, admLevel } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -40,9 +41,9 @@ export async function GET() {
       const slice = activityIds.slice(i, i + PAGE_SIZE)
       const { data: acts } = await supabase
         .from('activities')
-        .select('id, iati_identifier, title_narrative')
+        .select('id, iati_identifier, title_narrative, acronym')
         .in('id', slice)
-      acts?.forEach(a => activityById.set(a.id, { iati: a.iati_identifier || '', title: a.title_narrative || '' }))
+      acts?.forEach(a => activityById.set(a.id, { iati: a.iati_identifier || '', title: titleWithAcronym(a.title_narrative, a.acronym) }))
     }
 
     const reportData = rows.map(l => {
@@ -52,11 +53,12 @@ export async function GET() {
         activity_title: act?.title || '',
         location_name: l.location_name || l.name || '',
         admin_area: l.state_region_name || l.admin1_name || '',
+        adm_level: admLevel(l),
         latitude: l.latitude ?? '',
         longitude: l.longitude ?? '',
         location_type: l.location_type || l.location_class || '',
-        coverage: l.location_reach || l.coverage || '',
-        percentage: l.percentage ?? '',
+        coverage: l.location_reach || l.coverage_scope || l.coverage || '',
+        percentage: l.percentage_allocation ?? l.percentage ?? '',
       }
     })
 

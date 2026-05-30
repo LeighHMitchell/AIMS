@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
+import { titleWithAcronym } from '@/lib/reports/format-helpers'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const { data: funds, error: fundsError } = await supabase
       .from('activities')
-      .select('id, title_narrative')
+      .select('id, title_narrative, acronym')
       .eq('is_pooled_fund', true)
       .order('title_narrative')
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const fundIds = funds.map(f => f.id)
     const fundTitleMap: Record<string, string> = {}
-    funds.forEach(f => { fundTitleMap[f.id] = f.title_narrative })
+    funds.forEach(f => { fundTitleMap[f.id] = titleWithAcronym(f.title_narrative, (f as any).acronym) })
 
     const { data: transactions, error: txnError } = await supabase
       .from('transactions')

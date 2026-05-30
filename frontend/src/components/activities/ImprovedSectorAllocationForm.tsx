@@ -274,6 +274,15 @@ function ImprovedSectorAllocationFormInner({
 
   const isTransactionMode = sectorMode.mode === 'transaction';
   const isLocked = isTransactionMode;
+
+  // In transaction mode, load the weighted-average sector breakdown aggregated across all
+  // transactions so it can be shown read-only in place of the (locked) activity-level editor.
+  const { loadAggregatedSectors } = sectorMode;
+  useEffect(() => {
+    if (isTransactionMode && activityId) {
+      loadAggregatedSectors();
+    }
+  }, [isTransactionMode, activityId, loadAggregatedSectors]);
   // Multi-select: get all selected sector codes
   const selectedSectors = allocations.map(a => a.code);
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
@@ -997,6 +1006,51 @@ function ImprovedSectorAllocationFormInner({
             </div>
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Weighted-average sector breakdown across all transactions (read-only, transaction mode) */}
+      {isTransactionMode && (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-surface-muted border-b border-border">
+            <span className="text-body font-medium text-foreground">
+              Weighted average across transactions
+            </span>
+            {sectorMode.isLoadingAggregation && (
+              <span className="text-helper text-muted-foreground">Loading…</span>
+            )}
+          </div>
+          {(!sectorMode.aggregatedSectors || sectorMode.aggregatedSectors.length === 0) ? (
+            <div className="px-4 py-6 text-center text-body text-muted-foreground">
+              {sectorMode.isLoadingAggregation
+                ? 'Calculating weighted average…'
+                : 'No transaction-level sectors found yet. Add sectors to individual transactions to see the weighted average here.'}
+            </div>
+          ) : (
+            <table className="w-full text-body">
+              <thead>
+                <tr className="border-b border-border text-helper text-muted-foreground">
+                  <th className="text-left font-medium px-4 py-2">Sector</th>
+                  <th className="text-right font-medium px-4 py-2">Transactions</th>
+                  <th className="text-right font-medium px-4 py-2">Weighted %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sectorMode.aggregatedSectors.map((s) => (
+                  <tr key={s.sector_code} className="border-b border-border last:border-0">
+                    <td className="px-4 py-2">
+                      <span className="font-mono text-muted-foreground mr-2">{s.sector_code}</span>
+                      <span className="text-foreground">{s.sector_name}</span>
+                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{s.transaction_count}</td>
+                    <td className="px-4 py-2 text-right tabular-nums font-medium text-foreground">
+                      {(Math.round(s.weighted_percentage * 10) / 10).toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       )}
 
       {/* Wrap everything below in a disabled overlay when in transaction mode */}

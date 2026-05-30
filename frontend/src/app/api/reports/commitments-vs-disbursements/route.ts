@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds, COMMITMENT_TYPES, DISBURSEMENT_TYPES, txUsd } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -13,12 +13,20 @@ export async function GET() {
   }
 
   try {
-    // Fetch all transactions
-    // Exclude internal transfers (pooled fund flows) to avoid double-counting
+    // Canonical financial aggregation (see analytics-transaction-filters.ts):
+    // actual + non-deleted transactions, on published & non-deleted activities,
+    // internal pooled-fund transfers excluded.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (reportableIds.length === 0) {
+      return NextResponse.json({ data: [], error: null })
+    }
     let txQuery = supabase
       .from('transactions')
-      .select('transaction_type, value_usd, transaction_date')
+      .select('transaction_type, value, value_usd, currency, transaction_date')
       .not('transaction_date', 'is', null)
+      .eq('status', 'actual')
+      .is('deleted_at', null)
+      .in('activity_id', reportableIds)
     const pooledFundIds = await getPooledFundIds(supabase);
     txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
     const { data: transactions, error: transactionsError } = await txQuery
@@ -52,13 +60,12 @@ export async function GET() {
         total_disbursements: 0,
       }
 
-      // Transaction types 1 and 2 are incoming funds and commitments
-      if (t.transaction_type === '1' || t.transaction_type === '2') {
-        existing.total_commitments += (t.value_usd || 0)
+      // Canonical: Commitment = type 2 (outgoing) only; Disbursement = type 3 only.
+      if (COMMITMENT_TYPES.includes(t.transaction_type)) {
+        existing.total_commitments += txUsd(t)
       }
-      // Transaction types 3 and 4 are disbursements and expenditures
-      if (t.transaction_type === '3' || t.transaction_type === '4') {
-        existing.total_disbursements += (t.value_usd || 0)
+      if (DISBURSEMENT_TYPES.includes(t.transaction_type)) {
+        existing.total_disbursements += txUsd(t)
       }
 
       aggregated.set(year, existing)

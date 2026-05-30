@@ -3,6 +3,7 @@ import { requireSuperUser } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import {
   RECYCLE_BIN_ENTITY_TYPES,
+  getEntityIdColumn,
   type RecycleBinEntityType,
 } from '@/lib/soft-delete';
 
@@ -49,7 +50,7 @@ export async function POST(
   const { error, count } = await supabase
     .from(entityType)
     .update({ purge_paused: paused }, { count: 'exact' })
-    .in('id', ids)
+    .in(getEntityIdColumn(entityType), ids)
     .not('deleted_at', 'is', null);
 
   if (error) {

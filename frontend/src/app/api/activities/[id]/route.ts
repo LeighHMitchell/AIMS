@@ -92,7 +92,8 @@ export async function PATCH(
       'default_flow_type', 'default_tied_status', 'activity_scope', 'language',
       'recipient_countries', 'recipient_regions', 'custom_geographies', 'capital_spend_percentage',
       'banner', 'banner_position', 'icon', 'geography_level', 'sector_export_level',
-      'auto_sync', 'last_sync_time', 'sync_status', 'auto_sync_fields'
+      'sector_allocation_mode',
+      'auto_sync', 'last_sync_time', 'sync_status', 'auto_sync_fields', 'hierarchy'
     ];
     
     // Normalize activity_scope value (string '1'-'8') if provided using a helper

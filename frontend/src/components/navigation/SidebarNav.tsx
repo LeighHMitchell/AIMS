@@ -73,7 +73,7 @@ export function SidebarNav({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "EXPLORE": true,
     "PROFILES": true,
-    "ADVANCED": true,
+    "ADVANCED": false, // collapsed by default; sits under OPERATIONS
     "FINANCES": true,
     "ACTIVITIES": true,
     "ACTORS": true,
@@ -158,15 +158,6 @@ export function SidebarNav({
       ]
     },
     {
-      label: "ADVANCED",
-      icon: Shield,
-      defaultOpen: true,
-      items: [
-        { name: "Transparency Index", href: "/transparency-index", show: true },
-        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
-      ]
-    },
-    {
       label: "OPERATIONS",
       icon: LayoutDashboard,
       defaultOpen: true,
@@ -175,6 +166,16 @@ export function SidebarNav({
         { name: "Data Clinic", href: "/data-clinic", show: true },
         { name: "Library", href: "/library", show: true },
         { name: "Build History", href: "/build-history", show: true },
+      ]
+    },
+    {
+      // Sits under OPERATIONS and is collapsed by default.
+      label: "ADVANCED",
+      icon: Shield,
+      defaultOpen: false,
+      items: [
+        { name: "Transparency Index", href: "/transparency-index", show: true },
+        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
       ]
     },
     {

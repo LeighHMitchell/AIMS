@@ -822,7 +822,7 @@ export function TransactionTable({
             <React.Fragment key={transaction.id}>
             <TableRow
               className={cn(
-                "border-b border-border/40 hover:bg-muted/30 transition-colors",
+                "group/row border-b border-border/40 hover:bg-muted/30 transition-colors",
                 isSelected && "bg-blue-50 border-blue-200",
                 // Linked transactions: subtle background tint only (removed the
                 // 4px left-stripe accent that flagged as AI-slop).
@@ -1145,8 +1145,8 @@ export function TransactionTable({
                   return txCellMap[colId] || null;
                 })}
 
-              {/* Actions - always visible */}
-              <td className="py-3 px-2 text-center">
+              {/* Actions — revealed on row hover (stays visible while open/focused) */}
+              <td className="py-3 px-2 text-center opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                 <TransactionActionMenu
                   transactionId={transaction.uuid || transaction.id}
                   isLinkedTransaction={transaction.transaction_source === 'linked'}

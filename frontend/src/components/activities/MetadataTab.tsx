@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { getValidationStatusLabel } from '@/lib/validation-status';
 import { 
   Clock, 
   User, 
@@ -508,10 +509,10 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Publication Status</td>
               <td className="px-4 py-3 text-foreground capitalize">{metadata.publication_status || 'draft'}</td>
             </tr>
-            {/* Submission Status */}
+            {/* Validation Status */}
             <tr>
-              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Submission Status</td>
-              <td className="px-4 py-3 text-foreground capitalize">{metadata.submission_status || 'pending'}</td>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Validation Status</td>
+              <td className="px-4 py-3 text-foreground">{getValidationStatusLabel(metadata.submission_status)}</td>
             </tr>
             {/* Version */}
             <tr>

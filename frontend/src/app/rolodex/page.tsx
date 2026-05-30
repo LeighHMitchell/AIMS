@@ -51,6 +51,8 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { FilterPanel } from '@/components/rolodex/FilterPanel';
 import { useRolodexData } from '@/components/rolodex/useRolodexData';
+import { FullPagination } from '@/components/ui/full-pagination';
+import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { LoadingText } from '@/components/ui/loading-text';
 import { RolodexSkeleton } from '@/components/skeletons/FullScreenSkeletons';
 import { useRouter } from 'next/navigation';
@@ -86,7 +88,7 @@ export default function RolodexPage() {
   } = useRolodexData({
     initialFilters: {
       page: 1,
-      limit: 24 // Good for grid layout (4x6)
+      limit: DEFAULT_PAGE_SIZE // standard page size; user-adjustable via the per-page selector
     },
     autoFetch: true // Enable auto-fetch for filters and sorting
   });
@@ -233,56 +235,19 @@ export default function RolodexPage() {
       : <ChevronUp className="h-4 w-4 ml-1" />;
   };
 
+  // Standard pagination bar (shared FullPagination, incl. a records-per-page
+  // selector) for consistency with the Activities/Organisations lists.
   const renderPaginationControls = () => (
-    <div className="flex items-center justify-between">
-      <div className="text-body text-muted-foreground">
-        Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-        {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-        {pagination.total} people
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={pagination.prevPage}
-          disabled={!pagination.hasPrev || loading}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Previous
-        </Button>
-        
-        <div className="flex items-center space-x-1">
-          {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-            const page = Math.max(1, pagination.page - 2) + i;
-            if (page > pagination.totalPages) return null;
-            
-            return (
-              <Button
-                key={page}
-                variant="outline"
-                size="sm"
-                onClick={() => pagination.goToPage(page)}
-                disabled={loading}
-                className={`w-8 h-8 p-0 ${page === pagination.page ? "bg-muted text-foreground" : ""}`}
-              >
-                {page}
-              </Button>
-            );
-          })}
-        </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={pagination.nextPage}
-          disabled={!pagination.hasNext || loading}
-        >
-          Next
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
-    </div>
+    <FullPagination
+      page={pagination.page}
+      totalPages={pagination.totalPages}
+      totalItems={pagination.total}
+      perPage={pagination.limit}
+      onPageChange={(p) => pagination.goToPage(p)}
+      onPerPageChange={(n) => setFilters({ limit: n, page: 1 })}
+      perPageOptions={PAGE_SIZE_OPTIONS}
+      itemLabel="people"
+    />
   );
 
   // Show skeleton loader during initial load
@@ -399,7 +364,7 @@ export default function RolodexPage() {
           <>
             {/* People Grid/Table */}
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {visiblePeople.map((person) => (
                   <PersonCard
                     key={person.id}

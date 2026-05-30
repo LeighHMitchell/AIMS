@@ -2,6 +2,7 @@
 
 import React, { useRef, forwardRef } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { getValidationStatusLabel } from '@/lib/validation-status';
 import { Calendar, Clock, DollarSign, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { TIED_STATUS_LABELS } from '@/types/transaction';
@@ -182,9 +183,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                     variant="outline"
                     className="text-helper bg-white/90 text-foreground border-white/20"
                   >
-                    {activity.submission_status === 'pending_validation' ? 'Pending Validation' :
-                     activity.submission_status === 'validated' ? 'Validated' :
-                     activity.submission_status.charAt(0).toUpperCase() + activity.submission_status.slice(1)}
+                    {getValidationStatusLabel(activity.submission_status)}
                   </Badge>
                 )}
               </div>

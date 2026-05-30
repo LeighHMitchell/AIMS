@@ -1878,7 +1878,7 @@ export default function ActivityBudgetsTab({
                     <React.Fragment key={budgetId}>
                     <TableRow
                       className={cn(
-                        "border-b border-border/40 hover:bg-muted/30 transition-colors",
+                        "group/row border-b border-border/40 hover:bg-muted/30 transition-colors",
                         budget.hasError ? 'bg-destructive/10' : '',
                         selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
@@ -1998,7 +1998,7 @@ export default function ActivityBudgetsTab({
                         </div>
                       </TableCell>
                       {!readOnly && (
-                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Budget actions">

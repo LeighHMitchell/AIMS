@@ -8260,8 +8260,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             collaboration_type: !!updateData.collaboration_type,
             default_finance_type: !!updateData.default_finance_type,
             capital_spend_percentage: updateData.capital_spend_percentage !== undefined,
-            recipient_countries: !!(updateData.importedRecipientCountries || updateData.recipient_countries),
-            recipient_regions: !!(updateData.importedRecipientRegions || updateData.recipient_regions),
+            // FIX: include the `parsedActivity` fallback so the flag matches the data payload
+            // below (line ~8308). Previously the flag omitted `parsedActivity?.recipient_countries`,
+            // so when the per-item "Recipient Country N" fields weren't collected into
+            // `importedRecipientCountries` the data was still sent but the flag was false — and the
+            // server gate (`if (fields.recipient_countries && iati_data.recipient_countries)`)
+            // skipped the write, silently dropping the recipient country on import.
+            recipient_countries: !!(updateData.importedRecipientCountries || updateData.recipient_countries || parsedActivity?.recipient_countries),
+            recipient_regions: !!(updateData.importedRecipientRegions || updateData.recipient_regions || parsedActivity?.recipient_regions),
             custom_geographies: !!updateData.custom_geographies,
             default_currency: !!updateData.default_currency,
             default_tied_status: !!updateData.default_tied_status,
@@ -8333,11 +8339,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // Parse response JSON to check import results
         const result = await response.json();
 
-        // If the server-side /import-iati endpoint actually added transactions, record that
-        // Check transactions_added to ensure transactions were actually imported, not just requested
-        if (importRequestBody.fields.transactions && result?.fields_updated?.includes('transactions')) {
+        // The server-side /import-iati endpoint is AUTHORITATIVE for transaction import: it inserts
+        // new transactions, dedupes against existing ones, and writes transaction sector lines.
+        // Mark as handled whenever we asked it to import transactions and the call succeeded — even
+        // if it added none (all were duplicates on a re-import). Otherwise the client-side fallback
+        // below would re-insert them (no DB dedupe when transactions lack @ref) and DOUBLE the count,
+        // as well as skip the transaction-sector wiring that only exists on the server path.
+        if (importRequestBody.fields.transactions) {
           didServerSideTransactionImport = true;
-        } else if (importRequestBody.fields.transactions) {
         }
         
         // If the server-side /import-iati endpoint handled related activities, record that
@@ -8356,6 +8365,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
 
         const result = await response.json();
+
+        // The import-as-reporting-org route is AUTHORITATIVE for transactions: it inserts them and
+        // writes their sector lines server-side. Mark as handled so the client-side fallback below
+        // does NOT re-insert them (which previously doubled the transaction count).
+        didServerSideTransactionImport = true;
 
         // Surface server-side activity-record failures instead of silently reporting success.
         // The route returns success:true even when the activity UPDATE/INSERT failed (it records the
@@ -10144,6 +10158,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
           }
 
+          // Track whether any imported transaction carried its own sectors, so we can switch the
+          // activity to transaction-level sector reporting after the loop.
+          let anyTxSectorsImported = false;
 
           for (const transaction of updateData.importedTransactions) {
             
@@ -10210,7 +10227,55 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
               if (apiRes.ok) {
                 successCount++;
-                
+
+                // Persist transaction-level sectors to transaction_sector_lines so they appear
+                // in the transaction modal and feed the activity-level weighted average.
+                const rawTxSectors: any[] = Array.isArray(transaction.sectors) && transaction.sectors.length > 0
+                  ? transaction.sectors.filter((s: any) => s && (s.code || s.sector_code))
+                  : (transaction.sector?.code ? [{ code: transaction.sector.code, vocabulary: transaction.sector.vocabulary }] : []);
+                if (rawTxSectors.length > 0) {
+                  try {
+                    const created = await apiRes.clone().json();
+                    const txUuid = created?.uuid || created?.id;
+                    if (txUuid) {
+                      const n = rawTxSectors.length;
+                      const provided = rawTxSectors.map((s: any) => (typeof s.percentage === 'number' && !isNaN(s.percentage) && s.percentage > 0) ? s.percentage : null);
+                      const allProvided = provided.every((p: number | null) => p !== null);
+                      const sumProvided = provided.reduce((a: number, p: number | null) => a + (p || 0), 0);
+                      let pcts: number[];
+                      if (allProvided && Math.abs(sumProvided - 100) <= 0.01) {
+                        pcts = provided as number[];
+                      } else {
+                        const even = Math.floor((100 / n) * 100) / 100;
+                        pcts = rawTxSectors.map(() => even);
+                        pcts[0] = Math.round((pcts[0] + (100 - even * n)) * 100) / 100;
+                      }
+                      const sectorLines = rawTxSectors.map((s: any, i: number) => {
+                        const code = s.code || s.sector_code;
+                        const info = getSectorInfo(code);
+                        return {
+                          sector_vocabulary: s.vocabulary || s.sector_vocabulary || '1',
+                          sector_code: code,
+                          sector_name: info?.name || s.narrative || code,
+                          percentage: pcts[i],
+                        };
+                      });
+                      const secRes = await apiFetch(`/api/transactions/${txUuid}/sectors`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sector_lines: sectorLines }),
+                      });
+                      if (secRes.ok) {
+                        anyTxSectorsImported = true;
+                      } else {
+                        console.warn('[IATI Import] Transaction sector lines not saved:', await secRes.text());
+                      }
+                    }
+                  } catch (secErr) {
+                    console.warn('[IATI Import] Error saving transaction sector lines:', secErr);
+                  }
+                }
+
                 // Track successful transaction in summary with detailed info
                 importSummary.transactions.successful++;
                 importSummary.transactions.totalAmount += transaction.value || 0;
@@ -10290,6 +10355,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
           }
 
+          // If any transaction brought its own sectors, switch the activity to transaction-level
+          // sector reporting (both columns) so the Sectors tab auto-selects "Transaction Level"
+          // and shows the weighted average across transactions.
+          if (anyTxSectorsImported) {
+            try {
+              await apiFetch(`/api/activities/${effectiveActivityId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sectorExportLevel: 'transaction', sector_allocation_mode: 'transaction' }),
+              });
+            } catch (modeErr) {
+              console.warn('[IATI Import] Failed to set transaction-level sector mode:', modeErr);
+            }
+          }
 
           if (successCount > 0) {
             toast.success(`Transactions imported successfully`, {
@@ -12383,7 +12462,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <span className="font-medium">
                     {importStatus.stage === 'uploading' && 'Uploading XML file...'}
                     {importStatus.stage === 'parsing' && 'Parsing XML content...'}
-                    {importStatus.stage === 'importing' && (importCancelRequested ? 'Cancelling import...' : (importStatus.message || 'Importing data...'))}
+                    {importStatus.stage === 'importing' && (importCancelRequested ? 'Cancelling import...' : 'Importing data...')}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -13570,16 +13649,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               )}
             </div>
 
-            {/* Info Message */}
-            <Alert className="border-border bg-muted">
-              <Info className="h-4 w-4 text-muted-foreground" />
-              <AlertDescription className="text-foreground">
-                <p className="text-body">
-                  The selected organisation will be assigned as the reporting organisation for this activity.
-                  You can review and select which fields to import after confirming.
-                </p>
-              </AlertDescription>
-            </Alert>
+            {/* Info Message — plain helper text, not a card */}
+            <p className="text-body text-muted-foreground">
+              The selected organisation will be assigned as the reporting organisation for this activity.
+              You can review and select which fields to import after confirming.
+            </p>
           </div>
 
           <DialogFooter>

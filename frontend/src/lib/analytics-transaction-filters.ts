@@ -21,6 +21,47 @@ const OUTGOING_TYPES = ['2', '3', '4'];
 const INCOMING_TYPES = ['1', '11', '13'];
 
 /**
+ * Canonical transaction-type groupings for financial reporting.
+ *
+ * Deliberately STRICT and outgoing-only so every financial surface counts the
+ * same thing (decided 2026-05-29):
+ *   - Commitment  = type 2 (Outgoing Commitment) only — NOT incoming type 1.
+ *   - Disbursement = type 3 only — NOT expenditure type 4.
+ * Use these everywhere instead of hardcoding type arrays per route.
+ */
+export const COMMITMENT_TYPES = ['2'];
+export const DISBURSEMENT_TYPES = ['3'];
+
+/**
+ * Activity IDs eligible for financial reporting: PUBLISHED and NOT soft-deleted
+ * (i.e. not in the Recycle Bin). Call once per request, then constrain a
+ * transactions query with `.in('activity_id', ids)`.
+ *
+ * NB: uses an IN-list (fine at the current activity scale). If the activities
+ * table grows very large, switch callers to an `activities!inner(...)` join
+ * filtered on publication_status/deleted_at instead.
+ */
+export async function getReportableActivityIds(supabaseClient: any): Promise<string[]> {
+  const { data } = await supabaseClient
+    .from('activities')
+    .select('id')
+    .eq('publication_status', 'published')
+    .is('deleted_at', null);
+  return data?.map((a: any) => a.id) || [];
+}
+
+/**
+ * Canonical USD amount for a transaction row. Prefers the converted `value_usd`;
+ * falls back to the raw `value` ONLY when the transaction is already in USD,
+ * otherwise 0 — so raw foreign currency is never counted as USD.
+ */
+export function txUsd(t: any): number {
+  if (t?.value_usd != null && Number.isFinite(Number(t.value_usd))) return Number(t.value_usd);
+  if ((t?.currency ?? '').toString().toUpperCase() === 'USD') return Number(t.value) || 0;
+  return 0;
+}
+
+/**
  * Fetch IDs of all pooled fund activities. Call this once per request,
  * then pass the result to `excludeInternalTransfers`.
  */

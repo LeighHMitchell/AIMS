@@ -19,6 +19,15 @@ export const RECYCLE_BIN_ENTITY_TYPES = [
 export type RecycleBinEntityType = typeof RECYCLE_BIN_ENTITY_TYPES[number];
 
 /**
+ * Primary-key column per entity. The `transactions` table's PK is `uuid`, not
+ * `id` — every other in-scope table uses `id`. Recycle-bin operations must use
+ * this instead of assuming `id`, or transaction rows fail to list/restore/purge.
+ */
+export function getEntityIdColumn(entity: RecycleBinEntityType): string {
+  return entity === 'transactions' ? 'uuid' : 'id';
+}
+
+/**
  * Child tables that should follow a parent into the bin and back out again.
  * Each entry is a child table + the FK column that points at the parent.
  *
@@ -84,13 +93,14 @@ export async function softDelete(
   ids: string[],
   userId: string | null,
   deletedAt: string = new Date().toISOString(),
+  idColumn: string = 'id',
 ): Promise<{ count: number; error: Error | null }> {
   if (ids.length === 0) return { count: 0, error: null };
 
   const { error, count } = await client
     .from(table)
     .update({ deleted_at: deletedAt, deleted_by: userId }, { count: 'exact' })
-    .in('id', ids)
+    .in(idColumn, ids)
     .is('deleted_at', null);
 
   return { count: count ?? 0, error: error as Error | null };
@@ -151,20 +161,21 @@ export async function cascadeRestore(
   parentTable: string,
   parentIds: string[],
   childTables: ReadonlyArray<{ table: string; fk: string }>,
+  idColumn: string = 'id',
 ): Promise<{ restored: number; error: Error | null }> {
   if (parentIds.length === 0) return { restored: 0, error: null };
 
   const { data: parents, error: fetchError } = await client
     .from(parentTable)
-    .select('id, deleted_at')
-    .in('id', parentIds)
+    .select(`${idColumn}, deleted_at`)
+    .in(idColumn, parentIds)
     .not('deleted_at', 'is', null);
 
   if (fetchError) return { restored: 0, error: fetchError as Error };
   if (!parents || parents.length === 0) return { restored: 0, error: null };
 
   const WINDOW_MS = 5_000;
-  for (const parent of parents) {
+  for (const parent of parents as any[]) {
     if (!parent.deleted_at) continue;
     const ts = new Date(parent.deleted_at).getTime();
     const lo = new Date(ts - WINDOW_MS).toISOString();
@@ -174,7 +185,7 @@ export async function cascadeRestore(
       const { error } = await client
         .from(table)
         .update({ deleted_at: null, deleted_by: null })
-        .eq(fk, parent.id)
+        .eq(fk, parent[idColumn])
         .gte('deleted_at', lo)
         .lte('deleted_at', hi);
       if (error) return { restored: 0, error: error as Error };
@@ -184,7 +195,7 @@ export async function cascadeRestore(
   const { error: parentError, count } = await client
     .from(parentTable)
     .update({ deleted_at: null, deleted_by: null }, { count: 'exact' })
-    .in('id', parents.map(p => p.id));
+    .in(idColumn, (parents as any[]).map(p => p[idColumn]));
 
   return { restored: count ?? 0, error: (parentError as Error) ?? null };
 }

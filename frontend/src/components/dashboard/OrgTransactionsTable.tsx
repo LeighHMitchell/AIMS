@@ -274,7 +274,7 @@ export function OrgTransactionsTable({
           {transactions.map((transaction) => (
                   <TableRow
                     key={transaction.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="group/row cursor-pointer hover:bg-muted/50"
                     onClick={() => handleRowClick(transaction.activityId)}
                   >
                     <TableCell className="min-w-[280px]">
@@ -366,7 +366,7 @@ export function OrgTransactionsTable({
                       </div>
                     </TableCell>
                     {!transaction.isExternallyReported && (
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                         <TableRowActionMenu activityId={transaction.activityId} entityType="transaction" entityId={transaction.id} onDelete={() => deleteTransaction(transaction)} />
                       </TableCell>
                     )}

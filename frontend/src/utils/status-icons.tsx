@@ -27,25 +27,25 @@ export interface StatusIconConfig {
 
 export const getSubmissionStatusIcon = (status: string): StatusIconConfig => {
   switch (status) {
-    case 'draft': 
-      return { 
-        icon: <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />, 
-        tooltip: "Draft - In progress" 
+    case 'draft':
+    case 'not_submitted':
+    case 'submitted':
+    case 'pending':
+    case 'pending_validation':
+      return {
+        icon: <Clock className="h-4 w-4 text-gunmetal" />,
+        tooltip: "Pending Validation"
       }
-    case 'submitted': 
-      return { 
-        icon: <Clock className="h-4 w-4 text-gunmetal" />, 
-        tooltip: "Submitted - Awaiting validation" 
+    case 'validated':
+    case 'approved':
+      return {
+        icon: <CheckCircle className="h-4 w-4 text-gunmetal" />,
+        tooltip: "Validated"
       }
-    case 'validated': 
-      return { 
-        icon: <CheckCircle className="h-4 w-4 text-gunmetal" />, 
-        tooltip: "Validated - Approved for publication" 
-      }
-    case 'rejected': 
-      return { 
-        icon: <XCircle className="h-4 w-4 text-gunmetal" />, 
-        tooltip: "Rejected - Requires revision" 
+    case 'rejected':
+      return {
+        icon: <XCircle className="h-4 w-4 text-gunmetal" />,
+        tooltip: "Rejected - Requires revision"
       }
     case 'published': 
       return { 

@@ -1,5 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getOrganizationReferences } from '@/lib/organization-references';
+import { softDelete } from '@/lib/soft-delete';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -308,52 +310,35 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
-  
+
   try {
     const { id } = await params;
-    
+
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
       );
     }
-    
-    // Check if organization has dependencies
-    const { data: users } = await supabase
-      .from('users')
-      .select('id')
-      .eq('organization_id', id)
-      .limit(1);
-    
-    if (users && users.length > 0) {
+
+    // Use the shared reference check (single source of truth, same as the
+    // bulk delete + pre-flight) so the block reason names the actual records.
+    const refResult = await getOrganizationReferences(supabase, id);
+    if ('error' in refResult) {
+      return NextResponse.json({ error: refResult.error }, { status: 500 });
+    }
+    if (refResult.references.length > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete organization with assigned users' },
+        { error: 'Organization is still linked to other records', details: refResult.references },
         { status: 400 }
       );
     }
-    
-    // Check for activities
-    const { data: activities } = await supabase
-      .from('activities')
-      .select('id')
-      .eq('created_by_org', id)
-      .limit(1);
-    
-    if (activities && activities.length > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete organization with associated activities' },
-        { status: 400 }
-      );
-    }
-    
-    const { error } = await supabase
-      .from('organizations')
-      .delete()
-      .eq('id', id);
-    
+
+    // Soft-delete (recycle bin) instead of a hard delete, so the org can be restored.
+    const { error } = await softDelete(supabase, 'organizations', [id], user?.id ?? null);
+
     if (error) {
       console.error('[AIMS] Error deleting organization:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });

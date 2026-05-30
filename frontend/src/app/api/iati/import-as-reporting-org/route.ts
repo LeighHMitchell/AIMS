@@ -10,6 +10,43 @@ import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transa
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 import { getSystemHomeCountry } from '@/lib/system-settings';
 import { extractAcronymFromTitle } from '@/lib/text-utils';
+import { getSectorInfo } from '@/lib/dac-sector-utils';
+
+/**
+ * Build normalised transaction sector lines from parsed <transaction><sector> data.
+ * Percentages normalised to sum to 100 (single sector → 100; even split when missing).
+ */
+function buildTransactionSectorLines(
+  rawSectors: Array<{ code?: string; sector_code?: string; vocabulary?: string; percentage?: number; narrative?: string }>,
+  transactionValue: number
+): Array<{ sector_vocabulary: string; sector_code: string; sector_name: string; percentage: number; amount_minor: number; sort_order: number }> {
+  const sectors = (rawSectors || []).filter(s => s && (s.code || s.sector_code));
+  const n = sectors.length;
+  if (n === 0) return [];
+  const provided = sectors.map(s => (typeof s.percentage === 'number' && !isNaN(s.percentage) && s.percentage > 0) ? s.percentage : null);
+  const allProvided = provided.every(p => p !== null);
+  const sumProvided = provided.reduce((a, p) => a + (p || 0), 0);
+  let pcts: number[];
+  if (allProvided && Math.abs(sumProvided - 100) <= 0.01) {
+    pcts = provided as number[];
+  } else {
+    const even = Math.floor((100 / n) * 100) / 100;
+    pcts = sectors.map(() => even);
+    pcts[0] = Math.round((pcts[0] + (100 - even * n)) * 100) / 100;
+  }
+  return sectors.map((s, i) => {
+    const code = (s.code || s.sector_code) as string;
+    const info = getSectorInfo(code);
+    return {
+      sector_vocabulary: s.vocabulary || '1',
+      sector_code: code,
+      sector_name: info?.name || s.narrative || code,
+      percentage: pcts[i],
+      amount_minor: Math.round((transactionValue || 0) * pcts[i] / 100 * 100),
+      sort_order: i,
+    };
+  });
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -1465,11 +1502,20 @@ export async function POST(request: NextRequest) {
             
             // Filter out duplicates and prepare transactions with USD conversion
             const validTransactions: any[] = [];
+            // Sector lines per valid transaction (aligned by index with validTransactions)
+            const txSectorPlans: Array<ReturnType<typeof buildTransactionSectorLines>> = [];
             for (const t of parsedActivity.transactions) {
               if (!t || t.value === undefined) continue;
               const signature = `${t.type}-${t.date}-${t.value}-${t.currency || 'USD'}`;
               if (existingSignatures.has(signature)) continue;
-              
+
+              // Transaction-level sectors (IATI <transaction><sector>)
+              const rawTxSectors = (Array.isArray(t.sectors) && t.sectors.length > 0)
+                ? t.sectors
+                : (t.sector?.code ? [{ code: t.sector.code, vocabulary: t.sector.vocabulary }] : []);
+              const txSectorLines = buildTransactionSectorLines(rawTxSectors, t.value);
+              const hasTxSectors = txSectorLines.length > 0;
+
               const transactionData = {
                 activity_id: finalActivityId,
                 transaction_type: t.type,
@@ -1490,35 +1536,63 @@ export async function POST(request: NextRequest) {
                 tied_status: extractCodeValue(t.tiedStatus),
                 flow_type: extractCodeValue(t.flowType),
                 disbursement_channel: extractCodeValue(t.disbursementChannel),
+                recipient_country_code: t.recipientCountry || t.recipientCountry?.code || null,
+                recipient_region_code: t.recipient_region_code || t.recipientRegion?.code || null,
+                // Transaction carries its own sectors → does not inherit activity sectors
+                use_activity_sectors: hasTxSectors ? false : true,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
-              
+
               // Convert to USD
               const usdResult = await convertTransactionToUSD(
                 transactionData.value,
                 transactionData.currency,
                 transactionData.transaction_date || new Date().toISOString()
               );
-              
+
               if (usdResult.success) {
               } else {
                 console.warn(`[Import as Reporting Org] USD conversion failed: ${usdResult.error}`);
               }
-              
+
               // Add USD fields to transaction data
               const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
               validTransactions.push(transactionDataWithUSD);
+              txSectorPlans.push(txSectorLines);
             }
-            
+
             if (validTransactions.length > 0) {
-              const { error: transactionsError } = await supabase
+              const { data: insertedTransactions, error: transactionsError } = await supabase
                 .from('transactions')
-                .insert(validTransactions);
-              
+                .insert(validTransactions)
+                .select('uuid');
+
               if (transactionsError) {
                 console.error(`[Import as Reporting Org] Error inserting transactions:`, transactionsError);
               } else {
+                // Write transaction-level sector lines (aligned by insert order)
+                const sectorLineRows: any[] = [];
+                (insertedTransactions || []).forEach((row: any, i: number) => {
+                  const plan = txSectorPlans[i];
+                  if (row?.uuid && plan && plan.length > 0) {
+                    plan.forEach(line => sectorLineRows.push({ transaction_id: row.uuid, ...line }));
+                  }
+                });
+                if (sectorLineRows.length > 0) {
+                  const { error: sectorLinesError } = await supabase
+                    .from('transaction_sector_lines')
+                    .insert(sectorLineRows);
+                  if (sectorLinesError) {
+                    console.error('[Import as Reporting Org] Error inserting transaction sector lines:', sectorLinesError);
+                  } else {
+                    // Switch the activity to transaction-level sector reporting (both columns)
+                    await supabase
+                      .from('activities')
+                      .update({ sector_export_level: 'transaction', sector_allocation_mode: 'transaction', updated_at: new Date().toISOString() })
+                      .eq('id', finalActivityId);
+                  }
+                }
               }
             }
           }

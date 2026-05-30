@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { orgWithAcronym } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -119,16 +120,20 @@ export async function GET() {
     const reportData = organizations.map(org => {
       const orgType = codeAndName('organization_type', org.type)
       return {
-        organization_name: org.acronym || org.name,
+        organization_name: orgWithAcronym(org.name, org.acronym),
         organization_type_code: orgType.code,
         organization_type_name: orgType.name,
         iati_ref: org.iati_org_id || '',
+        total_activities: activityCountByOrg.get(org.id) || 0,
         active_activities: activeActivityCountByOrg.get(org.id) || 0,
         total_budget: Math.round(budgetByOrg.get(org.id) || 0),
         total_disbursed: Math.round(disbursementByOrg.get(org.id) || 0),
       }
     })
-    .filter(org => org.active_activities > 0 || org.total_budget > 0 || org.total_disbursed > 0)
+    // Keep any partner that reports at least one activity (any status) or has
+    // financial activity — previously orgs with only non-Implementation
+    // activities were dropped, undercounting the partner list.
+    .filter(org => org.total_activities > 0 || org.total_budget > 0 || org.total_disbursed > 0)
     .sort((a, b) => b.total_disbursed - a.total_disbursed)
 
     const response = NextResponse.json({ data: reportData, error: null })

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, memo } from 'react';
 import Link from 'next/link';
+import { getValidationStatusLabel } from '@/lib/validation-status';
 
 import { Calendar, MoreVertical, Pencil, Trash2, Clock, Copy, Bookmark, BookmarkCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -336,6 +337,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               src={activity.banner}
               alt={`Banner for ${activity.title}`}
               className="w-full h-48 object-cover"
+              loading="lazy"
+              decoding="async"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -352,6 +355,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     src={activity.icon}
                     alt={`Icon for ${activity.title}`}
                     className="w-full h-full object-contain"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
@@ -373,6 +378,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   src={activity.icon}
                   alt={`Icon for ${activity.title}`}
                   className="w-full h-full object-contain"
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
@@ -482,9 +489,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   variant={submissionColors[activity.submission_status as keyof typeof submissionColors] || 'secondary'}
                   className="text-helper font-medium leading-tight"
                 >
-                  {activity.submission_status === 'pending_validation' ? 'Pending Validation' :
-                   activity.submission_status === 'validated' ? 'Validated' :
-                   activity.submission_status.charAt(0).toUpperCase() + activity.submission_status.slice(1)}
+                  {getValidationStatusLabel(activity.submission_status)}
                 </Badge>
               )}
               {activity.publication_status && (

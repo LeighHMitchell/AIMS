@@ -761,12 +761,12 @@ export default function TransactionsPage() {
           {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Descriptions Toggle */}
+          {/* View density toggle: Compact ↔ Expanded (expanded shows descriptions) */}
           <Button
             variant={showDescriptions ? "default" : "outline"}
             size="sm"
-            className="h-9 w-9 flex-shrink-0 p-0"
-            title={showDescriptions ? "Hide descriptions" : "Show descriptions"}
+            className="h-9 flex-shrink-0 gap-1.5"
+            title={showDescriptions ? "Switch to compact view" : "Switch to expanded view"}
             onClick={() => {
               const next = !showDescriptions;
               setShowDescriptions(next);
@@ -774,6 +774,7 @@ export default function TransactionsPage() {
             }}
           >
             <AlignLeft className="h-4 w-4" />
+            {showDescriptions ? "Expanded" : "Compact"}
           </Button>
         </FilterBar>
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSuperUser } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { RECYCLE_BIN_ENTITY_TYPES } from '@/lib/soft-delete';
+import { RECYCLE_BIN_ENTITY_TYPES, getEntityIdColumn } from '@/lib/soft-delete';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export async function GET(_request: NextRequest) {
   for (const entity of RECYCLE_BIN_ENTITY_TYPES) {
     const { count, error } = await supabase
       .from(entity)
-      .select('id', { count: 'exact', head: true })
+      .select(getEntityIdColumn(entity), { count: 'exact', head: true })
       .not('deleted_at', 'is', null);
     if (error) {
       console.error(`[recycle-bin] Count failed for ${entity}:`, error);

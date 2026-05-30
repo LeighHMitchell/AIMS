@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 import { getOrganizationReferences } from '@/lib/organization-references';
+import { softDelete } from '@/lib/soft-delete';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -44,11 +45,12 @@ export async function GET(request: NextRequest) {
     const iatiOrgId = searchParams.get('iati_org_id');
     const searchTerm = searchParams.get('search');
 
-    // Build query with filters
+    // Build query with filters. Exclude soft-deleted (recycle-bin) orgs.
     let query = supabaseAdmin
       .from('organizations')
-      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, mission, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, reporting_org_ref, reporting_org_type, reporting_org_name, reporting_org_secondary_reporter, last_updated_datetime, default_currency, default_language, social_twitter, social_facebook, social_linkedin, social_instagram, social_youtube, created_at, updated_at');
-    
+      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, mission, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, reporting_org_ref, reporting_org_type, reporting_org_name, reporting_org_secondary_reporter, last_updated_datetime, default_currency, default_language, social_twitter, social_facebook, social_linkedin, social_instagram, social_youtube, created_at, updated_at')
+      .is('deleted_at', null);
+
     // Filter by IATI org ID (exact match)
     if (iatiOrgId) {
       query = query.eq('iati_org_id', iatiOrgId);
@@ -302,8 +304,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  
-  const { supabase, response: authResponse } = await requireAuth();
+
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
   
   try {
@@ -388,10 +390,10 @@ export async function DELETE(request: NextRequest) {
         continue;
       }
 
-      const { error } = await supabase
-        .from('organizations')
-        .delete()
-        .eq('id', id);
+      // Soft-delete (recycle bin) instead of a hard delete, so a deleted
+      // organisation can be reviewed and restored. Organisations have no
+      // in-scope child tables, so a flat softDelete is sufficient.
+      const { error } = await softDelete(supabase, 'organizations', [id], user?.id ?? null);
 
       if (error) {
         console.error('[AIMS] Error deleting organization:', error);

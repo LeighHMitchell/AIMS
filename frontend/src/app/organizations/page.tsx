@@ -895,6 +895,8 @@ const OrganizationCard: React.FC<{
             src={organization.banner}
             alt={`${organization.name} banner`}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -913,10 +915,12 @@ const OrganizationCard: React.FC<{
             {/* Logo */}
             <div className="flex-shrink-0">
               {organization.logo ? (
-                <img 
-                  src={organization.logo} 
+                <img
+                  src={organization.logo}
                   alt={`${organization.name} logo`}
                   className="w-12 h-12 object-contain rounded-lg border bg-card p-1"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
@@ -995,21 +999,21 @@ const OrganizationListView: React.FC<{
   return (
     <div className="space-y-2">
       {organizations.map((org) => (
-        <div 
-          key={org.id} 
-          className="bg-card border border-border rounded-lg px-4 py-3 hover:shadow-md transition-shadow duration-200"
+        <div
+          key={org.id}
+          className="group/row bg-card border border-border rounded-lg px-4 py-3 hover:shadow-md transition-shadow duration-200"
         >
           <div className="flex items-center justify-between gap-4">
-            {/* Left section: Organization info */}
-            <div 
-              className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer" 
-              onClick={() => router.push(`/organizations/${org.id}`)}
-            >
+            {/* Left section: Organization info (only the title links, not the whole row) */}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
               {/* Organization Name + Acronym + IATI ID */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <h3 className="text-body font-semibold text-foreground truncate">
+                <Link
+                  href={`/organizations/${org.id}`}
+                  className="text-body font-semibold text-foreground truncate no-underline hover:no-underline hover:text-primary transition-colors"
+                >
                   {org.name}
-                </h3>
+                </Link>
                 {org.acronym && (
                   <span className="text-body font-semibold text-foreground flex-shrink-0">
                     ({org.acronym})
@@ -1046,8 +1050,8 @@ const OrganizationListView: React.FC<{
               </div>
             </div>
 
-            {/* Right section: Action buttons */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Right section: Action buttons — revealed on row hover (stays visible while open/focused) */}
+            <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
               <Button
                 variant="ghost"
                 size="sm"

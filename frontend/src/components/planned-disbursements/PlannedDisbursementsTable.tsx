@@ -719,7 +719,7 @@ export function PlannedDisbursementsTable({
                 <React.Fragment key={disbursement.id}>
                   <TableRow
                     className={cn(
-                      "border-b border-border/40 hover:bg-muted/30 transition-colors",
+                      "group/row border-b border-border/40 hover:bg-muted/30 transition-colors",
                       isSelected && "bg-blue-50 border-blue-200"
                     )}
                   >
@@ -754,8 +754,8 @@ export function PlannedDisbursementsTable({
 
                     {orderedVisibleColumns.map((colId) => cellMap[colId])}
 
-                    {/* Actions - same layout as activities list */}
-                    <td className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                    {/* Actions — revealed on row hover (stays visible while open/focused) */}
+                    <td className="px-2 py-2 text-center align-middle opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                       <PlannedDisbursementActionMenu
                         disbursementId={disbursementId}
                         onEdit={onEdit ? () => onEdit(disbursement) : undefined}

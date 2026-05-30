@@ -20,6 +20,7 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table as TableIcon, Layers as LayersIcon, Search, Filter, Users } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds } from '@/lib/analytics-transaction-filters'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -527,6 +528,14 @@ export function FinancialTotalsBarChart({
           return
         }
 
+        // Canonical: restrict to published & non-deleted activities (exclude
+        // drafts and Recycle-Bin activities) and exclude internal pooled-fund
+        // transfers, so the dashboard reconciles with the reports. A single
+        // activity drill-down (effectiveActivityId) is shown as-is.
+        const reportableIds = await getReportableActivityIds(supabase)
+        const reportableSet = new Set(reportableIds)
+        const pooledFundIds = await getPooledFundIds(supabase)
+
         // Resolve org filter into a list of activity ids reported by the org
         // (budgets / PDs only join through activity_id).
         let reportedActivityIds: string[] | null = null
@@ -550,14 +559,18 @@ export function FinancialTotalsBarChart({
           .from('activity_budgets')
           .select('activity_id, period_start, period_end, value, usd_value, currency')
           .not('period_start', 'is', null)
+          .is('deleted_at', null)
         if (effectiveActivityId) {
           budgetsQuery = budgetsQuery.eq('activity_id', effectiveActivityId)
         } else if (effectiveOrgId) {
-          if (reportedActivityIds && reportedActivityIds.length > 0) {
-            budgetsQuery = budgetsQuery.in('activity_id', reportedActivityIds)
+          const ids = (reportedActivityIds || []).filter(id => reportableSet.has(id))
+          if (ids.length > 0) {
+            budgetsQuery = budgetsQuery.in('activity_id', ids)
           } else {
             budgetsQuery = budgetsQuery.eq('activity_id', '00000000-0000-0000-0000-000000000000')
           }
+        } else {
+          budgetsQuery = budgetsQuery.in('activity_id', reportableIds)
         }
         const { data: budgets, error: budgetsError } = await budgetsQuery
 
@@ -573,11 +586,14 @@ export function FinancialTotalsBarChart({
         if (effectiveActivityId) {
           pdQuery = pdQuery.eq('activity_id', effectiveActivityId)
         } else if (effectiveOrgId) {
-          if (reportedActivityIds && reportedActivityIds.length > 0) {
-            pdQuery = pdQuery.in('activity_id', reportedActivityIds)
+          const ids = (reportedActivityIds || []).filter(id => reportableSet.has(id))
+          if (ids.length > 0) {
+            pdQuery = pdQuery.in('activity_id', ids)
           } else {
             pdQuery = pdQuery.eq('activity_id', '00000000-0000-0000-0000-000000000000')
           }
+        } else {
+          pdQuery = pdQuery.in('activity_id', reportableIds)
         }
         const { data: plannedDisbursements, error: plannedError } = await pdQuery
 
@@ -591,18 +607,26 @@ export function FinancialTotalsBarChart({
           .from('transactions')
           .select('transaction_date, transaction_type, value, value_usd, currency, finance_type, aid_type, provider_org_name, provider_org_id')
           .eq('status', 'actual')
+          .is('deleted_at', null)
           .not('transaction_date', 'is', null)
         if (effectiveActivityId) {
           txQuery = txQuery.eq('activity_id', effectiveActivityId)
-        } else if (effectiveOrgId) {
-          const orParts = [
-            `provider_org_id.eq.${effectiveOrgId}`,
-            `receiver_org_id.eq.${effectiveOrgId}`,
-          ]
-          if (reportedActivityIds && reportedActivityIds.length > 0) {
-            orParts.push(`activity_id.in.(${reportedActivityIds.join(',')})`)
+        } else {
+          // Restrict to published & non-deleted activities, then (for an org
+          // filter) narrow to transactions where the org is provider, receiver,
+          // or the activity's reporting org. Internal pooled-fund transfers excluded.
+          txQuery = txQuery.in('activity_id', reportableIds)
+          if (effectiveOrgId) {
+            const orParts = [
+              `provider_org_id.eq.${effectiveOrgId}`,
+              `receiver_org_id.eq.${effectiveOrgId}`,
+            ]
+            if (reportedActivityIds && reportedActivityIds.length > 0) {
+              orParts.push(`activity_id.in.(${reportedActivityIds.join(',')})`)
+            }
+            txQuery = txQuery.or(orParts.join(','))
           }
-          txQuery = txQuery.or(orParts.join(','))
+          txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
         }
         const { data: transactions, error: transactionsError } = await txQuery
 

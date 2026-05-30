@@ -128,24 +128,29 @@ export function AcronymReviewModal({
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto py-4">
-          {/* Helper buttons */}
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAcceptAll}
-              disabled={detectedCount === 0}
-            >
-              {activities.length > 1 ? 'Accept All' : 'Accept'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAll}
-              disabled={acceptedCount === 0}
-            >
-              {activities.length > 1 ? 'Clear All' : 'Clear'}
-            </Button>
+          {/* Helper buttons — only relevant when there are multiple acronyms to act on in bulk.
+              For a single acronym the per-field clear (×) is enough. */}
+          <div className="flex items-center gap-2 mb-4">
+            {activities.length > 1 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAcceptAll}
+                  disabled={detectedCount === 0}
+                >
+                  Accept All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearAll}
+                  disabled={acceptedCount === 0}
+                >
+                  Clear All
+                </Button>
+              </>
+            )}
             <div className="ml-auto text-body text-muted-foreground">
               {acceptedCount} of {activities.length} activities have acronyms
             </div>
@@ -170,36 +175,36 @@ export function AcronymReviewModal({
                     <p className="text-body font-medium mt-1">{activity.title}</p>
                   </div>
 
-                  {/* Acronym input */}
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 space-y-1">
-                      <Label htmlFor={`acronym-${activity.iatiIdentifier}`}>
-                        Detected Acronym
-                      </Label>
+                  {/* Acronym input — larger, with an inline clear (×) inside the field */}
+                  <div className="space-y-1">
+                    <Label htmlFor={`acronym-${activity.iatiIdentifier}`}>
+                      Detected Acronym
+                    </Label>
+                    <div className="relative">
                       <Input
                         id={`acronym-${activity.iatiIdentifier}`}
                         value={currentValue}
                         onChange={(e) => handleAcronymChange(activity.iatiIdentifier, e.target.value)}
                         placeholder="Enter acronym or leave blank..."
                         maxLength={25}
-                        className={hasError ? 'border-destructive' : hasWarning ? 'border-yellow-500' : ''}
+                        className={`h-12 text-lg pr-10 ${hasError ? 'border-destructive' : hasWarning ? 'border-yellow-500' : ''}`}
                       />
-                      {error && (
-                        <div className={`flex items-center gap-1 text-helper ${hasError ? 'text-destructive' : 'text-yellow-600'}`}>
-                          <AlertCircle className="h-3 w-3" />
-                          {error}
-                        </div>
+                      {currentValue && (
+                        <button
+                          type="button"
+                          onClick={() => handleClearAcronym(activity.iatiIdentifier)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="Clear acronym"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       )}
                     </div>
-                    {currentValue && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleClearAcronym(activity.iatiIdentifier)}
-                        className="mt-6"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                    {error && (
+                      <div className={`flex items-center gap-1 text-helper ${hasError ? 'text-destructive' : 'text-yellow-600'}`}>
+                        <AlertCircle className="h-3 w-3" />
+                        {error}
+                      </div>
                     )}
                   </div>
                 </div>

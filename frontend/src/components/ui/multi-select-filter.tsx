@@ -5,7 +5,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -154,19 +153,16 @@ export function MultiSelectFilter({
             <span className="truncate">{getDisplayText()}</span>
           </div>
           <div className="flex items-center gap-1 ml-1 shrink-0">
+            {/* The display text already conveys the count ("N selected") or the
+                single label, so we don't repeat it as a separate count badge. */}
             {safeValue.length > 0 ? (
-              <>
-                <Badge variant="secondary" className="px-1.5 py-0 text-helper">
-                  {safeValue.length}
-                </Badge>
-                <X 
-                  className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()  // Prevent dropdown from opening
-                    clearAll()
-                  }}
-                />
-              </>
+              <X
+                className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation()  // Prevent dropdown from opening
+                  clearAll()
+                }}
+              />
             ) : (
               <ChevronDown className="h-4 w-4 opacity-50" />
             )}

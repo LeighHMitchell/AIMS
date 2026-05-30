@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { titleWithAcronym, orgWithAcronym } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export async function GET() {
   try {
     const { data: activities, error } = await supabase
       .from('activities')
-      .select('id, iati_identifier, title_narrative, activity_status, reporting_org_id, created_by_org_name')
+      .select('id, iati_identifier, title_narrative, acronym, activity_status, reporting_org_id, created_by_org_name')
 
     if (error) {
       console.error('[Reports API] Error fetching activities:', error)
@@ -75,8 +76,9 @@ export async function GET() {
         const status = codeAndName('activity_status', a.activity_status)
         return {
           iati_identifier: a.iati_identifier || '',
-          title: a.title_narrative || '',
-          reporting_org: org?.acronym || org?.name || a.created_by_org_name || 'Unknown',
+          title: titleWithAcronym(a.title_narrative, a.acronym),
+          reporting_org: orgWithAcronym(org?.name, org?.acronym, a.created_by_org_name),
+          activity_status_code: status.code,
           activity_status_name: status.name,
           total_budget: budget,
           total_disbursed: disbursed,

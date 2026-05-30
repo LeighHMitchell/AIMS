@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { toValidationStatus } from '@/lib/validation-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +8,10 @@ interface StatusData {
   status: string;
   count: number;
   percentage: number;
+  /** Total budget (USD, currency-safe) of activities in this status bucket. */
+  value: number;
+  /** Share of total budget USD across all buckets. */
+  valuePercentage: number;
 }
 
 interface ActivityDetail {
@@ -42,6 +47,24 @@ export async function GET() {
       );
     }
 
+    // Budget (USD, currency-safe) per activity, so the chart can show each
+    // status bucket by total budget value as well as by activity count.
+    const budgetByActivity = new Map<string, number>();
+    const activityIdList = (activities || []).map((a: any) => a.id);
+    if (activityIdList.length > 0) {
+      const { data: budgets } = await supabaseAdmin
+        .from('activity_budgets')
+        .select('activity_id, value, usd_value, currency')
+        .in('activity_id', activityIdList)
+        .is('deleted_at', null);
+      budgets?.forEach((b: any) => {
+        const usd = (b.usd_value != null && Number.isFinite(Number(b.usd_value)))
+          ? Number(b.usd_value)
+          : ((b.currency ?? '').toString().toUpperCase() === 'USD' ? Number(b.value) || 0 : 0);
+        budgetByActivity.set(b.activity_id, (budgetByActivity.get(b.activity_id) || 0) + usd);
+      });
+    }
+
     if (!activities || activities.length === 0) {
       return NextResponse.json({
         data: {
@@ -52,41 +75,62 @@ export async function GET() {
       });
     }
 
-    // Process activity status
+    // Process activity status — track both count and total budget USD per bucket.
     const activityStatusCounts = new Map<string, number>();
     const publicationStatusCounts = new Map<string, number>();
     const submissionStatusCounts = new Map<string, number>();
+    const activityStatusValues = new Map<string, number>();
+    const publicationStatusValues = new Map<string, number>();
+    const submissionStatusValues = new Map<string, number>();
+
+    const addValue = (map: Map<string, number>, key: string, v: number) =>
+      map.set(key, (map.get(key) || 0) + v);
 
     activities.forEach((activity: any) => {
+      const budget = budgetByActivity.get(activity.id) || 0;
+
       // Activity Status - default to '1' (Pipeline) for consistency with IATI standard
       const activityStatus = activity.activity_status || '1';
       activityStatusCounts.set(activityStatus, (activityStatusCounts.get(activityStatus) || 0) + 1);
+      addValue(activityStatusValues, activityStatus, budget);
 
       // Publication Status
       const publicationStatus = activity.publication_status || 'Unknown';
       publicationStatusCounts.set(publicationStatus, (publicationStatusCounts.get(publicationStatus) || 0) + 1);
+      addValue(publicationStatusValues, publicationStatus, budget);
 
-      // Submission Status
-      const submissionStatus = activity.submission_status || 'Unknown';
+      // Validation Status — canonical 3-state grouping (Pending Validation /
+      // Validated / Rejected), keyed by the validation key.
+      const submissionStatus = toValidationStatus(activity.submission_status).key;
       submissionStatusCounts.set(submissionStatus, (submissionStatusCounts.get(submissionStatus) || 0) + 1);
+      addValue(submissionStatusValues, submissionStatus, budget);
     });
 
     const totalActivities = activities.length;
+    const totalBudgetUsd = Array.from(budgetByActivity.values()).reduce((s, v) => s + v, 0);
 
-    // Convert to arrays with percentages
-    const createStatusArray = (statusMap: Map<string, number>): StatusData[] => {
+    // Convert to arrays with count + value percentages
+    const createStatusArray = (
+      statusMap: Map<string, number>,
+      valueMap: Map<string, number>
+    ): StatusData[] => {
       return Array.from(statusMap.entries())
-        .map(([status, count]) => ({
-          status,
-          count,
-          percentage: (count / totalActivities) * 100
-        }))
+        .map(([status, count]) => {
+          const value = valueMap.get(status) || 0;
+          return {
+            status,
+            count,
+            percentage: totalActivities > 0 ? (count / totalActivities) * 100 : 0,
+            value,
+            valuePercentage: totalBudgetUsd > 0 ? (value / totalBudgetUsd) * 100 : 0,
+          };
+        })
         .sort((a, b) => b.count - a.count); // Sort by count descending
     };
 
-    const activityStatus = createStatusArray(activityStatusCounts);
-    const publicationStatus = createStatusArray(publicationStatusCounts);
-    const submissionStatus = createStatusArray(submissionStatusCounts);
+    const activityStatus = createStatusArray(activityStatusCounts, activityStatusValues);
+    const publicationStatus = createStatusArray(publicationStatusCounts, publicationStatusValues);
+    const submissionStatus = createStatusArray(submissionStatusCounts, submissionStatusValues);
 
     // Create activity details list for table view
     const activityDetails: ActivityDetail[] = activities.map((activity: any) => ({

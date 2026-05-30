@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { titleWithAcronym, orgWithAcronym, admLevelSummary } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export async function GET() {
         id,
         iati_identifier,
         title_narrative,
+        acronym,
         activity_status,
         planned_start_date,
         planned_end_date,
@@ -51,10 +53,10 @@ export async function GET() {
       .select('activity_id, sector_code, sector_name')
       .in('activity_id', activityIds)
 
-    // Fetch locations for all activities
+    // Fetch locations for all activities (incl. admin-hierarchy fields for ADM level)
     const { data: locations } = await supabase
       .from('activity_locations')
-      .select('activity_id, location_name, state_region_name')
+      .select('activity_id, location_name, state_region_name, state_region_code, district_name, district_code, township_name, township_code, admin_level')
       .in('activity_id', activityIds)
 
     // Fetch transactions for budget and disbursement totals
@@ -93,6 +95,7 @@ export async function GET() {
     })
 
     const locationsByActivity = new Map<string, string[]>()
+    const locationRowsByActivity = new Map<string, any[]>()
     locations?.forEach(l => {
       const existing = locationsByActivity.get(l.activity_id) || []
       const locationName = l.state_region_name || l.location_name
@@ -100,6 +103,10 @@ export async function GET() {
         existing.push(locationName)
       }
       locationsByActivity.set(l.activity_id, existing)
+
+      const rows = locationRowsByActivity.get(l.activity_id) || []
+      rows.push(l)
+      locationRowsByActivity.set(l.activity_id, rows)
     })
 
     const budgetByActivity = new Map<string, number>()
@@ -129,21 +136,25 @@ export async function GET() {
     // Transform data for export
     const reportData = activities.map(activity => {
       const org = activity.reporting_org_id ? orgById.get(activity.reporting_org_id) : null
-      const reportingOrg = org?.acronym || org?.name || activity.created_by_org_name || 'Unknown'
+      const reportingOrg = orgWithAcronym(org?.name, org?.acronym, activity.created_by_org_name)
       const status = codeAndName('activity_status', activity.activity_status)
 
       return {
         iati_identifier: activity.iati_identifier || '',
-        title: activity.title_narrative || '',
+        title: titleWithAcronym(activity.title_narrative, activity.acronym),
         activity_status_code: status.code,
         activity_status_name: status.name,
         reporting_org: reportingOrg,
-        start_date: activity.actual_start_date || activity.planned_start_date || '',
-        end_date: activity.actual_end_date || activity.planned_end_date || '',
+        // Planned vs actual kept explicit (no silent fallback).
+        planned_start_date: activity.planned_start_date || '',
+        actual_start_date: activity.actual_start_date || '',
+        planned_end_date: activity.planned_end_date || '',
+        actual_end_date: activity.actual_end_date || '',
         total_budget: Math.round(budgetByActivity.get(activity.id) || 0),
         total_disbursed: Math.round(disbursementByActivity.get(activity.id) || 0),
         sectors: (sectorsByActivity.get(activity.id) || []).join('; '),
         locations: (locationsByActivity.get(activity.id) || []).join('; '),
+        adm_levels: admLevelSummary(locationRowsByActivity.get(activity.id) || []),
       }
     })
 

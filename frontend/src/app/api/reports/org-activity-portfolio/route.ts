@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { orgWithAcronym } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -68,12 +69,11 @@ export async function GET() {
     organizations?.forEach(o => orgById.set(o.id, { name: o.name, acronym: o.acronym, type: o.type }))
 
     // Aggregate per reporting organisation (fall back to created_by_org_name)
-    const aggregated = new Map<string, { name: string; type: string; count: number; active: number; budget: number; disbursed: number }>()
+    const aggregated = new Map<string, { name: string | null; acronym: string | null; fallback: string | null; type: string; count: number; active: number; budget: number; disbursed: number }>()
     activities.forEach(a => {
       const org = a.reporting_org_id ? orgById.get(a.reporting_org_id) : null
       const key = a.reporting_org_id || a.created_by_org_name || 'Unknown'
-      const name = org?.acronym || org?.name || a.created_by_org_name || 'Unknown'
-      const existing = aggregated.get(key) || { name, type: org?.type || '', count: 0, active: 0, budget: 0, disbursed: 0 }
+      const existing = aggregated.get(key) || { name: org?.name ?? null, acronym: org?.acronym ?? null, fallback: a.created_by_org_name ?? null, type: org?.type || '', count: 0, active: 0, budget: 0, disbursed: 0 }
       existing.count += 1
       // IATI ActivityStatus code 2 = Implementation
       if (a.activity_status === '2') existing.active += 1
@@ -86,7 +86,8 @@ export async function GET() {
       .map(v => {
         const orgType = codeAndName('organization_type', v.type)
         return {
-          organization_name: v.name,
+          organization_name: orgWithAcronym(v.name, v.acronym, v.fallback),
+          organization_type_code: orgType.code,
           organization_type_name: orgType.name,
           activity_count: v.count,
           active_activities: v.active,

@@ -156,9 +156,9 @@ export function DocumentTable({
             const sourceLabel = SOURCE_TYPE_LABELS[doc.sourceType];
 
             return (
-              <TableRow 
+              <TableRow
                 key={doc.id}
-                className={selectedIds.has(doc.id) ? 'bg-muted/50' : ''}
+                className={`group/row ${selectedIds.has(doc.id) ? 'bg-muted/50' : ''}`}
               >
                 <TableCell>
                   <Checkbox
@@ -278,7 +278,7 @@ export function DocumentTable({
                     {attributionMap?.get(doc.url) || '-'}
                   </TableCell>
                 )}
-                <TableCell>
+                <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Document actions">

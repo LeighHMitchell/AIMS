@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import {
   RECYCLE_BIN_ENTITY_TYPES,
   getChildTablesFor,
+  getEntityIdColumn,
   type RecycleBinEntityType,
 } from '@/lib/soft-delete';
 
@@ -65,16 +66,17 @@ export async function POST(
 
   // Only purge rows that are already in the recycle bin (deleted_at IS NOT NULL).
   // This protects against an admin accidentally calling purge on live IDs.
+  const idColumn = getEntityIdColumn(entityType);
   const { data: targets, error: fetchError } = await supabase
     .from(entityType)
-    .select('id')
-    .in('id', ids)
+    .select(idColumn)
+    .in(idColumn, ids)
     .not('deleted_at', 'is', null);
 
   if (fetchError) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
-  const targetIds = (targets ?? []).map((t: any) => t.id);
+  const targetIds = (targets ?? []).map((t: any) => t[idColumn]);
   if (targetIds.length === 0) {
     return NextResponse.json({ purged: 0 });
   }
@@ -113,7 +115,7 @@ export async function POST(
   const { error: deleteError, count } = await supabase
     .from(entityType)
     .delete({ count: 'exact' })
-    .in('id', targetIds);
+    .in(idColumn, targetIds);
 
   if (deleteError) {
     console.error(`[recycle-bin] Purge ${entityType} failed:`, deleteError);

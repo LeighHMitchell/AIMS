@@ -120,33 +120,43 @@ export function AutosaveUpload({
       setIsProcessing(true);
 
       try {
-        // Create preview and convert to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setPreview(base64String);
-          // Reset position for banners (center=50%), reset scale for icons (100%)
-          const isIcon = aspectRatio === 'square';
-          const defaultValue = isIcon ? 100 : 50;
-          setPosition(50);
-          if (isIcon) setScale(100);
-          onImageChange(base64String, defaultValue);
+        // Instant local preview while the upload runs.
+        const localPreview = URL.createObjectURL(file);
+        setPreview(localPreview);
+        // Reset position for banners (center=50%), reset scale for icons (100%)
+        const isIcon = aspectRatio === 'square';
+        const defaultValue = isIcon ? 100 : 50;
+        setPosition(50);
+        if (isIcon) setScale(100);
 
-          // "Blur" to trigger save - this simulates the blur behavior of text fields
-          setIsFocused(false);
+        // Upload to Supabase Storage and persist the returned URL (NOT base64).
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        formData.append('type', isIcon ? 'icon' : 'banner');
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Upload failed');
+        }
+        const { url } = await res.json();
 
-          // Reset saved state since we have new content to save
-          setHasSaved(false);
+        setPreview(url);
+        onImageChange(url, defaultValue);
+        URL.revokeObjectURL(localPreview);
 
-          // Trigger autosave after successful upload
-          if (triggerSave) {
-            // Small delay to show the orange indicator
-            setTimeout(() => {
-              triggerSave(base64String, defaultValue);
-            }, 100);
-          }
-        };
-        reader.readAsDataURL(file);
+        // "Blur" to trigger save - this simulates the blur behavior of text fields
+        setIsFocused(false);
+
+        // Reset saved state since we have new content to save
+        setHasSaved(false);
+
+        // Trigger autosave after successful upload
+        if (triggerSave) {
+          // Small delay to show the orange indicator
+          setTimeout(() => {
+            triggerSave(url, defaultValue);
+          }, 100);
+        }
       } catch (error) {
         console.error('Error processing image:', error);
         toast.error('Failed to process image');

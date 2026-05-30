@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { codeAndName } from '@/lib/iati/codelist-resolver'
+import { titleWithAcronym } from '@/lib/reports/format-helpers'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { data: funds, error: fundsError } = await supabase
       .from('activities')
-      .select('id, title_narrative, activity_status')
+      .select('id, title_narrative, acronym, activity_status')
       .eq('is_pooled_fund', true)
       .order('title_narrative')
 
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
       const status = codeAndName('activity_status', fund.activity_status)
 
       return {
-        fund_name: fund.title_narrative,
+        fund_name: titleWithAcronym(fund.title_narrative, (fund as any).acronym),
         total_contributions: contributions.toFixed(2),
         total_disbursements: disbursements.toFixed(2),
         balance: balance.toFixed(2),

@@ -66,20 +66,31 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
 
         const compressedFile = await imageCompression(file, compressionOptions);
 
-        // Create preview from compressed file
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setPreview(base64String);
-          setPosition(50); // Reset to center for new images
-          onBannerChange(base64String, 50);
-          if (activityId && activityId !== "new") {
-            toast.success("Banner uploaded successfully. You can now reposition it.");
-          } else {
-            toast.success("Banner uploaded. You can reposition it before saving.");
-          }
-        };
-        reader.readAsDataURL(compressedFile);
+        // Instant local preview while the upload runs.
+        const localPreview = URL.createObjectURL(compressedFile);
+        setPreview(localPreview);
+        setPosition(50); // Reset to center for new images
+
+        // Upload to Supabase Storage and persist the returned URL (NOT base64).
+        // Inline base64 data URIs previously bloated the activities list payload.
+        const formData = new FormData();
+        formData.append("file", compressedFile, file.name);
+        formData.append("type", "banner");
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Upload failed");
+        }
+        const { url } = await res.json();
+
+        setPreview(url);
+        onBannerChange(url, 50);
+        URL.revokeObjectURL(localPreview);
+        if (activityId && activityId !== "new") {
+          toast.success("Banner uploaded successfully. You can now reposition it.");
+        } else {
+          toast.success("Banner uploaded. You can reposition it before saving.");
+        }
       } catch (error) {
         console.error("Error uploading banner:", error);
         toast.error("Failed to upload banner");

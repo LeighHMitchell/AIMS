@@ -676,6 +676,15 @@ export async function POST(request: NextRequest) {
             if (isNaN(budgetValue)) continue;
             const rawValueDate = budget.valueDate || budget.periodStart;
             const valueDate = rawValueDate?.includes('T') ? rawValueDate.split('T')[0] : rawValueDate || periodStart;
+            const budgetCurrency = budget.currency || 'USD';
+
+            // Convert to USD at import time (mirrors the transaction path above) so
+            // imported non-USD budgets never land with usd_value = NULL. Reuses the
+            // same cached rate lookup; on conversion failure usd_value stays null so
+            // the budgets/backfill-usd route can retry later.
+            const usdResult = (budgetValue === 0 || budgetCurrency === 'USD')
+              ? { value_usd: budgetValue, exchange_rate_used: 1.0, usd_conversion_date: new Date().toISOString(), usd_convertible: true, success: true }
+              : await getCachedUSDConversion(budgetValue, budgetCurrency, valueDate);
 
             budgetRecords.push({
               activity_id: activityDbId,
@@ -684,8 +693,12 @@ export async function POST(request: NextRequest) {
               period_start: periodStart,
               period_end: periodEnd,
               value: budgetValue,
-              currency: budget.currency || 'USD',
+              currency: budgetCurrency,
               value_date: valueDate,
+              usd_value: usdResult.success ? usdResult.value_usd : null,
+              exchange_rate_used: usdResult.success ? usdResult.exchange_rate_used : null,
+              usd_conversion_date: usdResult.usd_conversion_date,
+              usd_convertible: usdResult.usd_convertible,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });

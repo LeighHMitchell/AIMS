@@ -290,7 +290,7 @@ export function TaskTable({
               <TableRow
                 key={assignment.id}
                 className={cn(
-                  'cursor-pointer hover:bg-muted/50',
+                  'group/row cursor-pointer hover:bg-muted/50',
                   isOverdue && 'bg-destructive/10/50',
                   isDueSoon && !isOverdue && 'bg-amber-50/50'
                 )}
@@ -439,7 +439,7 @@ export function TaskTable({
                   })()}
                 </TableCell>
 
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                <TableCell onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                   <TaskActionMenu
                     assignment={assignment}
                     onStatusChange={onStatusChange ? (status) => onStatusChange(assignment.id, status) : undefined}

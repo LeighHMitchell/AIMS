@@ -460,7 +460,7 @@ export function BudgetTable({
                 <React.Fragment key={budget.id}>
                   <TableRow
                     className={cn(
-                      "border-b border-border/40 hover:bg-muted/50 transition-colors",
+                      "group/row border-b border-border/40 hover:bg-muted/50 transition-colors",
                       isSelected && "bg-blue-50 border-blue-200"
                     )}
                   >
@@ -495,8 +495,8 @@ export function BudgetTable({
 
                     {orderedVisibleColumns.map((colId) => cellMap[colId])}
 
-                    {/* Actions - same layout as activities list */}
-                    <TableCell className="px-2 py-2 text-center align-top" onClick={(e) => e.stopPropagation()}>
+                    {/* Actions — revealed on row hover (stays visible while open/focused) */}
+                    <TableCell className="px-2 py-2 text-center align-top opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                       <BudgetActionMenu
                         budgetId={budgetId}
                         onEdit={onEdit ? () => onEdit(budget) : undefined}

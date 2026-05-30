@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { titleWithAcronym } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -59,9 +60,9 @@ export async function GET() {
       const slice = activityIds.slice(i, i + PAGE_SIZE)
       const { data: acts } = await supabase
         .from('activities')
-        .select('id, iati_identifier, title_narrative')
+        .select('id, iati_identifier, title_narrative, acronym')
         .in('id', slice)
-      acts?.forEach(a => activityById.set(a.id, { iati: a.iati_identifier || '', title: a.title_narrative || '' }))
+      acts?.forEach(a => activityById.set(a.id, { iati: a.iati_identifier || '', title: titleWithAcronym(a.title_narrative, a.acronym) }))
     }
 
     const reportData = transactions.map(t => {
@@ -83,9 +84,14 @@ export async function GET() {
         currency: t.currency || '',
         value_usd: t.value_usd != null ? Math.round(t.value_usd) : '',
         aid_type_code: aid.code,
+        aid_type_name: aid.name,
         finance_type_code: finance.code,
+        finance_type_name: finance.name,
         flow_type_code: flow.code,
+        flow_type_name: flow.name,
         tied_status_code: tied.code,
+        tied_status_name: tied.name,
+        description: t.description || '',
         reference: t.transaction_reference || '',
       }
     })

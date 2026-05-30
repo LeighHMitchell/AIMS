@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
+import { getValidationStatusLabel, isValidationKey, toValidationStatus } from "@/lib/validation-status";
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
@@ -26,6 +27,8 @@ interface StatusData {
   status: string;
   count: number;
   percentage: number;
+  value: number;
+  valuePercentage: number;
 }
 
 interface ActivityDetail {
@@ -63,6 +66,15 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [chartType, setChartType] = useState<'pie' | 'bar' | 'table'>('pie');
   const [statusType, setStatusType] = useState<'activity' | 'publication' | 'submission'>('activity');
+  // Measure each status bucket by activity count or by total budget (USD).
+  const [metric, setMetric] = useState<'count' | 'value'>('count');
+  const metricKey = metric === 'value' ? 'value' : 'count';
+  const formatUsdShort = (v: number): string => {
+    const abs = Math.abs(v || 0);
+    if (abs >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `$${(v / 1_000).toFixed(1)}k`;
+    return `$${(v || 0).toFixed(0)}`;
+  };
 
   useEffect(() => {
     fetchChartData();
@@ -112,7 +124,11 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
     const grouped: Record<string, ActivityDetail[]> = {};
     
     activityDetails.forEach(activity => {
-      const status = activity[statusField as keyof ActivityDetail] as string || 'Unknown';
+      let status = activity[statusField as keyof ActivityDetail] as string || 'Unknown';
+      // Group the validation (submission) axis into the canonical 3 states.
+      if (statusType === 'submission') {
+        status = toValidationStatus(status).key;
+      }
       if (!grouped[status]) {
         grouped[status] = [];
       }
@@ -129,6 +145,10 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
 
   // Convert status code to human-readable name
   const formatStatusName = (status: string) => {
+    // Canonical validation states (Pending Validation / Validated / Rejected)
+    if (isValidationKey(status)) {
+      return getValidationStatusLabel(status);
+    }
     // First, try to look up as an activity status code
     const activityStatus = getActivityStatusByCode(status);
     if (activityStatus) {
@@ -150,7 +170,8 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
           title={formatStatusName(data.status)}
           rows={[
             { label: 'Count', value: data.count.toLocaleString(), color },
-            { label: 'Percentage', value: `${data.percentage.toFixed(1)}%` },
+            { label: 'Total Budget (USD)', value: formatUsdShort(data.value ?? 0) },
+            { label: 'Percentage', value: `${(metric === 'value' ? (data.valuePercentage ?? 0) : data.percentage).toFixed(1)}%` },
           ]}
         />
       );
@@ -164,12 +185,13 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   // Implementation) before the percentage. Replaces the plain-string label so
   // the legend is no longer needed.
   const renderPieLabel = (props: any) => {
-    const { x, y, cx, textAnchor, displayStatus, percentage, index } = props;
+    const { x, y, cx, textAnchor, displayStatus, percentage, valuePercentage, index } = props;
     const anchor = textAnchor || (x >= cx ? 'start' : 'end');
     const color = COLORS[(index ?? 0) % COLORS.length];
+    const pct = metric === 'value' ? valuePercentage : percentage;
     return (
       <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={12} fontWeight={700} fill={color}>
-        {`${displayStatus} ${Number(percentage).toFixed(1)}%`}
+        {`${displayStatus} ${Number(pct ?? 0).toFixed(1)}%`}
       </text>
     );
   };
@@ -249,13 +271,30 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
               {[
                 { key: 'activity', label: 'Activity Status' },
                 { key: 'publication', label: 'Publication Status' },
-                { key: 'submission', label: 'Submission Status' }
+                { key: 'submission', label: 'Validation Status' }
               ].map(({ key, label }) => (
                 <Button
                   key={key}
                   variant={statusType === key ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusType(key as any)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Measure by count or USD budget value */}
+            <div className="flex gap-1 ml-2 border-l pl-2">
+              {[
+                { key: 'count', label: 'Count' },
+                { key: 'value', label: 'USD Value' },
+              ].map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={metric === key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMetric(key as any)}
                 >
                   {label}
                 </Button>
@@ -369,7 +408,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
                 outerRadius={140}
                 innerRadius={70}
                 fill="#8884d8"
-                dataKey="count"
+                dataKey={metricKey}
                 paddingAngle={2}
               >
                 {currentData.map((entry, index) => (
@@ -385,9 +424,9 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
             >
               <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
               <XAxis dataKey="displayStatus" stroke="#4c5568" fontSize={12} />
-              <YAxis stroke="#4c5568" fontSize={12} />
+              <YAxis stroke="#4c5568" fontSize={12} tickFormatter={metric === 'value' ? (v: number) => formatUsdShort(v) : undefined} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" fill="#dc2625" radius={[4, 4, 0, 0]} />
+              <Bar dataKey={metricKey} fill="#dc2625" radius={[4, 4, 0, 0]} />
             </BarChart>
           )}
         </ResponsiveContainer>

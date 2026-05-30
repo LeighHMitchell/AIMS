@@ -410,7 +410,7 @@ export function OrgActivitiesTable({
               {filteredActivities.map((activity) => (
                 <TableRow
                   key={activity.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="group/row cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(activity.id)}
                 >
                   <TableCell>
@@ -498,7 +498,7 @@ export function OrgActivitiesTable({
                           {formatDistanceToNow(new Date(activity.lastUpdated), { addSuffix: true })}
                         </span>
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                         <TableRowActionMenu activityId={activity.id} entityType="activity" onDelete={() => deleteActivity(activity)} />
                       </TableCell>
                     </>

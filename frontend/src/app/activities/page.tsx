@@ -703,6 +703,8 @@ const router = useRouter();
       // Multi-select array-based filters
       activityStatuses: optimizedData?.filters?.activityStatuses || [],
       setActivityStatuses: optimizedData?.filters?.setActivityStatuses || (() => {}),
+      publicationStatuses: optimizedData?.filters?.publicationStatuses || [],
+      setPublicationStatuses: optimizedData?.filters?.setPublicationStatuses || (() => {}),
       submissionStatuses: optimizedData?.filters?.submissionStatuses || [],
       setSubmissionStatuses: optimizedData?.filters?.setSubmissionStatuses || (() => {}),
       reportedByOrgs: optimizedData?.filters?.reportedByOrgs || [],
@@ -743,6 +745,9 @@ const router = useRouter();
   // Filter states - use safe optimized filters (multi-select arrays)
   const filterStatuses = usingOptimization ? safeOptimizedData.filters.activityStatuses : [];
   const setFilterStatuses = usingOptimization ? safeOptimizedData.filters.setActivityStatuses : () => {};
+
+  const filterPublications = usingOptimization ? safeOptimizedData.filters.publicationStatuses : [];
+  const setFilterPublications = usingOptimization ? safeOptimizedData.filters.setPublicationStatuses : () => {};
 
   const filterValidations = usingOptimization ? safeOptimizedData.filters.submissionStatuses : [];
   const setFilterValidations = usingOptimization ? safeOptimizedData.filters.setSubmissionStatuses : () => {};
@@ -1800,6 +1805,27 @@ const router = useRouter();
           />
         </div>
 
+        {/* Publication Filter */}
+        <div className="flex flex-col gap-1">
+          <Label className="text-helper text-muted-foreground">Publication</Label>
+          <MultiSelectFilter
+            options={[
+              { value: "published", label: "Published" },
+              { value: "draft", label: "Not Published" },
+            ]}
+            value={filterPublications}
+            onChange={setFilterPublications}
+            placeholder="All"
+            searchPlaceholder="Search..."
+            emptyText="No options found."
+            icon={<Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+            className="w-[180px] h-9"
+            dropdownClassName="w-[280px]"
+            open={openFilterId === 'publication'}
+            onOpenChange={handleFilterOpenChange('publication')}
+          />
+        </div>
+
         {/* Validation Filter */}
         <div className="flex flex-col gap-1">
           <Label className="text-helper text-muted-foreground">Validation</Label>
@@ -2673,7 +2699,7 @@ const router = useRouter();
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <span className="inline-flex items-center ml-1.5 align-middle">
-                                          <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                                          <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent>
@@ -3944,8 +3970,8 @@ const router = useRouter();
                         );
                       })}
 
-                      {/* Actions cell */}
-                      <td className="px-2 py-2 text-center align-middle">
+                      {/* Actions cell — revealed on row hover (stays visible while the menu is open/focused) */}
+                      <td className="px-2 py-2 text-center align-middle opacity-0 group-hover:opacity-100 focus-within:opacity-100 group-focus-within:opacity-100 transition-opacity">
                         <ActivityActionMenu
                           activityId={activity.id}
                           isBookmarked={isBookmarked(activity.id)}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { titleWithAcronym, orgWithAcronym } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,7 @@ interface ScoreBreakdown {
 interface TransparencyScore {
   id: string
   title: string
+  reporting_org_id: string | null
   reporting_org_name: string
   partner_name: string
   total_score: number
@@ -49,13 +51,31 @@ export async function GET() {
       return NextResponse.json({ data: [], error: null })
     }
 
+    const scoreRows = scores as TransparencyScore[]
+
+    // Fetch activity acronyms (by id) and reporting-org acronyms so titles and
+    // the Reporting Organisation column carry acronyms like the other reports.
+    const actAcronymById = new Map<string, string | null>()
+    const activityIds = Array.from(new Set(scoreRows.map(s => s.id).filter(Boolean)))
+    if (activityIds.length > 0) {
+      const { data: acts } = await supabase.from('activities').select('id, acronym').in('id', activityIds)
+      acts?.forEach((a: any) => actAcronymById.set(a.id, a.acronym))
+    }
+    const orgAcronymById = new Map<string, string | null>()
+    const orgIds = Array.from(new Set(scoreRows.map(s => s.reporting_org_id).filter((x): x is string => !!x)))
+    if (orgIds.length > 0) {
+      const { data: orgs } = await supabase.from('organizations').select('id, acronym').in('id', orgIds)
+      orgs?.forEach((o: any) => orgAcronymById.set(o.id, o.acronym))
+    }
+
     // Transform data for export
-    const reportData = (scores as TransparencyScore[]).map(score => {
+    const reportData = scoreRows.map(score => {
       const breakdown = score.breakdown || {} as ScoreBreakdown
+      const orgAcronym = score.reporting_org_id ? orgAcronymById.get(score.reporting_org_id) : null
 
       return {
-        activity_title: score.title || 'Untitled',
-        reporting_org: score.reporting_org_name || score.partner_name || 'Unknown',
+        activity_title: titleWithAcronym(score.title, actAcronymById.get(score.id)) || 'Untitled',
+        reporting_org: orgWithAcronym(score.reporting_org_name, orgAcronym, score.partner_name),
         total_score: Math.round(score.total_score * 10) / 10,
         operational_planning: breakdown.operational_planning?.score || 0,
         finance: breakdown.finance?.score || 0,

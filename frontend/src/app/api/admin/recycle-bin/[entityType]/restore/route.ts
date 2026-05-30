@@ -5,6 +5,7 @@ import {
   RECYCLE_BIN_ENTITY_TYPES,
   cascadeRestore,
   getChildTablesFor,
+  getEntityIdColumn,
   type RecycleBinEntityType,
 } from '@/lib/soft-delete';
 
@@ -47,7 +48,8 @@ export async function POST(
     admin,
     entityType,
     ids,
-    getChildTablesFor(entityType)
+    getChildTablesFor(entityType),
+    getEntityIdColumn(entityType)
   );
 
   if (error) {

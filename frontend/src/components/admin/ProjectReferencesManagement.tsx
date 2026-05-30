@@ -535,7 +535,7 @@ export function ProjectReferencesManagement() {
                   </thead>
                   <tbody>
                     {filteredReferences.map((ref) => (
-                      <tr key={ref.id} className="border-b hover:bg-muted/20">
+                      <tr key={ref.id} className="group/row border-b hover:bg-muted/20">
                         <td className="p-4">
                           <div className="flex flex-col">
                             <Link
@@ -574,7 +574,7 @@ export function ProjectReferencesManagement() {
                             <Star className="h-4 w-4 text-yellow-500 mx-auto fill-yellow-500" />
                           )}
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 text-right opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                           {!isLocked && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

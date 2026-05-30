@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { excludeInternalTransfers, getPooledFundIds, DISBURSEMENT_TYPES, txUsd } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -13,9 +14,13 @@ export async function GET() {
   }
 
   try {
+    // Canonical: only published & non-deleted activities count (exclude drafts
+    // and Recycle-Bin activities) so this reconciles with the other surfaces.
     const { data: activities, error } = await supabase
       .from('activities')
       .select('id, activity_status')
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
 
     if (error) {
       console.error('[Reports API] Error fetching activities:', error)
@@ -35,11 +40,19 @@ export async function GET() {
       .from('activity_budgets')
       .select('activity_id, value, usd_value, currency')
       .in('activity_id', activityIds)
+      .is('deleted_at', null)
 
-    const { data: transactions } = await supabase
+    // Disbursements only (type 3), actual + non-deleted, internal transfers excluded.
+    let txQuery = supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value_usd')
+      .select('activity_id, transaction_type, value, value_usd, currency')
       .in('activity_id', activityIds)
+      .in('transaction_type', DISBURSEMENT_TYPES)
+      .eq('status', 'actual')
+      .is('deleted_at', null)
+    const pooledFundIds = await getPooledFundIds(supabase);
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds, DISBURSEMENT_TYPES)
+    const { data: transactions } = await txQuery
 
     // Budget per activity (currency-safe USD)
     const budgetByActivity = new Map<string, number>()
@@ -50,12 +63,10 @@ export async function GET() {
       budgetByActivity.set(b.activity_id, (budgetByActivity.get(b.activity_id) || 0) + usd)
     })
 
-    // Disbursements (transaction types 3 and 4) per activity
+    // Disbursements (canonical: type 3 only) per activity
     const disbursedByActivity = new Map<string, number>()
     transactions?.forEach(t => {
-      if (t.transaction_type === '3' || t.transaction_type === '4') {
-        disbursedByActivity.set(t.activity_id, (disbursedByActivity.get(t.activity_id) || 0) + (t.value_usd || 0))
-      }
+      disbursedByActivity.set(t.activity_id, (disbursedByActivity.get(t.activity_id) || 0) + txUsd(t))
     })
 
     // Aggregate by activity status

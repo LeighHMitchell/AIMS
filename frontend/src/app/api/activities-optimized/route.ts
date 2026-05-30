@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     const activityStatus = searchParams.get('activityStatus'); // Legacy single value
     const activityStatuses = searchParams.get('activityStatuses')?.split(',').filter(Boolean) || [];
     const publicationStatus = searchParams.get('publicationStatus');
+    const publicationStatuses = searchParams.get('publicationStatuses')?.split(',').filter(Boolean) || [];
     const submissionStatus = searchParams.get('submissionStatus'); // Legacy single value
     const submissionStatuses = searchParams.get('submissionStatuses')?.split(',').filter(Boolean) || [];
     const reportedByOrgs = searchParams.get('reportedByOrgs')?.split(',').filter(Boolean) || [];
@@ -163,7 +164,11 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.eq('activity_status', activityStatus);
     }
 
-    if (publicationStatus && publicationStatus !== 'all') {
+    // Publication status - support both array and single value
+    if (publicationStatuses.length > 0) {
+      countQuery = countQuery.in('publication_status', publicationStatuses);
+      dataQuery = dataQuery.in('publication_status', publicationStatuses);
+    } else if (publicationStatus && publicationStatus !== 'all') {
       countQuery = countQuery.eq('publication_status', publicationStatus);
       dataQuery = dataQuery.eq('publication_status', publicationStatus);
     }

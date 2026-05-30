@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds, COMMITMENT_TYPES, DISBURSEMENT_TYPES, txUsd } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -30,15 +30,23 @@ export async function GET() {
       return NextResponse.json({ data: [], error: null })
     }
 
-    // Get unique activity IDs
-    const activityIds = [...new Set(sectors.map(s => s.activity_id))]
+    // Canonical: only published & non-deleted activities are reportable.
+    const reportableSet = new Set(await getReportableActivityIds(supabase))
 
-    // Fetch transactions for these activities
-    // Exclude internal transfers (pooled fund flows) to avoid double-counting
+    // Unique reportable activity IDs that have sectors
+    const activityIds = [...new Set(sectors.map(s => s.activity_id))].filter(id => reportableSet.has(id))
+    if (activityIds.length === 0) {
+      return NextResponse.json({ data: [], error: null })
+    }
+
+    // Fetch transactions for these activities (actual + non-deleted; internal
+    // pooled-fund transfers excluded to avoid double-counting).
     let txQuery = supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value_usd')
+      .select('activity_id, transaction_type, value, value_usd, currency')
       .in('activity_id', activityIds)
+      .eq('status', 'actual')
+      .is('deleted_at', null)
     const pooledFundIds = await getPooledFundIds(supabase);
     txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
     const { data: transactions } = await txQuery
@@ -47,14 +55,15 @@ export async function GET() {
     const activityTotals = new Map<string, { committed: number; disbursed: number }>()
     transactions?.forEach(t => {
       const existing = activityTotals.get(t.activity_id) || { committed: 0, disbursed: 0 }
-      
-      if (t.transaction_type === '1' || t.transaction_type === '2') {
-        existing.committed += (t.value_usd || 0)
+
+      // Canonical: Commitment = type 2 (outgoing) only; Disbursement = type 3 only.
+      if (COMMITMENT_TYPES.includes(t.transaction_type)) {
+        existing.committed += txUsd(t)
       }
-      if (t.transaction_type === '3' || t.transaction_type === '4') {
-        existing.disbursed += (t.value_usd || 0)
+      if (DISBURSEMENT_TYPES.includes(t.transaction_type)) {
+        existing.disbursed += txUsd(t)
       }
-      
+
       activityTotals.set(t.activity_id, existing)
     })
 
@@ -70,6 +79,7 @@ export async function GET() {
     sectors.forEach(s => {
       const sectorKey = s.sector_code || s.sector_name
       if (!sectorKey) return
+      if (!reportableSet.has(s.activity_id)) return  // skip drafts / recycle-bin activities
 
       const activityFinancials = activityTotals.get(s.activity_id) || { committed: 0, disbursed: 0 }
       const percentage = (s.percentage || 100) / 100

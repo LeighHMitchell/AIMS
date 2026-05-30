@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
+import { admLevel } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export async function GET() {
   try {
     const { data: locations, error } = await supabase
       .from('activity_locations')
-      .select('activity_id, location_name, state_region_name')
+      .select('activity_id, location_name, state_region_name, state_region_code, district_name, district_code, township_name, township_code, admin_level')
 
     if (error) {
       console.error('[Reports API] Error fetching locations:', error)
@@ -54,6 +55,7 @@ export async function GET() {
     const byLocation = new Map<string, {
       location_name: string
       state_region_name: string
+      adm_level: string
       activities: Set<string>
       committed: number
       disbursed: number
@@ -67,6 +69,7 @@ export async function GET() {
       const existing = byLocation.get(key) || {
         location_name: name,
         state_region_name: l.state_region_name || '',
+        adm_level: admLevel(l),
         activities: new Set<string>(),
         committed: 0,
         disbursed: 0,
@@ -83,6 +86,7 @@ export async function GET() {
       .map(v => ({
         location_name: v.location_name,
         state_region_name: v.state_region_name,
+        adm_level: v.adm_level,
         activity_count: v.activities.size,
         total_committed: Math.round(v.committed),
         total_disbursed: Math.round(v.disbursed),

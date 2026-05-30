@@ -413,6 +413,10 @@ export async function POST(
       // Additional IATI fields
       sector_code: body.sector_code || null,
       sector_vocabulary: body.sector_vocabulary || null,
+      // Whether the transaction inherits activity-level sectors (true) or carries its own (false).
+      // Defaults to true to preserve existing behaviour; importers set false when the XML
+      // <transaction> has its own <sector> elements.
+      use_activity_sectors: body.use_activity_sectors ?? true,
       recipient_country_code: body.recipient_country_code || null,
       recipient_region_code: body.recipient_region_code || null,
       recipient_region_vocab: body.recipient_region_vocab || body.recipient_region_vocabulary || null,

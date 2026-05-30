@@ -220,7 +220,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                 return (
                   <TableRow
                     key={budget.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="group/row cursor-pointer hover:bg-muted/50"
                     onClick={() => budget.activity_id && router.push(`/activities/${budget.activity_id}?tab=financials`)}
                   >
                     <TableCell className="min-w-[280px]">
@@ -268,7 +268,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                         <span className="text-body text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                       <TableRowActionMenu activityId={budget.activity_id} entityType="budget" entityId={budget.id} onDelete={() => deleteBudget(budget)} />
                     </TableCell>
                   </TableRow>

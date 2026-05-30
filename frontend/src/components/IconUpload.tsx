@@ -57,19 +57,29 @@ export const IconUpload: React.FC<IconUploadProps> = ({
 
         const compressedFile = await imageCompression(file, compressionOptions);
 
-        // Create preview from compressed file
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setPreview(base64String);
-          onIconChange(base64String);
-          if (activityId && activityId !== "new") {
-            toast.success("Icon uploaded and saved successfully");
-          } else {
-            toast.success("The icon has been uploaded and will be saved after activity creation.");
-          }
-        };
-        reader.readAsDataURL(compressedFile);
+        // Instant local preview while the upload runs.
+        const localPreview = URL.createObjectURL(compressedFile);
+        setPreview(localPreview);
+
+        // Upload to Supabase Storage and persist the returned URL (NOT base64).
+        const formData = new FormData();
+        formData.append("file", compressedFile, file.name);
+        formData.append("type", "icon");
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Upload failed");
+        }
+        const { url } = await res.json();
+
+        setPreview(url);
+        onIconChange(url);
+        URL.revokeObjectURL(localPreview);
+        if (activityId && activityId !== "new") {
+          toast.success("Icon uploaded and saved successfully");
+        } else {
+          toast.success("The icon has been uploaded and will be saved after activity creation.");
+        }
       } catch (error) {
         console.error("Error uploading icon:", error);
         toast.error("Failed to upload icon");

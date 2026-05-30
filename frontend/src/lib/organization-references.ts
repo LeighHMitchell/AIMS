@@ -8,6 +8,16 @@
  * Lives in lib/ (not in a route file) because Next.js only permits known
  * handler exports from `route.ts` modules.
  */
+
+/** ": Name A, Name B, … and N more" — names the records that block a delete. */
+function summariseNames(names: any[], max = 5): string {
+  const clean = names.map((n) => (n == null ? '' : String(n))).filter(Boolean);
+  if (clean.length === 0) return '';
+  const shown = clean.slice(0, max);
+  const more = clean.length - shown.length;
+  return `: ${shown.join(', ')}${more > 0 ? ` and ${more} more` : ''}`;
+}
+
 export async function getOrganizationReferences(
   supabase: any,
   id: string
@@ -33,24 +43,39 @@ export async function getOrganizationReferences(
     );
   }
 
-  // Activities where this org is the reporting organization
-  const { count: reportingCount } = await supabase
+  // Activities where this org is the reporting organization (named)
+  const { data: reportingActs } = await supabase
     .from('activities')
-    .select('id', { count: 'exact', head: true })
+    .select('title_narrative')
     .eq('reporting_org_id', id);
 
-  if (reportingCount && reportingCount > 0) {
-    references.push(`${reportingCount} activities as reporting organization`);
+  if (reportingActs && reportingActs.length > 0) {
+    const titles = reportingActs.map((a: any) => a.title_narrative).filter(Boolean);
+    references.push(
+      `Reporting organisation on ${reportingActs.length} ` +
+        `activit${reportingActs.length > 1 ? 'ies' : 'y'}${summariseNames(titles)}`
+    );
   }
 
-  // Activity contributor entries
-  const { count: contributorCount } = await supabase
+  // Activity contributor entries (named by the activities they belong to)
+  const { data: contributorRows } = await supabase
     .from('activity_contributors')
-    .select('id', { count: 'exact', head: true })
+    .select('activity_id, activities:activity_id(title_narrative)')
     .eq('organization_id', id);
 
-  if (contributorCount && contributorCount > 0) {
-    references.push(`${contributorCount} activity contributor entries`);
+  if (contributorRows && contributorRows.length > 0) {
+    const titles = Array.from(
+      new Set(
+        contributorRows
+          .map((r: any) => r.activities?.title_narrative)
+          .filter(Boolean)
+      )
+    );
+    const activityCount = titles.length || contributorRows.length;
+    references.push(
+      `Contributor on ${activityCount} ` +
+        `activit${activityCount > 1 ? 'ies' : 'y'}${summariseNames(titles)}`
+    );
   }
 
   // Transactions where this org is provider or receiver

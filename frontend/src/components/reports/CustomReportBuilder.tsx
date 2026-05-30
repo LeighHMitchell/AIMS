@@ -1336,6 +1336,9 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
             </CardTitle>
             <CardDescription>
               Create custom pivot tables by dragging and dropping fields. Filter data and save your configurations for later use.
+              <span className="mt-1 block text-helper text-muted-foreground">
+                Tip: percentage and score fields (e.g. Completeness Score, Execution Rate, Disbursement Rate) are per-activity values — use the <strong>Average</strong> aggregator, not Sum, or the total will exceed 100%.
+              </span>
             </CardDescription>
           </div>
           <SavedReportsManager

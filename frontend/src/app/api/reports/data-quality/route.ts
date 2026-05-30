@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { titleWithAcronym, orgWithAcronym } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +32,7 @@ export async function GET() {
         id,
         iati_identifier,
         title_narrative,
+        acronym,
         description_narrative,
         activity_status,
         planned_start_date,
@@ -143,10 +145,10 @@ export async function GET() {
       const completenessScore = Math.round((filledCount / totalFields) * 100)
 
       const org = activity.reporting_org_id ? orgById.get(activity.reporting_org_id) : null
-      const reportingOrg = org?.acronym || org?.name || activity.created_by_org_name || 'Unknown'
+      const reportingOrg = orgWithAcronym(org?.name, org?.acronym, activity.created_by_org_name)
 
       return {
-        activity_title: activity.title_narrative || 'Untitled',
+        activity_title: titleWithAcronym(activity.title_narrative, activity.acronym) || 'Untitled',
         iati_id: activity.iati_identifier || '',
         missing_fields: missingFields.join('; ') || 'None',
         completeness_score: completenessScore,

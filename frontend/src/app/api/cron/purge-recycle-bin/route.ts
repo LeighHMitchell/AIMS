@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import {
   RECYCLE_BIN_ENTITY_TYPES,
   getChildTablesFor,
+  getEntityIdColumn,
   type RecycleBinEntityType,
 } from '@/lib/soft-delete';
 
@@ -47,9 +48,10 @@ export async function GET(request: NextRequest) {
     const stat = { purged: 0, childrenPurged: 0 } as { purged: number; childrenPurged: number; error?: string };
     summary[entity] = stat;
 
+    const idColumn = getEntityIdColumn(entity);
     const { data: rows, error: fetchError } = await supabase
       .from(entity)
-      .select('id')
+      .select(idColumn)
       .lt('deleted_at', cutoff)
       .not('deleted_at', 'is', null)
       .eq('purge_paused', false);
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
       stat.error = fetchError.message;
       continue;
     }
-    const ids = (rows ?? []).map((r: any) => r.id);
+    const ids = (rows ?? []).map((r: any) => r[idColumn]);
     if (ids.length === 0) continue;
 
     // Null out FKs from non-deleted rows that point at parents we're about to purge.
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest) {
     const { error: deleteError, count } = await supabase
       .from(entity)
       .delete({ count: 'exact' })
-      .in('id', ids);
+      .in(idColumn, ids);
     if (deleteError) {
       stat.error = deleteError.message;
       continue;

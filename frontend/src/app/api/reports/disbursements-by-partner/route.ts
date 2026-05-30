@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds, COMMITMENT_TYPES, DISBURSEMENT_TYPES, txUsd } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -13,18 +14,31 @@ export async function GET() {
   }
 
   try {
-    // Fetch all transactions with provider organization info
-    const { data: transactions, error: transactionsError } = await supabase
+    // Canonical financial aggregation: actual + non-deleted transactions on
+    // published & non-deleted activities, internal pooled-fund transfers excluded.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (reportableIds.length === 0) {
+      return NextResponse.json({ data: [], error: null })
+    }
+    let txQuery = supabase
       .from('transactions')
       .select(`
         provider_org_id,
         provider_org_name,
         transaction_type,
+        value,
         value_usd,
+        currency,
         transaction_date,
         activity_id
       `)
       .not('provider_org_id', 'is', null)
+      .eq('status', 'actual')
+      .is('deleted_at', null)
+      .in('activity_id', reportableIds)
+    const pooledFundIds = await getPooledFundIds(supabase);
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
+    const { data: transactions, error: transactionsError } = await txQuery
 
     if (transactionsError) {
       console.error('[Reports API] Error fetching transactions:', transactionsError)
@@ -77,13 +91,12 @@ export async function GET() {
         last_transaction_date: null,
       }
 
-      // Transaction types 1 and 2 are incoming funds and commitments
-      if (t.transaction_type === '1' || t.transaction_type === '2') {
-        existing.total_committed += (t.value_usd || 0)
+      // Canonical: Commitment = type 2 (outgoing) only; Disbursement = type 3 only.
+      if (COMMITMENT_TYPES.includes(t.transaction_type)) {
+        existing.total_committed += txUsd(t)
       }
-      // Transaction types 3 and 4 are disbursements and expenditures
-      if (t.transaction_type === '3' || t.transaction_type === '4') {
-        existing.total_disbursed += (t.value_usd || 0)
+      if (DISBURSEMENT_TYPES.includes(t.transaction_type)) {
+        existing.total_disbursed += txUsd(t)
       }
 
       if (t.activity_id) {

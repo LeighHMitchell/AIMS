@@ -43,7 +43,7 @@ const HIERARCHY_LEVELS: HierarchyOption[] = [
 
 interface HierarchySelectProps {
   value?: number;
-  onValueChange?: (value: number) => void;
+  onValueChange?: (value: number | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -104,7 +104,7 @@ export function HierarchySelect({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onValueChange?.(1); // Reset to default level 1
+                  onValueChange?.(undefined); // Clear the selection (IATI @hierarchy is optional, no default)
                 }}
                 className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                 aria-label="Clear selection"

@@ -7,6 +7,47 @@ import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { inferTransactionParties, ParticipatingOrg as InferenceParticipatingOrg, ReportingOrg } from '@/lib/iati/inference';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
+import { getSectorInfo } from '@/lib/dac-sector-utils';
+
+/**
+ * Build normalised transaction sector lines from parsed <transaction><sector> data.
+ * Percentages are normalised to sum to 100 (single sector → 100; even split when
+ * any percentage is missing), matching the validation enforced by the sectors API.
+ * Returns [] when the transaction has no usable sectors.
+ */
+function buildTransactionSectorLines(
+  rawSectors: Array<{ code?: string; sector_code?: string; vocabulary?: string; percentage?: number; narrative?: string }>,
+  transactionValue: number
+): Array<{ sector_vocabulary: string; sector_code: string; sector_name: string; percentage: number; amount_minor: number; sort_order: number }> {
+  const sectors = (rawSectors || []).filter(s => s && (s.code || s.sector_code));
+  const n = sectors.length;
+  if (n === 0) return [];
+
+  const provided = sectors.map(s => (typeof s.percentage === 'number' && !isNaN(s.percentage) && s.percentage > 0) ? s.percentage : null);
+  const allProvided = provided.every(p => p !== null);
+  const sumProvided = provided.reduce((a, p) => a + (p || 0), 0);
+  let pcts: number[];
+  if (allProvided && Math.abs(sumProvided - 100) <= 0.01) {
+    pcts = provided as number[];
+  } else {
+    const even = Math.floor((100 / n) * 100) / 100;
+    pcts = sectors.map(() => even);
+    pcts[0] = Math.round((pcts[0] + (100 - even * n)) * 100) / 100;
+  }
+
+  return sectors.map((s, i) => {
+    const code = (s.code || s.sector_code) as string;
+    const info = getSectorInfo(code);
+    return {
+      sector_vocabulary: s.vocabulary || '1',
+      sector_code: code,
+      sector_name: info?.name || s.narrative || code,
+      percentage: pcts[i],
+      amount_minor: Math.round((transactionValue || 0) * pcts[i] / 100 * 100),
+      sort_order: i,
+    };
+  });
+}
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -57,6 +98,13 @@ interface IATITransaction {
   tiedStatus?: string;
   flowType?: string;
   disbursementChannel?: string;
+  // Transaction-level sectors (IATI <transaction><sector>) and recipient geography
+  sectors?: Array<{ code?: string; sector_code?: string; vocabulary?: string; percentage?: number; narrative?: string }>;
+  sector?: { code?: string; vocabulary?: string };
+  recipientCountry?: string;
+  recipient_region_code?: string;
+  recipient_region_vocab?: string;
+  recipientRegion?: { code?: string; vocabulary?: string };
 }
 
 interface DBSector {
@@ -1477,7 +1525,9 @@ export async function POST(
         // Prepare transaction data with IATI-compliant currency resolution
         const validTransactions: any[] = [];
         const skippedTransactions: any[] = [];
-        
+        // Sector lines to write per valid transaction (aligned by index with validTransactions)
+        const txSectorPlans: Array<Array<{ sector_vocabulary: string; sector_code: string; sector_name: string; percentage: number; amount_minor: number; sort_order: number }>> = [];
+
         for (const t of newTransactions) {
           // Find activities by IATI identifier
           const providerActivityUuid = await findActivityByIatiId(t.providerOrg?.providerActivityId);
@@ -1511,6 +1561,13 @@ export async function POST(
           
           // Normalize empty string dates to null (PostgreSQL DATE columns don't accept empty strings)
           const normalizedDate = t.date && t.date.trim() !== '' ? t.date : null;
+
+          // Transaction-level sectors (IATI <transaction><sector>)
+          const rawTxSectors = (Array.isArray(t.sectors) && t.sectors.length > 0)
+            ? t.sectors
+            : (t.sector?.code ? [{ code: t.sector.code, vocabulary: t.sector.vocabulary }] : []);
+          const txSectorLines = buildTransactionSectorLines(rawTxSectors, t.value);
+          const hasTxSectors = txSectorLines.length > 0;
           
           // Get initial provider/receiver org IDs from the transaction data
           const initialProviderOrgId = t.providerOrg?.ref ? 
@@ -1569,12 +1626,19 @@ export async function POST(
             receiver_activity_uuid: receiverActivityUuid,
             
             // IATI fields
-            aid_type: typeof t.aidType === 'object' ? t.aidType?.code : t.aidType,
+            aid_type: typeof t.aidType === 'object' ? (t.aidType as any)?.code : t.aidType,
             finance_type: t.financeType,
             tied_status: t.tiedStatus,
             flow_type: t.flowType,
             disbursement_channel: t.disbursementChannel,
-            
+
+            // Transaction-level recipient geography
+            recipient_country_code: t.recipientCountry || (t.recipientCountry as any)?.code || null,
+            recipient_region_code: t.recipient_region_code || t.recipientRegion?.code || null,
+            recipient_region_vocab: t.recipient_region_vocab || t.recipientRegion?.vocabulary || null,
+            // When the transaction carries its own <sector> elements it does not inherit activity sectors
+            use_activity_sectors: hasTxSectors ? false : true,
+
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -1594,19 +1658,55 @@ export async function POST(
           // Add USD fields to transaction data
           const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
           validTransactions.push(transactionDataWithUSD);
+          txSectorPlans.push(txSectorLines);
         }
-        
+
         // Insert only valid transactions
         if (validTransactions.length > 0) {
-          const { error: transactionError } = await supabase
+          const { data: insertedTransactions, error: transactionError } = await supabase
             .from('transactions')
-            .insert(validTransactions);
-          
+            .insert(validTransactions)
+            .select('uuid');
+
           if (transactionError) {
             console.error('[IATI Import] Error inserting transactions:', transactionError);
             // Don't throw - continue with other updates
           } else {
             updatedFields.push('transactions');
+
+            // Write transaction-level sector lines (aligned by insert order with validTransactions)
+            const sectorLineRows: any[] = [];
+            (insertedTransactions || []).forEach((row: any, i: number) => {
+              const plan = txSectorPlans[i];
+              if (row?.uuid && plan && plan.length > 0) {
+                plan.forEach(line => sectorLineRows.push({ transaction_id: row.uuid, ...line }));
+              }
+            });
+            if (sectorLineRows.length > 0) {
+              const { error: sectorLinesError } = await supabase
+                .from('transaction_sector_lines')
+                .insert(sectorLineRows);
+              if (sectorLinesError) {
+                console.error('[IATI Import] Error inserting transaction sector lines:', sectorLinesError);
+              } else {
+                // Transactions reported their own sectors → switch the activity to transaction-level
+                // sector reporting so the Sectors tab auto-selects "Transaction Level" (sector_export_level)
+                // AND shows the weighted average across transactions (sector_allocation_mode).
+                const { error: exportLevelError } = await supabase
+                  .from('activities')
+                  .update({
+                    sector_export_level: 'transaction',
+                    sector_allocation_mode: 'transaction',
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', activityId);
+                if (exportLevelError) {
+                  console.error('[IATI Import] Error setting sector_export_level=transaction:', exportLevelError);
+                } else if (!updatedFields.includes('sector_export_level')) {
+                  updatedFields.push('sector_export_level');
+                }
+              }
+            }
           }
         }
         

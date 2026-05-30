@@ -104,23 +104,39 @@ export function EnhancedImageUpload({
 
         const compressedFile = await imageCompression(file, compressionOptions);
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setPreview(base64String);
-          onChange(base64String);
-          // Reset position/scale for new images
-          if (canReposition) {
-            setCurrentPosition(50);
-            onPositionChange?.(50);
-          }
-          if (canZoom) {
-            setCurrentScale(100);
-            onScaleChange?.(100);
-          }
-          toast.success(`${label} uploaded successfully`);
-        };
-        reader.readAsDataURL(compressedFile);
+        // Show an instant local preview while the upload runs.
+        const localPreview = URL.createObjectURL(compressedFile);
+        setPreview(localPreview);
+
+        // Upload to Supabase Storage and persist the returned URL (NOT base64).
+        // Storing base64 data URIs inline previously bloated the organizations
+        // list payload to ~7.5 MB; URLs keep it a few KB and let images
+        // lazy-load per card.
+        const formData = new FormData();
+        formData.append('file', compressedFile, file.name);
+        formData.append('type', variant); // 'banner' | 'logo'
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Upload failed');
+        }
+        const { url } = await res.json();
+
+        setPreview(url);
+        onChange(url);
+        URL.revokeObjectURL(localPreview);
+
+        // Reset position/scale for new images
+        if (canReposition) {
+          setCurrentPosition(50);
+          onPositionChange?.(50);
+        }
+        if (canZoom) {
+          setCurrentScale(100);
+          onScaleChange?.(100);
+        }
+        toast.success(`${label} uploaded successfully`);
       } catch (error) {
         console.error('Error processing image:', error);
         toast.error('Failed to process image');

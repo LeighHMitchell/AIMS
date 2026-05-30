@@ -191,7 +191,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
               {disbursements.map((d) => (
                 <TableRow
                   key={d.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="group/row cursor-pointer hover:bg-muted/50"
                   onClick={() => d.activity_id && router.push(`/activities/${d.activity_id}?tab=financials`)}
                 >
                   <TableCell className="min-w-[280px]">
@@ -262,7 +262,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                     </div>
                   </TableCell>
                   {(!d.activity?.reporting_org_id || d.activity.reporting_org_id === organizationId) ? (
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                       <TableRowActionMenu activityId={d.activity_id} entityType="planned-disbursement" entityId={d.id} onDelete={() => deleteDisbursement(d)} />
                     </TableCell>
                   ) : (

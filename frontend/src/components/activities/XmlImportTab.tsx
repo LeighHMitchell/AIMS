@@ -2349,8 +2349,31 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
 
+      if (parsedActivity.hierarchy !== undefined && parsedActivity.hierarchy !== null) {
+        const hierarchyLabels: Record<number, string> = {
+          1: 'Level 1 (Parent)',
+          2: 'Level 2 (Child)',
+          3: 'Level 3 (Sub-child)'
+        };
+        const currentHierarchy = currentActivityData.hierarchy ?? null;
+        const currentHierarchyLabel = currentHierarchy != null
+          ? (hierarchyLabels[currentHierarchy] || `Level ${currentHierarchy}`)
+          : null;
+        const importHierarchyLabel = hierarchyLabels[parsedActivity.hierarchy] || `Level ${parsedActivity.hierarchy}`;
+        fields.push({
+          fieldName: 'Hierarchy',
+          iatiPath: 'iati-activity[@hierarchy]',
+          currentValue: currentHierarchyLabel,
+          importValue: importHierarchyLabel,
+          selected: shouldSelectField(currentHierarchyLabel, importHierarchyLabel),
+          hasConflict: hasConflict(currentHierarchyLabel, importHierarchyLabel),
+          tab: 'basic',
+          description: 'IATI activity hierarchy level (1 = parent, 2 = child, 3 = sub-child)'
+        });
+      }
+
       // === DATES TAB ===
-      
+
       if (parsedActivity.plannedStartDate) {
         const currentValue = currentActivityData.planned_start_date || null;
         fields.push({
@@ -4764,6 +4787,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           case 'Activity Scope':
             updateData.activity_scope = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
+          case 'Hierarchy': {
+            // Persist the raw IATI @hierarchy integer (read from parsed activity, not the display label)
+            const h = parsedActivity.hierarchy;
+            const hierarchyNum = typeof h === 'number' ? h : parseInt(String(h), 10);
+            if (!isNaN(hierarchyNum)) {
+              updateData.hierarchy = hierarchyNum;
+            }
+            break;
+          }
           case 'Narrative Language':
             updateData.language = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
@@ -6934,6 +6966,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
 
 
+          // Track whether any imported transaction carried its own sectors, so we can switch
+          // the activity to transaction-level sector reporting after the loop.
+          let anyTxSectorsImported = false;
+
           for (let txIndex = 0; txIndex < updateData.importedTransactions.length; txIndex++) {
             const transaction = updateData.importedTransactions[txIndex];
             const txCurrency = transaction.currency || freshActivityData?.default_currency || 'USD';
@@ -6966,7 +7002,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               // Check if finance type should be inherited from activity defaults
               const hasExplicitFinanceType = !!transaction.financeType;
               const effectiveFinanceType = transaction.financeType || currentActivityData?.defaultFinanceType;
-              
+
+              // Build transaction-level sector lines (IATI <transaction><sector>) if present.
+              // Parser exposes transaction.sectors as an array of { code, vocabulary, percentage, narrative };
+              // fall back to the legacy single transaction.sector for older parser output.
+              const rawTxSectors: any[] = Array.isArray(transaction.sectors) && transaction.sectors.length > 0
+                ? transaction.sectors.filter((s: any) => s && (s.code || s.sector_code))
+                : (transaction.sector?.code
+                    ? [{ code: transaction.sector.code, vocabulary: transaction.sector.vocabulary }]
+                    : []);
+              const hasTxSectors = rawTxSectors.length > 0;
+
               const transactionData = {
                 activity_id: activityId,
                 transaction_type: transaction.type,
@@ -6990,6 +7036,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 flow_type: transaction.flowType,
                 disbursement_channel: transaction.disbursementChannel,
                 humanitarian: transaction.humanitarian,
+                // Transaction-level recipient geography (IATI allows one country and/or one region per transaction)
+                recipient_country_code: transaction.recipientCountry || transaction.recipientCountry?.code || null,
+                recipient_region_code: transaction.recipient_region_code || transaction.recipientRegion?.code || null,
+                recipient_region_vocab: transaction.recipient_region_vocab || transaction.recipientRegion?.vocabulary || null,
+                // When the transaction carries its own <sector> elements, mark it as not inheriting activity sectors
+                use_activity_sectors: hasTxSectors ? false : true,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
@@ -7003,7 +7055,60 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
               if (apiRes.ok) {
                 successCount++;
-                
+
+                // Persist transaction-level sectors to transaction_sector_lines so they
+                // appear in the transaction modal (which reads sectors from sector lines).
+                if (hasTxSectors) {
+                  try {
+                    const created = await apiRes.clone().json();
+                    const txUuid = created?.uuid || created?.id;
+                    if (txUuid) {
+                      // Normalise percentages so they sum to 100 (PUT /sectors validates this).
+                      const n = rawTxSectors.length;
+                      const provided = rawTxSectors.map((s: any) =>
+                        (typeof s.percentage === 'number' && !isNaN(s.percentage) && s.percentage > 0) ? s.percentage : null
+                      );
+                      const allProvided = provided.every((p: number | null) => p !== null);
+                      const sumProvided = provided.reduce((a: number, p: number | null) => a + (p || 0), 0);
+                      let pcts: number[];
+                      if (allProvided && Math.abs(sumProvided - 100) <= 0.01) {
+                        pcts = provided as number[];
+                      } else {
+                        // Even split, with any rounding remainder placed on the first line
+                        const even = Math.floor((100 / n) * 100) / 100;
+                        pcts = rawTxSectors.map(() => even);
+                        pcts[0] = Math.round((pcts[0] + (100 - even * n)) * 100) / 100;
+                      }
+                      const sectorLines = rawTxSectors.map((s: any, i: number) => {
+                        const code = s.code || s.sector_code;
+                        const info = getSectorInfo(code);
+                        return {
+                          sector_vocabulary: s.vocabulary || s.sector_vocabulary || '1',
+                          sector_code: code,
+                          sector_name: info?.name || s.narrative || code,
+                          percentage: pcts[i],
+                        };
+                      });
+                      const secRes = await apiFetch(`/api/transactions/${txUuid}/sectors`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sector_lines: sectorLines }),
+                      });
+                      if (!secRes.ok) {
+                        const secErr = await secRes.text();
+                        console.warn(`[XML Import] Transaction sector lines not saved for ${txUuid}:`, secErr);
+                        importSummary.transactions.warnings.push(
+                          `Transaction sectors not saved (${rawTxSectors.map((s: any) => s.code || s.sector_code).join(', ')}): ${secErr}`
+                        );
+                      } else {
+                        anyTxSectorsImported = true;
+                      }
+                    }
+                  } catch (secError) {
+                    console.warn('[XML Import] Error saving transaction sector lines:', secError);
+                  }
+                }
+
                 // Track successful transaction in summary with detailed info
                 importSummary.transactions.successful++;
                 importSummary.transactions.totalAmount += transaction.value || 0;
@@ -7083,6 +7188,23 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             }
           }
 
+
+          // If any transaction brought its own sectors, switch the activity to transaction-level
+          // sector reporting so the Sectors tab auto-selects "Transaction Level" and shows the
+          // weighted average across transactions.
+          if (anyTxSectorsImported) {
+            try {
+              await apiFetch(`/api/activities/${activityId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                // sectorExportLevel drives the "Transaction Level" card; sector_allocation_mode
+                // drives the Sectors tab's locked weighted-average view.
+                body: JSON.stringify({ sectorExportLevel: 'transaction', sector_allocation_mode: 'transaction' }),
+              });
+            } catch (exportLevelError) {
+              console.warn('[XML Import] Failed to set transaction-level sector mode:', exportLevelError);
+            }
+          }
 
           if (successCount > 0) {
             toast.success(`Transactions imported successfully`, {
@@ -8881,7 +9003,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         ? 'Uploading XML file...'
                         : importStatus.stage === 'parsing'
                           ? 'Parsing XML content...'
-                          : (importStatus.message || 'Importing data...')
+                          : 'Importing data...'
                     }
                   />
                 </div>
@@ -8893,6 +9015,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 value={importStatus.progress || 0}
                 className="h-2"
               />
+              {/* Live detail — what's being processed right now (keeps the user confident
+                  things are moving). Stays distinct from the stable stage label above. */}
+              <p className="font-mono text-caption text-muted-foreground">
+                {importStatus.stage === 'uploading'
+                  ? '> uploading XML file…'
+                  : importStatus.stage === 'parsing'
+                    ? '> reading & validating IATI structure…'
+                    : `> ${importStatus.message || 'writing fields to activity…'}`}
+              </p>
             </div>
           </CardContent>
         </Card>

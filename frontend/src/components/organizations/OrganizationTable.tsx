@@ -509,7 +509,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 <TableRow
                   key={org.id}
                   data-state={selectable && selectedSet.has(org.id) ? "selected" : undefined}
-                  className="group hover:bg-muted/50 transition-colors cursor-pointer data-[state=selected]:bg-muted/60"
+                  className="group group/row hover:bg-muted/50 transition-colors cursor-pointer data-[state=selected]:bg-muted/60"
                   onClick={(e) => handleRowClick(org.id, e)}
                 >
                   {selectable && (
@@ -527,7 +527,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                     </TableCell>
                   )}
                   {orderedColumns.map((colId) => cellMap[colId])}
-                  <TableCell className="px-4 py-3 text-body text-foreground text-right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="px-4 py-3 text-body text-foreground text-right opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end">
                       <OrganizationActionMenu
                         organizationId={org.id}

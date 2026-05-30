@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSuperUser } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { RECYCLE_BIN_ENTITY_TYPES, type RecycleBinEntityType } from '@/lib/soft-delete';
+import { RECYCLE_BIN_ENTITY_TYPES, getEntityIdColumn, type RecycleBinEntityType } from '@/lib/soft-delete';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,8 @@ const ENTITY_CONFIG: Record<RecycleBinEntityType, EntityConfig> = {
     formatTitle: (r) => (r.title_narrative as string | null) || (r.iati_identifier as string | null) || 'Untitled activity',
   },
   transactions: {
-    columns: 'id, transaction_type, value, currency, transaction_date, deleted_at, deleted_by, purge_paused',
+    // transactions PK is `uuid`, not `id`.
+    columns: 'uuid, transaction_type, value, currency, transaction_date, deleted_at, deleted_by, purge_paused',
     formatTitle: (r) => {
       const type = (r.transaction_type as string | null) ?? 'Transaction';
       const amount = r.value != null ? `${r.value} ${r.currency ?? ''}`.trim() : '';
@@ -106,6 +107,7 @@ export async function GET(
     }
   }
 
+  const idColumn = getEntityIdColumn(entityType);
   const now = Date.now();
   const items = (rows ?? []).map((r: any) => {
     const deletedAtMs = new Date(r.deleted_at).getTime();
@@ -113,7 +115,7 @@ export async function GET(
     const daysRemaining = Math.max(0, RETENTION_DAYS - ageDays);
     const deleter = r.deleted_by ? deleterMap.get(r.deleted_by) : null;
     return {
-      id: r.id,
+      id: r[idColumn],
       title: ENTITY_CONFIG[entityType].formatTitle(r),
       deletedAt: r.deleted_at,
       daysRemaining,

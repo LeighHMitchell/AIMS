@@ -3,6 +3,7 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
+import { getValidationStatusLabel } from '@/lib/validation-status';
 import { Calendar, MoreVertical, Pencil, Trash2, Clock, Download, Copy, Bookmark, BookmarkCheck, Building2 } from 'lucide-react';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import {
@@ -343,9 +344,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               variant={submissionColors[activity.submission_status as keyof typeof submissionColors] || 'secondary'}
               className="text-helper font-medium leading-tight"
             >
-              {activity.submission_status === 'pending_validation' ? 'Pending Validation' :
-               activity.submission_status === 'validated' ? 'Validated' :
-               activity.submission_status.charAt(0).toUpperCase() + activity.submission_status.slice(1)}
+              {getValidationStatusLabel(activity.submission_status)}
             </Badge>
           )}
           {activity.publication_status && (

@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
         banner,
         created_at,
         updated_at
-      `, { count: 'exact' });
+      `, { count: 'exact' })
+      // Exclude soft-deleted (recycle-bin) orgs from the list.
+      .is('deleted_at', null);
 
     // Apply search filter
     // SECURITY: Escape ILIKE wildcards to prevent filter injection

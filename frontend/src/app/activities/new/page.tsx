@@ -2255,7 +2255,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 onValueChange={(value) => {
                   if (!fieldLockStatus.isLocked) {
                     setGeneral((g: any) => ({ ...g, hierarchy: value }));
-                    hierarchyAutosave.triggerFieldSave(value);
+                    // Send explicit null (not undefined) when cleared so it persists as NULL
+                    hierarchyAutosave.triggerFieldSave(value ?? null);
                   }
                 }}
                 placeholder="Select Hierarchy Level"

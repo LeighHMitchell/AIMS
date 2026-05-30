@@ -1086,8 +1086,9 @@ export async function POST(request: Request) {
         banner: body.banner,
         icon: body.icon,
         reporting_org_id: userOrgData.reporting_org_id,
-        // For IATI imports, allow null hierarchy - data will come from import
-        hierarchy: body.created_via === 'import' && body.hierarchy === null ? null : (body.hierarchy || 1),
+        // IATI @hierarchy is optional - never fabricate a default. Persist null unless
+        // a value is explicitly provided (by the user or an IATI import).
+        hierarchy: body.hierarchy ?? null,
         linked_data_uri: body.linkedDataUri || null,
         planned_start_date: cleanDateValue(body.plannedStartDate),
         planned_end_date: cleanDateValue(body.plannedEndDate),

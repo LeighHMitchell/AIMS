@@ -424,7 +424,7 @@ export default function WorkingGroupsPage() {
                   return (
                     <React.Fragment key={wg.id}>
                       <TableRow
-                        className="cursor-pointer"
+                        className="group/row cursor-pointer"
                         onClick={() => router.push(`/working-groups/${wg.id}`)}
                       >
                         <TableCell className="font-medium">
@@ -464,7 +464,7 @@ export default function WorkingGroupsPage() {
                         <TableCell className="text-right">{wg.meetings_count || 0}</TableCell>
                         <TableCell className="text-right">{wg.activities_count || 0}</TableCell>
                         {isSuperUser() && (
-                          <TableCell>
+                          <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                             <div onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

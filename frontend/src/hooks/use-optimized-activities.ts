@@ -53,6 +53,8 @@ interface UseOptimizedActivitiesReturn {
   filters: {
     activityStatuses: string[];
     setActivityStatuses: (statuses: string[]) => void;
+    publicationStatuses: string[];
+    setPublicationStatuses: (statuses: string[]) => void;
     submissionStatuses: string[];
     setSubmissionStatuses: (statuses: string[]) => void;
     reportedByOrgs: string[];
@@ -108,6 +110,7 @@ export function useOptimizedActivities(
   const [sortOrder, setSortOrder] = useState('desc');
 
   const [activityStatuses, setActivityStatuses] = useState<string[]>([]);
+  const [publicationStatuses, setPublicationStatuses] = useState<string[]>([]);
   const [submissionStatuses, setSubmissionStatuses] = useState<string[]>([]);
   const [reportedByOrgs, setReportedByOrgs] = useState<string[]>([]);
   const [aidTypes, setAidTypes] = useState<string[]>([]);
@@ -159,6 +162,7 @@ export function useOptimizedActivities(
         sortField,
         sortOrder,
         activityStatuses,
+        publicationStatuses,
         submissionStatuses,
         reportedByOrgs,
         aidTypes,
@@ -174,6 +178,7 @@ export function useOptimizedActivities(
       sortField,
       sortOrder,
       activityStatuses,
+      publicationStatuses,
       submissionStatuses,
       reportedByOrgs,
       aidTypes,
@@ -198,6 +203,7 @@ export function useOptimizedActivities(
         sortOrder,
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
         ...(activityStatuses.length > 0 && { activityStatuses: activityStatuses.join(',') }),
+        ...(publicationStatuses.length > 0 && { publicationStatuses: publicationStatuses.join(',') }),
         ...(submissionStatuses.length > 0 && { submissionStatuses: submissionStatuses.join(',') }),
         ...(reportedByOrgs.length > 0 && { reportedByOrgs: reportedByOrgs.join(',') }),
         ...(aidTypes.length > 0 && { aidTypes: aidTypes.join(',') }),
@@ -333,6 +339,8 @@ export function useOptimizedActivities(
     filters: {
       activityStatuses,
       setActivityStatuses,
+      publicationStatuses,
+      setPublicationStatuses,
       submissionStatuses,
       setSubmissionStatuses,
       reportedByOrgs,
