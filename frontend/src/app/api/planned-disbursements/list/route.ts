@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     const activitiesResult = allActivityIds.size > 0
       ? await adminSupabase
           .from('activities')
-          .select('id, title_narrative, iati_identifier, reporting_org_id')
+          .select('id, title_narrative, iati_identifier, other_identifier, acronym, reporting_org_id')
           .in('id', Array.from(allActivityIds))
       : { data: null, error: null };
 

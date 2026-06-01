@@ -50,7 +50,7 @@ export const transactionColumns: ColumnConfig<TransactionColumnId>[] = [
   { id: "activity", label: "Activity", group: "default", defaultVisible: true },
   { id: "systemId", label: "Transaction ID", group: "default", defaultVisible: false },
   { id: "transactionDate", label: "Date", group: "default", defaultVisible: true },
-  { id: "transactionType", label: "Type", group: "default", defaultVisible: true },
+  { id: "transactionType", label: "Transaction Type", group: "default", defaultVisible: true },
   { id: "organizations", label: "Provider → Receiver", group: "default", defaultVisible: true },
   { id: "amount", label: "Original Value", group: "default", defaultVisible: false },
   { id: "valueDate", label: "Value Date", group: "default", defaultVisible: false },

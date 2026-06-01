@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SectorSpendByPeriodTable } from '@/components/activities/SectorSpendByPeriodTable';
+import { ChartDataTable, CodeChip, ChartTableColumn } from '@/components/ui/chart-data-table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -841,6 +843,20 @@ function ImprovedSectorAllocationFormInner({
     if (onCompletionStatusChange) {
       // Small delay to ensure autosave state is properly initialized
       const timeoutId = setTimeout(() => {
+        // Transaction-level sector reporting: the activity has no activity-level allocations,
+        // so completion is driven by whether the transactions contribute a weighted-average
+        // breakdown (the "Weighted average across transactions" table). When they do, the
+        // Sectors tab should show a green tick.
+        if (isTransactionMode) {
+          const hasTxSectors = (sectorMode.aggregatedSectors?.length || 0) > 0;
+          onCompletionStatusChange({
+            isComplete: hasTxSectors,
+            isInProgress: false,
+            isSaved: hasTxSectors,
+          });
+          return;
+        }
+
         const hasValidSectors = allocations.some(sector => sector.id || sector.percentage > 0);
         const totalPercentage = allocations.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
         const isProperlyAllocated = Math.abs(totalPercentage - 100) < 0.1;
@@ -873,7 +889,7 @@ function ImprovedSectorAllocationFormInner({
       
       return () => clearTimeout(timeoutId);
     }
-  }, [allocations, sectorsAutosave.state.isPersistentlySaved, sectorsAutosave.state.isSaving, sectorsAutosave.state.error, onCompletionStatusChange]);
+  }, [allocations, sectorsAutosave.state.isPersistentlySaved, sectorsAutosave.state.isSaving, sectorsAutosave.state.error, onCompletionStatusChange, isTransactionMode, sectorMode.aggregatedSectors]);
 
   // Save to autosave when allocations change (with deep comparison to prevent unnecessary saves)
   const isInitialMountRef = useRef(true);
@@ -1009,48 +1025,74 @@ function ImprovedSectorAllocationFormInner({
       )}
 
       {/* Weighted-average sector breakdown across all transactions (read-only, transaction mode) */}
-      {isTransactionMode && (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-surface-muted border-b border-border">
-            <span className="text-body font-medium text-foreground">
-              Weighted average across transactions
-            </span>
-            {sectorMode.isLoadingAggregation && (
-              <span className="text-helper text-muted-foreground">Loading…</span>
+      {isTransactionMode && (() => {
+        const agg = sectorMode.aggregatedSectors;
+        const stripCode = (n: string) => {
+          const i = n.indexOf(' - ');
+          return i > -1 ? n.slice(i + 3) : n;
+        };
+        const weightedRows = (agg || []).map((s) => {
+          const info = getSectorInfo(s.sector_code);
+          return {
+            sector: stripCode(info.category),
+            subSector: stripCode(info.name),
+            transactions: s.transaction_count,
+            weightedPct: s.weighted_percentage,
+            __catCode: info.categoryCode,
+            __subCode: s.sector_code,
+          };
+        });
+        const weightedCols: ChartTableColumn[] = [
+          {
+            key: 'sector',
+            label: 'Sector',
+            align: 'left',
+            format: (_v, row) => (
+              <span><CodeChip className="mr-2">{(row as any).__catCode}</CodeChip>{(row as any).sector}</span>
+            ),
+          },
+          {
+            key: 'subSector',
+            label: 'Sub-sector',
+            align: 'left',
+            format: (_v, row) => (
+              <span><CodeChip className="mr-2">{(row as any).__subCode}</CodeChip>{(row as any).subSector}</span>
+            ),
+          },
+          { key: 'transactions', label: 'Transactions', numeric: true, plainNumber: true },
+          // includeInTotal:false → no malformed "%" sum in the footer; the rows already sum to 100%.
+          { key: 'weightedPct', label: 'Weighted %', numeric: true, plainNumber: true, includeInTotal: false, format: (v) => `${(Number(v) || 0).toFixed(1)}%` },
+        ];
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-body font-medium text-foreground">Weighted average across transactions</span>
+              <HelpTextTooltip
+                size="sm"
+                content="The activity's overall sector split, derived from its transactions and weighted by transaction value (USD) — a sector that received more money counts for more. This is how a transaction-level activity's per-transaction sectors roll up into a single activity-level breakdown. The percentages sum to 100%."
+              />
+              {sectorMode.isLoadingAggregation && (
+                <span className="text-helper text-muted-foreground ml-auto">Loading…</span>
+              )}
+            </div>
+            {(!agg || agg.length === 0) ? (
+              <div className="rounded-md border px-4 py-6 text-center text-body text-muted-foreground">
+                {sectorMode.isLoadingAggregation
+                  ? 'Calculating weighted average…'
+                  : 'No transaction-level sectors found yet. Add sectors to individual transactions to see the weighted average here.'}
+              </div>
+            ) : (
+              <ChartDataTable rows={weightedRows} columns={weightedCols} totalLabel="Total" />
             )}
           </div>
-          {(!sectorMode.aggregatedSectors || sectorMode.aggregatedSectors.length === 0) ? (
-            <div className="px-4 py-6 text-center text-body text-muted-foreground">
-              {sectorMode.isLoadingAggregation
-                ? 'Calculating weighted average…'
-                : 'No transaction-level sectors found yet. Add sectors to individual transactions to see the weighted average here.'}
-            </div>
-          ) : (
-            <table className="w-full text-body">
-              <thead>
-                <tr className="border-b border-border text-helper text-muted-foreground">
-                  <th className="text-left font-medium px-4 py-2">Sector</th>
-                  <th className="text-right font-medium px-4 py-2">Transactions</th>
-                  <th className="text-right font-medium px-4 py-2">Weighted %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sectorMode.aggregatedSectors.map((s) => (
-                  <tr key={s.sector_code} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2">
-                      <span className="font-mono text-muted-foreground mr-2">{s.sector_code}</span>
-                      <span className="text-foreground">{s.sector_name}</span>
-                    </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{s.transaction_count}</td>
-                    <td className="px-4 py-2 text-right tabular-nums font-medium text-foreground">
-                      {(Math.round(s.weighted_percentage * 10) / 10).toFixed(1)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        );
+      })()}
+
+      {/* Sector spend by year (USD per sector per period, actual vs imputed). Complements the
+          weighted-average % table above by showing how much went where, and when. In transaction
+          mode it's always shown; in activity mode it self-hides unless there is spend to impute. */}
+      {activityId && (
+        <SectorSpendByPeriodTable activityId={activityId} hideWhenEmpty={!isTransactionMode} />
       )}
 
       {/* Wrap everything below in a disabled overlay when in transaction mode */}
@@ -1103,7 +1145,8 @@ function ImprovedSectorAllocationFormInner({
 
       {/* Form Interface */}
       <div className="space-y-6 w-full">
-        {/* Sector Dropdown */}
+        {/* Sector Dropdown — hidden in transaction mode (sectors come from transactions) */}
+        {!isTransactionMode && (
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1122,9 +1165,11 @@ function ImprovedSectorAllocationFormInner({
             />
           </CardContent>
         </Card>
+        )}
 
-        {/* Empty State */}
-        {allocations.length === 0 && (
+        {/* Empty State — suppressed in transaction mode, where the weighted-average summary
+            above is the source of truth and the "No sectors" message would be misleading. */}
+        {allocations.length === 0 && !isTransactionMode && (
           <div className="text-center py-12">
             <img src="/images/empty-beaker.webp" alt="No sectors" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-base font-medium mb-2">No sectors</h3>

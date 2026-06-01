@@ -46,16 +46,17 @@ export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
   // Ref for chart export
 
   // Fetch data using the hook
-  const { 
-    data, 
-    chartData, 
+  const {
+    data,
+    chartData,
     sectorNames,
-    sectorCodes, 
-    years, 
-    totals, 
-    loading, 
+    sectorCodes,
+    years,
+    totals,
+    dataQuality,
+    loading,
     error,
-    refetch 
+    refetch
   } = useSectorTimeSeries({
     ...filters,
     dataType
@@ -220,6 +221,23 @@ export function SectorTimeSeriesPanel({ compact }: { compact?: boolean } = {}) {
             </div>
           </div>
         )}
+
+        {/* Data quality: how much of the spend comes from transaction-level sectors (actual)
+            vs imputed from the activity-level split. Helps users trust cross-activity comparisons. */}
+        {!loading && !error && dataQuality && (dataQuality.actualUsd + dataQuality.imputedUsd) > 0 && (() => {
+          const total = dataQuality.actualUsd + dataQuality.imputedUsd
+          const pctActual = Math.round((dataQuality.actualUsd / total) * 100)
+          return (
+            <div
+              className="mb-3 text-helper text-muted-foreground"
+              title="Actual = derived from transaction-level sectors. Imputed = the activity-level sector % applied to spend where a transaction carries no sector of its own."
+            >
+              Data quality: <span className="font-medium text-foreground">{pctActual}% actual</span>
+              {pctActual < 100 ? <> · {100 - pctActual}% imputed</> : null}
+              {dataQuality.unallocatedUsd > 0 ? <> · some spend uncategorised</> : null}
+            </div>
+          )
+        })()}
 
         {/* Data Visualization */}
         {!loading && !error && (

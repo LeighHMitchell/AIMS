@@ -227,6 +227,7 @@ interface TransactionData {
   activity?: {
     id: string;
     title: string;
+    acronym?: string;
     iati_id?: string;
     title_narrative?: string;
     iati_identifier?: string;
@@ -654,8 +655,8 @@ export function TransactionTable({
                     </SortableTableHeader>
                   ),
                   transactionType: (
-                    <SortableTableHeader key="transactionType" id="transactionType" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("transaction_type")}>
-                      <div className="flex items-center gap-1"><span>Type</span>{getSortIcon("transaction_type", sortField, sortOrder)}</div>
+                    <SortableTableHeader key="transactionType" id="transactionType" className="cursor-pointer hover:bg-muted/80 transition-colors min-w-[240px] whitespace-nowrap" onClick={() => onSort("transaction_type")}>
+                      <div className="flex items-center gap-1"><span>Transaction Type</span>{getSortIcon("transaction_type", sortField, sortOrder)}</div>
                     </SortableTableHeader>
                   ),
                   linkedStatus: <SortableTableHeader key="linkedStatus" id="linkedStatus" className="text-center">Linked</SortableTableHeader>,
@@ -685,7 +686,7 @@ export function TransactionTable({
                     </SortableTableHeader>
                   ),
                   financeType: (
-                    <SortableTableHeader key="financeType" id="financeType" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("finance_type")}>
+                    <SortableTableHeader key="financeType" id="financeType" className="cursor-pointer hover:bg-muted/80 transition-colors min-w-[200px] max-w-[230px]" onClick={() => onSort("finance_type")}>
                       <div className="flex items-center gap-1"><span>Finance Type</span>{getSortIcon("finance_type", sortField, sortOrder)}</div>
                     </SortableTableHeader>
                   ),
@@ -701,8 +702,8 @@ export function TransactionTable({
                 };
                 return txHeaderMap[colId] || null;
               })}
-            {/* Actions - always visible, no header text */}
-            <th className="h-12 px-2 data-table-col-actions" />
+            {/* Actions - pinned to the right edge, no header text */}
+            <th className="h-12 px-2 data-table-col-actions sticky right-0 z-20 bg-surface-muted" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -873,12 +874,16 @@ export function TransactionTable({
                       <td key="activity" className="py-3 px-4">
                         <div className="cursor-pointer hover:opacity-75 group" onClick={(e) => { e.stopPropagation(); if (transaction.activity_id) { window.location.href = `/activities/${transaction.activity_id}`; } }}>
                           <div className="text-body">
+                            {(() => {
+                              const activityRef = (transaction.activity_id && activityDetails[transaction.activity_id]?.partner_id) || transaction.activity?.partner_id;
+                              return activityRef ? (
+                                <span className="mr-2 inline-block align-middle"><CopyableIdBadge value={activityRef} label="Activity ID" /></span>
+                              ) : null;
+                            })()}
                             {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
                             {(() => {
-                              const iatiId = transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier;
-                              return iatiId ? (
-                                <span className="ml-2 inline-block align-middle"><CopyableIdBadge value={iatiId} label="IATI Identifier" /></span>
-                              ) : null;
+                              const acronym = transaction.activity?.acronym || (transaction.activity_id ? activityDetails[transaction.activity_id]?.acronym : undefined);
+                              return acronym ? <span>{' '}({acronym})</span> : null;
                             })()}
                           </div>
                           {showDescriptions && transaction.description && (
@@ -914,9 +919,9 @@ export function TransactionTable({
                       <td key="transactionDate" className="py-3 px-4 whitespace-nowrap">{formatTransactionDate(transaction.transaction_date)}</td>
                     ),
                     transactionType: (
-                      <td key="transactionType" className="py-3 px-4 whitespace-nowrap">
+                      <td key="transactionType" className="py-3 px-4 min-w-[240px] whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Tooltip><TooltipTrigger asChild><span className="text-body cursor-help inline-flex items-center gap-1.5"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.transaction_type}</span><span className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-helper text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="inline-flex items-center gap-1.5 cursor-help whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.transaction_type}</span><span className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-helper text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
                           {transaction.status === 'draft' && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -971,9 +976,9 @@ export function TransactionTable({
                       <td key="organizations" className="py-3 px-4">
                         <div className="text-body">
                           <div className="flex items-start gap-2">
-                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-body cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <div className="flex-1 min-w-0"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" className="float-left mr-1.5 mt-0.5" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-body cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div>
                             <span className="text-muted-foreground mt-1">→</span>
-                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-body cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <div className="flex-1 min-w-0"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" className="float-left mr-1.5 mt-0.5" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-body cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div>
                           </div>
                         </div>
                       </td>
@@ -1067,9 +1072,9 @@ export function TransactionTable({
                       const code = transaction.effective_finance_type || transaction.finance_type;
                       const label = FINANCE_TYPE_LABELS[code]?.full;
                       return (
-                        <td key="financeType" className="py-3 px-4 whitespace-nowrap">
+                        <td key="financeType" className="py-3 px-4 min-w-[200px] max-w-[230px]">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-helper">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-body cursor-help block ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded float-left mr-1.5 mt-0.5">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-helper">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
                           ) : <span className="text-body font-normal text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1145,8 +1150,9 @@ export function TransactionTable({
                   return txCellMap[colId] || null;
                 })}
 
-              {/* Actions — revealed on row hover (stays visible while open/focused) */}
-              <td className="py-3 px-2 text-center opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
+              {/* Actions — pinned to the right edge so it's always in view; revealed on row hover */}
+              <td className="py-3 px-2 text-center sticky right-0 z-10 bg-background">
+                <div className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                 <TransactionActionMenu
                   transactionId={transaction.uuid || transaction.id}
                   isLinkedTransaction={transaction.transaction_source === 'linked'}
@@ -1164,6 +1170,7 @@ export function TransactionTable({
                   onReject={onRejectTransaction ? () => onRejectTransaction(transaction.uuid || transaction.id) : undefined}
                   onViewSourceActivity={transaction.linked_from_activity_id ? () => window.open(`/activities/${transaction.linked_from_activity_id}`, '_blank') : undefined}
                 />
+                </div>
               </td>
             </TableRow>
             

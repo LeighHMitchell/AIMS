@@ -402,7 +402,7 @@ export function FilterPanel({
         {loading ? (
           <LoadingText>Loading...</LoadingText>
         ) : (
-          `Showing ${totalCount} ${totalCount === 1 ? 'person' : 'people'}`
+          `Showing ${totalCount} ${totalCount === 1 ? 'contact' : 'contacts'}`
         )}
       </div>
 

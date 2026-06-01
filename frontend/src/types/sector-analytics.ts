@@ -148,6 +148,11 @@ export interface SectorTimeSeriesResponse {
   sectorCodes?: Record<string, string> // Map of sector name to sector code
   years: string[] // All years in the data
   totals: Record<string, number> // Total by sector across all years
+  /**
+   * Data-quality split of the displayed spend: how much is derived from transaction-level
+   * sectors (actual) vs imputed from the activity-level % (fallback), plus uncategorised.
+   */
+  dataQuality?: { actualUsd: number; imputedUsd: number; unallocatedUsd: number }
   error?: string
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchTransactionSectorLinesChunked } from '@/lib/sector-spend';
 import { requireAuth } from '@/lib/auth';
 import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import sectorGroupData from '@/data/SectorGroup.json';
@@ -54,10 +55,15 @@ type YearMetrics = {
   actual: number;
   // New per-metric keys, additive.
   budgets: number;
+  // Data-quality split of the transaction sector attribution (additive, optional consumers):
+  //   actualUsd  = value attributed via the transaction's own sectors (transaction_sector_lines)
+  //   imputedUsd = value attributed by falling back to the activity-level sector %
+  actualUsd: number;
+  imputedUsd: number;
 } & Record<`tx_${TxCode}`, number>;
 
 const makeEmptyYearMetrics = (label: string): YearMetrics => {
-  const base = { label, planned: 0, actual: 0, budgets: 0 } as YearMetrics;
+  const base = { label, planned: 0, actual: 0, budgets: 0, actualUsd: 0, imputedUsd: 0 } as YearMetrics;
   for (const code of TX_TYPE_CODES) {
     (base as any)[`tx_${code}`] = 0;
   }
@@ -207,19 +213,11 @@ export async function GET(request: NextRequest) {
 
     // Fetch transaction sector lines for granular sector allocation
     const transactionIds = transactions?.map(t => t.uuid) || [];
-    let transactionSectorLines: any[] = [];
-
-    if (transactionIds.length > 0) {
-      const { data: sectorLines, error: sectorLinesError } = await supabase
-        .from('transaction_sector_lines')
-        .select('transaction_id, sector_code, sector_name, percentage, amount_minor')
-        .in('transaction_id', transactionIds)
-        .is('deleted_at', null);
-
-      if (!sectorLinesError && sectorLines) {
-        transactionSectorLines = sectorLines;
-      }
-    }
+    // Chunked fetch: a single `.in(...)` with hundreds of UUIDs fails/returns nothing (and risks
+    // the ~1000-row cap), which silently dropped transaction-level sectors from the breakdown.
+    const transactionSectorLines = transactionIds.length > 0
+      ? await fetchTransactionSectorLinesChunked(supabase, transactionIds, 'transaction_id, sector_code, sector_name, percentage, amount_minor')
+      : [];
 
     // Process data by sector and year (with hierarchy information).
     // Year key is the fiscal-year integer (matches calendar year when no customYear
@@ -294,6 +292,82 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // For activities that report sectors at the TRANSACTION level (no activity_sectors),
+    // derive an effective sector mix from their transactions so their budgets and planned
+    // disbursements can still be attributed to sectors (imputed). Value-weighted, with a
+    // per-year mix that falls back to the overall mix for years that have no transactions
+    // (e.g. a future-year budget).
+    type SectorWeight = { code: string; name: string; percentage: number };
+    const effectiveSectorsMap = new Map<string, { overall: SectorWeight[]; byYear: Map<number, SectorWeight[]> }>();
+    {
+      const txById = new Map<string, any>((transactions || []).map((t: any) => [t.uuid, t]));
+      type Bucket = { map: Map<string, { name: string; value: number }>; total: number };
+      type Acc = { overall: Bucket; byYear: Map<number, Bucket> };
+      const acc = new Map<string, Acc>();
+      const addTo = (b: Bucket, code: string, name: string, value: number) => {
+        const cur = b.map.get(code) || { name, value: 0 };
+        cur.value += value;
+        b.map.set(code, cur);
+        b.total += value;
+      };
+      for (const line of transactionSectorLines) {
+        const t = txById.get(line.transaction_id);
+        if (!t || !t.transaction_date) continue;
+        // Only activities WITHOUT declared activity_sectors need a derived mix.
+        if (activitySectorsMap.has(t.activity_id)) continue;
+        const usd = Number(t.value_usd) || 0;
+        const portion = usd * ((Number(line.percentage) || 0) / 100);
+        if (portion <= 0) continue;
+        const txDate = new Date(t.transaction_date);
+        const year = customYear ? getFiscalYearForDate(txDate, customYear) : txDate.getFullYear();
+        let a = acc.get(t.activity_id);
+        if (!a) { a = { overall: { map: new Map(), total: 0 }, byYear: new Map() }; acc.set(t.activity_id, a); }
+        addTo(a.overall, line.sector_code, line.sector_name, portion);
+        let yr = a.byYear.get(year);
+        if (!yr) { yr = { map: new Map(), total: 0 }; a.byYear.set(year, yr); }
+        addTo(yr, line.sector_code, line.sector_name, portion);
+      }
+      const toWeights = (b: Bucket): SectorWeight[] =>
+        b.total > 0
+          ? Array.from(b.map.entries()).map(([code, v]) => ({ code, name: v.name, percentage: (v.value / b.total) * 100 }))
+          : [];
+      for (const [activityId, a] of acc) {
+        const byYear = new Map<number, SectorWeight[]>();
+        for (const [year, yr] of a.byYear) byYear.set(year, toWeights(yr));
+        const overall = toWeights(a.overall);
+        effectiveSectorsMap.set(activityId, { overall, byYear });
+        // Seed sectorDataMap so budgets/planned can attribute to these (transaction-derived) sectors.
+        for (const s of overall) {
+          if (!sectorDataMap.has(s.code)) {
+            const h = getSectorHierarchy(s.code);
+            sectorDataMap.set(s.code, {
+              sectorCode: s.code,
+              sectorName: s.name,
+              groupCode: h.groupCode,
+              groupName: h.groupName,
+              categoryCode: h.categoryCode,
+              categoryName: h.categoryName,
+              yearlyData: new Map(),
+            });
+          }
+        }
+      }
+    }
+
+    // Sector weights to use for an activity's budgets/planned in a given year: its declared
+    // activity_sectors if present, else its transaction-derived mix (this year's, falling back
+    // to overall). Empty array → nothing to attribute.
+    const getImputedSectors = (activityId: string, year: number): SectorWeight[] => {
+      const act = activitySectorsMap.get(activityId);
+      if (act && act.length > 0) {
+        return act.map((s: any) => ({ code: s.sector_code, name: s.sector_name, percentage: s.percentage }));
+      }
+      const eff = effectiveSectorsMap.get(activityId);
+      if (!eff) return [];
+      const yr = eff.byYear.get(year);
+      return yr && yr.length > 0 ? yr : eff.overall;
+    };
+
     // Helper: pro-rate a period-spanning record (planned disbursement, budget)
     // across the selected fiscal/calendar years.
     const allocatePeriodAcrossYears = (
@@ -323,16 +397,15 @@ export async function GET(request: NextRequest) {
       const amount = parseFloat(pd.usd_amount?.toString() || '0') || 0;
       if (amount === 0) return;
 
-      const activitySectors = activitySectorsMap.get(pd.activity_id) || [];
-      if (activitySectors.length === 0) return;
-
       const yearAllocations = allocatePeriodAcrossYears(pd.period_start, pd.period_end, amount);
 
-      activitySectors.forEach(sector => {
-        const sectorData = sectorDataMap.get(sector.sector_code);
-        if (!sectorData) return;
-
-        yearAllocations.forEach(allocation => {
+      // Split each year's allocation by the activity's sectors for that year — declared
+      // activity_sectors, or (for transaction-level activities) the transaction-derived mix.
+      yearAllocations.forEach(allocation => {
+        const sectors = getImputedSectors(pd.activity_id, allocation.year);
+        sectors.forEach(sector => {
+          const sectorData = sectorDataMap.get(sector.code);
+          if (!sectorData) return;
           const y = getOrCreateYear(sectorData, allocation.year, allocation.label);
           y.planned += allocation.amount * (sector.percentage / 100);
         });
@@ -346,16 +419,13 @@ export async function GET(request: NextRequest) {
       const amount = parseFloat(budget.usd_value?.toString() || '0') || 0;
       if (amount === 0) return;
 
-      const activitySectors = activitySectorsMap.get(budget.activity_id) || [];
-      if (activitySectors.length === 0) return;
-
       const yearAllocations = allocatePeriodAcrossYears(budget.period_start, budget.period_end, amount);
 
-      activitySectors.forEach(sector => {
-        const sectorData = sectorDataMap.get(sector.sector_code);
-        if (!sectorData) return;
-
-        yearAllocations.forEach(allocation => {
+      yearAllocations.forEach(allocation => {
+        const sectors = getImputedSectors(budget.activity_id, allocation.year);
+        sectors.forEach(sector => {
+          const sectorData = sectorDataMap.get(sector.code);
+          if (!sectorData) return;
           const y = getOrCreateYear(sectorData, allocation.year, allocation.label);
           y.budgets += allocation.amount * (sector.percentage / 100);
         });
@@ -386,7 +456,7 @@ export async function GET(request: NextRequest) {
         sl => sl.transaction_id === transaction.uuid
       );
 
-      const applyToSector = (sectorCode: string, sectorName: string, share: number) => {
+      const applyToSector = (sectorCode: string, sectorName: string, share: number, method: 'actual' | 'imputed') => {
         let sectorData = sectorDataMap.get(sectorCode);
         if (!sectorData) {
           const hierarchy = getSectorHierarchy(sectorCode);
@@ -406,20 +476,25 @@ export async function GET(request: NextRequest) {
         const portion = transactionValue * share;
         (y as any)[txKey] = ((y as any)[txKey] || 0) + portion;
         if (isActual) y.actual += portion;
+        // Data-quality split of the sector attribution (independent of transaction type)
+        if (method === 'actual') y.actualUsd += portion;
+        else y.imputedUsd += portion;
       };
 
       if (sectorLines.length > 0) {
+        // Sector taken from the transaction itself → actual
         sectorLines.forEach(line => {
-          applyToSector(line.sector_code, line.sector_name, (line.percentage || 0) / 100);
+          applyToSector(line.sector_code, line.sector_name, (line.percentage || 0) / 100, 'actual');
         });
       } else if (transaction.sector_code) {
-        applyToSector(transaction.sector_code, 'Unknown Sector', 1);
+        applyToSector(transaction.sector_code, 'Unknown Sector', 1, 'actual');
       } else {
+        // Falling back to the activity-level split → imputed
         activitySectors.forEach(sector => {
           // Only contribute to sectors that the activity already declares —
           // matches the original logic which used `sectorDataMap.get` (no upsert).
           if (!sectorDataMap.has(sector.sector_code)) return;
-          applyToSector(sector.sector_code, sector.sector_name, (sector.percentage || 0) / 100);
+          applyToSector(sector.sector_code, sector.sector_name, (sector.percentage || 0) / 100, 'imputed');
         });
       }
     });

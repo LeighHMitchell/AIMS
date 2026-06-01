@@ -1906,7 +1906,8 @@ const router = useRouter();
           <Button
             variant={showDescriptions ? "default" : "outline"}
             size="sm"
-            className="h-9 w-9 flex-shrink-0 p-0"
+            className="h-9 flex-shrink-0 gap-1.5"
+            title={showDescriptions ? "Switch to compact view" : "Switch to expanded view"}
             onClick={() => {
               const next = !showDescriptions;
               setShowDescriptions(next);
@@ -1914,6 +1915,7 @@ const router = useRouter();
             }}
           >
             <AlignLeft className="h-4 w-4" />
+            {showDescriptions ? "Expanded" : "Compact"}
           </Button>
         )}
 
@@ -2685,9 +2687,26 @@ const router = useRouter();
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
                               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                               <h3
-                                className="group/title font-medium text-foreground leading-tight line-clamp-2 min-w-0"
+                                className="group/title font-medium text-foreground leading-tight min-w-0 [text-wrap:wrap]"
                                 title={activity.title}
                               >
+                                {activity.partnerId && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
+                                    }}
+                                    title="Click to copy Activity ID"
+                                    className="mr-1.5 align-middle text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
+                                  >
+                                    <span>{activity.partnerId}</span>
+                                    {copiedId === `${activity.id}-partnerId` && (
+                                      <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                                    )}
+                                  </button>
+                                )}
                                 {activity.title}
                                 {activity.acronym && (
                                   <span className="font-medium text-foreground">
@@ -2741,23 +2760,6 @@ const router = useRouter();
                                   )}
                                 </button>
                               </h3>
-                            {activity.partnerId && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
-                                }}
-                                title="Click to copy Activity ID"
-                                className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap flex-shrink-0 inline-flex items-center gap-1"
-                              >
-                                <span>{activity.partnerId}</span>
-                                {copiedId === `${activity.id}-partnerId` && (
-                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                                )}
-                              </button>
-                            )}
                               </div>
                           {showDescriptions && activity.description_general && (
                             <p className="text-helper text-muted-foreground mt-1 line-clamp-5">{activity.description_general}</p>
@@ -2778,25 +2780,30 @@ const router = useRouter();
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <DatabaseZap className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer" />
+                                <DatabaseZap className={`h-4 w-4 cursor-pointer hover:text-primary ${publicationStatus === 'published' ? 'text-muted-foreground' : 'text-muted-foreground/40'}`} />
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-2 p-1">
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <FileCheck className="h-4 w-4" />
-                                    <span className="text-body"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                              <TooltipContent side="bottom" align="start" collisionPadding={12} className="p-0 border-0 bg-transparent shadow-none max-w-none overflow-visible">
+                                <div className="w-max max-w-xs bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                                  <div className="bg-surface-muted px-3 py-2 border-b border-border">
+                                    <p className="font-semibold text-foreground">Publication Status</p>
                                   </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <ShieldCheck className="h-4 w-4" />
-                                    <span className="text-body"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    {activity.autoSync && activity.syncStatus === 'live' ? (
-                                      <RefreshCw className="h-4 w-4" />
-                                    ) : (
-                                      <Globe className="h-4 w-4" />
-                                    )}
-                                    <span className="text-body"><span className="font-semibold">IATI:</span> {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                  <div className="p-3 space-y-2">
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                      <FileCheck className="h-4 w-4 mt-0.5 shrink-0" />
+                                      <span className="text-body min-w-0 break-words"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                                    </div>
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                      <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" />
+                                      <span className="text-body min-w-0 break-words"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                                    </div>
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                      {activity.autoSync && activity.syncStatus === 'live' ? (
+                                        <RefreshCw className="h-4 w-4 mt-0.5 shrink-0" />
+                                      ) : (
+                                        <Globe className="h-4 w-4 mt-0.5 shrink-0" />
+                                      )}
+                                      <span className="text-body min-w-0 break-words"><span className="font-semibold">IATI:</span> {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                    </div>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -2920,27 +2927,32 @@ const router = useRouter();
                             <TooltipTrigger>
                               <ReceiptText className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer mx-auto" />
                             </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="space-y-2 p-1">
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Handshake className="h-4 w-4" />
-                                  <span className="text-body"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
+                            <TooltipContent side="left" align="start" sideOffset={16} collisionPadding={12} className="p-0 border-0 bg-transparent shadow-none max-w-none overflow-visible">
+                              <div className="w-[420px] bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                                <div className="bg-surface-muted px-3 py-2 border-b border-border">
+                                  <p className="font-semibold text-foreground">Modality &amp; Classification</p>
                                 </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <DollarSign className="h-4 w-4" />
-                                  <span className="text-body"><span className="font-semibold">Default Finance Type:</span> {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : 'Not specified'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Shuffle className="h-4 w-4" />
-                                  <span className="text-body"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Link2 className="h-4 w-4" />
-                                  <span className="text-body"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : 'Not specified'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Settings className="h-4 w-4" />
-                                  <span className="text-body"><span className="font-semibold">Default Modality:</span> {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : 'Not specified'}</span>
+                                <div className="p-3 space-y-2">
+                                  <div className="flex items-start gap-2 text-muted-foreground">
+                                    <Handshake className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <span className="text-body min-w-0 break-words"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2 text-muted-foreground">
+                                    <DollarSign className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <span className="text-body min-w-0 break-words"><span className="font-semibold">Finance Type:</span> {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : 'Not specified'}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2 text-muted-foreground">
+                                    <Shuffle className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <span className="text-body min-w-0 break-words"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2 text-muted-foreground">
+                                    <Link2 className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <span className="text-body min-w-0 break-words"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : 'Not specified'}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2 text-muted-foreground">
+                                    <Settings className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <span className="text-body min-w-0 break-words"><span className="font-semibold">Default Modality:</span> {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : 'Not specified'}</span>
+                                  </div>
                                 </div>
                               </div>
                             </TooltipContent>

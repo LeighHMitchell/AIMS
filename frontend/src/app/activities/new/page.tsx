@@ -5098,15 +5098,19 @@ function NewActivityPageContent() {
     };
 
     const generalCompletion = getTabCompletionStatus('general', general, getDateFieldStatus)
-    // Sectors tab: compute completion based on actual sectors data
+    // Sectors tab: compute completion based on actual sectors data.
+    // When the activity reports sectors at the transaction level, there are no activity-level
+    // allocations — completion is satisfied by the transaction sectors (the "Weighted average
+    // across transactions" table), so the Sectors tab should show a green tick.
+    const isTransactionSectorMode = general.sectorExportLevel === 'transaction';
     const hasSectorsWithPercentage = sectors.some(sector => sector.percentage && sector.percentage > 0);
     const totalSectorsPercentage = sectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
     const isSectorsProperlyAllocated = Math.abs(totalSectorsPercentage - 100) < 0.1;
-    const isSectorsDataComplete = hasSectorsWithPercentage && isSectorsProperlyAllocated;
-    
+    const isSectorsDataComplete = isTransactionSectorMode || (hasSectorsWithPercentage && isSectorsProperlyAllocated);
+
     const sectorsCompletion = {
       isComplete: isSectorsDataComplete,
-      isInProgress: hasSectorsWithPercentage && !isSectorsProperlyAllocated
+      isInProgress: !isTransactionSectorMode && hasSectorsWithPercentage && !isSectorsProperlyAllocated
     };
 
     // Defaults sub-tab under Finances: require all fields filled AND saved

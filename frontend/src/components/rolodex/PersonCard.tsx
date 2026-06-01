@@ -23,9 +23,7 @@ import {
   Phone,
   Building2,
   FileText,
-  ExternalLink,
   MoreVertical,
-  Briefcase,
   Printer,
   Pencil,
   User,
@@ -39,7 +37,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useRouter } from 'next/navigation';
 import { EditContactModal } from './EditContactModal';
 import { UserEditModal } from './UserEditModal';
-import { CardShell, CardShellRipLine } from '@/components/ui/card-shell';
+import { CardShell } from '@/components/ui/card-shell';
 
 interface PersonCardProps {
   person: RolodexPerson;
@@ -412,59 +410,80 @@ export function PersonCard({
     </DropdownMenu>
   );
 
+  const orgHref = person.organization_id ? `/organizations/${person.organization_id}` : undefined;
+  const orgLabel = organizationInfo || (person.source === 'user' ? 'System User' : 'Activity Contact');
+
+  const bannerVisual = person.profile_photo ? (
+    <img
+      src={person.profile_photo}
+      alt=""
+      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+      onError={(e) => {
+        (e.target as HTMLImageElement).style.display = 'none';
+      }}
+    />
+  ) : (
+    <div className="h-full w-full flex items-center justify-center">
+      <User className="h-16 w-16" style={{ color: colors.coolSteel, opacity: 0.3 }} />
+    </div>
+  );
+
   return (
     <CardShell
       ariaLabel={`Contact: ${displayName}`}
-      bannerImage={person.profile_photo}
-      bannerIcon={User}
       bannerActions={actionMenu}
-      bannerOverlay={
-        <>
-          <h2 className="text-lg font-bold text-white mb-1 line-clamp-2">
-            {displayName}
-          </h2>
-          <div className="flex items-center gap-2 text-helper flex-wrap" style={{ color: colors.paleSlate }}>
-            {jobInfo && (
-              <span className="flex items-center gap-1">
-                <Briefcase className="w-3 h-3" />
-                {jobInfo}
-              </span>
-            )}
-            {jobInfo && departmentInfo && <span>•</span>}
-            {departmentInfo && (
-              <span className="flex items-center gap-1">
-                {departmentInfo}
-              </span>
-            )}
-            {person.source === 'user' && person.role && (
-              <>
-                {(jobInfo || departmentInfo) && <span>•</span>}
-                <Badge
-                  variant={getRoleBadgeVariant(person.role)}
-                  className="text-[10px] px-1.5 py-0"
-                >
-                  {getRoleDisplayLabel(person.role)}
-                </Badge>
-              </>
-            )}
-          </div>
-        </>
+      bannerGradient="from-transparent via-transparent to-transparent"
+      bannerContent={
+        orgHref ? (
+          <a
+            href={orgHref}
+            onClick={(e) => e.stopPropagation()}
+            className="block h-full w-full"
+            aria-label={`View ${organizationInfo || 'organization'}`}
+          >
+            {bannerVisual}
+          </a>
+        ) : (
+          bannerVisual
+        )
       }
     >
       {/* Body */}
       <div className="relative flex-1 p-5 flex flex-col bg-card">
         <div className="flex-1">
-          {/* Role badge */}
-          {person.source === 'user' && person.role && (
-            <div className="mb-3">
-              <Badge
-                variant={getRoleBadgeVariant(person.role)}
-                className="text-helper"
-              >
-                {getRoleDisplayLabel(person.role)}
-              </Badge>
+          {/* Name + position/department — sits below the image */}
+          <h2 className="text-lg font-bold text-foreground mb-1 line-clamp-2">
+            {displayName}
+          </h2>
+          {(jobInfo || departmentInfo) && (
+            <div className="flex items-center gap-1.5 text-helper text-muted-foreground flex-wrap mb-3">
+              {jobInfo && <span>{jobInfo}</span>}
+              {departmentInfo && <span>{departmentInfo}</span>}
             </div>
           )}
+
+          {/* Organization — sits below the department */}
+          <div className="text-helper mb-3" style={{ color: colors.coolSteel }}>
+            {person.organization_logo && (
+              <img
+                src={person.organization_logo}
+                alt=""
+                className="inline-block w-4 h-4 rounded-full object-contain align-text-bottom mr-1.5"
+              />
+            )}
+            {orgHref ? (
+              <a
+                href={orgHref}
+                onClick={(e) => e.stopPropagation()}
+                className="relative z-10 no-underline hover:no-underline"
+                style={{ color: colors.coolSteel }}
+              >
+                {orgLabel}
+              </a>
+            ) : (
+              orgLabel
+            )}
+          </div>
 
           {/* Contact details — single column */}
           <div className="space-y-2">
@@ -518,38 +537,6 @@ export function PersonCard({
               </div>
             )}
           </div>
-        </div>
-
-        {/* Rip Line */}
-        <div className="my-4">
-          <CardShellRipLine />
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-            {person.organization_logo && (
-              <img
-                src={person.organization_logo}
-                alt=""
-                className="w-4 h-4 rounded-full object-contain"
-              />
-            )}
-            {person.organization_acronym || person.organization_name || (person.source === 'user' ? 'System User' : 'Activity Contact')}
-          </span>
-          {person.organization_id && organizationInfo && (
-            <a
-              href={`/organizations/${person.organization_id}`}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              className="flex items-center gap-1 text-[10px] hover:underline relative z-10"
-              style={{ color: colors.blueSlate }}
-            >
-              <ExternalLink className="w-3 h-3" />
-              View Organization
-            </a>
-          )}
         </div>
       </div>
     </CardShell>

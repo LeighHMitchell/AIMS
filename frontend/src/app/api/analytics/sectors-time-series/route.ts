@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchTransactionSectorLinesChunked } from '@/lib/sector-spend'
 import { requireAuth } from '@/lib/auth';
 import { SectorTimeSeriesResponse, SectorTimeSeriesData } from '@/types/sector-analytics'
 
@@ -207,6 +208,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Data-quality split: how much of the displayed spend is derived from transaction-level
+    // sectors (actual) vs imputed from the activity-level % (fallback). Accumulated inline from
+    // the same data the aggregation already walks — no extra query, existing fields unchanged.
+    const dataQuality = { actualUsd: 0, imputedUsd: 0, unallocatedUsd: 0 }
+
     if (dataType === 'actual') {
       // Fetch actual transactions (disbursements + expenditures)
       let transactionsQuery = supabase
@@ -236,16 +242,10 @@ export async function GET(request: NextRequest) {
       // Get transaction sector lines for accurate allocation
       const transactionIds = transactions?.map(t => t.uuid) || []
       
-      let sectorLinesData: any[] = []
-      if (transactionIds.length > 0) {
-        const { data: sectorLines } = await supabase
-          .from('transaction_sector_lines')
-          .select('transaction_id, sector_code, sector_name, percentage')
-          .in('transaction_id', transactionIds)
-          .is('deleted_at', null)
-        
-        sectorLinesData = sectorLines || []
-      }
+      // Chunked: a single .in() with hundreds of UUIDs fails silently (see fetchTransactionSectorLinesChunked).
+      const sectorLinesData: any[] = transactionIds.length > 0
+        ? await fetchTransactionSectorLinesChunked(supabase, transactionIds, 'transaction_id, sector_code, sector_name, percentage')
+        : []
 
       // Build transaction to sectors map
       const transactionSectors = new Map<string, Array<{
@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
         const txSectors = transactionSectors.get(tx.uuid)
 
         if (txSectors && txSectors.length > 0) {
-          // Use transaction-level sector allocation
+          // Use transaction-level sector allocation (ACTUAL)
           txSectors.forEach(sector => {
             const actSectors = activitySectorsMap.get(tx.activity_id) || []
             const matchingActivitySector = actSectors.find(as => as.sector_code === sector.sector_code)
@@ -290,9 +290,10 @@ export async function GET(request: NextRequest) {
               tx.activity_id,
               sector.percentage
             )
+            dataQuality.actualUsd += txValue * (sector.percentage / 100)
           })
         } else {
-          // Fallback: use activity-level sectors
+          // Fallback: use activity-level sectors (IMPUTED)
           const actSectors = activitySectorsMap.get(tx.activity_id) || []
           if (actSectors.length > 0) {
             actSectors.forEach(sector => {
@@ -306,7 +307,11 @@ export async function GET(request: NextRequest) {
                 tx.activity_id,
                 sector.percentage
               )
+              dataQuality.imputedUsd += txValue * (sector.percentage / 100)
             })
+          } else {
+            // No transaction sectors and no activity sectors → uncategorised spend
+            dataQuality.unallocatedUsd += txValue
           }
         }
       })
@@ -347,7 +352,11 @@ export async function GET(request: NextRequest) {
               pd.activity_id,
               sector.percentage
             )
+            // Planned disbursements have no sectors of their own → always activity-level (imputed)
+            dataQuality.imputedUsd += value * (sector.percentage / 100)
           })
+        } else {
+          dataQuality.unallocatedUsd += value
         }
       })
     }
@@ -400,7 +409,8 @@ export async function GET(request: NextRequest) {
       sectorNames: sortedSectorNames,
       sectorCodes: sectorCodeMap,
       years,
-      totals: sectorTotals
+      totals: sectorTotals,
+      dataQuality
     } as SectorTimeSeriesResponse)
 
   } catch (error) {

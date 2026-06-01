@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchTransactionSectorLinesChunked } from '@/lib/sector-spend'
 import { requireAuth } from '@/lib/auth';
 import { SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
 
@@ -133,16 +134,10 @@ export async function GET(request: NextRequest) {
     // Get sector allocations from transaction_sector_lines
     const transactionIds = transactions?.map(t => t.uuid) || []
     
-    let sectorLinesData: any[] = []
-    if (transactionIds.length > 0) {
-      const { data: sectorLines } = await supabase
-        .from('transaction_sector_lines')
-        .select('transaction_id, sector_code, sector_name, percentage, amount_minor')
-        .in('transaction_id', transactionIds)
-        .is('deleted_at', null)
-      
-      sectorLinesData = sectorLines || []
-    }
+    // Chunked: a single .in() with hundreds of UUIDs fails silently (see fetchTransactionSectorLinesChunked).
+    const sectorLinesData: any[] = transactionIds.length > 0
+      ? await fetchTransactionSectorLinesChunked(supabase, transactionIds, 'transaction_id, sector_code, sector_name, percentage, amount_minor')
+      : []
 
     // Get activity sectors for budgets and planned disbursements (fallback)
     const { data: activitySectors } = await supabase

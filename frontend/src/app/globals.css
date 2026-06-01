@@ -841,7 +841,9 @@ body:has([data-radix-dialog-content]) {
   min-width: 100%;
 }
 
-/* Make the title column (first data column after checkbox) stretch to fill remaining space */
+/* Title column (first data column after checkbox): fixed-ish width so it stays
+   wide without eating all remaining space. (max-width is ignored on auto-layout
+   table cells, so a fixed width is used instead.) */
 .activities-table .data-table-col-activity {
   width: 100%;
 }
@@ -863,8 +865,8 @@ body:has([data-radix-dialog-content]) {
    width:100% makes it greedy; min-width stops the browser squeezing it thin
    and wrapping the title (other columns have no min-width to hold their size). */
 .transactions-table .data-table-col-activity {
-  width: 100%;
-  min-width: 340px;
+  width: 320px;
+  min-width: 170px;
 }
 
 /* Force left alignment for all Reported by column content */

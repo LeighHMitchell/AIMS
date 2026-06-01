@@ -9377,18 +9377,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   </CardContent>
                 </Card>
 
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <p className="font-medium mb-2">How IATI Search works:</p>
-                    <ul className="list-disc list-inside space-y-1 text-body">
-                      <li>Searches the global IATI Datastore with 40,000+ activities</li>
-                      <li>Fetches the full IATI XML directly from the registry</li>
-                      <li>Automatically parses and shows field toggle options</li>
-                      <li>You can review and select which fields to import</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
+                <div className="text-muted-foreground">
+                  <p className="font-medium mb-2 text-foreground">How IATI Search works:</p>
+                  <ul className="list-disc list-inside space-y-1 text-body">
+                    <li>Searches the global IATI Datastore with 40,000+ activities</li>
+                    <li>Fetches the full IATI XML directly from the registry</li>
+                    <li>Automatically parses and shows field toggle options</li>
+                    <li>You can review and select which fields to import</li>
+                  </ul>
+                </div>
               </div>
             )}
         </div>

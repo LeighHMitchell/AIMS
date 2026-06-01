@@ -99,7 +99,9 @@ interface PlannedDisbursement {
     id: string;
     title_narrative?: string;
     title?: string;
+    acronym?: string;
     iati_identifier?: string;
+    other_identifier?: string;
   };
   provider_activity?: {
     title_narrative?: string;
@@ -156,11 +158,6 @@ export function PlannedDisbursementsTable({
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const copyIatiId = (iatiId: string, rowId: string) => {
-    navigator.clipboard.writeText(iatiId);
-    setCopiedId(`${rowId}-iati`);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
   const [usdValues, setUsdValues] = useState<Record<string, {
     usd: number | null,
     rate: number | null,
@@ -348,7 +345,7 @@ export function PlannedDisbursementsTable({
       <SortableTableHeader
         key="systemId"
         id="systemId"
-        className="cursor-pointer hover:bg-muted/80 transition-colors whitespace-nowrap"
+        className="cursor-pointer hover:bg-muted/80 transition-colors max-w-[120px]"
       >
         <span>Planned Disbursement ID</span>
       </SortableTableHeader>
@@ -482,23 +479,26 @@ export function PlannedDisbursementsTable({
                       }}
                     >
                       <div className="text-body">
-                        {activityTitle}
-                        {disbursement.activity?.iati_identifier && (
+                        {disbursement.activity?.other_identifier && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              copyIatiId(disbursement.activity!.iati_identifier!, disbursementId);
+                              copyToClipboard(disbursement.activity!.other_identifier!, `${disbursementId}-activityId`);
                             }}
-                            title="Click to copy IATI Identifier"
-                            className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 inline-flex items-center gap-1 align-middle cursor-pointer"
+                            title="Click to copy Activity ID"
+                            className="text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded mr-2 inline-flex items-center gap-1 align-middle cursor-pointer"
                           >
-                            <span>{disbursement.activity.iati_identifier}</span>
-                            {copiedId === `${disbursementId}-iati` && (
+                            <span>{disbursement.activity.other_identifier}</span>
+                            {copiedId === `${disbursementId}-activityId` && (
                               <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                             )}
                           </button>
+                        )}
+                        {activityTitle}
+                        {disbursement.activity?.acronym && (
+                          <span>{' '}({disbursement.activity.acronym})</span>
                         )}
                       </div>
                       {showDescriptions && (disbursement.description || disbursement.notes) && (

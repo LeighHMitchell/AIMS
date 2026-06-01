@@ -354,20 +354,23 @@ export function BudgetTable({
                           }
                         }}
                       >
-                        <span className="text-body">{activityTitle}</span>
-                        {budget.activity?.iati_identifier && (
+                        {budget.activity?.other_identifier && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              copyToClipboard(budget.activity!.iati_identifier!, 'IATI Identifier copied');
+                              copyToClipboard(budget.activity!.other_identifier!, 'Activity ID copied');
                             }}
-                            title="Click to copy"
-                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded ml-2 inline-block align-middle cursor-pointer"
+                            title="Click to copy Activity ID"
+                            className="text-xs font-mono bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded mr-2 inline-block align-middle cursor-pointer"
                           >
-                            {budget.activity.iati_identifier}
+                            {budget.activity.other_identifier}
                           </button>
+                        )}
+                        <span className="text-body">{activityTitle}</span>
+                        {budget.activity?.acronym && (
+                          <span className="text-body">{' '}({budget.activity.acronym})</span>
                         )}
                       </span>
                       {showDescriptions && budget.description && (

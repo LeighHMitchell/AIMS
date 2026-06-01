@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     let activitiesMap: Record<string, any> = {};
     if (allActivityIds.size > 0) {
       const activityIdArr = Array.from(allActivityIds);
-      const activitySelect = 'id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym, submission_status, created_by';
+      const activitySelect = 'id, title_narrative, acronym, iati_identifier, other_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym, submission_status, created_by';
 
       const { data: adminData, error: adminErr } = await adminSupabase
         .from('activities')

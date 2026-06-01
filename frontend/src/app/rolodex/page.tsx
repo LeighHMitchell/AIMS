@@ -299,7 +299,7 @@ export default function RolodexPage() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
                     onClick={handleExport}
                     disabled={loading || people.length === 0}
@@ -364,7 +364,7 @@ export default function RolodexPage() {
           <>
             {/* People Grid/Table */}
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {visiblePeople.map((person) => (
                   <PersonCard
                     key={person.id}

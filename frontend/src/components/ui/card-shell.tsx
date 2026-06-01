@@ -157,7 +157,7 @@ export function CardShell({
       >
         {/* Gradient overlay */}
         <div
-          className={`absolute inset-0 bg-gradient-to-t ${gradient} z-10`}
+          className={`absolute inset-0 bg-gradient-to-t ${gradient} z-10 pointer-events-none`}
         />
 
         {/* Banner visual — custom content, image, or icon fallback */}

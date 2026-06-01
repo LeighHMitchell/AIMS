@@ -67,6 +67,7 @@ interface UseSectorTimeSeriesState {
   sectorCodes: Record<string, string>
   years: string[]
   totals: Record<string, number>
+  dataQuality?: { actualUsd: number; imputedUsd: number; unallocatedUsd: number }
   loading: boolean
   error: string | null
 }
@@ -145,6 +146,7 @@ export function useSectorTimeSeries(
         sectorCodes: result.sectorCodes || {},
         years: result.years,
         totals: result.totals,
+        dataQuality: result.dataQuality,
         loading: false,
         error: null
       })

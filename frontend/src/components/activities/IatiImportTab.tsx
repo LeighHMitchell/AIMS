@@ -12872,19 +12872,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   </CardContent>
                 </Card>
 
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <p className="font-medium mb-2">How IATI Search works:</p>
-                    <ul className="list-disc list-inside space-y-1 text-body">
-                      <li>Queries the global IATI Datastore, which contains approximately 890,000 activities and more than ten million transactions</li>
-                      <li>Retrieves structured activity data through the Datastore API</li>
-                      <li>Accesses the original publisher XML when required for detailed inspection</li>
-                      <li>Parses all fields and presents configurable import options</li>
-                      <li>Enables users to review and select the specific fields they wish to import</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
+                <div className="text-muted-foreground">
+                  <p className="font-medium mb-2 text-foreground">How IATI Search works:</p>
+                  <ul className="list-disc list-inside space-y-1 text-body">
+                    <li>Queries the global IATI Datastore, which contains approximately 890,000 activities and more than ten million transactions</li>
+                    <li>Retrieves structured activity data through the Datastore API</li>
+                    <li>Accesses the original publisher XML when required for detailed inspection</li>
+                    <li>Parses all fields and presents configurable import options</li>
+                    <li>Enables users to review and select the specific fields they wish to import</li>
+                  </ul>
+                </div>
               </div>
             )}
         </div>
