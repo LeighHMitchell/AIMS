@@ -1082,7 +1082,7 @@ function ImprovedSectorAllocationFormInner({
                   : 'No transaction-level sectors found yet. Add sectors to individual transactions to see the weighted average here.'}
               </div>
             ) : (
-              <ChartDataTable rows={weightedRows} columns={weightedCols} totalLabel="Total" />
+              <ChartDataTable rows={weightedRows} columns={weightedCols} totalLabel="Total" className="border-border shadow-sm" />
             )}
           </div>
         );

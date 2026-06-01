@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds } from '@/lib/analytics-transaction-filters';
 import { admLevel } from '@/lib/reports/format-helpers';
 
 export const dynamic = 'force-dynamic'
@@ -14,6 +14,11 @@ export async function GET() {
   }
 
   try {
+    // Only published & non-deleted activities are reportable.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (!reportableIds.length) return NextResponse.json({ data: [], error: null });
+    const reportableSet = new Set(reportableIds)
+
     const { data: locations, error } = await supabase
       .from('activity_locations')
       .select('activity_id, location_name, state_region_name, state_region_code, district_name, district_code, township_name, township_code, admin_level')
@@ -30,13 +35,17 @@ export async function GET() {
       return NextResponse.json({ data: [], error: null })
     }
 
-    const activityIds = Array.from(new Set(locations.map(l => l.activity_id).filter(Boolean)))
+    const activityIds = Array.from(new Set(locations.map(l => l.activity_id).filter(Boolean))).filter(id => reportableSet.has(id))
+    if (activityIds.length === 0) {
+      return NextResponse.json({ data: [], error: null })
+    }
 
     // Exclude internal pooled-fund transfers to avoid double counting
     let txQuery = supabase
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
       .in('activity_id', activityIds)
+      .is('deleted_at', null)
     const pooledFundIds = await getPooledFundIds(supabase)
     txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
     const { data: transactions } = await txQuery
@@ -62,6 +71,7 @@ export async function GET() {
     }>()
 
     locations.forEach(l => {
+      if (!reportableSet.has(l.activity_id)) return  // skip drafts / recycle-bin activities
       const name = l.location_name || l.state_region_name
       if (!name) return
       const key = `${l.state_region_name || ''}|${name}`

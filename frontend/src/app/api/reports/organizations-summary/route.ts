@@ -39,6 +39,8 @@ export async function GET() {
       .from('activities')
       .select('id, reporting_org_id, activity_status')
       .in('reporting_org_id', orgIds)
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
 
     // Fetch budgets for activities
     const activityIds = activities?.map(a => a.id) || []
@@ -47,6 +49,7 @@ export async function GET() {
           .from('activity_budgets')
           .select('activity_id, value, usd_value, currency')
           .in('activity_id', activityIds)
+          .is('deleted_at', null)
       : { data: [] }
 
     // Fetch transactions as provider
@@ -54,6 +57,7 @@ export async function GET() {
       .from('transactions')
       .select('provider_org_id, transaction_type, value_usd')
       .in('provider_org_id', orgIds)
+      .is('deleted_at', null)
 
     // Build activity counts and budget totals by org
     const activityCountByOrg = new Map<string, number>()

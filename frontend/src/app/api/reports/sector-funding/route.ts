@@ -34,7 +34,7 @@ export async function GET() {
     const reportableSet = new Set(await getReportableActivityIds(supabase))
 
     // Unique reportable activity IDs that have sectors
-    const activityIds = [...new Set(sectors.map(s => s.activity_id))].filter(id => reportableSet.has(id))
+    const activityIds = Array.from(new Set(sectors.map(s => s.activity_id))).filter(id => reportableSet.has(id))
     if (activityIds.length === 0) {
       return NextResponse.json({ data: [], error: null })
     }

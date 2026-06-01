@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select('id, title_narrative, acronym')
       .eq('is_pooled_fund', true)
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
       .order('title_narrative')
 
     if (fundsError) {
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest) {
       .select('activity_id, value, value_usd, currency')
       .in('activity_id', allChildIds)
       .in('transaction_type', ['3'])
+      .is('deleted_at', null)
 
     // Build disbursement totals per child
     const childDisbursements: Record<string, number> = {}

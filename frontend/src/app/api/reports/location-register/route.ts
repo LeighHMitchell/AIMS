@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { titleWithAcronym, admLevel } from '@/lib/reports/format-helpers';
+import { getReportableActivityIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,11 @@ export async function GET() {
   }
 
   try {
+    // Only published & non-deleted activities are reportable.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (!reportableIds.length) return NextResponse.json({ data: [], error: null });
+    const reportableSet = new Set(reportableIds)
+
     // select('*') keeps this resilient to the activity_locations schema, which
     // mixes naming conventions across the app (location_name/name,
     // state_region_name/admin1_name, latitude/longitude, etc.).
@@ -34,7 +40,10 @@ export async function GET() {
       return NextResponse.json({ data: [], error: null })
     }
 
-    const rows = locations as Record<string, any>[]
+    const rows = (locations as Record<string, any>[]).filter(l => reportableSet.has(l.activity_id))
+    if (rows.length === 0) {
+      return NextResponse.json({ data: [], error: null })
+    }
     const activityIds = Array.from(new Set(rows.map(l => l.activity_id).filter(Boolean))) as string[]
     const activityById = new Map<string, { iati: string; title: string }>()
     for (let i = 0; i < activityIds.length; i += PAGE_SIZE) {

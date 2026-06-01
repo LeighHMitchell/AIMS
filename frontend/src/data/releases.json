@@ -1,7 +1,20 @@
 {
-  "currentVersion": "4.0.0",
-  "narrativeSummary": "Version 4.0.0 is a major milestone — the biggest rethink of analytics and reporting since the platform began. The entire analytics dashboard and every chart has been rebuilt to load faster, read more clearly, and behave consistently from one screen to the next. Three new charts bring the things most worth your attention straight to the surface: how much of your work is humanitarian, which activities the most partners are rallying around, and where the gap between what was planned and what's actually been spent is widest. Charts can now be filtered by partner, narrowed to just the figures you care about, switched between views, and downloaded as a spreadsheet in one click. A whole library of ready-made reports answers common questions without any setup. Behind the scenes, the Organisations page and the main list views are dramatically faster, the app is more accessible, chart colours are consistent everywhere, and a long-broken Transparency Index export works again. Less waiting, less guessing, more answers.",
+  "currentVersion": "4.0.1",
+  "narrativeSummary": "A maintenance update that polishes the 4.0.0 release. The ready-made reports got a consistency pass so their numbers, dates and columns line up the way you'd expect, and several Activity Editor tabs were tidied up for smoother editing. Plus refinements to transactions, sector allocation, and the financial overview. No new setup needed — everything just works a little more cleanly.",
   "releases": [
+    {
+      "version": "4.0.1",
+      "date": "2026-06-01",
+      "narrativeSummary": "A maintenance update that polishes the 4.0.0 release. The ready-made reports got a consistency pass so their numbers, dates and columns line up the way you'd expect, and several Activity Editor tabs were tidied up for smoother editing. Plus refinements to transactions, sector allocation, and the financial overview. No new setup needed — everything just works a little more cleanly.",
+      "changes": [
+        "<b>Tidier reports</b>",
+        "&nbsp;&nbsp;A consistency pass across the ready-made reports so figures, dates and columns line up the way you'd expect. Why it helps: you can trust what each report shows and compare them side by side without second-guessing.",
+        "<b>Smoother activity editing</b>",
+        "&nbsp;&nbsp;Refinements across several Activity Editor tabs (budgets, sectors, conditions, countries & regions, financing terms, humanitarian, related activities and more). Why it helps: less friction when entering and reviewing activity details.",
+        "<b>Other polish</b>",
+        "&nbsp;&nbsp;Refinements to transactions, sector allocation, and the financial overview. Why it helps: small rough edges smoothed out for a cleaner day-to-day experience."
+      ]
+    },
     {
       "version": "4.0.0",
       "date": "2026-05-30",

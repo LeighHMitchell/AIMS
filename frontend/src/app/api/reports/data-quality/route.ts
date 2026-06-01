@@ -42,6 +42,8 @@ export async function GET() {
         updated_at,
         created_by_org_name
       `)
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false })
 
     if (activitiesError) {

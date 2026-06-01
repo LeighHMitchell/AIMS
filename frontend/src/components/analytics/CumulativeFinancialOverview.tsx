@@ -19,6 +19,7 @@ import {
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Download, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon, CalendarIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds, DISBURSEMENT_TYPES } from '@/lib/analytics-transaction-filters'
 import { Button } from '@/components/ui/button'
 import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -372,8 +373,18 @@ export function CumulativeFinancialOverview({
           return
         }
 
-        // If organizationId is provided, get activity IDs where org is the reporting org
-        let activityIds: string[] | null = null
+        // Canonical reporting scope: published & non-deleted activities only
+        // (drafts and Recycle-Bin activities excluded) so the chart reconciles
+        // with the report routes. Pooled-fund ids drive internal-transfer
+        // exclusion on the disbursement series.
+        const reportableIds = await getReportableActivityIds(supabase)
+        const reportableSet = new Set(reportableIds)
+        const pooledFundIds = await getPooledFundIds(supabase)
+
+        // Activity-id scope applied to every query via `.in('activity_id', …)`.
+        // Org mode: org's reporting activities intersected with the reportable
+        // set. Portfolio mode: the full reportable set.
+        let activityIds: string[]
         if (organizationId) {
           const { data: orgActivities, error: orgError } = await supabase
             .from('activities')
@@ -387,14 +398,16 @@ export function CumulativeFinancialOverview({
             return
           }
 
-          activityIds = (orgActivities || []).map(a => a.id)
+          activityIds = (orgActivities || []).map(a => a.id).filter((id: string) => reportableSet.has(id))
+        } else {
+          activityIds = reportableIds
+        }
 
-          if (activityIds.length === 0) {
-            // No activities for this org - show empty state
-            setRawData({ transactions: [], plannedDisbursements: [], budgets: [] })
-            setLoading(false)
-            return
-          }
+        if (activityIds.length === 0) {
+          // No in-scope activities - show empty state (chart renders nothing).
+          setRawData({ transactions: [], plannedDisbursements: [], budgets: [] })
+          setLoading(false)
+          return
         }
 
         // Fetch ALL data without date filtering - filtering happens in the processing step
@@ -403,17 +416,18 @@ export function CumulativeFinancialOverview({
           .from('transactions')
           .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id')
           .eq('status', 'actual')
+          .is('deleted_at', null)
           .not('transaction_date', 'is', null)
+          .in('activity_id', activityIds)
           .order('transaction_date', { ascending: true })
-
-        // Filter by organization's activities if organizationId provided
-        if (activityIds) {
-          transactionsQuery = transactionsQuery.in('activity_id', activityIds)
-        }
 
         if (filters?.donor) {
           transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
         }
+
+        // Exclude internal pooled-fund transfers on the disbursement (type 3)
+        // series to avoid double-counting, matching the report routes.
+        transactionsQuery = excludeInternalTransfers(transactionsQuery, pooledFundIds, DISBURSEMENT_TYPES)
 
         const { data: transactions, error: transactionsError } = await transactionsQuery
 
@@ -427,11 +441,8 @@ export function CumulativeFinancialOverview({
           .from('planned_disbursements')
           .select('period_start, period_end, amount, usd_amount, currency, activity_id')
           .not('period_start', 'is', null)
+          .in('activity_id', activityIds)
           .order('period_start', { ascending: true })
-
-        if (activityIds) {
-          plannedQuery = plannedQuery.in('activity_id', activityIds)
-        }
 
         const { data: plannedDisbursements, error: plannedError } = await plannedQuery
 
@@ -443,11 +454,9 @@ export function CumulativeFinancialOverview({
           .from('activity_budgets')
           .select('period_start, period_end, value, usd_value, currency, activity_id')
           .not('period_start', 'is', null)
+          .is('deleted_at', null)
+          .in('activity_id', activityIds)
           .order('period_start', { ascending: true })
-
-        if (activityIds) {
-          budgetsQuery = budgetsQuery.in('activity_id', activityIds)
-        }
 
         const { data: budgets, error: budgetsError } = await budgetsQuery
 

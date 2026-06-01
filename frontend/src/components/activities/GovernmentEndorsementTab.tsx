@@ -745,7 +745,7 @@ export default function GovernmentEndorsementTab({
               </TableHeader>
               <TableBody>
                 {projectReferences.map((ref) => (
-                  <TableRow key={ref.id}>
+                  <TableRow key={ref.id} className="group/row">
                     <TableCell>
                       <Badge variant={
                         ref.referenceType === 'government' ? 'default' :
@@ -765,7 +765,7 @@ export default function GovernmentEndorsementTab({
                     <TableCell>{ref.name || '-'}</TableCell>
                     <TableCell className="text-muted-foreground">{ref.vocabulary || '-'}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                         {canEdit && !ref.isPrimary && (
                           <Button
                             variant="ghost"

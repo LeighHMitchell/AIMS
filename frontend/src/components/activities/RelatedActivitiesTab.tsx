@@ -386,7 +386,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                   </TableHeader>
                   <TableBody>
                     {sortedActivities.map((activity) => (
-                      <TableRow key={activity.id} className="hover:bg-muted/50">
+                      <TableRow key={activity.id} className="group/row hover:bg-muted/50">
                         <TableCell>
                           {activity.direction === 'incoming' ? (
                             <ArrowLeft className="h-4 w-4 text-[hsl(var(--success-icon))]" title="Incoming" />
@@ -450,7 +450,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         {!readOnly && (
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                               {!activity.isExternal && (
                                 <Link
                                   href={`/activities/${activity.id}`}

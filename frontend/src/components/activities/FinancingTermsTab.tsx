@@ -695,7 +695,7 @@ export function FinancingTermsTab({
                 </thead>
                 <tbody className="divide-y">
                   {sortedLoanStatuses.map((status) => (
-                    <tr key={status.id} className="hover:bg-muted/50">
+                    <tr key={status.id} className="group/row hover:bg-muted/50">
                       <td className="p-2 font-medium">{status.year}</td>
                       <td className="p-2 whitespace-nowrap">{status.value_date ? formatDate(status.value_date) : '-'}</td>
                       <td className="p-2 text-right tabular-nums">
@@ -735,7 +735,7 @@ export function FinancingTermsTab({
                         ) : '0'}
                       </td>
                       {!readOnly && (
-                        <td className="p-2 text-center">
+                        <td className="p-2 text-center opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                           <div className="flex items-center justify-center gap-1">
                             <Button
                               onClick={() => {

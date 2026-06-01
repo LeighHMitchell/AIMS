@@ -922,6 +922,16 @@ export function TransactionTable({
                       <td key="transactionType" className="py-3 px-4 min-w-[240px] whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <Tooltip><TooltipTrigger asChild><span className="inline-flex items-center gap-1.5 cursor-help whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.transaction_type}</span><span className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-helper text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                          {!!(transaction.sector_code || transaction.sectors?.length) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-[10px] font-semibold text-muted-foreground bg-muted border border-border w-4 h-4 rounded flex items-center justify-center cursor-help">S</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <p>This transaction has sector-level data</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           {transaction.status === 'draft' && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1037,32 +1047,12 @@ export function TransactionTable({
                                 </span>
                                 {formatCurrency(usdValues[transactionId].usd!, 'USD')}
                               </span>
-                              {transaction.currency && transaction.currency.toUpperCase() !== 'USD' && (
-                                <>
-                                  {transaction.value != null && (
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="text-helper text-muted-foreground whitespace-nowrap cursor-help">
-                                          {transaction.currency.toUpperCase()} {transaction.value.toLocaleString()}
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="left" className="text-helper">
-                                        <div>Rate {usdValues[transactionId].rate}</div>
-                                        {(transaction as any).exchange_rate_manual && (
-                                          <div className="text-orange-500 font-medium">Manual exchange rate</div>
-                                        )}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                  {(() => {
-                                    const dateStr = usdValues[transactionId].date;
-                                    if (!dateStr) return null;
-                                    const parsed = new Date(dateStr);
-                                    const display = isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMM yyyy');
-                                    return <span className="text-helper text-muted-foreground whitespace-nowrap">{display}</span>;
-                                  })()}
-                                </>
-                              )}
+                              {/* Value date shown under the USD figure (replaces the separate Value Date column). */}
+                              {(() => {
+                                const d = transaction.value_date || transaction.transaction_date;
+                                if (!d) return null;
+                                return <span className="text-helper text-muted-foreground whitespace-nowrap">{formatTransactionDate(d)}</span>;
+                              })()}
                             </>
                           ) : <span className="text-muted-foreground">—</span>}
                         </div>

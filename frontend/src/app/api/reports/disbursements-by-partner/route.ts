@@ -53,7 +53,7 @@ export async function GET() {
     }
 
     // Get unique provider org IDs
-    const providerOrgIds = [...new Set(transactions.map(t => t.provider_org_id).filter(Boolean))]
+    const providerOrgIds = Array.from(new Set(transactions.map(t => t.provider_org_id).filter(Boolean)))
 
     // Fetch organization details
     const { data: organizations } = await supabase

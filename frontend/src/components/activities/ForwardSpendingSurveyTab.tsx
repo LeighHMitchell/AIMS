@@ -720,9 +720,9 @@ export default function ForwardSpendingSurveyTab({
                   </TableHeader>
                   <TableBody>
                     {forecasts.map((forecast) => (
-                      <TableRow 
+                      <TableRow
                         key={forecast.id}
-                        className="border-b border-border/40 hover:bg-muted/30 transition-colors"
+                        className="group/row border-b border-border/40 hover:bg-muted/30 transition-colors"
                       >
                         <TableCell className="py-3 px-4 font-medium">{forecast.forecast_year}</TableCell>
                         <TableCell className="py-3 px-4 text-right font-medium">
@@ -764,7 +764,7 @@ export default function ForwardSpendingSurveyTab({
                         </TableCell>
                         {!isReadOnly && (
                           <TableCell className="py-3 px-4 text-center">
-                            <div className="flex justify-center gap-2">
+                            <div className="flex justify-center gap-2 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
                                 size="sm"

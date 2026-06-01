@@ -404,7 +404,7 @@ export function HumanitarianTab({
                   </TableHeader>
                   <TableBody>
                     {sortedScopes.map((scope) => (
-                      <TableRow key={scope.id}>
+                      <TableRow key={scope.id} className="group/row">
                         <TableCell className="text-body align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             {scope.id && (
@@ -476,7 +476,7 @@ export function HumanitarianTab({
                           )}
                         </TableCell>
                         {!readOnly && (
-                          <TableCell className="align-top">
+                          <TableCell className="align-top opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                             <div className="flex gap-1">
                               <button
                                 type="button"

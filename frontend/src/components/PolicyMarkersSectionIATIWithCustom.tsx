@@ -527,7 +527,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Policy Marker</TableHead>
+                <TableHead style={{ width: '380px' }}>Policy Marker</TableHead>
                 <TableHead style={{ width: '220px' }}>Significance</TableHead>
                 <TableHead>Rationale</TableHead>
                 {!readOnly && <TableHead style={{ width: '90px' }} />}
@@ -552,10 +552,10 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     {markersInGroup.map(({ marker, activityMarker }) => {
                       const markerUuid = marker.uuid || marker.id;
                       return (
-                        <TableRow key={markerUuid}>
+                        <TableRow key={markerUuid} className="group/row">
                           <TableCell>
-                            <div className="flex items-center gap-2 whitespace-nowrap">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
                                 {getDisplayCode(marker)}
                               </span>
                               <span className="font-medium text-body">{marker.name}</span>
@@ -579,7 +579,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                             )}
                           </TableCell>
                           {!readOnly && (
-                            <TableCell>
+                            <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                               <div className="flex items-center justify-end gap-1">
                                 <Button variant="ghost" size="icon" onClick={() => openEditModal(markerUuid)} className="hover:bg-blue-50 hover:text-blue-600" aria-label="Edit policy marker">
                                   <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -616,13 +616,14 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <div className="space-y-4 pt-2">
             {/* Marker Selection */}
             {modalMode === 'add' && !modalForm.isCreatingCustom && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Label>Policy Marker <RequiredDot /></Label>
                   <HelpTextTooltip content="Select an IATI standard policy marker or a custom marker defined by your organisation. Policy markers identify whether an activity targets a particular policy objective such as gender equality, environment, or governance.">
                     <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                   </HelpTextTooltip>
                 </div>
+                <div className="flex-1 min-w-0">
                 <Popover open={markerPopoverOpen} onOpenChange={setMarkerPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -766,19 +767,20 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     })()}
                   </PopoverContent>
                 </Popover>
+                </div>
               </div>
             )}
 
             {/* Edit mode: show locked marker display */}
             {modalMode === 'edit' && modalForm.selectedMarkerId && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Label>Policy Marker</Label>
                   <HelpTextTooltip content="The IATI standard or custom policy marker linked to this entry. Policy markers identify whether an activity targets a particular policy objective such as gender equality, environment, or governance. The marker cannot be changed once added — remove and re-add to switch markers.">
                     <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                   </HelpTextTooltip>
                 </div>
-                <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+                <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30 flex-1 min-w-0">
                   {(() => {
                     const m = getSelectedMarkerForModal();
                     if (!m) return null;

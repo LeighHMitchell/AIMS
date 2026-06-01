@@ -98,7 +98,7 @@ const ACTIVITY_EDITOR_COLUMN_CONFIGS: ActivityEditorColumnConfig[] = [
   { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true },
   { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true },
   { id: 'amount', label: 'Original Value', group: 'default', defaultVisible: true },
-  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true },
+  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: false },
   { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true },
   { id: 'financeType', label: 'Finance Type', group: 'default', defaultVisible: true },
   { id: 'linkedStatus', label: 'Linked', group: 'default', defaultVisible: false },
@@ -132,7 +132,7 @@ const ACTIVITY_EDITOR_COLUMN_GROUPS = {
 const DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS: ActivityEditorColumnId[] = 
   ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(col => col.defaultVisible || col.alwaysVisible).map(col => col.id);
 
-const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns_v3';  // v3: added optional Transaction ID (systemId)
+const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns_v4';  // v4: Value Date hidden by default (date now shows under USD Value)
 
 // Column Selector Component for Activity Editor
 interface ActivityEditorColumnSelectorProps {

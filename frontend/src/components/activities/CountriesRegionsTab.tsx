@@ -1421,7 +1421,7 @@ export default function CountriesRegionsTab({
                   <TableBody>
                     {/* Countries */}
                     {countries.map((countryAllocation) => (
-                      <TableRow key={countryAllocation.id}>
+                      <TableRow key={countryAllocation.id} className="group/row">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">CT</Badge>
@@ -1454,7 +1454,7 @@ export default function CountriesRegionsTab({
                           {countryAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               type="button"
                               onClick={() => editCountry(countryAllocation)}
@@ -1485,7 +1485,7 @@ export default function CountriesRegionsTab({
 
                     {/* Regions */}
                     {regions.map((regionAllocation) => (
-                      <TableRow key={regionAllocation.id}>
+                      <TableRow key={regionAllocation.id} className="group/row">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">RG</Badge>
@@ -1518,7 +1518,7 @@ export default function CountriesRegionsTab({
                           {regionAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               type="button"
                               onClick={() => editRegion(regionAllocation)}
@@ -1549,7 +1549,7 @@ export default function CountriesRegionsTab({
 
                     {/* Custom Geographies */}
                     {customGeographies.map((customAllocation) => (
-                      <TableRow key={customAllocation.id}>
+                      <TableRow key={customAllocation.id} className="group/row">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">CG</Badge>
@@ -1590,7 +1590,7 @@ export default function CountriesRegionsTab({
                           {customAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               type="button"
                               onClick={() => editCustomGeography(customAllocation)}

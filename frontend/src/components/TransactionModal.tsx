@@ -621,9 +621,11 @@ export default function TransactionModal({
   // Keep Advanced IATI Fields collapsed by default
   // Auto-open logic removed - user preference is to keep it collapsed
   useEffect(() => {
-    // Reset all collapsible sections to collapsed when modal opens
+    // Reset all collapsible sections to collapsed when modal opens — except
+    // Sector Classifications, which expands by default when the transaction has
+    // its own (transaction-level) sector data.
     if (open) {
-      setShowMultipleSectors(false);
+      setShowMultipleSectors((transaction?.sectors?.length ?? 0) > 0);
       setShowMultipleAidTypes(false);
       setShowGeographicTargeting(false);
       
@@ -1632,6 +1634,139 @@ export default function TransactionModal({
       setPendingFields(prev => ({ ...prev, [field]: value }));
     }
   };
+
+  // Sector Classifications section. Rendered between "Funding Modality & Aid
+  // Classification" and "Supporting Documents" when transaction-level sector data
+  // exists; otherwise it stays inside the Advanced Fields collapsible below.
+  const sectorClassificationsSection = (
+    <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors} className="rounded-lg border">
+      <CollapsibleTrigger asChild>
+        <button
+          className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg transition-colors text-left"
+          type="button"
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
+              <span className="text-body font-medium text-foreground">Sector Classifications</span>
+              {activitySectors.length === 0 && multipleSectorsCount > 0 && (
+                <Badge variant="secondary" className="text-helper">{multipleSectorsCount}</Badge>
+              )}
+            </div>
+            <Badge variant="outline" className="text-helper text-muted-foreground">
+              {activitySectors.length > 0 ? 'Activity level' : 'Transaction level'}
+            </Badge>
+          </div>
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-4 p-4 border-t">
+          {/* Activity-level sectors: read-only display */}
+          {activitySectors.length > 0 && (
+            <>
+              <p className="text-helper text-muted-foreground">
+                Sectors are set at the activity level. Transaction-level sector classification is disabled.
+                To change this, go to the{' '}
+                <button
+                  type="button"
+                  className="font-semibold hover:text-foreground inline"
+                  onClick={() => {
+                    onOpenChange(false);
+                    window.location.href = `/activities/${activityId}?tab=sectors`;
+                  }}
+                >
+                  Sectors tab
+                </button>.
+              </p>
+              <div className="p-3 bg-white rounded-md border border-border">
+                <table className="w-full text-helper">
+                  <thead className="bg-surface-muted">
+                    <tr className="text-muted-foreground border-b">
+                      <th className="text-left py-1 font-medium">Sector</th>
+                      <th className="text-right py-1 font-medium w-14">%</th>
+                      {formData.value > 0 && formData.currency !== 'USD' && (
+                        <th className="text-right py-1 font-medium w-24">{formData.currency}</th>
+                      )}
+                      {formData.value > 0 && calculatedUsdValue && (
+                        <th className="text-right py-1 font-medium w-24">USD</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activitySectors.map((sector, idx) => {
+                      const sectorCode = (sector as any).code || sector.sector_code;
+                      const rawSectorName = (sector as any).name || sector.sector_name || '';
+                      const sectorName = rawSectorName.replace(/^\d+\s*[-–]\s*/, '');
+                      const pct = sector.percentage || 0;
+                      const originalValue = formData.value > 0 && pct > 0 ? Math.round(formData.value * pct / 100) : null;
+                      const usdValue = calculatedUsdValue && pct > 0 ? Math.round(calculatedUsdValue * pct / 100) : null;
+                      return (
+                        <tr key={idx} className="border-b border-muted/50">
+                          <td className="py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              {sectorCode && (
+                                <span className="font-mono bg-muted px-1 py-0.5 rounded shrink-0">{sectorCode}</span>
+                              )}
+                              <span className="truncate">{sectorName || sectorCode}</span>
+                            </div>
+                          </td>
+                          <td className="text-right py-1.5 text-muted-foreground">{pct > 0 ? `${pct}%` : '—'}</td>
+                          {formData.value > 0 && formData.currency !== 'USD' && (
+                            <td className="text-right py-1.5 tabular-nums">{originalValue !== null ? originalValue.toLocaleString() : '—'}</td>
+                          )}
+                          {formData.value > 0 && calculatedUsdValue && (
+                            <td className="text-right py-1.5 tabular-nums">{usdValue !== null ? usdValue.toLocaleString() : '—'}</td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
+                    <tfoot>
+                      <tr className="font-medium border-t">
+                        <td className="py-1.5">Total</td>
+                        <td className="text-right py-1.5">{activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0)}%</td>
+                        {formData.value > 0 && formData.currency !== 'USD' && (
+                          <td className="text-right py-1.5 tabular-nums">{formData.value.toLocaleString()}</td>
+                        )}
+                        {formData.value > 0 && calculatedUsdValue && (
+                          <td className="text-right py-1.5 tabular-nums">{calculatedUsdValue.toLocaleString()}</td>
+                        )}
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </>
+          )}
+
+          {/* No activity-level sectors: allow transaction-level entry */}
+          {activitySectors.length === 0 && (
+            <div>
+              <p className="text-helper text-muted-foreground mb-3">
+                No sectors are defined at the activity level. You can specify sector allocations for this transaction below.
+                Percentages must sum to 100%.
+              </p>
+              <TransactionSectorManager
+                sectors={formData.sectors || []}
+                onSectorsChange={(sectors) => {
+                  setFormData({ ...formData, sectors });
+                }}
+                allowPercentages={true}
+                transactionValue={formData.value || 0}
+                transactionCurrency={formData.currency || 'USD'}
+                calculatedUsdValue={calculatedUsdValue}
+              />
+            </div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+
+  // True when the transaction itself has sector lines (e.g. imported IATI
+  // transaction-level sectors). Drives where the section above is rendered.
+  const hasTransactionSectors = multipleSectorsCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -2767,6 +2902,10 @@ export default function TransactionModal({
               </div>
             </div>
 
+            {/* Sector Classifications — promoted here when the transaction has its
+                own sector lines (e.g. imported IATI transaction-level sectors). */}
+            {hasTransactionSectors && sectorClassificationsSection}
+
             {/* Supporting Documents Section */}
             <div className="space-y-4">
               <SectionHeader title="Supporting Documents" helpText="Upload receipts, invoices, contracts, or other evidence to support this transaction. You can also add links to documents hosted elsewhere." />
@@ -3092,130 +3231,10 @@ export default function TransactionModal({
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Sector Classifications */}
-              <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors} className="rounded-lg border">
-                <CollapsibleTrigger asChild>
-                  <button
-                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg transition-colors text-left"
-                    type="button"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
-                        <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
-                        <span className="text-body font-medium text-foreground">Sector Classifications</span>
-                        {activitySectors.length === 0 && multipleSectorsCount > 0 && (
-                          <Badge variant="secondary" className="text-helper">{multipleSectorsCount}</Badge>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-helper text-muted-foreground">
-                        {activitySectors.length > 0 ? 'Activity level' : 'Transaction level'}
-                      </Badge>
-                    </div>
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-4 p-4 border-t">
-                    {/* Activity-level sectors: read-only display */}
-                    {activitySectors.length > 0 && (
-                      <>
-                        <p className="text-helper text-muted-foreground">
-                          Sectors are set at the activity level. Transaction-level sector classification is disabled.
-                          To change this, go to the{' '}
-                          <button
-                            type="button"
-                            className="font-semibold hover:text-foreground inline"
-                            onClick={() => {
-                              onOpenChange(false);
-                              window.location.href = `/activities/${activityId}?tab=sectors`;
-                            }}
-                          >
-                            Sectors tab
-                          </button>.
-                        </p>
-                        <div className="p-3 bg-white rounded-md border border-border">
-                          <table className="w-full text-helper">
-                            <thead className="bg-surface-muted">
-                              <tr className="text-muted-foreground border-b">
-                                <th className="text-left py-1 font-medium">Sector</th>
-                                <th className="text-right py-1 font-medium w-14">%</th>
-                                {formData.value > 0 && formData.currency !== 'USD' && (
-                                  <th className="text-right py-1 font-medium w-24">{formData.currency}</th>
-                                )}
-                                {formData.value > 0 && calculatedUsdValue && (
-                                  <th className="text-right py-1 font-medium w-24">USD</th>
-                                )}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {activitySectors.map((sector, idx) => {
-                                const sectorCode = (sector as any).code || sector.sector_code;
-                                const rawSectorName = (sector as any).name || sector.sector_name || '';
-                                const sectorName = rawSectorName.replace(/^\d+\s*[-–]\s*/, '');
-                                const pct = sector.percentage || 0;
-                                const originalValue = formData.value > 0 && pct > 0 ? Math.round(formData.value * pct / 100) : null;
-                                const usdValue = calculatedUsdValue && pct > 0 ? Math.round(calculatedUsdValue * pct / 100) : null;
-                                return (
-                                  <tr key={idx} className="border-b border-muted/50">
-                                    <td className="py-1.5">
-                                      <div className="flex items-center gap-1.5">
-                                        {sectorCode && (
-                                          <span className="font-mono bg-muted px-1 py-0.5 rounded shrink-0">{sectorCode}</span>
-                                        )}
-                                        <span className="truncate">{sectorName || sectorCode}</span>
-                                      </div>
-                                    </td>
-                                    <td className="text-right py-1.5 text-muted-foreground">{pct > 0 ? `${pct}%` : '—'}</td>
-                                    {formData.value > 0 && formData.currency !== 'USD' && (
-                                      <td className="text-right py-1.5 tabular-nums">{originalValue !== null ? originalValue.toLocaleString() : '—'}</td>
-                                    )}
-                                    {formData.value > 0 && calculatedUsdValue && (
-                                      <td className="text-right py-1.5 tabular-nums">{usdValue !== null ? usdValue.toLocaleString() : '—'}</td>
-                                    )}
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                            {activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
-                              <tfoot>
-                                <tr className="font-medium border-t">
-                                  <td className="py-1.5">Total</td>
-                                  <td className="text-right py-1.5">{activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0)}%</td>
-                                  {formData.value > 0 && formData.currency !== 'USD' && (
-                                    <td className="text-right py-1.5 tabular-nums">{formData.value.toLocaleString()}</td>
-                                  )}
-                                  {formData.value > 0 && calculatedUsdValue && (
-                                    <td className="text-right py-1.5 tabular-nums">{calculatedUsdValue.toLocaleString()}</td>
-                                  )}
-                                </tr>
-                              </tfoot>
-                            )}
-                          </table>
-                        </div>
-                      </>
-                    )}
-
-                    {/* No activity-level sectors: allow transaction-level entry */}
-                    {activitySectors.length === 0 && (
-                      <div>
-                        <p className="text-helper text-muted-foreground mb-3">
-                          No sectors are defined at the activity level. You can specify sector allocations for this transaction below.
-                          Percentages must sum to 100%.
-                        </p>
-                        <TransactionSectorManager
-                          sectors={formData.sectors || []}
-                          onSectorsChange={(sectors) => {
-                            setFormData({ ...formData, sectors });
-                          }}
-                          allowPercentages={true}
-                          transactionValue={formData.value || 0}
-                          transactionCurrency={formData.currency || 'USD'}
-                          calculatedUsdValue={calculatedUsdValue}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              {/* Sector Classifications — stays here in Advanced Fields unless the
+                  transaction has its own sector lines, in which case it is promoted
+                  to between Funding Modality and Supporting Documents (above). */}
+              {!hasTransactionSectors && sectorClassificationsSection}
 
               {/* Multiple Aid Types */}
               <Collapsible open={showMultipleAidTypes} onOpenChange={setShowMultipleAidTypes} className="rounded-lg border">

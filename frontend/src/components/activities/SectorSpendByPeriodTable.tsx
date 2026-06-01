@@ -136,6 +136,7 @@ export function SectorSpendByPeriodTable({ activityId, basis = 'disbursement_exp
           totalsColumn
           totalsColumnLabel="Total"
           totalLabel="Total"
+          className="border-border shadow-sm"
         />
       )}
     </div>

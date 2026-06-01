@@ -604,7 +604,7 @@ export function ConditionsTab({
                     ) : (
                       <TableRow
                         key={condition.id}
-                        className="border-b border-border/40 hover:bg-muted/30 transition-colors"
+                        className="group/row border-b border-border/40 hover:bg-muted/30 transition-colors"
                       >
                         <TableCell className="py-3 px-4 font-medium">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{index + 1}</span>
@@ -615,7 +615,7 @@ export function ConditionsTab({
                         </TableCell>
                         {!readOnly && (
                           <TableCell className="py-3 px-4 text-right">
-                            <div className="flex justify-end gap-1">
+                            <div className="flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
                                 size="sm"

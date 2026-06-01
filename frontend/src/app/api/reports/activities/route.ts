@@ -2,8 +2,14 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
 import { titleWithAcronym, orgWithAcronym, admLevelSummary } from '@/lib/reports/format-helpers';
+import { DISBURSEMENT_TYPES, txUsd, excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
+
+// Keep cents so the column sums reconcile with the Cumulative Financial
+// Overview (which never per-row rounds). Per-row Math.round() was discarding
+// the cents and drifting the grand total.
+const round2 = (n: number) => Math.round(n * 100) / 100
 
 export async function GET() {
   const { supabase, response: authResponse } = await requireAuth();
@@ -30,6 +36,9 @@ export async function GET() {
         reporting_org_id,
         created_by_org_name
       `)
+      // Only published, non-deleted activities (exclude Recycle Bin + drafts).
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
       .order('title_narrative', { ascending: true })
 
     if (activitiesError) {
@@ -59,17 +68,27 @@ export async function GET() {
       .select('activity_id, location_name, state_region_name, state_region_code, district_name, district_code, township_name, township_code, admin_level')
       .in('activity_id', activityIds)
 
-    // Fetch transactions for budget and disbursement totals
-    const { data: transactions } = await supabase
+    // Disbursements — canonical definition shared with the other reports and the
+    // Financial Totals chart: transaction_type 3 only, status 'actual', non-deleted,
+    // and internal pooled-fund transfers excluded (avoids double counting).
+    let txQuery = supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value_usd')
+      .select('activity_id, transaction_type, value, value_usd, currency')
       .in('activity_id', activityIds)
+      .in('transaction_type', DISBURSEMENT_TYPES)
+      .eq('status', 'actual')
+      .is('deleted_at', null)
+    const pooledFundIds = await getPooledFundIds(supabase)
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds, DISBURSEMENT_TYPES)
+    const { data: transactions } = await txQuery
 
-    // Fetch budgets
+    // Fetch budgets (non-deleted, dated — matches the chart's budget population)
     const { data: budgets } = await supabase
       .from('activity_budgets')
       .select('activity_id, value, usd_value, currency')
       .in('activity_id', activityIds)
+      .is('deleted_at', null)
+      .not('period_start', 'is', null)
 
     // Fetch reporting organizations
     const reportingOrgIds = activities
@@ -115,17 +134,18 @@ export async function GET() {
       const usd = (b.usd_value != null && Number.isFinite(Number(b.usd_value)))
         ? Number(b.usd_value)
         : ((b.currency ?? '').toString().toUpperCase() === 'USD' ? Number(b.value) || 0 : 0)
+      if (usd <= 0) return
       const existing = budgetByActivity.get(b.activity_id) || 0
       budgetByActivity.set(b.activity_id, existing + usd)
     })
 
     const disbursementByActivity = new Map<string, number>()
     transactions?.forEach(t => {
-      // Transaction types 3 and 4 are disbursements and expenditures
-      if (t.transaction_type === '3' || t.transaction_type === '4') {
-        const existing = disbursementByActivity.get(t.activity_id) || 0
-        disbursementByActivity.set(t.activity_id, existing + (t.value_usd || 0))
-      }
+      // Query already restricts to disbursements (type 3, actual, non-deleted).
+      const usd = txUsd(t)
+      if (usd <= 0) return
+      const existing = disbursementByActivity.get(t.activity_id) || 0
+      disbursementByActivity.set(t.activity_id, existing + usd)
     })
 
     const orgById = new Map<string, { name: string; acronym: string | null }>()
@@ -150,8 +170,8 @@ export async function GET() {
         actual_start_date: activity.actual_start_date || '',
         planned_end_date: activity.planned_end_date || '',
         actual_end_date: activity.actual_end_date || '',
-        total_budget: Math.round(budgetByActivity.get(activity.id) || 0),
-        total_disbursed: Math.round(disbursementByActivity.get(activity.id) || 0),
+        total_budget: round2(budgetByActivity.get(activity.id) || 0),
+        total_disbursed: round2(disbursementByActivity.get(activity.id) || 0),
         sectors: (sectorsByActivity.get(activity.id) || []).join('; '),
         locations: (locationsByActivity.get(activity.id) || []).join('; '),
         adm_levels: admLevelSummary(locationRowsByActivity.get(activity.id) || []),

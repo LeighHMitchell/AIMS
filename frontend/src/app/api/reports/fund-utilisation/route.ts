@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select('id, title_narrative, acronym, activity_status')
       .eq('is_pooled_fund', true)
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
       .order('title_narrative')
 
     if (fundsError) {
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
       .select('activity_id, value, value_usd')
       .in('activity_id', fundIds)
       .in('transaction_type', ['1', '11', '13'])
+      .is('deleted_at', null)
 
     // Get disbursements (outgoing transactions)
     const { data: outgoing } = await supabase
@@ -42,6 +45,7 @@ export async function GET(request: NextRequest) {
       .select('activity_id, value, value_usd')
       .in('activity_id', fundIds)
       .in('transaction_type', ['2', '3'])
+      .is('deleted_at', null)
 
     // Get child counts
     const { data: parentRels } = await supabase

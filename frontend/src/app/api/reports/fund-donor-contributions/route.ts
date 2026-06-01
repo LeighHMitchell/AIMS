@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select('id, title_narrative, acronym')
       .eq('is_pooled_fund', true)
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
       .order('title_narrative')
 
     if (fundsError) {
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
       .select('activity_id, transaction_type, value, value_usd, currency, provider_org_name, provider_org_ref, transaction_date')
       .in('activity_id', fundIds)
       .in('transaction_type', ['1', '11', '13'])
+      .is('deleted_at', null)
       .order('transaction_date', { ascending: true })
 
     if (txnError) {

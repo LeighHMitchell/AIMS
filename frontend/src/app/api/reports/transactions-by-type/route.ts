@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
-import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,10 +22,16 @@ export async function GET() {
   }
 
   try {
+    // Only published & non-deleted activities are reportable.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (!reportableIds.length) return NextResponse.json({ data: [], error: null });
+
     // Exclude internal pooled-fund transfers to avoid double counting
     let txQuery = supabase
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
+      .is('deleted_at', null)
+      .in('activity_id', reportableIds)
     const pooledFundIds = await getPooledFundIds(supabase)
     txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
     const { data: transactions, error } = await txQuery

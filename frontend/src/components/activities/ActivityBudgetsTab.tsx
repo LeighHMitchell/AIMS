@@ -1843,7 +1843,6 @@ export default function ActivityBudgetsTab({
                     { label: "Status", width: 120, sortKey: "status", align: "left" },
                     { label: "Type", width: 110, sortKey: "type", align: "left" },
                     { label: "Original Value", width: 160, sortKey: "value", align: "right" },
-                    { label: "Value Date", width: 140, sortKey: "value_date", align: "left" },
                     { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
                     <TableHead
@@ -1919,12 +1918,8 @@ export default function ActivityBudgetsTab({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
-                        <span>
-                          {safeFormatDate(budget.value_date, 'd MMM yyyy', '-')}
-                        </span>
-                      </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
+                        <div className="flex flex-col items-end gap-0.5">
                         <div className="flex items-center justify-end gap-1">
                         {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.loading ? (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
@@ -1995,6 +1990,9 @@ export default function ActivityBudgetsTab({
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'error' && (
                             <span className="text-helper text-destructive">Failed</span>
                         )}
+                        </div>
+                        {/* Value date shown under the USD value (replaces the separate Value Date column). */}
+                        <span className="text-helper text-muted-foreground">{safeFormatDate(budget.value_date, 'd MMM yyyy', '-')}</span>
                         </div>
                       </TableCell>
                       {!readOnly && (

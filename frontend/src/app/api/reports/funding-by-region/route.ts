@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { getReportableActivityIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,11 @@ export async function GET() {
   }
 
   try {
+    // Only published & non-deleted activities are reportable.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (!reportableIds.length) return NextResponse.json({ data: [], error: null });
+    const reportableSet = new Set(reportableIds)
+
     // Fetch all activity locations
     const { data: locations, error: locationsError } = await supabase
       .from('activity_locations')
@@ -29,14 +35,18 @@ export async function GET() {
       return NextResponse.json({ data: [], error: null })
     }
 
-    // Get unique activity IDs
-    const activityIds = [...new Set(locations.map(l => l.activity_id))]
+    // Get unique reportable activity IDs
+    const activityIds = Array.from(new Set(locations.map(l => l.activity_id))).filter(id => reportableSet.has(id))
+    if (activityIds.length === 0) {
+      return NextResponse.json({ data: [], error: null })
+    }
 
     // Fetch transactions for these activities
     const { data: transactions } = await supabase
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
       .in('activity_id', activityIds)
+      .is('deleted_at', null)
 
     // Fetch sectors for these activities
     const { data: sectors } = await supabase
@@ -79,6 +89,7 @@ export async function GET() {
     }>()
 
     locations.forEach(l => {
+      if (!reportableSet.has(l.activity_id)) return  // skip drafts / recycle-bin activities
       const regionName = l.state_region_name || l.location_name || 'Unspecified'
       const activityFinancials = activityTotals.get(l.activity_id) || { committed: 0, disbursed: 0 }
       const percentage = (l.percentage_allocation || 100) / 100

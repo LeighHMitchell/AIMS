@@ -713,7 +713,7 @@ export default function BudgetMappingTab({
                       const isAutoMapped = !!item.source_sector_code;
 
                       return (
-                        <TableRow key={`${cbi.id}-${index}`} className={isAutoMapped ? "bg-muted/30" : ""}>
+                        <TableRow key={`${cbi.id}-${index}`} className={`group/row ${isAutoMapped ? "bg-muted/30" : ""}`}>
                           <TableCell className="text-body text-foreground">
                             {getVocabularyName(cbi.vocabulary)}
                           </TableCell>
@@ -752,7 +752,7 @@ export default function BudgetMappingTab({
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                               <button
                                 type="button"
                                 onClick={() => handleEdit(cbi, index)}

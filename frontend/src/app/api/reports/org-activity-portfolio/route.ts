@@ -17,6 +17,8 @@ export async function GET() {
     const { data: activities, error } = await supabase
       .from('activities')
       .select('id, activity_status, reporting_org_id, created_by_org_name')
+      .eq('publication_status', 'published')
+      .is('deleted_at', null)
 
     if (error) {
       console.error('[Reports API] Error fetching activities:', error)
@@ -36,11 +38,13 @@ export async function GET() {
       .from('activity_budgets')
       .select('activity_id, value, usd_value, currency')
       .in('activity_id', activityIds)
+      .is('deleted_at', null)
 
     const { data: transactions } = await supabase
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
       .in('activity_id', activityIds)
+      .is('deleted_at', null)
 
     const reportingOrgIds = activities
       .map(a => a.reporting_org_id)

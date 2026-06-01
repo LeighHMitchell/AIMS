@@ -58,7 +58,7 @@ export async function GET() {
     const actAcronymById = new Map<string, string | null>()
     const activityIds = Array.from(new Set(scoreRows.map(s => s.id).filter(Boolean)))
     if (activityIds.length > 0) {
-      const { data: acts } = await supabase.from('activities').select('id, acronym').in('id', activityIds)
+      const { data: acts } = await supabase.from('activities').select('id, acronym').in('id', activityIds).eq('publication_status', 'published').is('deleted_at', null)
       acts?.forEach((a: any) => actAcronymById.set(a.id, a.acronym))
     }
     const orgAcronymById = new Map<string, string | null>()

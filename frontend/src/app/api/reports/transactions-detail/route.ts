@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
 import { titleWithAcronym } from '@/lib/reports/format-helpers';
+import { getReportableActivityIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,10 @@ export async function GET() {
   }
 
   try {
+    // Only published & non-deleted activities are reportable.
+    const reportableIds = await getReportableActivityIds(supabase);
+    if (!reportableIds.length) return NextResponse.json({ data: [], error: null });
+
     // Fetch every transaction, paginating past Supabase's default 1000-row cap.
     // select('*') keeps the route resilient to optional columns (aid_type, etc.).
     const transactions: Record<string, any>[] = []
@@ -34,6 +39,8 @@ export async function GET() {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .is('deleted_at', null)
+        .in('activity_id', reportableIds)
         .order('transaction_date', { ascending: true })
         .range(from, from + PAGE_SIZE - 1)
 
