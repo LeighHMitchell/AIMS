@@ -15,10 +15,10 @@
  */
 
 /** Outgoing transaction types: Commitment (2), Disbursement (3), Expenditure (4) */
-const OUTGOING_TYPES = ['2', '3', '4'];
+export const OUTGOING_TYPES = ['2', '3', '4'];
 
 /** Incoming transaction types: Incoming Funds (1), Incoming Commitment (11), Incoming Pledge (13) */
-const INCOMING_TYPES = ['1', '11', '13'];
+export const INCOMING_TYPES = ['1', '11', '13'];
 
 /**
  * Canonical transaction-type groupings for financial reporting.

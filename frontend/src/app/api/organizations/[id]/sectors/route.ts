@@ -96,7 +96,92 @@ export async function GET(
       
       sectorData.total_percentage += sector.percentage || 0;
     });
-    
+
+    // Fallback: for activities that have NO activity-level sectors, derive a
+    // value-weighted breakdown from their transaction-level sectors and merge it
+    // into the same aggregation (so transaction-level-only activities aren't invisible).
+    const activitiesWithSectors = new Set((activitySectors || []).map((s: any) => s.activity_id));
+    const fallbackActivityIds = activityIds.filter(actId => !activitiesWithSectors.has(actId));
+
+    if (fallbackActivityIds.length > 0) {
+      const chunk = <T,>(arr: T[], size: number): T[][] => {
+        const out: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+        return out;
+      };
+
+      // Transactions for the fallback activities (value + activity).
+      const txs: any[] = [];
+      for (const ids of chunk(fallbackActivityIds, 200)) {
+        const { data } = await supabase
+          .from('transactions')
+          .select('uuid, activity_id, value, value_usd')
+          .in('activity_id', ids);
+        if (data) txs.push(...data);
+      }
+
+      if (txs.length > 0) {
+        const txById = new Map<string, { activity_id: string; value: number }>();
+        const activityTotalValue = new Map<string, number>();
+        txs.forEach((t: any) => {
+          const v = parseFloat(t.value_usd?.toString() || t.value?.toString() || '0') || 0;
+          txById.set(t.uuid, { activity_id: t.activity_id, value: v });
+          activityTotalValue.set(t.activity_id, (activityTotalValue.get(t.activity_id) || 0) + v);
+        });
+
+        // Transaction-level sector lines for those transactions (chunked).
+        const txSectorLines: any[] = [];
+        const txIds = txs.map((t: any) => t.uuid);
+        for (const ids of chunk(txIds, 200)) {
+          const { data } = await supabase
+            .from('transaction_sector_lines')
+            .select('transaction_id, sector_code, sector_name, percentage')
+            .in('transaction_id', ids)
+            .is('deleted_at', null);
+          if (data) txSectorLines.push(...data);
+        }
+
+        // Per-activity, per-sector weighted value.
+        const perActivity = new Map<string, Map<string, { name: string; weightedValue: number }>>();
+        txSectorLines.forEach((line: any) => {
+          const tx = txById.get(line.transaction_id);
+          if (!tx) return;
+          const pct = parseFloat(line.percentage?.toString() || '0') || 0;
+          const weightedValue = tx.value * (pct / 100);
+          if (!perActivity.has(tx.activity_id)) perActivity.set(tx.activity_id, new Map());
+          const sectorsForAct = perActivity.get(tx.activity_id)!;
+          if (!sectorsForAct.has(line.sector_code)) {
+            sectorsForAct.set(line.sector_code, { name: line.sector_name || line.sector_code, weightedValue: 0 });
+          }
+          sectorsForAct.get(line.sector_code)!.weightedValue += weightedValue;
+        });
+
+        // Convert each fallback activity's weighted values to percentages and merge.
+        perActivity.forEach((sectorsForAct, actId) => {
+          const totalVal = activityTotalValue.get(actId) || 0;
+          sectorsForAct.forEach((data, code) => {
+            const pct = totalVal > 0 ? (data.weightedValue / totalVal) * 100 : 0;
+            const key = code || data.name;
+            if (!sectorMap.has(key)) {
+              sectorMap.set(key, {
+                sector_name: data.name,
+                sector_code: code || '',
+                activity_count: 0,
+                total_percentage: 0,
+                activity_ids: new Set(),
+              });
+            }
+            const sd = sectorMap.get(key)!;
+            if (!sd.activity_ids.has(actId)) {
+              sd.activity_ids.add(actId);
+              sd.activity_count += 1;
+            }
+            sd.total_percentage += pct;
+          });
+        });
+      }
+    }
+
     // Convert map to array and calculate average percentage
     const sectors = Array.from(sectorMap.entries()).map(([key, data], index) => ({
       id: key + '-' + index,

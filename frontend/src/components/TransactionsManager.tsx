@@ -45,6 +45,7 @@ import {
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatCurrencyPrecise, formatCurrencyCompact, formatDate as formatDateCanonical } from '@/lib/format';
+import { txUsd } from '@/lib/analytics-transaction-filters';
 
 // Define FINANCE_TYPES locally since it's not exported from the helper
 const FINANCE_TYPES: Record<string, string> = {
@@ -971,7 +972,7 @@ export default function TransactionsManager({
   // Calculate totals (published transactions only)
   const totalPublished = filteredTransactions
     .filter(t => t.status === "published")
-    .reduce((sum, t) => sum + t.value, 0);
+    .reduce((sum, t) => sum + txUsd(t), 0);
 
   const formatCurrency = (value: number, currency: string) => {
     return formatCurrencyPrecise(value, currency);

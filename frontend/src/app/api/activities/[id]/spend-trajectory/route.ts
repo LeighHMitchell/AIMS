@@ -69,13 +69,7 @@ export async function GET(
       if (!value && b.currency === 'USD' && b.value) {
         value = parseFloat(String(b.value)) || 0
       }
-      
-      // If still no USD value and there is a raw value, use it
-      // (This handles cases where conversion has not yet occurred)
-      if (!value && b.value) {
-        value = parseFloat(String(b.value)) || 0
-      }
-      
+
       return sum + value
     }, 0)
 
@@ -105,9 +99,6 @@ export async function GET(
     const resolveUsd = (row: { value: any; value_usd: any; currency: any }) => {
       let value = parseFloat(String(row.value_usd)) || 0
       if (!value && row.currency === 'USD' && row.value) {
-        value = parseFloat(String(row.value)) || 0
-      }
-      if (!value && row.value) {
         value = parseFloat(String(row.value)) || 0
       }
       return value
@@ -169,9 +160,6 @@ export async function GET(
       if (!Number.isFinite(year)) return
       let value = parseFloat(String(p.usd_amount)) || 0
       if (!value && p.currency === 'USD' && p.amount) {
-        value = parseFloat(String(p.amount)) || 0
-      }
-      if (!value && p.amount) {
         value = parseFloat(String(p.amount)) || 0
       }
       if (value <= 0) return

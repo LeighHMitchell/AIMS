@@ -109,7 +109,8 @@ export async function GET(request: NextRequest) {
           percentage
         )
       `)
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
 
     if (activitiesError) {
       console.error('[SectorDisbursementSummary] Error fetching activities:', activitiesError);

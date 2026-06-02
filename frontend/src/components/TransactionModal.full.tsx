@@ -90,22 +90,6 @@ const TRANSACTION_TYPE_OPTIONS: { code: string; name: string; desc: string }[] =
   { code: '13', name: 'Incoming Pledge', desc: 'Indicative, non-binding advice of an intended incoming commitment.' },
 ];
 
-const ORGANIZATION_TYPES = {
-  '10': 'Government',
-  '11': 'Local Government',
-  '15': 'Other Public Sector',
-  '21': 'International NGO',
-  '22': 'National NGO',
-  '23': 'Regional NGO',
-  '24': 'Partner Country based NGO',
-  '30': 'Public Private Partnership',
-  '31': 'Private Sector',
-  '40': 'Multilateral',
-  '60': 'Foundation',
-  '70': 'Academic, Training and Research',
-  '80': 'Other'
-};
-
 const DISBURSEMENT_CHANNELS = {
   '1': 'Central Ministry of Finance/Treasury',
   '2': 'Direct to Implementing Institution (Separate Account)',

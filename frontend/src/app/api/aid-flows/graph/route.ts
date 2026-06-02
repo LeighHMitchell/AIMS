@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { buildAidFlowGraphData } from '@/lib/analytics-helpers';
+import { txUsd, getReportableActivityIds } from '@/lib/analytics-transaction-filters';
+import { safeUsd } from '@/lib/safe-usd';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -77,8 +79,24 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-    
-    
+
+    // Restrict aid-flow data to reportable activities (published, not soft-deleted).
+    const reportableActivityIds = await getReportableActivityIds(supabase);
+    if (reportableActivityIds.length === 0) {
+      return NextResponse.json({
+        nodes: [],
+        links: [],
+        metadata: {
+          dateRange: { start: startDate, end: endDate },
+          transactionCount: 0,
+          totalValue: 0,
+          organizationCount: 0,
+          flowCount: 0,
+        },
+      }, { headers: { 'Cache-Control': 'no-store', 'Pragma': 'no-cache' } });
+    }
+
+
     // Diagnostic: Count all transactions with both provider and receiver (no date filter)
     const { count: totalWithBothOrgs } = await supabase
       .from('transactions')
@@ -108,6 +126,8 @@ export async function GET(request: NextRequest) {
           activity_id,
           transaction_type,
           value,
+          value_usd,
+          currency,
           provider_org_id,
           receiver_org_id,
           provider_org_name,
@@ -120,6 +140,7 @@ export async function GET(request: NextRequest) {
         .gte('transaction_date', startDate)
         .lte('transaction_date', endDate)
         .not('value', 'is', null)
+        .in('activity_id', reportableActivityIds)
         .in('transaction_type', transactionTypesToFilter)
         .order('value', { ascending: false })
         .limit(5000);
@@ -158,6 +179,7 @@ export async function GET(request: NextRequest) {
           activity_id,
           amount,
           usd_amount,
+          currency,
           provider_org_id,
           receiver_org_id,
           provider_org_name,
@@ -167,19 +189,23 @@ export async function GET(request: NextRequest) {
         `)
         .gte('period_start', startDate)
         .lte('period_start', endDate)
+        .in('activity_id', reportableActivityIds)
         .limit(5000);
 
       if (pdError) {
         console.error('[Aid Flow API] Error fetching planned disbursements:', pdError);
       } else if (pdData) {
         for (const pd of pdData) {
-          const v = (pd as any).usd_amount ?? (pd as any).amount;
-          if (v === null || v === undefined) continue;
+          // USD-only: non-USD PDs with no stored conversion contribute 0 and are skipped.
+          const v = safeUsd(pd as any);
+          if (!v) continue;
           transactions.push({
             uuid: `pd-${pd.id}`,
             activity_id: pd.activity_id,
             transaction_type: 'PD',
             value: v,
+            value_usd: v,
+            currency: 'USD',
             provider_org_id: pd.provider_org_id,
             receiver_org_id: pd.receiver_org_id,
             provider_org_name: pd.provider_org_name,
@@ -283,7 +309,7 @@ export async function GET(request: NextRequest) {
         end: endDate
       },
       transactionCount: transactions?.length || 0,
-      totalValue: transactions?.reduce((sum: number, t: any) => sum + (parseFloat(t.value?.toString() || '0') || 0), 0) || 0,
+      totalValue: transactions?.reduce((sum: number, t: any) => sum + txUsd(t), 0) || 0,
       organizationCount: graphData.nodes.length,
       flowCount: graphData.links.length
     };

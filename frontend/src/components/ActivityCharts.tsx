@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Transaction } from "@/types/transaction";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
+import { getTransactionUSDValueSync } from "@/lib/transaction-usd-helper";
 import { format } from "date-fns";
 
 interface DisbursementGaugeProps {
@@ -114,11 +115,11 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
         const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[transaction.transaction_type] || transaction.transaction_type;
       
       if (normalizedType === "2") { // Outgoing Commitment (was "C")
-        cumulativeCommitments += transaction.value;
+        cumulativeCommitments += getTransactionUSDValueSync(transaction);
       } else if (normalizedType === "3") { // Disbursement (was "D")
-        cumulativeDisbursements += transaction.value;
+        cumulativeDisbursements += getTransactionUSDValueSync(transaction);
       } else if (normalizedType === "4") { // Expenditure (was "E")
-        cumulativeExpenditures += transaction.value;
+        cumulativeExpenditures += getTransactionUSDValueSync(transaction);
       }
 
       dataMap.set(date, {

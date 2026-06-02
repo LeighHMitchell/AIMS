@@ -33,6 +33,7 @@ import { CustomYear, getCustomYearLabel, pickDefaultCalendarYearId } from '@/typ
 import { getFiscalYearForDate } from '@/utils/year-allocation'
 import { MetricMultiSelect } from './shared/MetricMultiSelect'
 import { type Metric } from './shared/metric-options'
+import { txUsd, getReportableActivityIds, getPooledFundIds, excludeInternalTransfers } from '@/lib/analytics-transaction-filters'
 
 // This chart only ever surfaces the two IATI transaction types it compares:
 // Outgoing Commitments (tx_2) and Disbursements (tx_3). The shared metric
@@ -56,6 +57,8 @@ interface ChartData {
 
 interface RawTransaction {
   value: string | number | null
+  value_usd: string | number | null
+  currency: string | null
   transaction_type: string
   transaction_date: string
 }
@@ -125,13 +128,21 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
     const fetchData = async () => {
       try {
         setLoading(true)
-        const { data, error } = await supabase
+        // Canonical scoping: published & non-deleted activities only, and
+        // exclude internal pooled-fund transfers — mirrors FinancialTotalsBarChart.
+        const reportableIds = await getReportableActivityIds(supabase)
+        const pooledFundIds = await getPooledFundIds(supabase)
+        let query = supabase
           .from('transactions')
-          .select('value, transaction_type, transaction_date')
+          .select('value, value_usd, currency, transaction_type, transaction_date')
           .in('transaction_type', ['2', '3']) // Commitments and Disbursements
           .eq('status', 'actual')
+          .is('deleted_at', null)
+          .in('activity_id', reportableIds)
           .gte('transaction_date', '2000-01-01T00:00:00.000Z')
           .lte('transaction_date', '2050-12-31T23:59:59.999Z')
+        query = excludeInternalTransfers(query, pooledFundIds, ['2', '3'])
+        const { data, error } = await query
 
         if (error) {
           console.error('[CommitmentsChart] Error fetching transactions:', error)
@@ -161,11 +172,6 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
     }
     fetchData()
   }, [refreshKey])
-
-  const parseValue = (raw: RawTransaction['value']): number => {
-    const v = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''))
-    return Number.isFinite(v) ? v : 0
-  }
 
   // Aggregate transactions into chart points. Both year and quarter modes honor
   // the selected custom year (CY/FY): year mode buckets by fiscal year, quarter
@@ -207,7 +213,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
         if (fy < minYear || fy > maxYear) return
         if (!byYear.has(fy)) byYear.set(fy, { commitments: 0, disbursements: 0 })
         const bucket = byYear.get(fy)!
-        const value = parseValue(t.value)
+        const value = txUsd(t)
         if (t.transaction_type === '2') bucket.commitments += value
         else if (t.transaction_type === '3') bucket.disbursements += value
       })
@@ -248,7 +254,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
       const key = `${year}-Q${quarter}`
       if (!byQuarter.has(key)) byQuarter.set(key, { year, quarter, commitments: 0, disbursements: 0 })
       const bucket = byQuarter.get(key)!
-      const value = parseValue(t.value)
+      const value = txUsd(t)
       if (t.transaction_type === '2') bucket.commitments += value
       else if (t.transaction_type === '3') bucket.disbursements += value
     })

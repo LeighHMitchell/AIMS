@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { txUsd } from '@/lib/analytics-transaction-filters';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -210,14 +211,14 @@ export async function GET(request: NextRequest) {
     // Query the transactions table with correct field names
     const { data: transactionData, error: transactionFetchError } = await supabase
       .from('transactions')
-      .select('provider_org, receiver_org, value, transaction_date, transaction_type, activity_id, organization_id');
+      .select('provider_org, receiver_org, value, value_usd, currency, transaction_date, transaction_type, activity_id, organization_id');
 
     if (!transactionFetchError && transactionData) {
       // Map to expected format
       transactions = transactionData.map((t: any) => ({
         provider_organization_id: t.provider_org,
         receiver_organization_id: t.receiver_org,
-        amount: t.value,
+        amount: txUsd(t),
         transaction_date: t.transaction_date,
         transaction_type: t.transaction_type,
         project_id: t.activity_id,

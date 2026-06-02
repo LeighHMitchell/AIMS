@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { MapPin } from 'lucide-react'
+import { txUsd } from '@/lib/analytics-transaction-filters'
 
 interface AidMapProps {
   dateRange: {
@@ -46,6 +47,8 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
           locations,
           transactions!inner (
             value,
+            value_usd,
+            currency,
             transaction_type,
             status,
             transaction_date,
@@ -78,8 +81,7 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
         
         // Calculate total disbursement for this activity
         const totalDisbursement = transactions.reduce((sum: number, t: any) => {
-          const value = parseFloat(t.value) || 0
-          return sum + (isNaN(value) ? 0 : value)
+          return sum + txUsd(t)
         }, 0)
         
         // Extract location info (adjust based on your location structure)

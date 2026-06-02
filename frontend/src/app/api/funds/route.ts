@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
+import { safeUsd } from '@/lib/safe-usd'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,12 +58,12 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       supabase
         .from('transactions')
-        .select('activity_id, transaction_type, value, value_usd, provider_org_name, provider_org_id, transaction_date')
+        .select('activity_id, transaction_type, value, value_usd, currency, provider_org_name, provider_org_id, transaction_date')
         .in('activity_id', fundIds)
         .in('transaction_type', ['1', '11', '13']),
       supabase
         .from('transactions')
-        .select('activity_id, transaction_type, value, value_usd, transaction_date, receiver_activity_uuid')
+        .select('activity_id, transaction_type, value, value_usd, currency, transaction_date, receiver_activity_uuid')
         .in('activity_id', fundIds)
         .in('transaction_type', ['2', '3']),
       supabase
@@ -173,8 +174,8 @@ export async function GET(request: NextRequest) {
       const donorNameToOrgId: Record<string, string> = {}
       const quarterlyData: Record<string, number> = {}
 
-      incoming.forEach((t: { value_usd?: number; value?: number; provider_org_name?: string; provider_org_id?: string }) => {
-        const usd = t.value_usd ?? (t as { usd_value?: number }).usd_value ?? t.value ?? 0
+      incoming.forEach((t: { value_usd?: number; value?: number; currency?: string; provider_org_name?: string; provider_org_id?: string }) => {
+        const usd = safeUsd({ value_usd: t.value_usd, usd_value: (t as { usd_value?: number }).usd_value, value: t.value, currency: t.currency })
         totalContributions += usd
         const donor = t.provider_org_name || 'Unknown'
         donorAmounts[donor] = (donorAmounts[donor] || 0) + usd
@@ -183,8 +184,8 @@ export async function GET(request: NextRequest) {
 
       // Disbursements per child (for sector totals)
       const childDisbursed: Record<string, number> = {}
-      outgoing.forEach((t: { value_usd?: number; value?: number; receiver_activity_uuid?: string; transaction_date?: string }) => {
-        const usd = t.value_usd ?? (t as { usd_value?: number }).usd_value ?? t.value ?? 0
+      outgoing.forEach((t: { value_usd?: number; value?: number; currency?: string; receiver_activity_uuid?: string; transaction_date?: string }) => {
+        const usd = safeUsd({ value_usd: t.value_usd, usd_value: (t as { usd_value?: number }).usd_value, value: t.value, currency: t.currency })
         totalDisbursements += usd
         const childId = t.receiver_activity_uuid
         if (childId && childIds.has(childId)) {

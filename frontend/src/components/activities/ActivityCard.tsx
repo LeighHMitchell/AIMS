@@ -21,48 +21,10 @@ import { StatusIcon } from '@/components/ui/status-icon';
 import { TIED_STATUS_LABELS } from '@/types/transaction';
 import { getActivityStatusDisplay } from '@/lib/activity-status-utils';
 import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
+import { codeAndName } from '@/lib/iati/codelist-resolver';
 
 // Aid modality label mappings
-const AID_TYPE_LABELS: Record<string, string> = {
-  'A01': 'General budget support',
-  'A02': 'Sector budget support',
-  'B01': 'Core support to NGOs',
-  'B02': 'Core contributions to multilateral institutions',
-  'B03': 'Contributions to pooled programmes and funds',
-  'B04': 'Basket funds/pooled funding',
-  'C01': 'Project-type interventions',
-  'D01': 'Donor country personnel',
-  'D02': 'Other technical assistance',
-  'E01': 'Scholarships/training in donor country',
-  'E02': 'Imputed student costs',
-  'F01': 'Debt relief',
-  'G01': 'Administrative costs not included elsewhere',
-  'H01': 'Development awareness',
-  'H02': 'Refugees in donor countries'
-};
-
-const FINANCE_TYPE_LABELS: Record<string, string> = {
-  '110': 'Standard grant',
-  '210': 'Interest subsidy',
-  '310': 'Capital subscription on deposit basis',
-  '311': 'Capital subscription on encashment basis',
-  '410': 'Aid loan excluding debt reorganisation',
-  '421': 'Standard loan',
-  '422': 'Reimbursable grant'
-};
-
-const FLOW_TYPE_LABELS: Record<string, string> = {
-  '10': 'ODA',
-  '20': 'OOF',
-  '21': 'Non-export credit OOF',
-  '22': 'Officially supported export credits',
-  '30': 'Private Development Finance',
-  '35': 'Private Market',
-  '36': 'Private Foreign Direct Investment',
-  '37': 'Other Private Flows at Market Terms',
-  '40': 'Non flow',
-  '50': 'Other flows'
-};
+// Aid/finance/flow type labels resolved from canonical IATI codelists via codeAndName().
 
 const MODALITY_LABELS: Record<string, string> = {
   '1': 'Grant',
@@ -398,19 +360,19 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             <div className="flex justify-between items-center">
               <span className="text-section-label font-medium text-muted-foreground uppercase">Default Aid Type</span>
               <span className="text-body text-foreground">
-                {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
+                {activity.default_aid_type ? (codeAndName('aid_type', activity.default_aid_type).name || activity.default_aid_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-section-label font-medium text-muted-foreground uppercase">Default Finance Type</span>
               <span className="text-body text-foreground">
-                {activity.default_finance_type ? (FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type) : 'Not reported'}
+                {activity.default_finance_type ? (codeAndName('finance_type', activity.default_finance_type).name || activity.default_finance_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-section-label font-medium text-muted-foreground uppercase">Default Flow Type</span>
               <span className="text-body text-foreground">
-                {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
+                {activity.default_flow_type ? (codeAndName('flow_type', activity.default_flow_type).name || activity.default_flow_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">

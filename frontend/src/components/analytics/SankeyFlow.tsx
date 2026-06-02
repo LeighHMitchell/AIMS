@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { txUsd } from '@/lib/analytics-transaction-filters'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { ArrowRight, Download, BarChart3, LineChart as LineChartIcon, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -83,6 +84,8 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         .from('transactions')
         .select(`
           value,
+          value_usd,
+          currency,
           transaction_type,
           status,
           transaction_date,
@@ -93,6 +96,8 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
           ),
           activities!inner (
             id,
+            publication_status,
+            deleted_at,
             activity_sectors (
               sector_code,
               percentage
@@ -101,6 +106,8 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         `)
         .eq('transaction_type', '3') // Disbursements
         .eq('status', 'actual')
+        .eq('activities.publication_status', 'published')
+        .is('activities.deleted_at', null)
         .gte('transaction_date', dateRange.from.toISOString())
         .lte('transaction_date', dateRange.to.toISOString())
         .not('provider_org_id', 'is', null)
@@ -127,7 +134,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       const periodMap = new Map<string, Map<string, number>>()
 
       transactions?.forEach((transaction: any) => {
-        const value = parseFloat(transaction.value) || 0
+        const value = txUsd(transaction)
         if (isNaN(value) || value <= 0) return
 
         const donorName = transaction.organizations?.name || 'Unknown Donor'

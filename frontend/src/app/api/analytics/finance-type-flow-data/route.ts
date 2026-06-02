@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { FLOW_TYPES } from '@/utils/transactionMigrationHelper'
+import { txUsd } from '@/lib/analytics-transaction-filters'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -103,6 +104,7 @@ export async function GET(request: NextRequest) {
         .select('id')
         .eq('reporting_org_id', organizationId)
         .eq('publication_status', 'published')
+        .is('deleted_at', null)
 
       if (orgError) {
         console.error('[FinanceTypeFlowData API] Error fetching org activities:', orgError)
@@ -180,11 +182,8 @@ export async function GET(request: NextRequest) {
     const uniqueFinanceTypes = new Set<string>()
 
     for (const t of transactions || []) {
-      // Try value_usd first, then fall back to raw value
-      let value = parseFloat(String(t.value_usd)) || 0
-      if (!value && t.value) {
-        value = parseFloat(String(t.value)) || 0
-      }
+      // USD-only: non-USD rows without a stored conversion contribute 0.
+      const value = txUsd(t)
       if (!value) continue
 
       // Get activity defaults

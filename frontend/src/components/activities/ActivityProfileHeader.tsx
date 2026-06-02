@@ -65,6 +65,7 @@ import {
 } from "lucide-react"
 import { IATI_ACTIVITY_SCOPE } from "@/data/iati-activity-scope"
 import { getCollaborationTypeByCode } from "@/data/iati-collaboration-types"
+import { codeAndName } from "@/lib/iati/codelist-resolver"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -155,42 +156,7 @@ const HIERARCHY_LEVELS: Record<number, string> = {
   5: "Task/Output",
 }
 
-const AID_TYPE_LABELS: Record<string, string> = {
-  A01: "General budget support",
-  A02: "Sector budget support",
-  B01: "Core support to NGOs",
-  B02: "Core contributions to multilateral institutions",
-  B03: "Contributions to pooled programmes and funds",
-  B04: "Basket funds/pooled funding",
-  C01: "Project-type interventions",
-  D01: "Donor country personnel",
-  D02: "Other technical assistance",
-  E01: "Scholarships/training in donor country",
-  E02: "Imputed student costs",
-  F01: "Debt relief",
-  G01: "Administrative costs",
-  H01: "Development awareness",
-  H02: "Refugees in donor countries",
-}
-
-const FLOW_TYPE_LABELS: Record<string, string> = {
-  "10": "Official Development Assistance",
-  "20": "Other Official Flows",
-  "30": "Private grants",
-  "35": "Private market",
-  "40": "Non flow",
-  "50": "Other flows",
-}
-
-const FINANCE_TYPE_LABELS: Record<string, string> = {
-  "110": "Standard grant",
-  "210": "Interest subsidy",
-  "310": "Capital subscription (deposit)",
-  "410": "Aid loan",
-  "421": "Standard loan",
-  "422": "Reimbursable grant",
-  "510": "Bonds",
-}
+// Aid/finance/flow type labels resolved from canonical IATI codelists via codeAndName().
 
 const TIED_STATUS_LABELS: Record<string, string> = {
   "3": "Partially tied",
@@ -928,7 +894,7 @@ export function ActivityProfileHeader({
                     {activity.defaultFlowType}
                   </code>
                   <span className="font-medium text-foreground">
-                    {FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType}
+                    {codeAndName("flow_type", activity.defaultFlowType).name || activity.defaultFlowType}
                   </span>
                 </div>
               </div>
@@ -941,7 +907,7 @@ export function ActivityProfileHeader({
                     {activity.defaultFinanceType}
                   </code>
                   <span className="font-medium text-foreground">
-                    {FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType}
+                    {codeAndName("finance_type", activity.defaultFinanceType).name || activity.defaultFinanceType}
                   </span>
                 </div>
               </div>
@@ -954,7 +920,7 @@ export function ActivityProfileHeader({
                     {activity.defaultAidType}
                   </code>
                   <span className="font-medium text-foreground">
-                    {AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType}
+                    {codeAndName("aid_type", activity.defaultAidType).name || activity.defaultAidType}
                   </span>
                 </div>
               </div>

@@ -34,6 +34,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, PLANNED_DISBURSEMENT_COLOR, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 import { formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { safeUsd } from '@/lib/safe-usd';
 
 // Series colours resolve through the single source of truth (lib/chart-colors)
 // so disbursements / planned / commitments / perfect-spend match every other
@@ -361,7 +362,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
             // Use usd_amount if available, otherwise use amount (assuming USD)
             const processedPd = pdData.map(pd => ({
               ...pd,
-              usd_amount: pd.usd_amount || pd.amount || 0
+              usd_amount: safeUsd({ usd_value: pd.usd_amount, amount: pd.amount, currency: pd.currency })
             }))
             setPlannedDisbursements(processedPd)
           }

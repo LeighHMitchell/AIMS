@@ -157,6 +157,7 @@ export async function GET(request: Request) {
       .from('activities')
       .select('id')
       .eq('publication_status', 'published')
+      .is('deleted_at', null)
     const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id)
 
     // First, get all organizations for mapping.

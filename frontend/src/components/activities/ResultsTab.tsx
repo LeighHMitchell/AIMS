@@ -59,6 +59,7 @@ import {
 } from '@/types/results';
 
 import { AddIndicatorForm } from './AddIndicatorForm';
+import { ResultsFramework } from './results/framework/ResultsFramework';
 import { 
   Bar, 
   BarChart, 
@@ -537,6 +538,27 @@ export function ResultsTab({
     }
   };
 
+  // Open the Edit Indicator modal with its values initialised (mirrors the
+  // inline edit-button init). Used by the ResultsFramework's onEditIndicator.
+  const handleStartEditIndicator = (indicatorId: string) => {
+    const indicator = results.flatMap(r => r.indicators || []).find(i => i.id === indicatorId);
+    if (!indicator) return;
+    setEditingIndicator(indicatorId);
+    setEditingIndicatorValues({
+      title: (indicator.title as any)[defaultLanguage] || '',
+      description: (indicator.description as any)?.[defaultLanguage] || '',
+      measure: indicator.measure || 'unit',
+      ascending: indicator.ascending ?? true,
+      aggregation_status: indicator.aggregation_status ?? false,
+      baseline: indicator.baseline?.value,
+      baseline_year: indicator.baseline?.baseline_year,
+      baseline_iso_date: indicator.baseline?.iso_date,
+      baseline_comment: (indicator.baseline?.comment as any)?.[defaultLanguage] || '',
+      target: indicator.periods?.[indicator.periods.length - 1]?.target_value,
+      actual: indicator.periods?.[indicator.periods.length - 1]?.actual_value
+    });
+  };
+
   // Use dummy data if enabled and no real results
   const displayResults = showDummyData && results.length === 0 ? DUMMY_RESULTS_DATA as any : results;
 
@@ -828,23 +850,22 @@ export function ResultsTab({
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Enhanced view switcher for results */}
-          <div className="flex justify-end">
-            <SegmentedControl
-              ariaLabel="Results view"
-              variant="icon"
-              value={activeSubTab}
-              onValueChange={setActiveSubTab}
-              options={[
-                { value: "overview", label: "Overview", icon: LayoutDashboard },
-                { value: "timeline", label: "Timeline View", icon: GanttChartSquare },
-                { value: "charts", label: "Progress Charts", icon: LineChartIcon },
-                { value: "table", label: "Data Table", icon: TableIcon },
-              ]}
-            />
-          </div>
+          {/* d-portal-style results framework (the single, shared presentation, also used on the profile) */}
+          <ResultsFramework
+            results={displayResults as ActivityResult[]}
+            defaultLanguage={defaultLanguage}
+            editable={!readOnly}
+            onEditResult={(id) => setEditingResult(id)}
+            onDeleteResult={handleDeleteResult}
+            onAddIndicator={(id) => setShowAddIndicator(id)}
+            onEditIndicator={handleStartEditIndicator}
+            onDeleteIndicator={handleDeleteIndicator}
+            onAddPeriod={(id) => setShowAddPeriod(id)}
+          />
 
-          {/* Overview Tab - Default View */}
+          {/* Existing Add/Edit modals retained but visually hidden — Radix Dialogs
+              portal to <body> when opened, so all editing flows still work. */}
+          <div className="hidden" aria-hidden="true">
           {activeSubTab === "overview" && (
           <div className="space-y-6">
           {/* Simple Results List */}
@@ -2194,6 +2215,7 @@ export function ResultsTab({
               </div>
           </div>
           )}
+          </div>
         </div>
       )}
 

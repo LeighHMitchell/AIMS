@@ -15,6 +15,7 @@ import {
   FileText
 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { safeUsd } from "@/lib/safe-usd";
 
 interface OrganizationData {
   id: string;
@@ -26,6 +27,7 @@ interface OrganizationData {
   created_at: string;
   budgets?: Array<{
     value: number;
+    usd_value?: number;
     currency: string;
     status: string;
     period_start: string;
@@ -33,6 +35,7 @@ interface OrganizationData {
   }>;
   expenditures?: Array<{
     value: number;
+    usd_value?: number;
     currency: string;
     year: string;
   }>;
@@ -46,6 +49,8 @@ interface OrganizationData {
   }>;
   transactions?: Array<{
     value: number;
+    value_usd?: number;
+    currency?: string;
     transaction_type: string;
     transaction_date: string;
   }>;
@@ -64,16 +69,16 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
     const expenditures = organization.expenditures || [];
     const transactions = organization.transactions || [];
 
-    const totalBudget = budgets.reduce((sum, b) => sum + b.value, 0);
-    const totalExpenditure = expenditures.reduce((sum, e) => sum + e.value, 0);
-    
+    const totalBudget = budgets.reduce((sum, b) => sum + safeUsd(b), 0);
+    const totalExpenditure = expenditures.reduce((sum, e) => sum + safeUsd(e), 0);
+
     const commitments = transactions
       .filter(t => t.transaction_type === "2")
-      .reduce((sum, t) => sum + t.value, 0);
-    
+      .reduce((sum, t) => sum + safeUsd(t), 0);
+
     const disbursements = transactions
       .filter(t => t.transaction_type === "3")
-      .reduce((sum, t) => sum + t.value, 0);
+      .reduce((sum, t) => sum + safeUsd(t), 0);
 
     const executionRate = totalBudget > 0 ? (totalExpenditure / totalBudget) * 100 : 0;
     

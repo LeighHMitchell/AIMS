@@ -48,6 +48,7 @@ import { toast } from 'sonner'
 import type { ParsedActivity } from './types'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
 import { useHomeCountry } from '@/contexts/SystemSettingsContext'
+import { codeAndName } from '@/lib/iati/codelist-resolver'
 
 interface BulkPreviewStepProps {
   activities: ParsedActivity[]
@@ -971,10 +972,7 @@ export default function BulkPreviewStep({
                                         <td className="py-1 text-muted-foreground">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.collaborationType}</span>
                                           {' '}
-                                          {(() => {
-                                            const names: Record<string, string> = { '1': 'Bilateral', '2': 'Multilateral (inflows)', '3': 'Bilateral, core contributions', '4': 'Multilateral outflows', '6': 'Private sector outflows', '7': 'Bilateral, ex-post reporting', '8': 'Bilateral, triangular co-operation' }
-                                            return names[activity.collaborationType] || ''
-                                          })()}
+                                          {codeAndName('collaboration_type', activity.collaborationType).name || activity.collaborationType}
                                         </td>
                                       </tr>
                                     )}

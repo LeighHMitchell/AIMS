@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
     const { data: publishedActivitiesAll } = await supabase
       .from('activities')
       .select('id')
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
     const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
 
     // Fetch transactions with activity data to get default_modality

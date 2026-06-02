@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as d3 from 'd3'
 import { Button } from '@/components/ui/button'
 import { Info, Maximize2, Minimize2, X, ArrowRight, Shrink, Expand, Plus, Minus, RotateCcw } from 'lucide-react'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { getTransactionTypeColor, OTHERS_COLOR, TRANSACTION_TYPE_LABELS as CANONICAL_TRANSACTION_TYPE_LABELS } from '@/lib/chart-colors'
 
 // Plain-language definitions used in the badge hover tooltips. Centralised so
 // the same wording appears next to a "Recipient" badge in the popup header
@@ -135,6 +136,39 @@ export default function EnhancedAidFlowGraph({
       if (fresh && fresh !== selectedNode) setSelectedNode(fresh)
     }
   }, [graphData])
+
+  // Legend rows are derived from the transaction types ACTUALLY present in the
+  // current graph data, labelled + coloured through the canonical chart-colors
+  // source of truth — so every swatch matches its links exactly. Codes are
+  // shown in canonical 1→13 order; any link with no/unknown code adds an
+  // "Other" row using the neutral fallback colour.
+  const legendEntries = useMemo(() => {
+    const presentCodes = new Set<string>()
+    let hasUnknown = false
+    graphData.links.forEach(l => {
+      const code = l.transactionType
+      if (code && code in CANONICAL_TRANSACTION_TYPE_LABELS) {
+        presentCodes.add(String(code))
+      } else {
+        hasUnknown = true
+      }
+    })
+
+    const entries = Object.keys(CANONICAL_TRANSACTION_TYPE_LABELS)
+      .filter(code => presentCodes.has(code))
+      .sort((a, b) => Number(a) - Number(b))
+      .map(code => ({
+        code,
+        label: CANONICAL_TRANSACTION_TYPE_LABELS[code],
+        color: getTransactionTypeColor(code),
+      }))
+
+    if (hasUnknown) {
+      entries.push({ code: 'unknown', label: 'Other', color: OTHERS_COLOR })
+    }
+
+    return entries
+  }, [graphData.links])
 
   // Helper to get connection stats for a node
   const getNodeConnectionStats = (nodeId: string) => {
@@ -340,29 +374,32 @@ export default function EnhancedAidFlowGraph({
       return validNodeIds.has(sourceId) && validNodeIds.has(targetId)
     })
 
-    // Transaction type colors - based on custom palette
-    // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
+    // Link coloring resolves through the canonical 13-code IATI palette in
+    // chart-colors.ts (single source of truth), so distinct transaction types
+    // never collide and match the legend / every other chart. Unknown/empty
+    // codes fall back to the neutral "others" slate.
     const transactionTypeColors: Record<string, string> = {
-      '1': '#7b95a7',  // Incoming Funds - Cool Steel
-      '2': '#4c5568',  // Outgoing Commitment - Blue Slate
-      '3': '#dc2625',  // Disbursement - Primary Scarlet
-      '4': '#4c5568',  // Expenditure - Blue Slate
-      '5': '#cfd0d5',  // Interest Payment - Pale Slate
-      '6': '#cfd0d5',  // Loan Repayment - Pale Slate
-      '7': '#7b95a7',  // Reimbursement - Cool Steel
-      '8': '#4c5568',  // Purchase of Equity - Blue Slate
-      '9': '#7b95a7',  // Sale of Equity - Cool Steel
-      '10': '#cfd0d5', // Credit Guarantee - Pale Slate
-      '11': '#dc2625', // Incoming Funds - Primary Scarlet
-      '12': '#4c5568', // Outgoing Pledge - Blue Slate
-      '13': '#7b95a7', // Incoming Pledge - Cool Steel
-      'unknown': '#cfd0d5' // Unknown - Pale Slate
+      '1': getTransactionTypeColor('1'),
+      '2': getTransactionTypeColor('2'),
+      '3': getTransactionTypeColor('3'),
+      '4': getTransactionTypeColor('4'),
+      '5': getTransactionTypeColor('5'),
+      '6': getTransactionTypeColor('6'),
+      '7': getTransactionTypeColor('7'),
+      '8': getTransactionTypeColor('8'),
+      '9': getTransactionTypeColor('9'),
+      '10': getTransactionTypeColor('10'),
+      '11': getTransactionTypeColor('11'),
+      '12': getTransactionTypeColor('12'),
+      '13': getTransactionTypeColor('13'),
+      'unknown': OTHERS_COLOR,
     }
 
     // Get color for a link based on transaction type
     const getLinkColor = (link: GraphLink) => {
-      const txType = link.transactionType || 'unknown'
-      return transactionTypeColors[txType] || transactionTypeColors['unknown']
+      const txType = link.transactionType
+      if (!txType || !(txType in transactionTypeColors)) return OTHERS_COLOR
+      return getTransactionTypeColor(txType)
     }
 
     // Color scales (keep for backward compatibility)
@@ -936,30 +973,16 @@ export default function EnhancedAidFlowGraph({
               <span className="text-body font-medium">Transaction Types</span>
             </div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5" style={{ backgroundColor: '#7b95a7' }}></div>
-                <span className="text-helper">Incoming Commit.</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
-                <span className="text-helper">Outgoing Commit.</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
-                <span className="text-helper">Disbursement</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
-                <span className="text-helper">Expenditure</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
-                <span className="text-helper">Incoming Funds</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5" style={{ backgroundColor: '#cfd0d5' }}></div>
-                <span className="text-helper">Other</span>
-              </div>
+              {legendEntries.length === 0 ? (
+                <span className="text-helper text-muted-foreground col-span-2">No transactions</span>
+              ) : (
+                legendEntries.map(entry => (
+                  <div key={entry.code} className="flex items-center gap-2">
+                    <div className="w-4 h-0.5" style={{ backgroundColor: entry.color }}></div>
+                    <span className="text-helper">{entry.label}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

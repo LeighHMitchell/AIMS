@@ -41,6 +41,17 @@ function getSectorHierarchy(sectorCode: string): SectorHierarchy {
   return sectorHierarchyMap.get(sectorCode) || defaultHierarchy;
 }
 
+// Mirror the Financial Totals card's USD value resolution: prefer value_usd,
+// fall back to the raw value only when the transaction is already in USD.
+const txUsdValue = (t: { value_usd?: any; value?: any; currency?: any }): number =>
+  Number(t.value_usd) || (t.currency === 'USD' ? Number(t.value) || 0 : 0);
+
+// Sentinel code/name for the synthetic bucket holding disbursements (and other
+// metrics) that could not be attributed to any sector — either the activity has
+// no sector data, or its allocation percentages sum to under 100%.
+const UNALLOCATED_CODE = 'N/A';
+const UNALLOCATED_LABEL = 'Unallocated / No sector';
+
 // All 13 IATI transaction type codes — mirrors the metric set used by the
 // External Development Partners Financial Overview chart so both charts can
 // share the same metric dropdown UX.
@@ -88,7 +99,10 @@ export async function GET(request: NextRequest) {
 
     const customYear = await fetchCustomYearById(supabase, customYearId);
 
-    // Fetch all activities with their sectors
+    // Fetch all activities with their sectors.
+    // Restrict to published + non-deleted so the universe matches the
+    // Financial Totals card (canonical aggregation: published-only). This
+    // makes the "Unallocated" bucket below reconcile exactly with that card.
     let activitiesQuery = supabase
       .from('activities')
       .select(`
@@ -98,13 +112,13 @@ export async function GET(request: NextRequest) {
           sector_name,
           percentage
         )
-      `);
+      `)
+      .is('deleted_at', null)
+      .eq('publication_status', 'published');
 
     // Filter by organization if provided (where org is reporting org)
     if (organizationId) {
-      activitiesQuery = activitiesQuery
-        .eq('reporting_org_id', organizationId)
-        .eq('publication_status', 'published');
+      activitiesQuery = activitiesQuery.eq('reporting_org_id', organizationId);
     }
 
     const { data: activities, error: activitiesError } = await activitiesQuery;
@@ -181,7 +195,9 @@ export async function GET(request: NextRequest) {
       `)
       .in('activity_id', activityIds)
       .in('transaction_type', TX_TYPE_CODES as unknown as string[])
-      .eq('status', 'actual');
+      .eq('status', 'actual')
+      // Match the Financial Totals card: exclude soft-deleted transactions.
+      .is('deleted_at', null);
     // Exclude internal transfers (pooled fund flows). With all 13 types in
     // play, the helper applies both incoming and outgoing exclusions.
     const pooledFundIds = await getPooledFundIds(supabase);
@@ -232,6 +248,15 @@ export async function GET(request: NextRequest) {
       yearlyData: Map<number, YearMetrics>;
     }>();
 
+    // Grand total per year per metric, accumulated independently of sector
+    // tagging (same universe as the Financial Totals card). After processing,
+    // the residual `total − allocated-to-sectors` becomes the Unallocated
+    // bucket so the donut reconciles with that card.
+    const totalsByYear = new Map<number, YearMetrics>();
+    // Distinct activities that contributed any unallocated portion, so the
+    // Unallocated slice can show a meaningful activity count.
+    const unallocatedActivityIds = new Set<string>();
+
     const yearLabel = (year: number): string =>
       customYear ? getCustomYearLabel(customYear, year) : year.toString();
 
@@ -244,6 +269,15 @@ export async function GET(request: NextRequest) {
       if (!y) {
         y = makeEmptyYearMetrics(label);
         sectorEntry.yearlyData.set(year, y);
+      }
+      return y;
+    };
+
+    const getOrCreateTotalYear = (year: number, label: string): YearMetrics => {
+      let y = totalsByYear.get(year);
+      if (!y) {
+        y = makeEmptyYearMetrics(label);
+        totalsByYear.set(year, y);
       }
       return y;
     };
@@ -315,7 +349,7 @@ export async function GET(request: NextRequest) {
         if (!t || !t.transaction_date) continue;
         // Only activities WITHOUT declared activity_sectors need a derived mix.
         if (activitySectorsMap.has(t.activity_id)) continue;
-        const usd = Number(t.value_usd) || 0;
+        const usd = txUsdValue(t);
         const portion = usd * ((Number(line.percentage) || 0) / 100);
         if (portion <= 0) continue;
         const txDate = new Date(t.transaction_date);
@@ -402,13 +436,21 @@ export async function GET(request: NextRequest) {
       // Split each year's allocation by the activity's sectors for that year — declared
       // activity_sectors, or (for transaction-level activities) the transaction-derived mix.
       yearAllocations.forEach(allocation => {
+        // Full amount counts toward the grand total regardless of sector mix.
+        getOrCreateTotalYear(allocation.year, allocation.label).planned += allocation.amount;
+
         const sectors = getImputedSectors(pd.activity_id, allocation.year);
+        let allocatedShare = 0;
         sectors.forEach(sector => {
           const sectorData = sectorDataMap.get(sector.code);
           if (!sectorData) return;
+          allocatedShare += (sector.percentage || 0) / 100;
           const y = getOrCreateYear(sectorData, allocation.year, allocation.label);
           y.planned += allocation.amount * (sector.percentage / 100);
         });
+        if (allocation.amount > 0 && allocatedShare < 0.9999) {
+          unallocatedActivityIds.add(pd.activity_id);
+        }
       });
     });
 
@@ -422,13 +464,21 @@ export async function GET(request: NextRequest) {
       const yearAllocations = allocatePeriodAcrossYears(budget.period_start, budget.period_end, amount);
 
       yearAllocations.forEach(allocation => {
+        // Full amount counts toward the grand total regardless of sector mix.
+        getOrCreateTotalYear(allocation.year, allocation.label).budgets += allocation.amount;
+
         const sectors = getImputedSectors(budget.activity_id, allocation.year);
+        let allocatedShare = 0;
         sectors.forEach(sector => {
           const sectorData = sectorDataMap.get(sector.code);
           if (!sectorData) return;
+          allocatedShare += (sector.percentage || 0) / 100;
           const y = getOrCreateYear(sectorData, allocation.year, allocation.label);
           y.budgets += allocation.amount * (sector.percentage / 100);
         });
+        if (allocation.amount > 0 && allocatedShare < 0.9999) {
+          unallocatedActivityIds.add(budget.activity_id);
+        }
       });
     });
 
@@ -446,10 +496,15 @@ export async function GET(request: NextRequest) {
         ? getFiscalYearForDate(txDate, customYear)
         : txDate.getFullYear();
       const label = yearLabel(year);
-      const transactionValue = transaction.value_usd || 0;
+      const transactionValue = txUsdValue(transaction);
       const activitySectors = activitySectorsMap.get(transaction.activity_id) || [];
       const txKey = `tx_${code}` as keyof YearMetrics;
       const isActual = code === '3';
+
+      // Grand total for this metric/year, independent of sector attribution.
+      const totalYear = getOrCreateTotalYear(year, label);
+      (totalYear as any)[txKey] = ((totalYear as any)[txKey] || 0) + transactionValue;
+      if (isActual) totalYear.actual += transactionValue;
 
       // Check if this transaction has sector lines
       const sectorLines = transactionSectorLines.filter(
@@ -481,12 +536,20 @@ export async function GET(request: NextRequest) {
         else y.imputedUsd += portion;
       };
 
+      // Track how much of this transaction's value reached a sector. Anything
+      // short of 100% (no sector data, or percentages summing under 100) is the
+      // residual surfaced in the Unallocated bucket.
+      let allocatedShare = 0;
+
       if (sectorLines.length > 0) {
         // Sector taken from the transaction itself → actual
         sectorLines.forEach(line => {
-          applyToSector(line.sector_code, line.sector_name, (line.percentage || 0) / 100, 'actual');
+          const share = (line.percentage || 0) / 100;
+          allocatedShare += share;
+          applyToSector(line.sector_code, line.sector_name, share, 'actual');
         });
       } else if (transaction.sector_code) {
+        allocatedShare = 1;
         applyToSector(transaction.sector_code, 'Unknown Sector', 1, 'actual');
       } else {
         // Falling back to the activity-level split → imputed
@@ -494,10 +557,70 @@ export async function GET(request: NextRequest) {
           // Only contribute to sectors that the activity already declares —
           // matches the original logic which used `sectorDataMap.get` (no upsert).
           if (!sectorDataMap.has(sector.sector_code)) return;
-          applyToSector(sector.sector_code, sector.sector_name, (sector.percentage || 0) / 100, 'imputed');
+          const share = (sector.percentage || 0) / 100;
+          allocatedShare += share;
+          applyToSector(sector.sector_code, sector.sector_name, share, 'imputed');
         });
       }
+
+      if (transactionValue > 0 && allocatedShare < 0.9999) {
+        unallocatedActivityIds.add(transaction.activity_id);
+      }
     });
+
+    // ---- Unallocated bucket -------------------------------------------------
+    // Sum what actually reached sectors (per year, per metric), then surface the
+    // residual against the grand totals as a synthetic "Unallocated" sector so
+    // the donut total reconciles with the Financial Totals card. Computed BEFORE
+    // the sector filter and before adding the synthetic entry to sectorDataMap.
+    const allocatedByYear = new Map<number, YearMetrics>();
+    sectorDataMap.forEach((sd) => {
+      sd.yearlyData.forEach((y, year) => {
+        let a = allocatedByYear.get(year);
+        if (!a) { a = makeEmptyYearMetrics(y.label); allocatedByYear.set(year, a); }
+        for (const txc of TX_TYPE_CODES) {
+          const k = `tx_${txc}`;
+          (a as any)[k] += (y as any)[k] || 0;
+        }
+        a.actual += y.actual;
+        a.planned += y.planned;
+        a.budgets += y.budgets;
+      });
+    });
+
+    const UNALLOCATED_EPSILON = 0.005; // sub-cent rounding tolerance
+    const unallocatedYearly = new Map<number, YearMetrics>();
+    const residual = (total: number, allocated: number) => Math.max(0, total - allocated);
+    totalsByYear.forEach((tot, year) => {
+      const alloc = allocatedByYear.get(year);
+      const u = makeEmptyYearMetrics(tot.label);
+      let hasValue = false;
+      for (const txc of TX_TYPE_CODES) {
+        const k = `tx_${txc}`;
+        const v = residual((tot as any)[k] || 0, alloc ? (alloc as any)[k] || 0 : 0);
+        (u as any)[k] = v;
+        if (v > UNALLOCATED_EPSILON) hasValue = true;
+      }
+      u.actual = residual(tot.actual, alloc?.actual || 0);
+      u.planned = residual(tot.planned, alloc?.planned || 0);
+      u.budgets = residual(tot.budgets, alloc?.budgets || 0);
+      if (u.actual > UNALLOCATED_EPSILON || u.planned > UNALLOCATED_EPSILON || u.budgets > UNALLOCATED_EPSILON) {
+        hasValue = true;
+      }
+      if (hasValue) unallocatedYearly.set(year, u);
+    });
+
+    if (unallocatedYearly.size > 0) {
+      sectorDataMap.set(UNALLOCATED_CODE, {
+        sectorCode: UNALLOCATED_CODE,
+        sectorName: UNALLOCATED_LABEL,
+        groupCode: UNALLOCATED_CODE,
+        groupName: UNALLOCATED_LABEL,
+        categoryCode: UNALLOCATED_CODE,
+        categoryName: UNALLOCATED_LABEL,
+        yearlyData: unallocatedYearly,
+      });
+    }
 
     // Filter by sector if specified
     let resultSectors = Array.from(sectorDataMap.values());
@@ -514,6 +637,17 @@ export async function GET(request: NextRequest) {
       return out;
     };
 
+    const byGroup = countsFromSets(activitiesByGroup);
+    const byCategory = countsFromSets(activitiesByCategory);
+    const bySector = countsFromSets(activitiesBySector);
+    // Distinct count of activities with unallocated funding, mirrored across all
+    // three hierarchy levels (the Unallocated slice uses the same code at each).
+    if (unallocatedYearly.size > 0 && unallocatedActivityIds.size > 0) {
+      byGroup[UNALLOCATED_CODE] = unallocatedActivityIds.size;
+      byCategory[UNALLOCATED_CODE] = unallocatedActivityIds.size;
+      bySector[UNALLOCATED_CODE] = unallocatedActivityIds.size;
+    }
+
     // Convert to response format (with hierarchy info)
     const result = {
       sectors: resultSectors.map(sector => ({
@@ -528,9 +662,9 @@ export async function GET(request: NextRequest) {
           .sort((a, b) => a.year - b.year),
       })).filter(s => s.years.length > 0), // Only include sectors with data
       activityCounts: {
-        byGroup: countsFromSets(activitiesByGroup),
-        byCategory: countsFromSets(activitiesByCategory),
-        bySector: countsFromSets(activitiesBySector),
+        byGroup,
+        byCategory,
+        bySector,
       },
     };
 

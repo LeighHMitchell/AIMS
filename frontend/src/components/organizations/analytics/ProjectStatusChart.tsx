@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { getActivityStatusLabel } from '@/lib/activity-status-utils';
 
 interface StatusData {
   status: string;
@@ -14,39 +15,29 @@ interface ProjectStatusChartProps {
   data: StatusData[];
 }
 
+// Keyed on IATI activity_status codes (and lowercase label aliases)
 const STATUS_COLORS: { [key: string]: string } = {
-  '2': '#10b981', // Active - green
-  'active': '#10b981',
-  '1': '#3b82f6', // Pipeline - blue
+  '1': '#3b82f6', // Pipeline/Identification - blue
   'pipeline': '#3b82f6',
-  '3': '#6b7280', // Completed - gray
-  'completed': '#6b7280',
-  '4': '#ef4444', // Post-completion - gray
+  '2': '#10b981', // Implementation - green
+  'implementation': '#10b981',
+  '3': '#6b7280', // Finalisation - gray
+  'finalisation': '#6b7280',
+  '4': '#6b7280', // Closed - gray
+  'closed': '#6b7280',
   '5': '#ef4444', // Cancelled - red
   'cancelled': '#ef4444',
-  'suspended': '#f59e0b', // orange
-};
-
-const STATUS_LABELS: { [key: string]: string } = {
-  '1': 'Pipeline',
-  '2': 'Active',
-  '3': 'Completed',
-  '4': 'Post-Completion',
-  '5': 'Cancelled',
-  'pipeline': 'Pipeline',
-  'active': 'Active',
-  'completed': 'Completed',
-  'cancelled': 'Cancelled',
-  'suspended': 'Suspended',
+  '6': '#f59e0b', // Suspended - orange
+  'suspended': '#f59e0b',
 };
 
 export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
-  
+
   const chartData = data.map(item => ({
-    name: STATUS_LABELS[item.status] || item.status,
+    name: getActivityStatusLabel(item.status) || item.status,
     value: item.count,
     percentage: item.percentage,
-    fill: STATUS_COLORS[item.status] || '#9ca3af'
+    fill: STATUS_COLORS[String(item.status).toLowerCase()] || '#9ca3af'
   }));
 
   const CustomTooltip = ({ active, payload }: any) => {

@@ -299,3 +299,27 @@ export function getChartColor(index: number): string {
 export function getLighterColor(color: string, amount: number = 20): string {
   return `${color}${amount.toString(16).padStart(2, '0')}`
 }
+
+/**
+ * Excel-style "color scale" background for table conditional formatting.
+ *
+ * A single-hue intensity ramp (darker = larger) expressed as an *alpha tint of
+ * one hue* over the cell's own background — deliberately NOT an opaque color.
+ * Because the tint is semi-transparent over the theme-aware cell background, it
+ * adapts to light AND dark mode with no branching, and the (also theme-aware)
+ * foreground text stays legible since alpha is capped well below opaque.
+ *
+ * @param t normalized position in [0, 1] — 0 = column minimum, 1 = column maximum.
+ * @returns an `hsl(... / a)` string, or `'transparent'` for out-of-range input.
+ */
+export function getColorScaleBackground(t: number): string {
+  if (!Number.isFinite(t)) return 'transparent'
+  const clamped = Math.max(0, Math.min(1, t))
+  // 0.05 floor keeps the smallest value faintly tinted so the scale reads as a
+  // continuous ramp rather than "blank → colored"; 0.42 ceiling preserves the
+  // text-to-background contrast needed for readability in both themes.
+  const alpha = 0.05 + clamped * 0.37
+  // Blue (≈ tailwind blue-600) — a neutral "magnitude" hue that doesn't imply
+  // the good/bad judgement a red↔green scale would.
+  return `hsl(217 91% 50% / ${alpha.toFixed(3)})`
+}

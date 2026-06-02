@@ -856,7 +856,38 @@ export default function ActivityDetailPage() {
       const found = await fetchActivityWithCache(activityId)
       if (found) {
 
-          setActivity(found)
+          // Fallback: if no activity-level sectors are set, derive a value-weighted
+          // breakdown from this activity's transaction-level sectors so the Sectors
+          // tab isn't empty for transaction-level-only activities (e.g. CAPRED).
+          let activityData = found;
+          if (!found.sectors || found.sectors.length === 0) {
+            try {
+              const aggRes = await apiFetch(`/api/activities/${activityId}/aggregate-transaction-sectors`);
+              if (aggRes.ok) {
+                const aggJson = await aggRes.json();
+                if (aggJson?.success && Array.isArray(aggJson.sectors) && aggJson.sectors.length > 0) {
+                  activityData = {
+                    ...found,
+                    sectors: aggJson.sectors.map((s: any) => ({
+                      code: s.sector_code,
+                      sector_code: s.sector_code,
+                      name: s.sector_name,
+                      sector_name: s.sector_name,
+                      percentage: s.weighted_percentage,
+                      categoryCode: s.sector_code?.substring(0, 3),
+                      level: 'subsector',
+                      type: 'secondary',
+                    })),
+                    sectorsFromTransactions: true,
+                  };
+                }
+              }
+            } catch (e) {
+              console.error('[ActivityProfile] transaction-level sector fallback failed:', e);
+            }
+          }
+
+          setActivity(activityData)
           setBanner(found.banner || null)
           setBannerPosition(found.bannerPosition ?? 50)
           setSdgMappings(found.sdgMappings || [])
@@ -1193,7 +1224,7 @@ export default function ActivityDetailPage() {
     transactions.forEach((t: any) => {
       const type = t.transaction_type;
       if (type) {
-        const value = t.value_usd ?? t.value ?? 0;
+        const value = getTransactionUSDValueSync(t);
         transactionTypeBreakdown[type] = (transactionTypeBreakdown[type] || 0) + value;
       }
     });
@@ -2490,6 +2521,11 @@ export default function ActivityDetailPage() {
                   {/* Sector Allocation Visualization */}
                   {activity.sectors && activity.sectors.length > 0 ? (
                     <div className="space-y-6">
+                      {activity.sectorsFromTransactions && (
+                        <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-helper text-muted-foreground">
+                          No activity-level sectors are set for this activity. The breakdown below is derived from its transaction-level sectors (value-weighted by USD).
+                        </div>
+                      )}
                       {/* Sector Flow Visualization - Full Width */}
                       <Card>
                         <CardHeader>

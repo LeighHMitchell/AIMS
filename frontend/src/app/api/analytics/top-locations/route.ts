@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthOrVisitor } from '@/lib/auth';
+import { txUsd } from '@/lib/analytics-transaction-filters';
+import { safeUsd } from '@/lib/safe-usd';
 
 type MetricType = 'budgets' | 'disbursements' | 'commitments';
 
@@ -117,7 +119,7 @@ export async function GET(request: NextRequest) {
       // Get budgets from activity_budgets table
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
-        .select('activity_id, value_usd, value, period_start, period_end')
+        .select('activity_id, value_usd, value, currency, period_start, period_end')
         .in('activity_id', activityIds);
 
       if (budgetError) {
@@ -132,7 +134,7 @@ export async function GET(request: NextRequest) {
         if (dateFrom && budget.period_start && new Date(budget.period_start) < new Date(dateFrom)) return;
         if (dateTo && budget.period_end && new Date(budget.period_end) > new Date(dateTo)) return;
         
-        const budgetValue = parseFloat(budget.value_usd) || parseFloat(budget.value) || 0;
+        const budgetValue = safeUsd(budget);
         const regions = activityRegionMap.get(budget.activity_id) || [];
         
         regions.forEach(({ regionName, percentage }) => {
@@ -150,7 +152,7 @@ export async function GET(request: NextRequest) {
       
       const { data: transactionData, error: transError } = await supabase
         .from('transactions')
-        .select('activity_id, value_usd, value, transaction_type, transaction_date, status')
+        .select('activity_id, value_usd, value, currency, transaction_type, transaction_date, status')
         .in('activity_id', activityIds)
         .eq('transaction_type', transactionType)
         .eq('status', 'actual');
@@ -167,7 +169,7 @@ export async function GET(request: NextRequest) {
         if (dateFrom && trans.transaction_date && new Date(trans.transaction_date) < new Date(dateFrom)) return;
         if (dateTo && trans.transaction_date && new Date(trans.transaction_date) > new Date(dateTo)) return;
         
-        const transValue = parseFloat(trans.value_usd) || parseFloat(trans.value) || 0;
+        const transValue = txUsd(trans);
         const regions = activityRegionMap.get(trans.activity_id) || [];
         
         regions.forEach(({ regionName, percentage }) => {

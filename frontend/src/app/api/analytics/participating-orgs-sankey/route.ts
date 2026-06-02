@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { safeUsd } from '@/lib/safe-usd';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,13 +122,13 @@ export async function GET(request: Request) {
 
     const { data: budgetData } = await supabaseAdmin
       .from('activity_budgets')
-      .select('activity_id, value')
+      .select('activity_id, value, usd_value, currency')
       .in('activity_id', activityIds);
 
     // Create a map of activity_id to total budget
     const activityBudgetMap = new Map<string, number>();
     budgetData?.forEach((b: any) => {
-      const value = parseFloat(b.value?.toString() || '0') || 0;
+      const value = safeUsd(b);
       activityBudgetMap.set(
         b.activity_id,
         (activityBudgetMap.get(b.activity_id) || 0) + value

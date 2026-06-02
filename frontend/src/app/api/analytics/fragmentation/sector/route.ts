@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
         activity_sectors (sector_code, category_code, category_name, percentage),
         transactions!transactions_activity_id_fkey1 (value_usd, transaction_type, transaction_date, status)
       `)
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
 
     if (error) {
       console.error('[Sector Fragmentation API] Error:', error);

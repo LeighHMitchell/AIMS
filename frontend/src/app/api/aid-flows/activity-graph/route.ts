@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getRelationshipTypeName } from '@/data/iati-relationship-types';
+import { txUsd } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -161,7 +162,9 @@ export async function GET(request: NextRequest) {
           activity_date_start_planned,
           activity_date_end_planned
         `)
-        .in('id', Array.from(activityIds));
+        .in('id', Array.from(activityIds))
+        .eq('publication_status', 'published')
+        .is('deleted_at', null);
       
       if (actError) {
         console.error('[Activity Graph API] Error fetching activities:', actError);
@@ -186,14 +189,14 @@ export async function GET(request: NextRequest) {
     // Get transaction totals per activity
     const { data: transactionTotals, error: txError } = await supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value')
+      .select('activity_id, transaction_type, value, value_usd, currency')
       .in('activity_id', Array.from(activityIds))
       .in('transaction_type', ['2', '3', '4']);
     
     const activityTotals = new Map<string, { totalIn: number; totalOut: number }>();
     transactionTotals?.forEach((tx: any) => {
       const current = activityTotals.get(tx.activity_id) || { totalIn: 0, totalOut: 0 };
-      const value = parseFloat(tx.value) || 0;
+      const value = txUsd(tx);
       // Incoming funds (type 1) count as totalIn, others as totalOut
       if (tx.transaction_type === '1') {
         current.totalIn += value;
@@ -314,14 +317,14 @@ export async function GET(request: NextRequest) {
         // Get transaction totals for all activities
         const { data: allTransactionTotals } = await supabase
           .from('transactions')
-          .select('activity_id, transaction_type, value')
+          .select('activity_id, transaction_type, value, value_usd, currency')
           .in('activity_id', allActivityIds)
           .in('transaction_type', ['2', '3', '4']);
         
         const allActivityTotals = new Map<string, { totalIn: number; totalOut: number }>();
         allTransactionTotals?.forEach((tx: any) => {
           const current = allActivityTotals.get(tx.activity_id) || { totalIn: 0, totalOut: 0 };
-          const value = parseFloat(tx.value) || 0;
+          const value = txUsd(tx);
           if (tx.transaction_type === '1') {
             current.totalIn += value;
           } else {

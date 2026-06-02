@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getActivityStatusLabel } from '@/lib/activity-status-utils';
 
 interface ProjectTableData {
   id: string;
@@ -45,28 +46,20 @@ interface ProjectsTableProps {
 type SortField = 'title' | 'iati_identifier' | 'status' | 'sectors' | 'commitments' | 'disbursements';
 type SortDirection = 'asc' | 'desc';
 
-const STATUS_LABELS: { [key: string]: string } = {
-  '1': 'Pipeline',
-  '2': 'Active',
-  '3': 'Completed',
-  '4': 'Post-Completion',
-  '5': 'Cancelled',
-  'pipeline': 'Pipeline',
-  'active': 'Active',
-  'completed': 'Completed',
-  'cancelled': 'Cancelled',
-  'suspended': 'Suspended',
-};
-
+// Keyed on IATI activity_status codes (and lowercase label aliases)
 const STATUS_COLORS: { [key: string]: string } = {
-  '2': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
-  'active': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   '1': 'bg-blue-100 text-blue-800',
   'pipeline': 'bg-blue-100 text-blue-800',
+  '2': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
+  'implementation': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   '3': 'bg-muted text-foreground',
-  'completed': 'bg-muted text-foreground',
+  'finalisation': 'bg-muted text-foreground',
+  '4': 'bg-muted text-foreground',
+  'closed': 'bg-muted text-foreground',
   '5': 'bg-destructive/10 text-red-800',
   'cancelled': 'bg-destructive/10 text-red-800',
+  '6': 'bg-amber-100 text-amber-800',
+  'suspended': 'bg-amber-100 text-amber-800',
 };
 
 export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps) {
@@ -277,10 +270,10 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                       <TableCell>
                         <Badge
                           className={
-                            STATUS_COLORS[project.status] || 'bg-muted text-foreground'
+                            STATUS_COLORS[String(project.status).toLowerCase()] || 'bg-muted text-foreground'
                           }
                         >
-                          {STATUS_LABELS[project.status] || project.status}
+                          {getActivityStatusLabel(project.status) || project.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-body text-muted-foreground max-w-xs">

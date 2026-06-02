@@ -19,6 +19,7 @@ import { ChartDataTable } from '@/components/ui/chart-data-table'
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction'
 import { TRANSACTION_TYPE_COLORS } from '@/lib/chart-colors'
 import { cn } from '@/lib/utils'
+import { getTransactionUSDValueSync } from '@/lib/transaction-usd-helper'
 
 interface Transaction {
   transaction_date: string
@@ -27,6 +28,7 @@ interface Transaction {
   value_usd?: number
   usd_value?: number
   value_USD?: number
+  currency?: string
   /** Development partner that reported it (set by the analytics calendar wrapper). */
   provider?: string
   /** Org id (for the development-partner link) and activity id/name (for the activity link). */
@@ -578,15 +580,7 @@ export function TransactionCalendarHeatmap({ transactions, stats, showControls =
         dayData.transactions.push(transaction)
         dayData.count += 1
 
-        const usdValue = parseFloat(
-          String(
-            transaction.value_usd ||
-            transaction.usd_value ||
-            transaction.value_USD ||
-            transaction.value ||
-            0
-          )
-        ) || 0
+        const usdValue = getTransactionUSDValueSync(transaction)
 
         dayData.value += Math.abs(usdValue)
 
@@ -1076,7 +1070,7 @@ export function TransactionCalendarHeatmap({ transactions, stats, showControls =
           it and expands the SAME popup to the development partners — each links
           to the donor (org) and to the activity. Names wrap. */}
       {hoveredDay && tooltipPosition && (() => {
-        const usdOf = (t: Transaction) => Math.abs(parseFloat(String(t.value_usd ?? t.usd_value ?? t.value ?? 0)) || 0)
+        const usdOf = (t: Transaction) => Math.abs(getTransactionUSDValueSync(t))
         type Item = { provider: string; providerId?: string; activityId?: string; activityName?: string; count: number; value: number }
         const byType = new Map<string, { count: number; value: number; items: Map<string, Item> }>()
         hoveredDay.transactions.forEach((t) => {

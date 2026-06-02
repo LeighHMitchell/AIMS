@@ -25,7 +25,7 @@ export const TRANSACTION_ACRONYMS: Record<TransactionType, string> = {
   '2': 'C',    // Outgoing Commitment
   '3': 'D',    // Disbursement
   '4': 'E',    // Expenditure
-  '5': 'IP',   // Interest Payment
+  '5': 'IR',   // Interest Payment (legacy acronym: Interest Repayment)
   '6': 'LR',   // Loan Repayment
   '7': 'R',    // Reimbursement
   '8': 'PE',   // Purchase of Equity

@@ -249,7 +249,8 @@ type Activity = {
   saleOfEquity?: number;
   creditGuarantee?: number;
   incomingFunds?: number;
-  commitmentCancellation?: number;
+  outgoingPledge?: number;
+  incomingPledge?: number;
   inflows?: number;
   totalTransactions?: number;
   
@@ -2228,11 +2229,6 @@ const router = useRouter();
                             <ColumnHeaderText columnId="totalIncomingFunds">Incoming Funds</ColumnHeaderText>
                           </SortableTableHeader>
                         ),
-                        totalCommitmentCancellation: (
-                          <SortableTableHeader key="totalCommitmentCancellation" id="totalCommitmentCancellation" className="py-3 text-right min-w-[120px]">
-                            <ColumnHeaderText columnId="totalCommitmentCancellation">Commitment Cancellation</ColumnHeaderText>
-                          </SortableTableHeader>
-                        ),
                         totalOutgoingPledge: (
                           <SortableTableHeader key="totalOutgoingPledge" id="totalOutgoingPledge" className="py-3 text-right min-w-[120px]">
                             <ColumnHeaderText columnId="totalOutgoingPledge">Outgoing Pledge</ColumnHeaderText>
@@ -3132,11 +3128,6 @@ const router = useRouter();
                           totalIncomingFunds: (
 <td key="totalIncomingFunds" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingFunds || 0)}
-                        </td>
-                          ),
-                          totalCommitmentCancellation: (
-<td key="totalCommitmentCancellation" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
                         </td>
                           ),
                           totalOutgoingPledge: (

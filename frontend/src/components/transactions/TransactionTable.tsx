@@ -79,6 +79,7 @@ import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { formatCurrencyPrecise, formatDate as formatDateCanonical } from "@/lib/format";
+import { codeAndName } from "@/lib/iati/codelist-resolver";
 
 // Transaction type to icon mapping (IATI Standard v2.03)
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -1071,11 +1072,11 @@ export function TransactionTable({
                     })(),
                     aidType: (() => {
                       const code = transaction.effective_aid_type || transaction.aid_type;
-                      const label = AID_TYPE_LABELS[code]?.full || AID_TYPE_LABELS[code]?.short;
+                      const label = codeAndName('aid_type', code).name || AID_TYPE_LABELS[code]?.short;
                       return (
                         <td key="aidType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-body">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : codeAndName('aid_type', transaction.aid_type).name || transaction.aid_type}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );

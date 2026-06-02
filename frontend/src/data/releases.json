@@ -1,7 +1,23 @@
 {
-  "currentVersion": "4.0.1",
-  "narrativeSummary": "A maintenance update that polishes the 4.0.0 release. The ready-made reports got a consistency pass so their numbers, dates and columns line up the way you'd expect, and several Activity Editor tabs were tidied up for smoother editing. Plus refinements to transactions, sector allocation, and the financial overview. No new setup needed — everything just works a little more cleanly.",
+  "currentVersion": "4.0.2",
+  "narrativeSummary": "This update brings a new Results Framework for tracking outcomes and indicators, plus a broad consistency pass across the analytics dashboard and aid-flow visualisations. Charts, maps and the Sankey flow diagrams now share the same colours and number formatting wherever they appear, the activity profile and transaction views got a polish, and dozens of analytics endpoints were tidied behind the scenes for steadier, more reliable figures. Nothing new to set up — your data just reads more clearly and consistently across the whole platform.",
   "releases": [
+    {
+      "version": "4.0.2",
+      "date": "2026-06-02",
+      "narrativeSummary": "This update brings a new Results Framework for tracking outcomes and indicators, plus a broad consistency pass across the analytics dashboard and aid-flow visualisations. Charts, maps and the Sankey flow diagrams now share the same colours and number formatting wherever they appear, the activity profile and transaction views got a polish, and dozens of analytics endpoints were tidied behind the scenes for steadier, more reliable figures. Nothing new to set up — your data just reads more clearly and consistently across the whole platform.",
+      "changes": [
+        "<b>New Results Framework</b>",
+        "&nbsp;&nbsp;A new framework for laying out results, indicators and targets on an activity. Why it helps: you can capture what an activity is trying to achieve and track progress against it, all in one structured place.",
+        "<b>More consistent analytics & maps</b>",
+        "&nbsp;&nbsp;A consistency pass across the analytics dashboard, the aid-flow graph, the Sankey diagrams and the map. Colours and number formatting now match wherever a figure appears. Why it helps: less 'which colour is which?' and more confidence that the same number means the same thing on every screen.",
+        "&nbsp;&nbsp;Steadier figures from dozens of analytics endpoints (donors, sectors, fragmentation, finance type, modality, SDGs, locations and more). Why it helps: charts load with more reliable, comparable numbers.",
+        "<b>Activity & transaction polish</b>",
+        "&nbsp;&nbsp;Refinements to the activity profile, results views, transaction list and calendar, and the activity cards. Why it helps: cleaner, smoother day-to-day reviewing and editing.",
+        "<b>Behind the scenes</b>",
+        "&nbsp;&nbsp;Shared analytics helpers and transaction filters tidied for consistency. Why it helps: a more stable foundation, so figures stay consistent as the platform grows."
+      ]
+    },
     {
       "version": "4.0.1",
       "date": "2026-06-01",

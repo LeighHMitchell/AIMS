@@ -1,10 +1,13 @@
 import { GraphData, GraphNode, GraphLink } from '@/components/analytics/AidFlowNetworkGraph'
+import { txUsd } from '@/lib/analytics-transaction-filters'
 
 interface Transaction {
   id: string
   activity_id: string
   transaction_type: string
   value: number
+  value_usd?: number | string | null
+  currency?: string | null
   provider_org_id?: string
   receiver_org_id?: string
   provider_org_name?: string
@@ -74,7 +77,8 @@ export function buildAidFlowGraphData(
   const validTransactions = transactions.filter(t => {
     // Must have a value (allow negative values, just check it exists and meets minimum absolute value)
     if (t.value === null || t.value === undefined) return false
-    const absValue = Math.abs(parseFloat(t.value.toString()))
+    // USD-only: a non-USD row with no stored conversion resolves to 0 and is dropped.
+    const absValue = Math.abs(txUsd(t))
     if (absValue < minValue) return false
     
     // Must have at least one organization reference (ID or name)
@@ -100,8 +104,8 @@ export function buildAidFlowGraphData(
 
   // Process each transaction
   validTransactions.forEach(transaction => {
-    const value = parseFloat(transaction.value.toString())
-    
+    const value = txUsd(transaction)
+
     // Get provider info (prefer ID, fallback to name, then Unknown)
     let providerId = transaction.provider_org_id
     let providerName = transaction.provider_org_name
@@ -302,13 +306,15 @@ function mapTransactionTypeToFlowType(transactionType?: string): GraphLink['flow
   
   switch (transactionType) {
     case '1':
-      return 'commitment' // Incoming funds
+      return 'disbursement' // Incoming Funds — a movement of funds, not a commitment
     case '2':
-      return 'commitment'
+      return 'commitment' // Outgoing Commitment
+    case '11':
+      return 'commitment' // Incoming Commitment
     case '3':
-      return 'disbursement'
+      return 'disbursement' // Disbursement
     case '4':
-      return 'expenditure'
+      return 'expenditure' // Expenditure
     default:
       return 'disbursement'
   }

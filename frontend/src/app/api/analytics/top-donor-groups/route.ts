@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds, txUsd } from '@/lib/analytics-transaction-filters';
+import { safeUsd } from '@/lib/safe-usd';
 import { findParentGroup, INSTITUTIONAL_GROUPS } from '@/data/location-groups';
 
 export const dynamic = 'force-dynamic';
@@ -93,7 +94,8 @@ export async function GET(request: NextRequest) {
     const { data: publishedActivitiesAll } = await supabase
       .from('activities')
       .select('id')
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
     const publishedActivityIds = (publishedActivitiesAll || []).map((a: any) => a.id);
 
     // Step 1: Fetch all organizations with their country_represented
@@ -192,7 +194,7 @@ export async function GET(request: NextRequest) {
       // Get budgets from activity_budgets table
       const { data: budgetData, error: budgetError } = await supabase
         .from('activity_budgets')
-        .select('usd_value, value, activity_id, period_start, period_end')
+        .select('usd_value, value, currency, activity_id, period_start, period_end')
         .in('activity_id', publishedActivityIds);
 
       if (budgetError) {
@@ -205,7 +207,7 @@ export async function GET(request: NextRequest) {
         if (dateFrom && budget.period_start && new Date(budget.period_start) < new Date(dateFrom)) return;
         if (dateTo && budget.period_end && new Date(budget.period_end) > new Date(dateTo)) return;
 
-        const value = parseFloat(budget.usd_value?.toString() || budget.value?.toString() || '0') || 0;
+        const value = safeUsd({ usd_value: budget.usd_value, value: budget.value, currency: budget.currency });
         addToGroup(activityOrgMap.get(budget.activity_id), value, budget.activity_id, 'budgets');
       });
 
@@ -215,7 +217,7 @@ export async function GET(request: NextRequest) {
       // Get planned disbursements - aggregate by provider_org_id
       const { data: plannedData, error: plannedError } = await supabase
         .from('planned_disbursements')
-        .select('usd_amount, amount, period_start, period_end, provider_org_id, activity_id')
+        .select('usd_amount, amount, currency, period_start, period_end, provider_org_id, activity_id')
         .not('provider_org_id', 'is', null)
         .in('activity_id', publishedActivityIds);
 
@@ -229,7 +231,7 @@ export async function GET(request: NextRequest) {
         if (dateFrom && pd.period_start && new Date(pd.period_start) < new Date(dateFrom)) return;
         if (dateTo && pd.period_end && new Date(pd.period_end) > new Date(dateTo)) return;
 
-        const value = parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0;
+        const value = safeUsd({ usd_value: pd.usd_amount, amount: pd.amount, currency: pd.currency });
         addToGroup(pd.provider_org_id, value, pd.activity_id, 'planned');
       });
 
@@ -241,7 +243,7 @@ export async function GET(request: NextRequest) {
 
       let txQuery = supabase
         .from('transactions')
-        .select('value_usd, value, transaction_date, provider_org_id, activity_id, transaction_type')
+        .select('value_usd, value, currency, transaction_date, provider_org_id, activity_id, transaction_type')
         .in('transaction_type', txTypes)
         .eq('status', 'actual')
         .not('provider_org_id', 'is', null)
@@ -261,7 +263,7 @@ export async function GET(request: NextRequest) {
         if (dateFrom && tx.transaction_date && new Date(tx.transaction_date) < new Date(dateFrom)) return;
         if (dateTo && tx.transaction_date && new Date(tx.transaction_date) > new Date(dateTo)) return;
 
-        const value = parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0;
+        const value = txUsd(tx);
         addToGroup(tx.provider_org_id, value, tx.activity_id, `tx_${tx.transaction_type}`);
       });
     }

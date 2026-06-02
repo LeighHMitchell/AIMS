@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const endYear = searchParams.get('endYear')
     const organizationId = searchParams.get('organizationId')
     const groupByLevel = searchParams.get('groupByLevel') || '5' // Default to 5-digit
-    const publicationStatus = searchParams.get('publicationStatus') || 'all' // Default to all activities
+    const publicationStatus = searchParams.get('publicationStatus') || 'published' // Default to published activities
     if (!supabase) {
       return NextResponse.json(
         { success: false, error: 'Database connection not initialized' } as SectorAnalyticsResponse,
@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     let activitiesQuery = supabase
       .from('activities')
       .select('id, reporting_org_id')
+      .is('deleted_at', null)
 
     // Only filter by published status if explicitly requested
     if (publicationStatus === 'published') {

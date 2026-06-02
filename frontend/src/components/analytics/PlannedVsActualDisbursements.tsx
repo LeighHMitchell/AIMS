@@ -39,6 +39,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ChartDataTable } from '@/components/ui/chart-data-table'
+import { txUsd, getReportableActivityIds, getPooledFundIds, excludeInternalTransfers } from '@/lib/analytics-transaction-filters'
+import { safeUsd } from '@/lib/safe-usd'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -98,12 +100,19 @@ function PlannedVsActualDisbursementsInner({
         setLoading(true)
         setError(null)
 
+        // Canonical scoping: published & non-deleted activities only, and
+        // exclude internal pooled-fund transfers — mirrors FinancialTotalsBarChart.
+        const reportableIds = await getReportableActivityIds(supabase)
+        const pooledFundIds = await getPooledFundIds(supabase)
+
         // Fetch actual disbursements (transaction type 3)
         let disbursementsQuery = supabase
           .from('transactions')
-          .select('transaction_date, value, activity_id, provider_org_id')
+          .select('transaction_date, value, value_usd, currency, activity_id, provider_org_id')
           .eq('transaction_type', '3')
           .eq('status', 'actual')
+          .is('deleted_at', null)
+          .in('activity_id', reportableIds)
           .order('transaction_date', { ascending: true })
 
         // Fetch the full available span so the year picker reflects all years that have data.
@@ -116,6 +125,9 @@ function PlannedVsActualDisbursementsInner({
           disbursementsQuery = disbursementsQuery.eq('provider_org_id', filters.donor)
         }
 
+        // Exclude internal pooled-fund transfers (disbursements are outgoing).
+        disbursementsQuery = excludeInternalTransfers(disbursementsQuery, pooledFundIds, ['3'])
+
         const { data: disbursements, error: disbursementsError } = await disbursementsQuery
 
         if (disbursementsError) {
@@ -127,7 +139,8 @@ function PlannedVsActualDisbursementsInner({
         // Fetch planned disbursements
         let plannedQuery = supabase
           .from('planned_disbursements')
-          .select('period_start, amount, usd_amount, activity_id')
+          .select('period_start, amount, usd_amount, currency, activity_id')
+          .in('activity_id', reportableIds)
           .order('period_start', { ascending: true })
 
         // Fetch the full available span so the year picker reflects all years that have data.
@@ -152,7 +165,7 @@ function PlannedVsActualDisbursementsInner({
           if (isNaN(date.getTime())) return
 
           const dateKey = date.toISOString().split('T')[0]
-          const value = parseFloat(String(disbursement.value)) || 0
+          const value = txUsd(disbursement)
 
           if (!dateMap.has(dateKey)) {
             dateMap.set(dateKey, {
@@ -176,7 +189,7 @@ function PlannedVsActualDisbursementsInner({
           if (isNaN(date.getTime())) return
 
           const dateKey = date.toISOString().split('T')[0]
-          const value = parseFloat(String(planned.usd_amount || planned.amount)) || 0
+          const value = safeUsd({ usd_value: planned.usd_amount, amount: planned.amount, currency: planned.currency })
 
           if (!dateMap.has(dateKey)) {
             dateMap.set(dateKey, {

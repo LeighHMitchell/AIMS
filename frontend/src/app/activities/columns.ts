@@ -33,7 +33,8 @@ export type ActivityColumnId =
   | "totalSaleOfEquity"
   | "totalCreditGuarantee"
   | "totalIncomingFunds"
-  | "totalCommitmentCancellation"
+  | "totalOutgoingPledge"
+  | "totalIncomingPledge"
   // Publication status columns
   | "isPublished"
   | "isValidated"
@@ -139,7 +140,6 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "totalSaleOfEquity", label: "Sale of Equity", group: "transactionTypeTotals", defaultVisible: false, description: "Proceeds from equity sales in USD." },
   { id: "totalCreditGuarantee", label: "Credit Guarantee", group: "transactionTypeTotals", defaultVisible: false, description: "Value of credit guarantees provided in USD." },
   { id: "totalIncomingFunds", label: "Incoming Funds", group: "transactionTypeTotals", defaultVisible: false, description: "Total funds received from all sources in USD." },
-  { id: "totalCommitmentCancellation", label: "Commitment Cancellation", group: "transactionTypeTotals", defaultVisible: false, description: "Total commitment cancellations in USD." },
   { id: "totalOutgoingPledge", label: "Outgoing Pledge", group: "transactionTypeTotals", defaultVisible: false, description: "Pledges made to future funding in USD." },
   { id: "totalIncomingPledge", label: "Incoming Pledge", group: "transactionTypeTotals", defaultVisible: false, description: "Pledges received for future funding in USD." },
 

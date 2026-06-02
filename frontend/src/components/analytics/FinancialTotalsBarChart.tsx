@@ -289,6 +289,14 @@ export function FinancialTotalsBarChart({
   const [selectedFinanceTypeCodes, setSelectedFinanceTypeCodes] = useState<string[] | null>(null)
   const [selectedAidTypeCodes, setSelectedAidTypeCodes] = useState<string[] | null>(null)
   const [selectedPartnerKeys, setSelectedPartnerKeys] = useState<string[] | null>(null)
+  // Whether the user has manually changed each filter. Until they do, the
+  // selection stays synced to "all available". This matters because the partner
+  // list arrives in two stages (transaction providers first, then activity
+  // reporting orgs); a one-shot seed would lock in only the first stage and
+  // silently drop Budgets/Planned Disbursements for the later-arriving partners.
+  const [financeTouched, setFinanceTouched] = useState(false)
+  const [aidTouched, setAidTouched] = useState(false)
+  const [partnerTouched, setPartnerTouched] = useState(false)
   // provider_org_id -> { name, acronym } for partners present in the
   // transactions (joined from organizations so the dropdown can show acronyms).
   const [partnerOrgs, setPartnerOrgs] = useState<Record<string, { name: string; acronym: string | null }>>({})
@@ -764,16 +772,19 @@ export function FinancialTotalsBarChart({
   // state is still null).
   useEffect(() => {
     if (!rawData) return
-    if (selectedFinanceTypeCodes === null && availableFinanceTypes.length > 0) {
+    // Keep each filter synced to "all available" until the user touches it, so
+    // partners (and types) that arrive in a later load stage are included rather
+    // than silently excluded.
+    if (!financeTouched && availableFinanceTypes.length > 0) {
       setSelectedFinanceTypeCodes(availableFinanceTypes.map(t => t.code))
     }
-    if (selectedAidTypeCodes === null && availableAidTypes.length > 0) {
+    if (!aidTouched && availableAidTypes.length > 0) {
       setSelectedAidTypeCodes(availableAidTypes.map(t => t.code))
     }
-    if (selectedPartnerKeys === null && availablePartners.length > 0) {
+    if (!partnerTouched && availablePartners.length > 0) {
       setSelectedPartnerKeys(availablePartners.map(p => p.key))
     }
-  }, [rawData, availableFinanceTypes, availableAidTypes, availablePartners, selectedFinanceTypeCodes, selectedAidTypeCodes, selectedPartnerKeys])
+  }, [rawData, availableFinanceTypes, availableAidTypes, availablePartners, financeTouched, aidTouched, partnerTouched])
 
   // Fetch acronyms for any org ids we haven't resolved yet so the partner
   // dropdown can show "Full Name (ACR)". Includes transaction provider orgs
@@ -807,18 +818,21 @@ export function FinancialTotalsBarChart({
   }, [rawData, activityReportingOrgs])
 
   const toggleFinanceType = (code: string) => {
+    setFinanceTouched(true)
     setSelectedFinanceTypeCodes(prev => {
       const cur = prev ?? availableFinanceTypes.map(t => t.code)
       return cur.includes(code) ? cur.filter(c => c !== code) : [...cur, code]
     })
   }
   const toggleAidType = (code: string) => {
+    setAidTouched(true)
     setSelectedAidTypeCodes(prev => {
       const cur = prev ?? availableAidTypes.map(t => t.code)
       return cur.includes(code) ? cur.filter(c => c !== code) : [...cur, code]
     })
   }
   const togglePartner = (key: string) => {
+    setPartnerTouched(true)
     setSelectedPartnerKeys(prev => {
       const cur = prev ?? availablePartners.map(p => p.key)
       return cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key]
@@ -1164,8 +1178,12 @@ export function FinancialTotalsBarChart({
                       style={{ backgroundColor: entry.color }}
                     />
                     {(() => {
-                      const codeMap: Record<string, string> = { 'Incoming Funds': '1', 'Outgoing Commitments': '2', 'Commitments': '2', 'Disbursements': '3', 'Expenditures': '4', 'Credit Guarantee': '10', 'Incoming Commitments': '11', 'Disbursement': '3' }
-                      const code = codeMap[entry.name]
+                      // Resolve the IATI code from the single source of truth
+                      // (TRANSACTION_TYPES) so every type — including 12/13
+                      // pledges — shows its badge. Strip any stack-by suffix
+                      // (e.g. "Incoming Pledges — World Bank") before lookup.
+                      const baseName = String(entry.name || '').split(DISAGG_SEP)[0]
+                      const code = NAME_TO_CODE[baseName]
                       return code ? <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">{code}</code> : null
                     })()}
                     <span className="text-foreground">{entry.name}</span>
@@ -1675,13 +1693,13 @@ export function FinancialTotalsBarChart({
                 <span className="text-helper font-semibold text-foreground">Finance Types</span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSelectedFinanceTypeCodes(availableFinanceTypes.map(t => t.code))}
+                    onClick={() => { setFinanceTouched(true); setSelectedFinanceTypeCodes(availableFinanceTypes.map(t => t.code)) }}
                     className="text-xs font-medium text-primary hover:text-primary/80 px-1.5 py-0.5 rounded hover:bg-muted"
                   >
                     Select all
                   </button>
                   <button
-                    onClick={() => setSelectedFinanceTypeCodes([])}
+                    onClick={() => { setFinanceTouched(true); setSelectedFinanceTypeCodes([]) }}
                     className="text-xs font-medium text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
                   >
                     Clear
@@ -1728,13 +1746,13 @@ export function FinancialTotalsBarChart({
                 <span className="text-helper font-semibold text-foreground">Aid Types</span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSelectedAidTypeCodes(availableAidTypes.map(t => t.code))}
+                    onClick={() => { setAidTouched(true); setSelectedAidTypeCodes(availableAidTypes.map(t => t.code)) }}
                     className="text-xs font-medium text-primary hover:text-primary/80 px-1.5 py-0.5 rounded hover:bg-muted"
                   >
                     Select all
                   </button>
                   <button
-                    onClick={() => setSelectedAidTypeCodes([])}
+                    onClick={() => { setAidTouched(true); setSelectedAidTypeCodes([]) }}
                     className="text-xs font-medium text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
                   >
                     Clear
@@ -1782,13 +1800,13 @@ export function FinancialTotalsBarChart({
                 <span className="text-helper font-semibold text-foreground">Development Partners</span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSelectedPartnerKeys(availablePartners.map(p => p.key))}
+                    onClick={() => { setPartnerTouched(true); setSelectedPartnerKeys(availablePartners.map(p => p.key)) }}
                     className="text-xs font-medium text-primary hover:text-primary/80 px-1.5 py-0.5 rounded hover:bg-muted"
                   >
                     Select all
                   </button>
                   <button
-                    onClick={() => setSelectedPartnerKeys([])}
+                    onClick={() => { setPartnerTouched(true); setSelectedPartnerKeys([]) }}
                     className="text-xs font-medium text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
                   >
                     Clear

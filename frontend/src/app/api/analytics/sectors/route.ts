@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
     const { data: publishedActivities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select('id')
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
 
     if (activitiesError) {
       console.error('Error fetching published activities:', activitiesError);

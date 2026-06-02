@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { safeUsd } from '@/lib/safe-usd';
 import { SDG_GOALS } from '@/data/sdg-targets'
 
 // Force dynamic rendering
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
         publication_status
       `)
       .eq('publication_status', 'published')
+      .is('deleted_at', null)
 
     // Apply organization filter
     if (organizationId && organizationId !== 'all') {
@@ -135,11 +137,11 @@ export async function GET(request: NextRequest) {
         .in('activity_id', activityIds),
       supabase
         .from('activity_budgets')
-        .select('activity_id, value, usd_value, period_start, period_end')
+        .select('activity_id, value, usd_value, currency, period_start, period_end')
         .in('activity_id', activityIds),
       supabase
         .from('planned_disbursements')
-        .select('activity_id, value, usd_amount, period_start, period_end')
+        .select('activity_id, value, usd_amount, currency, period_start, period_end')
         .in('activity_id', activityIds)
     ])
 
@@ -247,13 +249,13 @@ export async function GET(request: NextRequest) {
         
         // Sum budgets (use USD value if available, otherwise convert)
         const activityBudget = budgets.reduce((sum: number, b: any) => {
-          const value = parseFloat(b.usd_value) || parseFloat(b.value) || 0
+          const value = safeUsd({ usd_value: b.usd_value, value: b.value, currency: b.currency })
           return sum + (isNaN(value) ? 0 : value)
         }, 0)
 
         // Sum planned disbursements
         const activityPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => {
-          const value = parseFloat(pd.usd_amount) || parseFloat(pd.value) || 0
+          const value = safeUsd({ usd_value: pd.usd_amount, value: pd.value, currency: pd.currency })
           return sum + (isNaN(value) ? 0 : value)
         }, 0)
 
@@ -328,12 +330,12 @@ export async function GET(request: NextRequest) {
         const plannedDisbursements = activity.planned_disbursements || []
         
         const activityBudget = budgets.reduce((sum: number, b: any) => {
-          const value = parseFloat(b.usd_value) || parseFloat(b.value) || 0
+          const value = safeUsd({ usd_value: b.usd_value, value: b.value, currency: b.currency })
           return sum + (isNaN(value) ? 0 : value)
         }, 0)
 
         const activityPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => {
-          const value = parseFloat(pd.usd_amount) || parseFloat(pd.value) || 0
+          const value = safeUsd({ usd_value: pd.usd_amount, value: pd.value, currency: pd.currency })
           return sum + (isNaN(value) ? 0 : value)
         }, 0)
 

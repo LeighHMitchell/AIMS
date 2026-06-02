@@ -1,5 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { safeUsd } from '@/lib/safe-usd';
+import { txUsd } from '@/lib/analytics-transaction-filters';
 import type {
   CoordinationLevel,
   CoordinationMeasure,
@@ -168,7 +170,8 @@ export async function GET(request: NextRequest) {
     const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id, default_aid_type, default_finance_type, reporting_org_id')
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
 
     if (activitiesError) {
       console.error('[coordination] activities query failed:', activitiesError);
@@ -278,7 +281,7 @@ export async function GET(request: NextRequest) {
         const code = m.slice(3);
         const { data: txs, error: txError } = await supabase
           .from('transactions')
-          .select('activity_id, value, value_usd, transaction_date, transaction_type, aid_type, finance_type')
+          .select('activity_id, value, value_usd, currency, transaction_date, transaction_type, aid_type, finance_type')
           .in('activity_id', activityIds)
           .eq('transaction_type', code);
         if (txError) {
@@ -294,14 +297,14 @@ export async function GET(request: NextRequest) {
           const effFin = t.finance_type || defaults?.finance || null;
           if (hasAidTypeFilter && (!effAid || !aidTypeFilter.has(String(effAid)))) return;
           if (hasFinanceTypeFilter && (!effFin || !financeTypeFilter.has(String(effFin)))) return;
-          const v = num(t.value_usd) || num(t.value);
+          const v = txUsd(t);
           if (v <= 0) return;
           activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
         });
       } else if (m === 'budgets') {
         const { data: budgets, error: budgetsError } = await supabase
           .from('activity_budgets')
-          .select('activity_id, value, usd_value, period_start, period_end')
+          .select('activity_id, value, usd_value, currency, period_start, period_end')
           .in('activity_id', activityIds);
         if (budgetsError) {
           console.error('[coordination] activity_budgets query failed:', budgetsError);
@@ -310,7 +313,7 @@ export async function GET(request: NextRequest) {
           const defaults = activityDefaults.get(b.activity_id);
           if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
           if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
-          const raw = num(b.usd_value) || num(b.value);
+          const raw = safeUsd({ usd_value: b.usd_value, value: b.value, currency: b.currency });
           if (raw <= 0) return;
           const ps = b.period_start ? new Date(b.period_start) : null;
           const pe = b.period_end ? new Date(b.period_end) : null;
@@ -322,7 +325,7 @@ export async function GET(request: NextRequest) {
         // planned_disbursements uses `amount` / `usd_amount` (not value / usd_value).
         const { data: pds, error: pdError } = await supabase
           .from('planned_disbursements')
-          .select('activity_id, amount, usd_amount, period_start, period_end')
+          .select('activity_id, amount, usd_amount, currency, period_start, period_end')
           .in('activity_id', activityIds);
         if (pdError) {
           console.error('[coordination] planned_disbursements query failed:', pdError);
@@ -331,7 +334,7 @@ export async function GET(request: NextRequest) {
           const defaults = activityDefaults.get(pd.activity_id);
           if (hasAidTypeFilter && (!defaults?.aid || !aidTypeFilter.has(String(defaults.aid)))) return;
           if (hasFinanceTypeFilter && (!defaults?.finance || !financeTypeFilter.has(String(defaults.finance)))) return;
-          const raw = num(pd.usd_amount) || num(pd.amount);
+          const raw = safeUsd({ usd_value: pd.usd_amount, amount: pd.amount, currency: pd.currency });
           if (raw <= 0) return;
           const ps = pd.period_start ? new Date(pd.period_start) : null;
           const pe = pd.period_end ? new Date(pd.period_end) : null;
@@ -346,7 +349,7 @@ export async function GET(request: NextRequest) {
       // Use disbursements for the dollar component; the average is computed per bucket below.
       const { data: txs } = await supabase
         .from('transactions')
-        .select('activity_id, value, value_usd, transaction_date, transaction_type, aid_type, finance_type')
+        .select('activity_id, value, value_usd, currency, transaction_date, transaction_type, aid_type, finance_type')
         .in('activity_id', activityIds)
         .eq('transaction_type', '3');
       (txs || []).forEach((t: any) => {
@@ -358,7 +361,7 @@ export async function GET(request: NextRequest) {
         const effFin = t.finance_type || defaults?.finance || null;
         if (hasAidTypeFilter && (!effAid || !aidTypeFilter.has(String(effAid)))) return;
         if (hasFinanceTypeFilter && (!effFin || !financeTypeFilter.has(String(effFin)))) return;
-        const v = num(t.value_usd) || num(t.value);
+        const v = txUsd(t);
         if (v <= 0) return;
         activityValue.set(t.activity_id, (activityValue.get(t.activity_id) || 0) + v);
       });

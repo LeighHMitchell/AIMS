@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
+import { txUsd } from "@/lib/analytics-transaction-filters";
 import { LoadingText } from "@/components/ui/loading-text";
 import {
   ResponsiveContainer,
@@ -190,7 +191,7 @@ export default function PartnerProfilePage() {
           const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[t.type] || t.type;
           
           if (t.providerOrg === partner.name && normalizedType === "2" && t.status === "actual") {
-            totalFunding += t.value;
+            totalFunding += txUsd(t);
           }
         });
       }
@@ -445,7 +446,7 @@ export default function PartnerProfilePage() {
                                 const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[t.type] || t.type;
                                 if (t.providerOrg === partner?.name && normalizedType === "2" && t.status === "actual" && t.date) {
                                   const year = new Date(t.date).getFullYear();
-                                  fundingByYear[year] = (fundingByYear[year] || 0) + t.value;
+                                  fundingByYear[year] = (fundingByYear[year] || 0) + txUsd(t);
                                 }
                               });
                             }

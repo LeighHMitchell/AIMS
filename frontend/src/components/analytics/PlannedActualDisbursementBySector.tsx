@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { getCategoryInfo, getSectorInfo } from '@/lib/dac-sector-utils'
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -111,86 +112,33 @@ interface PlannedActualDisbursementBySectorProps {
 // Top N sectors to show before "All Other Sectors"
 const TOP_SECTORS_COUNT = 10
 
-// DAC 5-digit sector category names (1-digit level)
-const SECTOR_CATEGORIES: Record<string, string> = {
-  '1': 'Social Infrastructure & Services',
-  '2': 'Economic Infrastructure & Services',
-  '3': 'Production Sectors',
-  '4': 'Multi-Sector',
-  '5': 'Commodity Aid & General Program Assistance',
-  '6': 'Action Relating to Debt',
-  '7': 'Humanitarian Aid',
-  '9': 'Unallocated / Unspecified',
-  '0': 'Admin Costs of Donors'
-}
-
-// DAC 3-digit sector names
-const SECTOR_NAMES: Record<string, string> = {
-  '110': 'Education',
-  '111': 'Education, Level Unspecified',
-  '112': 'Basic Education',
-  '113': 'Secondary Education',
-  '114': 'Post-Secondary Education',
-  '120': 'Health',
-  '121': 'Health, General',
-  '122': 'Basic Health',
-  '123': 'Non-communicable Diseases',
-  '130': 'Population & Reproductive Health',
-  '140': 'Water Supply & Sanitation',
-  '150': 'Government & Civil Society',
-  '151': 'Government & Civil Society, General',
-  '152': 'Conflict, Peace & Security',
-  '160': 'Other Social Infrastructure',
-  '210': 'Transport & Storage',
-  '220': 'Communications',
-  '230': 'Energy',
-  '231': 'Energy Policy',
-  '232': 'Energy Generation, Renewable',
-  '233': 'Energy Generation, Non-Renewable',
-  '234': 'Hybrid Energy Plants',
-  '235': 'Nuclear Energy Plants',
-  '236': 'Energy Distribution',
-  '240': 'Banking & Financial Services',
-  '250': 'Business & Other Services',
-  '310': 'Agriculture, Forestry & Fishing',
-  '311': 'Agriculture',
-  '312': 'Forestry',
-  '313': 'Fishing',
-  '320': 'Industry, Mining & Construction',
-  '321': 'Industry',
-  '322': 'Mineral Resources & Mining',
-  '323': 'Construction',
-  '330': 'Trade Policies & Regulations',
-  '331': 'Trade Policies & Regulations',
-  '332': 'Tourism',
-  '410': 'General Environment Protection',
-  '430': 'Other Multisector',
-  '510': 'General Budget Support',
-  '520': 'Food Aid/Food Security',
-  '530': 'Other Commodity Assistance',
-  '600': 'Action Relating to Debt',
-  '720': 'Emergency Response',
-  '730': 'Reconstruction & Rehabilitation',
-  '740': 'Disaster Prevention & Preparedness',
-  '910': 'Administrative Costs of Donors',
-  '920': 'Support to NGOs',
-  '930': 'Refugees in Donor Countries',
-  '998': 'Unallocated/Unspecified'
-}
-
-// Helper to get parent sector info from a sector code
+// Helper to get parent sector info from a sector code.
+// Names resolve through the full DAC helpers (getCategoryInfo for the 3-digit
+// DAC category, getSectorInfo for the 5-digit sub-sector). When the helper has
+// no match we fall back to the raw code itself — never a generic "Unknown" —
+// so any plotted code stays legible.
 const getParentSectorInfo = (sectorCode: string) => {
   const code = sectorCode.toString()
-  // First digit is always the category code (no padding needed)
+  // First digit is the DAC top-level group code (no helper coverage; fall back
+  // to the digit itself rather than a generic placeholder).
   const categoryCode = code.substring(0, 1)
-  // First 3 digits are the sector code (if available)
+  // First 3 digits are the DAC category code (if available)
   const sectorCodePrefix = code.length >= 3 ? code.substring(0, 3) : code
+
+  // getCategoryInfo keys off the first 3 digits of the code → DAC category name.
+  const categoryName = getCategoryInfo(categoryCode)?.name || categoryCode
+  // Prefer the 3-digit DAC category name; for full 5-digit codes also try the
+  // exact sub-sector. Fall back to the raw 3-digit prefix.
+  const sectorName =
+    getCategoryInfo(sectorCodePrefix)?.name ||
+    getSectorInfo(sectorCodePrefix)?.name ||
+    sectorCodePrefix
 
   return {
     categoryCode,
-    categoryName: SECTOR_CATEGORIES[categoryCode] || 'Unknown Category',
+    categoryName,
     sectorCodePrefix,
-    sectorName: SECTOR_NAMES[sectorCodePrefix] || 'Unknown Sector'
+    sectorName
   }
 }
 

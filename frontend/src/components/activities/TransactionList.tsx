@@ -96,10 +96,11 @@ import { apiFetch } from '@/lib/api-fetch';
 import { formatCurrencyPrecise } from '@/lib/format';
 import { FullPagination } from "@/components/ui/full-pagination";
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
+import { INCOMING_TYPES } from "@/lib/analytics-transaction-filters";
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
-  '1': 'A firm written obligation from a development partner to provide a specified amount of funds, under particular terms and conditions.',
+  '1': 'Funds received for use on the activity, which can be from any source.',
   '2': 'A firm written obligation to provide a specified amount of funds under particular financial terms and conditions.',
   '3': 'Money moved from the development partner to an implementing organization.',
   '4': 'Outgoing funds that are spent on goods and services for the activity.',
@@ -108,9 +109,10 @@ const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
   '7': 'A transaction that covers costs already incurred by the organization.',
   '8': 'Outgoing funds that are used to purchase equity in a business.',
   '9': 'Incoming funds from the sale of equity.',
-  '11': 'A commitment made by a funding organization to underwrite a loan or other financial instrument.',
-  '12': 'Funds received for use on the activity, which can be from any source.',
-  '13': 'Cancellation of a commitment.'
+  '10': 'A commitment to underwrite a loan or other financial instrument against default by the borrower.',
+  '11': 'A firm written obligation from a development partner to provide a specified amount of funds to the activity, under particular terms and conditions.',
+  '12': 'An indication of an intended outgoing commitment that is not legally binding.',
+  '13': 'An indication of an intended incoming commitment that is not legally binding.'
 };
 
 // Column configuration for the activity transaction list
@@ -581,7 +583,7 @@ export default function TransactionList({
       const type = t.transaction_type;
       
       // Incoming vs Outgoing
-      if (['1', '12'].includes(type)) {
+      if (INCOMING_TYPES.includes(String(type))) {
         stats.totalIncoming += amount;
       } else {
         stats.totalOutgoing += amount;
@@ -1047,7 +1049,7 @@ export default function TransactionList({
   };
 
   const getTransactionTypeColor = (type: string) => {
-    const isIncoming = ['1', '12'].includes(type);
+    const isIncoming = INCOMING_TYPES.includes(String(type));
     return isIncoming ? 'text-[hsl(var(--success-icon))]' : 'text-blue-600';
   };
 

@@ -79,9 +79,6 @@ export async function GET(request: NextRequest) {
       if (!value && b.currency === 'USD' && b.value) {
         value = parseFloat(String(b.value)) || 0
       }
-      if (!value && b.value) {
-        value = parseFloat(String(b.value)) || 0
-      }
       return sum + value
     }, 0)
 
@@ -168,9 +165,6 @@ export async function GET(request: NextRequest) {
         // Get USD value (value_usd field from transactions table)
         let value = parseFloat(String(t.value_usd)) || 0
         if (!value && t.currency === 'USD' && t.value) {
-          value = parseFloat(String(t.value)) || 0
-        }
-        if (!value && t.value) {
           value = parseFloat(String(t.value)) || 0
         }
 

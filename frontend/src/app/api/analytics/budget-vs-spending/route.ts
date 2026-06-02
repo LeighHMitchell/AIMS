@@ -53,10 +53,12 @@ export async function GET(request: NextRequest) {
           transaction_type,
           value_usd,
           transaction_date,
+          status,
           receiver_activity_uuid
         )
       `)
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
 
     const { data: activities, error: activitiesError } = await activitiesQuery;
 
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
     const { data: budgetData, error: budgetError } = await supabaseAdmin
       .from('activity_budgets')
       .select('*')
+      .is('deleted_at', null)
       .order('period_start');
 
     if (budgetError) {
@@ -156,6 +159,9 @@ export async function GET(request: NextRequest) {
     activities?.forEach((activity: any) => {
       // Process transactions - use transaction date, not activity start date (USD only)
       activity.transactions?.forEach((transaction: any) => {
+        // Only count actual (not draft) transactions.
+        if (transaction.status !== 'actual') return;
+
         // Exclude internal transfers (pooled fund flows) to avoid double-counting
         if (transaction.receiver_activity_uuid) return;
 

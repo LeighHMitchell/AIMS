@@ -1610,7 +1610,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               },
               {
                 key: 'type',
-                label: 'Type',
+                label: 'Organisation Type',
                 numeric: false,
                 format: (_v, row) =>
                   (row as any).type ? (
@@ -1618,7 +1618,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                       <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {(row as any).type}
                       </code>
-                      <span className="text-body text-muted-foreground">{(row as any).typeName}</span>
+                      <span className="text-body text-foreground">{(row as any).typeName}</span>
                     </span>
                   ) : '',
               },

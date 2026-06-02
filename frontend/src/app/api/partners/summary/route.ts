@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getSystemHomeCountryName } from '@/lib/system-settings';
+import { txUsd } from '@/lib/analytics-transaction-filters';
+import { safeUsd } from '@/lib/safe-usd';
 
 export const dynamic = 'force-dynamic';
 
@@ -252,7 +254,7 @@ export async function GET(request: NextRequest) {
     const disbursementTypeCodes = ['3', '4'];
     const { data: disbursementTransactions, error: disbursementError } = await supabase
       .from('transactions')
-      .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, transaction_date, value_usd, transaction_type')
+      .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, transaction_date, value_usd, currency, transaction_type')
       .in('transaction_type', disbursementTypeCodes);
 
     if (disbursementError) {
@@ -263,7 +265,7 @@ export async function GET(request: NextRequest) {
     // These are used for future years (year > currentYear)
     const { data: plannedDisbursements, error: plannedError } = await supabase
       .from('planned_disbursements')
-      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, amount, usd_amount, period_start');
+      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, amount, usd_amount, currency, period_start');
 
     if (plannedError) {
       console.error('[AIMS] Error fetching planned disbursements:', plannedError);
@@ -320,9 +322,8 @@ export async function GET(request: NextRequest) {
               const isProvider = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
               
               if (isProvider) {
-                // Use USD value if available, otherwise use original value
-                const transValue = trans.value_usd || trans.value;
-                const amount = (typeof transValue === 'number' && !isNaN(transValue)) ? transValue : 0;
+                // USD only: non-USD rows without a stored conversion contribute 0
+                const amount = txUsd(trans);
                 return sum + amount;
               }
               
@@ -347,9 +348,8 @@ export async function GET(request: NextRequest) {
               const isProvider = pd.provider_org_id === org.id || pd.provider_org_name === org.name;
               
               if (isProvider) {
-                // Use USD amount if available, otherwise use original amount
-                const pdValue = pd.usd_amount || pd.amount;
-                const amount = (typeof pdValue === 'number' && !isNaN(pdValue)) ? pdValue : 0;
+                // USD only: non-USD rows without a stored conversion contribute 0
+                const amount = safeUsd({ usd_value: pd.usd_amount, amount: pd.amount, currency: pd.currency });
                 return sum + amount;
               }
               

@@ -6,37 +6,8 @@ import { getValidationStatusLabel } from '@/lib/validation-status';
 import { Calendar, Clock, DollarSign, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { TIED_STATUS_LABELS } from '@/types/transaction';
-// Aid modality label mappings
-const AID_TYPE_LABELS: Record<string, string> = {
-  'A01': 'General budget support',
-  'A02': 'Sector budget support',
-  'B01': 'Core support to NGOs',
-  'B02': 'Core contributions to multilateral institutions',
-  'B03': 'Contributions to pooled programmes and funds',
-  'B04': 'Basket funds/pooled funding',
-  'C01': 'Project-type interventions',
-  'D01': 'Donor country personnel',
-  'D02': 'Other technical assistance',
-  'E01': 'Scholarships/training in donor country',
-  'E02': 'Imputed student costs',
-  'F01': 'Debt relief',
-  'G01': 'Administrative costs not included elsewhere',
-  'H01': 'Development awareness',
-  'H02': 'Refugees in donor countries'
-};
-
-const FLOW_TYPE_LABELS: Record<string, string> = {
-  '10': 'ODA',
-  '20': 'OOF',
-  '21': 'Non-export credit OOF',
-  '22': 'Officially supported export credits',
-  '30': 'Private Development Finance',
-  '35': 'Private Market',
-  '36': 'Private Foreign Direct Investment',
-  '37': 'Other Private Flows at Market Terms',
-  '40': 'Non flow',
-  '50': 'Other flows'
-};
+import { codeAndName } from '@/lib/iati/codelist-resolver';
+// Aid/flow type labels resolved from canonical IATI codelists via codeAndName().
 
 // Tied Status mappings imported from @/types/transaction
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
@@ -267,14 +238,14 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 <div className="bg-muted rounded-lg p-3 border">
                   <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Aid Type</div>
                   <div className="text-body text-foreground">
-                    {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
+                    {activity.default_aid_type ? (codeAndName('aid_type', activity.default_aid_type).name || activity.default_aid_type) : 'Not reported'}
                   </div>
                 </div>
                 
                 <div className="bg-muted rounded-lg p-3 border">
                   <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Flow Type</div>
                   <div className="text-body text-foreground">
-                    {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
+                    {activity.default_flow_type ? (codeAndName('flow_type', activity.default_flow_type).name || activity.default_flow_type) : 'Not reported'}
                   </div>
                 </div>
                 

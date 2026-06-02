@@ -66,7 +66,8 @@ export async function GET(request: NextRequest) {
           transaction_date
         )
       `)
-      .eq('publication_status', 'published');
+      .eq('publication_status', 'published')
+      .is('deleted_at', null);
 
     if (activitiesError) {
       console.error('Error fetching activities:', activitiesError);

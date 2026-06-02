@@ -1945,7 +1945,7 @@ export async function GET(request: NextRequest) {
         if (!activityTransactionMap.has(transaction.activity_id)) {
           activityTransactionMap.set(transaction.activity_id, {
             // Transaction type totals
-            incomingCommitments: 0,      // Type 1
+            incomingFunds: 0,            // Type 1
             commitments: 0,              // Type 2 (Outgoing Commitment)
             disbursements: 0,            // Type 3
             expenditures: 0,             // Type 4
@@ -1954,9 +1954,10 @@ export async function GET(request: NextRequest) {
             reimbursement: 0,            // Type 7
             purchaseOfEquity: 0,         // Type 8
             saleOfEquity: 0,             // Type 9
-            creditGuarantee: 0,          // Type 11
-            incomingFunds: 0,            // Type 12
-            commitmentCancellation: 0,   // Type 13
+            creditGuarantee: 0,          // Type 10
+            incomingCommitments: 0,      // Type 11
+            outgoingPledge: 0,           // Type 12
+            incomingPledge: 0,           // Type 13
             totalTransactions: 0,
             // Flow type totals
             flowTypeODA: 0,              // Flow Type 10
@@ -1979,7 +1980,7 @@ export async function GET(request: NextRequest) {
         // Map transaction types to summaries
         switch (transaction.transaction_type) {
           case '1':
-            summary.incomingCommitments += valueUsd;
+            summary.incomingFunds += valueUsd;
             break;
           case '2':
             summary.commitments += valueUsd;
@@ -2005,14 +2006,17 @@ export async function GET(request: NextRequest) {
           case '9':
             summary.saleOfEquity += valueUsd;
             break;
-          case '11':
+          case '10':
             summary.creditGuarantee += valueUsd;
             break;
+          case '11':
+            summary.incomingCommitments += valueUsd;
+            break;
           case '12':
-            summary.incomingFunds += valueUsd;
+            summary.outgoingPledge += valueUsd;
             break;
           case '13':
-            summary.commitmentCancellation += valueUsd;
+            summary.incomingPledge += valueUsd;
             break;
         }
         

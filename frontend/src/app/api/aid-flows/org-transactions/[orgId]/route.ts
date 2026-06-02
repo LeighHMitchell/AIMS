@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { txUsd, getReportableActivityIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ interface TransactionData {
   transaction_type: string;
   transaction_date: string;
   value: string;
+  value_usd?: string | number | null;
   currency: string;
   status: string;
   description?: string;
@@ -53,6 +55,21 @@ export async function GET(
       );
     }
     
+    // Restrict to reportable activities (published, not soft-deleted).
+    const reportableActivityIds = await getReportableActivityIds(supabase);
+    if (reportableActivityIds.length === 0) {
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, organization_type, country')
+        .eq('id', orgId)
+        .single();
+      return NextResponse.json({
+        organization: orgData,
+        transactions: [],
+        summary: { totalInflow: 0, totalOutflow: 0, transactionCount: 0, uniquePartners: 0 },
+      });
+    }
+
     // Build query for transactions where org is either provider or receiver
     let query = supabase
       .from('transactions')
@@ -62,6 +79,7 @@ export async function GET(
         transaction_type,
         transaction_date,
         value,
+        value_usd,
         currency,
         status,
         description,
@@ -80,6 +98,7 @@ export async function GET(
         )
       `)
       .or(`provider_org_id.eq.${orgId},receiver_org_id.eq.${orgId}`)
+      .in('activity_id', reportableActivityIds)
       .order('transaction_date', { ascending: false })
       .limit(500);
     
@@ -115,7 +134,7 @@ export async function GET(
         activityRef: tx.activities?.iati_identifier,
       transactionType: tx.transaction_type,
       date: tx.transaction_date,
-      value: parseFloat(tx.value || '0'),
+      value: txUsd(tx),
       currency: tx.currency,
       status: tx.status,
       description: tx.description,

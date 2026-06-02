@@ -42,6 +42,7 @@ import {
 import { ChartDataTable } from '@/components/ui/chart-data-table'
 import { MetricsMultiSelect } from '@/components/analytics/MetricsMultiSelect'
 import { type Metric, metricColor } from '@/lib/financial-metrics'
+import { getReportableActivityIds, getPooledFundIds, excludeInternalTransfers } from '@/lib/analytics-transaction-filters'
 
 // Series this chart can render as separate cumulative lines. Order = display
 // order. `key` is the data key on each point, `code` the IATI tx code,
@@ -143,23 +144,32 @@ function CumulativeSpendingOverTimeInner({
           parseFloat(String(usd)) ||
           (currency === 'USD' ? parseFloat(String(raw)) || 0 : 0)
 
+        // Canonical scoping: published & non-deleted activities only, and
+        // exclude internal pooled-fund transfers — mirrors FinancialTotalsBarChart.
+        const reportableIds = await getReportableActivityIds(supabase)
+        const pooledFundIds = await getPooledFundIds(supabase)
+
         // Fetch all actual transactions (every IATI type), plus budgets and
         // planned disbursements, so any selected metric can be charted.
         let transactionsQuery = supabase
           .from('transactions')
           .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id')
           .eq('status', 'actual')
+          .is('deleted_at', null)
+          .in('activity_id', reportableIds)
           .order('transaction_date', { ascending: true })
 
         let budgetsQuery = supabase
           .from('activity_budgets')
           .select('period_start, value, usd_value, currency, activity_id')
           .not('period_start', 'is', null)
+          .in('activity_id', reportableIds)
 
         let plannedQuery = supabase
           .from('planned_disbursements')
           .select('period_start, amount, usd_amount, currency, activity_id')
           .not('period_start', 'is', null)
+          .in('activity_id', reportableIds)
 
         // Apply date range filter
         if (dateRange) {
@@ -178,6 +188,9 @@ function CumulativeSpendingOverTimeInner({
         if (filters?.donor) {
           transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
         }
+
+        // Exclude internal pooled-fund transfers (mixed tx types → both directions).
+        transactionsQuery = excludeInternalTransfers(transactionsQuery, pooledFundIds)
 
         const [{ data: transactions, error: transactionsError }, { data: budgets }, { data: planned }] =
           await Promise.all([transactionsQuery, budgetsQuery, plannedQuery])
