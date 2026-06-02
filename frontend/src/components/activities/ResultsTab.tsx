@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 import { useResults, useBaselines, useIndicators } from '@/hooks/use-results';
 import { supabase } from '@/lib/supabase';
@@ -1097,11 +1098,11 @@ export function ResultsTab({
                             }
                           }}
                         >
-                          <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+                          <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
                             <DialogHeader>
                               <DialogTitle>Edit Indicator</DialogTitle>
                             </DialogHeader>
-                            <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)]">
+                            <ScrollArea className="flex-1 min-h-0">
                               <div className="space-y-4 pr-4">
                                 {/* Title Editing */}
                                 <div className="space-y-2">
@@ -1153,7 +1154,7 @@ export function ResultsTab({
                                       }));
                                     }}
                                     placeholder="Select measure type..."
-                                    className="max-w-lg"
+                                    className="w-full"
                                   />
                                 </div>
 
@@ -1268,16 +1269,15 @@ export function ResultsTab({
 
                                   <div className="space-y-2">
                                     <Label className="text-body font-medium text-foreground">Baseline Date</Label>
-                                    <Input
-                                      type="date"
+                                    <DatePicker
                                       value={editingIndicatorValues.baseline_iso_date || ''}
-                                      onChange={(e) => {
+                                      onChange={(value) => {
                                         setEditingIndicatorValues(prev => ({
                                           ...prev,
-                                          baseline_iso_date: e.target.value
+                                          baseline_iso_date: value
                                         }));
                                       }}
-                                      className="text-body max-w-xs"
+                                      placeholder="Select baseline date"
                                     />
                                   </div>
 
@@ -2247,18 +2247,18 @@ export function ResultsTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-body font-medium text-foreground">Period Start</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={newPeriod.period_start}
-                  onChange={(e) => setNewPeriod(prev => ({ ...prev, period_start: e.target.value }))}
+                  onChange={(value) => setNewPeriod(prev => ({ ...prev, period_start: value }))}
+                  placeholder="Select period start"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-body font-medium text-foreground">Period End</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={newPeriod.period_end}
-                  onChange={(e) => setNewPeriod(prev => ({ ...prev, period_end: e.target.value }))}
+                  onChange={(value) => setNewPeriod(prev => ({ ...prev, period_end: value }))}
+                  placeholder="Select period end"
                 />
               </div>
             </div>

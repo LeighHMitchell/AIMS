@@ -62,14 +62,14 @@ export async function GET() {
 
     // Resolve activity IATI id + title for context
     const activityIds = Array.from(new Set(transactions.map(t => t.activity_id).filter(Boolean))) as string[]
-    const activityById = new Map<string, { iati: string; title: string }>()
+    const activityById = new Map<string, { iati: string; title: string; other: string }>()
     for (let i = 0; i < activityIds.length; i += PAGE_SIZE) {
       const slice = activityIds.slice(i, i + PAGE_SIZE)
       const { data: acts } = await supabase
         .from('activities')
-        .select('id, iati_identifier, title_narrative, acronym')
+        .select('id, other_identifier, iati_identifier, title_narrative, acronym')
         .in('id', slice)
-      acts?.forEach(a => activityById.set(a.id, { iati: a.iati_identifier || '', title: titleWithAcronym(a.title_narrative, a.acronym) }))
+      acts?.forEach(a => activityById.set(a.id, { iati: a.iati_identifier || '', title: titleWithAcronym(a.title_narrative, a.acronym), other: a.other_identifier || '' }))
     }
 
     const reportData = transactions.map(t => {
@@ -80,7 +80,8 @@ export async function GET() {
       const flow = safeCode('flow_type', t.flow_type ?? t.default_flow_type)
       const tied = safeCode('tied_status', t.tied_status ?? t.default_tied_status)
       return {
-        activity_iati_id: act?.iati || '',
+        activity_identifier: act?.other || '',
+        iati_identifier: act?.iati || '',
         activity_title: act?.title || '',
         transaction_type_code: type.code,
         transaction_type_name: type.name,

@@ -69,7 +69,8 @@ import {
 const loadActivityExport = () => import("@/lib/activity-export");
 import { useUser } from "@/hooks/useUser";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
+import { Transaction, TIED_STATUS_LABELS, TRANSACTION_TYPE_LABELS } from "@/types/transaction";
+import { coded } from "@/lib/exports";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
 import { USER_ROLES } from "@/types/user";
 import { ActivityListSkeleton } from '@/components/ui/skeleton-loader';
@@ -1379,30 +1380,90 @@ const router = useRouter();
   };
 
   const exportActivities = () => {
+    const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+    const fmtDate = (d: any) => (d ? format(new Date(d), "yyyy-MM-dd") : "");
+    // Resolve an IATI code to "<code> <label>" (or just the code if no label is found)
+    const fmtCoded = (list: "collaboration_type" | "activity_scope" | "activity_status", value: any) => {
+      const { code, name } = coded(list, value);
+      if (!code) return "";
+      return name ? `${code} ${name}` : code;
+    };
+
+    // All IATI transaction types, each gets its own USD column (code shown on the left)
+    const TX_CODES = ['1','2','3','4','5','6','7','8','9','10','11','12','13'] as const;
+
     const dataToExport = activities.map(activity => {
-      const sectors = activity.sectors?.map((s: any) => `${s.name} (${s.percentage}%)`).join("; ") || "";
-      
+      const a = activity as any;
+      const sectorList: any[] = activity.sectors || [];
+
+      // DAC categories (3-digit), deduplicated, e.g. "140 Water Supply & Sanitation"
+      const categories = Array.from(new Set(
+        sectorList
+          .filter((s: any) => s.categoryCode || s.categoryName)
+          .map((s: any) => `${s.categoryCode || ''} ${s.categoryName || ''}`.trim())
+      )).join("; ");
+      // Sub-sectors (5-digit), e.g. "14010 Water sector policy and administrative management"
+      const subSectors = sectorList
+        .map((s: any) => {
+          const base = `${s.code || ''} ${s.name || ''}`.trim();
+          return s.percentage ? `${base} (${s.percentage}%)` : base;
+        })
+        .filter(Boolean)
+        .join("; ");
+
+      // All other identifiers, e.g. "INN068; INN292"
+      const otherIdentifiers = Array.isArray(a.otherIdentifiers)
+        ? a.otherIdentifiers
+            .map((oi: any) => (typeof oi === 'string' ? oi : (oi?.code || oi?.ref || oi?.identifier || oi?.value || '')))
+            .filter(Boolean)
+            .join("; ")
+        : "";
+
+      // Reporting organisation name with acronym appended
+      const repName = a.reportingOrgName || activity.created_by_org_name || "";
+      const repAcronym = a.reportingOrgAcronym || activity.created_by_org_acronym || "";
+      const reportedBy = repName
+        ? (repAcronym ? `${repName} (${repAcronym})` : repName)
+        : repAcronym;
+
+      const acronym = a.acronym;
+      const title = activity.title || "";
+      const activityName = acronym ? `${title} (${acronym})` : title;
+
+      // One column per transaction type, keyed "<code> <label>"
+      const txTotals = a.transactionTypeTotals || {};
+      const txColumns: Record<string, number> = {};
+      TX_CODES.forEach((code) => {
+        txColumns[`${code} ${TRANSACTION_TYPE_LABELS[code]}`] = txTotals[code] || 0;
+      });
+
       return {
-        "Activity ID": activity.partnerId || "",
-        "IATI ID": activity.iatiId || "",
-        "UUID": activity.id,
-        "Title": activity.title,
-        "Description": activity.description || "",
-        "Activity Status": activity.activityStatus || activity.status || "",
-        "Submission Status": activity.submissionStatus || "draft",
-        "Publication Status": activity.publicationStatus || "draft",
-        "Reported by Organisation": activity.created_by_org_name || "",
-          "Organisation Acronym": activity.created_by_org_acronym || "",
+        "Activity Identifier": activity.partnerId || "",
+        "IATI Identifier": activity.iatiId || "",
+        "Other Identifiers": otherIdentifiers,
+        "Activity Name": activityName,
+        "Activity Description - General": activity.description || "",
+        "Activity Status": fmtCoded("activity_status", activity.activityStatus || activity.status),
+        "Activity Scope": fmtCoded("activity_scope", a.activityScope),
+        "Activity Hierarchy Level": a.hierarchy ?? "",
+        "Collaboration Type": fmtCoded("collaboration_type", activity.collaborationType),
+        "Submission Status": capitalize(activity.submissionStatus || "draft"),
+        "Publication Status": capitalize(activity.publicationStatus || "draft"),
+        "Reported by Organisation": reportedBy,
         "Target Groups": activity.targetGroups || "",
-        "Collaboration Type": activity.collaborationType || "",
-        "Sectors": sectors,
-        "Planned Budget (USD)": activity.totalPlannedBudgetUSD || 0,
-        "Disbursements & Expenditure (USD)": activity.totalDisbursementsAndExpenditureUSD || (activity.disbursements || 0) + (activity.expenditures || 0),
-        "Inflows (USD)": activity.inflows || 0,
-        "Default Currency": (activity as any).defaultCurrency || "USD",
+        "Sectors": categories,
+        "Sub Sectors": subSectors,
+        "Humanitarian Marker": a.humanitarian ? "Yes" : "No",
+        "Planned Start Date": fmtDate(a.plannedStartDate),
+        "Planned End Date": fmtDate(a.plannedEndDate),
+        "Actual Start Date": fmtDate(a.actualStartDate),
+        "Actual End Date": fmtDate(a.actualEndDate),
+        "Planned Budget (USD)": a.totalBudget || 0,
+        ...txColumns,
+        "Default Currency": a.defaultCurrency || "USD",
         "Currency Note": "Financial amounts are aggregated in USD using historical exchange rates. For detailed transaction-level currency information, export individual activity transactions.",
-        "Created Date": format(new Date(activity.createdAt), "yyyy-MM-dd"),
-        "Updated Date": format(new Date(activity.updatedAt), "yyyy-MM-dd"),
+        "Created Date": fmtDate(activity.createdAt),
+        "Updated Date": fmtDate(activity.updatedAt),
       };
     });
 

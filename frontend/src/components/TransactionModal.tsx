@@ -317,6 +317,7 @@ interface TransactionModalProps {
   activitySectors?: ActivitySector[]; // Sectors defined at activity level
   isPooledFund?: boolean; // Whether the parent activity is a pooled fund
   activityIsHumanitarian?: boolean; // Whether the parent activity is flagged humanitarian — defaults transaction flag to true for NEW transactions
+  activityReportingOrgId?: string; // The activity's reporting org — used as the provider/receiver default anchor (falls back to the user's org)
 }
 
 export default function TransactionModal({
@@ -339,12 +340,17 @@ export default function TransactionModal({
   activitySectors = [],
   isPooledFund = false,
   activityIsHumanitarian = false,
+  activityReportingOrgId,
 }: TransactionModalProps) {
   const { partners } = usePartners();
   const { participatingOrganizations } = useParticipatingOrganizations({ activityId });
   const { data: iatiValues, loading: iatiLoading, getFieldValues, error: iatiError } = useIATIReferenceValues();
   const { user } = useUser();
   const isEditing = !!transaction;
+  // Default provider/receiver anchor = the activity's reporting org, falling back
+  // to the logged-in user's org. The reporting org is the natural counterparty for
+  // the activity's own flows (correct even when the editor's org ≠ the reporting org).
+  const anchorOrgId = activityReportingOrgId || user?.organizationId || undefined;
   
   // Fallback transaction types if IATI values fail to load (IATI Standard v2.03)
   const fallbackTransactionTypes = [
@@ -989,10 +995,10 @@ export default function TransactionModal({
         transaction_reference: '', // Leave blank for backend auto-generation
         value_date: '',
         description: '',
-        provider_org_id: user?.organizationId || undefined,
+        provider_org_id: anchorOrgId,
         provider_org_type: undefined,
         provider_org_ref: '',
-        provider_org_name: user?.organizationId ? (organizations.find(o => o.id === user.organizationId)?.acronym || organizations.find(o => o.id === user.organizationId)?.name || '') : '',
+        provider_org_name: anchorOrgId ? (organizations.find(o => o.id === anchorOrgId)?.acronym || organizations.find(o => o.id === anchorOrgId)?.name || '') : '',
         provider_org_activity_id: '',
         provider_activity_uuid: activityId || undefined,
         receiver_org_id: undefined,
@@ -1859,7 +1865,7 @@ export default function TransactionModal({
                                   const newType = opt.code;
                                   const incomingTypes = ['1', '11'];
                                   const outgoingTypes = ['2', '3', '4'];
-                                  const reportingOrgId = user?.organizationId || undefined;
+                                  const reportingOrgId = anchorOrgId;
                                   const reportingOrgName = reportingOrgId
                                     ? (organizations.find(o => o.id === reportingOrgId)?.acronym || organizations.find(o => o.id === reportingOrgId)?.name || '')
                                     : '';

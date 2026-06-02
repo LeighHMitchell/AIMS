@@ -143,7 +143,10 @@ export async function GET(request: Request) {
     // (`byTxType`) so all 13 IATI transaction types are exposed to the chart.
     // v6 bumped after org-type normalization landed (name → code) so any old
     // v5 entries don't leak un-normalized types into the chart.
-    const cacheKey = `all-donors:v6:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}:${sectorGroups}:${sectorCategories}:${sectorSubSectors}:${customYearId}`
+    // v7: direction-aware provider fallback (reporting-org only for outgoing
+    // 2/3/4) + an "Unattributed / Unknown partner" bucket for value with no
+    // resolvable provider.
+    const cacheKey = `all-donors:v7:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}:${sectorGroups}:${sectorCategories}:${sectorSubSectors}:${customYearId}`
     const cached = getCached(cacheKey)
     if (cached) {
       return NextResponse.json(cached, {
@@ -295,6 +298,12 @@ export async function GET(request: Request) {
 
     // All 13 IATI transaction type codes
     const TX_TYPE_CODES = ['1','2','3','4','5','6','7','8','9','10','11','12','13']
+    // Reporting-org fallback for a missing provider is the IATI default ONLY for
+    // OUTGOING transactions (Commitment 2 / Disbursement 3 / Expenditure 4). For
+    // incoming and everything else, a missing provider means the donor is unknown
+    // — those go to the Unattributed bucket rather than being credited to the
+    // (recipient) reporting org.
+    const OUTGOING_FALLBACK_TYPES = new Set(['2', '3', '4'])
     const makeEmptyByTxType = (): Record<string, number> => {
       const m: Record<string, number> = {}
       for (const c of TX_TYPE_CODES) m[c] = 0
@@ -313,6 +322,38 @@ export async function GET(request: Request) {
       totalActualDisbursement: number
       byTxType: Record<string, number>
     }>()
+
+    // Synthetic bucket for value whose development partner can't be resolved
+    // (no provider and — for non-outgoing types — no usable fallback, or the
+    // org ID isn't in the organizations table). Surfaced so this chart can
+    // reconcile with the Financial Totals card instead of silently dropping it.
+    const UNATTRIBUTED_ID = '__unattributed__'
+    const UNATTRIBUTED_LABEL = 'Unattributed / Unknown partner'
+
+    // Get-or-create a donor row (used for real orgs and the Unattributed bucket).
+    const ensureDonor = (
+      id: string,
+      meta: { name: string; acronym: string | null; type: string | null },
+    ) => {
+      let d = donorData.get(id)
+      if (!d) {
+        d = {
+          id,
+          name: meta.name,
+          acronym: meta.acronym,
+          type: meta.type,
+          totalBudget: 0,
+          totalPlannedDisbursement: 0,
+          totalCommitment: 0,
+          totalActualDisbursement: 0,
+          byTxType: makeEmptyByTxType(),
+        }
+        donorData.set(id, d)
+      }
+      return d
+    }
+    const ensureUnattributed = () =>
+      ensureDonor(UNATTRIBUTED_ID, { name: UNATTRIBUTED_LABEL, acronym: null, type: null })
 
     // 1. AGGREGATE TOTAL BUDGETS BY REPORTING ORG
     // Pull any budget whose period OVERLAPS the window, then allocate the
@@ -351,11 +392,8 @@ export async function GET(request: Request) {
         if (sectorFilteredActivityIds && !sectorFilteredActivityIds.has(budget.activity_id)) return
 
         const reportingOrgId = activityToReportingOrg.get(budget.activity_id)
-        if (!reportingOrgId) return
-        if (isExcluded(reportingOrgId)) return
-
-        const orgInfo = orgMap.get(reportingOrgId)
-        if (!orgInfo) return
+        // Recipient-government orgs are deliberately excluded (not partners).
+        if (reportingOrgId && isExcluded(reportingOrgId)) return
 
         const rawBudgetValue = parseFloat(budget.usd_value) || 0
         if (isNaN(rawBudgetValue) || rawBudgetValue === 0) return
@@ -377,21 +415,10 @@ export async function GET(request: Request) {
           budgetValue *= sectorPct
         }
 
-        if (!donorData.has(reportingOrgId)) {
-          donorData.set(reportingOrgId, {
-            id: reportingOrgId,
-            name: orgInfo.name,
-            acronym: orgInfo.acronym,
-            type: orgInfo.type,
-            totalBudget: 0,
-            totalPlannedDisbursement: 0,
-            totalCommitment: 0,
-            totalActualDisbursement: 0,
-            byTxType: makeEmptyByTxType(),
-          })
-        }
-
-        const donor = donorData.get(reportingOrgId)!
+        const orgInfo = reportingOrgId ? orgMap.get(reportingOrgId) : undefined
+        const donor = reportingOrgId && orgInfo
+          ? ensureDonor(reportingOrgId, orgInfo)
+          : ensureUnattributed()
         donor.totalBudget += budgetValue
       })
     }
@@ -433,9 +460,10 @@ export async function GET(request: Request) {
       // Skip if sector filter is active and this activity doesn't match
       if (sectorFilteredActivityIds && pd.activity_id && !sectorFilteredActivityIds.has(pd.activity_id)) return
 
+      // Planned disbursements are outgoing by nature, so the reporting-org
+      // fallback for a missing provider is the IATI-appropriate default here.
       const providerOrgId = pd.provider_org_id || activityToReportingOrgForPds.get(pd.activity_id)
-      if (!providerOrgId) return
-      if (isExcluded(providerOrgId)) return
+      if (providerOrgId && isExcluded(providerOrgId)) return
       const rawPdValue = parseFloat(pd.usd_amount) || 0
       if (isNaN(rawPdValue) || rawPdValue === 0) return
 
@@ -457,24 +485,10 @@ export async function GET(request: Request) {
         }
       }
 
-      const orgInfo = orgMap.get(providerOrgId)
-      if (!orgInfo) return
-
-      if (!donorData.has(providerOrgId)) {
-        donorData.set(providerOrgId, {
-          id: providerOrgId,
-          name: orgInfo.name,
-          acronym: orgInfo.acronym,
-          type: orgInfo.type,
-          totalBudget: 0,
-          totalPlannedDisbursement: 0,
-          totalCommitment: 0,
-          totalActualDisbursement: 0,
-          byTxType: makeEmptyByTxType(),
-        })
-      }
-
-      const donor = donorData.get(providerOrgId)!
+      const orgInfo = providerOrgId ? orgMap.get(providerOrgId) : undefined
+      const donor = providerOrgId && orgInfo
+        ? ensureDonor(providerOrgId, orgInfo)
+        : ensureUnattributed()
       donor.totalPlannedDisbursement += pdValue
     })
 
@@ -518,11 +532,6 @@ export async function GET(request: Request) {
       // Skip if sector filter is active and this activity doesn't match
       if (sectorFilteredActivityIds && tx.activity_id && !sectorFilteredActivityIds.has(tx.activity_id)) return
 
-      // Use provider_org_id if available, otherwise fall back to activity's reporting_org
-      const providerOrgId = tx.provider_org_id || activityToReportingOrgForTx.get(tx.activity_id)
-      if (!providerOrgId) return
-      if (isExcluded(providerOrgId)) return
-
       const code = String(tx.transaction_type || '').trim()
       if (!TX_TYPE_CODES.includes(code)) return
 
@@ -537,24 +546,20 @@ export async function GET(request: Request) {
         }
       }
 
-      const orgInfo = orgMap.get(providerOrgId)
-      if (!orgInfo) return
-
-      if (!donorData.has(providerOrgId)) {
-        donorData.set(providerOrgId, {
-          id: providerOrgId,
-          name: orgInfo.name,
-          acronym: orgInfo.acronym,
-          type: orgInfo.type,
-          totalBudget: 0,
-          totalPlannedDisbursement: 0,
-          totalCommitment: 0,
-          totalActualDisbursement: 0,
-          byTxType: makeEmptyByTxType(),
-        })
+      // Provider is the development partner. The reporting-org fallback for a
+      // missing provider is applied ONLY to outgoing types (the IATI default);
+      // incoming/other types with no provider have an unknown donor.
+      let providerOrgId = tx.provider_org_id
+      if (!providerOrgId && OUTGOING_FALLBACK_TYPES.has(code)) {
+        providerOrgId = activityToReportingOrgForTx.get(tx.activity_id)
       }
+      // Recipient-government orgs are deliberately excluded (not partners).
+      if (providerOrgId && isExcluded(providerOrgId)) return
 
-      const donor = donorData.get(providerOrgId)!
+      const orgInfo = providerOrgId ? orgMap.get(providerOrgId) : undefined
+      const donor = providerOrgId && orgInfo
+        ? ensureDonor(providerOrgId, orgInfo)
+        : ensureUnattributed()
       donor.byTxType[code] = (donor.byTxType[code] || 0) + txValue
       // Keep legacy aggregates in sync so old call sites continue to work.
       if (code === '2') donor.totalCommitment += txValue

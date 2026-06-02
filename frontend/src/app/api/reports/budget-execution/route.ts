@@ -16,7 +16,7 @@ export async function GET() {
   try {
     const { data: activities, error } = await supabase
       .from('activities')
-      .select('id, iati_identifier, title_narrative, acronym, activity_status, reporting_org_id, created_by_org_name')
+      .select('id, other_identifier, iati_identifier, title_narrative, acronym, activity_status, reporting_org_id, created_by_org_name')
       .eq('publication_status', 'published')
       .is('deleted_at', null)
 
@@ -79,6 +79,7 @@ export async function GET() {
         const org = a.reporting_org_id ? orgById.get(a.reporting_org_id) : null
         const status = codeAndName('activity_status', a.activity_status)
         return {
+          activity_identifier: a.other_identifier || '',
           iati_identifier: a.iati_identifier || '',
           title: titleWithAcronym(a.title_narrative, a.acronym),
           reporting_org: orgWithAcronym(org?.name, org?.acronym, a.created_by_org_name),

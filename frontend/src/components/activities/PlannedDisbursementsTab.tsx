@@ -165,6 +165,7 @@ interface PlannedDisbursementsTabProps {
   hideHeaderTitle?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactNode;
   onLoadingChange?: (loading: boolean) => void;
+  reportingOrgId?: string; // Activity's reporting org — default provider for new disbursements (falls back to user's org)
 }
 
 interface Organization {
@@ -189,7 +190,8 @@ export default function PlannedDisbursementsTab({
   hideSummaryCards = false,
   hideHeaderTitle = false,
   renderFilters,
-  onLoadingChange
+  onLoadingChange,
+  reportingOrgId
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -215,6 +217,9 @@ export default function PlannedDisbursementsTab({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const { user, isLoading: userLoading } = useUser();
+  // Default provider for a new disbursement = the activity's reporting org,
+  // falling back to the logged-in user's org.
+  const anchorOrgId = reportingOrgId || user?.organizationId;
   const isReadOnly = readOnly;
   const [aggregationMode, setAggregationMode] = useState<'monthly' | 'quarterly' | 'semi-annual' | 'annual'>('quarterly');
 
@@ -301,7 +306,8 @@ export default function PlannedDisbursementsTab({
 
   // Handler to open modal for add/edit
   const openModal = (disbursement?: PlannedDisbursement) => {
-    // For new disbursements, default provider to the user's organisation and current activity
+    // For new disbursements, default provider to the activity's reporting org
+    // (falling back to the user's org) and current activity.
     let providerDefaults: Partial<PlannedDisbursement> = {
       provider_org_name: '',
       provider_org_ref: '',
@@ -309,8 +315,8 @@ export default function PlannedDisbursementsTab({
       provider_activity_id: '',
       provider_activity_uuid: '',
     };
-    if (!disbursement && user?.organizationId) {
-      const userOrg = organizations.find((o: any) => o.id === user.organizationId);
+    if (!disbursement && anchorOrgId) {
+      const userOrg = organizations.find((o: any) => o.id === anchorOrgId);
       if (userOrg) {
         providerDefaults = {
           provider_org_id: userOrg.id,
@@ -636,7 +642,7 @@ export default function PlannedDisbursementsTab({
       periodEnd = endDate;
     }
     
-    // Default provider to user's organisation for new disbursements
+    // Default provider to the activity's reporting org (fallback: user's org) for new disbursements
     let providerDefs: Partial<PlannedDisbursement> = {
       provider_org_name: '',
       provider_org_ref: '',
@@ -644,8 +650,8 @@ export default function PlannedDisbursementsTab({
       provider_activity_id: '',
       provider_activity_uuid: '',
     };
-    if (user?.organizationId) {
-      const userOrg = organizations.find((o: any) => o.id === user.organizationId);
+    if (anchorOrgId) {
+      const userOrg = organizations.find((o: any) => o.id === anchorOrgId);
       if (userOrg) {
         providerDefs = {
           provider_org_id: userOrg.id,

@@ -504,6 +504,7 @@ export function EnhancedFinancesSection({
             activitySectors={activitySectors}
             isPooledFund={general?.is_pooled_fund === true}
             activityIsHumanitarian={activityIsHumanitarian}
+            reportingOrgId={(general as any)?.reportingOrgId || undefined}
           />
         </TabsContent>
 

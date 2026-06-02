@@ -11,7 +11,7 @@ const REQUIRED_FIELDS = [
   { key: 'activity_status', label: 'Status' },
   { key: 'planned_start_date', label: 'Start Date' },
   { key: 'planned_end_date', label: 'End Date' },
-  { key: 'iati_identifier', label: 'IATI ID' },
+  { key: 'iati_identifier', label: 'IATI Identifier' },
   { key: 'reporting_org_id', label: 'Reporting Org' },
   { key: 'default_currency', label: 'Currency' },
 ]
@@ -30,6 +30,7 @@ export async function GET() {
       .from('activities')
       .select(`
         id,
+        other_identifier,
         iati_identifier,
         title_narrative,
         acronym,
@@ -150,8 +151,9 @@ export async function GET() {
       const reportingOrg = orgWithAcronym(org?.name, org?.acronym, activity.created_by_org_name)
 
       return {
+        activity_identifier: activity.other_identifier || '',
+        iati_identifier: activity.iati_identifier || '',
         activity_title: titleWithAcronym(activity.title_narrative, activity.acronym) || 'Untitled',
-        iati_id: activity.iati_identifier || '',
         missing_fields: missingFields.join('; ') || 'None',
         completeness_score: completenessScore,
         last_updated: activity.updated_at ? new Date(activity.updated_at).toISOString().split('T')[0] : '',

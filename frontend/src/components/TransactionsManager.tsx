@@ -317,6 +317,7 @@ interface TransactionsManagerProps {
   activitySectors?: ActivitySector[];
   isPooledFund?: boolean;
   activityIsHumanitarian?: boolean;
+  reportingOrgId?: string; // Activity's reporting org — used as the provider/receiver default in the modal
 }
 
 export default function TransactionsManager({ 
@@ -336,6 +337,7 @@ export default function TransactionsManager({
   activitySectors = [],
   isPooledFund = false,
   activityIsHumanitarian = false,
+  reportingOrgId,
 }: TransactionsManagerProps) {
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -1265,6 +1267,7 @@ export default function TransactionsManager({
         activitySectors={activitySectors}
         isPooledFund={isPooledFund}
         activityIsHumanitarian={activityIsHumanitarian}
+        activityReportingOrgId={reportingOrgId}
       />
 
       {/* Bulk Action Toolbar - appears from bottom when items selected */}

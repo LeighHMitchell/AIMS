@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
+import { orgWithAcronym } from '@/lib/reports/format-helpers';
 import { excludeInternalTransfers, getPooledFundIds, getReportableActivityIds, COMMITMENT_TYPES, DISBURSEMENT_TYPES, txUsd } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
@@ -80,7 +81,9 @@ export async function GET() {
       if (!t.provider_org_id) return
 
       const org = orgById.get(t.provider_org_id)
-      const orgName = org?.acronym || org?.name || t.provider_org_name || 'Unknown'
+      // Provider org = the development partner that disbursed the funds.
+      // Show "Full Name (ACRONYM)" in one cell.
+      const orgName = orgWithAcronym(org?.name, org?.acronym, t.provider_org_name)
 
       const existing = aggregated.get(t.provider_org_id) || {
         organization_name: orgName,

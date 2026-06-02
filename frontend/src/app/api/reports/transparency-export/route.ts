@@ -55,11 +55,11 @@ export async function GET() {
 
     // Fetch activity acronyms (by id) and reporting-org acronyms so titles and
     // the Reporting Organisation column carry acronyms like the other reports.
-    const actAcronymById = new Map<string, string | null>()
+    const actMetaById = new Map<string, { acronym: string | null; iati: string; other: string }>()
     const activityIds = Array.from(new Set(scoreRows.map(s => s.id).filter(Boolean)))
     if (activityIds.length > 0) {
-      const { data: acts } = await supabase.from('activities').select('id, acronym').in('id', activityIds).eq('publication_status', 'published').is('deleted_at', null)
-      acts?.forEach((a: any) => actAcronymById.set(a.id, a.acronym))
+      const { data: acts } = await supabase.from('activities').select('id, acronym, iati_identifier, other_identifier').in('id', activityIds).eq('publication_status', 'published').is('deleted_at', null)
+      acts?.forEach((a: any) => actMetaById.set(a.id, { acronym: a.acronym, iati: a.iati_identifier || '', other: a.other_identifier || '' }))
     }
     const orgAcronymById = new Map<string, string | null>()
     const orgIds = Array.from(new Set(scoreRows.map(s => s.reporting_org_id).filter((x): x is string => !!x)))
@@ -72,9 +72,12 @@ export async function GET() {
     const reportData = scoreRows.map(score => {
       const breakdown = score.breakdown || {} as ScoreBreakdown
       const orgAcronym = score.reporting_org_id ? orgAcronymById.get(score.reporting_org_id) : null
+      const meta = actMetaById.get(score.id)
 
       return {
-        activity_title: titleWithAcronym(score.title, actAcronymById.get(score.id)) || 'Untitled',
+        activity_identifier: meta?.other || '',
+        iati_identifier: meta?.iati || '',
+        activity_title: titleWithAcronym(score.title, meta?.acronym) || 'Untitled',
         reporting_org: orgWithAcronym(score.reporting_org_name, orgAcronym, score.partner_name),
         total_score: Math.round(score.total_score * 10) / 10,
         operational_planning: breakdown.operational_planning?.score || 0,

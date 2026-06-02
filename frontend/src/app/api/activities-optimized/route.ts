@@ -118,6 +118,10 @@ export async function GET(request: NextRequest) {
         recipient_countries,
         recipient_regions,
         is_pooled_fund,
+        collaboration_type,
+        activity_scope,
+        hierarchy,
+        other_identifiers,
         activity_sdg_mappings (
           id,
           sdg_goal,
@@ -308,6 +312,9 @@ export async function GET(request: NextRequest) {
     // Creator profiles map (for metadata columns)
     const creatorProfilesMap = new Map<string, { name: string; department: string | null }>();
 
+    // Reporting-org acronym map (looked up by reporting_org_id)
+    const reportingOrgAcronymMap = new Map<string, string>();
+
     if (activityIds.length > 0) {
       // PERFORMANCE OPTIMIZATION: Run all independent queries in parallel
       const parallelStartTime = Date.now();
@@ -400,11 +407,17 @@ export async function GET(request: NextRequest) {
           const current = summariesMap.get(t.activity_id) || {
             commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
             totalTransactions: 0, totalBudget: 0, totalBudgetOriginal: 0,
-            totalDisbursed: 0, totalPlannedDisbursementsUSD: 0, totalPlannedDisbursementsOriginal: 0
+            totalDisbursed: 0, totalPlannedDisbursementsUSD: 0, totalPlannedDisbursementsOriginal: 0,
+            transactionTypeTotals: {}
           };
 
           current.totalTransactions++;
           const transactionValue = t.value_usd || (t.currency === 'USD' ? parseFloat(t.value) || 0 : 0);
+
+          // Per-IATI-transaction-type USD totals (1-13)
+          if (!current.transactionTypeTotals) current.transactionTypeTotals = {};
+          const ttKey = String(t.transaction_type ?? '');
+          if (ttKey) current.transactionTypeTotals[ttKey] = (current.transactionTypeTotals[ttKey] || 0) + transactionValue;
 
           switch(t.transaction_type) {
             case '2': current.commitments += transactionValue; break;
@@ -427,7 +440,8 @@ export async function GET(request: NextRequest) {
             totalBudgetOriginal: budgetOriginalMap.get(activityId) || 0,
             totalDisbursed: 0,
             totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0,
-            totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0
+            totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0,
+            transactionTypeTotals: {}
           });
         } else {
           const summary = summariesMap.get(activityId)!;
@@ -458,9 +472,11 @@ export async function GET(request: NextRequest) {
       }
 
       // Gather IDs for all follow-up queries, then run them in parallel
-      const orgIds = participatingOrgs.length > 0
-        ? [...new Set(participatingOrgs.map((o: any) => o.organization_id).filter(Boolean))]
-        : [];
+      const reportingOrgIds = [...new Set(activities.map((a: any) => a.reporting_org_id).filter(Boolean))];
+      const orgIds = [...new Set([
+        ...(participatingOrgs.length > 0 ? participatingOrgs.map((o: any) => o.organization_id).filter(Boolean) : []),
+        ...reportingOrgIds
+      ])];
       const markerIds = activityPolicyMarkers && activityPolicyMarkers.length > 0
         ? [...new Set(activityPolicyMarkers.map((m: any) => m.policy_marker_id).filter(Boolean))]
         : [];
@@ -482,6 +498,10 @@ export async function GET(request: NextRequest) {
       // Process organization lookup results
       if (orgsLookupResult.data) {
         const orgsLookup = new Map(orgsLookupResult.data.map((o: any) => [o.id, o]));
+        // Build reporting-org acronym map for the activity list / export
+        orgsLookupResult.data.forEach((o: any) => {
+          if (o.acronym) reportingOrgAcronymMap.set(o.id, o.acronym);
+        });
         participatingOrgs = participatingOrgs.map((po: any) => ({
           ...po,
           organizations: orgsLookup.get(po.organization_id) || null
@@ -586,7 +606,8 @@ export async function GET(request: NextRequest) {
         totalBudgetOriginal: budgetOriginalMap.get(activity.id) || 0,
         totalDisbursed: 0,
         totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activity.id) || 0,
-        totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activity.id) || 0
+        totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activity.id) || 0,
+        transactionTypeTotals: {}
       };
       
       // Ensure planned disbursements are included even if summary exists
@@ -625,6 +646,11 @@ export async function GET(request: NextRequest) {
         reportingOrgId: activity.reporting_org_id,
         reportingOrgRef: activity.reporting_org_ref,
         reportingOrgName: activity.reporting_org_name,
+        reportingOrgAcronym: activity.reporting_org_id ? (reportingOrgAcronymMap.get(activity.reporting_org_id) || null) : null,
+        collaborationType: activity.collaboration_type,
+        activityScope: activity.activity_scope,
+        hierarchy: activity.hierarchy,
+        otherIdentifiers: activity.other_identifiers || [],
         createdBy: activity.created_by,
         plannedStartDate: activity.planned_start_date,
         plannedEndDate: activity.planned_end_date,

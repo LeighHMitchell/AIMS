@@ -317,6 +317,7 @@ export function FundingDeliveryGroup({
                   defaultCurrency={general.defaultCurrency || "USD"}
                   readOnly={!permissions?.canEditActivity}
                   onDisbursementsChange={onDisbursementsChange}
+                  reportingOrgId={general.reportingOrgId || undefined}
                 />
               </div>
             ) : (
