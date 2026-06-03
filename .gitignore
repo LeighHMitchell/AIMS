@@ -57,3 +57,8 @@ build/
 # are tracked normally.
 /seed_*.sql
 /backfill_*.sql
+
+# Source image originals (SDG banners etc.). These are already uploaded to
+# Supabase Storage and served from there — keep the originals on disk for
+# re-use but don't commit ~57 MB of binaries to the repo.
+/Images/
