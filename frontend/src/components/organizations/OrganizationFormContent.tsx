@@ -2398,7 +2398,7 @@ export function OrganizationFormContent({
           )}
 
           {/* Main Content */}
-          <div className="organization-editor flex-1 flex flex-col min-h-0 overflow-hidden pl-0 pr-6 md:pr-8 py-6 pb-24">
+          <div className="organization-editor flex-1 flex flex-col min-h-0 overflow-hidden pl-0 pr-6 md:pr-8 pt-6 pb-2">
             {renderTabsContent()}
           </div>
 

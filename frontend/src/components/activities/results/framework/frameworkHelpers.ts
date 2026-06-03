@@ -9,6 +9,7 @@ import {
   MEASURE_TYPE_CODE_MAP,
   STATUS_THRESHOLDS,
 } from '@/types/results';
+import { formatLongDate } from '@/lib/date-utils';
 
 /**
  * Resolve a multilingual narrative ({ en: "...", ... }) — or a stringified one,
@@ -105,11 +106,11 @@ export function formatIsoDate(dateString: string | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** "2024-07-01 : 2025-06-30" period range (d-portal style). */
+/** "1 July 2024 → 30 June 2025" period range. */
 export function formatPeriodRange(period: IndicatorPeriod): string {
-  const start = formatIsoDate(period.period_start);
-  const end = formatIsoDate(period.period_end);
-  if (start && end) return `${start} : ${end}`;
+  const start = formatLongDate(period.period_start);
+  const end = formatLongDate(period.period_end);
+  if (start && end) return `${start} → ${end}`;
   return start || end || '';
 }
 

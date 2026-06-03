@@ -160,20 +160,25 @@ export function CardShell({
           className={`absolute inset-0 bg-gradient-to-t ${gradient} z-10 pointer-events-none`}
         />
 
-        {/* Banner visual — custom content, image, or icon fallback */}
+        {/* Banner visual — custom content, image, or icon fallback. The image
+            and icon fallback are pointer-events-none so a click anywhere on the
+            banner falls through to the invisible full-card link below. Arbitrary
+            bannerContent is left interactive on purpose (e.g. PersonCard wraps
+            it in its own org link); callers that want a click-through visual
+            should set pointer-events-none on their own content. */}
         {bannerContent ? (
           bannerContent
         ) : bannerImage ? (
           <img
             src={bannerImage}
             alt=""
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
         ) : BannerIcon ? (
-          <div className="h-full w-full flex items-center justify-center">
+          <div className="h-full w-full flex items-center justify-center pointer-events-none">
             <BannerIcon
               className="h-16 w-16"
               style={{ color: colors.coolSteel, opacity: 0.3 }}

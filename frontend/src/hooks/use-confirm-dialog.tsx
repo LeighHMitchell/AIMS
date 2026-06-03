@@ -57,7 +57,7 @@ export function useConfirmDialog() {
 
   const ConfirmDialog = useCallback(() => (
     <AlertDialog open={open} onOpenChange={(v) => { if (!v) handleCancel(); }}>
-      <AlertDialogContent>
+      <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
         <AlertDialogHeader>
           <AlertDialogTitle>{options.title}</AlertDialogTitle>
           <AlertDialogDescription>{options.description}</AlertDialogDescription>

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
-import { AlertCircle, ArrowRight, Bookmark, List, LayoutGrid, Activity } from 'lucide-react'
+import { AlertCircle, List, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
 import { getIconForMarker, MARKER_TYPE_BADGE_CLASSES, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
@@ -49,6 +49,7 @@ export default function PolicyMarkersListingPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
+  const [banners, setBanners] = useState<Record<string, { banner: string; banner_position: number }>>({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +66,19 @@ export default function PolicyMarkersListingPage() {
       }
     }
     fetchData()
+  }, [])
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await apiFetch('/api/profile-banners/policy_marker')
+        if (!res.ok) return
+        setBanners(await res.json())
+      } catch {
+        // Banners are optional
+      }
+    }
+    fetchBanners()
   }, [])
 
   if (loading) {
@@ -185,6 +199,7 @@ export default function PolicyMarkersListingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {markers.map((marker: PolicyMarker) => {
                     const IconComponent = getIconForMarker(marker.iati_code)
+                    const markerBanner = banners[String(marker.id)]
 
                     return (
                       <CardShell
@@ -193,20 +208,21 @@ export default function PolicyMarkersListingPage() {
                         ariaLabel={marker.name}
                         bannerColor={groupColor}
                         bannerContent={
-                          <div className="h-full w-full flex items-center justify-center">
-                            <IconComponent className="h-12 w-12 text-white/20" />
-                          </div>
+                          markerBanner?.banner ? (
+                            <img
+                              src={markerBanner.banner}
+                              alt=""
+                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none"
+                              style={{ objectPosition: `center ${markerBanner.banner_position ?? 50}%` }}
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <IconComponent className="h-12 w-12 text-white/20" />
+                            </div>
+                          )
                         }
                         bannerOverlay={
                           <>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              {marker.is_iati_standard && (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-white/20 text-white border-0">IATI</Badge>
-                              )}
-                              {marker.iati_code && (
-                                <code className="text-xs px-1.5 py-0.5 bg-white/20 text-white/90 rounded font-mono">{marker.iati_code}</code>
-                              )}
-                            </div>
                             <h2 className="text-body font-bold text-white leading-tight">
                               <Link
                                 href={`/policy-markers/${marker.uuid}`}
@@ -224,7 +240,6 @@ export default function PolicyMarkersListingPage() {
                             {marker.description}
                           </p>
                           <div className="flex items-center gap-2 mt-auto pt-3 border-t border-border">
-                            <Activity className="w-4 h-4 text-muted-foreground" />
                             <span className="text-body font-medium">
                               {marker.activityCount} {marker.activityCount === 1 ? 'activity' : 'activities'}
                             </span>

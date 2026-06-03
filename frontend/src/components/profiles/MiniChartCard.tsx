@@ -17,9 +17,9 @@ export function MiniChartCard({ title, children, expandedContent }: MiniChartCar
 
   return (
     <>
-      <Card>
-        <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-body font-medium text-foreground">{title}</CardTitle>
+      <Card className="group">
+        <CardHeader className="py-2 px-3 flex-row items-center justify-between space-y-0 group-hover:bg-surface-muted transition-colors rounded-t-lg">
+          <CardTitle className="text-xs font-medium text-foreground">{title}</CardTitle>
           <Button
             variant="ghost"
             size="sm"

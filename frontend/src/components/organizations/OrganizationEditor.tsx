@@ -419,6 +419,20 @@ export function OrganizationEditor({
                 {exporting ? 'Exporting…' : 'Export for Review'}
               </Button>
             )}
+
+            {/* Save & Next — data on these sections saves inline, so this
+                simply advances to the next section for a consistent footer. */}
+            {hasNextSection && (
+              <Button
+                variant="default"
+                className="px-6 py-3 text-base font-semibold min-w-[200px]"
+                onClick={handleNextSection}
+                disabled={saving}
+              >
+                Save &amp; Next
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
           </div>
         </footer>
       )}

@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getSectorInfo, getAllSectorCodes, getChildCodes, getSectorLevel } from '@/lib/sector-hierarchy';
 import { COUNTRY_COORDINATES } from '@/data/country-coordinates';
+import {
+  getReportableActivityIds,
+  getPooledFundIds,
+  excludeInternalTransfers,
+  txUsd,
+  COMMITMENT_TYPES,
+  DISBURSEMENT_TYPES,
+  INCOMING_TYPES,
+} from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +47,9 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch sector data' }, { status: 500 });
     }
 
-    const activityIds = (activitySectors || []).map((s: any) => s.activity_id).filter(Boolean);
+    const allActivityIds = Array.from(
+      new Set((activitySectors || []).map((s: any) => s.activity_id).filter(Boolean))
+    );
 
     const emptyResponse = {
       sector: sectorInfo,
@@ -63,11 +74,23 @@ export async function GET(
       activityStatusBreakdown: [],
     };
 
-    if (activityIds.length === 0) {
+    if (allActivityIds.length === 0) {
       return NextResponse.json(emptyResponse);
     }
 
-    const uniqueActivityIds = Array.from(new Set(activityIds));
+    // Canonical aggregation: only PUBLISHED, non-deleted activities are
+    // reportable (drafts + Recycle Bin excluded), and pooled-fund internal
+    // transfers must be filtered out so totals reconcile with Financial Totals.
+    const [reportableIds, pooledFundIds] = await Promise.all([
+      getReportableActivityIds(supabase),
+      getPooledFundIds(supabase),
+    ]);
+    const reportableSet = new Set(reportableIds);
+    const uniqueActivityIds = allActivityIds.filter((id) => reportableSet.has(id));
+
+    if (uniqueActivityIds.length === 0) {
+      return NextResponse.json(emptyResponse);
+    }
 
     // Build activity -> percentage map
     const activityPercentMap = new Map<string, number>();
@@ -78,10 +101,15 @@ export async function GET(
 
     // Fetch data in parallel
     const [txResult, actResult, orgResult, locResult] = await Promise.all([
-      supabase
-        .from('transactions')
-        .select('uuid, activity_id, transaction_type, transaction_date, value, value_usd, currency, status, provider_org_id, receiver_org_id, recipient_country_code, recipient_region_code')
-        .in('activity_id', uniqueActivityIds),
+      excludeInternalTransfers(
+        supabase
+          .from('transactions')
+          .select('uuid, activity_id, transaction_type, transaction_date, value, value_usd, currency, status, provider_org_id, receiver_org_id, recipient_country_code, recipient_region_code')
+          .in('activity_id', uniqueActivityIds)
+          .eq('status', 'actual')
+          .is('deleted_at', null),
+        pooledFundIds
+      ),
       supabase
         .from('activities')
         .select('id, title_narrative, iati_identifier, activity_status, reporting_org_id, default_currency')
@@ -122,16 +150,20 @@ export async function GET(
     transactions.forEach(tx => {
       const sectorPct = activityPercentMap.get(tx.activity_id) || 100;
       const allocationMultiplier = sectorPct / 100;
-      // Currency-safe: only fall back to raw value when currency === 'USD'.
-      const baseValue = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
-        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
-      const allocatedValue = baseValue * allocationMultiplier;
+      const allocatedValue = txUsd(tx) * allocationMultiplier;
       const year = tx.transaction_date ? new Date(tx.transaction_date).getFullYear() : null;
 
-      const isCommitment = tx.transaction_type === '2' || tx.transaction_type === '11';
-      const isDisbursement = tx.transaction_type === '3';
+      // Canonical type buckets: commitment = '2' only, disbursement = '3' only,
+      // incoming = 1/11/13 (incl. Incoming Commitment '11', NOT a commitment).
+      const isCommitment = COMMITMENT_TYPES.includes(tx.transaction_type);
+      const isDisbursement = DISBURSEMENT_TYPES.includes(tx.transaction_type);
       const isExpenditure = tx.transaction_type === '4';
-      const isInflow = tx.transaction_type === '1' || tx.transaction_type === '12';
+      const isInflow = INCOMING_TYPES.includes(tx.transaction_type);
+
+      // "Total value" = canonical outgoing actuals only (commitments +
+      // disbursements). Never fold incoming/expenditure/pledges into a headline
+      // total, and never sum types that double-count the same money flow.
+      const totalDelta = (isCommitment || isDisbursement) ? allocatedValue : 0;
 
       if (year) {
         if (!transactionsByYearMap.has(year)) {
@@ -153,7 +185,7 @@ export async function GET(
           geographicMap.set(countryCode, { totalValue: 0, commitments: 0, disbursements: 0, activityIds: new Set() });
         }
         const gd = geographicMap.get(countryCode)!;
-        gd.totalValue += allocatedValue;
+        gd.totalValue += totalDelta;
         if (isCommitment) gd.commitments += allocatedValue;
         if (isDisbursement) gd.disbursements += allocatedValue;
         gd.activityIds.add(tx.activity_id);
@@ -165,7 +197,7 @@ export async function GET(
           organizationMap.set(tx.provider_org_id, { organization: null, totalValue: 0, totalCommitted: 0, totalDisbursed: 0, activityIds: new Set(), contributionTypes: new Set() });
         }
         const od = organizationMap.get(tx.provider_org_id)!;
-        od.totalValue += allocatedValue;
+        od.totalValue += totalDelta;
         if (isCommitment) od.totalCommitted += allocatedValue;
         if (isDisbursement) od.totalDisbursed += allocatedValue;
         od.activityIds.add(tx.activity_id);
@@ -174,7 +206,7 @@ export async function GET(
         if (!organizationMap.has(tx.receiver_org_id)) {
           organizationMap.set(tx.receiver_org_id, { organization: null, totalValue: 0, totalCommitted: 0, totalDisbursed: 0, activityIds: new Set(), contributionTypes: new Set() });
         }
-        organizationMap.get(tx.receiver_org_id)!.totalValue += allocatedValue;
+        organizationMap.get(tx.receiver_org_id)!.totalValue += totalDelta;
         organizationMap.get(tx.receiver_org_id)!.activityIds.add(tx.activity_id);
       }
 
@@ -184,12 +216,12 @@ export async function GET(
         subSectorMap.set(subCode, { activityIds: new Set(), commitments: 0, disbursements: 0, totalValue: 0 });
       }
       const sd = subSectorMap.get(subCode)!;
-      sd.totalValue += allocatedValue;
+      sd.totalValue += totalDelta;
       if (isCommitment) sd.commitments += allocatedValue;
       if (isDisbursement) sd.disbursements += allocatedValue;
       sd.activityIds.add(tx.activity_id);
 
-      totalValue += allocatedValue;
+      totalValue += totalDelta;
     });
 
     // Fill organization data from contributors
@@ -197,17 +229,16 @@ export async function GET(
     const actFinancials = new Map<string, { totalValue: number; committed: number; disbursed: number }>();
     transactions.forEach(tx => {
       const mult = (activityPercentMap.get(tx.activity_id) || 100) / 100;
-      // Currency-safe: only fall back to raw value when currency === 'USD'.
-      const baseV = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
-        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
-      const v = baseV * mult;
+      const v = txUsd(tx) * mult;
       if (!actFinancials.has(tx.activity_id)) {
         actFinancials.set(tx.activity_id, { totalValue: 0, committed: 0, disbursed: 0 });
       }
       const af = actFinancials.get(tx.activity_id)!;
-      af.totalValue += v;
-      if (tx.transaction_type === '2' || tx.transaction_type === '11') af.committed += v;
-      else if (tx.transaction_type === '3') af.disbursed += v;
+      const isC = COMMITMENT_TYPES.includes(tx.transaction_type);
+      const isD = DISBURSEMENT_TYPES.includes(tx.transaction_type);
+      if (isC) af.committed += v;
+      else if (isD) af.disbursed += v;
+      if (isC || isD) af.totalValue += v;
     });
 
     (orgContributors || []).forEach((contrib: any) => {
@@ -329,13 +360,12 @@ export async function GET(
       let actValue = 0, actCommitments = 0, actDisbursements = 0;
 
       actTx.forEach(tx => {
-        // Currency-safe: only fall back to raw value when currency === 'USD'.
-      const baseV = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
-        : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
-      const v = baseV * mult;
-        actValue += v;
-        if (tx.transaction_type === '2' || tx.transaction_type === '11') actCommitments += v;
-        else if (tx.transaction_type === '3') actDisbursements += v;
+        const v = txUsd(tx) * mult;
+        const isC = COMMITMENT_TYPES.includes(tx.transaction_type);
+        const isD = DISBURSEMENT_TYPES.includes(tx.transaction_type);
+        if (isC) actCommitments += v;
+        else if (isD) actDisbursements += v;
+        if (isC || isD) actValue += v;
       });
 
       const status = act.activity_status || 'unknown';

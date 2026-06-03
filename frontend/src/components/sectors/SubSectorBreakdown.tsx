@@ -21,9 +21,15 @@ interface SubSectorBreakdownProps {
   subSectors: SubSectorItem[]
   themeColor: string
   compact?: boolean
+  /**
+   * Hide the bar chart and show only the expandable list. Used by the full
+   * "Sub-Sector Breakdown" section where the "Sub-sector Coverage" mini card
+   * already renders the same bar — avoids showing the chart twice on one page.
+   */
+  hideChart?: boolean
 }
 
-export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: SubSectorBreakdownProps) {
+export function SubSectorBreakdown({ subSectors, themeColor, compact = false, hideChart = false }: SubSectorBreakdownProps) {
   const [expanded, setExpanded] = useState(!compact)
 
   const maxValue = Math.max(...subSectors.map(s => s.totalValue), 1)
@@ -42,7 +48,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
   return (
     <div>
       {/* Top sub-sectors bar chart */}
-      {chartData.length > 0 ? (
+      {!hideChart && (chartData.length > 0 ? (
         <div className={compact ? 'h-36' : 'h-56'}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -87,13 +93,13 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                   return null
                 }}
               />
-              <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       ) : (
         <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No sub-sector data</div>
-      )}
+      ))}
 
       {/* Expandable card list */}
       {!compact && subSectors.length > 0 && (
@@ -119,7 +125,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                   >
                     <code
                       className="text-xs font-mono font-bold px-2 py-1 rounded text-white flex-shrink-0"
-                      style={{ backgroundColor: '#4c5568' }}
+                      style={{ backgroundColor: themeColor }}
                     >
                       {s.code}
                     </code>
@@ -129,7 +135,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full"
-                            style={{ width: `${progressPct}%`, backgroundColor: '#4c5568' }}
+                            style={{ width: `${progressPct}%`, backgroundColor: themeColor }}
                           />
                         </div>
                         <span className="text-helper text-muted-foreground flex-shrink-0">{s.activityCount} activities</span>

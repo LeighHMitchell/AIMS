@@ -4,7 +4,7 @@ import * as React from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { IATI_MEASURE_TYPES, getMeasureTypeByCode } from "@/data/iati-measure-types";
 import { useDropdownState } from "@/contexts/DropdownContext";
 
@@ -77,7 +77,6 @@ export function MeasureTypeSearchableSelect({
         >
           <Command shouldFilter={false}>
             <CommandList>
-              <CommandEmpty>No measure type found.</CommandEmpty>
               <CommandGroup>
                 {IATI_MEASURE_TYPES.map((option) => (
                   <CommandItem

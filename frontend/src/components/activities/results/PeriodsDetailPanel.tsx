@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { formatLongDate } from '@/lib/date-utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,18 +66,10 @@ const getLocalizedString = (value: any, lang: string = 'en'): string => {
   return '';
 };
 
-// Format date for display
+// Format date for display ("1 July 2024")
 const formatDate = (dateString?: string): string => {
   if (!dateString) return '—';
-  try {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return dateString;
-  }
+  return formatLongDate(dateString) || dateString;
 };
 
 // Calculate achievement
@@ -125,7 +118,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-body font-medium text-foreground">
             <Calendar className="h-4 w-4 inline mr-2 text-muted-foreground" />
-            {formatDate(period.period_start)} — {formatDate(period.period_end)}
+            {formatDate(period.period_start)} → {formatDate(period.period_end)}
           </CardTitle>
           {achievement !== null && (
             <Badge variant="outline" className={cn("font-medium", getStatusColor(achievement))}>

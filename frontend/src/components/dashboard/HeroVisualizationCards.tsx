@@ -60,7 +60,10 @@ import { exportChartToCSV } from '@/lib/chart-export';
 import { Download } from 'lucide-react';
 
 interface BudgetTrendPoint {
+  /** Starting calendar year of the fiscal period (sorting/keys only) */
   year: number;
+  /** Display label for the fiscal period, e.g. "CY2025" or "AU FY2024-25" */
+  label: string;
   amount: number;
 }
 
@@ -310,11 +313,11 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Total Budgets
-              <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
+              <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by your organisation's default financial year. Budgets spanning a financial-year boundary are split proportionally by the number of days in each period." />
             </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</p>
-              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Total Budgets')} />
+              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Period: p.label, 'Amount (USD)': p.amount })), 'Total Budgets')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -325,14 +328,14 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-helper py-1 h-auto">Period</TableHead>
                           <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.budgetTrend.map((point) => (
                           <TableRow key={point.year}>
-                            <TableCell className="text-helper py-1">{point.year}</TableCell>
+                            <TableCell className="text-helper py-1">{point.label}</TableCell>
                             <TableCell className="text-helper py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
                           </TableRow>
                         ))}
@@ -343,7 +346,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   <ResponsiveContainer width="100%" height="100%">
                     {budgetViewMode === 'line' ? (
                       <LineChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
@@ -353,13 +356,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Period</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.label}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -374,7 +377,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       </LineChart>
                     ) : (
                       <BarChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
@@ -384,13 +387,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Period</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.label}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -428,11 +431,11 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Planned Disbursements
-              <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
+              <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by your organisation's default financial year. Disbursements spanning a financial-year boundary are split proportionally by the number of days in each period." />
             </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalPlanned)}</p>
-              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Planned Disbursements')} />
+              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Period: p.label, 'Amount (USD)': p.amount })), 'Planned Disbursements')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -443,14 +446,14 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-helper py-1 h-auto">Period</TableHead>
                           <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.plannedBudgetTrend.map((point) => (
                           <TableRow key={point.year}>
-                            <TableCell className="text-helper py-1">{point.year}</TableCell>
+                            <TableCell className="text-helper py-1">{point.label}</TableCell>
                             <TableCell className="text-helper py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
                           </TableRow>
                         ))}
@@ -461,7 +464,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   <ResponsiveContainer width="100%" height="100%">
                     {plannedViewMode === 'line' ? (
                       <LineChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
@@ -471,13 +474,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Period</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.label}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -492,7 +495,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       </LineChart>
                     ) : (
                       <BarChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
@@ -502,13 +505,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Year</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-foreground">Period</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-foreground">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       <tr>
-                                        <td className="px-3 py-1.5 text-muted-foreground">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-muted-foreground">{point.label}</td>
                                         <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                                       </tr>
                                     </tbody>
@@ -546,7 +549,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <div className="text-body font-medium text-muted-foreground flex items-center gap-2">
               Transactions by Type
-              <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
+              <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by your organisation's default financial year (each transaction falls into the financial year containing its date). Includes all transactions where your organisation is the reporter, provider, or receiver." />
             </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalTransactionValue)}</p>
@@ -586,7 +589,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               <table className="border-collapse">
                                 <thead className="bg-surface-muted">
                                   <tr className="bg-surface-muted">
-                                    <th className="px-3 py-1.5 text-left font-medium text-foreground whitespace-nowrap">Year {label}</th>
+                                    <th className="px-3 py-1.5 text-left font-medium text-foreground whitespace-nowrap">{label}</th>
                                     <th className="px-3 py-1.5 text-right font-medium text-foreground whitespace-nowrap">{formatCurrency(dataPoint?.amount || 0)}</th>
                                   </tr>
                                 </thead>
@@ -623,7 +626,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                              <TableHead className="text-helper py-1 h-auto">Period</TableHead>
                               {uniqueTypes.map(type => (
                                 <TableHead key={type} className="text-helper py-1 h-auto text-right">
                                   {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
@@ -802,14 +805,14 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Year</TableHead>
+                  <TableHead>Period</TableHead>
                   <TableHead className="text-right">Amount (USD)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(data?.budgetTrend || []).map((point) => (
                   <TableRow key={point.year}>
-                    <TableCell>{point.year}</TableCell>
+                    <TableCell>{point.label}</TableCell>
                     <TableCell className="text-right">{formatCurrencyFull(point.amount)}</TableCell>
                   </TableRow>
                 ))}
@@ -820,7 +823,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <ResponsiveContainer width="100%" height="100%">
             {budgetViewMode === 'line' ? (
               <LineChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -831,13 +834,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Period</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr>
-                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5">{point.label}</td>
                                 <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                               </tr>
                             </tbody>
@@ -852,7 +855,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               </LineChart>
             ) : (
               <BarChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -863,13 +866,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Period</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr>
-                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5">{point.label}</td>
                                 <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                               </tr>
                             </tbody>
@@ -897,14 +900,14 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Year</TableHead>
+                  <TableHead>Period</TableHead>
                   <TableHead className="text-right">Amount (USD)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(data?.plannedBudgetTrend || []).map((point) => (
                   <TableRow key={point.year}>
-                    <TableCell>{point.year}</TableCell>
+                    <TableCell>{point.label}</TableCell>
                     <TableCell className="text-right">{formatCurrencyFull(point.amount)}</TableCell>
                   </TableRow>
                 ))}
@@ -915,7 +918,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <ResponsiveContainer width="100%" height="100%">
             {plannedViewMode === 'line' ? (
               <LineChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -926,13 +929,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Period</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr>
-                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5">{point.label}</td>
                                 <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                               </tr>
                             </tbody>
@@ -947,7 +950,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               </LineChart>
             ) : (
               <BarChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -958,13 +961,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Period</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr>
-                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5">{point.label}</td>
                                 <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
                               </tr>
                             </tbody>
@@ -1004,7 +1007,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       <table className="border-collapse w-full">
                         <thead className="bg-surface-muted">
                           <tr className="bg-surface-muted">
-                            <th className="px-3 py-1.5 text-left font-medium" colSpan={2}>Year {label}</th>
+                            <th className="px-3 py-1.5 text-left font-medium" colSpan={2}>{label}</th>
                           </tr>
                           <tr className="bg-surface-muted border-b border-border">
                             <th className="px-3 py-1 text-left font-medium text-muted-foreground">Type</th>
@@ -1048,7 +1051,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Year</TableHead>
+                      <TableHead>Period</TableHead>
                       {uniqueTypes.map(type => (
                         <TableHead key={type} className="text-right">
                           {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}

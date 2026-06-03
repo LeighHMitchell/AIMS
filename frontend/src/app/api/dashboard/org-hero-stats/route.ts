@@ -1,5 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { fetchCustomYearById } from '@/lib/custom-year-server';
+import { CustomYear, CustomYearRow, toCustomYear, getCustomYearLabel } from '@/types/custom-years';
+import {
+  splitBudgetAcrossFiscalYears,
+  splitPlannedDisbursementAcrossFiscalYears,
+  getFiscalYearForDate,
+} from '@/utils/year-allocation';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,11 +18,15 @@ function isValidUUID(uuid: string): boolean {
 }
 
 export interface BudgetTrendPoint {
+  /** Starting calendar year of the fiscal period (used for sorting/keys) */
   year: number;
+  /** Display label for the fiscal period, e.g. "CY2025" or "AU FY2024-25" */
+  label: string;
   amount: number;
 }
 
 export interface TransactionTrendPoint {
+  /** Display label for the fiscal period (e.g. "CY2025" / "AU FY2024-25") */
   month: string;
   count: number;
   amount: number;
@@ -74,6 +85,43 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Resolve the fiscal year this org reports on. Charts bucket all financial
+    // figures by this organisation's Default Financial Year (set in the Org
+    // editor → default_custom_year_id). Falls back to the system default custom
+    // year, then to plain Gregorian calendar years (customYear === null).
+    let customYear: CustomYear | null = null;
+    const { data: orgRow } = await supabase
+      .from('organizations')
+      .select('default_custom_year_id')
+      .eq('id', organizationId)
+      .maybeSingle();
+    customYear = await fetchCustomYearById(supabase, orgRow?.default_custom_year_id);
+    if (!customYear) {
+      const { data: defaultYearRow } = await supabase
+        .from('custom_years')
+        .select('*')
+        .eq('is_default', true)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (defaultYearRow) customYear = toCustomYear(defaultYearRow as CustomYearRow);
+    }
+
+    // Fiscal-year helpers (respect the org's Default Financial Year; gracefully
+    // degrade to Gregorian calendar years when no custom year is configured).
+    const fyForDate = (date: Date): number =>
+      customYear ? getFiscalYearForDate(date, customYear) : date.getFullYear();
+    const labelFor = (fy: number): string =>
+      customYear ? getCustomYearLabel(customYear, fy) : String(fy);
+    const bucketAdd = (
+      map: Map<number, { label: string; amount: number }>,
+      fy: number,
+      amount: number
+    ) => {
+      const existing = map.get(fy);
+      if (existing) existing.amount += amount;
+      else map.set(fy, { label: labelFor(fy), amount });
+    };
+
     // Step 1: Get all activity IDs for this organization
     const { data: activitiesData, error: activitiesError } = await supabase
       .from('activities')
@@ -113,13 +161,13 @@ export async function GET(request: NextRequest) {
       // Get budgets for these activities
       supabase
         .from('activity_budgets')
-        .select('value, currency, usd_value, period_start, activity_id')
+        .select('value, currency, usd_value, period_start, period_end, activity_id')
         .in('activity_id', activityIds),
 
       // Get planned disbursements for these activities
       supabase
         .from('planned_disbursements')
-        .select('amount, currency, usd_amount, period_start, activity_id')
+        .select('amount, currency, usd_amount, period_start, period_end, activity_id')
         .in('activity_id', activityIds),
 
       // Get transactions for these activities (owned by org)
@@ -180,37 +228,49 @@ export async function GET(request: NextRequest) {
       (a) => a.submission_status === 'validated'
     ).length;
 
-    // Process budget trend by year
-    const budgetsByYear = new Map<number, number>();
+    // Process budget trend by fiscal year (proportional day-overlap split across
+    // fiscal years for periods that straddle an FY boundary).
+    const budgetsByYear = new Map<number, { label: string; amount: number }>();
     (budgetsResult.data || []).forEach((budget: any) => {
-      const year = budget.period_start
-        ? new Date(budget.period_start).getFullYear()
-        : new Date().getFullYear();
-      // Use usd_value, fallback to value if currency is USD
+      if (customYear && budget.period_start && budget.period_end) {
+        splitBudgetAcrossFiscalYears(budget, customYear).forEach((alloc) =>
+          bucketAdd(budgetsByYear, alloc.fiscalYear, alloc.amount)
+        );
+        return;
+      }
+      // No period_end (or no FY configured): assign full amount to the FY of the
+      // period start so the budget is never silently dropped.
       const amount = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0) || 0;
-      budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + amount);
+      if (!amount) return;
+      const d = budget.period_start ? new Date(budget.period_start) : new Date();
+      bucketAdd(budgetsByYear, fyForDate(d), amount);
     });
 
     const budgetTrend: BudgetTrendPoint[] = Array.from(budgetsByYear.entries())
-      .map(([year, amount]) => ({ year, amount }))
+      .map(([year, { label, amount }]) => ({ year, label, amount }))
       .sort((a, b) => a.year - b.year)
-      .slice(-5); // Last 5 years
+      .slice(-5); // Last 5 fiscal years
 
-    // Process planned disbursements trend by year
-    const plannedByYear = new Map<number, number>();
+    // Process planned disbursements trend by fiscal year (proportional split;
+    // the helper handles records with no period_end on its own).
+    const plannedByYear = new Map<number, { label: string; amount: number }>();
     (plannedDisbursementsResult.data || []).forEach((pd: any) => {
-      const year = pd.period_start
-        ? new Date(pd.period_start).getFullYear()
-        : new Date().getFullYear();
-      // Use usd_amount, fallback to amount if currency is USD
+      if (customYear) {
+        splitPlannedDisbursementAcrossFiscalYears(pd, customYear).forEach((alloc) =>
+          bucketAdd(plannedByYear, alloc.fiscalYear, alloc.amount)
+        );
+        return;
+      }
       const amount = pd.usd_amount || (pd.currency === 'USD' ? pd.amount : 0) || 0;
-      plannedByYear.set(year, (plannedByYear.get(year) || 0) + amount);
+      if (!amount) return;
+      const d = pd.period_start ? new Date(pd.period_start) : new Date();
+      bucketAdd(plannedByYear, fyForDate(d), amount);
     });
 
     const plannedBudgetTrend: BudgetTrendPoint[] = Array.from(plannedByYear.entries())
-      .map(([year, amount]) => ({ year, amount }))
+      .map(([year, { label, amount }]) => ({ year, label, amount }))
       .sort((a, b) => a.year - b.year)
-      .slice(-5); // Last 5 years
+      .slice(-5); // Last 5 fiscal years
 
     // Process transaction trend by year with type breakdown (counts + amounts)
     const transactionsByYear = new Map<number, {
@@ -223,7 +283,7 @@ export async function GET(request: NextRequest) {
     allTransactions.forEach((tx: any) => {
       if (tx.transaction_date) {
         const d = new Date(tx.transaction_date);
-        const year = d.getFullYear();
+        const year = fyForDate(d);
         if (!transactionsByYear.has(year)) {
           transactionsByYear.set(year, { count: 0, amount: 0, types: new Map(), typeAmounts: new Map() });
         }
@@ -241,16 +301,17 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Convert to array format, using year as the "month" field for compatibility
+    // Convert to array format. `month` carries the fiscal-year display label
+    // (e.g. "CY2025" / "AU FY2024-25"); sort by the numeric fiscal year first.
     const transactionTrend: TransactionTrendPoint[] = Array.from(transactionsByYear.entries())
+      .sort(([a], [b]) => a - b)
       .map(([year, data]) => ({
-        month: year.toString(),
+        month: labelFor(year),
         count: data.count,
         amount: data.amount,
         types: Object.fromEntries(data.types),
         typeAmounts: Object.fromEntries(data.typeAmounts),
       }))
-      .sort((a, b) => a.month.localeCompare(b.month))
       .slice(-5);
 
     // Build lookup maps for budgets, planned disbursements, and disbursement transactions per activity

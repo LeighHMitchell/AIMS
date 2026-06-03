@@ -15,6 +15,7 @@ import {
   formatPeriodRange,
   derivePeriodTypeLabel,
 } from './frameworkHelpers';
+import { formatLongDate } from '@/lib/date-utils';
 
 interface IndicatorFrameworkBlockProps {
   indicator: ResultIndicator;
@@ -72,7 +73,7 @@ export function IndicatorFrameworkBlock({
         <div>{baseline.value != null ? formatMeasureValue(baseline.value, indicator.measure) : <NotProvided />}</div>
         {(baseline.baseline_year || baseline.iso_date) && (
           <div className="text-helper text-muted-foreground">
-            {baseline.baseline_year || (baseline.iso_date ? baseline.iso_date.slice(0, 10) : '')}
+            {baseline.baseline_year || (baseline.iso_date ? formatLongDate(baseline.iso_date) : '')}
           </div>
         )}
       </div>

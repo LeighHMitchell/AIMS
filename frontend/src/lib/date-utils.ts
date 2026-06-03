@@ -219,16 +219,36 @@ export const formatActivityDate = (dateString: string | undefined): string => {
 };
 
 export const formatDateRange = (
-  startDate: string | undefined, 
+  startDate: string | undefined,
   endDate: string | undefined
 ): string => {
   const start = startDate ? formatActivityDate(startDate) : null;
   const end = endDate ? formatActivityDate(endDate) : null;
-  
+
   if (!start && !end) return '';
   if (!start) return `Ends ${end}`;
   if (!end) return `Starts ${start}`;
   return `${start} – ${end}`;
+};
+
+/** "1 July 2024" — long, human-readable date with no leading zero on the day. */
+export const formatLongDate = (dateString: string | undefined | null): string => {
+  if (!dateString) return '';
+  // Slice to the calendar date so a full ISO timestamp doesn't shift across timezones.
+  const date = parseISO(String(dateString).slice(0, 10));
+  if (!isValid(date)) return '';
+  return format(date, 'd MMMM yyyy');
+};
+
+/** "1 July 2024 → 30 June 2025" — long date range with an arrow separator. */
+export const formatLongDateRange = (
+  startDate: string | undefined | null,
+  endDate: string | undefined | null
+): string => {
+  const start = startDate ? formatLongDate(startDate) : '';
+  const end = endDate ? formatLongDate(endDate) : '';
+  if (start && end) return `${start} → ${end}`;
+  return start || end || '';
 };
 
 export const formatRelativeTime = (dateString: string): string => {

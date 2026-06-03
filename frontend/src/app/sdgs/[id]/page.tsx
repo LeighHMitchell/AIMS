@@ -203,32 +203,38 @@ export default function SDGProfilePage() {
     }
 
     if (abortControllerRef.current) abortControllerRef.current.abort()
-    abortControllerRef.current = new AbortController()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
     setLoading(true)
     setError(null)
 
     const fetchSDGData = async () => {
       try {
         const response = await apiFetch(`/api/sdgs/${sdgId}`, {
-          signal: abortControllerRef.current!.signal
+          signal: controller.signal
         })
         if (!response.ok) {
           if (response.status === 404) throw new Error('SDG goal not found')
           throw new Error('Failed to fetch SDG data')
         }
         const data = await response.json()
+        if (controller.signal.aborted) return
         setSdgData(data)
       } catch (err: any) {
-        if (err.name === 'AbortError') return
+        if (err.name === 'AbortError' || controller.signal.aborted) return
         console.error('[SDG Profile] Error:', err)
         setError(err.message || 'Failed to load SDG profile')
       } finally {
-        setLoading(false)
+        // Only the live request settles loading. An aborted run (e.g. React
+        // Strict Mode's double-invoke, or rapid navigation) must NOT flip
+        // loading to false, or the error/empty state flashes before the real
+        // fetch resolves.
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
     fetchSDGData()
-    return () => { abortControllerRef.current?.abort() }
+    return () => { controller.abort() }
   }, [params?.id])
 
   // Reset pagination when filter changes

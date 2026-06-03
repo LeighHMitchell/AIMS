@@ -275,19 +275,13 @@ export default function SectorsListingPage() {
                         bannerColor={getSectorColor(group.code)}
                         bannerImage={banners[cat.code]}
                         bannerContent={!banners[cat.code] ? (
-                          <div className="h-full w-full flex items-center justify-center">
+                          <div className="h-full w-full flex items-center justify-center pointer-events-none">
                             <span className="text-5xl font-bold text-white/15 font-mono">{cat.code}</span>
                           </div>
                         ) : undefined}
                         bannerOverlay={
                           <h2 className="text-body font-bold text-white leading-tight">
-                            <Link
-                              href={`/sectors/${cat.code}`}
-                              className="relative z-10 hover:underline inline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {cat.name}
-                            </Link>
+                            {cat.name}
                           </h2>
                         }
                       >

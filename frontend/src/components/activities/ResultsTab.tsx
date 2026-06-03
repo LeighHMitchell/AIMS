@@ -44,6 +44,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
+import { formatLongDateRange } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 import { useResults, useBaselines, useIndicators } from '@/hooks/use-results';
 import { supabase } from '@/lib/supabase';
@@ -740,7 +741,7 @@ export function ResultsTab({
 
       {/* Add Result Modal */}
       <Dialog open={showAddResult && !readOnly} onOpenChange={(open) => { if (!open) setShowAddResult(false); }}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>What result do you want to achieve?</DialogTitle>
           </DialogHeader>
@@ -931,7 +932,7 @@ export function ResultsTab({
                   }
                 }}
               >
-                <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col" onCloseAutoFocus={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle>Edit Result</DialogTitle>
                   </DialogHeader>
@@ -1098,11 +1099,11 @@ export function ResultsTab({
                             }
                           }}
                         >
-                          <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-                            <DialogHeader>
+                          <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onCloseAutoFocus={(e) => e.preventDefault()}>
+                            <DialogHeader className="shrink-0">
                               <DialogTitle>Edit Indicator</DialogTitle>
                             </DialogHeader>
-                            <ScrollArea className="flex-1 min-h-0">
+                            <div className="flex-1 min-h-0 overflow-y-auto">
                               <div className="space-y-4 pr-4">
                                 {/* Title Editing */}
                                 <div className="space-y-2">
@@ -1225,9 +1226,9 @@ export function ResultsTab({
                                 <div className="space-y-4 p-4 bg-muted rounded-lg">
                                   <h6 className="text-body font-semibold text-foreground">Baseline Information</h6>
 
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-2 gap-4 items-start">
                                     <div className="space-y-2">
-                                      <Label className="text-body font-medium text-foreground flex items-center gap-2">
+                                      <Label className="text-body font-medium text-foreground flex items-center gap-2 min-h-5">
                                         Baseline Value
                                         <HelpTextTooltip>
                                           The starting value before your activity began
@@ -1249,7 +1250,7 @@ export function ResultsTab({
                                     </div>
 
                                     <div className="space-y-2">
-                                      <Label className="text-body font-medium text-foreground">Baseline Year</Label>
+                                      <Label className="text-body font-medium text-foreground flex items-center gap-2 min-h-5">Baseline Year</Label>
                                       <Input
                                         type="number"
                                         min="1900"
@@ -1385,7 +1386,7 @@ export function ResultsTab({
                                                   </Button>
                                                   <div className="text-body">
                                                     <div className="font-medium text-foreground">
-                                                      {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
+                                                      {formatLongDateRange(period.period_start, period.period_end)}
                                                     </div>
                                                     <div className="text-helper text-muted-foreground">
                                                       Target: {period.target_value?.toLocaleString() || 'Not set'} |
@@ -1584,8 +1585,8 @@ export function ResultsTab({
                                   </div>
                                 </div>
                               </div>
-                            </ScrollArea>
-                            <DialogFooter>
+                            </div>
+                            <DialogFooter className="shrink-0">
                               <Button
                                 variant="outline"
                                 onClick={() => {
@@ -2236,7 +2237,7 @@ export function ResultsTab({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Add Period</DialogTitle>
             <DialogDescription>

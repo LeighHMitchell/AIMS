@@ -23,7 +23,7 @@ import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { getSectorColor } from '@/lib/sector-colors'
-import { CHART_COLOR_PALETTE } from '@/lib/chart-colors'
+import { getTransactionTypeColor } from '@/lib/chart-colors'
 import { SubSectorBreakdown } from '@/components/sectors/SubSectorBreakdown'
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
 import { ProfileBannerUpload } from '@/components/profiles/ProfileBannerUpload'
@@ -63,8 +63,6 @@ interface SectorData {
 }
 
 // ---- Helpers ----
-function formatNumber(value: number): string { return new Intl.NumberFormat('en-US').format(value) }
-
 function getStatusLabel(status?: string): string {
   const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Completion', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' }
   return labels[status || ''] || 'Unknown'
@@ -72,10 +70,6 @@ function getStatusLabel(status?: string): string {
 
 function getStatusVariant(status?: string): 'default' | 'secondary' | 'destructive' | 'outline' {
   if (status === '2') return 'default'; if (status === '4') return 'secondary'; if (status === '5') return 'destructive'; return 'outline'
-}
-
-function getLevelLabel(level: string): string {
-  return level === 'group' ? 'Sector Group' : level === 'category' ? 'Sector Category' : 'Sector'
 }
 
 // ---- Component ----
@@ -124,7 +118,11 @@ export default function SectorProfilePage() {
   useEffect(() => { setActivityPage(1) }, [activityStatusFilter, activitySort])
 
   const themeColor = useMemo(() => data ? getSectorColor(data.sector.code) : '#6B7280', [data])
-  const palette = CHART_COLOR_PALETTE
+  // Canonical financial-series colors (single source of truth, chart-colors.ts):
+  // a Disbursement bar/area is always the same hue as a transaction-type-3 slice.
+  const COMMITMENT_COLOR = getTransactionTypeColor('2')
+  const DISBURSEMENT_COLOR = getTransactionTypeColor('3')
+  const EXPENDITURE_COLOR = getTransactionTypeColor('4')
 
   const filteredActivities = useMemo(() => {
     if (!data) return []
@@ -195,7 +193,7 @@ export default function SectorProfilePage() {
           ]} />
 
           {/* Hero Banner */}
-          <div className="rounded-xl p-6 mb-6 border border-border relative overflow-hidden group" style={{ background: `linear-gradient(to right, ${themeColor}15, ${themeColor}08)` }}>
+          <div className="rounded-xl p-6 mb-6 border border-border relative overflow-hidden group min-h-[320px] flex flex-col justify-end" style={{ background: `linear-gradient(to right, ${themeColor}15, ${themeColor}08)` }}>
             {sectorBanner && (
               <div className="absolute inset-0">
                 <img src={sectorBanner} alt="" className="w-full h-full object-cover" style={{ objectPosition: `center ${sectorBannerPosition}%` }} />
@@ -235,9 +233,13 @@ export default function SectorProfilePage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={transactionsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
                         <defs>
-                          <linearGradient id="secGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#4c5568" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#4c5568" stopOpacity={0} />
+                          <linearGradient id="secGradC" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={COMMITMENT_COLOR} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={COMMITMENT_COLOR} stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="secGradD" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={DISBURSEMENT_COLOR} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={DISBURSEMENT_COLOR} stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
@@ -248,8 +250,8 @@ export default function SectorProfilePage() {
                             {payload.map((e: any, i: number) => <p key={i} className="text-helper text-muted-foreground">{e.name}: {formatCurrencyShort(e.value)}</p>)}
                           </div>
                         ) : null} />
-                        <Area type="monotone" dataKey="commitments" stackId="1" stroke="#4c5568" strokeWidth={2} fill="url(#secGrad)" name="Commitments" />
-                        <Area type="monotone" dataKey="disbursements" stackId="1" stroke="#7b95a7" strokeWidth={1.5} fill="#7b95a733" name="Disbursements" />
+                        <Area type="monotone" dataKey="commitments" stroke={COMMITMENT_COLOR} strokeWidth={2} fill="url(#secGradC)" name="Commitments" />
+                        <Area type="monotone" dataKey="disbursements" stroke={DISBURSEMENT_COLOR} strokeWidth={1.5} fill="url(#secGradD)" name="Disbursements" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -272,7 +274,7 @@ export default function SectorProfilePage() {
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}><p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
                         ) : null} />
-                        <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -290,7 +292,7 @@ export default function SectorProfilePage() {
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}><p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
                         ) : null} />
-                        <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -302,7 +304,7 @@ export default function SectorProfilePage() {
           <div className="space-y-8">
 
             {/* Sub-Sector Coverage + Breakdown */}
-            <Card><CardHeader><CardTitle className="text-body">{sector.level === 'sector' ? 'Related Sectors in Same Category' : 'Sub-Sector Breakdown'}</CardTitle></CardHeader><CardContent>
+            <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">{sector.level === 'sector' ? 'Related Sectors in Same Category' : 'Sub-Sector Breakdown'}</CardTitle></CardHeader><CardContent>
               {subSectorBreakdown.length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
@@ -315,7 +317,7 @@ export default function SectorProfilePage() {
                     ))}
                   </div>
                   <p className="text-helper text-muted-foreground">{subSectorBreakdown.filter(s => s.totalValue > 0).length} of {subSectorBreakdown.length} sub-sectors funded</p>
-                  <SubSectorBreakdown subSectors={subSectorBreakdown} themeColor={themeColor} />
+                  <SubSectorBreakdown subSectors={subSectorBreakdown} themeColor={themeColor} hideChart />
                 </div>
               ) : (
                 <p className="text-muted-foreground text-body text-center py-8">No sub-sector data available</p>
@@ -324,14 +326,14 @@ export default function SectorProfilePage() {
 
             {/* Financials */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card><CardHeader><CardTitle className="text-body">Financial Trends</CardTitle></CardHeader><CardContent>
+              <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">Financial Trends</CardTitle></CardHeader><CardContent>
                 {transactionsByYear.length > 0 ? (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={transactionsByYear} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                         <defs>
-                          <linearGradient id="secFinGradC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#4c5568" stopOpacity={0.3} /><stop offset="95%" stopColor="#4c5568" stopOpacity={0} /></linearGradient>
-                          <linearGradient id="secFinGradD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7b95a7" stopOpacity={0.3} /><stop offset="95%" stopColor="#7b95a7" stopOpacity={0} /></linearGradient>
+                          <linearGradient id="secFinGradC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={COMMITMENT_COLOR} stopOpacity={0.3} /><stop offset="95%" stopColor={COMMITMENT_COLOR} stopOpacity={0} /></linearGradient>
+                          <linearGradient id="secFinGradD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={DISBURSEMENT_COLOR} stopOpacity={0.3} /><stop offset="95%" stopColor={DISBURSEMENT_COLOR} stopOpacity={0} /></linearGradient>
                         </defs>
                         <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
                         <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
@@ -342,24 +344,26 @@ export default function SectorProfilePage() {
                           </div>
                         ) : null} />
 
-                        <Area type="monotone" dataKey="commitments" name="Commitments" stroke="#4c5568" strokeWidth={2} fill="url(#secFinGradC)" />
-                        <Area type="monotone" dataKey="disbursements" name="Disbursements" stroke="#7b95a7" strokeWidth={2} fill="url(#secFinGradD)" />
-                        <Area type="monotone" dataKey="expenditures" name="Expenditures" stroke="#dc2625" strokeWidth={1.5} fill="none" />
+                        <Area type="monotone" dataKey="commitments" name="Commitments" stroke={COMMITMENT_COLOR} strokeWidth={2} fill="url(#secFinGradC)" />
+                        <Area type="monotone" dataKey="disbursements" name="Disbursements" stroke={DISBURSEMENT_COLOR} strokeWidth={2} fill="url(#secFinGradD)" />
+                        <Area type="monotone" dataKey="expenditures" name="Expenditures" stroke={EXPENDITURE_COLOR} strokeWidth={1.5} fill="none" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-body">No time-series data</div>}
               </CardContent></Card>
 
-              <Card><CardHeader><CardTitle className="text-body">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
+              <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
                 {transactionsByType.length > 0 ? (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={50} outerRadius={90} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
-                          {transactionsByType.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
+                          {transactionsByType.map((entry, index) => <Cell key={`cell-${index}`} fill={getTransactionTypeColor(entry.type)} />)}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => formatCurrencyShort(value)} />
+                        <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-helper text-foreground">{payload[0]?.payload?.label}</p><p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
+                        ) : null} />
 
                       </RechartsPieChart>
                     </ResponsiveContainer>
@@ -369,12 +373,12 @@ export default function SectorProfilePage() {
             </div>
 
             {/* Donors */}
-            <Card><CardHeader><CardTitle className="text-body">Development Partner Landscape</CardTitle></CardHeader><CardContent>
+            <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">Development Partner Landscape</CardTitle></CardHeader><CardContent>
               <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
             </CardContent></Card>
 
             {/* Activities */}
-            <Card><CardHeader><CardTitle className="text-body">Activities</CardTitle></CardHeader><CardContent className="space-y-4">
+            <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">Activities</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   {[
@@ -472,7 +476,7 @@ export default function SectorProfilePage() {
             </CardContent></Card>
 
             {/* Organizations */}
-            <Card><CardHeader><CardTitle className="text-body">Organisations</CardTitle></CardHeader><CardContent className="space-y-4">
+            <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">Organisations</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1">
                   {['all', 'funding', 'implementing', 'accountable'].map(role => (
@@ -519,14 +523,14 @@ export default function SectorProfilePage() {
             </CardContent></Card>
 
             {/* Geography */}
-            <Card><CardHeader><CardTitle className="text-body">Activity Locations</CardTitle></CardHeader><CardContent>
+            <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg"><CardTitle className="text-body font-medium">Activity Locations</CardTitle></CardHeader><CardContent>
               <SDGGeographyMap locations={geographicDistribution} sdgColor={themeColor} />
             </CardContent></Card>
 
             {geographicDistribution.length > 0 && (
-              <Card><CardHeader>
+              <Card className="group"><CardHeader className="group-hover:bg-surface-muted transition-colors rounded-t-lg">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-body">Country Rankings</CardTitle>
+                  <CardTitle className="text-body font-medium">Country Rankings</CardTitle>
                   <Button variant="ghost" size="icon" className="h-7 w-7" title="Export CSV" aria-label="Export CSV" onClick={() => {
                     exportChartToCSV(
                       geographicDistribution.map((g, i) => ({

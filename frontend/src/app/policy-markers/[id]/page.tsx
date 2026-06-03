@@ -22,10 +22,12 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
-import { getIconForMarker, getSignificanceLabel, MARKER_TYPE_COLORS, MARKER_TYPE_BADGE_CLASSES, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
+import { getSignificanceLabel, MARKER_TYPE_COLORS, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 import { SignificanceDistribution } from '@/components/policy-markers/SignificanceDistribution'
+import { ProfileBannerUpload } from '@/components/profiles/ProfileBannerUpload'
+import { useUserRole } from '@/hooks/useUserRole'
 import Flag from 'react-world-flags'
 
 const SDGGeographyMap = dynamic(
@@ -64,10 +66,6 @@ interface PolicyMarkerData {
 }
 
 // ---- Helpers ----
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value)
-}
-
 function getStatusLabel(status?: string): string {
   const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Completion', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' }
   return labels[status || ''] || 'Unknown'
@@ -92,6 +90,9 @@ export default function PolicyMarkerProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const [banner, setBanner] = useState<string | null>(null)
+  const [bannerPosition, setBannerPosition] = useState(50)
+  const { isSuperUser } = useUserRole()
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const [activityView, setActivityView] = useState<'card' | 'table'>('card')
@@ -186,10 +187,8 @@ export default function PolicyMarkerProfilePage() {
     )
   }
 
-  const { marker, metrics, activities, organizations, transactionsByYear, transactionsByType, geographicDistribution, significanceDistribution, yoyStats, donorRankings } = data
-  const IconComponent = getIconForMarker(marker.iati_code)
+  const { marker, metrics, activities, organizations, transactionsByYear, transactionsByType, geographicDistribution, significanceDistribution, yoyStats, donorRankings, activityStatusBreakdown } = data
   const isRMNCH = marker.iati_code === '9'
-  const badgeClass = MARKER_TYPE_BADGE_CLASSES[marker.marker_type] || MARKER_TYPE_BADGE_CLASSES.other
 
   return (
     <MainLayout>
@@ -201,12 +200,26 @@ export default function PolicyMarkerProfilePage() {
           ]} />
 
           {/* Hero Banner */}
-          <Card className="mb-6 border-0 overflow-hidden" style={{ borderTop: `4px solid ${themeColor}` }}>
-            <CardContent className="p-6">
+          <Card className="mb-6 border-0 overflow-hidden relative group">
+            {banner && (
+              <div className="absolute inset-0">
+                <img
+                  src={banner}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: `center ${bannerPosition}%` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-background/30" />
+              </div>
+            )}
+            <ProfileBannerUpload
+              profileType="policy_marker"
+              profileId={String(marker.id)}
+              canEdit={isSuperUser()}
+              onBannerChange={(b, pos) => { setBanner(b); setBannerPosition(pos) }}
+            />
+            <CardContent className="p-6 relative z-[1]">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ backgroundColor: `${themeColor}15`, border: `2px solid ${themeColor}40` }}>
-                  <IconComponent className="w-8 h-8" style={{ color: themeColor }} />
-                </div>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-3xl font-bold text-foreground mb-1">{marker.name}</h1>
                   <p className="text-body text-muted-foreground leading-relaxed mb-3">{marker.description}</p>
@@ -214,8 +227,7 @@ export default function PolicyMarkerProfilePage() {
                     <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                       {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
                     </code>
-                    <Badge className={badgeClass}>{getMarkerTypeLabel(marker.marker_type)}</Badge>
-                    {marker.is_iati_standard && <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">IATI Standard</Badge>}
+                    <Badge variant="outline" className="border-border text-foreground">{getMarkerTypeLabel(marker.marker_type)}</Badge>
                     {marker.vocabulary && marker.vocabulary !== '1' && (
                       <Badge variant="outline" className="border-border text-foreground">Vocabulary: {marker.vocabulary}</Badge>
                     )}
@@ -232,7 +244,7 @@ export default function PolicyMarkerProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Funding Trends */}
             <Card>
-              <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Funding Trends</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-foreground">Funding Trends</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {transactionsByYear.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -263,7 +275,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Significance Distribution mini */}
             <Card>
-              <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Significance Distribution</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-foreground">Significance Distribution</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 <SignificanceDistribution distribution={significanceDistribution} themeColor={themeColor} compact />
               </CardContent>
@@ -271,7 +283,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Top Donors mini */}
             <Card>
-              <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Top Development Partners</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-foreground">Top Development Partners</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {donorRankings.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -292,7 +304,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Geographic Spread mini */}
             <Card>
-              <CardHeader className="py-2 px-3"><CardTitle className="text-body font-medium text-foreground">Geographic Spread</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-foreground">Geographic Spread</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {geographicDistribution.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -326,27 +338,35 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Overview */}
             <TabsContent value="overview" className="space-y-6">
-              <Card><CardHeader><CardTitle className="text-body">Summary</CardTitle></CardHeader><CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div><p className="text-helper font-medium text-muted-foreground mb-1">Aligned Activities</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalActivities)}</p><p className="text-helper text-muted-foreground mt-0.5">using this policy marker</p></div>
-                  <div><p className="text-helper font-medium text-muted-foreground mb-1">Organisations</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalOrganizations)}</p><p className="text-helper text-muted-foreground mt-0.5">involved</p></div>
-                  <div><p className="text-helper font-medium text-muted-foreground mb-1">Total Financial Value</p><p className="text-3xl font-bold text-foreground">{formatCurrencyShort(metrics.totalValue)}</p><p className="text-helper text-muted-foreground mt-0.5">across all transactions</p></div>
-                </div>
-              </CardContent></Card>
-
-              {/* Significance pie */}
-              {significanceDistribution.length > 0 && (
-                <Card><CardHeader><CardTitle className="text-body">Significance Overview</CardTitle></CardHeader><CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie data={significanceDistribution} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={40} outerRadius={75} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
-                          {significanceDistribution.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
-                        </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value} activities`} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
+              {/* Activity Status breakdown */}
+              {activityStatusBreakdown.length > 0 && (
+                <Card><CardHeader><CardTitle className="text-body">Activity Status</CardTitle></CardHeader><CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie data={activityStatusBreakdown} dataKey="count" nameKey="statusLabel" cx="50%" cy="50%" innerRadius={40} outerRadius={75} label={({ statusLabel, percent }) => `${statusLabel}: ${(percent * 100).toFixed(0)}%`}>
+                            {activityStatusBreakdown.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
+                          </Pie>
+                          <RechartsTooltip formatter={(value: number, _name: string, entry: any) => [`${value} activities`, entry?.payload?.statusLabel]} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-2">
+                      {activityStatusBreakdown.map((s, i) => (
+                        <div key={s.status} className="flex items-center justify-between p-2.5 border border-border rounded-lg">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: palette[i % palette.length] }} />
+                            <span className="text-helper font-medium text-foreground truncate">{s.statusLabel}</span>
+                          </div>
+                          <div className="text-right ml-3 flex-shrink-0">
+                            <span className="text-body font-semibold text-foreground">{s.count}</span>
+                            <span className="text-[10px] text-muted-foreground ml-1.5">{formatCurrencyShort(s.totalValue)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </CardContent></Card>
               )}
@@ -370,23 +390,6 @@ export default function PolicyMarkerProfilePage() {
                         </div>
                       </Link>
                     ))}
-                  </div>
-                </CardContent></Card>
-              )}
-
-              {/* Transaction Type Donut */}
-              {transactionsByType.length > 0 && (
-                <Card><CardHeader><CardTitle className="text-body">Transaction Types</CardTitle></CardHeader><CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={40} outerRadius={75} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
-                          {transactionsByType.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
-                        </Pie>
-                        <RechartsTooltip formatter={(value: number) => formatCurrencyShort(value)} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
                   </div>
                 </CardContent></Card>
               )}

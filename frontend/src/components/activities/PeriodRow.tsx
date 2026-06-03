@@ -24,6 +24,7 @@ import {
   UpdatePeriodData,
   STATUS_THRESHOLDS
 } from '@/types/results';
+import { formatLongDateRange } from '@/lib/date-utils';
 
 interface PeriodRowProps {
   period: IndicatorPeriod;
@@ -111,21 +112,8 @@ export function PeriodRow({
   };
 
   // Format date range
-  const formatDateRange = (start: string, end: string): string => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    
-    const formatOptions: Intl.DateTimeFormatOptions = { 
-      month: 'short', 
-      day: 'numeric',
-      year: startDate.getFullYear() !== endDate.getFullYear() ? 'numeric' : undefined
-    };
-    
-    const startFormatted = startDate.toLocaleDateString('en-US', formatOptions);
-    const endFormatted = endDate.toLocaleDateString('en-US', formatOptions);
-    
-    return `${startFormatted} – ${endFormatted}`;
-  };
+  const formatDateRange = (start: string, end: string): string =>
+    formatLongDateRange(start, end);
 
   const status = getStatus();
   const StatusIcon = status.icon;

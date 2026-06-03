@@ -9,9 +9,11 @@ import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
 
 interface ProfileBannerUploadProps {
-  profileType: 'sdg' | 'sector' | 'location'
+  profileType: 'sdg' | 'sector' | 'location' | 'policy_marker'
   profileId: string
   onBannerChange?: (banner: string | null, position: number) => void
+  /** When false, the banner still loads/displays but the edit button is hidden. Defaults to true. */
+  canEdit?: boolean
 }
 
 interface BannerData {
@@ -19,13 +21,21 @@ interface BannerData {
   banner_position: number
 }
 
-export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: ProfileBannerUploadProps) {
+export function ProfileBannerUpload({ profileType, profileId, onBannerChange, canEdit = true }: ProfileBannerUploadProps) {
   const [bannerData, setBannerData] = useState<BannerData>({ banner: null, banner_position: 50 })
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const onBannerChangeRef = React.useRef(onBannerChange)
   onBannerChangeRef.current = onBannerChange
   const saveVersionRef = React.useRef(0)
+  // Mirror of bannerData read synchronously by the change handlers. The
+  // EnhancedImageUpload "Replace" flow fires onChange(newUrl) AND
+  // onPositionChange(50) in the same tick; reading bannerData directly in the
+  // second handler would see the pre-render (stale) value and overwrite the new
+  // image with the old URL. The ref always holds the latest committed values.
+  const bannerDataRef = React.useRef(bannerData)
+  bannerDataRef.current = bannerData
+  const pendingSaveRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -74,12 +84,34 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
     }
   }, [profileType, profileId])
 
+  // Apply a banner/position change, update the ref synchronously, notify the
+  // parent immediately, and coalesce the persistence call. Coalescing collapses
+  // the onChange + onPositionChange pair fired by a single "Replace" into one
+  // PUT that carries the final, correct { banner, position } pair — avoiding the
+  // racing double-save that previously reverted the image to the old URL.
+  const commit = useCallback((next: BannerData) => {
+    bannerDataRef.current = next
+    setBannerData(next)
+    onBannerChangeRef.current?.(next.banner, next.banner_position)
+    if (pendingSaveRef.current) clearTimeout(pendingSaveRef.current)
+    pendingSaveRef.current = setTimeout(() => {
+      pendingSaveRef.current = null
+      saveBanner(bannerDataRef.current.banner, bannerDataRef.current.banner_position)
+    }, 0)
+  }, [saveBanner])
+
+  useEffect(() => () => {
+    if (pendingSaveRef.current) clearTimeout(pendingSaveRef.current)
+  }, [])
+
+  if (!canEdit) return null
+
   return (
     <>
       <Button
         variant="ghost"
         size="sm"
-        className="absolute top-2 right-2 z-10 bg-black/30 hover:bg-black/50 text-white h-7 px-2 text-helper opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 z-10 bg-white/90 shadow-sm text-foreground hover:bg-white h-7 px-2 text-helper opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={() => setIsEditing(true)}
       >
         <Camera className="h-3 w-3 mr-1" />
@@ -94,16 +126,11 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
           <EnhancedImageUpload
             value={bannerData.banner || ''}
             onChange={(value) => {
-              const newBanner = value || null
-              setBannerData(prev => ({ ...prev, banner: newBanner }))
-              onBannerChangeRef.current?.(newBanner, bannerData.banner_position)
-              saveBanner(newBanner, bannerData.banner_position)
+              commit({ banner: value || null, banner_position: bannerDataRef.current.banner_position })
             }}
             position={bannerData.banner_position}
             onPositionChange={(pos) => {
-              setBannerData(prev => ({ ...prev, banner_position: pos }))
-              onBannerChangeRef.current?.(bannerData.banner, pos)
-              saveBanner(bannerData.banner, pos)
+              commit({ banner: bannerDataRef.current.banner, banner_position: pos })
             }}
             variant="banner"
             label="Banner"

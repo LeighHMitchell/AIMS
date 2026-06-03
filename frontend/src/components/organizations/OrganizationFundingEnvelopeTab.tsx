@@ -57,7 +57,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies'
-import { formatCurrencyPrecise, formatCurrencyCompact as formatCurrencyCompactCanonical } from '@/lib/format'
+import { formatCurrencyPrecise } from '@/lib/format'
 
 interface OrganizationFundingEnvelopeTabProps {
   organizationId: string
@@ -107,46 +107,6 @@ export default function OrganizationFundingEnvelopeTab({
       fetchEnvelopes()
     }
   }, [organizationId, fetchEnvelopes])
-
-  // Categorize envelopes by temporal status
-  const categorizedEnvelopes = useMemo(() => {
-    const past: OrganizationFundingEnvelope[] = []
-    const current: OrganizationFundingEnvelope[] = []
-    const future: OrganizationFundingEnvelope[] = []
-
-    envelopes.forEach(envelope => {
-      const category = getTemporalCategory(envelope, currentYear)
-      if (category === 'past') {
-        past.push(envelope)
-      } else if (category === 'current') {
-        current.push(envelope)
-      } else {
-        future.push(envelope)
-      }
-    })
-
-    // Sort each category by year (descending)
-    const sortByYear = (a: OrganizationFundingEnvelope, b: OrganizationFundingEnvelope) => {
-      const aEnd = a.year_end || a.year_start
-      const bEnd = b.year_end || b.year_start
-      return bEnd - aEnd
-    }
-
-    return {
-      past: past.sort(sortByYear),
-      current: current.sort(sortByYear),
-      future: future.sort(sortByYear)
-    }
-  }, [envelopes, currentYear])
-
-  // Calculate section subtotals
-  const calculateSubtotal = (categoryEnvelopes: OrganizationFundingEnvelope[]) => {
-    return categoryEnvelopes.reduce((sum, env) => {
-      // Use USD amount if available, otherwise use original amount
-      const amount = env.amount_usd || env.amount
-      return sum + (amount || 0)
-    }, 0)
-  }
 
   // Format number with commas for display
   const formatNumberWithCommas = (value: number | string): string => {
@@ -436,12 +396,6 @@ export default function OrganizationFundingEnvelopeTab({
     return formatCurrencyPrecise(amount, currency)
   }
 
-  // Format currency compact (e.g., $56.5m, $53.2k) — values are USD subtotals
-  const formatCurrencyCompact = (amount: number | null | undefined) => {
-    if (amount === null || amount === undefined) return 'N/A'
-    return formatCurrencyCompactCanonical(amount)
-  }
-
   // Format year range
   const formatYearRange = (envelope: OrganizationFundingEnvelope) => {
     if (envelope.period_type === 'single_year') {
@@ -538,40 +492,6 @@ export default function OrganizationFundingEnvelopeTab({
               </div>
             </CardHeader>
             <CardContent>
-              {/* Hero Cards for Totals */}
-              {sortedEnvelopes.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                  <div className="bg-muted rounded-lg p-3 text-center">
-                    <div className="text-section-label text-muted-foreground uppercase">Past</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.past))}
-                    </div>
-                  </div>
-                  <div className="bg-muted rounded-lg p-3 text-center">
-                    <div className="text-section-label text-muted-foreground uppercase">Current</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.current))}
-                    </div>
-                  </div>
-                  <div className="bg-muted rounded-lg p-3 text-center">
-                    <div className="text-section-label text-muted-foreground uppercase">Future</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.future))}
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-3 text-center">
-                    <div className="text-section-label text-blue-600 uppercase">All (indicative)</div>
-                    <div className="text-lg font-semibold text-blue-900">
-                      {formatCurrencyCompact(
-                        calculateSubtotal(categorizedEnvelopes.past) +
-                        calculateSubtotal(categorizedEnvelopes.current) +
-                        calculateSubtotal(categorizedEnvelopes.future)
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {loading ? (
                 <div className="space-y-2 py-2">
                   <div className="flex gap-3 px-3 py-2 border-b border-border">
@@ -596,7 +516,6 @@ export default function OrganizationFundingEnvelopeTab({
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -609,7 +528,7 @@ export default function OrganizationFundingEnvelopeTab({
                           <TableHead>Role</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Funding Types</TableHead>
-                          {!readOnly && <TableHead className="w-[100px]" />}
+                          {!readOnly && <TableHead className="w-[100px] sticky right-0 z-20 bg-surface-muted border-l border-border" />}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -667,7 +586,7 @@ export default function OrganizationFundingEnvelopeTab({
                                 )}
                               </TableCell>
                               {!readOnly && (
-                                <TableCell>
+                                <TableCell className="sticky right-0 z-10 bg-card border-l border-border">
                                   <div className="flex items-center gap-1">
                                     <Button
                                       variant="ghost"
@@ -697,7 +616,6 @@ export default function OrganizationFundingEnvelopeTab({
                         })}
                       </TableBody>
                     </Table>
-                  </div>
                 </>
               )}
             </CardContent>
