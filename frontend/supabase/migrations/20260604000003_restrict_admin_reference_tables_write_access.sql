@@ -39,6 +39,12 @@ DECLARE
   ];
 BEGIN
   FOREACH tbl IN ARRAY tables LOOP
+    -- Skip tables that don't exist in this database
+    IF to_regclass('public.' || tbl) IS NULL THEN
+      RAISE NOTICE 'Skipping missing table: %', tbl;
+      CONTINUE;
+    END IF;
+
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
 
     -- drop existing policies
