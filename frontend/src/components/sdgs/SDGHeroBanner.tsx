@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { ProfileBannerUpload } from '@/components/profiles/ProfileBannerUpload'
+import { useUserRole } from '@/hooks/useUserRole'
 
 interface SDGHeroBannerProps {
   sdg: {
@@ -16,6 +17,7 @@ interface SDGHeroBannerProps {
 export function SDGHeroBanner({ sdg }: SDGHeroBannerProps) {
   const [banner, setBanner] = useState<string | null>(null)
   const [bannerPosition, setBannerPosition] = useState(50)
+  const { isSuperUser } = useUserRole()
 
   return (
     <div
@@ -36,6 +38,7 @@ export function SDGHeroBanner({ sdg }: SDGHeroBannerProps) {
       <ProfileBannerUpload
         profileType="sdg"
         profileId={String(sdg.id)}
+        canEdit={isSuperUser()}
         onBannerChange={(b, pos) => { setBanner(b); setBannerPosition(pos) }}
       />
       <div className="flex items-center gap-4 relative z-[1]">

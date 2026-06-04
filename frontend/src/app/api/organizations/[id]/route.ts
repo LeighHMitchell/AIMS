@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { canEditOrganization } from '@/lib/organization-permissions';
 import { getOrganizationReferences } from '@/lib/organization-references';
 import { softDelete } from '@/lib/soft-delete';
 
@@ -150,21 +151,28 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
-  
+
   try {
     const { id } = await params;
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-    
+
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
       );
     }
-    
+
+    if (!user || !(await canEditOrganization(supabase, user.id, id))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to edit this organisation' },
+        { status: 403 }
+      );
+    }
+
     // Remove computed fields before updating
     const { active_project_count, ...updates } = body;
     
@@ -320,6 +328,13 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
+      );
+    }
+
+    if (!user || !(await canEditOrganization(supabase, user.id, id))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete this organisation' },
+        { status: 403 }
       );
     }
 

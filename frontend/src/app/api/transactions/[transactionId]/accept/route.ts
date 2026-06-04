@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { canEditActivity } from '@/lib/activity-permissions-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   if (!supabase) {
@@ -31,6 +32,14 @@ export async function POST(
       return NextResponse.json(
         { error: 'Accepting activity ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Only someone who can edit the accepting activity may accept into it.
+    if (!user || !(await canEditActivity(user.id, acceptingActivityId))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to accept transactions into this activity' },
+        { status: 403 }
       );
     }
 

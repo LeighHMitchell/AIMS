@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { canEditActivity } from '@/lib/activity-permissions-server';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { upsertActivitySectors } from '@/lib/activity-sectors-helper';
 import { getOrCreateContact } from '@/lib/contact-helpers';
@@ -89,6 +90,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Activity ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Only those allowed to edit this activity may autosave its fields.
+    if (!authUser || !(await canEditActivity(authUser.id, body.activityId))) {
+      clearTimeout(timeoutId);
+      return NextResponse.json(
+        { error: 'You do not have permission to edit this activity' },
+        { status: 403 }
       );
     }
 

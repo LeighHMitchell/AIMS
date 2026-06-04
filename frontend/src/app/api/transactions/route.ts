@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { canEditActivity, canEditActivities } from '@/lib/activity-permissions-server';
 import { TransactionType } from '@/types/transaction';
 import { createSupabaseClient } from '@/lib/supabase-simple';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
@@ -813,7 +814,7 @@ async function performBudgetLineInference(transactionId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     const body = await request.json().catch(() => null);
@@ -824,6 +825,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'activity_id is required' },
         { status: 400 }
+      );
+    }
+
+    // Only those allowed to edit the activity may add transactions to it.
+    if (!user || !(await canEditActivity(user.id, body.activity_id))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to edit this activity' },
+        { status: 403 }
       );
     }
 
@@ -1084,7 +1093,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     const body = await request.json().catch(() => null);
@@ -1128,7 +1137,15 @@ export async function PUT(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
+    // Only those allowed to edit the parent activity may update its transactions.
+    if (!user || !(await canEditActivity(user.id, currentTransaction.activity_id))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to edit this activity' },
+        { status: 403 }
+      );
+    }
+
     if (!transactionReference) {
       // For updates, we need to keep the existing reference if it's empty
       transactionReference = currentTransaction?.transaction_reference || null;
@@ -1402,7 +1419,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     const { searchParams } = new URL(request.url);
@@ -1440,7 +1457,23 @@ export async function DELETE(request: NextRequest) {
           { status: 400 }
         );
       }
-      
+
+      // Authorization: must be allowed to edit each affected transaction's activity.
+      const adminForLookup = getSupabaseAdmin();
+      const { data: txRows } = await (adminForLookup ?? supabase)
+        .from('transactions')
+        .select('activity_id')
+        .in('uuid', uuids);
+      const affectedActivityIds = Array.from(
+        new Set((txRows ?? []).map((t: any) => t.activity_id).filter(Boolean))
+      ) as string[];
+      if (!user || !(await canEditActivities(user.id, affectedActivityIds)).allowed) {
+        return NextResponse.json(
+          { error: 'You do not have permission to delete one or more of these transactions' },
+          { status: 403 }
+        );
+      }
+
       // Perform bulk deletion
       const { error, count } = await supabase
         .from('transactions')
@@ -1479,6 +1512,23 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid transaction ID format' },
         { status: 400 }
+      );
+    }
+
+    // Authorization: must be allowed to edit the transaction's activity.
+    const adminForLookup = getSupabaseAdmin();
+    const { data: txRow } = await (adminForLookup ?? supabase)
+      .from('transactions')
+      .select('activity_id')
+      .eq('uuid', id)
+      .single();
+    if (!txRow) {
+      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+    }
+    if (!user || !(await canEditActivity(user.id, txRow.activity_id))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete this transaction' },
+        { status: 403 }
       );
     }
 

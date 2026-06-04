@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { canEditActivity } from '@/lib/activity-permissions-server';
 import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
 import { calculateModality } from '@/utils/modality-calculation';
 
@@ -34,7 +35,16 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    
+
+    // Only super_users, the owning org, the creator, or an accepted contributor
+    // may edit an activity.
+    if (!authUser || !(await canEditActivity(authUser.id, id))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to edit this activity' },
+        { status: 403 }
+      );
+    }
+
 
     // Handle reporting organization fields from IATI import
     let reportingOrgId: string | null = null;

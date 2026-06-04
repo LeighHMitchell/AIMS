@@ -60,40 +60,43 @@ export function CountryCodeSearchableSelect({
   return (
     <div className={cn("pb-6", className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger
-          className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-            !selectedCountry && "text-muted-foreground"
+        {/* The clear control is a sibling of the trigger (not nested inside it)
+            so we don't end up with a <button> inside the trigger <button>. */}
+        <div className="relative">
+          <PopoverTrigger
+            className={cn(
+              "flex h-10 w-full items-center rounded-md border border-input bg-background pl-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+              selectedCountry ? "pr-14" : "pr-9",
+              !selectedCountry && "text-muted-foreground"
+            )}
+            disabled={disabled}
+          >
+            <span className="truncate">
+              {selectedCountry ? (
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedCountry.code}</span>
+                  <span className="font-medium">{selectedCountry.dialCode}</span>
+                </span>
+              ) : (
+                placeholder
+              )}
+            </span>
+            <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50 pointer-events-none" />
+          </PopoverTrigger>
+          {selectedCountry && !disabled && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onValueChange?.("");
+              }}
+              className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+              aria-label="Clear selection"
+            >
+              <span className="text-helper">×</span>
+            </button>
           )}
-          disabled={disabled}
-        >
-          <span className="truncate">
-            {selectedCountry ? (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedCountry.code}</span>
-                <span className="font-medium">{selectedCountry.dialCode}</span>
-              </span>
-            ) : (
-              placeholder
-            )}
-          </span>
-          <div className="flex items-center gap-2">
-            {selectedCountry && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onValueChange?.("");
-                }}
-                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                aria-label="Clear selection"
-              >
-                <span className="text-helper">×</span>
-              </button>
-            )}
-            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-          </div>
-        </PopoverTrigger>
+        </div>
         <PopoverContent 
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border max-h-[400px]"
           align={align}

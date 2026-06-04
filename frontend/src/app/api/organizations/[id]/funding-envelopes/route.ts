@@ -5,6 +5,12 @@ import { convertTransactionToUSD } from '@/lib/transaction-usd-helper';
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
+// Postgres raises 42501 (insufficient_privilege) when an RLS WITH CHECK / USING
+// clause blocks a write. Used to return a clean 403 instead of a generic 500.
+function isRlsViolation(error: { code?: string } | null | undefined): boolean {
+  return error?.code === '42501';
+}
+
 /**
  * Helper function to convert funding envelope amount to USD
  * Uses the same pattern as transactions for consistency
@@ -64,6 +70,43 @@ async function convertEnvelopeToUSD(
       usd_convertible: false
     };
   }
+}
+
+/**
+ * Resolve the USD conversion for an envelope.
+ *
+ * Honours a client-supplied exchange rate (the rate shown/typed in the modal,
+ * whether auto-fetched or manually entered) so the saved value matches what the
+ * user previewed. Falls back to a server-side conversion when no usable rate is
+ * provided. USD amounts always equal `amount * rate` (same convention as
+ * currency-converter-fixed.ts).
+ */
+async function resolveEnvelopeUsd(
+  amount: number,
+  currency: string,
+  valueDate: string | null,
+  yearStart: number,
+  clientRate: unknown
+): Promise<{
+  amount_usd: number | null;
+  exchange_rate_used: number | null;
+  usd_conversion_date: string | null;
+  usd_convertible: boolean;
+}> {
+  const manualRate = typeof clientRate === 'number' ? clientRate : Number(clientRate);
+
+  // Honour an explicit, valid rate for non-USD currencies.
+  if (currency !== 'USD' && Number.isFinite(manualRate) && manualRate > 0) {
+    return {
+      amount_usd: Math.round(amount * manualRate * 100) / 100,
+      exchange_rate_used: manualRate,
+      usd_conversion_date: new Date().toISOString(),
+      usd_convertible: true
+    };
+  }
+
+  // Otherwise convert server-side (also handles USD → rate 1.0).
+  return convertEnvelopeToUSD(amount, currency, valueDate, yearStart);
 }
 
 // GET - Fetch all funding envelopes for an organization
@@ -149,16 +192,16 @@ export async function POST(
       ? body.value_date
       : null;
 
-    // Convert to USD
-    const usdConversion = await convertEnvelopeToUSD(
+    // Convert to USD (honours a client-supplied rate when provided)
+    const usdConversion = await resolveEnvelopeUsd(
       body.amount,
       body.currency,
       normalizedValueDate,
-      body.year_start
+      body.year_start,
+      body.exchange_rate_used
     );
 
-    if (usdConversion.amount_usd !== null) {
-    } else {
+    if (usdConversion.amount_usd === null) {
       console.warn(`[Funding Envelopes API] USD conversion failed for ${body.currency}`);
     }
 
@@ -192,6 +235,9 @@ export async function POST(
 
     if (error) {
       console.error('[Funding Envelopes API] Insert error:', error);
+      if (isRlsViolation(error)) {
+        return NextResponse.json({ error: 'You do not have permission to add funding envelopes for this organisation' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'Failed to create funding envelope', details: error.message }, { status: 500 });
     }
 
@@ -239,16 +285,17 @@ export async function PUT(
       ? body.value_date
       : null;
 
-    // Convert to USD (re-convert on update in case amount, currency, or value_date changed)
-    const usdConversion = await convertEnvelopeToUSD(
+    // Re-convert on update in case amount, currency, value_date, or rate changed
+    // (honours a client-supplied rate when provided)
+    const usdConversion = await resolveEnvelopeUsd(
       body.amount,
       body.currency,
       normalizedValueDate,
-      body.year_start
+      body.year_start,
+      body.exchange_rate_used
     );
 
-    if (usdConversion.amount_usd !== null) {
-    } else {
+    if (usdConversion.amount_usd === null) {
       console.warn(`[Funding Envelopes API] USD conversion failed for ${body.currency}`);
     }
 
@@ -281,6 +328,14 @@ export async function PUT(
 
     if (error) {
       console.error('[Funding Envelopes API] Update error:', error);
+      if (isRlsViolation(error)) {
+        return NextResponse.json({ error: 'You do not have permission to edit this funding envelope' }, { status: 403 });
+      }
+      // .single() returns PGRST116 when no row is visible/updatable — either the
+      // id doesn't exist or RLS hides it from this user.
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Funding envelope not found, or you do not have permission to edit it' }, { status: 404 });
+      }
       return NextResponse.json({ error: 'Failed to update funding envelope', details: error.message }, { status: 500 });
     }
 
@@ -304,14 +359,24 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Envelope ID required' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    // Select the deleted rows so we can tell a real delete from a no-op (an
+    // RLS-blocked delete affects 0 rows but does NOT raise an error).
+    const { data: deleted, error } = await supabase
       .from('organization_funding_envelopes')
       .delete()
-      .eq('id', envelopeId);
+      .eq('id', envelopeId)
+      .select('id');
 
     if (error) {
       console.error('[Funding Envelopes API] Delete error:', error);
+      if (isRlsViolation(error)) {
+        return NextResponse.json({ error: 'You do not have permission to delete this funding envelope' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'Failed to delete funding envelope', details: error.message }, { status: 500 });
+    }
+
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: 'Funding envelope not found, or you do not have permission to delete it' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });

@@ -2,22 +2,18 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
-import { AlertCircle, List, LayoutGrid } from 'lucide-react'
+import { AlertCircle, List, LayoutGrid, Search, X, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-fetch'
-import { getIconForMarker, MARKER_TYPE_BADGE_CLASSES, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
-
-const GROUP_COLORS: Record<string, string> = {
-  'environmental': '#16a34a',
-  'social_governance': '#2563eb',
-  'other': '#7c3aed',
-  'custom': '#64748b',
-}
+import { getIconForMarker, getMarkerColor } from '@/lib/policy-marker-utils'
+import { useUserRole } from '@/hooks/useUserRole'
 
 interface PolicyMarker {
   id: number
@@ -29,6 +25,8 @@ interface PolicyMarker {
   iati_code?: string
   is_iati_standard: boolean
   activityCount: number
+  icon?: string | null
+  color?: string | null
 }
 
 interface PMSummaryData {
@@ -38,10 +36,8 @@ interface PMSummaryData {
 }
 
 const GROUP_ORDER = [
-  { key: 'environmental', label: 'Environmental' },
-  { key: 'social_governance', label: 'Social & Governance' },
+  { key: 'oecd_dac', label: 'OECD DAC Policy Marker' },
   { key: 'other', label: 'Other' },
-  { key: 'custom', label: 'Custom' },
 ]
 
 export default function PolicyMarkersListingPage() {
@@ -50,6 +46,10 @@ export default function PolicyMarkersListingPage() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [banners, setBanners] = useState<Record<string, { banner: string; banner_position: number }>>({})
+  const [query, setQuery] = useState('')
+  const { isSuperUser } = useUserRole()
+  const canEdit = isSuperUser()
+  const router = useRouter()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,6 +115,18 @@ export default function PolicyMarkersListingPage() {
   const totalMarkers = data.markers.length
   const totalActivities = data.markers.reduce((sum, m) => sum + m.activityCount, 0)
 
+  // Quick text filter across name, description, and codes
+  const q = query.trim().toLowerCase()
+  const matchesQuery = (m: PolicyMarker) =>
+    !q ||
+    m.name.toLowerCase().includes(q) ||
+    (m.description || '').toLowerCase().includes(q) ||
+    (m.code || '').toLowerCase().includes(q) ||
+    (m.iati_code || '').toLowerCase().includes(q)
+  const filteredGroups: Record<string, PolicyMarker[]> = {}
+  GROUP_ORDER.forEach(g => { filteredGroups[g.key] = (data.groups[g.key] || []).filter(matchesQuery) })
+  const filteredCount = Object.values(filteredGroups).reduce((sum, arr) => sum + arr.length, 0)
+
   return (
     <MainLayout>
       <div className="min-h-screen">
@@ -125,17 +137,42 @@ export default function PolicyMarkersListingPage() {
               <div>
                 <h1 className="text-3xl font-bold text-foreground">Policy Markers</h1>
                 <p className="text-muted-foreground mt-1">
-                  {totalMarkers} markers across {totalActivities} activity alignments
+                  {q
+                    ? `${filteredCount} of ${totalMarkers} markers`
+                    : `${totalMarkers} markers across ${totalActivities} activity alignments`}
                 </p>
               </div>
             </div>
-            <div className="flex items-center border rounded-md flex-shrink-0">
-              <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none h-9">
-                <List className="h-4 w-4" />
-              </Button>
-              <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none h-9">
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Filter markers…"
+                  className="h-9 pl-9 pr-8"
+                  aria-label="Filter policy markers"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear filter"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center border rounded-md">
+                <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none h-9">
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none h-9">
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -148,12 +185,13 @@ export default function PolicyMarkersListingPage() {
                 <div className="w-40 hidden md:block">Category</div>
                 <div className="w-16 text-center">IATI</div>
                 <div className="w-20 text-right">Activities</div>
+                {canEdit && <div className="w-10 flex-shrink-0" />}
               </div>
               {GROUP_ORDER.map(group => {
-                const markers = data.groups[group.key] || []
+                const markers = filteredGroups[group.key] || []
                 if (markers.length === 0) return null
                 return markers.map((marker: PolicyMarker) => {
-                  const IconComponent = getIconForMarker(marker.iati_code)
+                  const IconComponent = getIconForMarker(marker.iati_code, marker.icon)
                   return (
                     <Link
                       key={marker.uuid}
@@ -180,6 +218,19 @@ export default function PolicyMarkersListingPage() {
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{marker.activityCount}</Badge>
                         )}
                       </div>
+                      {canEdit && (
+                        <div className="w-10 flex-shrink-0 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/policy-markers/${marker.uuid}/edit`) }}
+                            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                            title="Edit policy marker"
+                            aria-label="Edit policy marker"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </Link>
                   )
                 })
@@ -189,16 +240,15 @@ export default function PolicyMarkersListingPage() {
 
           {/* Card View - Grouped sections */}
           {viewMode === 'card' && GROUP_ORDER.map(group => {
-            const markers = data.groups[group.key] || []
+            const markers = filteredGroups[group.key] || []
             if (markers.length === 0) return null
-            const groupColor = GROUP_COLORS[group.key] || '#64748b'
 
             return (
               <div key={group.key} className="mb-8">
                 <h2 className="text-lg font-semibold text-foreground mb-3">{group.label}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {markers.map((marker: PolicyMarker) => {
-                    const IconComponent = getIconForMarker(marker.iati_code)
+                    const IconComponent = getIconForMarker(marker.iati_code, marker.icon)
                     const markerBanner = banners[String(marker.id)]
 
                     return (
@@ -206,7 +256,19 @@ export default function PolicyMarkersListingPage() {
                         key={marker.uuid}
                         href={`/policy-markers/${marker.uuid}`}
                         ariaLabel={marker.name}
-                        bannerColor={groupColor}
+                        bannerColor={getMarkerColor(marker)}
+                        bannerActions={canEdit ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/policy-markers/${marker.uuid}/edit`) }}
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit policy marker"
+                            aria-label="Edit policy marker"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        ) : undefined}
                         bannerContent={
                           markerBanner?.banner ? (
                             <img
@@ -258,6 +320,16 @@ export default function PolicyMarkersListingPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">No policy markers found. Add policy markers to activities to see them here.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* No search results */}
+          {totalMarkers > 0 && filteredCount === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No policy markers match &ldquo;{query}&rdquo;.</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => setQuery('')}>Clear filter</Button>
               </CardContent>
             </Card>
           )}

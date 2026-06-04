@@ -70,6 +70,35 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
       className={className}
       bannerImage={workingGroup.banner || defaultBanner}
       bannerIcon={Users}
+      bannerActions={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => onEdit?.(workingGroup.id)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Working Group
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.location.href = wgUrl}>
+              <Eye className="h-4 w-4 mr-2" />
+              View Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.location.href = `/working-groups/new?parent_id=${workingGroup.id}&parent_label=${encodeURIComponent(workingGroup.label || '')}`}>
+              <GitBranch className="h-4 w-4 mr-2" />
+              Create Sub-Working Group
+            </DropdownMenuItem>
+            {onDelete && (
+              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(workingGroup.id)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
       bannerOverlay={
         <>
           <h2 className="text-lg font-bold text-white mb-1 line-clamp-2">
@@ -103,8 +132,8 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
           </p>
         )}
 
-        <div className="flex items-end justify-between mt-auto">
-          <div className="grid grid-cols-3 gap-3 flex-1">
+        <div className="mt-auto">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Members</p>
               <div className="flex items-center gap-1.5 font-medium text-body" style={{ color: colors.blueSlate }}>
@@ -126,36 +155,6 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
                 <span>{workingGroup.activities?.length || 0}</span>
               </div>
             </div>
-          </div>
-          {/* Action menu - bottom right */}
-          <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0 ml-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 relative z-10">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => onEdit?.(workingGroup.id)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit Working Group
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.location.href = wgUrl}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.location.href = `/working-groups/new?parent_id=${workingGroup.id}&parent_label=${encodeURIComponent(workingGroup.label || '')}`}>
-                  <GitBranch className="h-4 w-4 mr-2" />
-                  Create Sub-Working Group
-                </DropdownMenuItem>
-                {onDelete && (
-                  <DropdownMenuItem className="text-destructive" onClick={() => onDelete(workingGroup.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </div>

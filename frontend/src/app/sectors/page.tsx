@@ -9,9 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeaderSkeleton, StatsRowSkeleton } from '@/components/ui/skeleton-loader'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Search, PieChart, List, LayoutGrid, Activity } from 'lucide-react'
+import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Search, PieChart, List, LayoutGrid, Activity, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
+import { useRouter } from 'next/navigation'
+import { useUserRole } from '@/hooks/useUserRole'
 import { formatCurrencyShort } from '@/lib/format'
 
 // Color palette for sector groups
@@ -62,8 +64,11 @@ export default function SectorsListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [viewMode, setViewMode] = useState<'list' | 'card'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [banners, setBanners] = useState<Record<string, string>>({})
+  const router = useRouter()
+  const { isSuperUser } = useUserRole()
+  const canEdit = isSuperUser()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -273,6 +278,18 @@ export default function SectorsListingPage() {
                         href={`/sectors/${cat.code}`}
                         ariaLabel={`${cat.code}: ${cat.name}`}
                         bannerColor={getSectorColor(group.code)}
+                        bannerActions={canEdit ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${cat.code}/edit`) }}
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit sector"
+                            aria-label="Edit sector"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        ) : undefined}
                         bannerImage={banners[cat.code]}
                         bannerContent={!banners[cat.code] ? (
                           <div className="h-full w-full flex items-center justify-center pointer-events-none">

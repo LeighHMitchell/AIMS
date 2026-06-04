@@ -40,6 +40,22 @@ export async function GET(
       );
     }
 
+    // Merge super-user customizations (description/color/icon) from profile_banners
+    const sdgMeta: any = { ...sdgGoal };
+    {
+      const { data: ov } = await supabase
+        .from('profile_banners')
+        .select('description, color, icon')
+        .eq('profile_type', 'sdg')
+        .eq('profile_id', String(sdgId))
+        .maybeSingle();
+      if (ov) {
+        if (ov.description) sdgMeta.description = ov.description;
+        if (ov.color) sdgMeta.color = ov.color;
+        if (ov.icon) sdgMeta.icon = ov.icon;
+      }
+    }
+
     // Get targets for this goal
     const goalTargets = getTargetsForGoal(sdgId);
 
@@ -71,7 +87,7 @@ export async function GET(
     const activityIds = (sdgMappings || []).map((m: any) => m.activity_id).filter(Boolean);
 
     const emptyResponse = {
-      sdg: { ...sdgGoal, targetCount: goalTargets.length },
+      sdg: { ...sdgMeta, targetCount: goalTargets.length },
       metrics: {
         totalActivities: 0,
         totalOrganizations: 0,
@@ -599,7 +615,7 @@ export async function GET(
       .sort((a, b) => b.count - a.count);
 
     return NextResponse.json({
-      sdg: { ...sdgGoal, targetCount: goalTargets.length },
+      sdg: { ...sdgMeta, targetCount: goalTargets.length },
       metrics: {
         totalActivities: uniqueActivityIds.length,
         totalOrganizations: organizations.length,

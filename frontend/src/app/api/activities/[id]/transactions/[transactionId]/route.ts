@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { canEditActivity } from '@/lib/activity-permissions-server';
 import { cleanTransactionFields, cleanBooleanValue } from '@/lib/transaction-field-cleaner';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
@@ -7,7 +8,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   if (!supabase) {
@@ -15,7 +16,10 @@ export async function PUT(
   }
 
   try {
-    const { transactionId } = await params;
+    const { id: activityId, transactionId } = await params;
+    if (!user || !(await canEditActivity(user.id, activityId))) {
+      return NextResponse.json({ error: 'You do not have permission to edit this activity' }, { status: 403 });
+    }
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
@@ -179,7 +183,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   if (!supabase) {
@@ -187,7 +191,10 @@ export async function DELETE(
   }
 
   try {
-    const { transactionId } = await params;
+    const { id: activityId, transactionId } = await params;
+    if (!user || !(await canEditActivity(user.id, activityId))) {
+      return NextResponse.json({ error: 'You do not have permission to edit this activity' }, { status: 403 });
+    }
     if (!transactionId || transactionId === 'undefined') {
       return NextResponse.json(
         { error: 'Transaction ID is required and must be a valid UUID.' },

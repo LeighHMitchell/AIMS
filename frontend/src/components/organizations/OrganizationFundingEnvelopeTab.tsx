@@ -75,6 +75,9 @@ export default function OrganizationFundingEnvelopeTab({
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editingEnvelope, setEditingEnvelope] = useState<OrganizationFundingEnvelope | null>(null)
+  // Raw string for the amount input so in-progress decimals (e.g. "12.0") aren't
+  // stripped while typing; reformatted with thousands separators on blur.
+  const [amountInput, setAmountInput] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false)
   const [modalExchangeRate, setModalExchangeRate] = useState<number | null>(null)
@@ -145,7 +148,9 @@ export default function OrganizationFundingEnvelopeTab({
   const openModal = (envelope?: OrganizationFundingEnvelope) => {
     if (envelope) {
       setEditingEnvelope({ ...envelope })
+      setAmountInput(envelope.amount ? formatNumberWithCommas(envelope.amount) : '')
     } else {
+      setAmountInput('')
       setEditingEnvelope({
         organization_id: organizationId,
         period_type: 'single_year',
@@ -224,10 +229,21 @@ export default function OrganizationFundingEnvelopeTab({
       const url = `/api/organizations/${organizationId}/funding-envelopes`
       const method = isNew ? 'POST' : 'PUT'
 
+      // Send the rate shown in the modal (auto-fetched or manually entered) so
+      // the saved USD value matches the preview. For USD, or when no rate is
+      // available, the server falls back to its own conversion.
+      const payload = {
+        ...editingEnvelope,
+        exchange_rate_used:
+          editingEnvelope.currency !== 'USD' && modalExchangeRate && modalExchangeRate > 0
+            ? modalExchangeRate
+            : null
+      }
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingEnvelope)
+        body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
@@ -268,14 +284,15 @@ export default function OrganizationFundingEnvelopeTab({
       )
 
       if (!response.ok) {
-        throw new Error('Failed to delete funding envelope')
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || 'Failed to delete funding envelope')
       }
 
       setEnvelopes(prev => prev.filter(e => e.id !== envelopeId))
       toast('Funding envelope deleted')
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Funding Envelope Tab] Error deleting:', error)
-      toast.error('Failed to delete funding envelope')
+      toast.error(error?.message || 'Failed to delete funding envelope')
     } finally {
       setDeleteLoading(null)
     }
@@ -339,16 +356,16 @@ export default function OrganizationFundingEnvelopeTab({
       return
     }
 
-    const valueDate = editingEnvelope.value_date
-    if (!valueDate) {
-      setModalRateError('Please set a value date first')
-      return
-    }
+    // Mirror the server's conversion-date logic: value_date when set, else
+    // Jan 1 of year_start. This keeps the modal preview equal to the stored value.
+    const conversionDate = editingEnvelope.value_date
+      ? new Date(editingEnvelope.value_date)
+      : new Date(editingEnvelope.year_start, 0, 1)
 
     setIsLoadingModalRate(true)
     setModalRateError(null)
     try {
-      const result = await fixedCurrencyConverter.convertToUSD(1, currency, new Date(valueDate))
+      const result = await fixedCurrencyConverter.convertToUSD(1, currency, conversionDate)
       if (result.success && result.exchange_rate) {
         setModalExchangeRate(result.exchange_rate)
         setModalRateError(null)
@@ -363,7 +380,7 @@ export default function OrganizationFundingEnvelopeTab({
     } finally {
       setIsLoadingModalRate(false)
     }
-  }, [editingEnvelope?.currency, editingEnvelope?.value_date])
+  }, [editingEnvelope?.currency, editingEnvelope?.value_date, editingEnvelope?.year_start])
 
   // Calculated USD value
   const modalCalculatedUsdValue = editingEnvelope?.amount && modalExchangeRate
@@ -376,11 +393,12 @@ export default function OrganizationFundingEnvelopeTab({
       if (editingEnvelope.currency === 'USD') {
         setModalExchangeRate(1)
         setModalRateError(null)
-      } else if (editingEnvelope.value_date) {
+      } else {
+        // Fetch using value_date when set, else the Jan-1 fallback (matches server)
         fetchModalExchangeRate()
       }
     }
-  }, [editingEnvelope?.currency, editingEnvelope?.value_date, modalExchangeRateManual, fetchModalExchangeRate])
+  }, [editingEnvelope?.currency, editingEnvelope?.value_date, editingEnvelope?.year_start, modalExchangeRateManual, fetchModalExchangeRate])
 
   // Reset exchange rate state when modal opens
   useEffect(() => {
@@ -820,11 +838,20 @@ export default function OrganizationFundingEnvelopeTab({
                     </div>
                     <Input
                       type="text"
-                      inputMode="numeric"
-                      value={editingEnvelope.amount ? formatNumberWithCommas(editingEnvelope.amount) : ''}
+                      inputMode="decimal"
+                      value={amountInput}
                       onChange={(e) => {
-                        const rawValue = e.target.value.replace(/[^0-9.]/g, '')
-                        updateField('amount', parseFloat(rawValue) || 0)
+                        // Allow digits and a single decimal point while typing
+                        const cleaned = e.target.value.replace(/[^0-9.]/g, '')
+                        const parts = cleaned.split('.')
+                        const normalized = parts.length > 2
+                          ? `${parts[0]}.${parts.slice(1).join('')}`
+                          : cleaned
+                        setAmountInput(normalized)
+                        updateField('amount', parseFloat(normalized) || 0)
+                      }}
+                      onBlur={() => {
+                        setAmountInput(editingEnvelope.amount ? formatNumberWithCommas(editingEnvelope.amount) : '')
                       }}
                       placeholder="0"
                     />

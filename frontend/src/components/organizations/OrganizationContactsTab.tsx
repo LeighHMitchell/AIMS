@@ -400,7 +400,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
 
           {/* Search Results Dropdown */}
           {showUserSearch && (
-            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+            <div className="absolute z-10 w-1/2 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
               {filteredUsers.length === 0 ? (
                 <div className="p-4 text-body text-muted-foreground text-center">
                   {searchQuery ? `No users found matching "${searchQuery}"` : 'No users found in your organization'}
@@ -420,9 +420,16 @@ export default function OrganizationContactsTab({ organizationId, organization }
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-body font-medium text-foreground truncate">{user.full_name}</p>
-                      <p className="text-helper text-muted-foreground truncate">{user.email}</p>
                       {user.job_title && (
                         <p className="text-helper text-muted-foreground truncate">{user.job_title}</p>
+                      )}
+                      {user.department && (
+                        <p className="text-helper text-muted-foreground truncate">{user.department}</p>
+                      )}
+                      {organization?.name && (
+                        <p className="text-helper text-muted-foreground truncate">
+                          {organization.acronym ? `${organization.name} (${organization.acronym})` : organization.name}
+                        </p>
                       )}
                     </div>
                   </button>
@@ -540,7 +547,6 @@ function ContactCard({
 }) {
   const typeInfo = validateIatiContactType(contact.type);
   const fullName = `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim();
-  const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ');
 
   return (
     <div className="relative border border-border rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-card">
@@ -593,8 +599,11 @@ function ContactCard({
             {fullName}
           </h3>
 
-          {jobLine && (
-            <p className="text-body text-muted-foreground break-words">{jobLine}</p>
+          {contact.jobTitle && (
+            <p className="text-body text-muted-foreground break-words">{contact.jobTitle}</p>
+          )}
+          {contact.department && (
+            <p className="text-body text-muted-foreground break-words">{contact.department}</p>
           )}
 
           {organization && (
@@ -740,10 +749,9 @@ function ContactsTable({
           {sortedContacts.map((contact) => {
             const typeInfo = validateIatiContactType(contact.type);
             const fullName = `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim();
-            const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ');
 
             return (
-              <tr key={contact.id} className="border-b border-border hover:bg-muted/50">
+              <tr key={contact.id} className="group border-b border-border hover:bg-muted/50">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <UserAvatar
@@ -761,7 +769,18 @@ function ContactsTable({
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <p className="text-body text-foreground">{jobLine || '—'}</p>
+                  {contact.jobTitle || contact.department ? (
+                    <>
+                      {contact.jobTitle && (
+                        <p className="text-body text-foreground">{contact.jobTitle}</p>
+                      )}
+                      {contact.department && (
+                        <p className="text-body text-foreground">{contact.department}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-body text-foreground">—</p>
+                  )}
                 </td>
                 <td className="py-3 px-4">
                   {contact.email ? (
@@ -786,7 +805,7 @@ function ContactsTable({
                   <span className="text-body text-foreground">{typeInfo.label}</span>
                 </td>
                 <td className="py-3 px-4">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="sm"

@@ -7,6 +7,7 @@ import { supabaseOptimized } from '@/lib/supabase-optimized';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { cascadeSoftDelete, ACTIVITY_CHILD_TABLES } from '@/lib/soft-delete';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { canDeleteActivities, canEditActivity } from '@/lib/activity-permissions-server';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -52,7 +53,7 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user: sessionUser, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     // Check content length to prevent large payloads
@@ -94,6 +95,15 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: 'Activity not found' },
           { status: 404 }
+        );
+      }
+
+      // Updating an existing activity — must be permitted to edit it.
+      // (Creating a brand-new activity, below, stays open to any authed user.)
+      if (!sessionUser || !(await canEditActivity(sessionUser.id, body.id))) {
+        return NextResponse.json(
+          { error: 'You do not have permission to edit this activity' },
+          { status: 403 }
         );
       }
       
@@ -2452,13 +2462,30 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user: sessionUser, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     const { id, ids, user } = body;
-    
+
+    // Authorization: only super_users, the owning org, or the creator may delete.
+    // Checked against the SESSION user (not the client-supplied body.user), and
+    // here because the delete below uses the admin client (bypasses RLS).
+    const deleteTargetIds: string[] = Array.isArray(ids) ? ids : (id ? [id] : []);
+    if (deleteTargetIds.length > 0) {
+      if (!sessionUser) {
+        return NextResponse.json({ error: 'You do not have permission to delete activities' }, { status: 403 });
+      }
+      const { allowed, blockedIds } = await canDeleteActivities(sessionUser.id, deleteTargetIds);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'You do not have permission to delete one or more of these activities', blockedIds },
+          { status: 403 }
+        );
+      }
+    }
+
     // Handle bulk deletion
     if (ids && Array.isArray(ids)) {
       if (ids.length === 0) {

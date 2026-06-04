@@ -14,8 +14,9 @@ import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, AlertCircle, LayoutGrid, Table as TableIcon, MapPin, Search,
   ChevronUp, ChevronDown, Building2, TrendingUp, Map as MapIcon,
-  BarChart3, LineChart as LineChartIcon, AreaChart as AreaChartIcon,
+  BarChart3, LineChart as LineChartIcon, AreaChart as AreaChartIcon, Pencil,
 } from 'lucide-react'
+import { useUserRole } from '@/hooks/useUserRole'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart as RechartsPieChart, Pie, Cell, Legend, AreaChart, Area,
@@ -195,6 +196,7 @@ const LOCATION_COLOR = '#4c5568'
 export default function LocationProfileDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { isSuperUser } = useUserRole()
   const [data, setData] = useState<LocationProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -349,10 +351,21 @@ export default function LocationProfileDetailPage() {
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
-          <Breadcrumbs items={[
-            { label: "Location Profiles", href: "/location-profiles" },
-            { label: region.name },
-          ]} />
+          <div className="flex items-start justify-between gap-4">
+            <Breadcrumbs items={[
+              { label: "Location Profiles", href: "/location-profiles" },
+              { label: region.name },
+            ]} />
+            {isSuperUser() && (
+              <Link
+                href={`/location-profiles/${region.st_pcode}/edit`}
+                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                Edit
+              </Link>
+            )}
+          </div>
 
           {/* Hero Banner with Map Tiles */}
           {(() => {
@@ -395,25 +408,30 @@ export default function LocationProfileDetailPage() {
 
             return (
               <div className="rounded-xl mb-6 border border-border relative overflow-hidden" style={{ height: 180 }}>
-                <div className="absolute inset-0 grid grid-rows-2" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, filter: 'saturate(0.4) brightness(0.9)' }}>
-                  {tiles.map((t, i) => (
-                    <img
-                      key={i}
-                      src={`https://tile.openstreetmap.org/${zoom}/${t.x}/${t.y}.png`}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ))}
-                </div>
+                {(region as any).banner ? (
+                  <img src={(region as any).banner} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: `center ${(region as any).banner_position ?? 50}%` }} />
+                ) : (
+                  <div className="absolute inset-0 grid grid-rows-2" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, filter: 'saturate(0.4) brightness(0.9)' }}>
+                    {tiles.map((t, i) => (
+                      <img
+                        key={i}
+                        src={`https://tile.openstreetmap.org/${zoom}/${t.x}/${t.y}.png`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent z-10" />
                 <div className="absolute inset-0 flex items-center px-6 z-20">
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-[#3C6255] flex items-center justify-center shadow-lg">
+                    <div className="flex-shrink-0 w-16 h-16 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: (region as any).color || '#3C6255' }}>
                       <MapPin className="h-8 w-8 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h1 className="text-2xl font-bold text-foreground drop-shadow-sm">{region.name}</h1>
+                      {(region as any).description && <p className="text-body text-foreground/80 mt-1 drop-shadow-sm line-clamp-2">{(region as any).description}</p>}
                     </div>
                   </div>
                 </div>

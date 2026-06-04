@@ -38,10 +38,26 @@ export async function GET() {
       goalCountMap.get(m.sdg_goal)!.add(m.activity_id);
     });
 
-    const sdgs = SDG_GOALS.map(goal => ({
-      ...goal,
-      activityCount: goalCountMap.has(goal.id) ? goalCountMap.get(goal.id)!.size : 0,
-    }));
+    // Super-user customization overrides (description/color/icon) per SDG
+    const overrideMap = new Map<string, any>();
+    {
+      const { data: ov } = await supabase
+        .from('profile_banners')
+        .select('profile_id, description, color, icon')
+        .eq('profile_type', 'sdg');
+      (ov || []).forEach((row: any) => overrideMap.set(String(row.profile_id), row));
+    }
+
+    const sdgs = SDG_GOALS.map(goal => {
+      const ov = overrideMap.get(String(goal.id));
+      return {
+        ...goal,
+        description: ov?.description || goal.description,
+        color: ov?.color || goal.color,
+        icon: ov?.icon || null,
+        activityCount: goalCountMap.has(goal.id) ? goalCountMap.get(goal.id)!.size : 0,
+      };
+    });
 
     return NextResponse.json({ sdgs });
   } catch (error: any) {

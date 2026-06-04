@@ -25,6 +25,26 @@ export async function GET(
       return NextResponse.json({ error: 'State/Region not found' }, { status: 404 });
     }
 
+    // Super-user customization overrides (description/color/icon/banner)
+    let overrideFields: any = { description: null, color: null, icon: null, banner: null, banner_position: 50 };
+    {
+      const { data: ov } = await supabase
+        .from('profile_banners')
+        .select('description, color, icon, banner, banner_position')
+        .eq('profile_type', 'location')
+        .eq('profile_id', pcode)
+        .maybeSingle();
+      if (ov) {
+        overrideFields = {
+          description: ov.description || null,
+          color: ov.color || null,
+          icon: ov.icon || null,
+          banner: ov.banner || null,
+          banner_position: ov.banner_position ?? 50,
+        };
+      }
+    }
+
     // Find all pcodes that map to this primary pcode (e.g. Shan has MMR014, MMR015, MMR016)
     const relatedPcodes: string[] = [pcode];
     const entries = Object.entries(STATE_PCODE_MAPPING);
@@ -63,7 +83,7 @@ export async function GET(
     const activityIds = Array.from(activityIdSet);
 
     if (activityIds.length === 0) {
-      return NextResponse.json(buildEmptyResponse(region, pcode));
+      return NextResponse.json(buildEmptyResponse(region, pcode, overrideFields));
     }
 
     // Fetch activities with reporting org fields
@@ -411,6 +431,7 @@ export async function GET(
         st_pcode: region.st_pcode,
         flag: region.flag,
         townshipCount: townshipNames.size,
+        ...overrideFields,
       },
       metrics: {
         totalActivities: activityIds.length,
@@ -461,7 +482,7 @@ function getTypeLabel(type: string): string {
   return labels[type] || 'Other';
 }
 
-function buildEmptyResponse(region: any, pcode: string) {
+function buildEmptyResponse(region: any, pcode: string, overrideFields: any = {}) {
   return {
     region: {
       name: region.name,
@@ -469,6 +490,7 @@ function buildEmptyResponse(region: any, pcode: string) {
       st_pcode: pcode,
       flag: region.flag,
       townshipCount: 0,
+      ...overrideFields,
     },
     metrics: {
       totalActivities: 0, totalOrganizations: 0, totalTransactions: 0,

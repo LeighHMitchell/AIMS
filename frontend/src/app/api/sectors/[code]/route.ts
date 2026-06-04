@@ -33,6 +33,22 @@ export async function GET(
       return NextResponse.json({ error: 'Sector not found' }, { status: 404 });
     }
 
+    // Merge super-user customization overrides (description/color/icon)
+    const sectorMeta: any = { ...sectorInfo };
+    {
+      const { data: ov } = await supabase
+        .from('profile_banners')
+        .select('description, color, icon')
+        .eq('profile_type', 'sector')
+        .eq('profile_id', code)
+        .maybeSingle();
+      if (ov) {
+        if (ov.description) sectorMeta.description = ov.description;
+        if (ov.color) sectorMeta.color = ov.color;
+        if (ov.icon) sectorMeta.icon = ov.icon;
+      }
+    }
+
     // Get all 5-digit codes that belong under this code
     const sectorCodes = getAllSectorCodes(code);
 
@@ -52,7 +68,7 @@ export async function GET(
     );
 
     const emptyResponse = {
-      sector: sectorInfo,
+      sector: sectorMeta,
       hierarchy: buildHierarchy(code, sectorInfo),
       metrics: {
         totalActivities: 0, totalOrganizations: 0, totalTransactions: 0, totalValue: 0,
@@ -490,7 +506,7 @@ export async function GET(
       .sort((a, b) => b.count - a.count);
 
     return NextResponse.json({
-      sector: sectorInfo,
+      sector: sectorMeta,
       hierarchy: buildHierarchy(code, sectorInfo),
       metrics: {
         totalActivities: uniqueActivityIds.length,

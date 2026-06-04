@@ -6,11 +6,13 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
-import { AlertCircle, Target, LayoutGrid, List } from 'lucide-react'
+import { AlertCircle, Target, LayoutGrid, List, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SDGCardModern from '@/components/sdgs/SDGCardModern'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { apiFetch } from '@/lib/api-fetch'
+import { useRouter } from 'next/navigation'
+import { useUserRole } from '@/hooks/useUserRole'
 
 interface SDGListItem {
   id: number
@@ -26,6 +28,9 @@ export default function SDGListingPage() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [banners, setBanners] = useState<Record<string, string>>({})
+  const router = useRouter()
+  const { isSuperUser } = useUserRole()
+  const canEdit = isSuperUser()
 
   useEffect(() => {
     const fetchSDGs = async () => {
@@ -143,6 +148,7 @@ export default function SDGListingPage() {
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Name</th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Description</th>
                       <th className="text-right font-medium text-muted-foreground px-4 py-3 w-28">Activities</th>
+                      {canEdit && <th className="w-12 px-4 py-3" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -183,6 +189,19 @@ export default function SDGListingPage() {
                             <span className="text-muted-foreground">0</span>
                           )}
                         </td>
+                        {canEdit && (
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/sdgs/${sdg.id}/edit`)}
+                              className="h-7 w-7 rounded-md inline-flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                              title="Edit SDG"
+                              aria-label="Edit SDG"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -207,6 +226,18 @@ export default function SDGListingPage() {
                     goal={goal}
                     activityCount={sdg.activityCount}
                     bannerImage={banners[String(sdg.id)]}
+                    bannerActions={canEdit ? (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sdgs/${sdg.id}/edit`) }}
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Edit SDG"
+                        aria-label="Edit SDG"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    ) : undefined}
                   />
                 )
               })}

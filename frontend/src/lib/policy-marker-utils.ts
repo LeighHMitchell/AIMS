@@ -16,13 +16,80 @@ import {
   Heart,
   Droplets,
   Wrench,
+  Globe,
+  Users,
+  Scale,
+  Sprout,
+  Sun,
+  CloudRain,
+  Building2,
+  GraduationCap,
+  Stethoscope,
+  HandHeart,
+  Briefcase,
+  Cpu,
+  Recycle,
+  ShieldCheck,
+  Wheat,
+  Accessibility,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 /**
- * Get the appropriate icon component for an IATI policy marker code.
+ * Curated set of icons a super user can choose from in the Policy Marker editor.
+ * The key is stored in policy_markers.icon; the component is resolved for display.
  */
-export function getIconForMarker(iatiCode?: string): LucideIcon {
+export const POLICY_MARKER_ICON_OPTIONS: Array<{ key: string; Icon: LucideIcon }> = [
+  { key: 'sparkles', Icon: Sparkles },
+  { key: 'leaf', Icon: Leaf },
+  { key: 'shield', Icon: Shield },
+  { key: 'shield-check', Icon: ShieldCheck },
+  { key: 'handshake', Icon: Handshake },
+  { key: 'tree-pine', Icon: TreePine },
+  { key: 'sprout', Icon: Sprout },
+  { key: 'wind', Icon: Wind },
+  { key: 'sun', Icon: Sun },
+  { key: 'waves', Icon: Waves },
+  { key: 'cloud-rain', Icon: CloudRain },
+  { key: 'mountain-snow', Icon: MountainSnow },
+  { key: 'baby', Icon: Baby },
+  { key: 'alert-circle', Icon: AlertCircle },
+  { key: 'heart', Icon: Heart },
+  { key: 'hand-heart', Icon: HandHeart },
+  { key: 'droplets', Icon: Droplets },
+  { key: 'wheat', Icon: Wheat },
+  { key: 'globe', Icon: Globe },
+  { key: 'users', Icon: Users },
+  { key: 'scale', Icon: Scale },
+  { key: 'building-2', Icon: Building2 },
+  { key: 'graduation-cap', Icon: GraduationCap },
+  { key: 'stethoscope', Icon: Stethoscope },
+  { key: 'briefcase', Icon: Briefcase },
+  { key: 'cpu', Icon: Cpu },
+  { key: 'recycle', Icon: Recycle },
+  { key: 'accessibility', Icon: Accessibility },
+  { key: 'wrench', Icon: Wrench },
+]
+
+const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
+  POLICY_MARKER_ICON_OPTIONS.map(o => [o.key, o.Icon])
+)
+
+/**
+ * Resolve a stored icon key (from policy_markers.icon) to a component.
+ */
+export function getIconComponent(iconKey?: string | null): LucideIcon | null {
+  if (!iconKey) return null
+  return ICON_BY_KEY[iconKey] || null
+}
+
+/**
+ * Get the appropriate icon component for a policy marker. A super-user-chosen
+ * icon (stored key) takes precedence over the IATI-code-based default.
+ */
+export function getIconForMarker(iatiCode?: string, storedIcon?: string | null): LucideIcon {
+  const custom = getIconComponent(storedIcon)
+  if (custom) return custom
   if (!iatiCode) return Wrench
 
   switch (iatiCode) {
@@ -75,6 +142,14 @@ export const MARKER_TYPE_COLORS: Record<string, string> = {
   social_governance: '#2563EB',
   other: '#7C3AED',
   custom: '#64748B',
+}
+
+/**
+ * Resolve the theme color for a marker: a super-user-chosen color takes
+ * precedence over the marker-type palette, with a neutral slate fallback.
+ */
+export function getMarkerColor(marker: { color?: string | null; marker_type?: string | null }): string {
+  return marker.color || MARKER_TYPE_COLORS[marker.marker_type || 'other'] || '#64748B'
 }
 
 /**

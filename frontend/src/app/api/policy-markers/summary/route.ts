@@ -50,18 +50,15 @@ export async function GET(request: NextRequest) {
       activityCount: countMap.get(m.uuid) || countMap.get(String(m.id)) || 0,
     }));
 
-    // Group by marker_type
+    // Group by vocabulary: official OECD-DAC / IATI markers vs everything else
     const groups: Record<string, any[]> = {
-      environmental: [],
-      social_governance: [],
+      oecd_dac: [],
       other: [],
-      custom: [],
     };
 
     enrichedMarkers.forEach(m => {
-      const type = m.marker_type || 'other';
-      if (!groups[type]) groups[type] = [];
-      groups[type].push(m);
+      if (m.is_iati_standard) groups.oecd_dac.push(m);
+      else groups.other.push(m);
     });
 
     const totalActivities = new Set(

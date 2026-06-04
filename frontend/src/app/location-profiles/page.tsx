@@ -7,9 +7,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
-import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, List } from 'lucide-react'
+import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, List, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
+import { useRouter } from 'next/navigation'
+import { useUserRole } from '@/hooks/useUserRole'
 import { formatCurrencyShort } from '@/lib/format'
 
 // Static map thumbnail for each state/region using OpenStreetMap static tiles
@@ -61,6 +63,9 @@ export default function LocationProfilesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
+  const router = useRouter()
+  const { isSuperUser } = useUserRole()
+  const canEdit = isSuperUser()
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -195,6 +200,18 @@ export default function LocationProfilesPage() {
                   href={`/location-profiles/${region.st_pcode}`}
                   ariaLabel={`${region.name} - ${region.type}`}
                   bannerColor={TYPE_COLORS[region.type] || '#64748b'}
+                  bannerActions={canEdit ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/location-profiles/${region.st_pcode}/edit`) }}
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Edit location"
+                      aria-label="Edit location"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  ) : undefined}
                   bannerContent={
                     <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
                       <img

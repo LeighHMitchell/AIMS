@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { canEditActivity } from '@/lib/activity-permissions-server';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
@@ -299,18 +300,26 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
     const { id: activityId } = await params;
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-    
+
     if (!activityId) {
       return NextResponse.json(
         { error: 'Activity ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Only those allowed to edit this activity may add transactions to it.
+    if (!user || !(await canEditActivity(user.id, activityId))) {
+      return NextResponse.json(
+        { error: 'You do not have permission to edit this activity' },
+        { status: 403 }
       );
     }
     

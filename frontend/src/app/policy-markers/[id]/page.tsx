@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, ExternalLink, MapPin,
+  ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, ExternalLink, MapPin, Pencil,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -22,7 +22,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
-import { getSignificanceLabel, MARKER_TYPE_COLORS, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
+import { getSignificanceLabel, getMarkerColor } from '@/lib/policy-marker-utils'
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 import { SignificanceDistribution } from '@/components/policy-markers/SignificanceDistribution'
@@ -41,6 +41,7 @@ interface PolicyMarkerData {
     id: string; uuid: string; code: string; name: string; description: string;
     marker_type: string; vocabulary: string; vocabulary_uri?: string;
     iati_code?: string; is_iati_standard: boolean;
+    color?: string | null; icon?: string | null;
   }
   metrics: {
     totalActivities: number; totalOrganizations: number; totalTransactions: number; totalValue: number;
@@ -129,7 +130,7 @@ export default function PolicyMarkerProfilePage() {
 
   useEffect(() => { setActivityPage(1) }, [activityStatusFilter, activitySort])
 
-  const themeColor = useMemo(() => data ? (MARKER_TYPE_COLORS[data.marker.marker_type] || '#64748B') : '#64748B', [data])
+  const themeColor = useMemo(() => data ? getMarkerColor(data.marker) : '#64748B', [data])
   const palette = useMemo(() => markerPalette(themeColor), [themeColor])
 
   const filteredActivities = useMemo(() => {
@@ -194,10 +195,21 @@ export default function PolicyMarkerProfilePage() {
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
-          <Breadcrumbs items={[
-            { label: "Policy Markers", href: "/policy-markers" },
-            { label: marker.name },
-          ]} />
+          <div className="flex items-start justify-between gap-4">
+            <Breadcrumbs items={[
+              { label: "Policy Markers", href: "/policy-markers" },
+              { label: marker.name },
+            ]} />
+            {isSuperUser() && (
+              <Link
+                href={`/policy-markers/${marker.uuid}/edit`}
+                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                Edit
+              </Link>
+            )}
+          </div>
 
           {/* Hero Banner */}
           <Card className="mb-6 border-0 overflow-hidden relative group">
@@ -227,7 +239,7 @@ export default function PolicyMarkerProfilePage() {
                     <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                       {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
                     </code>
-                    <Badge variant="outline" className="border-border text-foreground">{getMarkerTypeLabel(marker.marker_type)}</Badge>
+                    <Badge variant="outline" className="border-border text-foreground">{marker.is_iati_standard ? 'OECD DAC Policy Marker' : 'Other'}</Badge>
                     {marker.vocabulary && marker.vocabulary !== '1' && (
                       <Badge variant="outline" className="border-border text-foreground">Vocabulary: {marker.vocabulary}</Badge>
                     )}

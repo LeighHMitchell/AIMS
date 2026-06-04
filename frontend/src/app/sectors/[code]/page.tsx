@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge'
 // Tabs removed — all content shown on single page
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, ExternalLink, MapPin,
+  ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, ExternalLink, MapPin, Pencil,
 } from 'lucide-react'
+import { useUserRole } from '@/hooks/useUserRole'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
   Cell, PieChart as RechartsPieChart, Pie, AreaChart, Area,
@@ -117,7 +118,8 @@ export default function SectorProfilePage() {
 
   useEffect(() => { setActivityPage(1) }, [activityStatusFilter, activitySort])
 
-  const themeColor = useMemo(() => data ? getSectorColor(data.sector.code) : '#6B7280', [data])
+  const themeColor = useMemo(() => data ? ((data.sector as any).color || getSectorColor(data.sector.code)) : '#6B7280', [data])
+  const { isSuperUser } = useUserRole()
   // Canonical financial-series colors (single source of truth, chart-colors.ts):
   // a Disbursement bar/area is always the same hue as a transaction-type-3 slice.
   const COMMITMENT_COLOR = getTransactionTypeColor('2')
@@ -185,12 +187,23 @@ export default function SectorProfilePage() {
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
-          <Breadcrumbs items={[
-            { label: "All Sectors", href: "/sectors" },
-            ...(hierarchy.group ? [{ label: `${hierarchy.group.name} (${hierarchy.group.code})`, href: (!hierarchy.category && !hierarchy.sector) ? undefined : `/sectors/${hierarchy.group.code}` }] : []),
-            ...(hierarchy.category ? [{ label: `${hierarchy.category.name} (${hierarchy.category.code})`, href: !hierarchy.sector ? undefined : `/sectors/${hierarchy.category.code}` }] : []),
-            ...(hierarchy.sector ? [{ label: `${hierarchy.sector.name} (${hierarchy.sector.code})` }] : []),
-          ]} />
+          <div className="flex items-start justify-between gap-4">
+            <Breadcrumbs items={[
+              { label: "All Sectors", href: "/sectors" },
+              ...(hierarchy.group ? [{ label: `${hierarchy.group.name} (${hierarchy.group.code})`, href: (!hierarchy.category && !hierarchy.sector) ? undefined : `/sectors/${hierarchy.group.code}` }] : []),
+              ...(hierarchy.category ? [{ label: `${hierarchy.category.name} (${hierarchy.category.code})`, href: !hierarchy.sector ? undefined : `/sectors/${hierarchy.category.code}` }] : []),
+              ...(hierarchy.sector ? [{ label: `${hierarchy.sector.name} (${hierarchy.sector.code})` }] : []),
+            ]} />
+            {isSuperUser() && (
+              <Link
+                href={`/sectors/${sector.code}/edit`}
+                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                Edit
+              </Link>
+            )}
+          </div>
 
           {/* Hero Banner */}
           <div className="rounded-xl p-6 mb-6 border border-border relative overflow-hidden group min-h-[320px] flex flex-col justify-end" style={{ background: `linear-gradient(to right, ${themeColor}15, ${themeColor}08)` }}>
@@ -203,6 +216,7 @@ export default function SectorProfilePage() {
             <ProfileBannerUpload
               profileType="sector"
               profileId={sector.code}
+              canEdit={isSuperUser()}
               onBannerChange={(b, pos) => { setSectorBanner(b); setSectorBannerPosition(pos) }}
             />
             <div className="flex items-center gap-4 relative z-[1]">

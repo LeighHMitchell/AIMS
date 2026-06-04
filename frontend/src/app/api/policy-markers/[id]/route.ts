@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuthOrVisitor } from '@/lib/auth';
+import { requireAuth, requireAuthOrVisitor } from '@/lib/auth';
 import { COUNTRY_COORDINATES } from '@/data/country-coordinates';
 
 export const dynamic = 'force-dynamic';
@@ -446,6 +446,76 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('[Policy Marker API] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
+  }
+}
+
+// ── PATCH: super-user edit of a policy marker ─────────────────────────────────
+// Editable: description, icon, color, display_order (all markers). name/code are
+// editable only on non-IATI-standard (custom) markers — locked for the official
+// 12 to preserve IATI compliance.
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { supabase, user, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  if (!supabase || !user) {
+    return NextResponse.json({ error: 'Database connection not initialized' }, { status: 500 });
+  }
+
+  // Super-user gate
+  const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
+  if (profile?.role !== 'super_user') {
+    return NextResponse.json({ error: 'Only super users can edit policy markers' }, { status: 403 });
+  }
+
+  try {
+    const { id } = await params;
+
+    // Resolve by uuid first, then by id
+    let { data: marker } = await supabase.from('policy_markers').select('*').eq('uuid', id).maybeSingle();
+    if (!marker) {
+      const byId = await supabase.from('policy_markers').select('*').eq('id', id).maybeSingle();
+      marker = byId.data;
+    }
+    if (!marker) {
+      return NextResponse.json({ error: 'Policy marker not found' }, { status: 404 });
+    }
+
+    const body = await request.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+
+    const update: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (typeof body.description === 'string') update.description = body.description.trim();
+    if (typeof body.icon === 'string' || body.icon === null) update.icon = body.icon || null;
+    if (typeof body.color === 'string' || body.color === null) update.color = body.color || null;
+    if (body.display_order != null && !Number.isNaN(Number(body.display_order))) {
+      update.display_order = Number(body.display_order);
+    }
+    // Identity fields — only on custom markers
+    if (!marker.is_iati_standard) {
+      if (typeof body.name === 'string' && body.name.trim()) update.name = body.name.trim();
+      if (typeof body.code === 'string' && body.code.trim()) update.code = body.code.trim();
+    }
+
+    let { data: updated, error } = await supabase
+      .from('policy_markers').update(update).eq('id', marker.id).select('*').single();
+
+    // Graceful fallback if the icon/color migration hasn't been run yet
+    // (covers both "column … does not exist" and PostgREST's schema-cache message)
+    if (error && /(icon|color)/i.test(error.message) && /(does not exist|schema cache)/i.test(error.message)) {
+      delete update.icon; delete update.color;
+      ({ data: updated, error } = await supabase
+        .from('policy_markers').update(update).eq('id', marker.id).select('*').single());
+    }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ marker: updated });
+  } catch (error: any) {
+    console.error('[Policy Marker API] PATCH error:', error);
     return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }
